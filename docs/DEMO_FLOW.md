@@ -4,7 +4,7 @@ The guided Demo in the web app is the late-payment loop in six scenes and eleven
 
 ## The guided Demo: the late-payment loop
 
-Run it with Start demo and Next on the stepper (Demo mode keeps it on every page), or step by step on the story page (`/demo`). Every step does its work through the same API calls the Business pages use, then opens the Business page that shows the result. A step waits for the one before it, because the story moves time. Every step is convergent: Run brings the books to at least that step's state, and when they are already there it only reads them again, so Replay and a second Run are safe. Show only opens a finished step's screen. Reset (or Replay of step 1) erases the books and starts over.
+Run it with Start demo and Next on the stepper (Demo mode keeps it on every page), or step by step on the story page (`/demo`). Every step does its work through the same API calls the Business pages use, then opens the Business page that shows the result. A step waits for the one before it, because the story moves time. Back only moves the pointer; Next after a Back is a Show up to the highest step finished, and only the step after that is run. Every step is convergent: Run brings the books to at least that step's state, and when they are already there it only reads them again, so Replay and a second Run are safe. Show only opens a finished step's screen. Reset (or Replay of step 1) erases the books and starts over.
 
 | Scene | Step (what Next does) | Screen |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Run it with Start demo and Next on the stepper (Demo mode keeps it on every page
 | 4 Reality diverges | 5. "Bank: the agreed early payment arrives (synthetic)": the clock moves to the day the buyer promised to pay by (it records nothing), then `POST /demo/bank-receipt` posts the one receipt | Receivables |
 |  | 6. Time passes: the clock moves to day 34; nothing is recorded as received, the later payment does not arrive | Home: the reserve breach and the cure priced above the autonomous ceiling |
 | 5 The owner stays in control | 7. Queue the cure: exactly the Home button's bound act (the home's `state_version` and suggestions); it needs the owner, so it waits | Approvals, the card |
-|  | 8. The owner approves: the Next button reads "Approve ¥200,000.00" and is the owner's own click (`POST /approvals/{id}`); the stepper never presses it by itself. A second Run after the decision approves nothing again | Approvals |
+|  | 8. The owner approves: the card's own Approve is the only approval (`POST /approvals/{id}`). The step itself never decides: while the cure waits, running it only opens the approval card and leaves the story where it was; once the owner has decided, it reads the decision and shows it. The stepper never presses Approve | Approvals |
 |  | 9. Time passes: the clock moves to the day after the funding lands (day 38); the cash is in hand, not in transit | Cash |
 | 6 Outcome and proof | 10. Where the books stand: updated cash and the risk that remains, the deal's record (Fulfilled) and the cure's (Settled) | Home |
 |  | 11. The record and the proof: Activity with what changed, why it matters and what remains, and the evidence export link | Activity |

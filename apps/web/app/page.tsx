@@ -11,6 +11,7 @@ import { ErrorState, LoadingBlock } from "@/components/ui";
 import { getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
+import { withoutSuperseded } from "@/lib/home-changes";
 import { useI18n } from "@/lib/i18n";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { useNarrow } from "@/lib/use-narrow";
@@ -67,7 +68,7 @@ export default function HomePage() {
   const narrow = useNarrow();
   const decisions = h && h.pending_count > 0 && !cardHoldsApproval ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
   // While an approval is open the waiting row would say it a third time.
-  const shownChanges = (h?.changes ?? []).filter((c) => !(c.kind === "WAITING" && (h?.pending_count ?? 0) > 0));
+  const shownChanges = withoutSuperseded(h?.changes ?? []).filter((c) => !(c.kind === "WAITING" && (h?.pending_count ?? 0) > 0));
   const changes =
     h && shownChanges.length ? (
       <ChangesBlock key="changes" changes={shownChanges} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />

@@ -7,6 +7,7 @@ import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components
 import { OperationResultBox } from "@/components/operation-result";
 import { Disclosure } from "@/components/business/kit";
 import { Badge, Button, Chip, Hash, type Tone } from "@/components/ui";
+import { confirmWord } from "@/lib/confirm-word";
 import { useBusinessShell } from "@/lib/use-business-today";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
@@ -202,6 +203,8 @@ export function AssistantTurn({
   const hasSecurity = r.security_events.length > 0;
   const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
   const zh = r.lang === "zh";
+  // The Business button says the words the server asked for in its reply ("Yes, run it" for a plan, "Yes, do it" for an approval); the dictionary word is the fallback.
+  const goLabel = business ? ((r.reply && confirmWord(r.reply)) ?? t("chat.goahead.business")) : t("chat.goahead");
   const refused = r.operations.some((o) => o.status === "REFUSED");
   const pendingAfterRefresh = restored && (r.awaiting_confirmation || r.operations.some((o) => o.status === "PENDING_APPROVAL"));
 
@@ -303,8 +306,8 @@ export function AssistantTurn({
           <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
           <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", business ? t("chat.goahead.business") : t("chat.goahead"))} data-testid="chat-goahead">
-              {business ? t("chat.goahead.business") : t("chat.goahead")}
+            <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", goLabel)} data-testid="chat-goahead">
+              {goLabel}
             </Button>
             <Button variant="secondary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "取消" : "cancel", t("chat.cancelPlan"))} data-testid="chat-cancel">
               {t("chat.cancelPlan")}

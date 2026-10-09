@@ -103,7 +103,7 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="mx-auto max-w-3xl space-y-6">
+        <ul className="max-w-3xl space-y-6">
           {list.data.map((a) => (
             <li key={a.id} className="min-w-0">
               <ApprovalCard

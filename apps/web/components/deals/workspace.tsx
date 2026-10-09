@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
 import { decisionHref } from "@/components/business/open-decisions";
+import { DealStage } from "@/components/deals/deal-steps";
 import { ParsedTerms } from "@/components/deals/asks";
 import { AllChecks, checkCount, EngineVerdictLine } from "@/components/deals/reasons";
 import { PlanCard } from "@/components/plan-card";
@@ -23,32 +24,35 @@ import { whenText } from "@/lib/when";
 
 /**
  * The compact header of the selected deal: the buyer, when the offer came, when it was checked, and one chip for where the deal stands (the
- * record's state in the server's words, its colour the server's `state_tone`; the browser never picks one). No ask line (the asks card says it
- * once) and no step line (the chip is the step).
+ * record's state in the server's words, its colour the server's `state_tone`; the browser never picks one) and, under the meta line, the stage
+ * indicator: Received · Analysed · Response ready · Sent · Agreed, one chip each, from the same record state. No ask line (the asks card says it once).
  */
 export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: { buyer: string; received: string; evaluatedWhen: string | null; state?: { code: string; text: string; tone: Tone } | null }) {
   const { t } = useI18n();
   return (
-    <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-2.5 shadow-card sm:py-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id="deal-selected-title" className="text-balance text-base font-semibold text-ink">
+    <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-2 shadow-card sm:py-3">
+      {/* One wrapping row: the buyer, then the state chip and the meta line. On a phone the chip and the meta line share a row (the first screen is short);
+          from sm the chip sits at the right of the buyer and the meta line has its own row. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-y-1">
+        <h2 id="deal-selected-title" className="min-w-0 text-balance text-base font-semibold text-ink max-sm:basis-full sm:flex-1">
           {buyer}
         </h2>
         {state ? (
-          <span data-testid="deal-state-chip" data-state={state.code}>
+          <span data-testid="deal-state-chip" data-state={state.code} className="sm:order-2">
             <StatePill tone={state.tone}>{state.text}</StatePill>
           </span>
         ) : null}
+        <p className="min-w-0 text-xs text-ink-3 max-sm:flex-1 sm:order-3 sm:basis-full" data-testid="deal-selected-meta">
+          {received}
+          {evaluatedWhen ? (
+            <>
+              {" · "}
+              <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
+            </>
+          ) : null}
+        </p>
       </div>
-      <p className="mt-0.5 text-xs text-ink-3" data-testid="deal-selected-meta">
-        {received}
-        {evaluatedWhen ? (
-          <>
-            {" · "}
-            <span data-testid="deal-evaluated">{t("biz.deals.evaluatedWhen", { when: evaluatedWhen })}</span>
-          </>
-        ) : null}
-      </p>
+      {state ? <DealStage state={state.code} stateText={state.text} /> : null}
     </section>
   );
 }
@@ -183,7 +187,7 @@ const ADVANCED_TITLE: Record<AdvancedKey, "biz.deals.parsed" | "biz.deals.origin
  * existing fields; it copies none of them.
  */
 export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[] }) {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const [active, setActive] = useState<string | null>(null);
   const keys = Object.keys(ws.advanced.keys) as AdvancedKey[];
   const body: Record<AdvancedKey, React.ReactNode> = {
@@ -263,8 +267,8 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
         {v.autonomy?.gaps.length ? (
           <Callout tone="warn" title={t("biz.deals.adv.gaps")}>
             <ul className="list-disc pl-5">
-              {v.autonomy.gaps.map((g) => (
-                <li key={g}>{g}</li>
+              {v.autonomy.gaps.map((g, i) => (
+                <li key={g}>{(lang === "zh" && v.autonomy?.gaps_when?.[i]) || g}</li>
               ))}
             </ul>
           </Callout>

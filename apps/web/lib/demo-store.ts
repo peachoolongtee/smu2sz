@@ -11,6 +11,12 @@ import type { BorrowerFileView, CapexApplyResult, CapexView, FundingView, Negoti
 export interface DemoState {
   /** -1 until the stepper has started. */
   step: number;
+  /**
+   * The highest step that has finished (-1 before any). Back moves `step` and leaves this where it was: a step up to here is only shown,
+   * because the books already hold its result; only the step after it is run. Read it with `reachedOf`, which also covers a session
+   * saved before this field existed.
+   */
+  reached: number;
   offerId: string | null;
   offers: Record<string, OfferView>;
   /** offer_id -> server fixture id, for offers compiled from a demo fixture (evaluate passes it back). */
@@ -65,6 +71,7 @@ export interface StepFacts {
 
 export const INITIAL_DEMO: DemoState = {
   step: -1,
+  reached: -1,
   offerId: null,
   offers: {},
   fixtures: {},
@@ -90,6 +97,9 @@ export const demoStore = createStore<DemoState>(INITIAL_DEMO, {
   // A reload never restores a locked stepper: `busy` is not saved, `running` is (it is how a reload mid-step is recognised).
   sanitize: (s) => ({ ...s, busy: false, error: null }),
 });
+
+/** The highest finished step: never behind the pointer, whatever an older saved session held. */
+export const reachedOf = (d: Pick<DemoState, "step" | "reached">): number => Math.max(d.reached ?? -1, d.step);
 
 export function useDemo(): DemoState {
   return demoStore.useValue();

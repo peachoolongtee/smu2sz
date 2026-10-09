@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { STORY_STEPS, walkStory } from "./helpers";
+import { openStoryFold, STORY_STEPS, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -324,6 +324,7 @@ test("on a desktop the Deals workspace keeps the server's order and the inbox ro
  */
 async function toDay34(page: Page) {
   await page.goto("/demo");
+  await openStoryFold(page, "story-today");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -378,5 +379,29 @@ test("at tablet width (820) the open invoices are a list, so the Buyer column is
   await page.goto("/receivables");
   await expect(page.getByTestId("recv-open-list")).toBeVisible();
   await expect(page.locator("table")).toBeHidden();
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+});
+
+test("phone: the Demo story keeps 'More to show', 'Today' and 'The books' under one closed fold each, so the page is short", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone", "the folds are the phone's");
+  await page.goto("/demo");
+  for (const card of ["story-more", "story-today", "story-reset"]) {
+    const fold = page.getByTestId(`story-fold-${card}`);
+    await expect(fold).toBeAttached();
+    await expect(fold).not.toHaveAttribute("open", "");
+  }
+  // The controls stay one tap away: a fold opens with the keyboard's Enter and shows what was behind it.
+  await expect(page.getByTestId("more-run-capex")).toBeHidden();
+  const books = page.getByTestId("story-fold-story-reset");
+  await books.locator("> summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("story-reset")).toBeVisible();
+  await books.locator("> summary").click();
+  await expect(page.getByTestId("story-reset")).toBeHidden();
+  await expect(page.getByTestId("home-day")).toBeAttached();
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  const view = page.viewportSize()?.height ?? 915;
+  // Measured 2.7 screens at 412 x 915 with the folds and the compact step rows; the eleven steps are the page. Under two is open.
+  expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
