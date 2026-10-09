@@ -20,6 +20,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from fractions import Fraction
 from typing import Literal, NamedTuple
 
 from pydantic import Field
@@ -29,6 +30,7 @@ from app.api.presentation import party_name, t, when_text
 from app.books import Books
 from app.domain.models import (
     Commitment,
+    CompiledOffer,
     Contract,
     CounterProposal,
     FinancialState,
@@ -40,13 +42,14 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
-from app.financial import value_concessions
+from app.financial import EngineError, value_concessions
 from app.funding import NoPermanentSourceError, marginal_cost, plan
 from app.funding.router import shared_runs
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
+from app.verifier.evaluate import _evaluate, _Router
 from app.whatif.offer import Context, EarlyPayContext, RebateOnlyContext, build, context
 from app.whatif.params import (
     DISCOUNT_MAX_BP,
@@ -191,16 +194,21 @@ def _scan_max(values: Sequence[int], ok: Callable[[int], bool]) -> Found:
 
 
 def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | None = None, gallop: bool = False,
-              hint_steps: int = 2) -> Found:
+              hint_steps: int = 2, top_first: bool = False) -> Found:
     """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (binary search, then the two
     values past the boundary checked; if one passes the lever is scanned whole and its largest passing value returned).
     A `hint` (a value expected to be the boundary) is tried first: it stands when it passes and the two values past it
     fail, which is the same evidence the search ends with; otherwise the search runs as if there were no hint. With
     `gallop` the search first doubles its steps up from the first value (cheap when the boundary is near it, as for
     the terms, where a long extension is also the costliest evaluation). `hint_steps` is how many values past the
-    hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one)."""
+    hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one).
+    With `top_first` the top of the range is asked once the first value has passed: when it passes too, it is the
+    largest value and nothing lies past it (a lever with no wall inside its range is read in two evaluations instead of
+    a search; a lever that passes at both ends and fails between them is read as passing, which the lever does not do)."""
     if not values or not ok(values[0]):
         return Found(None, True)
+    if top_first and len(values) > 1 and ok(values[-1]):
+        return Found(values[-1], True)
     if hint is not None and hint in values:
         i = values.index(hint)
         if ok(hint) and not any(ok(v) for v in values[i + 1: i + 1 + hint_steps]):
@@ -300,7 +308,12 @@ def _params(s: Setting) -> WhatIfParams:
 
 
 class _Verifier:
-    """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs."""
+    """`build` then `evaluate`, memoised per setting within one call, counting the evaluations it actually runs.
+
+    A search asks only whether a setting passes (`quick`), and the verifier builds its counters (a second set of router
+    searches) only for an offer it refuses. So a search reads the verdict without them: a setting that passes has no
+    counters either way, and its probe goes to the memo as it stands; a setting that fails is kept apart in `failed` and
+    is evaluated whole by `probe` only if the answer needs to show it (the counters, the verifier's own outcome word)."""
 
     def __init__(self, books: Books, mandate: Mandate, key: str, day: int, commitments: Sequence[Commitment],
                  ctx: BuyerContext, ranges: Ranges, withheld: str = "") -> None:
@@ -309,11 +322,13 @@ class _Verifier:
         self.withheld = withheld  # why the ranges leave out the terms and rebate levers (`NO_PLAN`); empty: they are all there
         self.state: FinancialState = books.state
         self.memo: dict[Setting, Probe] = {}
+        self.failed: dict[Setting, Probe] = {}  # refused settings read without their counters (see `quick`)
+        self.routers: dict[Setting, _Router] = {}  # the router of each refused setting's quick reading, for `probe` to reuse
         self.cur = ctx.recurring.terms_days if isinstance(ctx, Context) else TERMS_MIN
 
     @property
     def evaluations(self) -> int:
-        return len(self.memo)
+        return len(self.memo) + len(self.failed)
 
     def norm(self, s: Setting) -> Setting:
         if s.discount == 0 or s.face == face_of(self.ctx):
@@ -330,6 +345,7 @@ class _Verifier:
         return s.face is None or (0 < s.face <= r.face_max_fen and s.face % FACE_STEP_FEN == 0)
 
     def probe(self, setting: Setting) -> Probe:
+        """The verifier's whole answer to a setting, counters included."""
         s = self.norm(setting)
         hit = self.memo.get(s)
         if hit is not None:
@@ -337,10 +353,46 @@ class _Verifier:
         if not self.in_range(s):
             raise ValueError(f"{s} is outside the levers' ranges")
         offer, _ = build(_params(s), self.ctx, self.day)
-        v = evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
-                     commitments=self.commitments, plans="committed").verdict
+        # a refused setting read before keeps its router, whose memo holds the plans that reading searched for
+        router = self.routers.pop(s, None)
+        v = self._verdict(offer, router if router is not None else _Router(self.mandate), with_counters=True)
         p = self._read(s, v)
         self.memo[s] = p
+        self.failed.pop(s, None)
+        return p
+
+    def _verdict(self, offer: CompiledOffer, router: _Router, *, with_counters: bool) -> Verdict:
+        """`evaluate` on this buyer's books, on the given router and with or without the counters. An engine error is
+        worded by `evaluate` itself (a NO_VERDICT); it never raises one."""
+        try:
+            with shared_runs():
+                return _evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
+                                 commitments=self.commitments, plans="committed", router=router,
+                                 with_counters=with_counters).verdict
+        except EngineError:
+            return evaluate(offer, self.state, self.mandate, trusted_owner_key_hex=self.key, day=self.day,
+                            commitments=self.commitments, plans="committed").verdict
+
+    def quick(self, setting: Setting) -> Probe:
+        """The answer to a setting for a search: the verdict without the counters. Its `passes`, `approved`,
+        `liquidity_only`, forward total and violations are the whole answer's; `counters`, `unlisted` and, for a refused
+        offer, `outcome` (the verifier words COUNTER or REJECT by whether a counter exists) are not, so a refused setting
+        is never handed to anything that shows it (`probe` evaluates it whole)."""
+        s = self.norm(setting)
+        hit = self.memo.get(s) or self.failed.get(s)
+        if hit is not None:
+            return hit
+        if not self.in_range(s):
+            raise ValueError(f"{s} is outside the levers' ranges")
+        offer, _ = build(_params(s), self.ctx, self.day)
+        router = _Router(self.mandate)
+        v = self._verdict(offer, router, with_counters=False)
+        p = self._read(s, v)
+        if v.outcome in PASSING:  # no counters are built for an offer that is not refused: the whole answer, as it is
+            self.memo[s] = p
+        else:
+            self.failed[s] = p
+            self.routers[s] = router
         return p
 
     def _read(self, s: Setting, v: Verdict) -> Probe:
@@ -369,7 +421,7 @@ class _Verifier:
             unlisted=tuple(c for c, _ in read if not self.in_range(c)))
 
     def ok(self, s: Setting) -> bool:
-        return self.probe(s).passes
+        return self.quick(s).passes
 
     def rebate_hint(self, at_zero: Probe) -> int | None:
         """Where the largest rebate probably lies, read from the verifier's own forward-concession totals: the room the
@@ -379,16 +431,19 @@ class _Verifier:
         top = self.ranges.rebate[-1]
         if top == 0:
             return None
-        base, full = self.probe(Setting(self.cur)), self.probe(Setting(self.cur, rebate=top))
+        base, full = self.quick(Setting(self.cur)), self.quick(Setting(self.cur, rebate=top))
         steps = len(self.ranges.rebate) - 1
-        per_step, rest = divmod(full.forward_total_fen - base.forward_total_fen, steps)
+        per_step = Fraction(full.forward_total_fen - base.forward_total_fen, steps)  # the verifier rounds each total to the fen
         room = self.mandate.max_aggregate_forward_concession_fen - at_zero.forward_total_fen
-        if per_step <= 0 or rest or room < 0:
+        if per_step <= 0 or room < 0:
             return None
-        return self.ranges.rebate[min(room // per_step, steps)]
+        return self.ranges.rebate[min(int(room // per_step), steps)]
 
     def approved(self, s: Setting) -> bool:
-        return self.probe(s).approved
+        return self.quick(s).approved
+
+    def liquidity_only(self, s: Setting) -> bool:
+        return self.quick(s).liquidity_only
 
     def compensating_price(self, terms: int) -> tuple[int | None, int | None]:
         """(per-invoice funding cost of the extension, the smallest 5 bp price step that covers it): the Option B rule of
@@ -527,14 +582,14 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
     pmax = r.price[-1]
 
     if has_terms:
-        f = last_true(up, lambda x: v.ok(Setting(x)), gallop=True)
+        f = last_true(up, lambda x: v.ok(Setting(x)), gallop=True, top_first=True)
         out.append(_maximum(v, TERMS_ALONE, "terms_alone", "days", f, lambda x: Setting(x), up))
-        g = last_true(up, lambda x: v.probe(Setting(x)).liquidity_only, gallop=True)
+        g = last_true(up, lambda x: v.liquidity_only(Setting(x)), gallop=True, top_first=True)
         out.append(_maximum(v, TERMS_BUDGET_IGNORED, "terms_budget_ignored", "days", g, lambda x: Setting(x), up,
                             ignore_caps=True))
         # the longest terms that any price in range makes pass (the price is monotone: the top of the range is the best
         # chance), then the smallest price that does it
-        h = last_true(up, lambda x: v.approved(Setting(x, price=pmax)), gallop=True)
+        h = last_true(up, lambda x: v.approved(Setting(x, price=pmax)), gallop=True, top_first=True)
         t_best = h.value
         hp = Found(None, True)
         if t_best is not None:
@@ -555,7 +610,7 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
     # early pay: the whole invoice, and the face of the verifier's own early-pay counter (asked for the top of the range,
     # so that the counter's rate is the break-even step and not the buyer's own)
     faces: list[int] = []
-    whole = last_true(r.discount, lambda d: v.ok(Setting(cur, discount=d)))
+    whole = last_true(r.discount, lambda d: v.ok(Setting(cur, discount=d)), gallop=True)
     if rebate_only:  # no open invoice to pay early
         whole = Found(None, True)
     elif (whole.value or 0) < top_discount:
@@ -578,7 +633,7 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
                             found, early_at(face), r.discount, face_fen=shown))
 
     if len(r.rebate) > 1:
-        rb = last_true(r.rebate, lambda x: v.ok(Setting(cur, rebate=x)), hint=v.rebate_hint(v.probe(Setting(cur))))
+        rb = last_true(r.rebate, lambda x: v.ok(Setting(cur, rebate=x)), hint=v.rebate_hint(v.quick(Setting(cur))))
         out.append(_maximum(v, REBATE, "rebate", "bp", rb, lambda x: Setting(cur, rebate=x), r.rebate))
     else:
         withheld = (v.withheld or NO_RECURRING) if isinstance(ctx, Context) or rebate_only else NO_RECURRING
@@ -613,7 +668,7 @@ def _cell(v: _Verifier, base: Setting, keep_failures: bool, price_hint: int | No
     if fp.value is None:
         return v.probe(base._replace(price=r.price[-1], rebate=0)) if keep_failures else None
     priced = base._replace(price=fp.value)
-    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.probe(priced)),
+    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
                    hint_steps=1 if price_hint is not None else 2)
     return v.probe(priced._replace(rebate=fr.value or 0))
 
@@ -707,7 +762,7 @@ def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None 
     counters = set(counter_costs)
     seen = {c.setting for c in cells}
     for s in sorted(counters):
-        if s not in seen and v.probe(s).approved:
+        if s not in seen and v.approved(s):
             cells.append(v.probe(s))
     cell_tuple = tuple(Cell(p, p.setting in counters) for p in cells)
 

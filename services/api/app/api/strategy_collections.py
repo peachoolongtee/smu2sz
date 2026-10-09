@@ -32,8 +32,7 @@ def clear_cache() -> None:
 
 def _payload(answer: WorthAnswer, lang: str) -> dict[str, Any]:
     """The answer as JSON with the server-formatted strings; a saving that is zero or negative reads "no saving" (the raw
-    figure stays beside it), and with no committed plan to price against it reads "cannot be priced". The `impact` objects are left out: each effect already carries the figures that
-    matter."""
+    figure stays beside it). The `impact` objects are left out: each effect already carries the figures that matter."""
     body = answer.model_dump(mode="json", exclude={"rows": {"__all__": {"effects": {"__all__": {"impact"}}}}})
     out: dict[str, Any] = displayed(body)
     for row in out["rows"]:
@@ -41,7 +40,7 @@ def _payload(answer: WorthAnswer, lang: str) -> dict[str, Any]:
             row["net_saving_display"] = row["net_saving_text"]
         for effect in row["effects"]:
             if effect["no_saving"]:
-                effect["saving_display"] = effect["saving_text"] if answer.no_plan else saving_text(effect["saving_fen"], lang)
+                effect["saving_display"] = saving_text(effect["saving_fen"], lang)
     return out
 
 

@@ -144,7 +144,7 @@ def scenario_inflow(books: Books, amount_fen: int, on_day: int, *, outflow_day: 
 
 
 @dataclass(frozen=True)
-class _Reading:
+class Reading:
     cost_fen: int
     need_fen: int
     needs_owner: bool
@@ -156,7 +156,9 @@ class _Reading:
     alert_codes: tuple[str, ...]
 
 
-def _read(side: Books | ScenarioState, mandate: Mandate, store: LedgerStore, day: int) -> _Reading:
+def read_books(side: Books | ScenarioState, mandate: Mandate, store: LedgerStore, day: int) -> Reading:
+    """What the router, the trajectory and the alerts say about one set of books. Pure in the books, the mandate, the
+    store's commitments and the day, so a caller that subtracts many scenarios from the same books reads those once."""
     if isinstance(side, Books):
         state, obs = side.state, side.with_([])
     else:  # a scenario's live obligations are those of the stored commitments that still bind to its state
@@ -168,7 +170,7 @@ def _read(side: Books | ScenarioState, mandate: Mandate, store: LedgerStore, day
     floor = mandate.min_cash_fen
     live = [d for d in t.days if d.day >= state.as_of_day]
     booked = sum(fc.value_fen for fc in state.forward_concessions)
-    return _Reading(
+    return Reading(
         cost_fen=p.total_cost_fen, need_fen=p.need_fen, needs_owner=p.needs_owner_approval,
         executable_now=p.executable_now, first_breach_day=t.first_breach_day,
         breach_days=sum(1 for d in live if d.closing_fen < floor),
@@ -178,14 +180,16 @@ def _read(side: Books | ScenarioState, mandate: Mandate, store: LedgerStore, day
 
 
 def marginal_impact(before: Books | ScenarioState, after: Books | ScenarioState, mandate: Mandate, *,
-                    store: LedgerStore, day: int, label: str = "") -> MarginalImpact:
+                    store: LedgerStore, day: int, label: str = "", before_reading: Reading | None = None) -> MarginalImpact:
     """What changes between two books: the COMMITTED plan, the CONSERVATIVE trajectory and the alerts of each,
     subtracted (after minus before). `posted_cost_delta_fen` is `FundingPlan.total_cost_fen` after less before: a
     negative figure is a saving, a positive one a cost, kept as it is. The alerts read the state they are given and
-    the `store` only for the commitments, expiries and repayments (a scenario's state need not be the store's)."""
+    the `store` only for the commitments, expiries and repayments (a scenario's state need not be the store's).
+    `before_reading` is `read_books(before, ...)` taken earlier, for a caller that measures many scenarios against the same
+    books (the figures are the same whether it is given or not)."""
     with shared_runs():
-        b = _read(before, mandate, store, day)
-        a = _read(after, mandate, store, day)
+        b = before_reading if before_reading is not None else read_books(before, mandate, store, day)
+        a = read_books(after, mandate, store, day)
     return MarginalImpact(
         label=label,
         need_delta_fen=a.need_fen - b.need_fen,
@@ -202,4 +206,4 @@ def marginal_impact(before: Books | ScenarioState, after: Books | ScenarioState,
         before_need_fen=b.need_fen, after_need_fen=a.need_fen)
 
 
-__all__ = ["marginal_impact", "scenario_inflow", "scenario_received"]
+__all__ = ["Reading", "marginal_impact", "read_books", "scenario_inflow", "scenario_received"]

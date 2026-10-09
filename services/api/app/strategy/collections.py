@@ -56,7 +56,7 @@ from app.funding import plan
 from app.funding.router import shared_runs
 from app.mandate import check_apr
 from app.strategy.faces import option_a_face
-from app.strategy.impact import marginal_impact, scenario_received
+from app.strategy.impact import Reading, marginal_impact, read_books, scenario_received
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import MarginalImpact
 from app.verifier.bind import early_pay_lead
@@ -120,7 +120,7 @@ class ReceivableWorth(Contract):
     days_late: int  # 0 when not late
     status: str
     financed: bool
-    effects: list[Effect]
+    effects: list[Effect]  # empty when no committed plan covers the shortfall: a receipt cannot be priced against nothing
     gross_saving_fen: int
     ceilings: list[Ceiling]
     mid_rate_bp: int | None  # on the quoted face (the counter's, else the plan's need): the rate halfway to the ceiling ...
@@ -214,19 +214,27 @@ def _apr_cap_bp(mandate: Mandate, days_early: int, cap_bp: int) -> int:
 
 
 def _last_true(values: list[int], ok: Callable[[int], bool]) -> int | None:
-    """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (the spike's bisection)."""
+    """Largest value with ok(value), assuming ok holds up to a boundary and fails after it (the spike's bisection, run from
+    the bottom: the steps double until one fails, then the span between the last pass and that failure is bisected). The
+    boundary of an early-payment rate lies a step or two above zero on the books seen so far (a discount beyond the
+    cheapest funding's cost loses to it), so this reads it in about three evaluations where a bisection from the top of
+    the range needed five; the value found is the same whenever ok holds up to a boundary and fails after it."""
     if not ok(values[0]):
         return None
-    lo, hi = 0, len(values) - 1
-    if not ok(values[hi]):
-        while hi - lo > 1:
-            mid = (lo + hi) // 2
-            if ok(values[mid]):
-                lo = mid
-            else:
-                hi = mid
-    else:
-        lo = hi
+    lo, hi, step = 0, len(values), 1  # values[lo] passes; values[hi] fails, or is past the end
+    while lo + step < len(values):
+        if ok(values[lo + step]):
+            lo += step
+            step *= 2
+        else:
+            hi = lo + step
+            break
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if ok(values[mid]):
+            lo = mid
+        else:
+            hi = mid
     return values[lo]
 
 
@@ -324,7 +332,7 @@ def _quoted_ceiling(ceilings: list[Ceiling]) -> Ceiling | None:
 
 
 def _effects(books: Books, mandate: Mandate, store: LedgerStore, day: int, r: Receivable, first_breach: int | None,
-             lang: Lang, priced: bool = True) -> list[Effect]:
+             lang: Lang, before: Reading | None = None) -> list[Effect]:
     targets: list[tuple[EffectKind, int, str]] = [("today", day, t(lang, "if it arrived today", "如果今天到账"))]
     if r.status == "OPEN" and r.due_day > day:
         early = r.due_day - DAYS_BEFORE_DUE
@@ -341,11 +349,11 @@ def _effects(books: Books, mandate: Mandate, store: LedgerStore, day: int, r: Re
             scenario = scenario_received(books, r.id, rday)
         except ValueError:
             continue
-        imp = marginal_impact(books, scenario, mandate, store=store, day=day, label=label)
-        saving = -imp.posted_cost_delta_fen if priced else 0  # with no plan to price against the delta is not a saving
+        imp = marginal_impact(books, scenario, mandate, store=store, day=day, label=label, before_reading=before)
+        saving = -imp.posted_cost_delta_fen
         out.append(Effect(
             kind=kind, label=label, receipt_day=rday, receipt_when=when_text(rday, day, lang), saving_fen=saving,
-            no_saving=saving <= 0, saving_text=saving_text(saving, lang) if priced else cannot_price_text(lang),
+            no_saving=saving <= 0, saving_text=saving_text(saving, lang),
             need_left_fen=imp.after_need_fen,
             breach_days_removed=imp.breach_days_removed, alerts_removed=list(imp.alerts_removed),
             after_needs_owner=imp.after_needs_owner, after_executable_now=imp.after_executable_now, impact=imp))
@@ -572,6 +580,8 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
         advanced_ids = {a.receivable_id for a in base_plan.actions
                         if a.kind == FundingActionKind.FINANCE_INVOICE and a.receivable_id is not None
                         and (first_breach is None or (a.lands_day if a.lands_day is not None else a.day) < first_breach)}
+        # the books as they stand, read once for every receipt below; with no plan no receipt is priced, and none is read
+        standing = None if no_plan else read_books(books, mandate, store, day)
         live = sorted((r for r in state.receivables if r.status in _OPEN and r.outstanding_fen > 0),
                       key=lambda r: (r.due_day, r.id))
         rows: list[ReceivableWorth] = []
@@ -581,7 +591,7 @@ def receivables_worth(books: Books, mandate: Mandate, *, store: LedgerStore, day
             covered_before += r.outstanding_fen
             days_late = max(0, day - r.due_day)
             who = party_name(state, r.counterparty_id)
-            effects = _effects(books, mandate, store, day, r, first_breach, lang, not no_plan)
+            effects = [] if no_plan else _effects(books, mandate, store, day, r, first_breach, lang, standing)
             today_effect = next((e for e in effects if e.kind == "today"), None)
             gross = today_effect.saving_fen if today_effect is not None else (effects[0].saving_fen if effects else 0)
             ceilings, why_none = _ceilings(books, mandate, r, base_plan.need_fen, c0, lang, partial(counter_face, r.id))

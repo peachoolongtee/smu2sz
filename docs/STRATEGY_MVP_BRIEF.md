@@ -444,5 +444,24 @@ the backtest's findings, 8 October 2026.
 - **Backtest check (i)** means "inside the envelope": a counter passes when a listed package matches it or
   `probe_packages` approves it; `counters_listed` is reported beside `counters_inside`.
 - **Tests**: every wall-clock assertion is skipped under `SKIP_PERF_BENCH=1`; deterministic counts are preferred.
+- **No committed plan (map #58, ticket #79).** When the router finds no admissible committed plan for the books
+  (`app/strategy/no_plan.py`: `FundingPlan.admissible` is false, the state the alerts call "No committed facility can cure
+  it") a plan cost of 0 is not a price, and each route says so in its own sentence instead of reading the zero. The curve
+  keeps no band (`bands` is empty, `flat` is false, `no_plan` is true) and its sentence is "No committed funding plan covers
+  the shortfall, so earlier cash cannot be priced against borrowing: collect first." The worth ranking runs by days late,
+  then amount, opens with the same cause (`top_action`), puts the longest-overdue invoice's sentence second, and every row's
+  `worth_text` reads "Cannot be priced: no funding plan" (with "; N days late" when it is); the rows carry no effects, since
+  a hypothetical receipt is not priced against no plan (and each one cost close to a second to read). The envelope withholds
+  the terms and rebate levers (their `unavailable` reads "withheld while no funding plan covers the shortfall"; early payment
+  is still checked), says "FLOW cannot offer longer terms or a rebate while no funding plan covers the shortfall; early
+  payment only." as its reason, reads "Your current funding plan is not priced because no committed plan covers the
+  shortfall." as its cost line, and leaves each package's `plan_cost_fen` null.
+- **Fewer runs for the same figures (map #58, ticket #78).** `docs/research/strategy/08-perf-2026-10-10.md`: the envelope's
+  searches read a setting's verdict without the counters the verifier builds only for a refused offer (a setting that passes
+  has none, so its probe is the whole answer; a refused one is read whole again only if it is shown, on the router it
+  already searched); the rebate search starts from the forward-concession arithmetic even when the verifier's totals are
+  rounded; the collections' early-payment ceiling is found from the bottom of the rate grid; the books as they stand are
+  read once for all the receipts the ranking measures. `evaluations` counts the settings read, so it fell (73 to 52 for
+  Buyer A on the public-record books, week 1).
 - **Web**: the default build is byte-for-byte the old app (the Deals compare state is lifted only with the flag; the
   strategy reads are idle hooks with the flag off; the recordings load lazily).

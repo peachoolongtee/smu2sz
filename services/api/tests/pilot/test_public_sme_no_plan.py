@@ -109,7 +109,7 @@ def test_the_worth_ranking_runs_by_lateness_then_amount_with_the_sentence_at_the
     for r in rows:
         assert "Saves nothing extra now" not in r["worth_text"] and r["net_saving_display"] == "cannot be priced"
         assert "would not lower your funding cost" not in r["reason_sentence"] and "saves nothing extra" not in r["action_sentence"]
-        assert all(e["saving_display"] == "cannot be priced" and e["saving_fen"] == 0 for e in r["effects"])
+        assert r["effects"] == [], "a receipt is not priced against no plan, and none is searched for"
     assert "ranked by how late each invoice is, then by amount" in body["ranking_note"]
 
 

@@ -129,8 +129,10 @@ receipt dates against due dates); the comprehension test of the cash sentence ru
 
 ## 8. Known limitations
 
-The first envelope read is 6–11 s cold (the sweep is cached per state; a warm-up at deal read would hide it); the full
-grid with the zone is about 44 s and is computed only on `?zone=1`; `price_curve` and `receivables_worth` read the store
+The first envelope read is 6–11 s cold on the golden books and 7–9 s (`zone=0`) or 9–12 s (`zone=1`) on the public-record
+books in the weeks with a funding plan, from 17–78 s before ticket #78 (`docs/research/strategy/08-perf-2026-10-10.md`; the
+sweep is cached per state; a warm-up at deal read would hide it); the full
+grid with the zone is computed only on `?zone=1`; `price_curve` and `receivables_worth` read the store
 (alerts, reconciliation) outside the runtime lock after the snapshot; the mock recordings are English only (zh in mock
 mode shows English sentences; live mode is bilingual); a package for a buyer without a recurring invoice reads "30-day
 terms · …" because the grid's minimum stands in for terms in force; the backtest's collections invariants do not yet assert
