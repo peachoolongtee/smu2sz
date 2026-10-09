@@ -736,6 +736,10 @@ export interface PassedCheck {
   observed: string;
   limit: string;
   formula: string | null;
+  /** The same sentences in the UI language (the evaluate view sends them with `lang`); the Advanced fold reads them in Chinese. Absent elsewhere. */
+  label_when?: string;
+  observed_when?: string;
+  limit_when?: string;
 }
 
 /** The server's own trajectory shape (views.TrajectoryView): money as `{fen, text}` pairs. */
@@ -777,6 +781,10 @@ export interface AutonomyView {
   covered: string[];
   gaps: string[];
   notes: string[];
+  /** The same lines in the UI language, one for one (the evaluate view sends them with `lang`). */
+  covered_when?: string[];
+  gaps_when?: string[];
+  notes_when?: string[];
 }
 
 /** One early-pay discount with its annual rate, as the server states it (owner routes only). */
@@ -2031,6 +2039,9 @@ export interface NlResponse {
   trace_id: string;
   /** The validated page context this turn used; null when none was sent or none was found. */
   context_echo?: NlContextEcho | null;
+  /** An owner turn that decided something: the decision's record id, and whether the record was written. Absent on other turns and in older recordings. */
+  decision_id?: string | null;
+  decision_recorded?: boolean;
 }
 
 /** POST /nl/opener: the agent speaks first. A pending cure sits in the owner's session until "go ahead". */

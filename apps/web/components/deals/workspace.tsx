@@ -187,7 +187,7 @@ const ADVANCED_TITLE: Record<AdvancedKey, "biz.deals.parsed" | "biz.deals.origin
  * existing fields; it copies none of them.
  */
 export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[] }) {
-  const { t, te } = useI18n();
+  const { t, te, lang } = useI18n();
   const [active, setActive] = useState<string | null>(null);
   const keys = Object.keys(ws.advanced.keys) as AdvancedKey[];
   const body: Record<AdvancedKey, React.ReactNode> = {
@@ -267,8 +267,8 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
         {v.autonomy?.gaps.length ? (
           <Callout tone="warn" title={t("biz.deals.adv.gaps")}>
             <ul className="list-disc pl-5">
-              {v.autonomy.gaps.map((g) => (
-                <li key={g}>{g}</li>
+              {v.autonomy.gaps.map((g, i) => (
+                <li key={g}>{(lang === "zh" && v.autonomy?.gaps_when?.[i]) || g}</li>
               ))}
             </ul>
           </Callout>

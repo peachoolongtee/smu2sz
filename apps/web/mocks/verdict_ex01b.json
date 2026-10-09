@@ -544,7 +544,10 @@
         "implied_annual_rate": "14.7773%",
         "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
         "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
-      }
+      },
+      "label_when": "Implied cost of early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
+      "observed_when": "14.78%",
+      "limit_when": "15.00%"
     },
     {
       "code": "DSCR_MIN",
@@ -564,7 +567,10 @@
         "pro_forma_leverage_debt": "¥1,590,040.00",
         "pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
         "source": "mandate v1"
-      }
+      },
+      "label_when": "DSCR with the extension funded (pro-forma estimate)",
+      "observed_when": "1.92x",
+      "limit_when": "≥ 1.25x"
     },
     {
       "code": "LEVERAGE_MAX",
@@ -578,7 +584,10 @@
         "EBITDA_m": "¥90,000.00",
         "leverage_exact": "39751/27000",
         "definition": "DebtPosition principal + drawn balances counted in leverage, at month end"
-      }
+      },
+      "label_when": "Highest monthly leverage (month 1)",
+      "observed_when": "1.47x",
+      "limit_when": "≤ 2.50x"
     },
     {
       "code": "CLEAN_DOWN",
@@ -591,7 +600,10 @@
         "run_start_day": "62",
         "run_end_day": "120",
         "horizon_days": "120"
-      }
+      },
+      "label_when": "Bank credit line: clean-down",
+      "observed_when": "59 days at zero",
+      "limit_when": "≥ 30 consecutive days"
     }
   ],
   "autonomy": {
@@ -608,6 +620,21 @@
       "OFF-1559c5b525ed-O1: the message does not state the invoice amount"
     ],
     "notes": [
+      "a discount does not state its invoice amount",
+      "TERMS_EXTENSION leaves current_terms_days unresolved",
+      "a settlement date or window is stated but not read into the terms",
+      "text not read into the terms: 'settlement', 'standard', 'terms', 'going', 'forward', ..."
+    ],
+    "covered_when": [
+      "early payment of ¥420,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days at 1.20% in 2 days",
+      "terms extension on future invoices +15 days",
+      "contingent rebate on period purchases base ¥400,000.00 at 1.00%"
+    ],
+    "gaps_when": [
+      "the compiler could not account for every figure and request in the message: a discount does not state its invoice amount; TERMS_EXTENSION leaves current_terms_days unresolved; a settlement date or window is stated but not read into the terms; text not read into the terms: 'settlement', 'standard', 'terms', 'going', 'forward', ...",
+      "OFF-1559c5b525ed-O1: the message does not state the invoice amount"
+    ],
+    "notes_when": [
       "a discount does not state its invoice amount",
       "TERMS_EXTENSION leaves current_terms_days unresolved",
       "a settlement date or window is stated but not read into the terms",

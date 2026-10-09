@@ -158,3 +158,14 @@ test("the server's overdue word on the worth row also pins an invoice; nothing i
   const outstanding = [{ receivable_id: "A", past_due: false, due_day: 1 }, { receivable_id: "B", past_due: false, due_day: 99 }];
   assert.deepEqual(orderInvoices(outstanding, [{ receivable_id: "A" }, { receivable_id: "B", overdue_text: "Overdue" }]).map((o) => o.receivable_id), ["B", "A"]);
 });
+
+// ---------------------------------------------------------------- the chat button says the server's confirm word
+
+const { confirmWord } = await import("../lib/confirm-word.ts");
+
+test("the confirm word is the one the server's reply names; none named means none", () => {
+  assert.equal(confirmWord('Cost ¥3,113.93. Reply "Yes, run it" to run it.'), "Yes, run it");
+  assert.equal(confirmWord('The approval waits. Reply "Yes, do it" to approve it.'), "Yes, do it");
+  assert.equal(confirmWord("回复“好，执行”即可批准。"), "好，执行");
+  assert.equal(confirmWord("Nothing waits for you."), null);
+});
