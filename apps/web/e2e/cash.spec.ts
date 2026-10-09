@@ -42,30 +42,18 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const options = page.getByTestId("cash-options-list");
   await expect(options).not.toContainText("Router optimum");
   await expect(options).not.toContainText("Cheapest committed plan");
-  await expect(page.getByTestId("cash-options-order")).toHaveText(
-    "The recommended plan first, then the other plans that can run now, cheapest first. Plans that depend on the buyer, leave a gap or are not available yet follow, and are not ranked.",
-  );
+  // The recommended plan is said once, in the plan card above; the server's ordering sentence starts from it, so it is not drawn over the alternatives.
+  await expect(page.getByTestId("cash-options-order")).toHaveCount(0);
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
+  await expect(options).not.toContainText("Recommended");
   await expect(page.locator("#cash-options")).not.toContainText("ranked by cost");
   expect(await options.locator("[data-group]").evaluateAll((els) => els.filter((el) => el.hasAttribute("data-testid") && el.getAttribute("data-testid")!.startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
-    "RECOMMENDED",
     "CONDITIONAL_ON_BUYER",
     "INSUFFICIENT",
     "NOT_AVAILABLE_YET",
   ]);
-  const recommended = page.getByTestId("cash-options-RECOMMENDED");
-  await expect(recommended.locator("h3")).toHaveText("Recommended");
-  const pick = recommended.getByTestId("cash-option-selected");
-  await expect(pick).toContainText("Bank credit line + Invoice financing (onboarded platform)");
-  await expect(pick).toContainText("Recommended");
-  await expect(pick).toContainText("#1");
-  // Each row: its cost, when the money arrives, what gap remains and what the cost assumes: the server's sentences.
-  await expect(pick.getByTestId("cash-option-total")).toHaveText("¥3,113.93");
-  await expect(pick.getByTestId("cash-option-arrival")).toHaveText("All of the funds are available in 3 days.");
-  await expect(pick.getByTestId("cash-option-gap")).toHaveText("No gap is left.");
-  await expect(pick.getByTestId("cash-option-basis")).toContainText("All charges to the assumed repayment day in 32 days.");
-  // Words with no cost claim the browser cannot make: the recommended row says it protects cash and can run today.
-  await pick.locator("summary").click();
-  await expect(pick.getByTestId("cash-option-why")).toContainText("Fully protects your cash and can run today");
+  // The plan itself is the card's: its cost is on the page once, and the options hold no second copy of it.
+  expect((await page.locator("main").innerText()).match(/¥3,113\.93/g)).toHaveLength(1);
   // What depends on the buyer is its own group, never numbered, saying whose consent it needs; the server's order puts the cheaper first.
   const conditional = page.getByTestId("cash-options-CONDITIONAL_ON_BUYER");
   await expect(conditional.locator("h3")).toHaveText("Only if the buyer agrees to early payment");
@@ -198,12 +186,13 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   const alternative = page.getByTestId("cash-options-ALTERNATIVE");
   await expect(alternative.locator("h3")).toHaveText("Another way to fund it");
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("#2");
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,706.10");
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
   // and the first row is titled with its sources, not the generic "Recommended plan".
   await expect(page.getByTestId("cash-cheaper-option")).toHaveCount(0);
-  await expect(options.locator('[data-key="recommended_plan"]')).not.toContainText("Recommended plan");
+  await expect(options.locator('[data-key="recommended_plan"]')).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 

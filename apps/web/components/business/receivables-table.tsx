@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
 import { ActionChip, ActionText, RankingNote, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, Card, TableWrap, tableCls, tdCls, thCls, toggleClass } from "@/components/ui";
 import { focusInvoice } from "@/lib/chat-context";
+import { isOverdue } from "@/lib/receivables-order";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
 import { daysLate, whenText } from "@/lib/when";
 
-type Filter = "all" | "late" | "soon";
+export type RecvFilter = "all" | "late" | "soon";
+
 
 /** An invoice that is not late but falls due within this many days is "Due soon" (the page counts days; it computes no money). */
 const DUE_SOON_DAYS = 14;
@@ -20,7 +22,8 @@ const DUE_SOON_DAYS = 14;
  * in both. Level 1 per row: the buyer (monogram and name), the amount, when, the status, and with the strategy MVP's worth loaded
  * the server's rank as a numeral, the one worth figure and the action as a chip. The sentence for the step, the reason behind it
  * and the record ids (audit details) are one chevron down. The rows arrive in the order the page chose; this component filters
- * by days and never computes a figure.
+ * by days and never computes a figure. The filter is the page's (its red Overdue tile applies Late). When any invoice is overdue and the
+ * whole list shows, the overdue rows sit first under "Overdue first" and the rest under the savings ranking; a filtered view has no headings.
  */
 export function ReceivablesTable({
   invoices,
@@ -30,6 +33,8 @@ export function ReceivablesTable({
   worthOf,
   rank,
   chase,
+  filter,
+  onFilter,
 }: {
   invoices: OutstandingReceivable[];
   asOfDay: number;
@@ -39,17 +44,29 @@ export function ReceivablesTable({
   rank: Map<string, number>;
   /** The invoices that offer "Chase payment" (late, due inside the forecast's shortfall, or with a lapsed promise); the page chose them. */
   chase: Set<string>;
+  filter: RecvFilter;
+  onFilter: (f: RecvFilter) => void;
 }) {
   const { t } = useI18n();
-  const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const isLate = (o: OutstandingReceivable) => o.past_due;
-  const isSoon = (o: OutstandingReceivable) => !o.past_due && o.due_day - asOfDay <= DUE_SOON_DAYS;
+  const isLate = (o: OutstandingReceivable) => isOverdue(o, worthOf.get(o.receivable_id));
+  const isSoon = (o: OutstandingReceivable) => !isLate(o) && o.due_day - asOfDay <= DUE_SOON_DAYS;
   const late = invoices.filter(isLate).length;
   const soon = invoices.filter(isSoon).length;
-  const shown = invoices.filter((o) => (filter === "late" ? isLate(o) : filter === "soon" ? isSoon(o) : true));
+  // A filter the list cannot honour (Late with nothing late) shows everything.
+  const active: RecvFilter = (filter === "late" && late > 0) || (filter === "soon" && soon > 0) ? filter : "all";
+  const shown = invoices.filter((o) => (active === "late" ? isLate(o) : active === "soon" ? isSoon(o) : true));
+  // Overdue first: with the whole list showing and something overdue, the overdue rows are their own group above the rest.
+  // Every row keeps the server's own rank numeral, so a pinned row shows where the savings ranking put it.
+  const grouped = active === "all" && late > 0 && late < shown.length;
+  const groups: { id: "overdue" | "rest" | "all"; heading: string | null; rows: OutstandingReceivable[] }[] = grouped
+    ? [
+        { id: "overdue", heading: t("biz.recv.group.overdue"), rows: shown.filter(isLate) },
+        { id: "rest", heading: worth ? t("biz.recv.group.ranked") : t("biz.recv.group.rest"), rows: shown.filter((o) => !isLate(o)) },
+      ]
+    : [{ id: "all", heading: null, rows: shown }];
   // A filter that would repeat the whole list (one invoice, or all in one bucket) is not offered.
-  const filters: { id: Filter; label: string; n: number }[] = [
+  const filters: { id: RecvFilter; label: string; n: number }[] = [
     { id: "all", label: t("biz.recv.filter.all"), n: invoices.length },
     ...(late > 0 ? [{ id: "late" as const, label: t("biz.recv.filter.late"), n: late }] : []),
     ...(soon > 0 ? [{ id: "soon" as const, label: t("biz.recv.filter.soon"), n: soon }] : []),
@@ -76,7 +93,7 @@ export function ReceivablesTable({
         {showFilters ? (
           <div role="group" aria-label={t("biz.recv.filter.label")} className="flex flex-wrap gap-1.5" data-testid="recv-filters">
             {filters.map((f) => (
-              <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)} className={toggleClass(filter === f.id, "sm")} data-testid={`recv-filter-${f.id}`}>
+              <button key={f.id} type="button" aria-pressed={active === f.id} onClick={() => onFilter(f.id)} className={toggleClass(active === f.id, "sm")} data-testid={`recv-filter-${f.id}`}>
                 {f.label}
                 <span className="tabular-nums text-ink-3">{f.n}</span>
               </button>
@@ -93,8 +110,12 @@ export function ReceivablesTable({
 
       {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
       {shown.length ? (
-        <ul className="motion-rise divide-y divide-line lg:hidden" data-testid="recv-open-list">
-          {shown.map((o) => {
+        <div className="lg:hidden" data-testid="recv-open-list">
+          {groups.map((g) => (
+            <div key={g.id} data-testid={`recv-list-group-${g.id}`}>
+              {g.heading ? <GroupHeading>{g.heading}</GroupHeading> : null}
+              <ul className="motion-rise divide-y divide-line">
+          {g.rows.map((o) => {
             const w = worthOf.get(o.receivable_id);
             const buyer = buyerName(o.counterparty_id);
             const n = rank.get(o.receivable_id);
@@ -132,7 +153,10 @@ export function ReceivablesTable({
               </li>
             );
           })}
-        </ul>
+              </ul>
+            </div>
+          ))}
+        </div>
       ) : null}
 
       {shown.length ? (
@@ -156,7 +180,16 @@ export function ReceivablesTable({
                 </tr>
               </thead>
               <tbody>
-                {shown.map((o) => {
+                {groups.map((g) => (
+                  <Fragment key={g.id}>
+                    {g.heading ? (
+                      <tr data-testid={`recv-group-${g.id}`} data-group={g.id}>
+                        <th scope="colgroup" colSpan={cols} className="border-b border-line px-3 pb-1.5 pt-3 text-left">
+                          <GroupHeading table>{g.heading}</GroupHeading>
+                        </th>
+                      </tr>
+                    ) : null}
+                {g.rows.map((o) => {
                   const w = worthOf.get(o.receivable_id);
                   const buyer = buyerName(o.counterparty_id);
                   const n = rank.get(o.receivable_id);
@@ -204,6 +237,8 @@ export function ReceivablesTable({
                     ) : null,
                   ];
                 })}
+                  </Fragment>
+                ))}
               </tbody>
             </table>
           </TableWrap>
@@ -211,6 +246,12 @@ export function ReceivablesTable({
       ) : null}
     </Card>
   );
+}
+
+/** The small heading over a group of rows ("Overdue first", "Ranked by what collecting saves you"); in the table it is the row-group's header cell. */
+function GroupHeading({ children, table = false }: { children: ReactNode; table?: boolean }) {
+  const cls = "text-xs font-semibold uppercase tracking-wide text-ink-3";
+  return table ? <span className={cls}>{children}</span> : <h3 className={`${cls} pb-1 pt-3 first:pt-0`}>{children}</h3>;
 }
 
 /**

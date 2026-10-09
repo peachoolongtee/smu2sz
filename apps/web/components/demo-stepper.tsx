@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
-import { backStep, goToStep, resetDemo, type StepMode } from "@/lib/demo-control";
-import { useDemo } from "@/lib/demo-store";
+import { backStep, goToStep, nextStep, resetDemo, type StepMode } from "@/lib/demo-control";
+import { reachedOf, useDemo } from "@/lib/demo-store";
 import { DEMO_STEPS, SCENES, stepRoute } from "@/lib/demo";
 import { stepNarration } from "@/lib/demo-text";
 import { useCureWaiting } from "@/lib/use-cure-waiting";
@@ -23,6 +23,8 @@ export function DemoStepper() {
   const router = useRouter();
   const demo = useDemo();
   const step = demo.step;
+  // The highest finished step: Back lowers the pointer, not this. A step up to here is shown (the books hold its result), only the one after it runs.
+  const reached = reachedOf(demo);
   const current = step >= 0 ? DEMO_STEPS[step] : null;
   const last = DEMO_STEPS.length - 1;
 
@@ -32,6 +34,13 @@ export function DemoStepper() {
   async function goTo(target: number, mode: StepMode = "run") {
     interrupted.current = null;
     const outcome = await goToStep(target, router.push, { mode });
+    if (outcome === "unauthorized") interrupted.current = target;
+  }
+
+  async function next() {
+    interrupted.current = null;
+    const target = step + 1;
+    const outcome = await nextStep(router.push);
     if (outcome === "unauthorized") interrupted.current = target;
   }
 
@@ -70,8 +79,8 @@ export function DemoStepper() {
                   <button
                     type="button"
                     // A scene that is already behind us is shown, never re-run; the next one starts; the ones after it wait their turn (the story moves time).
-                    disabled={demo.busy || s.first > step + 1}
-                    onClick={() => void goTo(s.first, s.first <= step ? "show" : "run")}
+                    disabled={demo.busy || s.first > reached + 1}
+                    onClick={() => void goTo(s.first, s.first <= reached ? "show" : "run")}
                     aria-current={active ? "step" : undefined}
                     title={t("demo.jump", { scene: te("scene", s.id) })}
                     className={toggleClass(active, "sm")}
@@ -129,7 +138,8 @@ export function DemoStepper() {
             variant={opensApproval ? "secondary" : "primary"}
             loading={demo.busy}
             disabled={step >= last}
-            onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void goTo(step + 1))}
+            // Next after a Back only shows the steps already finished (it moves the pointer and re-runs nothing); it runs the first one that is not.
+            onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void next())}
             data-testid="demo-next"
           >
             {nextLabel}

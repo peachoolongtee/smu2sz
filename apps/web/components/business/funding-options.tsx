@@ -58,6 +58,12 @@ function legsLine(c: Option): string | null {
 /** The row's grid: rank, name, [cost cell], chevron. Under the small breakpoint the cost cell drops to a second line so the name keeps the width. */
 const rowGrid = "grid min-h-12 grid-cols-[1.5rem_minmax(0,1fr)_1rem] items-start gap-x-3 gap-y-1 py-2.5 sm:grid-cols-[1.5rem_minmax(0,1fr)_auto_1rem]";
 
+/** Whether the row is the recommended plan: the server's `role`, else (an older recording) the selected row when the home's next step came from the router. */
+export function isRecommendedRow(c: ComparisonRow, recommendedKey: string | null): boolean {
+  const o = c as Option;
+  return o.role ? o.role === "recommended" : Boolean(o.selected) && recommendedKey === (o.key ?? null);
+}
+
 /** The server's group for a row; a recording without one is grouped by the row's role, as it always was. */
 function groupOf(c: Option): ComparisonGroup {
   if (c.group) return c.group;
@@ -173,7 +179,7 @@ export function FundingOptions({ rows, menu, recommendedKey, orderText }: { rows
   const { t } = useI18n();
   const options = rows as Option[];
   // The badge follows the server's role; an older recording marks the router's pick only when the home's next step came from it.
-  const isRecommended = (c: Option) => (c.role ? c.role === "recommended" : c.selected && recommendedKey === (c.key ?? null));
+  const isRecommended = (c: Option) => isRecommendedRow(c, recommendedKey);
   const fallbackHeading = (g: ComparisonGroup) => (g === "RECOMMENDED" || g === "ALTERNATIVE" ? t("biz.cash.options.full") : t("biz.cash.options.rest"));
   return (
     <div className="space-y-4" data-testid="cash-options-list">

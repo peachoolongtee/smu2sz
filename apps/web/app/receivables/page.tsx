@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ReceiptFacts } from "@/components/receipt-facts";
 import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { orderInvoices } from "@/lib/receivables-order";
 import { whenText } from "@/lib/when";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { PartialRead, ReadWhen } from "@/components/business/freshness";
 import { Disclosure } from "@/components/business/kit";
 import { chaseIds, shortfallStretch } from "@/lib/chase";
-import { ReceivablesTable } from "@/components/business/receivables-table";
+import { ReceivablesTable, type RecvFilter } from "@/components/business/receivables-table";
 import { ChasePayment } from "@/components/business/chase-payment";
 
 /**
@@ -27,16 +28,16 @@ export default function ReceivablesPage() {
   // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
   const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
   const worth = worthRead.data;
+  // The open invoices' filter lives here so the red Overdue tile can apply Late.
+  const [filter, setFilter] = useState<RecvFilter>("all");
   const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
   const name = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id ?? "";
-  // Late rows first, then by due day; the page counts days, the server does the money.
-  // With the worth loaded the server's own rank leads (what collecting each saves), the rest keep the late-first order.
+  // Overdue rows are pinned first, whatever the ranking says (the server's `past_due` / `overdue_text`; no date is compared here); inside each group the
+  // server's own rank leads (what collecting each saves). The page counts days, the server does the money.
   const rank = new Map((worth?.rows ?? []).map((w, i) => [w.receivable_id, i]));
-  const invoices = data
-    ? [...data.outstanding].sort((a, b) => (rank.get(a.receivable_id) ?? rank.size) - (rank.get(b.receivable_id) ?? rank.size) || Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day)
-    : [];
+  const invoices = data ? orderInvoices(data.outstanding, worth?.rows ?? []) : [];
   const topRow = worth?.rows.find((r) => r.overdue_text) ?? worth?.rows[0];
   const error = recon.error ?? home.error;
   // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
@@ -83,6 +84,19 @@ export default function ReceivablesPage() {
                 value={<span data-testid="recv-overdue">{r.overdue_total_display}</span>}
                 caption={r.past_due.length ? t("biz.recv.sum.overdue.n", { n: r.past_due.length }) : undefined}
                 tone={r.past_due.length ? "bad" : "neutral"}
+                // A tap on the red tile shows the late invoices: the list below takes its Late filter and comes into view.
+                press={
+                  r.past_due.length && invoices.length
+                    ? {
+                        label: t("biz.recv.sum.overdue.show"),
+                        testId: "recv-overdue-show",
+                        onPress: () => {
+                          setFilter("late");
+                          document.getElementById("recv-open")?.scrollIntoView({ block: "start" });
+                        },
+                      }
+                    : undefined
+                }
               />
               <Stat
                 label={t("biz.recv.sum.next")}
@@ -101,7 +115,7 @@ export default function ReceivablesPage() {
             </div>
           ) : null}
 
-          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} /> : null}
+          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} filter={filter} onFilter={setFilter} /> : null}
 
           {data.promised?.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>

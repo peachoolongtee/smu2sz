@@ -1,80 +1,42 @@
 "use client";
 
 import { CheckIcon } from "@/components/icons";
-import { Button } from "@/components/ui";
-import { dealRecordId } from "@/lib/api";
+import { Chip } from "@/components/ui";
 import { dealProgress } from "@/lib/decision";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import { useCurrentOffer } from "@/lib/use-current";
-import { useDecision } from "@/lib/use-decision";
+import type { DecisionState } from "@/lib/types";
 
 /**
- * Where the owner is in one buyer deal, as one quiet line: Received · Analysed · Response ready · Sent · the outcome. Every step and the
- * outcome's words come from the deal's decision record (`deal:{offer_id}`), read again whenever the books or the clock move; the line
- * never reads the verdict's outcome, the session cache or a clicked button. While the record loads the line waits rather than guess.
- * It is a quiet line of text: the steps do not link anywhere (they only say where the deal stands); the one place to go next is the
- * Action of the workspace, or the approval when the outcome is waiting on one.
+ * Where one buyer deal stands, as one line of chips in the compact buyer header: Received · Analysed · Response ready · Sent · Agreed. The
+ * stage comes from the deal's decision record state and nothing else (ADR-0011, F06): the verdict's outcome, the session cache or a clicked
+ * button never moves it. One chip per stage: the ones behind are marked done, the one the deal is at (the last it completed) is strong and
+ * `aria-current`, the ones ahead are quiet. The chips link nowhere; the place to go next is the Action of the workspace, or the approval when the outcome waits
+ * on one. When the deal has closed the last chip says the record's own words ("Fulfilled", "No deal: the buyer did not accept"), and a deal
+ * that waits on the buyer says so in the stage it is stuck on.
  */
-const STEPS: { key: DictKey }[] = [{ key: "steps.received" }, { key: "steps.analysed" }, { key: "steps.ready" }, { key: "steps.sent" }];
+const STAGES: DictKey[] = ["steps.received", "steps.analysed", "steps.ready", "steps.sent"];
 
-export function DealSteps() {
+export function DealStage({ state, stateText }: { state: DecisionState | string; stateText: string }) {
   const { t } = useI18n();
-  const cur = useCurrentOffer();
-  const record = useDecision(cur.offerId ? dealRecordId(cur.offerId) : null);
-  if (record.error) {
-    return (
-      <nav aria-label={t("steps.label")} className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-2" data-testid="deal-steps">
-        <span>{t("steps.unavailable")}</span>
-        <Button size="sm" onClick={record.reload}>
-          {t("common.retry")}
-        </Button>
-      </nav>
-    );
-  }
-  const d = record.data;
-  if (!d) return <nav aria-label={t("steps.label")} className="mt-3 min-h-6" data-testid="deal-steps" aria-busy={record.loading} />;
-  const p = dealProgress(d.state);
-  const outcomeTone =
-    p.tone === "bad" ? "font-semibold text-bad-fg" : p.tone === "closed" ? "font-semibold text-ink-2" : p.tone === "good" ? "text-ok-fg" : "font-semibold text-brand-700";
+  const p = dealProgress(state as DecisionState);
+  // The deal is at the last stage it completed: Received (read, not yet checked), Response ready (checked), or, once it has an outcome, the last chip.
+  const at = p.reached ? STAGES.length : Math.max(p.done - 1, 0);
+  const status = (i: number) => (i < at ? "done" : i === at ? "current" : "todo");
+  const stages = [...STAGES.map((key, i) => ({ key, label: t(key), status: status(i) })), { key: "steps.agreed" as const, label: p.reached ? stateText : t("steps.agreed"), status: status(STAGES.length) }];
+  // A deal that waits on the buyer (needs clarification) says so in the stage it is stuck on.
+  const stuck = p.stalled ? stages.find((s) => s.status === "current") : undefined;
+  if (stuck) stuck.label = stateText;
   return (
-    <nav aria-label={t("steps.label")} className="mt-3" data-testid="deal-steps" data-state={d.state} aria-busy={record.loading}>
-      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
-        {STEPS.map((s, i) => {
-          const state = i < p.done ? "done" : i === p.done ? "current" : "todo";
-          const tone = state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
-          // A deal that waits on the buyer (needs clarification) says so in the step it is stuck on.
-          const label =
-            state === "current" && p.stalled
-              ? d.state_text
-              : // The response that is ready says what it is ("Counter recommended", "Acceptable, awaiting agreement") until it has been sent.
-                s.key === "steps.ready" && d.state === "RESPONSE_READY"
-                ? t("steps.ready.with", { action: d.state_text })
-                : t(s.key);
-          return (
-            <li key={s.key} className="flex items-center gap-1">
-              {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <span aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill py-1 pr-2 ${tone}`}>
-                {state === "done" ? <CheckIcon /> : null}
-                {label}
-              </span>
-            </li>
-          );
-        })}
-        <li className="flex items-center gap-1">
-          <span className="text-ink-3">·</span>
-          {p.reached ? (
-            <span aria-current={p.tone === "open" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded-pill py-1 pr-2 ${outcomeTone}`} data-testid="deal-steps-outcome">
-              {p.tone === "good" ? <CheckIcon /> : null}
-              {d.state_text}
-            </span>
-          ) : (
-            <span className="inline-flex items-center rounded-pill py-1 pr-2 text-ink-3" data-testid="deal-steps-outcome">
-              {t("steps.agreement")}
-            </span>
-          )}
+    <ol aria-label={t("steps.label")} className="mt-2 flex flex-wrap items-center gap-1 max-sm:mt-1 max-sm:gap-0.5" data-testid="deal-stage" data-state={state}>
+      {stages.map((s) => (
+        <li key={s.key} aria-current={s.status === "current" ? "step" : undefined} data-status={s.status}>
+          <Chip tone={s.status === "current" ? "brand" : "neutral"} className={`max-sm:px-1.5! ${s.status === "current" ? "font-bold" : s.status === "todo" ? "text-ink-3" : ""}`}>
+            {s.status === "done" ? <CheckIcon className="max-sm:hidden" /> : null}
+            {s.label}
+          </Chip>
         </li>
-      </ol>
-    </nav>
+      ))}
+    </ol>
   );
 }

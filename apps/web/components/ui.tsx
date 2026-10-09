@@ -219,6 +219,7 @@ export function Stat({
   captionTestId,
   rootTestId,
   row = false,
+  press,
   className = "",
 }: {
   label: ReactNode;
@@ -239,13 +240,15 @@ export function Stat({
   rootTestId?: string;
   /** Below the small breakpoint the tile is one row (the label, then the figure at the right, the caption under both) so a phone reads several facts in a few lines; from `sm` it is the tile. */
   row?: boolean;
+  /** A tile that leads somewhere on this page (a filter): one quiet text button, stretched over the whole tile like a link tile's link. */
+  press?: { label: string; onPress: () => void; testId?: string };
   className?: string;
 }) {
   const deep = surface === "deep";
   const note = caption ?? hint;
   const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile px-4 py-3 ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
+    <div className={`min-w-0 rounded-tile px-4 py-3 ${press ? "motion-lift relative hover:bg-subtle" : ""} ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
       <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
       <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
@@ -258,6 +261,13 @@ export function Stat({
       {note ? (
         <dd className={`mt-0.5 text-xs ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
           {note}
+        </dd>
+      ) : null}
+      {press ? (
+        <dd className="mt-0.5 text-xs">
+          <button type="button" onClick={press.onPress} className="rounded-pill font-medium text-brand-700 underline underline-offset-2 after:absolute after:inset-0 after:rounded-tile" data-testid={press.testId}>
+            {press.label}
+          </button>
         </dd>
       ) : null}
     </div>

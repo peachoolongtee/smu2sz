@@ -51,7 +51,11 @@ test("day 0: the summary answers who owes what, with no empty panels", async ({ 
 test("day 34: the late invoice leads, the overdue total is the server's, and the early payment and receipt appear", async ({ page }) => {
   await advanceTo34(page);
   await expect(page.getByTestId("recv-overdue")).toHaveText("¥162,800.00");
-  const rows = page.locator("#recv-open tbody tr");
+  // Overdue first: its heading row leads the table, then the late invoice, then the heading over the rest.
+  await expect(page.getByTestId("recv-group-overdue")).toHaveText("Overdue first");
+  // "Not overdue" until the collections ranking is on; with it (the strategy build) the heading says what orders the rest.
+  await expect(page.getByTestId("recv-group-rest")).toHaveText(/^(Not overdue|Ranked by what collecting saves you)$/);
+  const rows = page.locator("#recv-open tbody tr:not([data-group])");
   await expect(rows.first()).toHaveAttribute("data-testid", "recv-RCV-A");
   await expect(rows.first()).toContainText("Foshan Home Retail Co.");
   await expect(rows.first()).toContainText("2 days late");
@@ -73,6 +77,35 @@ test("day 34: the late invoice leads, the overdue total is the server's, and the
   const received = await receipts.innerText();
   expect(promised + received).not.toMatch(/CMT-|RI:|DEMO-RCPT/);
   await expect(page.getByTestId("promised-RCV-A")).toContainText("the ¥420,000.00 invoice to Foshan Home Retail Co.");
+});
+
+test("day 34: the full list leads with the overdue invoice, and the red Overdue tile applies the Late filter", async ({ page }) => {
+  await advanceTo34(page);
+  const open = page.locator("#recv-open");
+  await expect(open.getByTestId("recv-group-overdue")).toHaveText("Overdue first");
+  await expect(open.getByTestId("recv-group-rest")).toBeVisible();
+  const all = page.getByTestId("recv-filter-all");
+  await expect(all).toHaveAttribute("aria-pressed", "true");
+  // The tile is a real button: a tap on it shows the late invoices only, and the headings (which name the groups of the whole list) step aside.
+  const tile = page.getByTestId("recv-overdue-show");
+  await expect(tile).toHaveText("Show the late invoices");
+  await tile.click();
+  await expect(page.getByTestId("recv-filter-late")).toHaveAttribute("aria-pressed", "true");
+  await expect(open.locator("tbody tr[data-testid^='recv-RCV']")).toHaveCount(1);
+  await expect(open.getByTestId("recv-group-overdue")).toHaveCount(0);
+  await all.click();
+  await expect(open.getByTestId("recv-group-overdue")).toBeVisible();
+  // Keyboard: the same button, reached by Tab and pressed with Enter.
+  await tile.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("recv-filter-late")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("day 0: nothing is overdue, so there are no group headings and the Overdue tile is not a button", async ({ page }) => {
+  await page.goto("/receivables");
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
+  await expect(page.getByTestId("recv-overdue-show")).toHaveCount(0);
+  await expect(page.locator('[data-testid^="recv-group-"]')).toHaveCount(0);
 });
 
 /** Day 34 on the books where the buyer paid half on day 2: the part-paid promise, the balance still owed and the window ended. */

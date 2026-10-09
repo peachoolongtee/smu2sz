@@ -2353,6 +2353,12 @@ export interface HomeChange {
   discount_display?: string;
   remaining_display?: string;
   window_state?: "open" | "ended";
+  /** Which records the row is about (ids only, never shown): the invoice, the agreement and the decision's record. Absent in older recordings. */
+  receivable_id?: string | null;
+  commitment_id?: string | null;
+  decision_id?: string | null;
+  /** The server's word that another row on the page says this one better (its `seq`, or its `decision_id`): the page then leaves this row out. */
+  superseded_by?: string | number | null;
 }
 
 export interface HomeReceivable {

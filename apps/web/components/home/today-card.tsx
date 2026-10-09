@@ -12,7 +12,7 @@ import { useAsync } from "@/lib/use-async";
 const MAX_DAYS = 366;
 
 /** The simulated day and the demo control that moves it (Demo mode only). Every read refetches after an advance. */
-export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
+export function TodayCard({ onAdvanced, folded = false }: { onAdvanced: () => void; /** Inside a fold that already carries the title (the story page on a phone): the body alone, no card of its own. */ folded?: boolean }) {
   const { t } = useI18n();
   const clock = useAsync(getClock, []);
   const [days, setDays] = useState("1");
@@ -39,8 +39,9 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
     }
   }
 
-  return (
-    <Card id="home-today" title={t("home.today")} subtitle={t("home.today.sub")} actions={<Badge tone="info">{t("home.demo.badge")}</Badge>}>
+  const body = (
+    <>
+      {folded ? <p className="mb-3 text-xs text-ink-3">{t("home.today.sub")}</p> : null}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <p className="text-3xl font-semibold tabular-nums text-ink" data-testid="home-day" aria-live="polite">
           {clock.data ? t("common.dayN", { n: clock.data.day }) : "…"}
@@ -95,6 +96,14 @@ export function TodayCard({ onAdvanced }: { onAdvanced: () => void }) {
           <ErrorState error={clock.error} onRetry={clock.reload} />
         </div>
       ) : null}
+    </>
+  );
+
+  return folded ? (
+    <div id="home-today">{body}</div>
+  ) : (
+    <Card id="home-today" title={t("home.today")} subtitle={t("home.today.sub")} actions={<Badge tone="info">{t("home.demo.badge")}</Badge>}>
+      {body}
     </Card>
   );
 }

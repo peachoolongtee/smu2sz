@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { resetBooks, runPlan, sendCounter } from "./helpers";
-import { STORY_STEPS } from "./helpers";
+import { openStoryFold, STORY_STEPS } from "./helpers";
 
 /**
  * The accessibility re-check (wayfinder #65 Wave 7, section 29): axe on every Business page and on the blocks added since the last
@@ -29,6 +29,7 @@ async function checkedDeal(page: Page) {
 
 async function advanceTo(page: Page, day: number) {
   await page.goto("/demo");
+  await openStoryFold(page, "story-today");
   await page.getByTestId("home-days").fill(String(day));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText(`Day ${day}`);
