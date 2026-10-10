@@ -45,11 +45,15 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
 # 3 Oct (existing debt is cash): the existing loan's ¥45,000 payments on days 30, 60, 90 and 120 are in the
 # trajectory, and the plan carries a ¥255,000 advance (cost ¥3,113.93); before: 6e416d997eccbf94 and 60bcdca14e272842
-GOLDEN_TRAJECTORY = "0437cc43e3b22800"
+# Wave 1 (013b539): the response adds `first_breach_cash`, the cash on the first breach day (¥60,000.00); every other
+# field unchanged. Before: 0437cc43e3b22800.
+GOLDEN_TRAJECTORY = "3425b553564cc68b"
 # Red team d, F1: the two comparison rows that rely on the buyer paying early ("Discount the whole invoice at 1.2%",
 # "Line + early payment on part of the invoice") are flagged executable_now false ("needs the buyer's agreement to pay
 # early"); every figure and the selected plan (¥3,113.93) unchanged. Before: 2479590b9ee26e83.
-GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+# Wave 1 (013b539): each option adds its status, shortfall, worst day and reason kind, and each leg the day its money is
+# available; every other field unchanged. Before: 252b9812e99b4aee.
+GOLDEN_ROUTER_PLAN = "073b1704bd74a5d6"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)

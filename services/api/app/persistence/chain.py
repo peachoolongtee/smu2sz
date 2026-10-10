@@ -135,3 +135,21 @@ def offer_fingerprint(offer: Any) -> str:
 
 def approval_id(n: int) -> str:
     return f"APR-{n:06d}"
+
+
+def document_id(n: int) -> str:
+    return f"DOC-{n:06d}"
+
+
+_DECISION_FIELDS = ("status", "decided_day", "decided_seq", "linked_facility_id")
+
+
+def check_decision(stored: Any, decided: Any) -> None:
+    """A decision on a contract record may change only the decision fields, and only to CONFIRMED or REJECTED."""
+    from app.domain.models import DocumentStatus
+
+    if decided.status not in (DocumentStatus.CONFIRMED, DocumentStatus.REJECTED):
+        raise ValueError(f"a decision is CONFIRMED or REJECTED, not {decided.status}")
+    keep = {f: getattr(stored, f) for f in _DECISION_FIELDS}
+    if decided.model_copy(update=keep) != stored:
+        raise ValueError(f"a decision on {stored.id} cannot change the document or its reading")

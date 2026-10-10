@@ -346,6 +346,61 @@ const queued = files["home_goahead.json"].operations[0]?.approval_id;
 if (!queued) throw new Error("go ahead on day 34 queued no approval: the demo path has changed");
 files["home_approve_chat.json"] = await live.nl({ session_id: "rec-home-go", actor: "OWNER", text: `approve ${queued}` });
 
+// ------------------------------------------------------------------ contract ingestion (brief 03): the demo documents and the deal summary
+// The demo reset opens on the three demo documents read by the agent and confirmed by the owner (DOC-000001..3, the first three
+// ledger entries), so the deal summary is ready once a deal is agreed. Recorded: each as the reset leaves it with its ledger row, then read
+// again on fresh demo books (a new reading, DOC-000004) and confirmed (a lender agreement linked to its facility) or rejected.
+// Confirming writes no books.
+files["contracts_fixtures.json"] = await live.getContractFixtures();
+const CONTRACT_FIXTURES = files["contracts_fixtures.json"];
+const documentsRecorded = {};
+await reset();
+{
+  const seeded = (await live.getDocuments()).documents;
+  const ledger = (await live.getLedger()).operations;
+  for (const f of CONTRACT_FIXTURES) {
+    const row = seeded.find((d) => d.source === `fixture:${f.id}`);
+    const op = ledger.find((x) => x.seq === row?.decided_seq);
+    if (!row || row.status !== "CONFIRMED" || !op) throw new Error(`the demo reset did not confirm ${f.id}`);
+    documentsRecorded[f.id] = { seeded: await live.getDocument(row.id), seeded_operation: { op_id: op.op_id, ...template(op) } };
+  }
+}
+files["deals_day0.json"] = await live.getDeals();
+for (const decision of ["confirm", "reject"]) {
+  for (const f of CONTRACT_FIXTURES) {
+    await reset();
+    const again = await live.submitDocument({ fixture_id: f.id });
+    if (again.id !== "DOC-000004") throw new Error(`${f.id} read again as ${again.id}, not DOC-000004`);
+    documentsRecorded[f.id].reread = again;
+    const decided = await live.decideDocument(again.id, decision, again.doc_hash, decision === "confirm" ? f.link_facility_id : null);
+    if (decided.result.status !== "EXECUTED") throw new Error(`${f.id} read again was not ${decision}ed: ${decided.result.message}`);
+    documentsRecorded[f.id][decision === "confirm" ? "confirmed" : "rejected"] = decided;
+    // The deal follows the supply agreement confirmed last: record it once, after the new reading is confirmed.
+    if (decision === "confirm" && f.kind === "BUYER_CONTRACT") files["deals_day0_reconfirmed.json"] = await live.getDeals();
+  }
+}
+files["documents.json"] = documentsRecorded;
+// The deal on the home path (as above) from the demo's starting point: on day 0 right after the buyer agreed (the Deals page shows
+// the summary from then on), then the receipt on day 2 and the clock to day 34; then the cure queued for approval, then approved.
+await toDay34(async () => {
+  files["deals_day0_agreed.json"] = await live.getDeals();
+});
+files["deals_day34_open.json"] = await live.getDeals();
+{
+  const alerts = await live.getAlerts();
+  const cure = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+  if (!cure) throw new Error("no actionable reserve alert on day 34 with the contract confirmed: the demo path has changed");
+  await live.actOnAlert(cure.id, {
+    state_version: alerts.state_version,
+    suggestions: cure.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+  });
+  files["deals_day34_pending.json"] = await live.getDeals();
+  const waiting = (await live.getApprovals()).find((a) => a.status === "PENDING");
+  if (!waiting) throw new Error("the day-34 cure did not wait for approval: the demo path has changed");
+  await live.decideApproval(waiting.id, "APPROVE");
+  files["deals_day34_approved.json"] = await live.getDeals();
+}
+
 // ------------------------------------------------------------------ the chat: every scripted text the mock knows, one conversation each
 const P = (role, lang, id) => promptsFor(role, lang).find((p) => p.id === id);
 const o = (lang, id) => P("OWNER", lang, id).text;

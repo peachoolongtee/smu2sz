@@ -31,6 +31,7 @@ PHRASES: dict[Intent, tuple[str, str, str]] = {
     Intent.SHOW_RATIOS: ("What is our DSCR?", "are we inside the covenants?", "杠杆率是多少"),
     Intent.CAPEX: ("should I buy the machine?", "can we afford the ¥600,000 machine?", "买这台设备划算吗"),
     Intent.BORROWER_FILE: ("prepare the borrower file", "generate the lender pack for the term loan", "准备借款人资料"),
+    Intent.SHOW_DEAL: ("where are we with Foshan?", "what did we sign with Foshan?", "跟佛山的合同进展如何"),
 }
 ALL = [(i, p) for i, ps in PHRASES.items() for p in ps]
 READ_ONLY = [(i, p) for i, p in ALL if i != Intent.BORROWER_FILE]

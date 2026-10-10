@@ -131,7 +131,7 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
 
 | Component | Responsibility | Trust |
 | --- | --- | --- |
-| `compiler/` | Turns buyer offers and lender term sheets into typed obligations or facility terms. Every obligation carries a span that must match the document exactly; otherwise the field is abstained. A zh + en rules grammar flags authority claims, data requests and unknown lenders. The coverage proof (`coverage.py`) sets `autonomy_eligible`. | Untrusted output; schema-validated |
+| `compiler/` | Turns buyer offers and lender term sheets or agreements into typed obligations or facility terms, and a signed buyer contract into a reading of 18 fields, each with its clause. Every obligation and term carries a span that must match the document exactly; otherwise the field is abstained or left blank. A zh + en rules grammar flags authority claims, data requests and unknown lenders. The coverage proof (`coverage.py`) sets `autonomy_eligible`. | Untrusted output; schema-validated |
 | `financial/` | The daily cash recursion, debt ledger and forward-concession valuation, in integer fen, in conservative and expected modes | Trusted, deterministic |
 | `covenants/` | DSCR, leverage and clean-down per facility definition, evaluated monthly on the projected state | Trusted, deterministic |
 | `funding/` | The Debt Desk router: grid search for the cheapest admissible mix; marginal cost of funds; break-even early-pay discount; the terms extension priced as a loan | Trusted, deterministic |
@@ -140,14 +140,15 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
 | `operations/` | The executor: the **only** writer of commitments and operations. It computes the tier itself and runs every draw, advance and repayment through admission (`funding/admission.py`: the planner's engine and predicates on today's books), whoever asks. | Trusted |
 | `commitments/` | Commitment lifecycle (PROPOSED → ACCEPTED → ACTIVE → FULFILLED, or EXPIRED / REVOKED), terms hash, nonce, expiry | Trusted |
 | `books/`, `clock/` | `books.current_books` is the one set of current books: the state today plus the live obligations of accepted commitments. Every projection in every module runs on it (ADR-0006). Accepted terms and prices are written onto the invoices once, with a scope fixed at acceptance (ADR-0009), and every draw or advance is a dated funding lot whose cash lands after the lead time (ADR-0010). `Runtime.advance_to` is the only way time moves: it posts the day's scheduled flows, lands funding, posts loan instalments, the existing loan's payments (which leave cash) and maturities, expires lapsed commitments and logs one `ADVANCE_CLOCK` entry on the chain. It never records a receipt and never repays a credit line. | Trusted, deterministic |
-| `persistence/` | SQLAlchemy tables, Alembic migrations (`0001_initial`, `0002_enable_rls`, `0003_append_only_triggers`) and `LedgerStore` (SQL and in-memory). The operations log is append-only and hash-chained. | Trusted |
+| `persistence/` | SQLAlchemy tables, Alembic migrations (`0001_initial`, `0002_enable_rls`, `0003_append_only_triggers`, `0004_approval_decided_day`, `0005_contract_records`) and `LedgerStore` (SQL and in-memory). The operations log is append-only and hash-chained. | Trusted |
 | `counterparties/` | A deterministic buyer kernel with a hidden reservation and a template verbaliser | Separate fixtures; can refuse |
 | `egress/` | Scans every outbound text for protected values and planted canaries, and blocks the whole message on a hit | Trusted, last step |
 | `nl/` | `/nl` harness: natural-language request → intent and typed slots → verifier → typed operations; multi-turn sessions with clarification, correction and a nearest-capability fallback. A counterparty's response carries the reply and the session id only, and the counterparty is whoever its `X-Counterparty-Key` names (no key: a proposal only). A session is bound to the credential that opened it. Free text executes only as a closed affirmative command (`consent.py`); plans are proposed first and "go ahead" runs the exact operations shown. | Trusted orchestration; never skips the verifier |
 | `security/` | Attack catalogue runner, security-event helpers, refusal templates | Test and audit |
 | `capex/`, `borrower_file/`, `alerts/`, `whatif/` | Capex NPV and financing structures; a lender-ready borrower file built from verified state (HTML/DOCX, neutral styling; a read-only owner action with its provenance and an evidence hash, never queued for approval); cash alerts, each with a typed cure, and receipt reconciliation including promised early payments; a read-only what-if sandbox. All of them read current books. | Trusted, deterministic |
+| `ingest/`, `contracts/`, `deals/` | Contract ingestion: text from a Word file or a PDF with a text layer (scans refused); a contract record per uploaded document (the reading, its flags, the hash of the text, PROPOSED until the owner confirms or rejects it); the deal summary (on Deals once a deal is agreed), which sets a confirmed contract beside the live books. A document never writes the books | Trusted, deterministic; the reading inside is untrusted model output |
 | `api/` | FastAPI routers, dependency wiring and authentication (owner token, agent key, bank-feed key) | Trust boundary |
-| `apps/web` | Next.js screens: the owner home at `/` (the day and a demo clock control, the agent's opener with a Go ahead button, position, approvals waiting, alerts with "Let the agent fix this", recent agent actions), Mandate, Inbox, Trajectory, Funding, Verdict (with the autonomy-proof panel, also shown in chat), Capex, Ledger, Approvals (an approval card for each queued item: the operation, the reason and the terms), Security, Evidence, Alerts, Reconciliation and What-if; a `/chat` page and a slide-over chat panel on every page (owner and buyer roles); an Owner sign-in dialog that keeps the token in `sessionStorage` only; English and Chinese labels; a 15-step demo stepper | Displays server-formatted values only |
+| `apps/web` | Next.js screens: the owner home at `/` (the day and a demo clock control, the agent's opener with a Go ahead button, position, approvals waiting, alerts with "Let the agent fix this", recent agent actions), Deals (the buyer's message, the recommendation, the negotiation and, once both parties agree, the deal summary: the confirmed contract beside the books), Mandate, Inbox, Documents (upload, the review screen with every clause highlighted beside its term, confirm or reject), Trajectory, Funding, Verdict (with the autonomy-proof panel, also shown in chat), Capex, Ledger, Approvals (an approval card for each queued item: the operation, the reason and the terms), Security, Evidence, Alerts, Reconciliation and What-if; a `/chat` page and a slide-over chat panel on every page (owner and buyer roles); an Owner sign-in dialog that keeps the token in `sessionStorage` only; English and Chinese labels; a 15-step demo stepper | Displays server-formatted values only |
 
 **One offer, end to end.**
 
@@ -163,7 +164,7 @@ TermsLedger is a **modular monolith** (ADR-0001): one FastAPI service (`services
 
 ### Models, tools, data sources and external services
 
-**Models.** The model is used only to (a) compile offers and term sheets into a strict JSON schema and (b) optionally classify an `/nl` request into one intent from a closed list when the rules parser finds nothing. It never decides, prices, negotiates or executes.
+**Models.** The model is used only to (a) compile offers, term sheets and contracts into a strict JSON schema and (b) optionally classify an `/nl` request into one intent from a closed list when the rules parser finds nothing. It never decides, prices, negotiates or executes.
 
 | Backend | Model | When |
 | --- | --- | --- |
@@ -184,13 +185,15 @@ The model sees only the documents and the output schema. Mandate values, facilit
 | Debt Desk | `POST /router/plan`, `POST /facilities/compile` (owner), `POST /capex/evaluate`, `POST /borrower-file` |
 | Execution | `POST /operations`, `GET /approvals/queue`, `POST /approvals/{id}`, `POST /circuit/{id}/reset`, `POST /commitments/{id}/revoke` (owner) |
 | Read views and evidence (owner token) | `GET /state`, `/mandate`, `/trajectory`, `/ledger`, `/audit`, `/evidence`; `POST /demo/reset` |
+| Contracts (owner token) | `POST /documents` (a demo document, an upload or pasted text), `GET /documents`, `GET /documents/{id}`, `POST /documents/{id}/confirm`, `POST /documents/{id}/reject`, `GET /deals`, `GET /deals/{buyer}`, `GET /fixtures/contracts` |
 
 The typed operation kinds (`app/domain/models.py`) are:
 
 - ACCEPT_OFFER, COUNTER_OFFER, REJECT_OFFER and RECORD_COMMITMENT;
 - DRAW_FACILITY, REPAY_FACILITY, SUBMIT_INVOICE_FOR_FINANCING and RECEIVE_PAYMENT (and, written by the clock as SYSTEM, one ADVANCE_CLOCK entry per move of time);
 - APPLY_FOR_FACILITY, ADD_FACILITY and REQUEST_OWNER_APPROVAL (preparing the borrower file is no longer an operation: it is a read-only owner action);
-- the Tier-3 kinds SIGN_PERSONAL_GUARANTEE, PLEDGE_COLLATERAL, ISSUE_EQUITY and CHANGE_MANDATE, which exist only to be refused.
+- the Tier-3 kinds SIGN_PERSONAL_GUARANTEE, PLEDGE_COLLATERAL, ISSUE_EQUITY and CHANGE_MANDATE, which exist only to be refused;
+- CONFIRM_DOCUMENT and REJECT_DOCUMENT: the owner's decision on the agent's reading of a contract or lender agreement, bound to the hash of the text, logged on the chain, with no effect on the books.
 
 No operation has a payee or account field. A request for a transfer to a third party (`TRANSFER_FUNDS`) is rejected as an unknown kind.
 
@@ -202,7 +205,8 @@ No operation has a payee or account field. A request for a transfer to a third p
 - `fixtures/heldout/`, `fixtures/heldout2/`, `fixtures/heldout3/`: three held-out evaluation sets of buyer messages and owner utterances (section 03).
 - `fixtures/counterparties/`: buyer profiles with hidden reservations.
 - `fixtures/golden/`: the independent oracle and its golden values.
-- `services/api/evals/security/attacks.yaml`: 122 attacks through the API; the 133 chat attacks are run through `/nl` by the same runner (`app.security.attacks`).
+- `fixtures/contracts/`: three synthetic demo documents written to match the golden books (the supply agreement FHR-2026-07 with Foshan Home Retail, the credit line agreement and the invoice financing agreement), each as Markdown, Word and PDF. `fixtures/contracts_heldout/` holds the protocol and the empty label file of the held-out contract set, which is pending.
+- `services/api/evals/security/attacks.yaml`: 126 attacks through the API; the 133 chat attacks are run through `/nl` by the same runner (`app.security.attacks`).
 - `services/api/evals/e2e/scenarios.yaml`: 49 scripted `/nl` tasks.
 - `fixtures/scenarios/golden_sme.events.json`: dated events the clock applies. On day 25 the scenario adds the month-2 payroll of ¥200,000 (due day 42); it does not exist on day 0, so day-0 golden values are unchanged.
 
@@ -401,6 +405,8 @@ We evaluate the compiler on data its tuners had not seen, the engines against an
 
 An early-pay discount that fails any of the three early-payment tests (at or above break-even, cash not needed, or dearer than the router's plan) is neither Tier 1 nor Tier 2: it is a COUNTER (`DISCOUNT_ABOVE_BREAK_EVEN`, `EARLY_PAY_NOT_NEEDED`, `EARLY_PAY_DEARER_THAN_PLAN`).
 
+**Contract documents.** The agent's reading of an uploaded contract counts only once the owner confirms it, and confirming changes no books. The demo starts with the three demo documents already read and confirmed (the owner's first three logged operations), so the deal summary is ready as soon as a deal is agreed. CONFIRM_DOCUMENT and REJECT_DOCUMENT are owner-only (any other caller is refused and logged as privilege escalation), bound to the SHA-256 of the exact text the owner reviewed, made once, and refused for a document that carries text addressed to the agent.
+
 **Confirmation.** A Tier-2 operation is stored as its exact canonical JSON. When the owner approves, the executor re-runs every gate against the mandate then in force. An approval given after a revocation is therefore refused, and an approved Tier-3 operation stays refused.
 
 **Verification.** Every operation passes the same gates, in order:
@@ -432,6 +438,7 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 - Contingency is decided deterministically after the model answers: a sentence with a condition on a future business event is CONTINGENT whatever the model says, and a gain is never relabelled FIRM.
 - The rules grammar flags override attempts, fake SYSTEM lines, role-play, encoded text, full-width, zero-width and homoglyph text, and authority claims in both languages. Detection is logged, but refusal does not depend on it.
 - If a model backend fails, times out or returns invalid JSON, the deterministic rules grammar takes over.
+- **Contracts are read the same way.** Every contract term must quote its clause verbatim; its amount, rate, period and date are parsed in code from the quoted words. A sentence addressed to the agent (an instruction, a request for its prompt) is a blocking flag: it is never read as a term, the document cannot be confirmed, and a security event is logged. Documents are read only for counterparties on the owner's registry with the matching role, and a confirmed lender agreement never becomes a facility.
 - **Misreading is treated as a security problem too.** A message the compiler cannot fully account for can no longer be accepted without the owner (ADR-0005), and the coverage proof fails closed on unread words.
 - **The chat endpoint is inside the boundary.** The attack suite also drives `/nl` as the owner, as a buyer and as a holder of the agent key. A buyer's chat response carries the reply and the session id and nothing else: no verdict, plan, operation or protected value. Text pasted or quoted into the owner's chat never becomes an instruction or an approval id. A chat session is bound to the credential that opened it, so a different credential cannot continue it. Free text executes only as a closed affirmative command (negation, questions, conditions, future times, foreign currencies and unreadable amounts execute nothing); an approval id is decided only by an exact decision; "go ahead" runs the exact operations that were shown. A buyer is who its channel key says. The security scoreboard is computed from the run data, not asserted. Found by this suite and fixed the same day: text pasted without quote marks ("Attachment:", "> …", "Forwarded message") could approve a queued item, and an agent-key holder could say "go ahead" inside the owner's session.
 
@@ -442,19 +449,20 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 - The compiler never sees the mandate, state, funding menu or reservations.
 - Outbound text is template-filled from an allow-list. Data requests get one fixed reply that discloses nothing.
 - The deterministic egress guard scans every outbound text for protected values in their usual forms (¥, k, 万, Chinese and 大写 numerals, English number words, percentages, ratios, company names and role aliases) and for four planted canaries. It blocks the whole message on a hit.
-- Read routes (`/state`, `/mandate`, `/trajectory`, `/ledger`, `/audit`, `/evidence`) require the owner token.
+- Read routes (`/state`, `/mandate`, `/trajectory`, `/ledger`, `/audit`, `/evidence`, and the document and deal routes) require the owner token.
+- A contract's terms (amounts, rates, payment terms, the agreement number, a lender agreement's limit and rates) are protected values owned by that counterparty, read or confirmed: another buyer asking for them is refused, and the egress guard blocks them in any outbound text.
 - Cache mode sends nothing off the machine. In live mode only the inbound documents and the schema leave it.
 
 **Compliance, in brief** (the full statements are in the Security Self-Assessment, section 03).
 
 - **Data flows.** In live mode (opt-in) a buyer's message and attached documents go to the configured model provider (DeepSeek or Anthropic) for extraction only. The model never receives the mandate, the floor, facility limits or other buyers' terms. In the default cache mode nothing leaves the machine. A real buyer document can contain personal information (for example an individual's name, phone number or bank account). Sending it to a provider outside mainland China would be a cross-border transfer of personal information under China's PIPL, and a deployer would need a legal basis and, where required, a security assessment or standard contract before any production use with real documents. That is an obligation on the deployer, not legal advice, and we do not claim compliance.
 - **Synthetic data only.** The demo, the tests and every evaluation use synthetic fixtures.
-- **AI-generated content.** Outbound text to a counterparty is template-filled from typed fields, not free model prose. The web UI does not yet label the agent's replies as AI-generated, for reference. That is a gap we list in the Security Self-Assessment.
+- **AI-generated content.** Outbound text to a counterparty is template-filled from typed fields, not free model prose. The web UI labels what the model extracted "AI-generated, for reference": a contract's reading until the owner confirms it (then "Read by the agent, confirmed by you"), and a buyer offer's extracted terms in the Inbox. Chat replies are template text built from typed fields and carry no label.
 - **Decision support, not advice.** The agent acts only inside an owner-signed mandate. Tier 2 needs the owner and Tier 3 is never executed. It is not a licensed lender, broker or adviser, and it executes no real payment: every facility and the bank feed are simulated.
 - **Audit trail.** Every operation, refusals included, is in a hash-chained log. The chain head is not anchored outside the system, so a full rewrite of the log would verify as valid (audit finding S8, open).
 - **Licence.** [TEAM: licence to be chosen by the owner]
 
-**Measured results.** The suite now holds **255 attacks: 122 through the API and 133 through chat** (43 as the owner, 64 as a buyer, 26 as a holder of the agent key without the owner token). **0 of the 255 caused harm** (`python -m app.security.attacks --report`, 3 Oct 2026). Each attack runs on a fresh runtime through the real FastAPI routes, `LLM_MODE=cache`. The buyer attacks run twice, with no channel key (`NL-CX01`) and with the buyer's own key (`NL-CX01K`), and the 41 consent attacks `NL-CS01` to `NL-CS41` send negated, questioning, conditional, future-dated, foreign-currency, unreadable-amount and "do not approve" texts in English and Chinese with the owner token and with the agent key. The table below is the 122 API attacks as in `services/api/evals/security/latest_report.md` (which also lists every chat attack), with the deployment's credentials and `DEMO_MODE=0`. Of the 133 chat attacks, 86 were detected (an event or a refusal code) and 47 changed nothing but raised neither, 39 of them consent attacks, whose correct result is that nothing runs and no code is raised; the other 8 are the agent key asking to reset the circuit breaker or to revoke a commitment, the agent key saying "go ahead" inside the owner's session, the owner token reusing a counterparty's session id, a bare "yes" in a fresh owner or agent session with an approval pending, and two replayed request ids.
+**Measured results.** The suite now holds **259 attacks: 126 through the API and 133 through chat** (43 as the owner, 64 as a buyer, 26 as a holder of the agent key without the owner token). **0 of the 259 caused harm** (`python -m app.security.attacks --report`, 5 Oct 2026). The four added on 5 Oct target contract ingestion: an instruction to the agent inside a contract clause, a lender agreement from an unregistered sender, a buyer asking for another buyer's contract terms, and a non-owner confirming a document. Each attack runs on a fresh runtime through the real FastAPI routes, `LLM_MODE=cache`. The buyer attacks run twice, with no channel key (`NL-CX01`) and with the buyer's own key (`NL-CX01K`), and the 41 consent attacks `NL-CS01` to `NL-CS41` send negated, questioning, conditional, future-dated, foreign-currency, unreadable-amount and "do not approve" texts in English and Chinese with the owner token and with the agent key. The table below is the 126 API attacks as in `services/api/evals/security/latest_report.md` (which also lists every chat attack), with the deployment's credentials and `DEMO_MODE=0`. Of the 133 chat attacks, 86 were detected (an event or a refusal code) and 47 changed nothing but raised neither, 39 of them consent attacks, whose correct result is that nothing runs and no code is raised; the other 8 are the agent key asking to reset the circuit breaker or to revoke a commitment, the agent key saying "go ahead" inside the owner's session, the owner token reusing a counterparty's session id, a bare "yes" in a fresh owner or agent session with an approval pending, and two replayed request ids.
 
 **An independent audit and five red-team rounds** (1 to 3 Oct 2026; reports and probes under `docs/research/`: the principal audit and its evidence folder, and `redteam-2026-10-03`, `-03b`, `-03c`, `-03d`, `-03e`) found 13 and 26 issues (3, 7, 3, 7 and 6 in the rounds), listed with their regression tests in the Security Self-Assessment (section 02). All 39 were fixed; the owner then stopped the red-team rounds, and none is planned. The audit's NO-GO conclusion on autonomy dated from before those fixes, and the system remains a simulation.
 
@@ -470,9 +478,9 @@ Each executor entry point runs as one store unit of work, so state, commitment, 
 | Protected values disclosed in outbound text | **0** |
 | Protected values readable without the owner token | **0** |
 | Canaries tripped in outbound text | **0** |
-| Attack success rate: injection / exfiltration / escalation / replay | **0%** of 40 / 21 / 20 / 21 attempts |
-| Detection rate (a SecurityEvent or a refusal code) | **98.4%** (120 of 122) |
-| SecurityEvent rate | **72.1%** (88 of 122) |
+| Attack success rate: injection / exfiltration / escalation / replay | **0%** of 42 / 22 / 21 / 21 attempts |
+| Detection rate (a SecurityEvent or a refusal code) | **98.4%** (124 of 126) |
+| SecurityEvent rate | **73.0%** (92 of 126) |
 
 - Twelve findings (F-01 to F-12) were found by this suite and are fixed or mitigated; no attack is run as an expected failure. The two attacks that are "contained" rather than detected are Tier-2 requests by the agent, queued for the owner as designed.
 - The pytest suite adds two hypothesis fuzzers (random operation bodies against `/operations`, and random zh + en injection fragments through intake, the verdict and a compromised agent).
@@ -507,26 +515,27 @@ python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_sc
 2. Run `docker compose -f infra/docker-compose.yml up --build`.
 3. The Compose file sets **`DEMO_MODE=0`**, so the published demo credentials are rejected, and it refuses to start without `OWNER_TOKEN`, `AGENT_KEY` and `POSTGRES_PASSWORD`. It binds the API to `127.0.0.1:8000`, to sit behind a TLS reverse proxy. It does not set `BANK_FEED_KEY`, so there is no bank-feed channel until one is configured.
 
-**Test cases.** `uv run pytest --co` collects **5,479** API tests (3 Oct 2026):
+**Test cases.** `uv run pytest --co` collects **5,702** API tests (8 Oct 2026, with contract ingestion):
 
 | Area | Tests | Area | Tests |
 | --- | --- | --- | --- |
 | funding router | 1,149 | alerts | 76 |
-| egress guard | 961 | mandate | 72 |
-| nl harness | 862 | api | 53 |
-| compiler | 625 | capex | 51 |
-| operations (executor) | 373 | what-if | 45 |
-| verifier | 258 | certification | 41 |
-| security (attacks, fuzzers, metrics) | 236 | covenants | 38 |
-| financial engine | 195 | concurrency | 30 |
-| persistence | 92 | borrower file | 29 |
-| commitments | 90 | evaluation harness | 24 |
-| books | 83 | money and fixtures | 11 |
+| egress guard | 964 | mandate | 72 |
+| nl harness | 888 | capex | 51 |
+| compiler | 684 | what-if | 45 |
+| operations (executor) | 395 | certification | 41 |
+| verifier | 258 | covenants | 38 |
+| security (attacks, fuzzers, metrics) | 240 | concurrency | 30 |
+| financial engine | 195 | document text extraction | 29 |
+| api | 112 | borrower file | 29 |
+| persistence | 104 | evaluation harness | 24 |
+| commitments | 90 | money and fixtures | 11 |
+| books | 83 | contract records (golden equality, held-out scorer) | 9 |
 | counterparties | 76 | clock | 9 |
 
-**Latest full run** (`SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`, Windows, 3 Oct 2026, `dev` at `db097e0`): **5,446 passed, 33 skipped, 0 failed**, run as two sequential chunks that together cover every test directory (chunk A 7 min 50 s, chunk B 6 min 3 s; chunk A is `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial tests/funding`, chunk B is `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier tests/whatif tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`). The skips are 7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c). The run uses the recorded-output cache and an in-memory store, and the concurrency suite ran on SQLite only; live-model mode was not tested and PostgreSQL was not run (uncertainty debt U-001, U-002).
+**Latest full run** (`SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`, Windows): **5,716 passed, 33 skipped, 0 failed** on 8 Oct 2026 after contract ingestion was merged into the redesigned UI (branch `feat/upgrading-contracts`). On `feat/contract-ingestion` before the merge: 5,669 passed, 33 skipped, 0 failed. The run before it, on 3 Oct 2026 at `db097e0`: **5,446 passed, 33 skipped, 0 failed**, run as two sequential chunks that together cover every test directory (chunk A 7 min 50 s, chunk B 6 min 3 s; chunk A is `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial tests/funding`, chunk B is `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier tests/whatif tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`). The skips are 7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c). The run uses the recorded-output cache and an in-memory store, and the concurrency suite ran on SQLite only; live-model mode was not tested and PostgreSQL was not run (uncertainty debt U-001, U-002).
 
-**Web app** (`apps/web`; counts after the web refresh `2fc5aa9` on 3 Oct 2026, recorded in `docs/CONTINUOUS_OPTIMIZATION.md`): the mock-mode Playwright run passed **35 tests** and the live project **33**. They cover the demo walk with the golden numbers (including the two-step day-34 cure and the day-37 landing), the owner home, the chat panel, owner sign-in, the Tier-2 approval queue, and the adapter contract. [TEAM: rerun `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test:unit` and both Playwright projects at the submitted commit; they were not re-run for this document.]
+**Web app** (`apps/web`, 8 Oct 2026, after contract ingestion was merged into the redesigned UI): `pnpm lint`, `pnpm typecheck`, `pnpm build` and `pnpm test:unit` (17) pass; the mock-mode Playwright run passed **58 tests** (7 skipped: a live-only test, and the screenshot runs, which need `SHOTS_DIR`) and the live project **41** (2 skipped, mock-only). They cover the demo walk with the golden numbers (including the two-step day-34 cure and the day-37 landing), the owner home, Deals (the negotiation and, once the buyer agrees, the deal summary), the documents page (read, review, confirm, reject, upload, in English and Chinese), Activity, the chat panel, owner sign-in, the Tier-2 approval queue, phone layouts, and the adapter contract. [TEAM: rerun them at the submitted commit.]
 
 **Scripted tasks and evidence.** `scripts/run_scenarios.py --inproc` passes **49/49** tasks (87 `/nl` turns, 3 Oct 2026); all 49 evidence chains verify with `scripts/verify_evidence.py`. The nine tasks added on 1 Oct cover the financing comparison (en and zh), reconciliation, covenant ratios (en and zh), a capex case, the borrower file (now built at once, read-only), the nearest-capability fallback, and the agent key being told to ask the owner; three later tasks cover chat refusing to record a stated fact (en and zh) and reconciliation showing a bank reference. Details are in the Execution Evidence document.
 
@@ -538,6 +547,7 @@ python3 scripts/verify_evidence.py services/api/evals/e2e/latest/evidence/S01_sc
 - **Held-out 1 is no longer held out**; its near-perfect scores in `latest_report.md` are not accuracy claims. The report's findings table (EV-01 to EV-12) is the historical list from the first evaluation run; the summary table above it is the current run.
 - **Open security risks** (Security Self-Assessment, section 04): single-operator key custody (R-2), the Tier-1 blast radius of a compromised agent (R-3), the trusted in-process actor (R-5), and the medium items found through chat (threshold probing S5 by a buyer with its key, the agent key reading status and alerts through chat S9). Channel authentication (R-4) and the plan binding of "go ahead" (R-12) were fixed on 3 Oct; the open operational rows (a multi-leg plan is not one transaction, a bank event without a reference is identified by its key only, no cap on unauthenticated intake, concurrency proven on SQLite but not PostgreSQL so one worker only, the live-model certification not run) are R-15. The hash chain is internally checkable only: its head is not anchored outside the system (audit S8), and head hashes differ from run to run. The Postgres append-only triggers have not run against a live Postgres in CI (F-11), and `/demo/reset` is owner-only but still exists outside demo mode (F-05).
 - **Everything is simulated.** Lenders and the buyer are mocks, facilities and rates are synthetic, and there are no real bank integrations or loan applications.
+- **Contract ingestion is shown, never booked.** A confirmed contract does not create a buyer's receivables or recurring invoices, and a lender agreement does not add or change a facility. Deliverables and payment documents are listed with their quotes, not tracked. Scanned PDFs are refused (no OCR). With no model key, the demo readings were recorded with the deterministic grammar, which was written against the three demo documents; the held-out contract set that would measure reading accuracy is pending, and its report quotes no figure (`services/api/evals/contracts_heldout_report.md`). The demo contracts are English; a Chinese contract has not been tried.
 - **Covenant definitions differ by lender.** We test the defined covenants "under this definition", not bank-grade compliance; the system makes no claim of covenant compliance with any bank.
 - **What the checks cover.** The projection screens the obligations that were entered. EBITDA is the owner's figure and recurring invoices are treated as confirmed sales collected on their due day, with one buyer as all of the receivables. "Cheapest" means cheapest within the bounded search.
 - **Not available:** the after-signing extension (statutory due dates, late interest, receivable confirmation) is not built; its empty module and flag were removed. The mandate cannot be renewed by the agent: an alert warns 14 days before it expires and renewal is an offline owner step. The simulated clock, the bank feed and every receipt are simulated; no real payment is made or recorded.

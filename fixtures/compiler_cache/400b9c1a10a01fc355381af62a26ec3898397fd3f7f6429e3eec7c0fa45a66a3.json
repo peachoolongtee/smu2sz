@@ -1,0 +1,43 @@
+{
+  "doc_ids": [
+    "DOC-76cfc556bff0a5ff"
+  ],
+  "extraction": {
+    "authority_claims": [],
+    "clauses": [
+      {
+        "field": "fee",
+        "quote": "service fee of 0.25%",
+        "value_text": "0.25%"
+      },
+      {
+        "field": "lead_time",
+        "quote": "disbursed within three (3) days",
+        "value_text": "three (3) days"
+      },
+      {
+        "field": "advance_rate",
+        "quote": "Advance rate: the Financier advances 80%",
+        "value_text": "80%"
+      },
+      {
+        "field": "principal",
+        "quote": "facility limit of RMB 350,000",
+        "value_text": "RMB 350,000"
+      },
+      {
+        "field": "rate",
+        "quote": "interest rate is 7.8% per annum",
+        "value_text": "7.8%"
+      }
+    ],
+    "facility_kind": "INVOICE_FINANCING",
+    "lender_name": null,
+    "repayment": "ON_RECEIPT"
+  },
+  "key": "400b9c1a10a01fc355381af62a26ec3898397fd3f7f6429e3eec7c0fa45a66a3",
+  "kind": "term_sheet",
+  "label": "GBR_INVOICE_FINANCING_AGREEMENT",
+  "prompt_version": "termsheet-v3",
+  "source_model": "rules-v1"
+}

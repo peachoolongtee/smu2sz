@@ -3,8 +3,8 @@ import { expect, test } from "./fixtures";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
-const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
-const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
+const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -53,6 +53,16 @@ test("the Business home puts the status and the next action in the first screen,
     await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Cash & funding" }).click();
   }
   await expect(page).toHaveURL(/\/cash/);
+});
+
+test("the document review fits the viewport", async ({ page }) => {
+  await page.goto("/documents");
+  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  expect(await overflowX(page), "the review screen overflows horizontally").toBeLessThanOrEqual(1);
+  await page.getByTestId("doc-confirm").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+  expect(await overflowX(page), "the confirmed review overflows horizontally").toBeLessThanOrEqual(1);
 });
 
 test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {

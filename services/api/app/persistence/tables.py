@@ -195,6 +195,22 @@ approvals = Table(
     Column("decided_day", Integer, nullable=True),
 )
 
+# Documents the agent read (brief 03): the text, the reading and the owner's decision, as one canonical JSON
+# payload. Never read by the engine: a confirmed contract writes no books.
+contract_records = Table(
+    "contract_records",
+    metadata,
+    _row_id(),
+    Column("id", String(32), nullable=False, unique=True),
+    Column("kind", String(32), nullable=False),
+    Column("counterparty_id", ID, nullable=False, index=True),
+    Column("status", String(16), nullable=False, index=True),
+    Column("doc_hash", HASH, nullable=False),
+    Column("uploaded_day", Integer, nullable=False),
+    Column("decided_day", Integer, nullable=True),
+    Column("payload_json", Text, nullable=False),
+)
+
 security_events = Table(
     "security_events",
     metadata,
@@ -255,6 +271,7 @@ __all__ = [
     "TELEMETRY_TABLES",
     "approvals",
     "commitments",
+    "contract_records",
     "counterparties",
     "evaluation_runs",
     "evidence_exports",

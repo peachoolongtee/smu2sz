@@ -9,6 +9,7 @@ import { AnnotatedText } from "@/components/annotated-text";
 import { OutcomeBadge } from "@/components/badges";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
+import { AgreedDeals, isAgreed } from "@/components/deals/deal-summary";
 import { DealSteps } from "@/components/deals/deal-steps";
 import { ACTION_KEY, DealDecision, businessAction } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
@@ -18,7 +19,7 @@ import { PlanCard } from "@/components/plan-card";
 import { Button, Callout, Card, EmptyState, ErrorState, Formula, KeyValueList, LoadingBlock, PageHeader } from "@/components/ui";
 import { ViolationCard } from "@/components/verdict-parts";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { getClock, getState, submitOffer } from "@/lib/api";
+import { getClock, getDeals, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
@@ -48,6 +49,9 @@ export default function DealsPage() {
   const [reading, setReading] = useState<string | null>(null);
   const books = useAsync(getState, []);
   const clock = useAsync(getClock, []);
+  // The deal summaries (contract ingestion): read again whenever a negotiation is recorded, since the store's version moves.
+  const dealsView = useAsync(() => getDeals().catch(() => null), []);
+  const agreedDeals = dealsView.data?.deals.filter(isAgreed) ?? [];
   // The simulated clock: every day on this page is said as a distance from it.
   const today = clock.data?.day ?? books.data?.day ?? 0;
   const known = books.data ? new Set(books.data.state.counterparties.map((c) => c.id)) : null;
@@ -112,13 +116,21 @@ export default function DealsPage() {
   } else if (offer && v && cur.negotiation) {
     next =
       cur.negotiation.outcome === "DEAL"
-        ? { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
+        ? agreedDeals.some((d) => d.counterparty_id === offer.offer.counterparty_id)
+          ? { text: t("next.agreedDeal"), action: <a href="#deal-summary" className={nextLinkCls}>{t("next.seeDeal")}</a> }
+          : { text: t("next.agreed"), action: <a href="#commitments" className={nextLinkCls}>{t("next.seeHome")}</a> }
         : { text: t("next.noDeal"), action: <a href="#inbox-list" className={nextLinkCls}>{t("next.backToOffers")}</a> };
   } else if (offer && v && v.counters.length) {
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkCls}>{t("next.toCounters")}</a> };
   }
 
-  const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
+  // Once both parties have agreed, the deal summary (the confirmed contract beside the books) comes before the commitments.
+  const commitments = (
+    <>
+      <AgreedDeals deals={dealsView.data?.deals ?? []} />
+      <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />
+    </>
+  );
 
   return (
     <>

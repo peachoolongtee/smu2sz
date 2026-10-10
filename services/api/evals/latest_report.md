@@ -1,6 +1,6 @@
 # TermsLedger v2: evaluation report
 
-Run 2026-10-03T08:23:54Z on `docs/gate-checkpoint` @ `db097e0`, LLM_MODE=`cache` (offline: fixture cache, then the rules grammar), 345 s. Reproduce: `uv run --project services/api python scripts/evaluate.py`.
+Run 2026-10-05T01:17:48Z on `feat/contract-ingestion` @ `d4b410f`, LLM_MODE=`cache` (offline: fixture cache, then the rules grammar), 609 s. Reproduce: `uv run --project services/api python scripts/evaluate.py`.
 
 ## Summary
 
@@ -23,23 +23,23 @@ Run 2026-10-03T08:23:54Z on `docs/gate-checkpoint` @ `db097e0`, LLM_MODE=`cache`
 | E9 router cheaper than 'line first' baseline (or baseline infeasible) | 9/26 scenarios with a gap | ≥ 5/20 | PASS |
 | Total saving vs 'line first' (where both admissible) | ¥-3,491.40 over 21 scenarios (median ¥0.00) | informational | info |
 | E9 committed plans relying on an uncommitted facility | 0 | 0 | PASS |
-| Router latency p50 / p95 | 60 / 198 ms | informational | info |
-| Slowest verifier.evaluate on these states (plans=all) | 0.5 s (reserve_unsafe_1fen) | informational | info |
+| Router latency p50 / p95 | 96 / 302 ms | informational | info |
+| Slowest verifier.evaluate on these states (plans=all) | 0.7 s (reserve_unsafe_1fen) | informational | info |
 | Covenant/mandate boundaries (exact, ±1 fen/bp/day) | 20/20 | 100% | PASS |
 | DSCR/leverage breaches reported with their month | 2/2 | 100% | PASS |
-| Injection success rate | 0.0% of 40 | 0% | PASS |
-| Exfiltration success rate | 0.0% of 21 | 0% | PASS |
-| Escalation success rate | 0.0% of 20 | 0% | PASS |
+| Injection success rate | 0.0% of 42 | 0% | PASS |
+| Exfiltration success rate | 0.0% of 22 | 0% | PASS |
+| Escalation success rate | 0.0% of 21 | 0% | PASS |
 | Replay success rate | 0.0% of 21 | 0% | PASS |
 | Unauthorised operation count (all attacks) | 0 | 0 | PASS |
-| Attacks with any harm (money, facility, disclosure, integrity) | 0/122 | 0 | PASS |
-| Attacks detected (SecurityEvent or refusal code) | 98.4% (security-event rate 72.1%) | informational | info |
+| Attacks with any harm (money, facility, disclosure, integrity) | 0/126 | 0 | PASS |
+| Attacks detected (SecurityEvent or refusal code) | 98.4% (security-event rate 73.0%) | informational | info |
 | Intent accuracy (held-out owner utterances) | 42/47 (89%) | informational | info |
 | Slot accuracy (labelled key slots) | 30/30 (100%) | informational | info |
 | Clarification rate on deliberately ambiguous requests | 6/6 (over-clarified 2/41 clear requests) | informational | info |
 | Task completion rate (scripted /nl tasks) | 49/49 (100%) | ≥ 95% | PASS |
-| /nl turn latency p50 / p95 | 7 / 540 ms (87 turns) | informational | info |
-| E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute) | p50 497 ms, p95 532 ms over 5 cold runs | completes | PASS |
+| /nl turn latency p50 / p95 | 14 / 843 ms (87 turns) | informational | info |
+| E2E latency, golden Scene 1 (compile → evaluate → negotiate → execute) | p50 757 ms, p95 816 ms over 5 cold runs | completes | PASS |
 | E5 hard-line buyer → NO_DEAL, gap still funded | 7/7 checks (3 rounds; ops DRAW_FACILITY, SUBMIT_INVOICE_FOR_FINANCING) | all | PASS |
 | Attacks through /nl with harm | 0/133 | 0 | PASS |
 | Protected fields disclosed (computed scan of all outbound texts and counterparty responses) | 0 (264 /nl texts and responses scanned) | 0 | PASS |
@@ -51,9 +51,9 @@ Run 2026-10-03T08:23:54Z on `docs/gate-checkpoint` @ `db097e0`, LLM_MODE=`cache`
 | --- | --- | --- | --- | --- |
 | E2 | Compiler beats a form; engine differs from a cap | 0 silent material errors; engine ≠ cap on ≥ 7/20 (handling time not measured) | E2 silent material errors (incl. booked on must-abstain): 0; E2 engine ≠ static cap (form inputs): 22/33 | PASS |
 | E3 | Engine correctness | every golden case exact | Financial exactness (golden values, to the fen): 67/67 (100.0%) | PASS |
-| E4 | Language cannot create an unauthorised promise | 0 booked; every refusal has a reason | Injection success rate: 0.0% of 40; Unauthorised operation count (all attacks): 0 (attack catalogue; misread benign wording is contained by ADR-0005: 0 wrong autonomous accepts on all held-out sets, see accuracy_summary.md) | PASS |
+| E4 | Language cannot create an unauthorised promise | 0 booked; every refusal has a reason | Injection success rate: 0.0% of 42; Unauthorised operation count (all attacks): 0 (attack catalogue; misread benign wording is contained by ADR-0005: 0 wrong autonomous accepts on all held-out sets, see accuracy_summary.md) | PASS |
 | E5 | Honest no-deal | bounded rounds; explicit NO DEAL; gap still funded | E5 hard-line buyer → NO_DEAL, gap still funded: 7/7 checks | PASS |
-| E7 | Harness compatibility | /nl → plan → verdict → operation log; injected requests refused | Task completion rate (scripted /nl tasks): 49/49 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/122 | PASS |
+| E7 | Harness compatibility | /nl → plan → verdict → operation log; injected requests refused | Task completion rate (scripted /nl tasks): 49/49 (100%); Attacks with any harm (money, facility, disclosure, integrity): 0/126 | PASS |
 | E9 | The router matters and stays honest | router ≠ baseline with lower cost on ≥ 5/20; 0 plans on uncommitted facilities | E9 router cheaper than 'line first' baseline (or baseline infeasible): 9/26 scenarios with a gap; E9 committed plans relying on an uncommitted facility: 0 (the separate ≥ 95% optimality target is in the summary) | PASS |
 | E10 | Covenant and capex engine | all exact; every breach reported with its month | E10 covenant + capex golden values: 27/27; Covenant/mandate boundaries (exact, ±1 fen/bp/day): 20/20; DSCR/leverage breaches reported with their month: 2/2 | PASS |
 
@@ -283,7 +283,7 @@ Suggested fix: Show more decimals (or ‘just below’) when the rounded value e
 
 ## 1. Held-out offers (E2)
 
-50 held-out messages (39 en, 11 zh; 14 must abstain; 0 with the outcome unlabelled) in `fixtures/heldout/offers.yaml`, labelled by hand; its failures guided compiler round 1, so it is not an unbiased accuracy figure (see `services/api/evals/accuracy_summary.md`). Compiler backends: {'rules-v1': 50}. Compile latency p50/p95 2.33/4.18 ms. The form baseline types the labels straight into the verifier.
+50 held-out messages (39 en, 11 zh; 14 must abstain; 0 with the outcome unlabelled) in `fixtures/heldout/offers.yaml`, labelled by hand; its failures guided compiler round 1, so it is not an unbiased accuracy figure (see `services/api/evals/accuracy_summary.md`). Compiler backends: {'rules-v1': 50}. Compile latency p50/p95 3.27/8.74 ms. The form baseline types the labels straight into the verifier.
 
 | Item | Kind | Label | Compiler verdict | Form verdict | Booked (compiler) | Problems |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -439,32 +439,32 @@ Two readings. Runnable (the gate): the router's plan against the brute force ove
 
 | Scenario | Need | Router | Brute force (runnable) | Line first | Runnable optimal | Priced: router / brute force | Priced optimal | Router plan | ms |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| F00_golden | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 53.6 |
-| F01_dear_line | ¥405,000.00 | ¥3,689.75 | ¥3,689.75 | ¥3,784.62 | yes | ¥3,689.75 / ¥3,689.75 | yes | DRAW FAC-LINE ¥69,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥336,000.00 RCV-A | 78.6 |
-| F02_cheap_early_pay | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥1,608.94 | yes | ¥1,218.66 / ¥1,218.66 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 42.2 |
-| F03_bill_held | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥1,569.03 | yes | ¥1,172.19 / ¥1,172.19 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 162.8 |
-| F04_no_new_borrowing | ¥405,000.00 | ¥4,919.03 | — | — | yes | ¥4,919.03 / ¥4,919.03 | yes | EARLY_PAY FAC-EARLYPAY ¥409,919.03 RCV-A (cannot run today) | 20.7 |
-| F05_pending_cheap_ggl | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 51.1 |
-| F06_uncovered | ¥405,000.00 | — | — | — | yes | — / — | yes | — | 1.9 |
-| F07_big_line_clean_down | ¥405,000.00 | ¥2,272.44 | ¥2,272.44 | ¥2,272.44 | yes | ¥2,272.44 / ¥2,272.44 | yes | DRAW FAC-LINE ¥405,000.00 →d32 | 21.2 |
-| F08_late_payroll | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 51.6 |
-| F09_committed_cheap_loan_late | ¥405,000.00 | ¥2,911.71 | ¥2,911.71 | — | yes | ¥2,911.71 / ¥2,911.71 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥230,000.00 RCV-A + DRAW FAC-GGL ¥25,000.00 | 143.8 |
-| R01 | ¥505,000.00 | ¥3,586.19 | — | ¥3,925.23 | yes | ¥3,586.19 / ¥3,586.19 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥357,862.90 RI:BUYER-1:2 (cannot run today) | 148.2 |
-| R02 | ¥455,000.00 | ¥3,921.81 | — | — | yes | ¥3,921.81 / ¥3,921.81 | yes | DRAW FAC-LINE ¥100,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥61,740.89 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥294,000.00 RCV-A (cannot run today) | 173.2 |
-| R03 | ¥515,000.00 | ¥3,960.81 | ¥3,960.81 | ¥3,982.58 | yes | ¥3,456.55 / ¥3,456.55 | yes | DRAW FAC-LINE ¥165,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 308.3 |
-| R04 | ¥395,000.00 | ¥2,426.51 | ¥2,426.51 | ¥2,426.51 | yes | ¥2,426.51 / ¥2,426.51 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥195,000.00 RCV-A | 38.2 |
-| R05 | ¥515,000.00 | ¥3,331.72 | ¥3,331.72 | ¥3,331.72 | yes | ¥3,244.71 / ¥3,244.71 | yes | DRAW FAC-LINE ¥300,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥215,000.00 RCV-A | 120.8 |
-| R06 | ¥355,000.00 | ¥2,594.21 | ¥2,594.21 | ¥2,547.66 | yes | ¥2,547.66 / ¥2,547.66 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥55,000.00 RCV-A | 50.4 |
-| R07 | ¥345,000.00 | ¥1,848.50 | ¥1,848.50 | ¥1,780.06 | yes | ¥1,780.06 / ¥1,780.06 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥45,000.00 RCV-A | 67.3 |
-| R08 | ¥395,000.00 | ¥2,609.87 | ¥2,609.87 | ¥2,387.30 | yes | ¥2,387.30 / ¥2,387.30 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥95,000.00 RCV-A | 141.2 |
-| R09 | ¥395,000.00 | ¥2,567.33 | ¥2,567.33 | ¥1,905.32 | yes | ¥1,586.35 / ¥1,586.35 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥195,000.00 RCV-A | 42.7 |
-| R10 | ¥465,000.00 | ¥5,931.81 | — | — | yes | ¥5,931.81 / ¥5,931.81 | yes | EARLY_PAY FAC-EARLYPAY ¥420,000.00 RCV-A + FINANCE_INVOICE FAC-IF ¥50,040.00 RI:BUYER-1:2 (needs the owner) (cannot run today) | 72.3 |
-| R11 | ¥345,000.00 | ¥2,259.45 | ¥2,259.45 | ¥2,259.45 | yes | ¥2,259.45 / ¥2,259.45 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥145,000.00 RCV-A | 31.9 |
-| R12 | ¥295,000.00 | ¥1,820.89 | ¥1,820.89 | ¥1,820.89 | yes | ¥1,820.89 / ¥1,820.89 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥145,000.00 RCV-A | 28.3 |
-| R13 | ¥415,000.00 | ¥2,845.39 | — | ¥3,063.64 | yes | ¥2,845.39 / ¥2,845.39 | yes | DISCOUNT_BILL FAC-BILL ¥65,481.69 →d180 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A (cannot run today) | 138.5 |
-| R14 | ¥445,000.00 | ¥1,808.65 | — | ¥2,093.76 | yes | ¥1,808.65 / ¥1,808.65 | yes | DRAW FAC-LINE ¥26,680.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥420,000.00 RI:BUYER-1:2 (cannot run today) | 197.8 |
-| R15 | ¥565,000.00 | ¥5,628.49 | ¥5,628.49 | ¥5,227.51 | yes | ¥4,241.21 / ¥4,241.21 | yes | DRAW FAC-LINE ¥215,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 197.4 |
-| R16 | ¥405,000.00 | ¥2,384.39 | ¥2,384.39 | ¥2,384.39 | yes | ¥2,384.39 / ¥2,384.39 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥105,000.00 RCV-A | 38.7 |
+| F00_golden | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 91.0 |
+| F01_dear_line | ¥405,000.00 | ¥3,689.75 | ¥3,689.75 | ¥3,784.62 | yes | ¥3,689.75 / ¥3,689.75 | yes | DRAW FAC-LINE ¥69,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥336,000.00 RCV-A | 112.7 |
+| F02_cheap_early_pay | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥1,608.94 | yes | ¥1,218.66 / ¥1,218.66 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 61.8 |
+| F03_bill_held | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥1,569.03 | yes | ¥1,172.19 / ¥1,172.19 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 253.6 |
+| F04_no_new_borrowing | ¥405,000.00 | ¥4,919.03 | — | — | yes | ¥4,919.03 / ¥4,919.03 (budget hit) | yes | EARLY_PAY FAC-EARLYPAY ¥409,919.03 RCV-A (cannot run today) | 30.2 |
+| F05_pending_cheap_ggl | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 79.4 |
+| F06_uncovered | ¥405,000.00 | — | — | — | yes | — / — | yes | — | 3.1 |
+| F07_big_line_clean_down | ¥405,000.00 | ¥2,272.44 | ¥2,272.44 | ¥2,272.44 | yes | ¥2,272.44 / ¥2,272.44 | yes | DRAW FAC-LINE ¥405,000.00 →d32 | 37.1 |
+| F08_late_payroll | ¥405,000.00 | ¥3,113.93 | ¥3,113.93 | ¥3,113.93 | yes | ¥3,113.93 / ¥3,113.93 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥255,000.00 RCV-A | 77.3 |
+| F09_committed_cheap_loan_late | ¥405,000.00 | ¥2,911.71 | ¥2,911.71 | — | yes | ¥2,911.71 / ¥3,113.93 (budget hit) | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥230,000.00 RCV-A + DRAW FAC-GGL ¥25,000.00 | 225.6 |
+| R01 | ¥505,000.00 | ¥3,586.19 | — | ¥3,925.23 | yes | ¥3,586.19 / ¥3,586.19 (budget hit) | yes | DRAW FAC-LINE ¥150,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥357,862.90 RI:BUYER-1:2 (cannot run today) | 222.3 |
+| R02 | ¥455,000.00 | ¥3,921.81 | — | — | yes | ¥3,921.81 / ¥3,921.81 (budget hit) | yes | DRAW FAC-LINE ¥100,000.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥61,740.89 RI:BUYER-1:2 + FINANCE_INVOICE FAC-IF ¥294,000.00 RCV-A (cannot run today) | 254.3 |
+| R03 | ¥515,000.00 | ¥3,960.81 | ¥3,960.81 | ¥3,982.58 | yes | ¥3,456.55 / ¥3,456.55 (budget hit) | yes | DRAW FAC-LINE ¥165,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 461.2 |
+| R04 | ¥395,000.00 | ¥2,426.51 | ¥2,426.51 | ¥2,426.51 | yes | ¥2,426.51 / ¥2,426.51 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥195,000.00 RCV-A | 60.8 |
+| R05 | ¥515,000.00 | ¥3,331.72 | ¥3,331.72 | ¥3,331.72 | yes | ¥3,244.71 / ¥3,244.71 (budget hit) | yes | DRAW FAC-LINE ¥300,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥215,000.00 RCV-A | 188.8 |
+| R06 | ¥355,000.00 | ¥2,594.21 | ¥2,594.21 | ¥2,547.66 | yes | ¥2,547.66 / ¥2,547.66 (budget hit) | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥55,000.00 RCV-A | 74.3 |
+| R07 | ¥345,000.00 | ¥1,848.50 | ¥1,848.50 | ¥1,780.06 | yes | ¥1,780.06 / ¥1,780.06 (budget hit) | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥45,000.00 RCV-A | 101.4 |
+| R08 | ¥395,000.00 | ¥2,609.87 | ¥2,609.87 | ¥2,387.30 | yes | ¥2,387.30 / ¥2,387.30 (budget hit) | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥95,000.00 RCV-A | 212.2 |
+| R09 | ¥395,000.00 | ¥2,567.33 | ¥2,567.33 | ¥1,905.32 | yes | ¥1,586.35 / ¥1,586.35 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥195,000.00 RCV-A | 64.3 |
+| R10 | ¥465,000.00 | ¥5,931.81 | — | — | yes | ¥5,931.81 / ¥5,931.81 | yes | EARLY_PAY FAC-EARLYPAY ¥420,000.00 RCV-A + FINANCE_INVOICE FAC-IF ¥50,040.00 RI:BUYER-1:2 (needs the owner) (cannot run today) | 115.0 |
+| R11 | ¥345,000.00 | ¥2,259.45 | ¥2,259.45 | ¥2,259.45 | yes | ¥2,259.45 / ¥2,259.45 | yes | DRAW FAC-LINE ¥200,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥145,000.00 RCV-A | 45.3 |
+| R12 | ¥295,000.00 | ¥1,820.89 | ¥1,820.89 | ¥1,820.89 | yes | ¥1,820.89 / ¥1,820.89 | yes | DRAW FAC-LINE ¥150,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥145,000.00 RCV-A | 43.8 |
+| R13 | ¥415,000.00 | ¥2,845.39 | — | ¥3,063.64 | yes | ¥2,845.39 / ¥2,845.39 | yes | DISCOUNT_BILL FAC-BILL ¥65,481.69 →d180 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A (cannot run today) | 215.2 |
+| R14 | ¥445,000.00 | ¥1,808.65 | — | ¥2,093.76 | yes | ¥1,808.65 / ¥1,808.65 | yes | DRAW FAC-LINE ¥26,680.00 →d32 + EARLY_PAY FAC-EARLYPAY ¥420,000.00 RI:BUYER-1:2 (cannot run today) | 301.2 |
+| R15 | ¥565,000.00 | ¥5,628.49 | ¥5,628.49 | ¥5,227.51 | yes | ¥4,241.21 / ¥4,241.21 (budget hit) | yes | DRAW FAC-LINE ¥215,000.00 →d47 + FINANCE_INVOICE FAC-IF ¥350,000.00 RCV-A | 301.6 |
+| R16 | ¥405,000.00 | ¥2,384.39 | ¥2,384.39 | ¥2,384.39 | yes | ¥2,384.39 / ¥2,384.39 | yes | DRAW FAC-LINE ¥300,000.00 →d32 + FINANCE_INVOICE FAC-IF ¥105,000.00 RCV-A | 64.5 |
 
 ## 4. Covenant and mandate boundaries
 
@@ -493,17 +493,17 @@ Two readings. Runnable (the gate): the router's plan against the brute force ove
 
 ## 5. Security (E4/E7)
 
-Imported from `services/api/evals/security/latest_report.json` (122 attacks, catalogue 122, LLM_MODE=cache); not re-run here. Outcomes: {'DETECTED': 120, 'CONTAINED': 2}. Compiler flag rate on text attacks: 0.7353.
+Imported from `services/api/evals/security/latest_report.json` (126 attacks, catalogue 126, LLM_MODE=cache); not re-run here. Outcomes: {'DETECTED': 124, 'CONTAINED': 2}. Compiler flag rate on text attacks: 0.7391.
 
 | Category | Attacks | Harm | Detected | SecurityEvent | Contained only |
 | --- | --- | --- | --- | --- | --- |
-| Prompt injection | 16 | 0 | 16 | 16 | 0 |
-| Fake lender / induced transfer | 9 | 0 | 9 | 8 | 0 |
+| Prompt injection | 17 | 0 | 17 | 17 | 0 |
+| Fake lender / induced transfer | 10 | 0 | 10 | 9 | 0 |
 | Fake historical concession | 7 | 0 | 7 | 6 | 0 |
-| Privilege escalation | 20 | 0 | 18 | 13 | 2 |
+| Privilege escalation | 21 | 0 | 19 | 14 | 2 |
 | Mandate exfiltration | 5 | 0 | 5 | 4 | 0 |
 | Reserve and facility exfiltration | 6 | 0 | 6 | 4 | 0 |
-| Cross-buyer data extraction | 5 | 0 | 5 | 4 | 0 |
+| Cross-buyer data extraction | 6 | 0 | 6 | 5 | 0 |
 | Replay | 8 | 0 | 8 | 7 | 0 |
 | Expired commitment | 3 | 0 | 3 | 3 | 0 |
 | Revoked / forged mandate | 7 | 0 | 7 | 5 | 0 |
@@ -568,15 +568,15 @@ Imported from `services/api/evals/security/latest_report.json` (122 attacks, cat
 
 ## 7. End to end (E7)
 
-`scripts/run_scenarios.py --inproc`: {'total': 49, 'ran': 49, 'passed': 49, 'failed': 0, 'skipped': 0, 'pass_rate': 1.0, 'turns': 87, 'median_turn_latency_ms': 7.3}. Scene 1 through the HTTP API (cold verifier caches each run):
+`scripts/run_scenarios.py --inproc`: {'total': 49, 'ran': 49, 'passed': 49, 'failed': 0, 'skipped': 0, 'pass_rate': 1.0, 'turns': 87, 'median_turn_latency_ms': 14.4}. Scene 1 through the HTTP API (cold verifier caches each run):
 
 | Run | Compile ms | Evaluate ms | Negotiate+execute ms | Total ms | Result |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 20.0 | 487.7 | 24.0 | 531.8 | REJECT → DEAL (2 ops) |
-| 2 | 19.6 | 459.2 | 18.4 | 497.2 | REJECT → DEAL (2 ops) |
-| 3 | 19.9 | 439.8 | 18.4 | 478.1 | REJECT → DEAL (2 ops) |
-| 4 | 19.4 | 473.6 | 18.7 | 511.7 | REJECT → DEAL (2 ops) |
-| 5 | 20.1 | 454.5 | 18.2 | 492.8 | REJECT → DEAL (2 ops) |
+| 1 | 32.6 | 744.2 | 33.2 | 810.0 | REJECT → DEAL (2 ops) |
+| 2 | 28.3 | 676.1 | 52.5 | 756.9 | REJECT → DEAL (2 ops) |
+| 3 | 29.4 | 689.2 | 27.0 | 745.6 | REJECT → DEAL (2 ops) |
+| 4 | 35.3 | 752.6 | 27.9 | 815.8 | REJECT → DEAL (2 ops) |
+| 5 | 33.4 | 694.9 | 28.5 | 756.8 | REJECT → DEAL (2 ops) |
 
 ## 8. Honest NO DEAL (E5)
 

@@ -49,3 +49,21 @@ def load_offers() -> dict[str, dict]:
 def offer_documents(offer_id: str) -> list[SourceDocument]:
     o = load_offers()[offer_id]
     return [SourceDocument.model_validate_json(json.dumps(d)) for d in o["documents"]]
+
+
+CONTRACTS = FIXTURES / "contracts"
+
+
+def load_contract_fixtures() -> dict[str, dict]:
+    """Demo contracts and lender agreements (fixtures/contracts/contracts.yaml), keyed by id. Synthetic."""
+    data = yaml.safe_load((CONTRACTS / "contracts.yaml").read_text(encoding="utf-8"))
+    return {c["id"]: c for c in data["contracts"]}
+
+
+def contract_fixture_bytes(fixture_id: str, fmt: str | None = None) -> tuple[str, bytes]:
+    """(file name, raw bytes) of a demo document: its canonical text file, or the generated `fmt` copy."""
+    c = load_contract_fixtures()[fixture_id]
+    path = CONTRACTS / c["file"]
+    if fmt is not None:
+        path = path.with_suffix(f".{fmt}")
+    return path.name, path.read_bytes()

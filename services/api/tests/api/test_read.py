@@ -14,10 +14,12 @@ def test_baseline_trajectory_breaches_day_12(client):
     assert next(d for d in t["days"] if d["day"] == 12)["closing"]["text"] == "¥60,000.00"
 
 
-def test_ledger_empty_and_chain_valid_after_reset(client):
+def test_ledger_holds_only_the_demo_document_confirmations_after_reset(client):
     client.post("/demo/reset")
     body = client.get("/ledger").json()
-    assert body["chain_valid"] and body["operations"] == [] and body["chain_length"] == 0
+    # The demo opens on the three demo documents confirmed by the owner (test_demo_documents.py); nothing else is logged.
+    assert body["chain_valid"] and body["chain_length"] == 3
+    assert [o["kind"] for o in body["operations"]] == ["CONFIRM_DOCUMENT"] * 3
 
 
 def test_post_offer_fixture_compiles_three_obligations(client):
