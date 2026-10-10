@@ -1048,7 +1048,14 @@ export interface CapexRequest {
 
 /** POST /capex/evaluate: side-effect free, writes nothing. */
 export type CapexView = Displayed<{
-  request: CapexRequest;
+  /** The request as the server read it, with its defaults filled in and their display strings. */
+  request: CapexRequest & {
+    monthly_uplift_display?: string;
+    uplift_start_month?: number;
+    life_months?: number;
+    hurdle_display?: string;
+    payback_limit_months?: number;
+  };
   npv_fen: Fen;
   /** null: no payback within the life. */
   payback_month: number | null;

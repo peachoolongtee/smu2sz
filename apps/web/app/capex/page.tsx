@@ -11,6 +11,7 @@ import { idsToNames, localNames, plainDays, sentenceCase } from "@/lib/business-
 import { useAsync } from "@/lib/use-async";
 import { runBorrowerFile, runCapex, runCapexApply } from "@/lib/demo";
 import { useDemo } from "@/lib/demo-store";
+import type { DictKey } from "@/lib/dictionary";
 import { useI18n, type I18n } from "@/lib/i18n";
 import type { CapexStructure } from "@/lib/types";
 
@@ -137,17 +138,47 @@ export default function CapexPage() {
               ))}
             </dl>
             <Disclosure summary={t("biz.capex.basis")} className="border-t border-line px-5">
-              <div className="space-y-2 text-sm text-ink-2">
-                {capex.estimate_note ? <p>{capex.estimate_note}</p> : null}
-                {capex.assumptions?.length ? (
-                  <ul className="list-disc space-y-1 pl-5" data-testid="capex-assumptions">
+              {/* The basis in short: a heading and one line each, every figure the server's; the server's full wording one tap away. */}
+              <ul className="space-y-3 text-sm" data-testid="capex-basis">
+                {(
+                  [
+                    capex.request.hurdle_display && capex.request.payback_limit_months
+                      ? ["biz.capex.basis.worth", t("biz.capex.basis.worth.sub", { hurdle: capex.request.hurdle_display, n: capex.request.payback_limit_months })]
+                      : null,
+                    capex.request.monthly_uplift_display && capex.request.uplift_start_month && capex.request.life_months
+                      ? [
+                          "biz.capex.basis.estimate",
+                          t("biz.capex.basis.estimate.sub", { amount: capex.request.monthly_uplift_display, from: capex.request.uplift_start_month, to: capex.request.life_months }),
+                        ]
+                      : capex.estimate_note
+                        ? ["biz.capex.basis.estimate", capex.estimate_note]
+                        : null,
+                    ["biz.capex.basis.cheapest", t("biz.capex.basis.cheapest.sub")],
+                    ["biz.capex.basis.terms", t("biz.capex.basis.terms.sub")],
+                    ["biz.capex.basis.cash", t("biz.capex.basis.cash.sub")],
+                    ["biz.capex.basis.debt", t("biz.capex.basis.debt.sub")],
+                    ["biz.capex.basis.rates", t("biz.capex.basis.rates.sub")],
+                  ] as ([DictKey, string] | null)[]
+                )
+                  .filter((x): x is [DictKey, string] => x !== null)
+                  .map(([key, sub]) => (
+                    <li key={key}>
+                      <p className="font-semibold text-ink">{t(key)}</p>
+                      <p className="mt-0.5 text-ink-3">{sub}</p>
+                    </li>
+                  ))}
+              </ul>
+              {capex.assumptions?.length ? (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.capex.basis.full")}</summary>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs text-ink-2" data-testid="capex-assumptions">
                     {capex.assumptions.map((a) => (
                       <li key={a}>{a}</li>
                     ))}
                   </ul>
-                ) : null}
-                {capex.as_of_day !== undefined ? <p className="text-xs text-ink-3" data-testid="capex-as-of">{t("capex.asOf", { day: capex.as_of_day })}</p> : null}
-              </div>
+                </details>
+              ) : null}
+              {capex.as_of_day !== undefined ? <p className="mt-3 text-xs text-ink-3" data-testid="capex-as-of">{t("capex.asOf", { day: capex.as_of_day })}</p> : null}
             </Disclosure>
           </BizCard>
 
