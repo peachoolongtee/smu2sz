@@ -1,0 +1,91 @@
+{
+  "probe": "f02-ledger",
+  "request": {
+    "method": "GET",
+    "path": "/ledger",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "commitments": [
+      {
+        "id": "CMT-a0780e3bd50adfc8",
+        "offer_id": "OFF-c7fbf1dcb9b2",
+        "offer_version": 1,
+        "counterparty_id": "BUYER-1",
+        "verdict_id": "VER-e65cb16ac4fe",
+        "terms_hash": "bffa5c1fbba00868269fb2806b828a609afc8e564078989e581aa2881c49dfa4",
+        "obligations": [
+          {
+            "id": "OFF-c7fbf1dcb9b2-O1",
+            "type": "IMMEDIATE_DISCOUNT",
+            "counterparty_id": "BUYER-1",
+            "rate_bp": 50,
+            "amount_fen": null,
+            "days_delta": null,
+            "target_terms_days": null,
+            "effective_day": 2,
+            "base": {
+              "kind": "INVOICE",
+              "amount_fen": 42000000,
+              "receivable_id": "RCV-A",
+              "events_per_year": null,
+              "amount_display": "¥420,000.00"
+            },
+            "contingency": "FIRM",
+            "duration": {
+              "kind": "ONE_OFF",
+              "invoices": null,
+              "end_day": null
+            },
+            "spans": [
+              {
+                "doc_id": "NL-f02-t1",
+                "start": 7,
+                "end": 36,
+                "text": "pay the invoice early at 0.5%"
+              }
+            ],
+            "confidence": 0.9,
+            "unresolved": [],
+            "rate_display": "0.50%"
+          }
+        ],
+        "status": "PROPOSED",
+        "nonce": "nln-3b471747966b9eb46dbec18f1a9513fd",
+        "expires_day": 14,
+        "mandate_version": 1,
+        "forward_value_fen": 0,
+        "forward_value_display": "¥0.00"
+      }
+    ],
+    "operations": [
+      {
+        "approval_id": "APR-000001",
+        "effective_day": 0,
+        "entry_hash": "9568cf44b849af5daa4960246e780b2eea69598e9c08e55c4fae9d9fd597b9da",
+        "kind": "ACCEPT_OFFER",
+        "message": "Queued for owner approval (APR-000001): the verdict requires owner approval",
+        "op_id": "NL-e2f5a678972b6bd2",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "seq": 1,
+        "status": "PENDING_APPROVAL",
+        "tier": "TIER_2",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Queued for owner approval (APR-000001): the verdict requires owner approval",
+        "message_when": "Queued for owner approval (APR-000001): the verdict requires owner approval",
+        "event_text": "Queued for owner approval (APR-000001): the verdict requires owner approval",
+        "event_detail": null
+      }
+    ],
+    "chain_valid": true,
+    "chain_length": 1,
+    "head_hash": "9568cf44b849af5daa4960246e780b2eea69598e9c08e55c4fae9d9fd597b9da"
+  }
+}

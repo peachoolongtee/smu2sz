@@ -152,7 +152,7 @@ export default function LedgerPage() {
             ) : audit.data.events.length || audit.data.refusals.length ? (
               <ul className="space-y-3">
                 {audit.data.refusals.map((o) => (
-                  <li key={`${o.seq}-${o.op_id}`} className="rounded-lg border border-bad-line p-3">
+                  <li key={`${o.seq}-${o.op_id}`} className="rounded-tile border border-bad-line p-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <OpStatusBadge status={o.status} />
                       <span className="text-sm font-medium">{te("opkind", o.kind)}</span>
@@ -161,7 +161,7 @@ export default function LedgerPage() {
                   </li>
                 ))}
                 {audit.data.events.map((e) => (
-                  <li key={e.id} className="rounded-lg border border-bad-line p-3">
+                  <li key={e.id} className="rounded-tile border border-bad-line p-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <CodeBadge code={e.kind} tone="bad" />
                       <span className="text-sm">{e.action_taken}</span>

@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { OperationList } from "@/components/chat/assistant-turn";
-import { approvalHref, OperationResultBox } from "@/components/operation-result";
-import { Badge, Button, ErrorState } from "@/components/ui";
+import { approvalHref } from "@/components/operation-result";
+import { Badge, Button, ErrorState, SlowNotice } from "@/components/ui";
 import { actOnAlert, alertChanged, ApiError, getApprovals, getMandate } from "@/lib/api";
-import { idsToNames, plainDays } from "@/lib/business-words";
+import { isTimeout } from "@/lib/errors";
 import { bump } from "@/lib/demo-store";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useAsync } from "@/lib/use-async";
+import { useBusinessShell } from "@/lib/use-business-today";
 import type { AlertActResult, AlertChangedDetail, AlertItem, ApprovalView, SuggestedOperation } from "@/lib/types";
 
 /** Information alerts: nothing to press. FUNDING_IN_TRANSIT lands by itself; renewing a mandate is an offline owner step. */
@@ -29,19 +31,33 @@ export function useFixAlert(onDone?: () => void) {
   const [result, setResult] = useState<AlertActResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState<AlertChangedDetail | null>(null);
+  // The act ran out of time: it may have landed. Retry reads the books again first (`recheck`) and sends nothing; the page then offers the
+  // action again only if it is still there (a plan that ran leaves the alert, or waits for approval).
+  const [slow, setSlow] = useState(false);
+  const [rechecked, setRechecked] = useState(false);
+
+  /** Reads the affected state again (the alerts, the queue, the home), then leaves the owner to decide from what is now true. */
+  function recheck() {
+    setSlow(false);
+    setRechecked(true);
+    bump();
+  }
 
   async function fix(alert: AlertItem, stateVersion: number) {
     setBusyId(alert.id);
     setError(null);
     setResult(null);
     setChanged(null);
+    setSlow(false);
+    setRechecked(false);
     try {
       setResult(await actOnAlert(alert, stateVersion));
     } catch (e) {
       const moved = alertChanged(e);
-      if (moved) setChanged(moved);
+      if (isTimeout(e)) setSlow(true);
+      else if (moved) setChanged(moved);
       else if (e instanceof ApiError && (e.status === 404 || e.status === 409) && !isWriteConflictDetail(e.detail)) setError(t(e.status === 404 ? "alerts.fix.err.404" : "alerts.fix.err.409"));
-      else setError(e instanceof Error ? e.message : String(e));
+      else setError(errorText(e, t));
     } finally {
       setBusyId(null);
       bump();
@@ -49,7 +65,7 @@ export function useFixAlert(onDone?: () => void) {
     }
   }
 
-  return { busyId, result, error, changed, fix };
+  return { busyId, result, error, changed, fix, slow, rechecked, recheck };
 }
 
 /** What a suggested cure costs, in the server's words: the cost, the formula (which carries the yearly rate) and, when the cost is above the ceiling, that the owner must approve it. Nothing when the server sent no cost. */
@@ -78,7 +94,8 @@ export function ZeroFloorNote({ alert }: { alert: AlertItem }) {
 
 /** What the alert cards need besides the alerts: the approvals queue (to find a cure waiting for the owner) and the yearly cost ceiling. A failed read only hides that extra. */
 export function useAlertContext(): { approvals: ApprovalView[] | undefined; cap: string | undefined } {
-  const approvals = useAsync(getApprovals, []);
+  const { lang } = useI18n();
+  const approvals = useAsync(getApprovals, [lang]);
   const mandate = useAsync(getMandate, []);
   return { approvals: approvals.data, cap: mandate.data?.mandate.max_apr_display };
 }
@@ -119,7 +136,7 @@ export function AlertCure({
   const waiting = pendingApprovalFor(alert, approvals);
   if (waiting) {
     return (
-      <div className="mt-2 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
+      <div className="mt-2 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
         <p className="font-semibold">{t("alerts.waiting", { id: waiting.id })}</p>
         <p className="mt-0.5">{t("alerts.waiting.body")}</p>
         <Link href={approvalHref(waiting.id)} className="mt-1 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${alert.id}`}>
@@ -159,69 +176,51 @@ export function FixButton({ alertId, busyId, onFix }: { alertId: string; busyId:
 }
 
 /**
- * The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether
- * the alert is gone. With `plain` (the Business pages) the counts that are zero, the tier, the sequence number and the hash
- * are left out, and the executor's sentence speaks in names and distances from today.
+ * The executor's answer: how many ran, waited for approval or were refused, each operation with its message, and whether the
+ * alert is gone. On a Business page each operation's message is the server's `message_when` (names, the owner's words,
+ * distances from today) when the API sent one; the Demo views keep the executor's sentence.
  */
 export function FixResult({
   result,
   error,
   changed,
-  plain,
+  slow = false,
+  rechecked = false,
+  onRecheck,
 }: {
   result: AlertActResult | null;
   error: string | null;
   changed?: AlertChangedDetail | null;
-  plain?: { today: number; names: { id: string; name: string }[] };
+  /** The act ran out of time: it may have landed, so Retry (`onRecheck`) reads the state first. */
+  slow?: boolean;
+  /** The state was read again after a timeout: say so, so a missing result is not read as a success. */
+  rechecked?: boolean;
+  onRecheck?: () => void;
 }) {
-  const { t, te } = useI18n();
-  const ref = useRef<HTMLElement>(null);
-  // The action that was pressed leaves the page once it has run; bring its answer into view instead of leaving the reader lost.
-  useEffect(() => {
-    if (result) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [result]);
+  const { t } = useI18n();
+  const business = useBusinessShell();
+  if (slow) return <SlowNotice message={t("err.timeout_write")} onRetry={onRecheck} />;
+  if (rechecked && !result && !changed && !error) return <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">{t("biz.slow.checked")}</p>;
   if (changed) return <AlertChanged changed={changed} />;
   if (error) {
     return (
-      <div className="mt-3">
-        <ErrorState error={error} />
-      </div>
+      <ErrorState error={error} />
     );
   }
   if (!result) return null;
-  const counts = [
-    { n: result.executed, tone: "ok" as const, key: "alerts.fix.executed" as const },
-    { n: result.pending_approval, tone: "warn" as const, key: "alerts.fix.pending" as const },
-    { n: result.refused, tone: "bad" as const, key: "alerts.fix.refused" as const },
-  ];
+  // The one thing that happened is "it waits for your approval": the next-step tile and the decision row already say that, once each.
+  if (business && result.pending_approval && !result.executed && !result.refused) return null;
   return (
-    <section ref={ref} aria-label={t("alerts.fix.title")} className="mt-3 scroll-mt-24 space-y-2 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card)" data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className="space-y-2 rounded-card border border-line bg-surface p-4 shadow-card" data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.fix.title")}</h3>
-        {counts.map((c) =>
-          plain && !c.n ? null : (
-            <Badge key={c.key} tone={c.n ? c.tone : "neutral"}>
-              {t(c.key, { n: c.n })}
-            </Badge>
-          ),
-        )}
+        <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
+        {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
+        {!business || result.executed ? <Badge tone={result.executed ? "ok" : "neutral"}>{t("alerts.fix.executed", { n: result.executed })}</Badge> : null}
+        {!business || result.pending_approval ? <Badge tone={result.pending_approval ? "warn" : "neutral"}>{t("alerts.fix.pending", { n: result.pending_approval })}</Badge> : null}
+        {!business || result.refused ? <Badge tone={result.refused ? "bad" : "neutral"}>{t("alerts.fix.refused", { n: result.refused })}</Badge> : null}
       </div>
-      {plain ? (
-        <ul className="space-y-2" data-testid="chat-ops">
-          {result.results.map((o) => (
-            <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
-              <OperationResultBox status={o.status} message={o.status === "PENDING_APPROVAL" ? "" : plainDays(idsToNames(o.message, plain.names), plain.today, t)} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
-                <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              </OperationResultBox>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <OperationList operations={result.results} />
-      )}
-      <p className="text-xs text-ink-2">
-        {result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}
-      </p>
+      <OperationList operations={result.results} business={business} />
+      <p className="text-sm text-ink" data-testid="fix-outcome">{result.cured ? t("alerts.fix.cured") : result.pending_approval ? t("alerts.waiting.body") : t("alerts.fix.notCured")}</p>
     </section>
   );
 }
@@ -236,14 +235,14 @@ function AlertChanged({ changed }: { changed: AlertChangedDetail }) {
   return (
     <section
       aria-label={t("alerts.changed.title")}
-      className="mt-3 space-y-2 rounded-lg border border-warn-line bg-warn-bg p-3 text-warn-fg"
+      className="mt-3 space-y-2 rounded-tile border border-warn-line bg-warn-bg p-3 text-warn-fg"
       role="alert"
       data-testid="fix-changed"
     >
       <h3 className="text-sm font-semibold">{t("alerts.changed.title")}</h3>
       <p className="text-xs">{t("alerts.changed.body")}</p>
       {now ? (
-        <div className="rounded-md border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">
+        <div className="rounded-tile border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.changed.now")}</p>
           <p className="mt-1 text-sm font-medium">{now.title}</p>
           <p className="mt-1 break-words text-xs text-ink-2">{now.detail}</p>

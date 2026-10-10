@@ -26,9 +26,10 @@ from app.domain.models import (
     SignPersonalGuarantee,
 )
 from app.domain.ports import LedgerStore
+from app.nl import binding as page
+from app.nl import business, landing, plans, reads
 from app.nl import capabilities as cap
 from app.nl import classifier as clf
-from app.nl import landing, plans
 from app.nl import lexicon as lx
 from app.nl.alerts import alerts_intent, alerts_turn, confirm_cure
 from app.nl.context import NlContext
@@ -95,7 +96,7 @@ class _TurnContext(NlContext):
 def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, owner_key_hex: str,
            owner_authenticated: bool, sessions: SessionStore = SESSIONS,
            classifier_backends: Sequence[clf.IntentBackend] | None = None,
-           verdict_extras: VerdictExtras | None = None) -> NlResponse:
+           verdict_extras: VerdictExtras | None = None, owner_reads: page.OwnerReads | None = None) -> NlResponse:
     session, _new = sessions.get_or_create(req.session_id, req.actor,
                                            owner_auth=owner_authenticated and req.actor == "OWNER")
     session.turn += 1
@@ -108,6 +109,11 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     ctx = _TurnContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex,
                        owner_authenticated=owner_authenticated and req.actor == "OWNER", session=session, lang=lang,
                        trace_id=f"{session.id}:{session.turn}", request_id=req.request_id, extras=verdict_extras)
+    if ctx.owner_authenticated:  # the page's context and the Home read are lent to the owner's turn only
+        ctx.reads = owner_reads
+        ctx.binding = page.resolve(store, req.context, day=day, state=store.get_state(),
+                                   latest_verdict=owner_reads.latest_verdict if owner_reads is not None else None)
+        page.apply(session, ctx.binding)
 
     before = {e.id for e in store.security_events()}
     if req.request_id and req.request_id in session.requests:
@@ -126,6 +132,8 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         if turn.pending.intent == Intent.NEGOTIATE:
             turn.pending.data["followups"] = _followups(ctx, turn.pending.data.get("verdict_id"))
             turn.pending.data["zero_forward"] = isinstance(ctx, _TurnContext) and ctx.zero_forward  # as it was shown
+    if req.actor == "OWNER":
+        turn = business.rewrite(ctx, turn)  # Business words for the owner's reply when the request asked for them
     if not turn.guarded:
         turn.reply, _ok = ctx.guard(turn.reply, turn.recipient, allow=turn.allow)
     _update_session(session, turn)
@@ -256,7 +264,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
-    if p.intent in cap.OWNER_ONLY and not ctx.owner_authenticated:
+    if (p.intent in cap.OWNER_ONLY or p.intent == Intent.CHANGES or {"waiting", "arrival"} & set(p.matched)) \
+            and not ctx.owner_authenticated:
         return cap.needs_sign_in(ctx, p.intent)
     match p.intent:
         case Intent.EVALUATE_OFFER:
@@ -271,7 +280,13 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.REPAY_FACILITY:
             return repay(ctx, slots, execute=slots.execute_now and not llm)
         case Intent.SHOW_STATUS:
+            if "waiting" in p.matched:
+                return reads.waiting(ctx)
+            if "arrival" in p.matched:
+                return reads.arrival(ctx)
             return status(ctx)
+        case Intent.CHANGES:
+            return reads.changes(ctx)
         case Intent.RECORD_FACT:
             return cap.record_fact(ctx, slots)
         case Intent.SHOW_ALERTS:
@@ -279,7 +294,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
         case Intent.COMPARE_FINANCING:
             return cap.compare_financing(ctx)
         case Intent.RECONCILE:
-            return cap.reconcile_receipts(ctx)
+            return reads.receivables(ctx) if "overdue" in p.matched else cap.reconcile_receipts(ctx)
         case Intent.SHOW_RATIOS:
             return cap.show_ratios(ctx)
         case Intent.CAPEX:
@@ -615,9 +630,11 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
     try:
         r: OperationResult = ctx.executor.decide(aid, approve, actor)
     except NotFound:
-        return Turn(intent=intent, reply=t(ctx, f"{aid} is not in the approvals queue.", f"{aid} 不在审批队列中。"))
+        return Turn(intent=intent, facts={"approval": "unknown", "id": aid},
+                    reply=t(ctx, f"{aid} is not in the approvals queue.", f"{aid} 不在审批队列中。"))
     except ApprovalAlreadyDecided:
-        return Turn(intent=intent, reply=t(ctx, f"{aid} was already decided.", f"{aid} 已处理。"))
+        return Turn(intent=intent, facts={"approval": "already", "id": aid},
+                    reply=t(ctx, f"{aid} was already decided.", f"{aid} 已处理。"))
     ctx.results.append(r)
     verb = t(ctx, "Approve", "批准") if approve else t(ctx, "Decline", "驳回")
     steps.result("DECIDE_APPROVAL", f"{verb} {aid} ({r.kind})", r)
@@ -632,7 +649,10 @@ def _decide_approval(ctx: NlContext, slots: Slots, approve: bool, text: str = ""
         rest = [a for a in _pending_approvals(ctx) if a.id != aid]
         if rest:
             reply += t(ctx, " Still waiting for your decision: ", " 仍待您审批：") + "; ".join(f"{a.id} ({a.reason})" for a in rest)
-    return Turn(intent=intent, reply=reply, plan=steps.items)
+    typed = parse_operation(rec.op_json) if rec is not None else None  # None for a payload the parser does not know
+    facts = {"approval": "decided", "id": aid, "approve": approve, "owner": actor == Actor.OWNER, "status": r.status, "op": typed,
+             "message": r.message}
+    return Turn(intent=intent, reply=reply, plan=steps.items, facts=facts)
 
 
 TIER3_OPS = {"SIGN_PERSONAL_GUARANTEE": SignPersonalGuarantee, "PLEDGE_COLLATERAL": PledgeCollateral,
@@ -659,6 +679,8 @@ def _out_of_scope(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
             ctx, f"Refused: {kind.replace('_', ' ').lower()} is a Tier-3 action. The agent can never do it, whoever "
                  f"asks; it was refused by the executor and logged. " + CAPABILITIES_EN,
             f"已拒绝：{kind} 属于三级操作，代理在任何情况下都不能执行；执行器已拒绝并记录。" + CAPABILITIES_ZH))
+    if ctx.owner_authenticated and lx.READ_QUESTION.search(text.strip()) and cap.closest_capability(text) is None:
+        return reads.recovery(ctx)  # an ordinary question with no read: one way forward, not every capability
     return cap.nearest_reply(ctx, text, CAPABILITIES_EN, CAPABILITIES_ZH)
 
 
@@ -712,4 +734,5 @@ def _response(ctx: NlContext, turn: Turn, parse_source: str, before: set[str],
         plan=turn.plan, verdict=verdict,
         operations=[r.model_dump(mode="json") for r in ctx.results], clarification=turn.clarification,
         awaiting_confirmation=turn.awaiting, amended=turn.amended, replayed=replayed, negotiation=turn.negotiation,
-        security_events=events, parse_source=parse_source, trace_id=ctx.trace_id)
+        security_events=events, parse_source=parse_source, trace_id=ctx.trace_id,
+        context_echo=ctx.binding.echo if ctx.binding is not None else None)

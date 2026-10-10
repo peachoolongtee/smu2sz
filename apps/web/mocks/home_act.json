@@ -1,6 +1,9 @@
 {
   "alert_id": "ALERT-RESERVE-42",
+  "decision_id": "alert:ALERT-RESERVE-42:v7",
+  "decision_recorded": true,
   "day": 34,
+  "lang": "en",
   "results": [
     {
       "op_id": "alert:ALERT-RESERVE-42:v7:0",
@@ -13,7 +16,10 @@
       "prev_hash": "ba361ee60b03593a7bc5c080530de6dc6eff9bcb06da3e0d113ae01adb9c7f6e",
       "effective_day": 34,
       "approval_id": "APR-000001",
-      "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)"
+      "message": "Queued for owner approval (APR-000001): effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 to day 47), annualised = 32.52%)",
+      "message_when": "Queued for owner approval (APR-000001): the yearly cost of 32.52% is above the 15.00% limit you signed for funding without your approval (all charges on ¥200,000.00 held 10 days (from in 3 days to in 13 days), annualised = 32.52%)",
+      "event_text": "Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
+      "event_detail": null
     }
   ],
   "executed": 0,

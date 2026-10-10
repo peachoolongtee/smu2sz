@@ -10,7 +10,8 @@ const contingencyTone: Record<Contingency, Tone> = { FIRM: "ok", CONTINGENT: "wa
 
 export function NumberChip({ n }: { n: number }) {
   return (
-    <span className="grid size-5 shrink-0 place-items-center rounded bg-ink text-[0.7rem] font-bold text-white" aria-label={`#${n}`}>
+    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-ink text-xs font-bold text-white">
+      <span className="sr-only">#</span>
       {n}
     </span>
   );
@@ -20,7 +21,7 @@ export function KindChip({ item }: { item: OfferItem }) {
   const { te } = useI18n();
   const label = item.group === "obligation" ? te("obligation", item.kind) : te("flag", item.kind);
   return (
-    <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-semibold ${ANNOTATION_STYLE[item.kind].chip}`}>
+    <span className={`inline-flex items-center rounded-pill border px-2 py-0.5 text-xs font-semibold ${ANNOTATION_STYLE[item.kind].chip}`}>
       {label}
     </span>
   );
@@ -90,7 +91,7 @@ export function OfferItemCard({
     <li
       onMouseEnter={() => onActivate(item.id)}
       onMouseLeave={() => onActivate(null)}
-      className={`rounded-lg border bg-surface p-3 ${active ? "border-ink ring-2 ring-ink/15" : "border-line"}`}
+      className={`rounded-tile border bg-surface p-3 ${active ? "border-ink ring-2 ring-ink/15" : "border-line"}`}
       data-testid={`item-${item.id}`}
     >
       <div className="flex flex-wrap items-center gap-2">

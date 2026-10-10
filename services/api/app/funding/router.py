@@ -306,13 +306,17 @@ def _row(alt: Alternative, search: Search, result: ComparisonResult) -> Comparis
     cost = ev.cost if ev is not None else None
     lines = search.cost_lines(ev) if ev is not None else []
     return ComparisonRow(
-        key=alt.key, label=alt.label, components=alt.components, actions=alt.actions, cost_fen=cost,
+        # the legs carry the day they become eligible and the day the cash lands (display stamps, as on the plan)
+        key=alt.key, label=alt.label, components=alt.components, actions=_with_landing(search, alt.actions), cost_fen=cost,
         cost_display=cost_display(lines, cost), result=result, reasons=alt.reasons,
         breach_day=ev.breach_day if ev is not None else None, note=_note(alt, search) if result != ComparisonResult.SELECTED else "",
         needs_owner_approval=ev is not None and ev.needs_approval, approval_reason=approval_text(search, ev),
         executable_now=ev is None or not ev.unrunnable,
+        not_executable_reason=unrunnable_text(search, ev),
+
         shortfall_fen=ev.shortfall if ev is not None and ev.breach_day is not None else None,
         worst_day=_worst_day(ev, search),
+        leg_costs_fen=[c.fen for c in lines],
     )
 
 

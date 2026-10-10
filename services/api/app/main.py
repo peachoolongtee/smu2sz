@@ -11,15 +11,20 @@ from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
+from app.api.collections import router as collections_router
 from app.api.deals import router as deals_router
 from app.api.decide import router as decide_router
+from app.api.decisions import router as decisions_router
+from app.api.demo_bank import router as demo_bank_router
 from app.api.documents import router as documents_router
 from app.api.errors import install_error_handlers
 from app.api.home import router as home_router
 from app.api.nl import router as nl_router
 from app.api.offers import router as offers_router
 from app.api.operations import router as operations_router
+from app.api.pilot import router as pilot_router
 from app.api.read import router as read_router
+from app.api.strategy import router as strategy_router
 from app.api.whatif import router as whatif_router
 from app.config import get_settings, load_dotenv
 
@@ -38,13 +43,18 @@ app.include_router(read_router)
 app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)
+app.include_router(decisions_router)
 app.include_router(capex_router)
 app.include_router(whatif_router)
 app.include_router(borrower_file_router)
 app.include_router(alerts_router)
 app.include_router(nl_router)
 app.include_router(clock_router)
+app.include_router(demo_bank_router)
 app.include_router(home_router)
+app.include_router(strategy_router)
+app.include_router(pilot_router)
+app.include_router(collections_router)
 app.include_router(documents_router)
 app.include_router(deals_router)
 

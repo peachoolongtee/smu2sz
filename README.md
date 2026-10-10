@@ -8,7 +8,7 @@ All data is synthetic (`fixtures/`). This is a simulation: the agent is decision
 
 ## Quickstart for judges
 
-Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); for the web app, Node with `pnpm`. Run everything from the repository root.
+Requirements: Python 3.12 with [`uv`](https://docs.astral.sh/uv/); for the web app, Node with `pnpm`. Open a terminal at the repository root. The step 1 command runs from the root; the commands in steps 2 and 3 that start with `cd` run from that directory, and the others run from the root.
 
 **1. Verify the submitted evidence** (standard library only, no install):
 
@@ -18,23 +18,32 @@ for f in services/api/evals/e2e/latest/evidence/*.jsonl; do python3 scripts/veri
 
 Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's hash chain; the script recomputes every `entry_hash = sha256(prev_hash + payload_json + result_json)`. (The concatenated `evidence.jsonl` holds 49 separate chains, so verify the per-task files.)
 
-**2. Run it.**
+**2. Run it.** Two servers, one terminal each, both starting at the repository root:
 
 ```bash
 cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
 ```
 
+- **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db` with the command above; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).
+- **A repo-root `.env`.** The API reads `.env` at the repository root if one exists, and fills in only what the shell has not set. Set `TERMSLEDGER_NO_DOTENV=1` to skip it (the tests and the e2e config do).
+- **Other ports.** The API allows the web origin `http://localhost:3000` by default. For any other web port, start the API with `CORS_ORIGINS=<web origin>` (without it the browser's preflight is refused and every request fails) and the web app with `NEXT_PUBLIC_API_URL=<API origin>`, for example `CORS_ORIGINS=http://localhost:3141 uv run uvicorn app.main:app --port 8041` and `NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141`.
+- **Files `pnpm dev` writes.** Next.js 16 writes `apps/web/AGENTS.md` and `apps/web/CLAUDE.md` when the dev server starts; both are git-ignored.
+- More on the web app, the live mode and the e2e switches is in `apps/web/README.md`.
+
 Switch to **Demo** in the header, click **Start demo** and sign in as the owner when asked (the local demo token is `demo-owner-token`; add `NEXT_PUBLIC_DEMO=1` to prefill it). The chat panel opens from the header on every page, and the owner home at `/` shows the day, the agent's opener and what is waiting. To see the whole path from the deal to the repaid credit line without the UI (17 steps, in process, exit 0; the day-34 cure takes two steps, go ahead then approve, and lands on day 37): `PYTHONUTF8=1 uv run --project services/api python scripts/demo_run.py`.
 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 5,716 passed, 33 skipped on 8 Oct 2026 after contract ingestion was merged into the redesigned UI (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run of about 51 min with other jobs on the machine)
-cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:e2e
-                                                     # Playwright mock e2e: 58 passed, 7 skipped (live project: 41 passed, 2 skipped) on 8 Oct 2026
-                                                     # (once: pnpm exec playwright install chromium)
+cd services/api && uv run pytest                     # 6,712 passed, 37 skipped on 10 Oct 2026 (dev with feat/upgrading and contract ingestion merged; Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run, about 72 min)
+cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit
+cd apps/web && pnpm exec playwright install chromium   # once
+cd apps/web && pnpm test:e2e:mock                    # no backend: 159 passed, 37 skipped (168 and 28 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
+cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 79 passed, 14 skipped (87 and 6 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
 ```
+
+All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-curve test in `slow.spec.ts`), which run only with `E2E_STRATEGY=1`; the mock skips include the same ones. The live project starts an API on :8000 and a web build on :3000 itself, so those ports must be free; `E2E_API_PORT`, `E2E_LIVE_PORT` and `E2E_PORT` (mock, default 3100) move them. Two switches change the live API: `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db` makes the API that Playwright starts use that file instead of `memory`, and `E2E_REUSE_API=1` starts no API and runs against one already listening on `E2E_API_PORT` (start it yourself with `CORS_ORIGINS` set to the live web origin; then `E2E_DATABASE_URL` is ignored). In my runs of `live.spec.ts` and of the whole live project on a SQLite file, the file ended with the seed state (the `operations` table empty), because the specs reset the books. Details in `apps/web/README.md`.
 
 **4. Evaluate.**
 
@@ -65,7 +74,7 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 | Terms Guard | Compile a buyer's offer (zh + en, message and attachments) into typed obligations with exact spans; verdict with formulas; counters priced from the marginal cost of funds; break-even rule; the early-payment rule (break-even for the actual days early, the cash must be needed, cheaper than the router's plan; ADR-0007); ADR-0005 autonomy proof | core (`FEATURE_TERMS_GUARD`) | on |
 | Debt Desk | Grid-search funding router over committed facilities, marginal cost of funds, break-even discount | core (`FEATURE_DEBT_DESK`) | on |
 | Buyer negotiation | Deterministic buyer kernel with a hidden reservation; bounded rounds; NO DEAL | core (`FEATURE_BUYER_NEGOTIATION`) | on |
-| Natural-language harness and chat | `POST /nl`: 20 intents (including financing comparison, alerts, reconciliation, covenant ratios, capex, the borrower file, and a read-only RECORD_FACT that says chat cannot record a stated bill or figure), plans, clarification, correction, nearest-capability fallback; `POST /nl/opener` (the agent speaks first); `/chat` page and slide-over panel | core | on |
+| Natural-language harness and chat | `POST /nl`: 21 intents (including financing comparison, alerts, reconciliation, covenant ratios, capex, the borrower file, a read-only CHANGES ("what changed?") and a read-only RECORD_FACT that says chat cannot record a stated bill or figure), plans, clarification, correction, nearest-capability fallback; `POST /nl/opener` (the agent speaks first); `/chat` page and slide-over panel | core | on |
 | Permission tiers and executor | Tier 1 / 2 / 3, signed mandate, nonce, idempotency, circuit breaker, hash-chained log, `GET /evidence` | core | on |
 | Security scenes | FastCapital and other hostile-message scenes in the demo | `FEATURE_SECURITY_SCENES` | on |
 | What-if sandbox | Read-only hypothetical verdicts (terms slider, discounts) | core | on |

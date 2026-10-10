@@ -1,13 +1,12 @@
 "use client";
 
-import { PageIcon } from "@/components/business/kit";
-import { ShieldCheckIcon } from "@/components/icons";
-
 import Link from "next/link";
+import { ShieldCheckIcon } from "@/components/icons";
 import { Badge, Card, ErrorState, Hash, LoadingBlock, PageHeader, Stat } from "@/components/ui";
 import { getMandate } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
+import { Disclosure } from "@/components/business/kit";
 
 /** Limits: what the agent may do alone, in sentences; the signed mandate's fields and signature under details. */
 export default function LimitsPage() {
@@ -18,19 +17,13 @@ export default function LimitsPage() {
 
   return (
     <>
-      <PageHeader
-        icon={
-          <PageIcon tone="sky">
-            <ShieldCheckIcon width={22} height={22} />
-          </PageIcon>
-        }
-        title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
+      <PageHeader section="home" icon={ShieldCheckIcon} title={t("nav.limits")} subtitle={t("biz.limits.subtitle")} />
       {mandate.error ? (
         <ErrorState error={mandate.error} onRetry={mandate.reload} />
       ) : !v || !m ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <Card id="limits-rules" title={t("biz.limits.rules")} subtitle={t("biz.limits.rules.sub", { v: m.version })} actions={<Badge tone={v.validity.status === "ACTIVE" ? "ok" : "bad"}>{te("validity", v.validity.status)}</Badge>}>
             <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink">
               <li>{t("biz.limits.floor", { floor: m.min_cash_display })}</li>
@@ -49,9 +42,8 @@ export default function LimitsPage() {
             <Stat label={t("mandate.cap")} value={m.max_aggregate_forward_concession_display} />
             <Stat label={t("biz.limits.tier2Label")} value={m.tier2_single_commitment_display} />
           </dl>
-          <details className="rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)">
-            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-ink">{t("biz.auditDetails")}</summary>
-            <div className="space-y-2 border-t border-line p-4 text-sm text-ink-2">
+          <Disclosure card summary={t("biz.auditDetails")}>
+            <div className="space-y-2 text-sm text-ink-2">
               <p>
                 {t("mandate.signature")}: <Badge tone={v.signature.status === "VALID" ? "ok" : "bad"}>{te("sigstatus", v.signature.status)}</Badge> <span className="text-xs">{v.signature.algorithm} · {v.signature.key_fingerprint}</span>
               </p>
@@ -65,7 +57,7 @@ export default function LimitsPage() {
                 </Link>
               </p>
             </div>
-          </details>
+          </Disclosure>
         </div>
       )}
     </>

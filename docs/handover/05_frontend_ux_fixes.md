@@ -1,5 +1,7 @@
 # Handover: frontend UI/UX fixes, 7 Oct 2026 by Dylan
 
+> Since then (8 Oct): `feat/strategy-mvp` ported parts of this work by component rather than merging it; `docs/UX_SIMPLIFICATION_BRIEF.md` section 11 lists what came across and what was left.
+
 The frontend-only fixes that came out of a UI/UX review of the web app (`apps/web`). Read this before touching the
 Business pages again, then `docs/HANDOVER.md` for everything else.
 

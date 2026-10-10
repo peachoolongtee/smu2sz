@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CashChart, ConcessionMeter, DebtChart } from "@/components/charts";
+import { CashChart, ConcessionMeter, DebtChart } from "@/components/lazy-charts";
 import {
   Badge,
   Callout,
@@ -50,7 +50,7 @@ export default function TrajectoryPage() {
                 { value: "EXPECTED", label: t("traj.expected") },
               ]}
             />
-            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2">
+            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-2 touch:min-h-11">
               <input
                 type="checkbox"
                 checked={showCured && Boolean(view?.cured_trajectory)}
@@ -181,10 +181,10 @@ function TrajectoryBody({
             {fwd.parts.map((p, i) => (
               <li key={p.label} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2 text-ink-2">
-                  <span aria-hidden className={`size-2.5 rounded-sm ${i === 0 ? "bg-warn-fg" : "bg-violet-600"}`} />
+                  <span aria-hidden className={`size-2.5 rounded-sm ${i === 0 ? "bg-warn-fg" : "bg-info-solid"}`} />
                   {p.label}
                 </span>
-                <span className="font-medium tabular-nums">{p.value_display}</span>
+                <span className="whitespace-nowrap font-medium tabular-nums">{p.value_display}</span>
               </li>
             ))}
           </ul>
@@ -228,11 +228,11 @@ function TrajectoryBody({
                 {tr.months.map((m) => (
                   <tr key={m.month}>
                     <td className={`${tdCls} tabular-nums`}>{m.month}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.ebitda_display}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.debt_service_display}</td>
-                    <td className={`${tdCls} text-right tabular-nums`}>{m.total_debt_display}</td>
-                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
-                    <td className={`${tdCls} text-right font-medium tabular-nums`}>{m.leverage.text}&times;</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.ebitda_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.debt_service_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{m.total_debt_display}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{m.dscr ? `${m.dscr.text}×` : t("common.none")}</td>
+                    <td className={`${tdCls} whitespace-nowrap text-right font-medium tabular-nums`}>{m.leverage.text}&times;</td>
                   </tr>
                 ))}
               </tbody>
@@ -264,7 +264,7 @@ function TrajectoryBody({
                       <td className={`${tdCls} tabular-nums`}>{i === 0 ? d.day : ""}</td>
                       <td className={tdCls}>{e.label}</td>
                       <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{e.amount_display}</td>
-                      <td className={`${tdCls} text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
+                      <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
                       <td className={`${tdCls} font-mono text-xs text-ink-2`}>{e.formula ?? ""}</td>
                     </tr>
                   )),

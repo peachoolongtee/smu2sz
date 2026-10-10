@@ -15,16 +15,22 @@ import act from "../../mocks/home_act.json";
 import actDay0 from "../../mocks/home_act_day0.json";
 import summaryAfter from "../../mocks/home_summary_after.json";
 import summaryAfterZh from "../../mocks/home_summary_after_zh.json";
+import trajAfter from "../../mocks/trajectory_conservative_after.json";
 import summaryAfterFund from "../../mocks/home_summary_after_fund.json";
 import summaryAfterFundZh from "../../mocks/home_summary_after_fund_zh.json";
+import trajAfterFund from "../../mocks/trajectory_conservative_after_fund.json";
 import summaryDay0 from "../../mocks/home_summary_day0.json";
 import summaryDay0Zh from "../../mocks/home_summary_day0_zh.json";
+import trajDay0 from "../../mocks/trajectory_conservative_day0.json";
 import summaryDay34 from "../../mocks/home_summary_day34.json";
 import summaryDay34Zh from "../../mocks/home_summary_day34_zh.json";
+import trajDay34 from "../../mocks/trajectory_conservative_day34.json";
 import summaryPending from "../../mocks/home_summary_pending.json";
 import summaryPendingZh from "../../mocks/home_summary_pending_zh.json";
+import trajPending from "../../mocks/trajectory_conservative_pending.json";
 import summaryQuiet from "../../mocks/home_summary_quiet.json";
 import summaryQuietZh from "../../mocks/home_summary_quiet_zh.json";
+import trajQuiet from "../../mocks/trajectory_conservative_quiet.json";
 import alertsAfter from "../../mocks/home_alerts_after.json";
 import alertsDay34 from "../../mocks/home_alerts_day34.json";
 import alertsMandateExpired from "../../mocks/home_alerts_mandate_expired.json";
@@ -37,19 +43,66 @@ import openerPending from "../../mocks/home_opener_pending.json";
 import openerQuiet from "../../mocks/home_opener_quiet.json";
 import openerQuietZh from "../../mocks/home_opener_quiet_zh.json";
 import reconciliationDay34 from "../../mocks/home_reconciliation_day34.json";
+import reconciliationDay34Half from "../../mocks/home_reconciliation_day34_half.json";
 import stateAfterApprove from "../../mocks/home_state_after_approve.json";
 import stateDay34 from "../../mocks/home_state_day34.json";
 import stateAfterFund from "../../mocks/state_after_fund.json";
+import summaryDay34NoReceipt from "../../mocks/home_summary_day34_noreceipt.json";
+import summaryDay34NoReceiptZh from "../../mocks/home_summary_day34_noreceipt_zh.json";
+import summaryDay34Half from "../../mocks/home_summary_day34_half.json";
+import summaryDay34HalfZh from "../../mocks/home_summary_day34_half_zh.json";
+import summaryDay34Residual from "../../mocks/home_summary_day34_residual.json";
+import summaryDay34ResidualZh from "../../mocks/home_summary_day34_residual_zh.json";
+import trajDay34Residual from "../../mocks/trajectory_conservative_day34_residual.json";
+import trajDay34Half from "../../mocks/trajectory_conservative_day34_half.json";
+import trajDay34NoReceipt from "../../mocks/trajectory_conservative_day34_noreceipt.json";
+import reconciliationDay2 from "../../mocks/home_reconciliation_day2.json";
+import stateDay2 from "../../mocks/home_state_day2.json";
+import summaryDay2 from "../../mocks/home_summary_day2.json";
+import summaryDay2Zh from "../../mocks/home_summary_day2_zh.json";
+import trajDay2 from "../../mocks/trajectory_conservative_day2.json";
+import alertsSettled from "../../mocks/home_alerts_settled.json";
+import stateSettled from "../../mocks/home_state_settled.json";
+import summarySettled from "../../mocks/home_summary_settled.json";
+import summarySettledZh from "../../mocks/home_summary_settled_zh.json";
+import trajSettled from "../../mocks/trajectory_conservative_settled.json";
 
 /** The day the recording was taken on. */
 export const NEWS_DAY = 34;
-const KEY = "tl-mock-home-v3";
+/** The day after the approved cure's cash landed (day 37): the recording of the books with that funding settled. */
+export const SETTLED_DAY = 38;
+const KEY = "tl-mock-home-v4";
 /**
  * The mock variant of the 409 ALERT_CHANGED path. Set this sessionStorage key to "1" (the books move, the alert is still there
  * with its recorded cure) or "gone" (the books move and the alert no longer exists) just before pressing "Let the agent fix this":
  * the next act answers 409 ALERT_CHANGED, once, and the state_version the mock serves advances by one.
  */
 export const MOVE_BOOKS_KEY = "tl-mock-books-moved";
+
+/**
+ * Test hook, like MOVE_BOOKS_KEY: set this sessionStorage key and day 34 is read on other books than the main walk's (which has the
+ * full receipt of day 2). "1": NO receipt, so cash is already under the reserve today. "half": half of the receipt, so the promise is
+ * part-kept and its change row carries the four named facts. "residual": no receipt, the cure approved and its cash landed, so the reserve is still
+ * short and the home carries the remaining task. The home and the readings are the recordings taken on those books.
+ */
+export const NO_RECEIPT_KEY = "tl-mock-no-receipt";
+
+type Receipt = "none" | "half" | "residual" | null;
+
+/** The receipt variant the test hook selected, for the decision mock (null on the main walk). */
+export function mockReceiptVariant(): Receipt {
+  return receiptVariant();
+}
+
+function receiptVariant(): Receipt {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(NO_RECEIPT_KEY);
+    return v === "1" ? "none" : v === "half" ? "half" : v === "residual" ? "residual" : null;
+  } catch {
+    return null;
+  }
+}
 
 export type CureStage = "open" | "pending" | "approved";
 
@@ -59,13 +112,15 @@ interface HomeState {
   stage: CureStage;
   /** The day-0 funding plan ("Fund the cash gap", then "go ahead") has run. */
   funded: boolean;
+  /** The guided Demo's one synthetic bank event has posted the agreed early payment (the clock never does). */
+  receipted: boolean;
   /** How many times the books moved behind the owner's back (the mock variant below): added to the recorded state_version. */
   moved: number;
 }
 
 let memory: HomeState | null = null;
 
-const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false, moved: 0 });
+const fresh = (): HomeState => ({ day: 0, stage: "open", funded: false, receipted: false, moved: 0 });
 
 function load(): HomeState {
   if (memory) return memory;
@@ -73,7 +128,7 @@ function load(): HomeState {
   if (typeof window !== "undefined") {
     try {
       const raw = window.sessionStorage.getItem(KEY);
-      if (raw) memory = JSON.parse(raw) as HomeState;
+      if (raw) memory = { ...fresh(), ...(JSON.parse(raw) as Partial<HomeState>) };
     } catch {
       /* start from day 0 */
     }
@@ -98,7 +153,7 @@ const clone = <T>(v: unknown): T => JSON.parse(JSON.stringify(v)) as T;
 function requireOwner(): void {
   if (!getOwnerToken()) {
     requestSignIn("required");
-    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
 }
 
@@ -134,14 +189,32 @@ export function mockAlerts(): AlertsView | null {
   const s = load();
   if (s.day < NEWS_DAY) return null;
   const recorded =
-    s.day > MANDATE_LAST_DAY ? alertsMandateExpired : s.day >= MANDATE_WARN_FROM_DAY ? alertsMandateWarning : s.stage === "approved" ? alertsAfter : alertsDay34;
+    s.day > MANDATE_LAST_DAY
+      ? alertsMandateExpired
+      : s.day >= MANDATE_WARN_FROM_DAY
+        ? alertsMandateWarning
+        : s.stage === "approved"
+          ? s.day >= SETTLED_DAY
+            ? alertsSettled
+            : alertsAfter
+          : alertsDay34;
   const view = clone<AlertsView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
 }
 
 /** GET /reconciliation once the day-2 bank receipt has been recorded (the home path reaches day 34 with it); null before. */
 export function mockReconciliation(): unknown {
-  return load().day >= NEWS_DAY ? clone(reconciliationDay34) : null;
+  const s = load();
+  // Between the synthetic bank event and day 34 the books hold the receipt and nothing is late yet (recorded on day 2).
+  if (s.day < NEWS_DAY) return s.receipted ? clone(reconciliationDay2) : null;
+  return clone(receiptVariant() === "half" ? reconciliationDay34Half : reconciliationDay34);
+}
+
+/** Which recorded books the mock is reading: the opening books, day 34 after the full receipt, or day 34 after the half receipt. */
+export function recordedBooks(): "day0" | "day2" | "day34" | "day34_half" {
+  const s = load();
+  if (s.day < NEWS_DAY) return s.receipted ? "day2" : "day0";
+  return receiptVariant() === "half" ? "day34_half" : "day34";
 }
 
 const sameSuggestions = (a: ActRequest["suggestions"], b: ActRequest["suggestions"]): boolean =>
@@ -215,24 +288,69 @@ export function cureStage(): CureStage {
  * books after the deal, the books after the day-0 plan ran (funding in transit), day 34 with the late invoice (the fix
  * needs approval), the queued fix, and the approved fix. `dealt` says whether the Scene 1 deal was made in this session.
  */
+/** Where the recorded story stands: the books the home, the readings and the funding comparison were recorded on. */
+type StoryPoint = "day0" | "quiet" | "day2" | "after_fund" | "day34" | "pending" | "after" | "settled";
+
+function storyPoint(dealt: boolean): StoryPoint {
+  const s = load();
+  // The residual variant is one recording of its own books: the cure there ran and landed, whatever the mock's cure stage says.
+  if (s.day >= NEWS_DAY && receiptVariant() === "residual") return "day34";
+  if (s.day >= NEWS_DAY) return s.stage === "approved" ? (s.day >= SETTLED_DAY ? "settled" : "after") : s.stage === "pending" ? "pending" : "day34";
+  if (s.receipted && !s.funded) return "day2";
+  return s.funded ? "after_fund" : dealt ? "quiet" : "day0";
+}
+
+/** Which recorded books the chat's page reads (what changed, what is overdue, ...) were taken on: the opening books, day 34 open, the queued cure, the approved cure. */
+export type ReadPoint = "day0" | "day34" | "pending" | "after";
+
+export function readPoint(): ReadPoint {
+  const s = load();
+  if (s.day < NEWS_DAY) return "day0";
+  return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
+}
+
+function day34Summary(zh: boolean): unknown {
+  const variant = receiptVariant();
+  if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;
+  if (variant === "half") return zh ? summaryDay34HalfZh : summaryDay34Half;
+  if (variant === "residual") return zh ? summaryDay34ResidualZh : summaryDay34Residual;
+  return zh ? summaryDay34Zh : summaryDay34;
+}
+
 export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
   const s = load();
   // Each point of the story was recorded in both languages (GET /home?lang=zh writes the sentences in Chinese).
   const zh = lang === "zh";
-  const recorded =
-    s.day >= NEWS_DAY
-      ? s.stage === "approved"
-        ? zh ? summaryAfterZh : summaryAfter
-        : s.stage === "pending"
-          ? zh ? summaryPendingZh : summaryPending
-          : zh ? summaryDay34Zh : summaryDay34
-      : s.funded
-        ? zh ? summaryAfterFundZh : summaryAfterFund
-        : dealt
-          ? zh ? summaryQuietZh : summaryQuiet
-          : zh ? summaryDay0Zh : summaryDay0;
+  const point = storyPoint(dealt);
+  const recorded = {
+    day0: zh ? summaryDay0Zh : summaryDay0,
+    quiet: zh ? summaryQuietZh : summaryQuiet,
+    day2: zh ? summaryDay2Zh : summaryDay2,
+    after_fund: zh ? summaryAfterFundZh : summaryAfterFund,
+    day34: day34Summary(zh),
+    pending: zh ? summaryPendingZh : summaryPending,
+    after: zh ? summaryAfterZh : summaryAfter,
+    settled: zh ? summarySettledZh : summarySettled,
+  }[point];
   const view = clone<HomeView>(recorded);
   return { ...view, day: s.day, state_version: view.state_version + s.moved };
+}
+
+/** GET /trajectory (conservative) on the same books as the home: the Cash page's readings table and the home's figures are one projection. */
+export function mockTrajectory(dealt: boolean): unknown {
+  return clone(
+    {
+      day0: trajDay0,
+      quiet: trajQuiet,
+      day2: trajDay2,
+      after_fund: trajAfterFund,
+      day34:
+        receiptVariant() === "none" ? trajDay34NoReceipt : receiptVariant() === "half" ? trajDay34Half : receiptVariant() === "residual" ? trajDay34Residual : trajDay34,
+      pending: trajPending,
+      after: trajAfter,
+      settled: trajSettled,
+    }[storyPoint(dealt)],
+  );
 }
 
 /** The day-0 fix (the line draw and the invoice advance) runs alone: the recorded answer, and the books are then "funded". */
@@ -247,6 +365,21 @@ export function mockActDay0(): AlertActResult {
   return { ...clone<AlertActResult>(actDay0), day: s.day };
 }
 
+/** The synthetic bank event has posted the agreed early payment. */
+export function markReceipted(): void {
+  load().receipted = true;
+  save();
+}
+
+export function isReceipted(): boolean {
+  return load().receipted;
+}
+
+/** The day-0 funding plan has run. */
+export function isFunded(): boolean {
+  return load().funded;
+}
+
 /** The day-0 funding plan ran in the chat. */
 export function markFunded(): void {
   load().funded = true;
@@ -256,7 +389,8 @@ export function markFunded(): void {
 /** The recorded books for this point of the story: after the approved cure, at day 34, after the day-0 plan, or null for the opening books. */
 export function mockStateJson(): unknown {
   const s = load();
-  if (s.day >= NEWS_DAY) return s.stage === "approved" ? stateAfterApprove : stateDay34;
+  if (s.day >= NEWS_DAY) return s.stage === "approved" ? (s.day >= SETTLED_DAY ? stateSettled : stateAfterApprove) : stateDay34;
+  if (s.receipted && !s.funded) return stateDay2;
   return s.funded ? stateAfterFund : null;
 }
 

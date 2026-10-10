@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "./fixtures";
-import { resetBooks, runPlan } from "./helpers";
+import { resetBooks, runPlan, sendCounter } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -38,9 +38,8 @@ async function agreeFoshanDeal(page: Page) {
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   const response = page.locator("#counters");
-  await response.getByTestId("deal-send-open").click();
-  await response.getByTestId("deal-send").click();
-  await expect(response).toContainText("Accepted by the buyer");
+  await sendCounter(response);
+  await expect(response.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
 }
 
 /** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */
@@ -55,8 +54,8 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page.locator("#deal-summary")).toHaveCount(0);
 
   await agreeFoshanDeal(page);
-  await expect(page.getByTestId("next-step")).toContainText("The deal summary below sets the contract beside the books");
-  await expect(page.getByTestId("next-step").getByRole("link", { name: "See the deal summary" })).toHaveAttribute("href", "#deal-summary");
+  // An agreement in force needs no Action band: the summary sits with the agreements, the commitments below it.
+  await expect(page.getByTestId("next-step")).toHaveCount(0);
   const summary = page.locator("#deal-summary");
   await expect(summary.getByRole("heading", { name: "Deal summary", level: 2 })).toBeVisible();
   const deal = page.getByTestId("deal-summary-BUYER-1");
@@ -81,6 +80,10 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
+  // A detail page of Deals: the way back names it.
+  await expect(page.getByTestId("back-to-deals")).toHaveText("Back to Deals");
+  await page.getByTestId("back-to-deals").click();
+  await expect(page).toHaveURL(/\/deals$/);
 });
 
 test("the documents: the three demo documents confirmed, each term of the supply agreement beside its clause", async ({ page }) => {

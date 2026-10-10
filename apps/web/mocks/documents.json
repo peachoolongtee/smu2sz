@@ -514,7 +514,11 @@
       "tier": "TIER_2",
       "requested_by": "OWNER",
       "message": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
-      "summary": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed"
+      "summary": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "message_when": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "event_text": "Document DOC-000001 (Supply agreement FHR-2026-07) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed",
+      "event_detail": null,
+      "decision_id": null
     },
     "reread": {
       "id": "DOC-000004",
@@ -2240,7 +2244,11 @@
       "tier": "TIER_2",
       "requested_by": "OWNER",
       "message": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)",
-      "summary": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)"
+      "summary": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-LINE for reference (the facility itself is unchanged)",
+      "message_when": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Bank credit line for reference (the facility itself is unchanged)",
+      "event_text": "Document DOC-000002 (Credit line agreement MB-CL-2026-031) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Bank credit line for reference (the facility itself is unchanged)",
+      "event_detail": null,
+      "decision_id": null
     },
     "reread": {
       "id": "DOC-000004",
@@ -2919,7 +2927,11 @@
       "tier": "TIER_2",
       "requested_by": "OWNER",
       "message": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)",
-      "summary": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)"
+      "summary": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to FAC-IF for reference (the facility itself is unchanged)",
+      "message_when": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Invoice financing (onboarded platform) for reference (the facility itself is unchanged)",
+      "event_text": "Document DOC-000003 (Invoice financing agreement GBR-IF-2026-118) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books changed; linked to Invoice financing (onboarded platform) for reference (the facility itself is unchanged)",
+      "event_detail": null,
+      "decision_id": null
     },
     "reread": {
       "id": "DOC-000004",

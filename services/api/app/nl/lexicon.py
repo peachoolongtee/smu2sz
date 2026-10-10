@@ -409,3 +409,37 @@ FACILITY_WORDS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("CREDIT_LINE", _re(r"\bcredit line\b", r"\bthe line\b", r"\bline\b", r"\brevolver\b", r"授信", r"信用额度", r"额度")),
     ("INVOICE_FINANCING", _re(r"invoice financing", r"\bfactoring\b", r"发票融资", r"保理")),
 )
+
+
+# ---- the questions the Business pages suggest (app/nl/reads.py answers them; rules.py and the handlers share these) ------
+CHANGES_ASK = _re(
+    r"\bwhat(?:['’]s| is| has| have)?\s+(?:has\s+|have\s+)?(?:changed|new|different|happened)\b",
+    r"\bwhat\s+changed\b", r"\banything\s+(?:new|changed|different)\b", r"\bwhat\s+did\s+i\s+miss\b",
+    r"\bsince\s+(?:my|the)\s+last\s+(?:visit|login|time)\b", r"\bcatch\s+me\s+up\b",
+    r"有什么变化", r"发生了什么", r"什么变化", r"变化了什么", r"有什么新(?:变化|动态)", r"自上次", r"上次之后")
+WAITING_ASK = _re(
+    r"\bwhat\s+(?:are|is)\s+(?:we|you|i)\s+(?:still\s+)?waiting\s+(?:for|on)\b", r"\bwaiting\s+(?:for|on)\s+what\b",
+    r"\bwhat(?:['’]s| is)\s+(?:still\s+)?(?:pending|outstanding|open)\b", r"\bwhat\s+are\s+we\s+waiting\b",
+    r"在等什么", r"等什么", r"等待什么", r"还在等")
+ARRIVAL_ASK = _re(
+    r"\bwhen\s+(?:does|do|will|is)\b.{0,30}\b(?:money|cash|funds?|funding|payments?)\b.{0,20}\b(?:arrive|land|come|get here|in)\b",
+    r"\bwhen\s+(?:will|do)\s+(?:we|i)\s+(?:get|receive)\b.{0,20}\b(?:money|cash|funds?|paid|payment)\b",
+    r"\bwhen\s+(?:does|do|will|is)\s+the\s+(?:money|cash|funding)\b",
+    r"什么时候(?:到账|收到|到)", r"何时(?:到账|收到)", r"资金.{0,6}什么时候", r"钱.{0,6}什么时候")
+OVERDUE_ASK = _re(
+    r"\bwhat(?:['’]s| is| are)\s+(?:overdue|late|past due)\b", r"\bwhat\s+is\s+overdue\b", r"\bwho\s+(?:is|are)\s+(?:late|overdue)\b",
+    r"\bwho\s+(?:should|do)\s+(?:i|we)\s+(?:chase|call|follow up|remind|collect)\b", r"\bchase\s+first\b",
+    r"\bwho\s+(?:has not|hasn'?t|haven'?t)\s+paid\b", r"\bwho\s+to\s+chase\b",
+    r"逾期", r"先催", r"该催", r"催(?:收|款|哪)", r"谁(?:还)?没(?:有)?付")
+LATE_PAYMENT_ASK = _re(
+    r"\b(?:late|delayed?|overdue|slips?|slipped|doesn'?t arrive|does not arrive|never arrives?)\b.{0,40}\b(?:payment|invoice|receipt|receivable)s?\b",
+    r"\b(?:payment|invoice|receipt|receivable)s?\b.{0,40}\b(?:is|are|comes?|arrives?|gets?)\b.{0,6}\b(?:late|delayed|overdue)\b",
+    r"\b(?:payment|invoice|receipt)s?\b.{0,30}\bdoesn'?t arrive\b", r"\bpays?\s+late\b",
+    r"(?:款|付款|回款|收款|发票).{0,10}(?:延迟|晚到|晚付|逾期|没到|迟到|延误)", r"(?:延迟|晚到|晚付|逾期|迟到|延误).{0,10}(?:款|付款|回款|收款|发票)")
+ACCEPT_ASK = _re(r"\baccept(?:ed|ing)?\b", r"\bagree(?:d)?\s+to\b", r"\btake\s+(?:the|their|this)\s+(?:deal|offer|terms)\b",
+                    r"接受", r"答应", r"同意")
+OPTION_ASK = _re(r"\boption\s+([a-d])\b", r"\bcounter\s+([a-d])\b", r"(?:方案|选项|还价)\s?([a-dA-D])\b", r"\b([a-d])\s?(?:方案|选项)")
+PLAN_ASK = _re(r"\bplan\b", r"\bchoose\b", r"\bchose\b", r"\bchosen\b", r"\brecommend", r"\bcheapest\b", r"方案", r"计划", r"推荐")
+
+READ_QUESTION = re.compile(r"^\s*(?:what|when|who|whom|which|how|where|why|is|are|do|does|did|can|could|will|would|should|show|tell)\b"
+                            r"|[?？]\s*$|什么|谁|哪|吗|多少|几|怎么|如何", re.IGNORECASE)

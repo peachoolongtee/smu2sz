@@ -14,6 +14,9 @@ pnpm test:e2e:mock       # mock project only, no backend needed
 pnpm test:e2e:live       # live project only (needs `uv`)
 ```
 
+Run these from `apps/web`; the commands in the sections below that start with `cd` say where they run from. The same
+steps, the two servers and the database choices are in the root `README.md`; this file adds the web-specific parts.
+
 ## Modes
 
 - `NEXT_PUBLIC_API_MODE=mock|live` (default `mock`), `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
@@ -29,9 +32,27 @@ pnpm test:e2e:live       # live project only (needs `uv`)
 
 ### Running live locally
 
+Two terminals, both starting at the repository root:
+
 ```
 cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8000
 cd apps/web && NEXT_PUBLIC_API_MODE=live pnpm dev      # must be on :3000, the API's CORS allow-list
+```
+
+`DATABASE_URL=memory` keeps the books in the API process and writes no file. Leave `DATABASE_URL` out and the API uses
+`sqlite:///./termsledger.db`, a file in the directory it was started from (`services/api/termsledger.db`, git-ignored); the
+app creates the file and its tables itself on the first request, so there is no Alembic step. For a file elsewhere give the
+absolute form, `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes). `TERMSLEDGER_NO_DOTENV=1` stops the API
+reading a repo-root `.env`, so a stray one cannot change the database or the model mode.
+
+`pnpm dev` writes `AGENTS.md` and `CLAUDE.md` in this directory (Next.js 16 does it on start); both are git-ignored.
+
+To use other ports, tell the API to allow the web origin and tell the web app where the API is (without `CORS_ORIGINS` the
+browser's preflight gets a 400 and every request fails):
+
+```
+cd services/api && CORS_ORIGINS=http://localhost:3141 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache uv run uvicorn app.main:app --port 8041
+cd apps/web && NEXT_PUBLIC_API_MODE=live NEXT_PUBLIC_API_URL=http://localhost:8041 pnpm dev -p 3141
 ```
 
 ### Owner sign-in
@@ -77,8 +98,10 @@ the product the owner uses: the brand FLOW 流 · AI working-capital agent, a to
 Cash & funding, Receivables, Activity, plus Limits from the account menu), an Approvals badge that appears in the header only
 while something waits for the owner (the `/approvals` route stays), one account menu (signed-in state, sign out, language, what
 the data is; Sign in stays visible when signed out), one "Demo data" pill, no clock, no stepper, no mock or sample controls.
-Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N";
-the reserve is the "minimum cash reserve"; authority copy is the owner's signed limits. **Demo** is for judges: the story page (`/demo`) with the
+Business pages speak in distances from today ("in 12 days", `lib/when.ts` or the server's `*_when` strings), never "Day N"
+(the shared plan, violation and counter cards decide this with `lib/use-business-today.ts`: the Demo views keep "Day N", a
+Business page gets `whenText` and the server's `*_when` twins such as the ledger's `message_when` and a counter's `text_when`);
+the reserve is the "minimum cash reserve"; authority copy is the owner's signed limits. Recent changes and Activity lead with the server's business sentence (`event_text`, with `event_detail` beside it; `GET /home` `changes[]`, `GET /ledger` operations and the act results), and the executor's own sentence, the operation id, the tier and the hashes stay behind Audit details. The account menu holds "Signed in as Owner", the language and Sign out; the header button is the avatar. The chat button is "Ask FLOW", and on a Business page `promptsFor(role, lang, pathname)` puts that page's own questions first (each one a sentence the NL rules read; `services/api/tests/nl/test_business_page_prompts.py`). **Demo** is for judges: the story page (`/demo`) with the
 fifteen steps, the clock, the scenario switch and the side doors, the story bar on every page, and the engine views (Mandate,
 Inbox, Trajectory, Funding, Verdict, What-if, Capex, Ledger, Alerts, Reconciliation, Security, Evidence). Engine routes
 always render the Demo shell; business routes render the Demo shell only while Demo mode is on (running a step or Reset
@@ -143,10 +166,37 @@ agreed when the negotiation (Deals, the stepper) or the chat's "go ahead" agrees
 ## Tests
 
 `playwright.config.ts` has three projects (`PW_CHROMIUM_PATH` points them at a pre-installed Chromium when the pinned build cannot be downloaded). `desktop` and `phone` run against a mock-mode build on :3100.
-`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract`, `documents` and `live` specs against uvicorn (:8000, in-memory store,
+`live` runs `demo`, `whatif`, `alerts`, `chat`, `contract`, `documents`, `live` (and `slow`, `strategy`) specs against uvicorn (:8000, in-memory store,
 recorded LLM cache, no Supabase) and a live-mode build on :3000. `demo.spec.ts` and `chat.spec.ts` are the same files in both
 modes and asserts the same golden numbers. `contract.spec.ts` calls the live adapters from Node against the
 running API. Mock and live builds use separate `NEXT_DIST_DIR`s (`.next-e2e-mock`, `.next-e2e-live`).
+
+Counts on `feat/ux-remediation`, 9 Oct 2026, run from this directory with `--retries=0`:
+
+| Command | Result |
+| --- | --- |
+| `E2E_TARGET=mock pnpm exec playwright test` (`pnpm test:e2e:mock`) | 166 tests listed: 135 passed, 33 skipped |
+| `E2E_TARGET=live pnpm exec playwright test` (`pnpm test:e2e:live`) | 79 tests listed: 69 passed, 12 skipped |
+
+All 12 live skips need `E2E_STRATEGY=1` (11 in `strategy.spec.ts`, the price-curve test in `slow.spec.ts`).
+
+Switches, all read by `playwright.config.ts`:
+
+- `E2E_TARGET=mock|live|all` (default `all`): which servers start.
+- `E2E_PORT` (mock, default 3100), `E2E_LIVE_PORT` (default 3000), `E2E_API_PORT` (default 8000): move the servers when
+  another program holds a port. The config tells the API it starts to allow the live web origin (`CORS_ORIGINS`).
+- `E2E_DATABASE_URL` (default `memory`): the `DATABASE_URL` of the API the config starts, for example
+  `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db E2E_TARGET=live pnpm exec playwright test e2e/live.spec.ts`. After a run
+  `sqlite3 <file> .tables` lists the tables the API created (18 after `e2e/live.spec.ts`). The specs reset the books, so the file holds the seed state
+  (8 facilities, 7 counterparties, 1 mandate, 1 state) and an empty `operations` table.
+- `E2E_REUSE_API=1`: the config starts no API and the live project uses the one already listening on `E2E_API_PORT`. Start
+  it yourself from `services/api` with `TERMSLEDGER_NO_DOTENV=1 LLM_MODE=cache` and `CORS_ORIGINS=<the live web origin>`
+  (and any `DATABASE_URL` you like; `E2E_DATABASE_URL` is ignored in this mode), for example
+  `E2E_TARGET=live E2E_REUSE_API=1 E2E_LIVE_PORT=3242 E2E_API_PORT=8172 pnpm exec playwright test e2e/live.spec.ts`.
+  The live web build is still started by Playwright. Without this switch the config refuses to start when something already
+  listens on the API port.
+- `E2E_STRATEGY=1`: builds the web app with the strategy flag and starts the API with the strategy feature flags, so the
+  strategy specs run instead of skipping.
 
 Specs that are not about sign-in import `test` from `e2e/fixtures.ts`, which pre-seeds the owner token in the live
 project; `chat.spec.ts` signs in through the dialog like a user.

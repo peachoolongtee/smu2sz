@@ -62,9 +62,31 @@ export const ShieldIcon = (p: P) => (
     <path d="M8 1.8l5 1.8v4c0 3-2.1 5.2-5 6.6-2.9-1.4-5-3.6-5-6.6v-4l5-1.8z" />
   </svg>
 );
+/** An arc that turns; where motion is reduced (a frozen arc says nothing) it is an ellipsis instead (see globals.css). */
 export const Spinner = (p: P) => (
-  <svg {...base(p)} className={`animate-spin ${p.className ?? ""}`}>
-    <path d="M8 2a6 6 0 1 0 6 6" />
+  <>
+    <svg {...base(p)} className={`spinner animate-spin ${p.className ?? ""}`}>
+      <path d="M8 2a6 6 0 1 0 6 6" />
+    </svg>
+    <span aria-hidden className="spinner-dots font-semibold leading-none">
+      …
+    </span>
+  </>
+);
+export const ArrowDownIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 2.5v10M4 8.5l4 4 4-4" />
+  </svg>
+);
+export const AlertIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 3v6M8 12.2v.1" />
+  </svg>
+);
+export const ClockIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M8 5v3.2l2 1.3" />
   </svg>
 );
 export const ChatIcon = (p: P) => (
@@ -72,9 +94,13 @@ export const ChatIcon = (p: P) => (
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const ChevronRightIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M6 3.5L10.5 8 6 12.5" />
+  </svg>
+);
 
-/* ------------------------------------------------------------------ Business icons (24-unit grid, 1.8 stroke) */
-
+/* Business navigation icons (24-unit grid). */
 const base24 = (p: P) => ({
   width: 20,
   height: 20,
@@ -119,62 +145,10 @@ export const ActivityIcon = (p: P) => (
     <path d="M3.5 12h4l2.5-6.5 4 13 2.5-6.5h4" />
   </svg>
 );
-export const UserIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <circle cx="12" cy="8.5" r="3.5" />
-    <path d="M5 19.5c1.2-3.2 3.9-5 7-5s5.8 1.8 7 5" />
-  </svg>
-);
-export const ChevronRightIcon = (p: P) => (
-  <svg {...base24({ width: 16, height: 16, ...p })}>
-    <path d="m9.5 6 6 6-6 6" />
-  </svg>
-);
-export const ChevronDownIcon = (p: P) => (
-  <svg {...base24({ width: 16, height: 16, ...p })}>
-    <path d="m6 9.5 6 6 6-6" />
-  </svg>
-);
-export const ArrowUpRightIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <path d="M7 17 17 7M9 7h8v8" />
-  </svg>
-);
-export const ArrowDownLeftIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <path d="M17 7 7 17M15 17H7V9" />
-  </svg>
-);
-export const AlertIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <path d="M12 4 2.8 19.5h18.4L12 4Z" />
-    <path d="M12 10v4.5M12 17.2v.1" />
-  </svg>
-);
-export const ClockIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M12 7.5V12l3 2" />
-  </svg>
-);
 export const ShieldCheckIcon = (p: P) => (
   <svg {...base24(p)}>
-    <path d="M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6l-7-2.5Z" />
-    <path d="m9 12 2.2 2.2L15.5 10" />
-  </svg>
-);
-export const SlidersIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-    <circle cx="16" cy="7" r="2" />
-    <circle cx="10" cy="17" r="2" />
-  </svg>
-);
-export const CartIcon = (p: P) => (
-  <svg {...base24(p)}>
-    <path d="M3.5 4.5h2.2l2 10.5h10l2-7.5H6.6" />
-    <circle cx="9.5" cy="19" r="1.3" />
-    <circle cx="16.5" cy="19" r="1.3" />
+    <path d="M12 3.5 5 6v5.5c0 4.2 2.8 7.2 7 9 4.2-1.8 7-4.8 7-9V6l-7-2.5Z" />
+    <path d="m9 12 2.2 2.2L15.2 10" />
   </svg>
 );
 export const SparkIcon = (p: P) => (

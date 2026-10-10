@@ -20,8 +20,10 @@ import type {
   ApprovalDecision,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
@@ -32,6 +34,8 @@ import type {
   DocumentDecision,
   DocumentsList,
   DocumentView,
+  DecisionList,
+  DecisionView,
   FundingView,
   HomeView,
   LedgerView,
@@ -44,6 +48,10 @@ import type {
   NlResponse,
   OfferView,
   PlanRequest,
+  EnvelopeView,
+  PilotJournalView,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -55,6 +63,7 @@ import type {
 } from "./types";
 
 export { ApiError };
+export { counterChanged, dealRecordId, decisionMissing } from "./decision";
 
 // Each implementation is loaded lazily, so a live build never ships the mock JSON and a mock build never ships the live client.
 const mock = () => import("./mock/handlers");
@@ -83,14 +92,14 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
   return isMock ? (await mock()).submitOffer(req) : (await live()).submitOffer(req);
 }
 
-/** The contract has no read endpoint for offers: live mode answers from the session cache only. */
+/** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. A 404 means the server does not know the offer. */
 export async function getOffer(offerId: string): Promise<OfferView> {
   return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
 }
 
 /** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */
-export async function evaluateOffer(offerId: string, fixtureId?: string): Promise<VerdictView> {
-  return isMock ? (await mock()).evaluateOffer(offerId) : (await live()).evaluateOffer(offerId, fixtureId);
+export async function evaluateOffer(offerId: string, fixtureId?: string, lang: "en" | "zh" = "en"): Promise<VerdictView> {
+  return isMock ? (await mock()).evaluateOffer(offerId) : (await live()).evaluateOffer(offerId, fixtureId, lang);
 }
 
 /** POST /negotiate/{offer_id}: bounded rounds with the buyer kernel. */
@@ -98,9 +107,22 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
 }
 
-/** POST /router/plan */
-export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
-  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req);
+/**
+ * GET /decisions: the durable decision record, newest first (ADR-0011). `open` keeps only the unfinished ones. Owner only.
+ * Every state, sentence and figure is the server's; screens show them and decide nothing from them.
+ */
+export async function getDecisions(opts: { lang: "en" | "zh"; family?: "DEAL" | "FUNDING"; open?: boolean; limit?: number }): Promise<DecisionList> {
+  return isMock ? (await mock()).getDecisions(opts) : (await live()).getDecisions(opts);
+}
+
+/** GET /decisions/{id}: one record in full. The id of a deal is `deal:{offer_id}` (`dealRecordId`). A 404 DECISION_NOT_FOUND is `decisionMissing`. */
+export async function getDecision(id: string, lang: "en" | "zh"): Promise<DecisionView> {
+  return isMock ? (await mock()).getDecision(id, lang) : (await live()).getDecision(id, lang);
+}
+
+/** POST /router/plan. `lang` ("zh") makes the server write each row's `role_reason` in Chinese; English is the default. */
+export async function planFunding(req: PlanRequest = {}, lang: "en" | "zh" = "en"): Promise<FundingView> {
+  return isMock ? (await mock()).planFunding(req) : (await live()).planFunding(req, lang);
 }
 
 /**
@@ -108,12 +130,12 @@ export async function planFunding(req: PlanRequest = {}): Promise<FundingView> {
  * without one the screen shows the position today.
  */
 export async function getTrajectory(mode: Mode = "CONSERVATIVE", verdict?: VerdictView | null): Promise<TrajectoryView> {
-  return isMock ? (await mock()).getTrajectory(mode) : (await live()).getTrajectory(mode, verdict);
+  return isMock ? (await mock()).getTrajectory(mode, verdict) : (await live()).getTrajectory(mode, verdict);
 }
 
-/** GET /ledger */
-export async function getLedger(): Promise<LedgerView> {
-  return isMock ? (await mock()).getLedger() : (await live()).getLedger();
+/** GET /ledger. `lang` is the language of the chain words and the refusal block (the rows' own sentences are English). */
+export async function getLedger(lang: "en" | "zh" = "en"): Promise<LedgerView> {
+  return isMock ? (await mock()).getLedger() : (await live()).getLedger(lang);
 }
 
 /** GET /audit */
@@ -124,6 +146,11 @@ export async function getAudit(): Promise<AuditView> {
 /** GET /approvals/queue */
 export async function getApprovals(): Promise<ApprovalView[]> {
   return isMock ? (await mock()).getApprovals() : (await live()).getApprovals();
+}
+
+/** GET /approvals/queue with the read's own freshness word (`last_read_when`, null when the server sends none). */
+export async function getApprovalsRead(): Promise<{ approvals: ApprovalView[]; last_read_when: string | null }> {
+  return isMock ? { approvals: await (await mock()).getApprovals(), last_read_when: null } : (await live()).getApprovalsRead();
 }
 
 /** POST /approvals/{id}. Owner action: live mode sends X-Owner-Token. */
@@ -161,9 +188,47 @@ export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
 }
 
+/** GET /receivables/{id}/chase: the collection handoff for one open invoice (the facts and a payment request to copy; nothing is sent). */
+export async function getChase(receivableId: string, lang: "en" | "zh"): Promise<ChaseView> {
+  return isMock ? (await mock()).getChase(receivableId, lang) : (await live()).getChase(receivableId, lang);
+}
+
+/**
+ * GET /cash/price-curve (flag `price_curve`): what cash arriving earlier is worth, in one sentence. Resolves to null when the
+ * server has the feature off (403 FEATURE_DISABLED) or lacks the route (404), so the Cash page hides the sentence. Call it only
+ * behind STRATEGY_MVP.
+ */
+export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView | null> {
+  return isMock ? (await mock()).getPriceCurve(lang) : (await live()).getPriceCurve(lang);
+}
+
+/** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
+export async function getReceivablesWorth(lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
+  return isMock ? (await mock()).getReceivablesWorth(lang) : (await live()).getReceivablesWorth(lang);
+}
+
+/**
+ * GET /buyers/{buyer_id}/envelope (flag `envelope`): what the owner can live with for this buyer, as approved packages. `zone` asks
+ * for the terms-and-price table as well. The first answer for a set of books takes several seconds (the server sweeps the levers);
+ * a repeat is cached. Null when the server has the feature off or lacks the buyer, so the Deals card hides. Call it only behind
+ * STRATEGY_MVP.
+ */
+export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
+  return isMock ? (await mock()).getEnvelope(buyerId, lang, zone) : (await live()).getEnvelope(buyerId, lang, zone);
+}
+
+/**
+ * GET /pilot/journal (flag `pilot_journal`): the shadow pilot's entries, newest first, read-only. Null when the server has the
+ * feature off (403 FEATURE_DISABLED) or lacks the route, so the Activity section hides; null in mock mode, which has no recording.
+ * Call it only behind STRATEGY_MVP and live mode.
+ */
+export async function getPilotJournal(): Promise<PilotJournalView | null> {
+  return isMock ? (await mock()).getPilotJournal() : (await live()).getPilotJournal();
+}
+
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */
-export async function nl(req: NlRequest): Promise<NlResponse> {
-  return isMock ? (await mock()).nl(req) : (await live()).nl(req);
+export async function nl(req: NlRequest, opts: { business?: boolean } = {}): Promise<NlResponse> {
+  return isMock ? (await mock()).nl(req) : (await live()).nl(req, opts);
 }
 
 /** POST /nl/opener: the agent speaks first. Owner only. Any pending cure waits in `sessionId` until "go ahead". */
@@ -221,9 +286,17 @@ export async function demoReset(scenario?: string): Promise<void> {
   return isMock ? (await mock()).demoReset(scenario) : (await live()).demoReset(scenario);
 }
 
+/**
+ * POST /demo/bank-receipt (owner, demo mode only): the guided Demo's one synthetic bank event, the agreed early payment arriving from the
+ * simulated bank feed. Demo mode only: no Business page calls it, and the clock never records a receipt by itself.
+ */
+export async function demoBankReceipt(): Promise<BankReceiptResult> {
+  return isMock ? (await mock()).demoBankReceipt() : (await live()).demoBankReceipt();
+}
+
 /** GET /borrower-file/{id}.html | .docx | .pdf: fetched with the owner token and saved. Live mode only. */
 export async function downloadFile(path: string, filename: string): Promise<void> {
-  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.");
+  if (isMock) throw new ApiError(0, "Downloads are available in live mode, where the API renders the file.", undefined, "mock_download");
   return (await live()).downloadFile(path, filename);
 }
 

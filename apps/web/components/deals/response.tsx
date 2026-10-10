@@ -2,223 +2,348 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Badge, Button, Card, ErrorState, Segmented } from "@/components/ui";
-import { negotiate } from "@/lib/api";
-import { idsToNames, localNames, plainDays } from "@/lib/business-words";
-import { recordNegotiation } from "@/lib/demo-store";
+import { obligationSentence } from "@/components/deals/commitments";
+import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
+import { counterChanged, negotiate } from "@/lib/api";
+import { evaluate as evaluateAndCache } from "@/lib/demo";
+import { bump, recordNegotiation } from "@/lib/demo-store";
+import { isTimeout } from "@/lib/errors";
+import { useNarrow } from "@/lib/use-narrow";
 import { useI18n } from "@/lib/i18n";
+import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
-import type { BuyerProfile, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import type { BuyerProfile, CounterChangedDetail, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import { Disclosure } from "@/components/business/kit";
 
-type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; outbound_blocked?: boolean };
-/** Ids on the books with their names (facilities, buyers), so a funding sentence reads "Bank credit line", not "FAC-LINE". */
-type Named = { id: string; name: string }[];
+type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; label_when?: string | null; outbound_blocked?: boolean };
+
+/** The DOM id (and test id) of a counter's card: "deal-option-Option-B". */
+export function optionDomId(label: string): string {
+  return `deal-option-${label.replace(/\s+/g, "-")}`;
+}
 
 /**
  * One counter as a business card: what changes for the buyer (the counter's own wording), what it costs (the plain
- * cost, or the net economic cost with the funding cost and the offset beside it, never "¥0.00" alone), and the
- * reasoning behind "Details". Formulas stay in the calculation disclosure of the page.
+ * cost, or the net economic cost with the funding cost and the offset beside it, never "¥0.00" alone), and behind
+ * "Details": why it works and the terms the buyer would agree to, as sentences. Formulas stay in the page's
+ * calculation disclosure.
  */
-type CounterBadge = "recommended" | "accepted" | null;
-
-function CounterBusinessCard({ c, badge, today, action }: { c: Counter; badge: CounterBadge; today: number; action?: React.ReactNode }) {
-  const recommended = badge !== null;
-  const { t, lang } = useI18n();
+function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; recommended: boolean; today: number; action?: React.ReactNode }) {
+  const { t, te } = useI18n();
   const e = c.economics ?? null;
   return (
-    <li className={`rounded-lg border p-4 ${recommended ? "border-brand-600 bg-brand-50/40" : "border-line"}`} data-testid={`deal-option-${c.label.replace(/\s+/g, "-")}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-semibold text-ink">{c.label}</h3>
-        {badge === "recommended" ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
-        {badge === "accepted" ? <Badge tone="ok">{t("biz.deals.option.accepted")}</Badge> : null}
+    <li id={optionDomId(c.label)} tabIndex={-1} className="py-4 first:pt-0 last:pb-0" data-testid={optionDomId(c.label)}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-semibold text-ink">{c.label_when ?? c.label}</h3>
+          {recommended ? <Badge tone="brand">{t("biz.deals.option.recommended")}</Badge> : null}
+        </div>
+        {/* A plain cost sits on the title's line; a net cost needs its two parts and keeps the rows below. */}
+        {!e?.is_net ? (
+          <p className="flex items-baseline gap-2 text-sm">
+            <span className="text-ink-3">{t("biz.deals.estCost")}</span>
+            <span className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
+              {c.supplier_cost_display}
+            </span>
+          </p>
+        ) : null}
       </div>
       <p className="mt-2 text-sm text-ink" data-testid="deal-option-text">
-        {localNames(c.text_when ?? plainDays(c.text, today, t), lang)}
+        {c.text_when ?? c.text}
       </p>
-      <dl className="mt-3 text-sm">
-        {e?.is_net ? (
-          <>
-            <div className="flex items-baseline justify-between gap-3">
-              <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-                {/* The verifier floors a negative net at zero on purpose (the adjustment covers the cost); the card says so, never a gain. */}
-                {e.net_fen <= 0 ? "≈ ¥0" : e.net_display}
-              </dd>
-            </div>
-            <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.fundingCost")}</dt>
-              <dd className="tabular-nums">{e.funding_cost_display}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
-              <dt>{t("biz.deals.offset")}</dt>
-              <dd className="tabular-nums">−{e.offset_display}</dd>
-            </div>
-          </>
-        ) : (
+      {e?.is_net ? (
+        <dl className="mt-3 text-sm">
           <div className="flex items-baseline justify-between gap-3">
-            <dt className="text-ink-2">{t("biz.deals.estCost")}</dt>
+            <dt className="text-ink-2">{t("biz.deals.netCost")}</dt>
             <dd className="text-lg font-semibold tabular-nums text-ink" data-testid="deal-option-cost">
-              {c.supplier_cost_display}
+              {/* The server says the net ("≈ ¥0" when the adjustment covers the cost: the verifier floors it on purpose, never a gain). */}
+              {e.net_words ?? e.net_display}
             </dd>
           </div>
-        )}
-      </dl>
-      {action ? <div className="mt-4">{action}</div> : null}
-      <details className="mt-3 text-sm" data-testid="deal-option-details">
-        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.details")}</summary>
-        <p className="mt-1.5 text-ink-2">{localNames(c.rationale_when ?? plainDays(c.rationale, today, t), lang)}</p>
-      </details>
+          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.fundingCost")}</dt>
+            <dd className="tabular-nums">{e.funding_cost_display}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+            <dt>{t("biz.deals.offset")}</dt>
+            <dd className="tabular-nums">−{e.offset_display}</dd>
+          </div>
+        </dl>
+      ) : null}
+      {action ? <div className="mt-3">{action}</div> : null}
+      <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.optionDetails", { label: c.label })}>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
+        <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
+        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-ink-2" data-testid="deal-option-terms">
+          {c.obligations.map((o) => (
+            <li key={o.id}>{obligationSentence(o, t, te, today)}</li>
+          ))}
+        </ul>
+      </Disclosure>
     </li>
   );
 }
 
 /**
- * Send the recommended counter to the buyer. The reply comes from the demo's simulated buyer (`POST /negotiate`), and it
- * is not a dry run: if the buyer agrees, the agreement is booked and the remaining gap is funded, so the owner confirms
- * first, as with "Run funding plan". The API always opens with the first counter and offers the next one only after a
- * refusal, which is why only the recommended option carries the button.
+ * What the buyer answered once a counter was sent. DEAL: the agreement now on the books, its terms as sentences. NO_DEAL:
+ * each counter and the buyer's refusal, then what happens next: whether the funding for the gap still ran on the books
+ * (the server's operation statuses) with the way to Cash & funding. The buyer's own words, which can carry the engine's
+ * day numbers, wait behind "What the buyer wrote". The counters are the verifier's; this card only reports the answer.
  */
-function SendToBuyer({ offerId, first, next, buyer }: { offerId: string; first: Counter; next: Counter | null; buyer: string }) {
+function NegotiationOutcome({ negotiation }: { negotiation: NegotiationView }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-  const [profile, setProfile] = useState<BuyerProfile>("cooperative");
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  async function send() {
-    setSending(true);
-    setError(null);
-    try {
-      // Recording the answer re-renders the card as the agreed or the refused deal.
-      recordNegotiation(await negotiate(offerId, { buyer_profile: profile }));
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error(String(e)));
-      setSending(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <Button variant="primary" onClick={() => setOpen(true)} data-testid="deal-send-open">
-        {t("biz.deals.send.open", { label: first.label })}
-      </Button>
-    );
-  }
-  // After a refusal the API offers the next counter, whichever way the simulated buyer leans.
-  const fallback = next ? t("biz.deals.send.ifRefuse", { next: next.label }) : t("biz.deals.send.ifRefuseOne");
+  const deal = negotiation.outcome === "DEAL";
+  const accepted = negotiation.rounds.find((r) => r.buyer_response === "ACCEPT");
+  const ran = negotiation.operations.filter((o) => o.status === "EXECUTED");
+  const words = negotiation.rounds.filter((r) => r.buyer_text);
   return (
-    <div className="space-y-3 rounded-xl border border-brand-600/30 bg-surface p-4" data-testid="deal-send-confirm">
-      <p className="font-semibold text-ink">{t("biz.deals.send.title", { label: first.label, buyer })}</p>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
-        <li>{t("biz.deals.send.simulated")}</li>
-        <li>{t("biz.deals.send.ifAgree")}</li>
-        <li>{fallback}</li>
-      </ul>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-medium text-ink-3">{t("biz.deals.send.profile")}</span>
-        <Segmented<BuyerProfile>
-          label={t("biz.deals.send.profile")}
-          name="deal-buyer-profile"
-          value={profile}
-          onChange={setProfile}
-          options={[
-            { value: "cooperative", label: t("biz.deals.send.cooperative") },
-            { value: "hard_line", label: t("biz.deals.send.hardLine") },
-          ]}
-        />
-      </div>
-      {error ? <ErrorState error={error} /> : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" loading={sending} onClick={() => void send()} data-testid="deal-send">
-          {sending ? t("biz.deals.send.sending") : t("biz.deals.send.confirm")}
-        </Button>
-        <Button variant="secondary" disabled={sending} onClick={() => setOpen(false)} data-testid="deal-send-cancel">
-          {t("biz.deals.send.cancel")}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/** Each counter sent and the buyer's answer, in the buyer's own words. */
-function BuyerThread({ negotiation }: { negotiation: NegotiationView }) {
-  const { t } = useI18n();
-  return (
-    <ol className="space-y-2" data-testid="deal-rounds">
-      {negotiation.rounds.map((r) => (
-        <li key={r.round} className={`rounded-xl px-4 py-3 text-sm ${r.buyer_response === "ACCEPT" ? "bg-ok-bg/60" : "bg-subtle"}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-ink">{t("biz.deals.round", { n: r.round })}</span>
-            {r.counter_label ? <span className="text-ink-2">{r.counter_label}</span> : null}
-            <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "bad"}>{r.buyer_response === "ACCEPT" ? t("biz.deals.option.accepted") : t("biz.deals.refused")}</Badge>
-          </div>
-          {r.buyer_text ? <p className="mt-1 italic text-ink-3">&ldquo;{r.buyer_text}&rdquo;</p> : null}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/** What the negotiation did on the books: the operations that ran, and any that wait for the owner. */
-function RanOnBooks({ negotiation, today, lead, named }: { negotiation: NegotiationView; today: number; lead: string; named: Named }) {
-  const { t, lang } = useI18n();
-  const ran = negotiation.operations.filter((o) => o.status === "EXECUTED" && o.kind !== "ACCEPT_OFFER");
-  const waiting = negotiation.operations.some((o) => o.status === "PENDING_APPROVAL");
-  if (!ran.length && !waiting) return null;
-  return (
-    <div className="mt-2 space-y-2">
-      {ran.length ? (
-        <div className="rounded-xl bg-ok-bg/60 px-4 py-3 text-sm" data-testid="deal-gap-funded">
-          <p className="font-medium text-ok-fg">{lead}</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-ink-2">
-            {ran.map((o) => (
-              <li key={`${o.seq}-${o.op_id}`}>{localNames(plainDays(idsToNames(o.summary || o.message, named), today, t), lang)}</li>
+    <Card id="counters" title={t("biz.deals.answerTitle")} tone={deal ? "ok" : undefined}>
+      {deal ? (
+        <>
+          <p className="text-base font-semibold text-ink" data-testid="deal-negotiation">
+            {t("biz.deals.dealDone", { counter: accepted?.counter_label_when ?? accepted?.counter_label ?? "" })}
+          </p>
+          {/* The agreed terms are said once, in the Agreements card; this is the way to it. */}
+          <p className="mt-2">
+            <a href="#commitments" className={textLinkClass}>
+              {t("biz.deals.seeAgreement")}
+            </a>
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-base font-semibold text-ink" data-testid="deal-negotiation">
+            {t("biz.deals.noDeal")}
+          </p>
+          <ol className="mt-3 space-y-1.5" data-testid="deal-rounds">
+            {negotiation.rounds.map((r) => (
+              <li key={r.round} className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-medium text-ink">{t("biz.deals.round", { n: r.round })}</span>
+                {r.counter_label ? <span className="text-ink-2">{r.counter_label_when ?? r.counter_label}</span> : null}
+                <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "neutral"}>{r.buyer_response === "ACCEPT" ? t("biz.deals.accepted") : t("biz.deals.refused")}</Badge>
+              </li>
+            ))}
+          </ol>
+          {ran.length ? (
+            <div className="mt-3 rounded-tile border border-ok-line bg-ok-bg px-3 py-2 text-sm" data-testid="deal-gap-funded">
+              <p className="font-medium text-ok-fg">{t("biz.deals.gapFunded")}</p>
+              <Link href="/cash" className={`mt-1 ${textLinkClass}`}>
+                {t("biz.deals.seeCash")}
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-ink-2" data-testid="deal-nothing-changed">
+              {t("biz.deals.nothingChanged")}
+            </p>
+          )}
+        </>
+      )}
+      {words.length ? (
+        <Disclosure testId="deal-buyer-words" className="mt-3 text-sm" summary={t("biz.deals.buyerWrote")}>
+          <ul className="mt-1.5 space-y-1.5 text-ink-2">
+            {words.map((r) => (
+              <li key={r.round} className="break-words">
+                {r.buyer_text}
+              </li>
             ))}
           </ul>
-          <Link href="/cash" className="mt-2 inline-block font-semibold text-brand-700 hover:text-brand-600">
-            {t("biz.deals.seeCash")}
-          </Link>
+        </Disclosure>
+      ) : null}
+    </Card>
+  );
+}
+
+/**
+ * One counter's send control. Above the button, in 14 px ink, what sending does: "This will" and the server's lines (the agreement it
+ * records, the funding it draws or requests, the estimated cost), or the server's one `send_scope` sentence when it sent no lines. The first
+ * press asks once, as Home's Run does; the second sends exactly what is shown. The outbound guard's hold says the wording was held back.
+ * The question also asks how the demo's simulated buyer leans (feat/upgrading): open to a counter, or holding firm, which refuses it.
+ */
+function SendControl({ c, lines, primary, sending, busy, onSend }: { c: Counter; lines: string[] | null; primary: boolean; sending: boolean; busy: boolean; onSend: (profile: BuyerProfile) => void }) {
+  const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
+  const [profile, setProfile] = useState<BuyerProfile>("cooperative");
+  // The outbound guard held this counter's wording back: it cannot be sent as it stands.
+  const held = Boolean(c.outbound_blocked);
+  const scopeId = `scope-${optionDomId(c.label)}`;
+  const name = c.label_when ?? c.label;
+  const suffix = primary ? "" : `-${c.label.replace(/\s+/g, "-")}`;
+  return (
+    <div className="space-y-3">
+      {!held ? (
+        lines?.length ? (
+          <div id={scopeId} data-testid="deal-send-scope">
+            <p className="text-sm font-semibold text-ink">{t("biz.deals.send.thisWill")}</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink" data-testid="deal-send-scope-lines">
+              {lines.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p id={scopeId} className="max-w-prose text-sm text-ink" data-testid="deal-send-scope">
+            {c.send_scope || t("biz.deals.send.simulated")}
+          </p>
+        )
+      ) : null}
+      {confirming && !held ? (
+        <div className="rounded-tile border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`send-confirm-${c.id}`} data-testid={`deal-send-confirm-box${suffix}`}>
+          <p id={`send-confirm-${c.id}`} className="font-semibold text-ink">
+            {t("biz.deals.send.confirmTitle", { label: name })}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
+            <Segmented<BuyerProfile>
+              label={t("biz.deals.send.profile")}
+              name={`deal-buyer-profile-${c.id}`}
+              value={profile}
+              onChange={setProfile}
+              options={[
+                { value: "cooperative", label: t("biz.deals.send.cooperative") },
+                { value: "hard_line", label: t("biz.deals.send.hardLine") },
+              ]}
+            />
+          </div>
+          {profile === "hard_line" ? (
+            <p className="mt-2 text-sm text-ink-2" data-testid={`deal-send-refusal${suffix}`}>
+              {t("biz.deals.send.ifRefuseOne")}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="primary" loading={sending} disabled={busy} onClick={() => { onSend(profile); setConfirming(false); }} data-testid={`deal-send-confirm${suffix}`}>
+              {sending ? t("biz.deals.sending") : t("biz.deals.send.confirmGo", { label: name })}
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => setConfirming(false)} data-testid={`deal-send-cancel${suffix}`}>
+              {t("biz.confirm.cancel")}
+            </Button>
+          </div>
         </div>
-      ) : null}
-      {waiting ? (
-        <p className="text-sm text-warn-fg" data-testid="deal-waiting">
-          {t("biz.deals.send.waiting")}{" "}
-          <Link href="/approvals" className="font-semibold underline underline-offset-2">
-            {t("biz.deals.send.openApprovals")}
-          </Link>
-        </p>
-      ) : null}
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={primary ? "primary" : "secondary"}
+            loading={sending}
+            disabled={held || busy}
+            aria-describedby={scopeId}
+            onClick={() => setConfirming(true)}
+            data-testid={primary ? "deal-send" : `deal-send-${c.label.replace(/\s+/g, "-")}`}
+          >
+            {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: name })}
+          </Button>
+          {held ? (
+            <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+              {t("biz.deals.send.blocked")}
+            </span>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * "Recommended response": the first counter as the response to send, the next one behind "Compare another option",
- * and, once a counter was sent, the buyer's reply and what it changed. In Business mode the owner sends the
- * recommended counter from here; Demo mode keeps the stepper's negotiation. The counters are the verifier's, priced and
- * re-checked on the books; the card only shows them.
+ * The refusal of a send the books have outgrown (409 COUNTER_CHANGED): nothing was sent. With the current counters the card shows
+ * them in place of the old ones; without them (`reevaluate`) the old proposal is withdrawn and "Check again" gets a new one.
+ */
+function CounterChanged({ detail, onCheck, checking }: { detail: CounterChangedDetail; onCheck: () => void; checking: boolean }) {
+  const { t } = useI18n();
+  const current = detail.counters.length > 0;
+  return (
+    <div className="mb-4" role="alert" data-testid="deal-counter-changed" data-reason={detail.reason}>
+      <Callout tone="warn" title={t("biz.deals.changed.title")}>
+        <p>{current ? t("biz.deals.changed.current") : t("biz.deals.changed.reevaluate")}</p>
+        {detail.reevaluate || !current ? (
+          <Button className="mt-2" size="sm" variant="secondary" loading={checking} onClick={onCheck} data-testid="deal-check-again">
+            {t("biz.deals.checkAgain")}
+          </Button>
+        ) : null}
+      </Callout>
+    </div>
+  );
+}
+
+/**
+ * "Recommended response": the first counter as the response to send, the next one behind "Compare another option" with its own send,
+ * and what the buyer answered once a counter was sent. Each send names its option, runs the bounded negotiation with the demo's buyer
+ * kernel (the label and the server's scope sentence say the reply is simulated), and carries what the owner was shown: the verdict
+ * id, the counter id and the verdict's `state_version`. If the books moved the API refuses (409 COUNTER_CHANGED) and nothing is sent.
+ * The counters are the verifier's, priced and re-checked on the books; the card only shows them.
  */
 export function RecommendedResponse({
   v,
   offerId,
-  negotiation,
   today,
   mode,
-  buyer,
-  named,
+  negotiation,
+  compareOpen,
+  onCompareChange,
 }: {
   v: VerdictView;
-  offerId: string | null;
-  negotiation: NegotiationView | null;
+  offerId: string;
   today: number;
   mode: Mode;
-  buyer: string;
-  named: Named;
+  negotiation: NegotiationView | null;
+  /** The page may hold whether the other options are shown (Option B); without it the card keeps its own state. */
+  compareOpen?: boolean;
+  onCompareChange?: (open: boolean) => void;
 }) {
   const { t } = useI18n();
-  const [compare, setCompare] = useState(false);
-  const counters = v.counters as Counter[];
-  if (!counters.length) {
+  // On a phone the generic line under the title gives way to the answer: the Send button comes up the page.
+  const narrow = useNarrow();
+  const [localCompare, setLocalCompare] = useState(false);
+  const compare = compareOpen ?? localCompare;
+  const setCompare = (open: boolean) => (onCompareChange ? onCompareChange(open) : setLocalCompare(open));
+  const [sending, setSending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // The refusal belongs to the verdict it answered: a new evaluation (same id, other books) starts clean.
+  const shownKey = `${v.id}:${v.state_version}`;
+  const [refused, setRefused] = useState<{ key: string; detail: CounterChangedDetail } | null>(null);
+  const [checking, setChecking] = useState(false);
+  // The send ran out of time: it may have landed. Retry reads the deal's record and the books again and sends nothing.
+  const [slow, setSlow] = useState(false);
+  const [rechecked, setRechecked] = useState(false);
+  const changed = refused && refused.key === shownKey ? refused.detail : null;
+  // What the owner is looking at, and what the send will carry: the evaluation's, or the current proposal the API sent back.
+  const shown = changed && changed.counters.length ? { verdictId: changed.verdict_id ?? v.id, stateVersion: changed.state_version, counters: changed.counters as Counter[] } : { verdictId: v.id, stateVersion: v.state_version, counters: v.counters as Counter[] };
+  const withdrawn = Boolean(changed && !changed.counters.length);
+  const counters = withdrawn ? [] : shown.counters;
+
+  async function send(c: Counter, profile: BuyerProfile = "cooperative") {
+    setSending(c.id);
+    setError(null);
+    setSlow(false);
+    setRechecked(false);
+    try {
+      recordNegotiation(await negotiate(offerId, { buyer_profile: profile, verdict_id: shown.verdictId, counter_id: c.id, state_version: shown.stateVersion }));
+      setRefused(null);
+    } catch (e) {
+      const moved = counterChanged(e);
+      if (isTimeout(e)) {
+        setSlow(true);
+        bump();
+      } else if (moved) setRefused({ key: shownKey, detail: moved });
+      else setError(errorText(e, t));
+    } finally {
+      setSending(null);
+    }
+  }
+
+  async function checkAgain() {
+    setChecking(true);
+    setError(null);
+    try {
+      await evaluateAndCache(offerId);
+      setRefused(null);
+    } catch (e) {
+      setError(errorText(e, t));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (!v.counters.length) {
     return (
       <Card id="counters" title={t("biz.deals.response")}>
         <p className="text-sm text-ink-2" data-testid="deal-no-offer">
@@ -227,58 +352,55 @@ export function RecommendedResponse({
       </Card>
     );
   }
-
-  // The buyer accepted: the agreed counter, marked as such, the buyer's reply, and what was funded after it.
-  if (negotiation?.outcome === "DEAL") {
-    const acceptedId = negotiation.accepted_counter_id ?? negotiation.rounds.find((r) => r.buyer_response === "ACCEPT")?.counter_id ?? null;
-    const agreed = counters.find((c) => c.id === acceptedId) ?? counters[0];
-    return (
-      <Card id="counters" title={t("biz.deals.agreedTitle")} subtitle={t("biz.deals.agreedSub")}>
-        <ul className="space-y-3">
-          <CounterBusinessCard c={agreed} badge="accepted" today={today} />
-        </ul>
-        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.send.replyTitle")}</p>
-        <BuyerThread negotiation={negotiation} />
-        <p className="mt-3 text-sm text-ink-2" data-testid="deal-negotiation">
-          {t("biz.deals.dealDone", { counter: negotiation.rounds.find((r) => r.buyer_response === "ACCEPT")?.counter_label ?? agreed.label })}
-        </p>
-        <RanOnBooks negotiation={negotiation} today={today} lead={t("biz.deals.gapFundedDeal")} named={named} />
-      </Card>
-    );
-  }
-
-  // The buyer refused every counter: what was offered and what the buyer answered, and what still happened on the books.
-  if (negotiation?.outcome === "NO_DEAL") {
-    const ran = negotiation.operations.some((o) => o.status === "EXECUTED" || o.status === "PENDING_APPROVAL");
-    return (
-      <Card id="counters" title={t("biz.deals.offeredTitle")} subtitle={t("biz.deals.offeredSub")}>
-        <BuyerThread negotiation={negotiation} />
-        <p className="mt-3 text-sm font-medium text-ink" data-testid="deal-negotiation">
-          {t("biz.deals.noDealPlain")}
-        </p>
-        {ran ? <RanOnBooks negotiation={negotiation} today={today} lead={t("biz.deals.gapFunded")} named={named} /> : <p className="mt-1 text-sm text-ink-2">{t("biz.deals.nothingChanged")}</p>}
-      </Card>
-    );
-  }
-
+  // The buyer has answered: the outcome replaces the counters, which are no longer choices.
+  if (negotiation) return <NegotiationOutcome negotiation={negotiation} />;
   const [first, ...rest] = counters;
-  const send = mode === "business" && offerId ? <SendToBuyer offerId={offerId} first={first} next={rest[0] ?? null} buyer={buyer} /> : undefined;
+  const busy = sending !== null;
+  // The server's "This will" lines belong to the priced response (the recommended counter); another counter keeps its one sentence.
+  const pricedLines = (c: Counter): string[] | null => (v.workspace?.priced_response?.counter_id === c.id ? (v.workspace.priced_response.send_scope_lines ?? null) : null);
+  const controlFor = (c: Counter, primary: boolean) =>
+    mode === "business" ? <SendControl c={c} lines={pricedLines(c)} primary={primary} sending={sending === c.id} busy={busy} onSend={(profile) => void send(c, profile)} /> : undefined;
+
   return (
-    <Card id="counters" title={t("biz.deals.response")} subtitle={t("biz.deals.counters.sub")}>
-      <ul className="space-y-3">
-        <CounterBusinessCard c={first} badge="recommended" today={today} action={send} />
-        {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} badge={null} today={today} />) : null}
-      </ul>
+    <Card id="counters" title={t("biz.deals.response")} subtitle={narrow ? undefined : t("biz.deals.counters.sub")}>
+      {changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}
+      {first ? (
+        <ul className="motion-rise divide-y divide-line">
+          <CounterBusinessCard c={first} recommended today={today} action={controlFor(first, true)} />
+          {compare ? rest.map((c) => <CounterBusinessCard key={c.id} c={c} recommended={false} today={today} action={controlFor(c, false)} />) : null}
+        </ul>
+      ) : null}
+      {slow ? (
+        <div className="mt-3">
+          <SlowNotice
+            message={t("err.timeout_write")}
+            onRetry={() => {
+              setSlow(false);
+              setRechecked(true);
+              bump();
+            }}
+          />
+        </div>
+      ) : rechecked && !error ? (
+        <p className="mt-3 rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">
+          {t("biz.slow.checked")}
+        </p>
+      ) : null}
+      {error ? (
+        <div className="mt-3">
+          <ErrorState error={error} />
+        </div>
+      ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         {rest.length ? (
-          <Button variant="secondary" onClick={() => setCompare((x) => !x)} data-testid="deal-compare">
+          <Button variant="secondary" onClick={() => setCompare(!compare)} data-testid="deal-compare">
             {compare ? t("biz.deals.hideCompare") : t("biz.deals.compare", { n: rest.length })}
           </Button>
         ) : null}
         {mode === "demo" ? (
           <p className="text-xs text-ink-3">
             {t("biz.deals.negotiateHint")}{" "}
-            <Link href="/verdict#negotiation" className="font-medium text-brand-700 underline underline-offset-2">
+            <Link href="/verdict#negotiation" className={textLinkClass}>
               {t("biz.deals.negotiateLink")}
             </Link>
           </p>

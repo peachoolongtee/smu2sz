@@ -6,8 +6,8 @@ Order matters and is fixed ("why"/"为什么" makes a request EXPLAIN before any
   correction / confirmation of the session's pending plan (a short whole-message affirmative only), Tier-3 requests,
   explicit approvals (a full-match approve or reject sentence only; see app/nl/consent.py), the closed command grammar
   (the only free text that executes a draw or a repay),
-  EXPLAIN, WHAT_IF, fixture or quoted-offer references, ACCELERATE_RECEIPT, NEGOTIATE, REPAY_FACILITY,
-  FUND_GAP, SHOW_STATUS, bare approvals, capex, vague cash requests (AMBIGUOUS).
+  EXPLAIN, WHAT_IF, fixture or quoted-offer references, alerts, the page questions (what changed, what we are waiting
+  for, when money arrives, what is overdue), ACCELERATE_RECEIPT, NEGOTIATE, REPAY_FACILITY, FUND_GAP, SHOW_STATUS, bare approvals, capex, vague cash requests (AMBIGUOUS).
 """
 
 from __future__ import annotations
@@ -269,6 +269,15 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.EVALUATE_OFFER, "offer_reference")
     if lx.ALERTS.search(text) and not lx.ACCELERATE.search(text):
         return hit(Intent.SHOW_ALERTS, "alerts")
+    # the questions the Business pages suggest (app/nl/reads.py): read-only, answered from the Home read
+    if lx.CHANGES_ASK.search(text):
+        return hit(Intent.CHANGES, "changes")
+    if lx.WAITING_ASK.search(text):
+        return hit(Intent.SHOW_STATUS, "waiting")
+    if lx.ARRIVAL_ASK.search(text):
+        return hit(Intent.SHOW_STATUS, "arrival")
+    if lx.OVERDUE_ASK.search(text):
+        return hit(Intent.RECONCILE, "overdue")
     if lx.BORROWER_FILE.search(text):
         return hit(Intent.BORROWER_FILE, "borrower_file")
     if lx.COMPARE_FINANCING.search(text) and not lx.ACCELERATE.search(text):

@@ -1,11 +1,12 @@
 /**
  * The Tier-2 queue. GET /approvals/queue returns raw approval records; the page wants a display row.
  * Decisions are owner actions. Like every live request they carry X-Owner-Token, and the server (not this file)
- * decides whether the caller really is the owner. A refusal from the executor is surfaced as an error.
+ * decides whether the caller really is the owner. Only "you are not the owner" is an error. An approval whose run the executor
+ * refused is a completed decision: the row comes back APPROVED with the refusal, and the page shows the terminal outcome.
  */
 
 import { ApiError } from "../errors";
-import type { ApprovalDecision, ApprovalOperation, ApprovalPresentation, ApprovalStatus, ApprovalView, OperationResult, Tier } from "../types";
+import type { StateTone, ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -28,10 +29,26 @@ interface RawApproval {
   amount_display?: string | null;
   /** Business words for the card, written by the API. */
   presentation?: ApprovalPresentation;
+  /** The decision record (ADR-0011): its id and state, the stored quote and what the decision run did. All the server's words. */
+  decision_id?: string | null;
+  decision_state?: DecisionState | null;
+  quote?: ApprovalQuote | null;
+  execution?: { status: ApprovalExecutionStatus; summary_text: string | null } | null;
+  result_state_text?: string | null;
+  result_tone?: StateTone | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
-  const { approvals } = await http<{ approvals: RawApproval[] }>("GET", "/approvals/queue");
+  return (await getApprovalsRead()).approvals;
+}
+
+/** The queue and when the books were last read for it (the server's words, absent from an older server). */
+export async function getApprovalsRead(): Promise<{ approvals: ApprovalView[]; last_read_when: string | null }> {
+  const raw = await http<{ approvals: RawApproval[]; last_read_when?: string | null }>("GET", "/approvals/queue");
+  return { approvals: toViews(raw.approvals), last_read_when: raw.last_read_when ?? null };
+}
+
+function toViews(approvals: RawApproval[]): ApprovalView[] {
   // `decided_day` is the API's, never the simulated clock today (that is not the day a past decision was made).
   return approvals.map(
     (a) =>
@@ -54,8 +71,22 @@ export async function getApprovals(): Promise<ApprovalView[]> {
         decided_day: a.decided_day ?? null,
         result_message: a.result_message ?? null,
         presentation: a.presentation,
+        decision_id: a.decision_id ?? null,
+        decision_state: a.decision_state ?? null,
+        quote: a.quote ?? null,
+        execution: a.execution ?? null,
+        result_state_text: a.result_state_text ?? a.presentation?.result_state_text ?? null,
+        result_tone: a.result_tone ?? a.presentation?.result_tone ?? null,
       }) as ApprovalView,
   );
+}
+
+/** How the decision run ended, from the executor's result (the queue's `presentation.execution_status` wins once it is read). */
+function executionStatusOf(decision: ApprovalDecision, status: OperationResult["status"]): ApprovalExecutionStatus {
+  if (status === "REFUSED") return "REFUSED";
+  if (status === "DUPLICATE") return "DUPLICATE";
+  if (status === "PENDING_APPROVAL") return "PENDING";
+  return decision === "REJECT" ? "DECLINED" : "EXECUTED";
 }
 
 export async function decideApproval(id: string, decision: ApprovalDecision): Promise<ApprovalView> {
@@ -63,11 +94,11 @@ export async function decideApproval(id: string, decision: ApprovalDecision): Pr
   const { result } = await http<{ result: OperationResult }>("POST", `/approvals/${encodeURIComponent(id)}`, {
     body: { decision },
   });
-  const notOwner = result.violations.some((v) => v.code === "INSUFFICIENT_AUTHORITY");
-  if (notOwner || (decision === "APPROVE" && result.status === "REFUSED")) {
-    throw new ApiError(403, result.message || "The executor refused this decision.");
+  if (result.violations.some((v) => v.code === "INSUFFICIENT_AUTHORITY")) {
+    throw new ApiError(403, result.message || "Only the owner can decide this.", undefined, result.message ? undefined : "executor_refused");
   }
+  // The approval is APPROVED even when the executor then refused to run it (the authorization stands, the execution did not): read the queue again.
   const found = (await getApprovals()).find((a) => a.id === id);
-  if (!found) throw new ApiError(404, `Approval ${id} not found.`);
-  return { ...found, result_message: result.message };
+  if (!found) throw new ApiError(404, `Approval ${id} not found.`, undefined, "approval_missing", { id });
+  return { ...found, result_message: result.message, execution_status: found.presentation?.execution_status ?? executionStatusOf(decision, result.status) };
 }

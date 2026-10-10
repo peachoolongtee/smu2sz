@@ -1,55 +1,144 @@
 @import "tailwindcss";
 
-/* Design tokens. Calm light fintech theme: neutral surfaces, one blue accent, semantic status colours.
-   Every colour used by components comes from here or from the default Tailwind palette (annotation tones). */
-@theme {
+/* `touch:` is where a finger is the pointer: any viewport below the desktop layout (1024 px) or a coarse pointer at any width.
+   Controls keep their 32 / 40 px look on a desktop and reach 44 px here (DESIGN.md, Touch). */
+@custom-variant touch {
+  @media (max-width: 63.999rem) {
+    @slot;
+  }
+  @media (pointer: coarse) {
+    @slot;
+  }
+}
+
+/* `short:` is a window at most 800 px tall (a 768 px laptop): the hero and the next-step card tighten so the priced action reaches the first screen. */
+@custom-variant short (@media (max-height: 800px));
+
+/* Design tokens (the reference is apps/web/DESIGN.md). A light fintech theme: a faintly cool canvas under white cards, one
+   confident blue, semantic status colours, five section hues for wayfinding, and one deep navy block (the Home hero, the
+   Demo strip). Every colour used by components comes from here (the annotation tones in lib/annotation-style.ts are the one
+   exception). Status tokens mean a status and nothing else; the -solid tokens are for marks that must be seen (dots, rails,
+   chart marks, a white icon on a chip: 3:1), the -bright tokens for pills and figures on the deep block. The sec-* tokens
+   say where you are (a page's icon chip, a tab, a shortcut, an avatar) and never how things are going.
+   `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
+@theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --color-canvas: #f5f7fa;
+  --color-canvas: #f3f6fb;
   --color-surface: #ffffff;
-  --color-subtle: #eef2f6;
-  --color-line: #dde3ea;
-  --color-line-strong: #c3cdd9;
+  --color-subtle: #eaf0f7;
+  --color-line: #dbe3ee;
+  --color-line-strong: #c2cddc; /* dividers between dense rows: decoration, not a boundary that must be seen */
+  --color-line-ui: #74849b; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.3:1 on subtle */
 
   --color-ink: #0f1c2e;
   --color-ink-2: #3f5068;
   --color-ink-3: #5d6e84;
 
-  --color-brand-50: #eaf1fc;
-  --color-brand-100: #d6e4f9;
-  --color-brand-600: #1558c0;
-  --color-brand-700: #0f479c;
+  --color-brand-50: #e8f0fe;
+  --color-brand-100: #d3e2fc;
+  --color-brand-600: #1a5fe0; /* white on it: 5.6:1 */
+  --color-brand-700: #124bb8;
+  --color-brand-900: #0b1f4d; /* the deep block: the Home hero, the Demo strip */
+  --color-on-deep: #ffffff; /* text on the deep block: 15.9:1 */
+  --color-on-deep-muted: #b7c3d9; /* captions on the deep block: 9:1 */
 
   --color-ok-fg: #0b6b48;
   --color-ok-bg: #e5f5ed;
   --color-ok-line: #b2dec6;
+  --color-ok-solid: #1a8a5a;
+  --color-ok-bright: #6fdcae;
   --color-warn-fg: #82490a;
   --color-warn-bg: #fdf2d9;
   --color-warn-line: #ecd092;
+  --color-warn-solid: #b7791f;
+  --color-warn-bright: #f5b942;
   --color-bad-fg: #a3241a;
   --color-bad-bg: #fdecea;
   --color-bad-line: #f1b9b2;
+  --color-bad-solid: #d2362a;
+  --color-bad-bright: #ffb4ab;
   --color-info-fg: #1447a6;
   --color-info-bg: #e8f0fd;
   --color-info-line: #b9cff4;
+  --color-info-solid: #2f6fe0;
+  --color-info-bright: #a9c8ff;
+
+  /* Section hues, for wayfinding only: bg is the tint, fg the text on the tint (4.5:1), solid the fill behind a white icon or
+     an icon on white (3:1). Never a status. Teal and orange are pushed away from ok-green and warn-amber on purpose. */
+  --color-sec-home-bg: #e8f0fe;
+  --color-sec-home-fg: #124bb8;
+  --color-sec-home-solid: #1a5fe0;
+  --color-sec-deals-bg: #f0ebfd;
+  --color-sec-deals-fg: #5532bf;
+  --color-sec-deals-solid: #6d4ad8;
+  --color-sec-cash-bg: #e1f4f6;
+  --color-sec-cash-fg: #07616e;
+  --color-sec-cash-solid: #0a8190;
+  --color-sec-recv-bg: #fdeee0;
+  --color-sec-recv-fg: #8f3f05;
+  --color-sec-recv-solid: #c4570c;
+  --color-sec-activity-bg: #fce9f1;
+  --color-sec-activity-fg: #a3225a;
+  --color-sec-activity-solid: #c7366e;
+
+  /* The cash chart's marks and nothing else: the line you read, the plan, the reserve, the danger band, the worst point. */
+  --color-chart-base: #1a5fe0;
+  --color-chart-plan: #0b6b48;
+  --color-chart-reserve: #a3241a;
+  --color-chart-danger: #fdecea;
+  --color-chart-worst: #b7791f;
+  --color-chart-grid: #dbe3ee;
+  --color-chart-axis: #5d6e84;
+
+  --color-focus: #1a5fe0;
+  --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
+
+  /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
+  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22);
+  --shadow-pop: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24);
+  /* The Demo strip fixed to the bottom of a phone: the same soft shadow, cast upward. */
+  --shadow-up: 0 -4px 12px rgb(15 28 46 / 0.08);
+
+  /* One radius scale: pills for everything you press or type into, 16 px cards, 12 px inner tiles and rows. */
+  --radius-pill: 9999px;
+  --radius-card: 16px;
+  --radius-tile: 12px;
+
+  /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 280ms;
+  /* Tailwind's own transition-colors / -opacity / -transform take the kit's timing, not its 150 ms default. */
+  --default-transition-duration: var(--dur);
+  --default-transition-timing-function: var(--ease-out);
+
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
   --color-new: #6b3fc0;
   --color-new-bg: #f1ebfc;
   --color-new-line: #d5c4f3;
-
-  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.04);
-  --radius-card: 0.625rem;
-  --radius-btn: 0.375rem;
 }
 
 html {
+  /* Light only, by design: form controls, scrollbars and the dialog backdrop must not take a dark phone's theme under a light page. */
+  color-scheme: light;
+  /* A focused or anchored element scrolls clear of the fixed bottom bar (app-shell.tsx publishes its measured height as --dock-h). */
+  scroll-padding-bottom: calc(var(--dock-h, 0px) + 1rem);
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
+}
+
+/* An owner who chose Demo mode or Chinese: the server's Business/English first paint stays hidden until the shell has hydrated into
+   their choice (lib/pre-hydration.ts sets the mark; components/app-shell.tsx clears it, and so does a 2 s timer in the script itself). */
+html[data-pending] body {
+  visibility: hidden;
 }
 
 body {
@@ -58,12 +147,42 @@ body {
   line-height: 1.45;
 }
 
+/* Focus: a 2 px ring, 2 px off the edge, in the focus token (3:1 on the canvas and on white). It follows the element's own
+   radius, so a pill gets a round ring. */
 :focus-visible {
-  outline: 2px solid var(--color-brand-600);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
+/* Inside the deep block the ring is white. */
+.on-deep :focus-visible {
+  outline-color: var(--color-focus-on-deep);
+}
+
+/* A text link answers the pointer: its underline thickens (no colour change, so the contrast row in DESIGN.md stays true). */
+a.underline:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* The browser's own surfaces take the palette: the selection is the brand tint, the caret and the checkboxes are the brand blue. */
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-ink);
+}
+input,
+textarea,
+select {
+  caret-color: var(--color-brand-600);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-brand-600);
+}
+
+/* ------------------------------------------------------------------ Motion kit
+   Ease-out, 120 / 200 / 280 ms, transform and opacity only, so nothing moves the layout (a disclosure's height is the one
+   deliberate exception). Everything is a class so a component names what it wants and the reduced-motion block at the end
+   can switch the lot off. */
 @keyframes tl-slide-in {
   from {
     transform: translateX(2rem);
@@ -87,89 +206,43 @@ body {
   }
 }
 
-/* ------------------------------------------------------------------ Business theme
-   The owner's product, inspired by Revolut: a soft grey canvas, white cards with large radii and hairline borders, one
-   confident blue, near-black type with tight tracking for figures, pill buttons, round icon actions, and short, crisp
-   motion (ease-out, under 300 ms, transform and opacity only). Scoped to `.biz` so the Demo shell keeps its own look. */
-.biz {
-  --color-canvas: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-subtle: #f1f2f4;
-  --color-line: #eceef1;
-  --color-line-strong: #dcdfe4;
-
-  --color-ink: #121417;
-  --color-ink-2: #4b5260;
-  --color-ink-3: #6c7380;
-
-  --color-brand-50: #ebf3ff;
-  --color-brand-100: #d4e5ff;
-  --color-brand-600: #0666eb;
-  --color-brand-700: #0552c2;
-
-  --color-ok-fg: #00804f;
-  --color-ok-bg: #e3f7ee;
-  --color-ok-line: #b5e7d0;
-  --color-warn-fg: #8f5200;
-  --color-warn-bg: #fff4e0;
-  --color-warn-line: #f6d79f;
-  --color-bad-fg: #c9252c;
-  --color-bad-bg: #fdecec;
-  --color-bad-line: #f5c2c4;
-  --color-info-fg: #0552c2;
-  --color-info-bg: #ebf3ff;
-  --color-info-line: #c4dbff;
-
-  --shadow-card: 0 1px 2px rgb(18 20 23 / 0.04), 0 8px 24px -12px rgb(18 20 23 / 0.08);
-  --shadow-lift: 0 2px 4px rgb(18 20 23 / 0.05), 0 16px 32px -16px rgb(18 20 23 / 0.16);
-  --radius-card: 1.25rem;
-  --radius-btn: 9999px;
-
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  font-size: 0.9375rem;
-  line-height: 1.5;
+/* A card or block arriving: fades in and rises 6 px. */
+@keyframes biz-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* Some life behind the cards (components/business/backdrop.tsx): a dot grid fading out from the top, soft colour glows
-   that drift slowly, rings and a wave line. Low contrast, so the white cards stay the strongest shapes on the page. */
-.biz-dots {
-  background-image: radial-gradient(rgb(18 20 23 / 0.12) 1px, transparent 1.2px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 0%, transparent 75%);
+/* A row arriving in a list: the same rise, staggered 30 ms per row. */
+@keyframes biz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.biz-blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(60px);
-  opacity: 0.55;
-  animation: biz-drift 26s ease-in-out infinite alternate;
+
+/* A menu or sheet opening from its button: a short drop. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.biz-blob-a {
-  top: -10rem;
-  left: -8rem;
-  width: 34rem;
-  height: 30rem;
-  background: rgb(6 102 235 / 0.22);
-}
-.biz-blob-b {
-  top: -6rem;
-  right: -10rem;
-  width: 32rem;
-  height: 28rem;
-  background: rgb(139 92 246 / 0.2);
-  animation-delay: -9s;
-}
-.biz-blob-c {
-  bottom: -12rem;
-  left: 35%;
-  width: 36rem;
-  height: 26rem;
-  background: rgb(20 184 166 / 0.14);
-  animation-delay: -17s;
-}
+
+/* The soft background's slow drift. */
 @keyframes biz-drift {
   from {
     transform: translate3d(0, 0, 0) scale(1);
@@ -179,261 +252,270 @@ body {
   }
 }
 
-/* The primary action glows a little: a blue gradient that brightens on hover. */
-.biz .btn-primary {
-  background-image: linear-gradient(135deg, #0666eb 0%, #3b6dff 55%, #6a5cff 100%);
-  box-shadow: 0 6px 16px -6px rgb(6 102 235 / 0.55);
-}
-.biz .btn-primary:not(:disabled):hover {
-  background-image: linear-gradient(135deg, #0552c2 0%, #2f5ff0 55%, #5b4df0 100%);
-  box-shadow: 0 8px 20px -6px rgb(6 102 235 / 0.65);
-}
-
-/* Summary tiles get a tint each, so a row of figures reads as a set of colours rather than grey boxes. */
-.biz dl > .stat:nth-child(4n + 1) {
-  background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 70%);
-}
-.biz dl > .stat:nth-child(4n + 2) {
-  background: linear-gradient(135deg, #fff0f0 0%, #ffffff 70%);
-}
-.biz dl > .stat:nth-child(4n + 3) {
-  background: linear-gradient(135deg, #ebfaf5 0%, #ffffff 70%);
-}
-.biz dl > .stat:nth-child(4n + 4) {
-  background: linear-gradient(135deg, #f3efff 0%, #ffffff 70%);
-}
-.biz .stat {
-  border-radius: 1rem;
-  border-color: transparent;
-  box-shadow: var(--shadow-card);
-  padding: 1rem 1.125rem;
-}
-
-/* The shared button, as a pill in the Business theme: taller, bolder, grey secondaries without a border. */
-.biz .btn {
-  font-weight: 600;
-}
-.biz .btn-md {
-  min-height: 2.75rem;
-  padding-inline: 1.25rem;
-}
-.biz .btn-secondary {
-  background: var(--color-subtle);
-  border-color: transparent;
-}
-.biz .btn-secondary:hover {
-  background: #e6e8ec;
-}
-
-/* Shared primitives, restyled for the Business theme through their class hooks. */
-.biz .page-head {
-  margin-bottom: 1.5rem;
-}
-.biz .page-head h1 {
-  font-size: 1.75rem;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-}
-@media (min-width: 1024px) {
-  .biz .page-head h1 {
-    font-size: 2rem;
+/* The status dot's one pulse: a ring that grows out of the dot and fades. */
+@keyframes dot-pulse {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3);
   }
 }
-.biz .page-head p {
-  font-size: 0.9375rem;
-  color: var(--color-ink-3);
-}
-.biz .card {
-  border-color: var(--color-line);
-}
-.biz .card-head {
-  border-bottom-color: transparent;
-  padding: 1.125rem 1.25rem 0.25rem;
-}
-.biz .card-head h2 {
-  font-size: 1rem;
-  letter-spacing: -0.01em;
-}
-.biz .card-head p {
-  font-size: 0.8125rem;
-}
-.biz .card-body {
-  padding: 1rem 1.25rem 1.25rem;
-}
-.biz .badge {
-  border-color: transparent;
-  padding: 0.125rem 0.625rem;
-  font-weight: 600;
-}
-.biz .next-step {
-  border-color: transparent;
-  border-radius: var(--radius-card);
-  padding: 0.875rem 1rem 0.875rem 1.25rem;
-  box-shadow: var(--shadow-card);
-}
-.biz .next-step a,
-.biz .next-step button {
-  border-radius: 9999px;
+
+@layer components {
+  /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
+  .motion-reveal {
+    animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
+  .motion-rise > * {
+    animation: biz-rise var(--dur-slow) var(--ease-out) backwards;
+  }
+  .motion-rise > :nth-child(2) { animation-delay: 30ms; }
+  .motion-rise > :nth-child(3) { animation-delay: 60ms; }
+  .motion-rise > :nth-child(4) { animation-delay: 90ms; }
+  .motion-rise > :nth-child(5) { animation-delay: 120ms; }
+  .motion-rise > :nth-child(6) { animation-delay: 150ms; }
+  .motion-rise > :nth-child(7) { animation-delay: 180ms; }
+  .motion-rise > :nth-child(8) { animation-delay: 210ms; }
+  .motion-rise > :nth-child(n + 9) { animation: none; }
+
+  /* Rows, tiles and option rows that lead somewhere lift 1 px and take the next shadow step, on devices that really hover. */
+  .motion-lift {
+    transition:
+      transform var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      background-color var(--dur) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .motion-lift:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+
+  /* Pill buttons answer the press, and ease their colour. */
+  .motion-press {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur) var(--ease-out),
+      border-color var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      opacity var(--dur) var(--ease-out);
+  }
+  .motion-press:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  /* A dialog card arriving (the walkthrough): opacity and scale only, so its own placement is left alone. */
+  .motion-pop {
+    animation: tour-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The chat slide-over and any panel that enters from the right edge. */
+  .motion-panel[open] {
+    animation: tl-slide-in var(--dur-slow) var(--ease-out) backwards;
+  }
+
+  /* The sheet under the account button, and any menu that drops from a button. */
+  .motion-sheet {
+    transform-origin: top right;
+    animation: sheet-in var(--dur) var(--ease-out) backwards;
+  }
+
+  /* The status dot's single pulse (ACTION_NEEDED and CRITICAL only; the class is not set for the others). */
+  .motion-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    animation: dot-pulse 900ms var(--ease-out) 400ms 1 backwards;
+  }
+
+  /* A sliding thumb or indicator: it moves by transform only. */
+  .motion-slide {
+    transition: transform var(--dur) var(--ease-out);
+  }
+
+  /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the
+     pseudo-element is the extra hit area, so a compact chip does not grow. */
+  .hit {
+    position: relative;
+  }
+  @media (max-width: 63.999rem), (pointer: coarse) {
+    .hit::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 2.75rem);
+      height: max(100%, 2.75rem);
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  /* The fixed bottom bar (the phone tab bar, the Demo stepper) publishes its measured height as --dock-h (app-shell.tsx, useDock).
+     Content clears it, and clears the Ask FLOW pill that sits above it from `sm` (40 px tall, 16 px off the bar and 16 px below the
+     content); on a phone Ask FLOW is a cell of the bar itself, so only the bar is cleared. From `lg` there is no bar: the pill is at
+     the corner and the page ends 80 px below its content (40 px from 1440 px up). */
+  .dock-pad {
+    padding-bottom: calc(var(--dock-h, 3.5rem) + 1.5rem);
+  }
+  @media (min-width: 40rem) {
+    .dock-pad {
+      padding-bottom: calc(var(--dock-h, 3.5rem) + 4.5rem);
+    }
+  }
+  @media (min-width: 64rem) {
+    .dock-pad {
+      padding-bottom: calc(var(--dock-h, 0px) + 5rem);
+    }
+  }
+  /* Business pages (`.dock-pad-margin`): from 1440 px the 1180 px content leaves a margin wider than the pill, so it sits beside the page. */
+  @media (min-width: 90rem) {
+    .dock-pad.dock-pad-margin {
+      padding-bottom: 2.5rem;
+    }
+  }
+
+  /* Ask FLOW. Phone: the last cell of the bar, 48 x 56 px, flush to the bar's bottom-right corner (the tab bar and the Demo stepper
+     leave that cell free). From `sm`: a pill 16 px above the bar; from `lg`, 24 px from the corner. */
+  .ask-trigger {
+    right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    width: 3rem;
+    height: 3.5rem;
+  }
+  @media (min-width: 40rem) {
+    .ask-trigger {
+      right: 1rem;
+      bottom: calc(var(--dock-h, 3.5rem) + 1rem);
+      width: auto;
+      height: auto;
+    }
+  }
+  @media (min-width: 64rem) {
+    .ask-trigger {
+      right: 1.5rem;
+      bottom: calc(var(--dock-h, 0px) + 1.5rem);
+    }
+  }
 }
 
-/* The brand's tagline only where the header has room for it. */
-@media (max-width: 1535px) {
-  .biz .brand-tagline {
+/* Disclosures: the body is a one-row grid that opens from 0fr to 1fr (the same height animation for every <details>; the
+   inner box clips while it moves). `@starting-style` covers browsers that render a closed <details> as display: none. */
+.disclosure-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--dur) var(--ease-out),
+    opacity var(--dur) var(--ease-out);
+  opacity: 0;
+}
+details[open] > .disclosure-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  @starting-style {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+.disclosure-body > .disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Any <details> that is not a Disclosure (a transcript's fold, an inline audit row) gets the browser's own height animation where
+   `::details-content` exists; elsewhere it simply opens. The account menu (`.menu`) is a sheet, not a fold. */
+details:not(.menu, :has(> .disclosure-body)) {
+  interpolate-size: allow-keywords;
+}
+details:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size var(--dur) var(--ease-out),
+    content-visibility var(--dur) allow-discrete;
+}
+details[open]:not(.menu, :has(> .disclosure-body))::details-content {
+  block-size: auto;
+}
+
+/* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
+   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They drift
+   very slowly: one 40 s drift, then they rest where they are (a 64 px blur that animates forever is paint work for the life of the
+   tab). The Cash disc is left out on a phone, where the tab bar covers it anyway. Cards stay solid on top. */
+.biz-disc {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  filter: blur(64px);
+  opacity: 0.35;
+  animation: biz-drift 40s ease-in-out 1 forwards;
+}
+.biz-disc-home {
+  top: -8rem;
+  left: -10rem;
+  width: 38rem;
+  height: 32rem;
+  background: color-mix(in srgb, var(--color-sec-home-solid) 12%, var(--color-canvas));
+}
+.biz-disc-cash {
+  right: -12rem;
+  bottom: -10rem;
+  width: 40rem;
+  height: 30rem;
+  background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
+  animation-delay: -20s;
+}
+@media (max-width: 39.999rem) {
+  .biz-disc-cash {
     display: none;
   }
 }
 
-/* Segmented switches as pills. */
-.biz .seg {
-  border-color: transparent;
-  border-radius: 9999px;
-  background: #e8eaee;
-  padding: 3px;
-}
-.biz .seg-opt {
-  border-radius: 9999px;
-  font-weight: 600;
-  padding: 0.375rem 0.875rem;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease,
-    box-shadow 200ms ease;
-}
-
-/* Figures read like a banking app: tight tracking, tabular digits. */
-.biz .figure {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.025em;
-}
-
-/* Buttons and pressable rows answer the press. */
-.biz button,
-.biz a.press,
-.biz summary {
-  transition:
-    transform 160ms var(--ease-out),
-    background-color 200ms ease,
-    color 200ms ease,
-    box-shadow 200ms ease,
-    opacity 200ms ease;
-}
-.biz button:not(:disabled):active,
-.biz a.press:active {
-  transform: scale(0.97);
-}
-
-/* Cards that open something lift on hover, only on devices that really hover. */
-@media (hover: hover) and (pointer: fine) {
-  .biz .lift {
-    transition:
-      transform 200ms var(--ease-out),
-      box-shadow 200ms var(--ease-out),
-      background-color 200ms ease;
-  }
-  .biz .lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lift);
-  }
-}
-
-/* Disclosures: details stay one click away; the chevron turns and the content eases in. */
-.biz details > summary {
-  list-style: none;
-  cursor: pointer;
-}
-.biz details > summary::-webkit-details-marker {
+/* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal
+   specificity, so the later rule wins, and the other order left the ellipsis hidden under reduced motion. */
+.spinner-dots {
   display: none;
 }
-.biz details > summary .chev {
-  transition: transform 200ms var(--ease-out);
-}
-.biz details[open] > summary .chev {
-  transform: rotate(90deg);
-}
-/* Summaries without their own chevron get one drawn here, turning the same way. */
-.biz details > summary:not(:has(.chev)):not(.no-chev)::before {
-  content: "";
-  display: inline-block;
-  flex-shrink: 0;
-  width: 0.45em;
-  height: 0.45em;
-  margin: 0 0.65em 0.1em 0.15em;
-  border-right: 1.75px solid currentColor;
-  border-bottom: 1.75px solid currentColor;
-  opacity: 0.6;
-  transform: rotate(-45deg);
-  transition: transform 200ms var(--ease-out);
-}
-.biz details[open] > summary:not(:has(.chev)):not(.no-chev)::before {
-  transform: rotate(45deg);
-}
-.biz details[open] > :not(summary) {
-  animation: biz-reveal 220ms var(--ease-out);
-}
-@keyframes biz-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
 
-/* Page sections rise in once, with a short stagger. */
-.biz .rise > * {
-  animation: biz-rise 380ms var(--ease-out) both;
-}
-.biz .rise > *:nth-child(2) {
-  animation-delay: 40ms;
-}
-.biz .rise > *:nth-child(3) {
-  animation-delay: 80ms;
-}
-.biz .rise > *:nth-child(4) {
-  animation-delay: 120ms;
-}
-.biz .rise > *:nth-child(n + 5) {
-  animation-delay: 160ms;
-}
-@keyframes biz-rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* The hero card: a deep blue panel with a soft glow tinted by the status. */
-.biz .hero {
-  background:
-    radial-gradient(90% 120% at 100% 0%, var(--hero-glow, rgb(124 92 255 / 0.55)) 0%, transparent 60%),
-    radial-gradient(70% 90% at 0% 100%, rgb(20 184 166 / 0.28) 0%, transparent 60%),
-    linear-gradient(140deg, #071230 0%, #0d2a7a 48%, #2a2fb8 78%, #5b2bd6 100%);
-  color: #fff;
-}
-.biz .hero[data-status="SAFE"] {
-  --hero-glow: rgb(0 178 160 / 0.4);
-}
-.biz .hero[data-status="CRITICAL"] {
-  --hero-glow: rgb(229 72 77 / 0.5);
-}
-
+/* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-lift:hover,
+  .motion-press:not(:disabled):active {
+    transform: none !important;
+  }
+  .biz-disc {
+    animation: none !important;
+  }
+  /* A frozen arc is no feedback: the busy state is an ellipsis instead. */
+  .spinner {
+    display: none;
+  }
+  .spinner-dots {
+    display: inline;
+    order: 1; /* after the label in a button's row */
   }
 }
 
-/* Recharts draws its own focus outline on the wrapper; keep it subtle. */
+/* Recharts makes its SVG a tab stop (its accessibility layer): it takes the global ring like every other control. */
 .recharts-wrapper:focus-visible,
 .recharts-surface:focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

@@ -13,12 +13,15 @@ import type {
   ClockView,
   ApprovalView,
   AuditView,
+  BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  EnvelopeView,
   ContractFixture,
   DealsView,
   DocumentDecision,
@@ -37,6 +40,9 @@ import type {
   OfferView,
   OperationView,
   PlanRequest,
+  PilotJournalView,
+  PriceCurveView,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -48,10 +54,21 @@ import type {
   ApprovalDecision,
 } from "../types";
 import * as approvals from "./approvals";
+import * as decisions from "./decisions";
 import { downloadFile, http } from "./http";
 import * as trajectory from "./trajectory";
 
 const enc = encodeURIComponent;
+
+/** A strategy read the server has switched off (403 FEATURE_DISABLED) or does not have (404) is no data, not a failure: the card hides. */
+async function nullWhenOff<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 404 || (e.status === 403 && /FEATURE_DISABLED/.test(JSON.stringify(e.detail ?? e.message))))) return null;
+    throw e;
+  }
+}
 
 /** /negotiate returns the executor's raw results; the ledger view adds who asked and a one-line summary. */
 function asOperationView(o: Record<string, unknown>): OperationView {
@@ -76,26 +93,36 @@ export const live = {
       body: req.fixture_id ? { fixture_id: req.fixture_id } : { counterparty_id: req.counterparty_id, documents: req.documents },
     }),
 
-  /** The API has no read endpoint for an offer; the session cache (demo store) holds what POST /offers returned. */
-  getOffer: (offerId: string): Promise<OfferView> =>
-    Promise.reject(new ApiError(404, `Offer ${offerId} is not in this session. Submit it again from the Inbox.`)),
+  /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
+  getOffer: async (offerId: string): Promise<OfferView> => {
+    try {
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
+      throw e;
+    }
+  },
 
-  evaluateOffer: (offerId: string, fixtureId?: string) =>
-    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
+  evaluateOffer: (offerId: string, fixtureId?: string, lang: "en" | "zh" = "en") =>
+    http<VerdictView>("POST", `/offers/${enc(offerId)}/evaluate${lang === "zh" ? "?lang=zh" : ""}`, { body: fixtureId ? { fixture_id: fixtureId } : {} }),
 
   negotiate: async (offerId: string, req: NegotiateRequest): Promise<NegotiationView> => {
     const n = await http<NegotiationView>("POST", `/negotiate/${enc(offerId)}`, { body: req });
     return { ...n, operations: n.operations.map((o) => asOperationView(o as unknown as Record<string, unknown>)) };
   },
 
-  planFunding: (req: PlanRequest) => http<FundingView>("POST", "/router/plan", { body: req }),
+  planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 
   getTrajectory: (mode: Mode, verdict?: VerdictView | null): Promise<TrajectoryView> => trajectory.getTrajectory(mode, verdict),
 
-  getLedger: () => http<LedgerView>("GET", "/ledger"),
+  getLedger: (lang: "en" | "zh" = "en") => http<LedgerView>("GET", `/ledger${lang === "zh" ? "?lang=zh" : ""}`),
   getAudit: () => http<AuditView>("GET", "/audit"),
 
+  getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),
+  getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
+
   getApprovals: (): Promise<ApprovalView[]> => approvals.getApprovals(),
+  getApprovalsRead: () => approvals.getApprovalsRead(),
   decideApproval: (id: string, decision: ApprovalDecision) => approvals.decideApproval(id, decision),
 
   capexEvaluate: (req: CapexRequest) => http<CapexView>("POST", "/capex/evaluate", { body: req }),
@@ -106,14 +133,33 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
-  getReconciliation: async (): Promise<ReconciliationView> =>
-    (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
+  getReconciliation: async (): Promise<ReconciliationView> => {
+    const raw = await http<{ reconciliation: ReconciliationView; last_read_when?: string }>("GET", "/reconciliation");
+    // The freshness word sits beside the report or inside it, depending on the server's version; the report carries whichever there is.
+    return raw.reconciliation.last_read_when || !raw.last_read_when ? raw.reconciliation : { ...raw.reconciliation, last_read_when: raw.last_read_when };
+  },
+
+  /** GET /receivables/{id}/chase: the collection handoff for one open invoice (owner only; 404 unknown, 422 when nothing is outstanding). */
+  getChase: (receivableId: string, lang: "en" | "zh") => http<ChaseView>("GET", `/receivables/${enc(receivableId)}/chase?lang=${lang}`),
+
+  /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
+  getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
+  /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
+  getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
+
+  /** GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail of the answer, read only when asked. */
+  getEnvelope: (buyerId: string, lang: "en" | "zh", zone = false) =>
+    nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
+
+  /** GET /pilot/journal (flag `pilot_journal`). Null when the feature is off or absent. Read-only: the web never posts an entry. */
+  getPilotJournal: () => nullWhenOff(() => http<PilotJournalView>("GET", "/pilot/journal")),
 
   /** POST /nl. The owner channel sends X-Owner-Token. A buyer turn never carries the owner token; in a demo build it
    * sends the buyer's published channel key (X-Counterparty-Key), otherwise nothing, and the API treats it as a proposal. */
-  nl: (req: NlRequest): Promise<NlResponse> =>
+  nl: (req: NlRequest, opts: { business?: boolean } = {}): Promise<NlResponse> =>
     http<NlResponse>("POST", "/nl", {
       body: req,
+      business: opts.business && req.actor !== "COUNTERPARTY",
       auth: req.actor === "COUNTERPARTY" ? "none" : "owner",
       buyerKey: req.actor === "COUNTERPARTY" ? DEMO_BUYER_KEYS[req.counterparty_id ?? ""] : undefined,
     }),
@@ -139,6 +185,9 @@ export const live = {
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
   },
+
+  /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
+  demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 

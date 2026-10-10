@@ -41,10 +41,12 @@ test("the books move after the alert was shown: 409 says so, shows the current a
 
   // The home was refetched with the new version, so pressing again acts on what is shown now: it queues the cure, still not as success.
   await runPlan(page, "ALERT-RESERVE-42");
-  const op = page.getByTestId("fix-result").getByTestId("chat-op-SUBMIT_INVOICE_FOR_FINANCING");
-  await expect(op).toHaveAttribute("data-status", "PENDING_APPROVAL");
-  await expect(op.getByTestId("op-state")).toContainText("Waiting for your approval");
-  await expect(op.getByTestId("op-state").locator(":scope > span")).not.toHaveClass(/text-ok-fg/);
+  // The queued cure is said once, as the next step's waiting tile in the warning look (the agent's answer is not a card when it only waits).
+  const waiting = page.getByTestId("alert-waiting-ALERT-RESERVE-42");
+  await expect(waiting).toContainText("Waiting for your approval");
+  await expect(waiting).toHaveClass(/text-warn-fg/);
+  await expect(waiting).not.toHaveClass(/text-ok-fg|bg-ok-bg/);
+  await expect(page.getByTestId("fix-result")).toHaveCount(0);
   await expect(page.getByTestId("fix-changed")).toHaveCount(0);
 });
 

@@ -1,6 +1,9 @@
+import type { ChatFacts } from "./chat-context";
+import { NO_FACTS } from "./chat-context";
 import type { DictKey } from "./dictionary";
 import type { CounterpartyId } from "./chat";
 import type { Lang } from "./i18n";
+import { isBusinessRoute } from "./mode";
 import type { NlActor } from "./types";
 
 /**
@@ -13,6 +16,8 @@ export interface Prompt {
   label: DictKey;
   text: string;
   counterparty?: CounterpartyId;
+  /** The page must hold this for the prompt to be answerable; otherwise it is hidden. */
+  needs?: keyof ChatFacts;
 }
 
 const FASTCAPITAL =
@@ -71,6 +76,76 @@ const BUYER: Record<Lang, Prompt[]> = {
   ],
 };
 
-export function promptsFor(role: NlActor, lang: Lang): Prompt[] {
-  return (role === "OWNER" ? OWNER : BUYER)[lang];
+/**
+ * What the owner may ask about the page they are on (Business only). The wording is the one the rules parser reads
+ * (services/api/tests/nl/test_business_page_prompts.py holds the same list; keep them in step): a prompt the rules cannot read
+ * must not be offered. Two to four per page. A prompt with `needs` is shown only when the page holds what it asks about: with no
+ * evaluated deal "Why are we countering this?" would answer "evaluate an offer first", so it is hidden, not shown to fail.
+ */
+const PAGE: Record<string, Record<Lang, Prompt[]>> = {
+  "/": {
+    en: [
+      { id: "page-changed", label: "chat.p.page.changed", text: "What changed today?" },
+      { id: "page-attention", label: "chat.p.page.attention", text: "What needs my attention?" },
+    ],
+    zh: [
+      { id: "page-changed", label: "chat.p.page.changed", text: "今天有什么变化？" },
+      { id: "page-attention", label: "chat.p.page.attention", text: "有什么需要我关注的？" },
+    ],
+  },
+  "/deals": {
+    en: [
+      { id: "page-counter", label: "chat.p.page.counter", text: "Why are we countering this?", needs: "verdict" },
+      { id: "page-original", label: "chat.p.page.original", text: "What if I accept their original terms?", needs: "verdict" },
+      { id: "page-option", label: "chat.p.page.option", text: "Why is Option A cheaper?", needs: "counters" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "What are we waiting for?" },
+    ],
+    zh: [
+      { id: "page-counter", label: "chat.p.page.counter", text: "为什么要还价？", needs: "verdict" },
+      { id: "page-original", label: "chat.p.page.original", text: "如果我接受对方的原始条款会怎样？", needs: "verdict" },
+      { id: "page-option", label: "chat.p.page.option", text: "为什么方案A更便宜？", needs: "counters" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "我们在等什么？" },
+    ],
+  },
+  "/cash": {
+    en: [
+      { id: "page-plan", label: "chat.p.page.plan", text: "Why did FLOW choose this plan?", needs: "plan" },
+      { id: "page-arrive", label: "chat.p.page.arrive", text: "When does the money arrive?" },
+      { id: "page-late", label: "chat.p.page.late", text: "What happens if this payment is late?" },
+    ],
+    zh: [
+      { id: "page-plan", label: "chat.p.page.plan", text: "FLOW 为什么选这个方案？", needs: "plan" },
+      { id: "page-arrive", label: "chat.p.page.arrive", text: "资金什么时候到账？" },
+      { id: "page-late", label: "chat.p.page.late", text: "如果这笔款项延迟会怎样？" },
+    ],
+  },
+  "/receivables": {
+    en: [
+      { id: "page-chase", label: "chat.p.page.chase", text: "Who should I chase first?", needs: "overdue" },
+      { id: "page-overdue", label: "chat.p.page.overdue", text: "What is overdue?" },
+      { id: "page-late", label: "chat.p.page.late", text: "What happens if this payment is late?" },
+    ],
+    zh: [
+      { id: "page-chase", label: "chat.p.page.chase", text: "应该先催哪一家？", needs: "overdue" },
+      { id: "page-overdue", label: "chat.p.page.overdue", text: "哪些款项逾期了？" },
+      { id: "page-late", label: "chat.p.page.late", text: "如果这笔款项延迟会怎样？" },
+    ],
+  },
+};
+
+export interface PromptOptions {
+  /** The Business shell: the page's own questions only, no fixture ids, no amendment or "approve it" chips. Demo keeps the general prompts. */
+  business?: boolean;
+  /** What the pages hold (see ChatFacts); unknown facts hide the prompts that need them. */
+  facts?: ChatFacts;
+}
+
+/** The owner's prompts for a page. The buyer channel has no page prompts and exists in Demo only. */
+export function promptsFor(role: NlActor, lang: Lang, pathname?: string | null, opts: PromptOptions = {}): Prompt[] {
+  if (role !== "OWNER") return BUYER[lang];
+  const facts = opts.facts ?? NO_FACTS;
+  const shown = (list: Prompt[] | undefined) => (list ?? []).filter((p) => !p.needs || facts[p.needs]);
+  if (opts.business) return shown((pathname ? PAGE[pathname] : undefined)?.[lang] ?? PAGE["/"][lang]);
+  const page = pathname && isBusinessRoute(pathname) ? shown(PAGE[pathname]?.[lang]) : [];
+  return [...page, ...OWNER[lang]];
 }

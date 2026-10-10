@@ -1,14 +1,18 @@
 "use client";
 
-import { PageIcon } from "@/components/business/kit";
-import { InboxInIcon } from "@/components/icons";
-
-import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
-import { getHome, getReconciliation, getState } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { ReceiptFacts } from "@/components/receipt-facts";
+import { Badge, Card, ErrorState, LoadingBlock, PageHeader, Stat } from "@/components/ui";
+import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { orderInvoices } from "@/lib/receivables-order";
 import { whenText } from "@/lib/when";
-import { localNames } from "@/lib/business-words";
-import { useAsync } from "@/lib/use-async";
+import { useAsync, useStrategyAsync } from "@/lib/use-async";
+import { PartialRead, ReadWhen } from "@/components/business/freshness";
+import { Disclosure } from "@/components/business/kit";
+import { chaseIds, shortfallStretch } from "@/lib/chase";
+import { ReceivablesTable, type RecvFilter } from "@/components/business/receivables-table";
+import { ChasePayment } from "@/components/business/chase-payment";
 
 /**
  * Receivables, in the order the owner asks: who owes me and how much (the summary, from the home read), when and who is
@@ -17,128 +21,110 @@ import { useAsync } from "@/lib/use-async";
  */
 export default function ReceivablesPage() {
   const { t, te, lang } = useI18n();
-  const recon = useAsync(getReconciliation, []);
+  const recon = useAsync(getReconciliation, [lang]);
   const books = useAsync(getState, []);
   const home = useAsync(() => getHome(lang), [lang]);
+  // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
+  // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
+  const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
+  const worth = worthRead.data;
+  // The open invoices' filter lives here so the red Overdue tile can apply Late.
+  const [filter, setFilter] = useState<RecvFilter>("all");
+  const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
   const data = recon.data;
   const r = home.data?.receivables;
   const name = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id ?? "";
-  // Late rows first, then by due day; the page counts days, the server does the money.
-  const invoices = data ? [...data.outstanding].sort((a, b) => Number(b.past_due) - Number(a.past_due) || a.due_day - b.due_day) : [];
+  // Overdue rows are pinned first, whatever the ranking says (the server's `past_due` / `overdue_text`; no date is compared here); inside each group the
+  // server's own rank leads (what collecting each saves). The page counts days, the server does the money.
+  const rank = new Map((worth?.rows ?? []).map((w, i) => [w.receivable_id, i]));
+  const invoices = data ? orderInvoices(data.outstanding, worth?.rows ?? []) : [];
+  const topRow = worth?.rows.find((r) => r.overdue_text) ?? worth?.rows[0];
   const error = recon.error ?? home.error;
-  // An early payment that arrived is listed once, under the payments received; the promise list keeps what is still awaited.
-  const promised = data?.promised?.filter((p) => p.status !== "RECEIVED") ?? [];
-  // A commitment id in brackets is an audit detail, not something the owner reads.
-  const plain = (text: string) => localNames(text.replace(/\s*\(commitment [^)]*\)/g, ""), lang);
-  const lateLabel = (dueDay: number) => t("biz.recv.late", { days: Math.max(0, (data?.as_of_day ?? 0) - dueDay) });
+  // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
+  // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
+  const chase = chaseIds(invoices, data?.promised, shortfallStretch(home.data?.cash.first_breach_day, home.data?.cash.lowest_day));
+
+  // A link such as /receivables#RI:BUYER-1:2 (from the home's remaining task) lands on that invoice once the page has loaded. The phone list and
+  // the table both carry the id, one of them hidden: the visible one is scrolled to.
+  const loaded = Boolean(data && r);
+  useEffect(() => {
+    if (!loaded || typeof window === "undefined" || !window.location.hash) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = Array.from(document.querySelectorAll<HTMLElement>("[id]")).find((el) => el.id === id && el.getClientRects().length > 0);
+    target?.scrollIntoView({ block: "center" });
+  }, [loaded]);
 
   return (
     <>
-      <PageHeader
-        icon={
-          <PageIcon tone="orange">
-            <InboxInIcon width={22} height={22} />
-          </PageIcon>
-        }
-        title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+      <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
       {error ? (
         <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
       ) : !data || !r ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <section id="recv-summary" aria-label={t("nav.receivables")} data-testid="recv-summary">
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Stat label={t("biz.recv.sum.outstanding")} value={<span data-testid="recv-outstanding">{r.open_total_display}</span>} hint={t("biz.recv.sum.count", { n: r.open_count })} />
+            {/* How fresh the summary is: the report's own "when", else the home read's. */}
+            <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
+            {/* What to do first, in the server's sentence, with the way to act beside it. */}
+            {worth?.rows.length && worth.top_action && topRow ? (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-tile border border-line bg-surface px-4 py-3 shadow-card" data-testid="recv-top-action">
+                <div className="min-w-0 flex-1 basis-64 text-sm text-ink">
+                  <p className="font-medium">{worth.top_action}</p>
+                  {worth.top_action_second ? <p className="mt-1 text-ink-2" data-testid="recv-top-action-second">{worth.top_action_second}</p> : null}
+                </div>
+                {/* The sentence is about the late invoice when anything is late, else the first row: Chase payment is for that one. */}
+                {chase.has(topRow.receivable_id) ? <ChasePayment top receivableId={topRow.receivable_id} buyer={name(topRow.buyer_id)} /> : null}
+              </div>
+            ) : null}
+            <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Stat className="col-span-2 sm:col-span-1" label={t("biz.recv.sum.outstanding")} value={<span data-testid="recv-outstanding">{r.open_total_display}</span>} caption={t("biz.recv.sum.count", { n: r.open_count })} />
               <Stat
                 label={t("biz.recv.sum.overdue")}
                 value={<span data-testid="recv-overdue">{r.overdue_total_display}</span>}
-                hint={r.past_due.length ? t("biz.recv.sum.overdue.n", { n: r.past_due.length }) : undefined}
+                caption={r.past_due.length ? t("biz.recv.sum.overdue.n", { n: r.past_due.length }) : undefined}
                 tone={r.past_due.length ? "bad" : "neutral"}
+                // A tap on the red tile shows the late invoices: the list below takes its Late filter and comes into view.
+                press={
+                  r.past_due.length && invoices.length
+                    ? {
+                        label: t("biz.recv.sum.overdue.show"),
+                        testId: "recv-overdue-show",
+                        onPress: () => {
+                          setFilter("late");
+                          document.getElementById("recv-open")?.scrollIntoView({ block: "start" });
+                        },
+                      }
+                    : undefined
+                }
               />
               <Stat
                 label={t("biz.recv.sum.next")}
                 value={<span data-testid="recv-next-amount">{r.next_receipt ? r.next_receipt.face_display : "-"}</span>}
-                hint={r.next_receipt ? <span data-testid="recv-next-hint">{t("biz.recv.sum.next.hint", { buyer: r.next_receipt.buyer_name, when: r.next_receipt.due_when })}</span> : undefined}
+                caption={r.next_receipt ? <span data-testid="recv-next-hint">{t("biz.recv.sum.next.hint", { buyer: r.next_receipt.buyer_name, when: r.next_receipt.due_when })}</span> : undefined}
               />
             </dl>
             {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
           </section>
 
-          {invoices.length ? (
-            <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
-              {/* On a phone the invoices are a list; the table needs the width of a larger screen. */}
-              <ul className="space-y-2 sm:hidden" data-testid="recv-open-list">
-                {invoices.map((o) => (
-                  <li key={o.receivable_id} className={`rounded-md border px-3 py-2 text-sm ${o.past_due ? "border-bad-line bg-bad-bg/40" : "border-line"}`}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="min-w-0 font-medium text-ink">{name(o.counterparty_id)}</span>
-                      <span className="shrink-0 font-semibold tabular-nums">{o.face_display}</span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-3">
-                      <span>
-                        {t("biz.due")} {whenText(o.due_day, data.as_of_day, t)} · {o.receivable_id}
-                      </span>
-                      <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? lateLabel(o.due_day) : t("recon.onTime")}</Badge>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="hidden sm:block">
-              <TableWrap label={t("biz.recv.open")}>
-                <table className={tableCls}>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={thCls}>{t("biz.buyer")}</th>
-                      <th scope="col" className={`${thCls} text-right`}>{t("biz.amount")}</th>
-                      <th scope="col" className={thCls}>{t("biz.due")}</th>
-                      <th scope="col" className={thCls}>{t("common.status")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoices.map((o) => (
-                      <tr key={o.receivable_id} className={o.past_due ? "bg-bad-bg/40" : ""} data-testid={`recv-${o.receivable_id}`}>
-                        <td className={`${tdCls} font-medium`}>
-                          {name(o.counterparty_id)}
-                          <span className="ml-2 text-xs font-normal text-ink-3">{o.receivable_id}</span>
-                        </td>
-                        <td className={`${tdCls} text-right tabular-nums`}>{o.face_display}</td>
-                        <td className={`${tdCls} tabular-nums`}>{whenText(o.due_day, data.as_of_day, t)}</td>
-                        <td className={tdCls}>
-                          <Badge tone={o.past_due ? "bad" : "neutral"}>{o.past_due ? lateLabel(o.due_day) : t("recon.onTime")}</Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
-              </div>
-            </Card>
+          <PartialRead partial={home.data?.partial} onRetry={home.reload} />
+
+          {worthRead.error ? (
+            <div data-testid="recv-worth-failed">
+              <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+            </div>
           ) : null}
 
-          {!promised.length && r.promised ? (
-            <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")}>
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${r.promised.receivable_id}`} data-status="AWAITED">
-                <span>
-                  <span className="font-medium text-ink">{r.promised.buyer_name}</span>
-                  <span className="block text-xs text-ink-2">{t("biz.recv.promisedWhen", { when: r.promised.when ?? "" })}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums">{r.promised.expected_display}</span>
-                  <Badge tone="info">{te("promstatus", "AWAITED")}</Badge>
-                </span>
-              </div>
-            </Card>
-          ) : null}
+          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} filter={filter} onFilter={setFilter} /> : null}
 
-          {promised.length ? (
+          {data.promised?.length ? (
             <Card id="recv-promised" title={t("biz.recv.promised")} subtitle={t("biz.recv.promised.sub")} actions={data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : undefined}>
-              <ul className="space-y-2">
-                {promised.map((p) => (
-                  <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
+              <ul className="motion-rise space-y-2">
+                {data.promised.map((p) => (
+                  <li key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm" data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                     <span>
                       <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
-                      <span className="block text-xs text-ink-2">{plain(p.detail)}</span>
+                      <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="font-semibold tabular-nums">{p.expected_display}</span>
@@ -154,25 +140,41 @@ export default function ReceivablesPage() {
             <Card id="recv-receipts" title={t("biz.recv.receipts")} subtitle={t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}>
               <ul className="space-y-2">
                 {data.receipts.map((x) => (
-                  <li key={x.entry_hash} className={`rounded-md border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
+                  <li key={x.entry_hash} className={`rounded-tile border px-3 py-2 text-sm ${x.flagged ? "border-bad-line bg-bad-bg/40" : "border-line"}`} data-testid={`receipt-${x.op_id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-ink">
-                        {name(x.counterparty_id)}
-                      </span>
+                      <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
                       <span className="flex items-center gap-2">
                         <span className="font-semibold tabular-nums">{x.received_display}</span>
                         <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-ink-2">
-                      {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                      {plain(x.detail)}
-                    </p>
-                    {x.bank_reference ? (
-                      <p className="mt-0.5 text-xs text-ink-3" data-testid={`receipt-ref-${x.op_id}`}>
-                        {t("recon.bankRef", { ref: x.bank_reference })}
+                    {/* A part-paid invoice: a short lead and the four named facts say it once; the long sentence waits behind Audit details. */}
+                    {x.remaining_display ? (
+                      <>
+                        <p className="mt-0.5 text-sm text-ink-2" data-testid={`receipt-lead-${x.op_id}`}>
+                          {t("biz.recv.partPaid", { buyer: name(x.counterparty_id), when: x.day !== null ? whenText(x.day, data.as_of_day, t) : "" })}
+                        </p>
+                        <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} windowText={x.window_state_text} />
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-xs text-ink-2">
+                        {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
+                        {x.detail_when ?? x.detail}
                       </p>
-                    ) : null}
+                    )}
+                    {/* The record ids (invoice, bank reference) are the audit level. */}
+                    <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
+                      {x.remaining_display ? <p className="mt-1 text-xs text-ink-2">{x.detail_when ?? x.detail}</p> : null}
+                      <p className="mt-1 text-xs text-ink-3">
+                        {x.receivable_id}
+                        {x.bank_reference ? (
+                          <span data-testid={`receipt-ref-${x.op_id}`}>
+                            {" · "}
+                            {t("recon.bankRef", { ref: x.bank_reference })}
+                          </span>
+                        ) : null}
+                      </p>
+                    </Disclosure>
                   </li>
                 ))}
               </ul>

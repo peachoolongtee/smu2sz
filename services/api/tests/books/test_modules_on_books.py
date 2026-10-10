@@ -45,15 +45,11 @@ SPAN = [SourceSpan(doc_id="T", start=0, end=0, text="")]
 # Recorded on origin/dev (cfecd72) with no commitments: sha256 of the sorted-key JSON of each response.
 # 3 Oct (existing debt is cash): the existing loan's ¥45,000 payments on days 30, 60, 90 and 120 are in the
 # trajectory, and the plan carries a ¥255,000 advance (cost ¥3,113.93); before: 6e416d997eccbf94 and 60bcdca14e272842
-# Wave 1 (013b539): the response adds `first_breach_cash`, the cash on the first breach day (¥60,000.00); every other
-# field unchanged. Before: 0437cc43e3b22800.
-GOLDEN_TRAJECTORY = "3425b553564cc68b"
+GOLDEN_TRAJECTORY = "0437cc43e3b22800"
 # Red team d, F1: the two comparison rows that rely on the buyer paying early ("Discount the whole invoice at 1.2%",
 # "Line + early payment on part of the invoice") are flagged executable_now false ("needs the buyer's agreement to pay
 # early"); every figure and the selected plan (¥3,113.93) unchanged. Before: 2479590b9ee26e83.
-# Wave 1 (013b539): each option adds its status, shortfall, worst day and reason kind, and each leg the day its money is
-# available; every other field unchanged. Before: 252b9812e99b4aee.
-GOLDEN_ROUTER_PLAN = "073b1704bd74a5d6"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
+GOLDEN_ROUTER_PLAN = "252b9812e99b4aee"  # also: actions and comparison rows carry `lands_day` (API gaps). Earlier, 3 Oct: extension figures on 13 dated invoices; extra receivables ¥210,000.00. 118733a57fd7900b before the plan, cost lines and menu rows carried the approval and executable_now flags (every figure unchanged)
 EX01_COUNTERS = [
     # face 255,000 / (1 − 0.85%) = 257,186.08, rounded up to a whole ¥100 (the gap net of the line includes the
     # existing loan's ¥45,000 day-30 payment; compute_golden.py counter_a_face)
@@ -143,18 +139,68 @@ def _lowest(traj: dict[str, Any]) -> tuple[int, int]:
 # ---------------------------------------------------------------- 1. no commitments: nothing moves
 
 
+# Display-only fields the simplification map added to the router plan's comparison rows and legs (they never feed the
+# engine, see tests/funding/test_display_fields_inert.py). The golden digest is of the payload without them.
+_ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "worst_day", "not_executable_reason",
+                "not_executable_reason_when", "note_when", "components_when",
+                "label_when",  # Wave 7 (F28): the row's label as a Business page reads it, in the page's language
+                "approval_reason_when",  # approval_reason_when: the comparison rows' approval-reason sentence (Wave 4/7)
+                # Wave 8 pass A: the row's role and why, its named legs (with their cost lines), the plan's name and the
+                # offset it nets against; `legs` goes whole (name_display, cost_display, amounts all derive from the actions)
+                "role", "role_reason", "legs", "leg_costs_fen", "name_display", "offset_fen", "offset_display",
+                "offset_label",
+                # Wave 3 (F18): the comparison contract's group, rank and words (the golden is of the router's rows and figures)
+                "group", "group_text", "rank", "arrival_day", "arrival_when", "arrival_text", "available_when", "uncovered_display",
+                "remaining_gap_fen", "remaining_gap_display", "remaining_gap_text", "basis_text", "consent_text")
+
+
+def _strip_when(plan: dict[str, Any]) -> None:
+    """`plan_when`'s `*_when` sentences (Wave 4/7) beside the plan's, cost lines', violations' and rejected candidates' text."""
+    for holder in [plan, *plan.get("costs", []), *plan.get("violations", []), *plan.get("rejected", [])]:
+        for k in [k for k in holder if k.endswith("_when")]:
+            holder.pop(k)
+
+
+def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
+    out = json.loads(json.dumps(plan))
+    out.pop("recommended_key", None)  # Wave 8 pass A: names the recommended comparison row; `recommended_plan` is never a row here
+    out.pop("comparison_order_text", None)  # Wave 3: how the list is ordered
+    # Wave 3 (F18) lists the rows in the order the owner reads them; the golden is of the router's spec 7.4 order, kept as `router_order`
+    out["comparison"] = sorted(out["comparison"], key=lambda r: r.pop("router_order"))
+    for key in ("committed", "expected"):
+        if out.get(key):
+            out[key].pop("available_from_day", None)
+            _strip_when(out[key])
+            for a in out[key]["actions"]:
+                a.pop("available_from_day", None)
+    for row in out["comparison"]:
+        for k in _ROW_DISPLAY:
+            row.pop(k, None)
+        for a in row["actions"]:
+            a.pop("available_from_day", None)
+            a["lands_day"] = None  # rows now carry the landing stamp; the golden rows had none
+    return out
+
+
 def test_no_commitments_trajectory_and_router_plan_are_unchanged(client: TestClient, rt: Runtime) -> None:
     t = client.get("/trajectory").json()
     assert t.pop("today") == 0
-    assert _digest(t) == GOLDEN_TRAJECTORY
+    # `first_breach_cash` is a display-only field the simplification map added (Wave 1), and `first_breach_ahead_*` the first
+    # breach from today on (map #65, F01); the golden is of the rest, which is the engine's own projection and has not moved
+    display_only = {"first_breach_cash", "first_breach_ahead_day", "first_breach_ahead_cash"}
+    assert _digest({k: v for k, v in t.items() if k not in display_only}) == GOLDEN_TRAJECTORY
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     raw = trajectory_view(project(state, [], [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen),
                           mandate.min_cash_fen).model_dump()
+    ahead = {k: t.pop(k) for k in ("first_breach_ahead_day", "first_breach_ahead_cash")}
     assert t == json.loads(json.dumps(raw))
+    # day 0: nothing is closed yet, so the first breach from today on is the engine's own
+    assert ahead["first_breach_ahead_day"] == raw["first_breach_day"]
+    assert ahead["first_breach_ahead_cash"] == json.loads(json.dumps(raw["first_breach_cash"]))
     r = client.post("/router/plan").json()
     assert r["marginal"]["extension_extra_receivables_fen"] == 21_000_000  # F x 15 / 30, the shared pro forma
     assert r["marginal"]["extension_committed_12m_fen"] == 2_432_692
-    assert _digest(r) == GOLDEN_ROUTER_PLAN
+    assert _digest(_without_display_fields(r)) == GOLDEN_ROUTER_PLAN
     assert r["committed"]["total_cost_display"] == "¥3,113.93"  # line 841.64 + advance of 255,000 2,272.29
     assert r["committed"]["total_cost_fen"] == 311_393
 

@@ -1,0 +1,550 @@
+{
+  "_meta": {
+    "command": "FLOW_RESEARCH_SPIKES=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache PYTHONUTF8=1 uv run --project services/api python services/api/scripts/research/portfolio_spike.py --json",
+    "branch": "feat/mvp-w0",
+    "base_commit": "bcc67d4",
+    "recorded": "2026-10-08"
+  },
+  "spike": "portfolio",
+  "deals": [
+    "EX01",
+    "EX08A",
+    "EX08B"
+  ],
+  "candidates": {
+    "EX01": [
+      {
+        "label": "reject",
+        "alone": "REJECT (nothing booked)",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "moves_cash": false,
+        "enumerated": true
+      },
+      {
+        "label": "Option A",
+        "alone": "ACCEPT",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "moves_cash": true,
+        "enumerated": true
+      },
+      {
+        "label": "Option B",
+        "alone": "NEEDS_OWNER_APPROVAL",
+        "alone_codes": [
+          "RESERVE_BREACH"
+        ],
+        "forward_value": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "moves_cash": true,
+        "enumerated": true
+      },
+      {
+        "label": "as asked",
+        "alone": "REJECT",
+        "alone_codes": [
+          "AGG_CONCESSION_EXCEEDED",
+          "RESERVE_BREACH",
+          "DISCOUNT_ABOVE_BREAK_EVEN",
+          "EARLY_PAY_DEARER_THAN_PLAN"
+        ],
+        "forward_value": {
+          "fen": 2832692,
+          "display": "¥28,326.92"
+        },
+        "moves_cash": true,
+        "enumerated": false
+      }
+    ],
+    "EX08A": [
+      {
+        "label": "reject",
+        "alone": "REJECT (nothing booked)",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "moves_cash": false,
+        "enumerated": true
+      },
+      {
+        "label": "as asked",
+        "alone": "NEEDS_OWNER_APPROVAL",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 300000,
+          "display": "¥3,000.00"
+        },
+        "moves_cash": false,
+        "enumerated": true
+      }
+    ],
+    "EX08B": [
+      {
+        "label": "reject",
+        "alone": "REJECT (nothing booked)",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 0,
+          "display": "¥0.00"
+        },
+        "moves_cash": false,
+        "enumerated": true
+      },
+      {
+        "label": "as asked",
+        "alone": "NEEDS_OWNER_APPROVAL",
+        "alone_codes": [],
+        "forward_value": {
+          "fen": 250000,
+          "display": "¥2,500.00"
+        },
+        "moves_cash": false,
+        "enumerated": true
+      }
+    ]
+  },
+  "ranked": [
+    {
+      "rank": 1,
+      "packages": {
+        "EX01": "Option A",
+        "EX08A": "reject",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 14998620,
+        "display": "¥149,986.20"
+      },
+      "funding_cost": {
+        "fen": 84157,
+        "display": "¥841.57"
+      },
+      "posted_cost": {
+        "fen": 302777,
+        "display": "¥3,027.77"
+      },
+      "concession_value": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "cost_for_ranking": {
+        "fen": 302777,
+        "display": "¥3,027.77"
+      },
+      "budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 0,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone)",
+      "plan": "committed plan: ¥841.57"
+    },
+    {
+      "rank": 2,
+      "packages": {
+        "EX01": "reject",
+        "EX08A": "reject",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "posted_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "concession_value": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "cost_for_ranking": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 0,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone)",
+      "plan": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
+    },
+    {
+      "rank": 3,
+      "packages": {
+        "EX01": "Option B",
+        "EX08A": "reject",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "posted_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "concession_value": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "cost_for_ranking": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "budget_used": {
+        "fen": 0,
+        "display": "¥0.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 1,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone)",
+      "plan": "committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46"
+    },
+    {
+      "rank": 4,
+      "packages": {
+        "EX01": "Option A",
+        "EX08A": "reject",
+        "EX08B": "as asked"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 14998620,
+        "display": "¥149,986.20"
+      },
+      "funding_cost": {
+        "fen": 84157,
+        "display": "¥841.57"
+      },
+      "posted_cost": {
+        "fen": 302777,
+        "display": "¥3,027.77"
+      },
+      "concession_value": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "cost_for_ranking": {
+        "fen": 552777,
+        "display": "¥5,527.77"
+      },
+      "budget_used": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 1,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08A as asked -> forward budget",
+      "plan": "committed plan: ¥841.57"
+    },
+    {
+      "rank": 5,
+      "packages": {
+        "EX01": "reject",
+        "EX08A": "reject",
+        "EX08B": "as asked"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "posted_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "concession_value": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "cost_for_ranking": {
+        "fen": 561393,
+        "display": "¥5,613.93"
+      },
+      "budget_used": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 1,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08A as asked -> forward budget",
+      "plan": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
+    },
+    {
+      "rank": 6,
+      "packages": {
+        "EX01": "Option A",
+        "EX08A": "as asked",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 14998620,
+        "display": "¥149,986.20"
+      },
+      "funding_cost": {
+        "fen": 84157,
+        "display": "¥841.57"
+      },
+      "posted_cost": {
+        "fen": 302777,
+        "display": "¥3,027.77"
+      },
+      "concession_value": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "cost_for_ranking": {
+        "fen": 602777,
+        "display": "¥6,027.77"
+      },
+      "budget_used": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 1,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08B as asked -> forward budget",
+      "plan": "committed plan: ¥841.57"
+    },
+    {
+      "rank": 7,
+      "packages": {
+        "EX01": "reject",
+        "EX08A": "as asked",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "posted_cost": {
+        "fen": 311393,
+        "display": "¥3,113.93"
+      },
+      "concession_value": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "cost_for_ranking": {
+        "fen": 611393,
+        "display": "¥6,113.93"
+      },
+      "budget_used": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 1,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08B as asked -> forward budget",
+      "plan": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
+    },
+    {
+      "rank": 8,
+      "packages": {
+        "EX01": "Option B",
+        "EX08A": "reject",
+        "EX08B": "as asked"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "posted_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "concession_value": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "cost_for_ranking": {
+        "fen": 620646,
+        "display": "¥6,206.46"
+      },
+      "budget_used": {
+        "fen": 250000,
+        "display": "¥2,500.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 2,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08A as asked -> forward budget",
+      "plan": "committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46"
+    },
+    {
+      "rank": 9,
+      "packages": {
+        "EX01": "Option B",
+        "EX08A": "as asked",
+        "EX08B": "reject"
+      },
+      "feasible": true,
+      "need": {
+        "fen": 40500000,
+        "display": "¥405,000.00"
+      },
+      "funding_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "posted_cost": {
+        "fen": 370646,
+        "display": "¥3,706.46"
+      },
+      "concession_value": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "cost_for_ranking": {
+        "fen": 670646,
+        "display": "¥6,706.46"
+      },
+      "budget_used": {
+        "fen": 300000,
+        "display": "¥3,000.00"
+      },
+      "budget_cap": {
+        "fen": 500000,
+        "display": "¥5,000.00"
+      },
+      "owner_decisions": 2,
+      "binding": "EX01 as asked -> forward budget (and not acceptable alone); EX08B as asked -> forward budget",
+      "plan": "committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46"
+    }
+  ],
+  "infeasible": [],
+  "infeasible_reasons": {
+    "dropped before enumeration: EX01 as asked is not acceptable alone (AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN)": 4,
+    "cut before evaluation: forward budget": 3
+  },
+  "counts": {
+    "all_packages": 16,
+    "candidates_dropped_alone": 1,
+    "packages_removed_by_dropped_candidates": 4,
+    "pruned_by_budget": 3,
+    "evaluated": 9,
+    "feasible": 9,
+    "infeasible": 0,
+    "router_calls": 3,
+    "router_calls_saved_by_separability": 6,
+    "removed_by_pruning_in_total": 7
+  },
+  "greedy_evaluate_many": {
+    "order": [
+      "EX01",
+      "EX08A",
+      "EX08B"
+    ],
+    "portfolio": {
+      "EX01": "reject",
+      "EX08A": "as asked",
+      "EX08B": "reject"
+    },
+    "rank_in_enumeration": 7,
+    "feasible_portfolios": 9,
+    "cost_for_ranking": {
+      "fen": 611393,
+      "display": "¥6,113.93"
+    },
+    "best_cost_for_ranking": {
+      "fen": 302777,
+      "display": "¥3,027.77"
+    },
+    "outcomes": {
+      "EX01": "REJECT",
+      "EX08A": "NEEDS_OWNER_APPROVAL",
+      "EX08B": "COUNTER"
+    },
+    "codes": {
+      "EX01": [
+        "AGG_CONCESSION_EXCEEDED",
+        "RESERVE_BREACH",
+        "DISCOUNT_ABOVE_BREAK_EVEN",
+        "EARLY_PAY_DEARER_THAN_PLAN"
+      ],
+      "EX08A": [],
+      "EX08B": [
+        "AGG_CONCESSION_EXCEEDED"
+      ]
+    },
+    "counters": {
+      "EX01": [
+        "Option A",
+        "Option B"
+      ],
+      "EX08A": [],
+      "EX08B": [
+        "Option A"
+      ]
+    }
+  },
+  "seconds": {
+    "prepare_candidates": 0.436,
+    "enumerate_and_rank": 0.09,
+    "total": 0.543
+  }
+}

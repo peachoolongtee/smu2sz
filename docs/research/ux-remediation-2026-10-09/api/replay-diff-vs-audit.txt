@@ -1,0 +1,67 @@
+== abstention-foreign-currency.json: 13 leaves audit / 13 now, 0 non-hash diffs
+== api-probe-manifest.json: 60 leaves audit / 60 now, 0 non-hash diffs
+MISSING approval-after-decision.json
+== demo-completed-ledger.json: 51 leaves audit / 3 now, 43 non-hash diffs
+    .chain_length | audit: 3 | now: 0
+    .operations[0].approval_id | audit: None | now: <absent>
+    .operations[0].day | audit: 0 | now: <absent>
+    .operations[0].effective_day | audit: 0 | now: <absent>
+    .operations[0].event_detail | audit: None | now: <absent>
+    .operations[0].event_text | audit: ¥150,000.00 drawn on the Bank credit line. Cash received today. | now: <absent>
+    .operations[0].kind | audit: DRAW_FACILITY | now: <absent>
+    .operations[0].message | audit: Drew ¥150,000.00 on FAC-LINE on day 0 | now: <absent>
+    .operations[0].message_when | audit: Drew ¥150,000.00 on Bank credit line today | now: <absent>
+    .operations[0].op_id | audit: fund-OFF-f806f79b6c21-hard_line-0 | now: <absent>
+    .operations[0].requested_by | audit: AGENT | now: <absent>
+    .operations[0].seq | audit: 1 | now: <absent>
+    .operations[0].status | audit: EXECUTED | now: <absent>
+    .operations[0].summary | audit: Drew ¥150,000.00 on FAC-LINE on day 0 | now: <absent>
+    .operations[0].tier | audit: TIER_1 | now: <absent>
+MISSING demo-timing.json
+MISSING detector.json
+MISSING home-after-decision.json
+MISSING home-missed-payment.json
+== home-partial-payment.json: 1295 leaves audit / 1295 now, 4 non-hash diffs
+    .changes[0].event_text | audit: The early payment promised under commitment CMT-09c5b5e58e424153 32 days ago did not arriv | now: The early payment promised under commitment CMT-a811295f3a59b55f 32 days ago did not arriv
+    .changes[0].text | audit: The early payment promised under commitment CMT-09c5b5e58e424153 32 days ago did not arriv | now: The early payment promised under commitment CMT-a811295f3a59b55f 32 days ago did not arriv
+    .warnings[1].detail | audit: The early payment promised under commitment CMT-09c5b5e58e424153 32 days ago did not arriv | now: The early payment promised under commitment CMT-a811295f3a59b55f 32 days ago did not arriv
+    .warnings[1].id | audit: ALERT-EARLYPAY-4073785a8dcc | now: ALERT-EARLYPAY-da7fb9ef26af
+MISSING primary-audit-provenance.json
+== receipt-clock-day2.json: 17 leaves audit / 17 now, 0 non-hash diffs
+== receipt-clock-day34.json: 27 leaves audit / 27 now, 2 non-hash diffs
+    .lapsed_commitment_ids[0] | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .result.message | audit: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice | now: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice
+== receipt-duplicate.json: 10 leaves audit / 10 now, 0 non-hash diffs
+== receipt-evaluation.json: 3015 leaves audit / 3015 now, 0 non-hash diffs
+== receipt-ledger-day34.json: 135 leaves audit / 135 now, 8 non-hash diffs
+    .commitments[0].id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .operations[0].message | audit: Commitment CMT-09c5b5e58e424153 is ACTIVE; forward concession ¥0.00 booked | now: Commitment CMT-a811295f3a59b55f is ACTIVE; forward concession ¥0.00 booked
+    .operations[0].message_when | audit: Commitment CMT-09c5b5e58e424153 is ACTIVE; forward concession ¥0.00 booked | now: Commitment CMT-a811295f3a59b55f is ACTIVE; forward concession ¥0.00 booked
+    .operations[0].op_id | audit: accept-CMT-09c5b5e58e424153 | now: accept-CMT-a811295f3a59b55f
+    .operations[0].summary | audit: Commitment CMT-09c5b5e58e424153 is ACTIVE; forward concession ¥0.00 booked | now: Commitment CMT-a811295f3a59b55f is ACTIVE; forward concession ¥0.00 booked
+    .operations[5].message | audit: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice | now: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice
+    .operations[5].message_when | audit: Clock moved from 32 days ago to today: 2 scheduled flow(s) posted (net −¥460,000.00), 2 in | now: Clock moved from 32 days ago to today: 2 scheduled flow(s) posted (net −¥460,000.00), 2 in
+    .operations[5].summary | audit: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice | now: Clock moved from day 2 to day 34: 2 scheduled flow(s) posted (net −¥460,000.00), 2 invoice
+== receipt-negotiation.json: 103 leaves audit / 103 now, 3 non-hash diffs
+    .commitment.id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .operations[0].message | audit: Commitment CMT-09c5b5e58e424153 is ACTIVE; forward concession ¥0.00 booked | now: Commitment CMT-a811295f3a59b55f is ACTIVE; forward concession ¥0.00 booked
+    .operations[0].op_id | audit: accept-CMT-09c5b5e58e424153 | now: accept-CMT-a811295f3a59b55f
+== receipt-offer.json: 87 leaves audit / 87 now, 0 non-hash diffs
+== receipt-partial.json: 10 leaves audit / 10 now, 0 non-hash diffs
+== receipt-promise-before.json: 33 leaves audit / 33 now, 3 non-hash diffs
+    .reconciliation.promised[0].commitment_id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .reconciliation.promised[0].detail | audit: ¥255,013.80 promised for RCV-A by day 2 under commitment CMT-09c5b5e58e424153; the day has | now: ¥255,013.80 promised for RCV-A by day 2 under commitment CMT-a811295f3a59b55f; the day has
+    .reconciliation.promised[0].detail_when | audit: ¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 30 days  | now: ¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 30 days 
+== receipt-reconciliation-day2.json: 56 leaves audit / 56 now, 4 non-hash diffs
+    .reconciliation.promised[0].commitment_id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .reconciliation.promised[0].detail | audit: the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of R | now: the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of R
+    .reconciliation.receipts[0].commitment_id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .reconciliation.receipts[0].detail | audit: agreed early payment for ¥128,600.00 of face (commitment CMT-09c5b5e58e424153); up to ¥128 | now: agreed early payment for ¥128,600.00 of face (commitment CMT-a811295f3a59b55f); up to ¥128
+== receipt-reconciliation-day34.json: 70 leaves audit / 70 now, 4 non-hash diffs
+    .reconciliation.promised[0].commitment_id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .reconciliation.promised[0].detail | audit: the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of R | now: the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of R
+    .reconciliation.receipts[0].commitment_id | audit: CMT-09c5b5e58e424153 | now: CMT-a811295f3a59b55f
+    .reconciliation.receipts[0].detail | audit: agreed early payment for ¥128,600.00 of face (commitment CMT-09c5b5e58e424153); up to ¥128 | now: agreed early payment for ¥128,600.00 of face (commitment CMT-a811295f3a59b55f); up to ¥128
+== receipt-reset.json: 3 leaves audit / 3 now, 0 non-hash diffs
+MISSING state-missed-payment.json
+TOTAL 71

@@ -1,13 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
-import { Badge, Card, type Tone } from "@/components/ui";
+import { Disclosure } from "@/components/business/kit";
+import { Badge, Button, Card, Chip, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import { INBOX, type InboxMessage, type InboxSource } from "@/lib/inbox";
+import { INBOX, type InboxMessage } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
+import type { RefusalBlock } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
-const sourceTone: Record<InboxSource, Tone> = { wechat: "ok", email: "info", portal: "neutral" };
+/** A fold inside the inbox list: its head spans the card, aligned with the rows. */
+const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-4 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {
@@ -28,10 +32,15 @@ function threads(messages: InboxMessage[]): Thread[] {
 
 /**
  * The inbox, one thread per buyer (owner decision, wayfinder #28). Business mode shows only known contacts and says
- * in one line that a suspicious message was blocked, linking to Activity's refused section; Demo mode shows every
+ * in one line what the books hold as set aside (the server's count from `GET /ledger`, never the page's own: nothing set aside, no line, and
+ * the fixture's example says it is one), linking to Activity's refused section; Demo mode shows every
  * message, the unknown sender flagged, and keeps the "simulated" explanation. Clicking a message reads it (the page
  * does that); `statusFor` gives the words for a message already evaluated. The registry (`known`, the counterparty ids
- * on the books) decides who is a known contact.
+ * on the books) decides who is a known contact, so Business mode shows no message until the books have loaded (a
+ * loading block, or the error when the books failed to load): it never shows a sender it has not checked.
+ *
+ * Once a deal is selected the list folds to one row, "Inbox (N)" with a "Back to inbox" control (`collapsed`); the full list shows when
+ * nothing is selected or on request, and then offers to hide itself again.
  */
 export function InboxList({
   currentDocId,
@@ -42,6 +51,12 @@ export function InboxList({
   mode,
   statusFor,
   onOpen,
+  loadError,
+  onRetry,
+  collapsed = false,
+  onExpand,
+  onCollapse,
+  refusals,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -53,15 +68,36 @@ export function InboxList({
   /** The recommendation words for a message that was evaluated, else null. */
   statusFor: (docId: string) => string | null;
   onOpen: (m: InboxMessage) => void;
+  /** The books (the registry of known contacts) failed to load. */
+  loadError?: Error;
+  onRetry?: () => void;
+  /** A deal is selected and the list is folded to one row. */
+  collapsed?: boolean;
+  onExpand?: () => void;
+  /** Shown on the open list while a deal is selected: folds it again. */
+  onCollapse?: () => void;
+  /** The books' refusal block (`GET /ledger`); null or absent until it has loaded, and then no set-aside line is drawn. */
+  refusals?: RefusalBlock | null;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
   const unknown = (m: InboxMessage) => (known ? !known.has(m.counterparty_id) : false);
   const shown = business ? INBOX.filter((m) => !unknown(m)) : INBOX;
-  const blocked = business ? INBOX.length - shown.length : 0;
+  // Business mode hides the senders the books do not know; the example line is only for a list that actually hides one.
+  const hidden = business ? INBOX.length - shown.length : 0;
   const all = threads(shown);
   const current = all.find((th) => th.messages.some((m) => m.document.doc_id === currentDocId)) ?? null;
   const others = current ? all.filter((th) => th !== current) : all;
+
+  // The set-aside line is the books' (the ledger's refusal block): a count when something was set aside, the labelled example when nothing was yet.
+  const aside: { text: string; href: string; example: boolean } | null =
+    business && refusals
+      ? refusals.count > 0 && refusals.set_aside_text
+        ? { text: refusals.set_aside_text, href: refusals.href, example: false }
+        : hidden > 0 && refusals.example?.is_fixture_example
+          ? { text: refusals.example.text, href: refusals.href, example: true }
+          : null
+      : null;
 
   function row(m: InboxMessage, inThread: boolean) {
     const isCurrent = m.document.doc_id === currentDocId;
@@ -76,10 +112,10 @@ export function InboxList({
         aria-current={isCurrent ? "true" : undefined}
         data-testid={`inbox-msg-${m.id}`}
         className={`flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
-          isCurrent ? "bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]" : ""
+          isCurrent ? "bg-brand-50" : ""
         } ${inThread ? "pl-8" : ""}`}
       >
-        <Badge tone={sourceTone[m.source]} className="mt-0.5 w-16 justify-center">
+        <Badge className="mt-0.5 w-16 justify-center">
           {te("inbox.source", m.source)}
         </Badge>
         <span className="min-w-0 flex-1 basis-56">
@@ -101,12 +137,12 @@ export function InboxList({
           ) : isCurrent ? (
             <span className="font-medium text-brand-700">{t("inbox.showing")}</span>
           ) : status ? (
-            <span className="font-medium text-ink" data-testid="inbox-msg-status">
-              {status}
+            <span data-testid="inbox-msg-status">
+              <Chip>{status}</Chip>
             </span>
           ) : read ? (
             <span className="flex items-center gap-1 text-ok-fg">
-              <CheckIcon width={12} height={12} />
+              <CheckIcon />
               {t("inbox.readDone")}
             </span>
           ) : (
@@ -123,52 +159,66 @@ export function InboxList({
       <li key={th.counterpartyId} data-testid={`inbox-thread-${th.counterpartyId}`}>
         {row(latest, false)}
         {rest.length ? (
-          <details open={th === current && latest.document.doc_id !== currentDocId}>
-            <summary className="cursor-pointer px-4 pb-2 text-xs font-medium text-brand-700">
-              {t("biz.deals.moreInThread", { n: rest.length, buyer: th.company })}
-            </summary>
+          <Disclosure flush summaryClass={foldHead} defaultOpen={th === current && latest.document.doc_id !== currentDocId} summary={t("biz.deals.moreInThread", { n: rest.length, buyer: th.company })}>
             <div className="divide-y divide-line border-t border-line">{rest.map((m) => row(m, true))}</div>
-          </details>
+          </Disclosure>
         ) : null}
       </li>
     );
   }
 
+  if (collapsed && !(business && known === null)) {
+    return (
+      <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-card border border-line bg-surface px-4 py-2 shadow-card" data-testid="inbox-collapsed">
+        <h2 className="text-sm font-semibold text-ink">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
+        <Button size="sm" onClick={onExpand} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
+          {t("biz.deals.backToInbox")}
+        </Button>
+      </div>
+    );
+  }
+  if (business && known === null) {
+    return (
+      <Card id="inbox-list" title={t("biz.deals.inbox")}>
+        <div data-testid={loadError ? "inbox-error" : "inbox-loading"}>
+          {loadError ? <ErrorState error={loadError} onRetry={onRetry} /> : <LoadingBlock rows={2} />}
+        </div>
+      </Card>
+    );
+  }
   return (
     <Card
       id="inbox-list"
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
+      actions={
+        onCollapse ? (
+          <Button size="sm" variant="ghost" onClick={onCollapse} aria-expanded data-testid="inbox-hide">
+            {t("biz.deals.hideInbox")}
+          </Button>
+        ) : undefined
+      }
     >
-      <ul className="-m-4 divide-y divide-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
+      <ul className="motion-rise -m-4 divide-y divide-line overflow-hidden rounded-b-card" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>
-            <details data-testid="inbox-others">
-              <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-brand-700">{t("biz.deals.otherMessages", { n: others.reduce((n, th) => n + th.messages.length, 0) })}</summary>
+            <Disclosure flush testId="inbox-others" summaryClass={foldHead} summary={t("biz.deals.otherMessages", { n: others.reduce((n, th) => n + th.messages.length, 0) })}>
               <ul className="divide-y divide-line border-t border-line">{others.map(thread)}</ul>
-            </details>
+            </Disclosure>
           </li>
         ) : (
           others.map(thread)
         )}
-        {blocked ? (
-          // These messages never reach the agent (the sender is not on the books), so nothing about them is in Activity:
-          // the owner can look at them here, labelled as unread by the agent.
-          <li className="px-4 py-3 text-xs text-ink-3" data-testid="inbox-blocked">
-            <details>
-              <summary className="cursor-pointer">
-                {t("biz.deals.blocked", { n: blocked })} <span className="font-medium text-brand-700 underline underline-offset-2">{t("biz.deals.blocked.link")}</span>
-              </summary>
-              <ul className="mt-2 space-y-2">
-                {INBOX.filter(unknown).map((m) => (
-                  <li key={m.id} className="rounded-md border border-line bg-subtle px-3 py-2">
-                    <p className="font-medium text-ink-2">{t("biz.deals.blocked.from", { company: m.company, contact: m.contact })}</p>
-                    <p className="mt-1 whitespace-pre-line break-words text-ink-3">{m.document.text}</p>
-                  </li>
-                ))}
-              </ul>
-            </details>
+        {aside ? (
+          <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
+            <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
+            <span>
+              {aside.text}{" "}
+              <Link href={aside.href} className={textLinkClass}>
+                {t("biz.deals.blocked.link")}
+              </Link>
+            </span>
           </li>
         ) : null}
       </ul>

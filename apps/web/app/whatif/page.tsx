@@ -2,12 +2,22 @@
 
 import { useState } from "react";
 import { WhatIfControlsCard } from "@/components/whatif-controls";
-import { WhatIfCashCard, WhatIfSummaryCard } from "@/components/whatif-results";
+import {
+  WhatIfCashCard,
+  WhatIfCountersCard,
+  WhatIfCovenantsCard,
+  WhatIfMeterCard,
+  WhatIfPlanCard,
+  WhatIfSummaryCard,
+  WhatIfTestedCard,
+  WhatIfVerdictCard,
+} from "@/components/whatif-results";
+import { Disclosure } from "@/components/business/kit";
 import { Badge, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { getClock } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { useAsync } from "@/lib/use-async";
 import type { WhatIfParams } from "@/lib/types";
+import { useAsync } from "@/lib/use-async";
 import { useWhatIf } from "./use-whatif";
 
 /** The buyer's actual offer (EX01): the page opens on it so the first thing shown is the real problem. */
@@ -55,6 +65,20 @@ export default function WhatIfPage() {
             ) : null}
             <WhatIfSummaryCard r={result} loading={loading} today={today} />
             <WhatIfCashCard r={result} today={today} />
+            <Disclosure card summary={t("whatif.details")} testId="whatif-details">
+              <div className="space-y-6">
+                <WhatIfVerdictCard r={result} loading={loading} />
+                <div className="grid gap-6 xl:grid-cols-2">
+                  <WhatIfMeterCard r={result} />
+                  <div className="space-y-6">
+                    <WhatIfCovenantsCard r={result} />
+                    <WhatIfPlanCard r={result} />
+                  </div>
+                </div>
+                <WhatIfCountersCard r={result} />
+                <WhatIfTestedCard r={result} />
+              </div>
+            </Disclosure>
           </div>
         </div>
       )}

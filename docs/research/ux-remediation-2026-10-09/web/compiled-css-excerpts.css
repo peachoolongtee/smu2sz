@@ -1,0 +1,81 @@
+/* dev server compiled CSS (block form), the touch: utilities */
+  }
+
+  @media (max-width: 63.999rem) {
+    .touch\:size-11 {
+      width: calc(var(--spacing) * 11);
+      height: calc(var(--spacing) * 11);
+    }
+  }
+
+  @media (pointer: coarse) {
+    .touch\:size-11 {
+      width: calc(var(--spacing) * 11);
+      height: calc(var(--spacing) * 11);
+    }
+  }
+
+  @media (max-width: 63.999rem) {
+    .touch\:h-11 {
+      height: calc(var(--spacing) * 11);
+    }
+  }
+
+  @media (pointer: coarse) {
+    .touch\:h-11 {
+      height: calc(var(--spacing) * 11);
+    }
+  }
+
+  @media (max-width: 63.999rem) {
+    .touch\:min-h-11 {
+      min-height: calc(var(--spacing) * 11);
+    }
+  }
+
+  @media (pointer: coarse) {
+    .touch\:min-h-11 {
+      min-height: calc(var(--spacing) * 11);
+    }
+  }
+
+
+/* the spinner rules (dev, compiled) */
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, :before, :after {
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+    transition-delay: 0s !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+  }
+
+  .motion-lift:hover, .motion-press:not(:disabled):active {
+    transform: none !important;
+  }
+
+  .biz-disc {
+    animation: none !important;
+  }
+
+  .spinner {
+    display: none;
+  }
+
+  .spinner-dots {
+    order: 1;
+    display: inline;
+  }
+}
+
+.spinner-dots {
+  display: none;
+}
+
+.recharts-wrapper:focus-visible, .recharts-surface:focus-visible {
+  outline: 2px solid var(--color-focus);

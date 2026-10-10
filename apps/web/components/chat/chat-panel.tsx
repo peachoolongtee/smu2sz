@@ -8,7 +8,9 @@ import { useI18n } from "@/lib/i18n";
 import { ChatView } from "./chat-view";
 
 /**
- * Chat from every page: a floating button opens a slide-over with the same conversation as /chat.
+ * Chat from every page: a button opens a slide-over with the same conversation as /chat. The button never floats over the content:
+ * on a phone it is the last cell of the bottom bar (the Business tab bar and the Demo stepper leave it free), from `sm` a pill
+ * above the bar with the page's bottom padding sized to clear it (`.ask-trigger` and `.dock-pad` in globals.css).
  * A native modal <dialog> gives focus trapping, Esc to close and focus return for free.
  */
 export function ChatPanel() {
@@ -32,17 +34,15 @@ export function ChatPanel() {
         <button
           type="button"
           aria-haspopup="dialog"
+          aria-label={t("chat.open")}
           onClick={() => setPanelOpen(true)}
           data-testid="chat-open"
-          data-tour="chat"
-          aria-label={t("chat.open")}
-          title={t("chat.open")}
-          // A round button where the page is narrow, so it covers as little of the content as possible; the label shows
-          // only where the margin beside the content is wide enough to hold it.
-          className="fixed bottom-28 right-4 z-40 inline-flex size-12 items-center justify-center gap-2 rounded-full bg-brand-600 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 lg:bottom-5 lg:right-5 2xl:size-auto 2xl:min-h-11 2xl:px-4"
+          className="ask-trigger motion-press fixed z-40 flex min-h-10 flex-col items-center justify-center gap-0.5 text-xs font-medium text-ink-2 hover:text-ink touch:min-h-11 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:rounded-pill sm:border sm:border-transparent sm:bg-brand-600 sm:px-4 sm:text-sm sm:text-white sm:shadow-pop sm:hover:bg-brand-700 sm:hover:text-white"
         >
-          <ChatIcon />
-          <span className="hidden 2xl:inline">{t("chat.open")}</span>
+          <ChatIcon className="size-5 text-brand-600 sm:size-4 sm:text-white" />
+          {/* A phone's cell is 56 px wide: the short word there, the full name from sm (the button's name is always the full one). */}
+          <span aria-hidden className="sm:hidden">{t("chat.open.short")}</span>
+          <span aria-hidden className="hidden sm:inline">{t("chat.open")}</span>
         </button>
       )}
       <dialog
@@ -53,7 +53,7 @@ export function ChatPanel() {
         onClick={(e) => {
           if (e.target === e.currentTarget) setPanelOpen(false);
         }}
-        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-ink/30 open:animate-[tl-slide-in_0.18s_ease-out]"
+        className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-dvh w-full max-w-[min(32rem,100vw)] overflow-x-hidden border-l border-line bg-surface p-0 text-ink shadow-pop backdrop:bg-ink/30 motion-panel"
       >
         {panelOpen ? (
           <div className="flex h-full flex-col">
@@ -66,7 +66,7 @@ export function ChatPanel() {
                 onClick={() => setPanelOpen(false)}
                 aria-label={t("chat.close")}
                 data-testid="chat-close"
-                className="grid size-10 place-items-center rounded-md border border-line-strong text-ink-2 hover:bg-subtle"
+                className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle touch:size-11"
               >
                 <XIcon />
               </button>

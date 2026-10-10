@@ -26,20 +26,78 @@
   "decided_day": 34,
   "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
   "presentation": {
-    "headline": "Approve ¥200,000.00 of invoice financing?",
+    "headline": "You approved ¥200,000.00 of invoice financing.",
     "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
     "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
-    "cost_display": null,
-    "rate_text": null,
-    "cost_due_day": null,
+    "cost_display": "¥1,782.19",
+    "rate_text": "32.5%",
+    "cost_due_day": 47,
     "lands_day": 37,
     "lands_when": "in 3 days",
-    "if_decline": "Nothing runs; the request is closed.",
-    "protects": null,
-    "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 until in 13 days), annualised = 32.52%)",
-    "result_message": "Advance ¥200,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Invoice financing (onboarded platform) today; the cash lands in 3 days after the 3-day lead time, not today",
-    "decided_when": "today"
-  }
+    "lands_text": null,
+    "if_decline": null,
+    "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "residual": null,
+    "execution_status": "EXECUTED",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "next_step_text": null,
+    "next_step_href": null,
+    "result_state_text": "Approved, cash arrives in 3 days",
+    "result_tone": "info",
+    "result_message": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days.",
+    "decided_when": "today",
+    "created_when": "today"
+  },
+  "decision_id": "alert:ALERT-RESERVE-42:v7",
+  "decision_state": "SETTLEMENT_PENDING",
+  "quote": {
+    "recorded": true,
+    "quoted_when": "today",
+    "lines": [
+      {
+        "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "amount_fen": 20000000,
+        "amount_display": "¥200,000.00",
+        "cost_fen": 178219,
+        "cost_display": "¥1,782.19",
+        "rate_text": "32.5%",
+        "cost_days": 10,
+        "lands_day": 37,
+        "lands_when": "in 3 days",
+        "above_ceiling": true
+      }
+    ],
+    "total_fen": 178219,
+    "total_display": "¥1,782.19",
+    "cost_note": null,
+    "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+    "lands_day": 37,
+    "lands_when": "in 3 days",
+    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "if_declined": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+    "needs_owner": true,
+    "text": null,
+    "actual": [
+      {
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "amount_display": "¥200,000.00",
+        "request_day": 34,
+        "arrival_day": 37,
+        "arrival_when": "in 3 days",
+        "settled": false
+      }
+    ],
+    "difference_text": null
+  },
+  "execution": {
+    "status": "EXECUTED",
+    "summary_text": "¥200,000.00 of invoice financing was requested today; the cash lands in 3 days."
+  },
+  "result_state_text": "Approved, cash arrives in 3 days",
+  "result_tone": "info",
+  "execution_status": "EXECUTED"
 }

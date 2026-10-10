@@ -7,6 +7,7 @@ intents: whatever it says, it is an inbound offer to compile and verify (INVARIA
 
 from __future__ import annotations
 
+import re
 from contextvars import ContextVar
 
 from app.compiler import compile_offer, compile_term_sheet
@@ -29,7 +30,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.egress import AllowedValue, allowed_for_counter, allowed_from_obligations, protected_for, scan
-from app.nl import landing
+from app.nl import landing, reads
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.models import Intent, Slots
@@ -130,16 +131,99 @@ def log_authority_claims(ctx: NlContext, offer: CompiledOffer) -> None:
 # ---------------------------------------------------------------- the verdict -> operations decision
 
 
+_NOTHING_AGREED = ("Nothing has been agreed or executed.", "目前尚未达成或执行任何事项。")
+
+# A currency the buyer wrote, named from this closed list only (never the message's own words): the sentence stays a
+# fixed template, so the egress guard has nothing of the message to check.
+_CURRENCY_NAMES: tuple[tuple[re.Pattern[str], str, str], ...] = (
+    (re.compile(r"US\s?\$|USD|美元|美金", re.IGNORECASE), "US dollars", "美元"),
+    (re.compile(r"HK\s?\$|HKD|港币|港元", re.IGNORECASE), "Hong Kong dollars", "港元"),
+    (re.compile(r"EUR|€|euros?|欧元", re.IGNORECASE), "euros", "欧元"),
+    (re.compile(r"GBP|£|pounds?|英镑", re.IGNORECASE), "pounds sterling", "英镑"),
+    (re.compile(r"JPY|日元|日圆", re.IGNORECASE), "yen", "日元"),
+    (re.compile(r"\$|＄|dollars?", re.IGNORECASE), "dollars", "美元等外币"),
+)
+
+
+def _currency_named(v: Verdict) -> tuple[str, str] | None:
+    for x in v.violations:
+        for sp in x.spans:
+            for pat, en, zh in _CURRENCY_NAMES:
+                if pat.search(sp.text):
+                    return en, zh
+    return None
+
+
+def _unresolved_fields(v: Verdict) -> list[str]:
+    """The compiler's own field names for what it could not read ("offer.currency"): typed values, not message text."""
+    seen: list[str] = []
+    for x in v.violations:
+        for f in [*(x.observed or "").split(","), *str(x.inputs.get("fields", "")).split(",")]:
+            f = f.strip()
+            if f and f not in seen:
+                seen.append(f)
+    return seen
+
+
 def clarification_request(ctx: NlContext, v: Verdict) -> str:
     """One specific question for a NO_VERDICT, from the typed violation fields only (a fixed template: no
-    value from the message is echoed back)."""
+    value from the message is echoed back; a currency is named from a closed list). Each field the compiler abstained
+    on has its own sentence in plain words and says nothing was agreed; the compiler's rules are untouched."""
     what = " ".join([x.observed or "" for x in v.violations] + [k for x in v.violations for k in x.inputs])
+    fields = _unresolved_fields(v)
+
+    def has(*names: str) -> bool:
+        return any(f in names for f in fields)
+
+    def said(en: str, zh: str) -> str:
+        return t(ctx, f"{en} {_NOTHING_AGREED[0]}", f"{zh}{_NOTHING_AGREED[1]}")
+
     if any(x.code == ViolationCode.CONFLICTING_SOURCES for x in v.violations):
         return t(ctx, "Your message and the attached document state different values. Please confirm which one is "
                       "correct.", "贵方消息与附件中的数值不一致，请确认以哪一个为准。")
     if "alternatives" in what:
         return t(ctx, "Your message offers more than one value for a term. Please confirm the single value you propose.",
                  "贵方消息中同一条款给出了多个数值，请确认贵方提议的具体数值。")
+    if has("offer.currency"):
+        named = _currency_named(v)
+        return said(f"Your message states the amount in {named[0] if named else 'a currency other than yuan'}, but FLOW "
+                    "works in yuan (CNY). Please restate the amount or rate in CNY.",
+                    f"贵方消息以{named[1] if named else '人民币以外的币种'}计价，而本系统以人民币（CNY）记账。请以人民币重新说明金额或比例。")
+    if has("offer.rate.unusual_form"):
+        return said("A rate in your message is written with a comma, and I cannot tell whether the comma is a decimal point "
+                    "or a thousands separator. Please restate the rate with a decimal point.",
+                    "贵方消息中的比例使用了逗号，我无法区分它是小数点还是千位分隔符。请用小数点重新说明比例。")
+    if has("offer.amount.unusual_form"):
+        return said("An amount in your message mixes commas and dots, so I cannot read it safely. Please restate it with a "
+                    "decimal point and no thousands separators.",
+                    "贵方消息中的金额同时使用了逗号和句点，我无法可靠读取。请用小数点且不加千位分隔符重新说明金额。")
+    if has("offer.rate.per_day"):
+        return said("The rate in your message is stated per day. FLOW can only book one flat rate on the whole invoice. "
+                    "Please state a single flat rate for paying early.",
+                    "贵方消息中的比例按天计算，本系统只能按发票整体记录一个固定比例。请给出提前付款的单一固定比例。")
+    if has("offer.terms.discount_code"):
+        return said("The terms in your message are a payment-day schedule (like 2/10 net 30), which FLOW cannot book. "
+                    "Please state either one flat early-payment discount or the payment terms in days.",
+                    "贵方消息中的条款是按付款日划分的折扣方案（如 2/10 net 30），本系统无法记录。请改为给出一个固定的提前付款折扣，或以天数表示的付款期限。")
+    if any(f.endswith(".base.partial") for f in fields):
+        return said("Your offer applies to part of an invoice, and FLOW books whole invoices only. Please confirm whether "
+                    "your offer is for the whole invoice.",
+                    "贵方的报价只针对发票的一部分，而本系统只记录整张发票。请确认报价是否针对整张发票。")
+    if has("offer.base.other_party_invoice"):
+        return said("Your message names another party's invoice. Please confirm which of your own invoices the offer "
+                    "applies to.", "贵方消息提到的是其他方的发票。请确认该报价适用于贵方自己的哪一张发票。")
+    if has("offer.hedged"):
+        return said("Your offer is worded as a possibility (for example 'might' or 'maybe'), not a firm offer. Please "
+                    "confirm that you are offering these terms.",
+                    "贵方的报价措辞是一种可能性（如“可能”“也许”），不是确定的报价。请确认贵方确实提出这些条款。")
+    if has("offer.payment_after_due_date"):
+        return said("The payment you describe falls after the due date, and a discount for paying late is not an early "
+                    "payment. Please confirm the date you will pay.",
+                    "贵方所述的付款发生在到期日之后，逾期付款的折扣不属于提前付款。请确认付款日期。")
+    if has("offer.rider.price_freeze"):
+        return said("Your message includes a price commitment (such as a freeze or a cap), which FLOW cannot record as a "
+                    "payment term. Please confirm what you are offering for the payment.",
+                    "贵方消息包含价格承诺（如冻结或封顶），本系统无法将其记录为付款条款。请确认贵方为此次付款提供什么。")
     if "scope" in what or "base" in what or "receivable_id" in what:
         return t(ctx, "Please confirm what the discount or rebate applies to: which invoice, or which period's "
                       "purchases, and for how long.", "请确认该折扣或返利适用于哪张发票或哪一期的采购，以及适用多长时间。")
@@ -530,10 +614,18 @@ def explain(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
         _, v = evaluate_fixture(ctx, slots.fixture_id)
     elif ctx.session.last_verdict_id:
         v = ctx.store.get_verdict(ctx.session.last_verdict_id)
+    if not slots.fixture_id and ctx.reads is not None and lx.PLAN_ASK.search(text) and not lx.OPTION_ASK.search(text):
+        # "Why did FLOW choose this plan?" asks about the funding plan, not a verdict: on the Cash page and Home always,
+        # elsewhere only when there is no deal to explain
+        page = ctx.binding.page if ctx.binding is not None else ""
+        if v is None or page in ("/", "/cash"):
+            return reads.plan_explain(ctx)
     if v is None:
         return Turn(intent=Intent.EXPLAIN, reply=t(ctx, "There is no verdict to explain yet. Evaluate an offer first.",
                                                    "还没有可解释的结论。请先评估一条报价。"))
-    lines = [verdict_line(ctx, v)]
+    if not slots.fixture_id and lx.OPTION_ASK.search(text):
+        return reads.option(ctx, v, text)
+    lines = [reads.about(ctx, v) + verdict_line(ctx, v)]
     for x in v.violations:
         inputs = "; ".join(f"{k}={val}" for k, val in list(x.inputs.items())[:5])
         where = f" day {x.day}" if x.day is not None else (f" month {x.month}" if x.month is not None else "")
@@ -559,6 +651,11 @@ def explain(ctx: NlContext, slots: Slots, text: str = "") -> Turn:
 def what_if(ctx: NlContext, slots: Slots, text: str) -> Turn:
     """A hypothetical terms or discount change, verified on synthetic typed obligations whose spans are
     the owner's own words. Nothing is executed."""
+    if not (lx.days(text) or lx.rates(text)):
+        if ctx.reads is not None and lx.LATE_PAYMENT_ASK.search(text):
+            return reads.late_payment(ctx)  # a late payment of the invoice the page names, or the next one due
+        if lx.ACCEPT_ASK.search(text) and not slots.fixture_id and not slots.quoted_text:
+            return reads.accept_original(ctx)  # the verdict already held on their terms as written
     state = ctx.state()
     cp = slots.counterparty_id or ctx.session.counterparty_id
     if cp is None and ctx.session.last_offer_id:

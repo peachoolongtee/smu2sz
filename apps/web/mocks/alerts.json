@@ -1,5 +1,6 @@
 {
   "day": 0,
+  "lang": "en",
   "basis": "CONSERVATIVE",
   "state_version": 1,
   "projected_offer_id": null,
@@ -45,7 +46,8 @@
           "cost_formula": "",
           "above_apr_cap": false,
           "executes_automatically": false,
-          "amount_display": "¥150,000.00"
+          "amount_display": "¥150,000.00",
+          "note_when": "draw requested today; the router sizes and prices the final plan"
         },
         {
           "operation_kind": "SUBMIT_INVOICE_FOR_FINANCING",
@@ -66,12 +68,15 @@
           "above_apr_cap": false,
           "executes_automatically": false,
           "amount_display": "¥336,000.00",
-          "cost_display": "¥2,994.08"
+          "cost_display": "¥2,994.08",
+          "note_when": "submit today: the invoice is open, buyer-confirmed and not yet due"
         }
       ],
       "actionable": true,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥240,000.00"
+      "amount_display": "¥240,000.00",
+      "title_when": "Reserve breach ahead in 12 days",
+      "detail_when": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below your minimum cash reserve; the gap peaks at ¥405,000.00 in 30 days and lasts until 31 days from now. A funding plan is available: draw on Bank credit line ¥150,000.00 + finance an invoice on Invoice financing (onboarded platform) ¥336,000.00, cost ¥2,994.08 (11.2% a year for 29 days)."
     },
     {
       "id": "ALERT-HEADROOM-32",
@@ -92,8 +97,13 @@
       "suggested": [],
       "actionable": false,
       "basis": "CONSERVATIVE",
-      "amount_display": "¥15,000.00"
+      "amount_display": "¥15,000.00",
+      "title_when": "Cash is close to your minimum in 32 days",
+      "detail_when": "Cash stays above your minimum cash reserve by only ¥15,000.00 in 32 days (15 days with less than 10% of your minimum cash reserve to spare)."
     }
   ],
-  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself.",
+  "note_when": "A suggested step runs only when you choose it. Nothing runs by itself.",
+  "last_read_when": "today",
+  "last_read_day": 0
 }

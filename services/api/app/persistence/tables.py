@@ -264,8 +264,45 @@ evidence_exports = Table(
     Column("exported_at", String(40), nullable=False),
 )
 
-# Tables that `reset()` keeps: telemetry, not ledger state.
-TELEMETRY_TABLES = (llm_calls, evaluation_runs)
+# The shadow pilot's journal (map #58, docs/pilot/JOURNAL_SPEC.md): what the owner did against an answer FLOW gave. Its own
+# table, written only by `POST /pilot/journal`, never part of the state, the operations or the hash chain. Append-only.
+pilot_journal = Table(
+    "pilot_journal",
+    metadata,
+    _row_id(),
+    Column("week", Integer, nullable=False, index=True),
+    Column("sme", String(64), nullable=False, index=True),
+    Column("answer", String(16), nullable=False),
+    Column("flow_said", Text, nullable=False),
+    Column("snapshot_hash", HASH, nullable=False),
+    Column("owner_did", Text, nullable=False),
+    Column("choice", String(16), nullable=False),
+    Column("recorded_on", String(10), nullable=False),
+    Column("state_version", Integer, nullable=False),
+    Column("day", Integer, nullable=False),
+    Column("recorded_at", String(40), nullable=False),
+)
+
+# The durable decision record's facts (ADR-0011): the few things a decision's read model cannot re-derive from the other
+# tables. Its own table, written only by the API layer after the canonical event, never part of the state, the operations or
+# the hash chain. Append-only and insert-if-absent. Unlike the pilot journal it is ledger data: `reset()` clears it.
+decision_facts = Table(
+    "decision_facts",
+    metadata,
+    _row_id(),
+    Column("decision_id", String(160), nullable=False, index=True),
+    Column("family", String(8), nullable=False),
+    Column("fact", String(16), nullable=False),
+    Column("fact_key", String(256), nullable=False),
+    Column("state_version", Integer, nullable=False),
+    Column("day", Integer, nullable=False),
+    Column("body_json", Text, nullable=False),
+    Column("recorded_at", String(40), nullable=False),
+    UniqueConstraint("decision_id", "fact", "fact_key", name="uq_decision_facts_decision_id_fact_fact_key"),
+)
+
+# Tables that `reset()` keeps: telemetry and the pilot's journal, not ledger state.
+TELEMETRY_TABLES = (llm_calls, evaluation_runs, pilot_journal)
 
 __all__ = [
     "TELEMETRY_TABLES",
@@ -273,6 +310,7 @@ __all__ = [
     "commitments",
     "contract_records",
     "counterparties",
+    "decision_facts",
     "evaluation_runs",
     "evidence_exports",
     "facilities",
@@ -283,6 +321,7 @@ __all__ = [
     "offers",
     "operations",
     "organizations",
+    "pilot_journal",
     "security_events",
     "states",
     "used_nonces",

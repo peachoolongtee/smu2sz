@@ -54,12 +54,14 @@ def test_no_leg_is_ever_shown_requested_or_landing_before_it_is_eligible(client,
     legs = [a for p in plans for a in _legs(p)] + [a for r in rows for a in (r.get("actions") or [])]
     checked = 0
     for a in legs:
-        if a["kind"] not in ("DRAW", "FINANCE_INVOICE") or a.get("lands_day") is None:
+        if a["kind"] not in ("DRAW", "FINANCE_INVOICE"):
             continue
-        assert a["available_from_day"] is not None and a["available_from_day"] >= a["day"], a
+        # every comparison row carries the stamps now, so no leg is skipped for lacking them
+        assert a["lands_day"] is not None and a["available_from_day"] is not None, a
+        assert a["available_from_day"] >= a["day"], a
         assert a["lands_day"] >= a["available_from_day"], a
         checked += 1
-    assert checked >= 3
+    assert checked >= 6
 
 
 def test_the_landing_stamp_agrees_with_the_engine_on_the_deals_cure(client):
@@ -88,6 +90,8 @@ def test_comparison_rows_carry_a_status_and_what_an_insufficient_one_leaves_unco
     assert line["shortfall_display"] == "¥255,000.00" and line["worst_day"] == 30
     ggl = rows["line_guaranteed_loan"]
     assert ggl["status"] == "unavailable" and ggl["shortfall_display"] is None and ggl["reason_kind"] is None
+    assert "in 21 days" in ggl["note_when"] and "in 12 days" in ggl["note_when"] and "day 2" not in ggl["note_when"]
+    assert "day 21" in ggl["note"]  # the engine's own note is unchanged
     # a plan that does not fully protect cash is never one of the ranked solutions
     assert all(r["status"] in ("recommended", "alternative") for r in rows.values() if r["result"] in ("SELECTED", "ADMISSIBLE"))
     assert all(r["status"] in ("insufficient", "unavailable") for r in rows.values() if r["result"] == "NOT_ADMISSIBLE")
@@ -96,8 +100,11 @@ def test_comparison_rows_carry_a_status_and_what_an_insufficient_one_leaves_unco
 def test_the_verdicts_comparison_rows_carry_the_same_status(client, rt):
     v = _eval(client, EX01)
     statuses = {r["key"]: r["status"] for r in v["comparison"]}
-    assert statuses["router_optimum"] in ("recommended", "insufficient", "unavailable")
-    assert set(statuses.values()) <= {"recommended", "alternative", "insufficient", "unavailable"}
+    # the recorded verdict (mocks/verdict_ex01.json) has the router's pick as the one recommended row
+    assert statuses["router_optimum"] == "recommended"
+    assert statuses == {"full_discount": "alternative", "line_partial_early_pay": "alternative",
+                        "router_optimum": "recommended", "line_guaranteed_loan": "unavailable", "line_only": "insufficient"}
+
 
 
 # ---------------------------------------------------------------- gross versus net
@@ -149,6 +156,14 @@ def test_the_home_reads_headroom_and_its_status_in_words(client, rt):
     assert c["funding_lots"] == []
 
 
+def test_the_headline_does_not_repeat_the_worst_point_when_the_first_breach_is_the_lowest(client, rt):
+    assert client.get("/home", headers=OWNER).json()["worst"] is not None  # day 0: breach day 12, lowest day 30
+    to_day34(client, rt)
+    h = client.get("/home", headers=OWNER).json()
+    assert h["cash"]["first_breach_day"] == h["cash"]["lowest_day"] and h["worst"] is None
+    assert "in 8 days" in h["headline"]
+
+
 def test_after_the_day34_cure_the_lowest_point_ahead_is_today_not_34_days_ago(client, rt):
     to_day34(client, rt)
     [breach] = [a for a in client.get("/alerts", headers=OWNER).json()["alerts"] if a["kind"] == "RESERVE_BREACH_AHEAD"]
@@ -163,3 +178,152 @@ def test_after_the_day34_cure_the_lowest_point_ahead_is_today_not_34_days_ago(cl
     assert h["cash"]["in_transit"]["total_display"] == "¥200,000.00"
     zh = client.get("/home", params={"lang": "zh"}, headers=OWNER).json()
     assert zh["status_text"] == "安全，但余量不多" and "今天" in zh["worst"]
+
+
+def test_a_comparison_row_says_why_it_cannot_run_and_carries_its_landing_days(client, rt):
+    rows = {r["key"]: r for r in client.post("/router/plan", headers=OWNER).json()["comparison"]}
+    for key in ("full_discount", "line_partial_early_pay"):
+        assert rows[key]["executable_now"] is False and rows[key]["not_executable_reason"], key
+    for key in ("router_optimum", "line_only", "line_guaranteed_loan"):
+        assert rows[key]["executable_now"] is True and rows[key]["not_executable_reason"] == "", key
+    [draw, adv] = rows["router_optimum"]["actions"]
+    assert draw["lands_day"] == 0 and adv["available_from_day"] == 0 and adv["lands_day"] == 3
+    [_, loan] = rows["line_guaranteed_loan"]["actions"]
+    assert loan["lands_day"] == 21 and loan["available_from_day"] == 0
+
+
+# ---------------------------------------------------------------- the status of every outcome
+
+
+def test_comparison_status_names_every_outcome():
+    from app.api.presentation import comparison_status as status
+    assert status("SELECTED", [], None) == "recommended"
+    assert status("ADMISSIBLE", [], None) == "alternative"
+    assert status("NOT_ADMISSIBLE", ["RESERVE_BREACH"], 12) == "insufficient"
+    assert status("NOT_ADMISSIBLE", [], 12) == "insufficient"  # a breach day alone is enough
+    assert status("NOT_ADMISSIBLE", ["UNCOMMITTED_FACILITY", "LEAD_TIME_TOO_LONG"], None) == "unavailable"
+    assert status("NOT_ADMISSIBLE", ["LEAD_TIME_TOO_LONG"], None) == "unavailable"
+    # anything else (a covenant, the borrowing switch, the rate ceiling) breaks one of the owner's limits
+    assert status("NOT_ADMISSIBLE", ["DSCR_BREACH"], None) == "blocked"
+    assert status("NOT_ADMISSIBLE", [], None) == "blocked"
+
+
+def test_comparison_reason_says_the_buyer_or_the_invoice():
+    from app.api.presentation import comparison_reason as reason
+    assert reason([{"kind": "EARLY_PAY"}], False) == "buyer_early_pay"
+    assert reason([{"kind": "DRAW"}, {"kind": "EARLY_PAY"}], False) == "buyer_early_pay"
+    assert reason([{"kind": "FINANCE_INVOICE", "day": 0, "available_from_day": 32}], False) == "invoice_not_issued"
+    assert reason([{"kind": "FINANCE_INVOICE", "day": 0, "available_from_day": 0}], False) is None
+    assert reason([{"kind": "EARLY_PAY"}], True) is None  # a row that can run today has no reason
+
+
+def test_business_action_for_every_outcome():
+    from app.api.presentation import business_action as action
+    assert action("ACCEPT", 0) == "accept"
+    assert action("COUNTER", 1) == "counter" and action("REJECT", 2) == "counter"
+    assert action("REJECT", 0) == "decline"
+    assert action("NEEDS_OWNER_APPROVAL", 0) == "needs_owner"
+    assert action("NO_VERDICT", 0) == "cannot" and action("NO_DEAL", 0) == "cannot"
+
+
+def test_counter_economics_has_no_figure_when_no_committed_source_prices_concessions():
+    from app.api.presentation import counter_economics
+    from app.domain.models import FacilityStatus
+    from app.mandate import load_signed_mandate
+    b = bundle(EX01)
+    state, _ = load_scenario()
+    mandate = load_signed_mandate()
+    counter = b.verdict.counters[0]
+    assert counter_economics(list(counter.obligations), state, mandate) is not None
+    uncommitted = state.model_copy(update={"facilities": [f.model_copy(update={"status": FacilityStatus.NOT_APPLIED})
+                                                           for f in state.facilities]})
+    assert counter_economics(list(counter.obligations), uncommitted, mandate) is None
+
+
+def test_net_words_say_about_zero_when_the_offset_covers_the_cost(client, rt):
+    from app.api.presentation import counter_economics
+    from app.domain.models import ObligationType
+    from app.mandate import load_signed_mandate
+    a, b = _eval(client, EX01)["counters"]
+    assert b["economics"]["net_fen"] < 0 and b["economics"]["net_words"] == "≈ ¥0"
+    assert a["economics"]["net_fen"] == 0 and a["economics"]["net_words"] == "≈ ¥0"
+    # a net that is a cost is said as the figure (the extension without its offset)
+    state, _ = load_scenario()
+    ext = [o for o in bundle(EX01).bound_obligations if o.type == ObligationType.TERMS_EXTENSION]
+    e = counter_economics(ext, state, load_signed_mandate())
+    assert e is not None and e["net_fen"] > 0 and e["net_words"] == e["net_display"] == "¥24,326.92"
+
+
+
+# ---------------------------------------------------------------- the home's words
+
+
+def test_the_status_text_for_every_band():
+    from types import SimpleNamespace
+
+    from app.alerts import AlertKind
+    from app.api.home import _status_text as text
+    tight = [SimpleNamespace(kind=AlertKind.RESERVE_HEADROOM_LOW)]
+    other = [SimpleNamespace(kind=AlertKind.RECEIVABLE_PAST_DUE)]
+    assert text("SAFE", [], "en") == "Covered" and text("SAFE", [], "zh") == "安全"
+    assert text("WATCH", tight, "en") == "Covered, but tight" and text("WATCH", tight, "zh") == "安全，但余量不多"
+    assert text("WATCH", other, "en") == "Covered, with warnings" and text("WATCH", [], "zh") == "安全，但有提醒"
+    assert text("ACTION_NEEDED", [], "en") == "Action needed"
+    assert text("CRITICAL", [], "en") == "Critical"
+
+
+def test_chart_annotations_use_the_last_from_and_short_words_per_kind():
+    from app.api.home import _label_short as short
+    assert short("ADVANCE", "Advance ¥255,000.00 on X from Invoice financing", "en") == "Invoice financing lands"
+    assert short("ADVANCE", "x", "zh") == "发票融资到账"
+    assert short("DRAW", "Draw from Bank credit line", "en") == "Credit line draw"
+    assert short("RECEIPT", "Receipt the ¥420,000.00 invoice from Foshan Home Retail Co.", "en") == "Receipt from Foshan Home Retail Co."
+    # a party name that itself contains " from " keeps its whole name: the last " from " is the one that introduces it
+    assert short("RECEIPT", "Receipt the ¥1.00 invoice from Sourced from Asia Ltd", "en") == "Receipt from Asia Ltd"
+    assert short("RECEIPT", "Receipt", "en") == "Receipt" and short("EARLY_RECEIPT", "x", "zh") == "收款"
+    assert short("FLOW", "Payroll (monthly), day 12", "en") == "Payroll"
+    assert short("FLOW", "Supplier payment from stock", "en") == "Supplier payment from stock"  # no kind rule: the label itself
+
+
+def test_the_lowest_point_ahead_falls_back_to_every_day_when_today_is_past_the_last():
+    from types import SimpleNamespace
+
+    from app.api.home import _lowest_ahead
+    days = [SimpleNamespace(day=d, closing_fen=c) for d, c in [(0, 300), (1, 100), (2, 50), (3, 200)]]
+    traj = SimpleNamespace(days=days)
+    assert _lowest_ahead(traj, 2) == (50, 2)
+    assert _lowest_ahead(traj, 3) == (200, 3)  # only today and later count
+    assert _lowest_ahead(traj, 9) == (50, 2)  # today beyond the last day: the whole series
+
+
+# ---------------------------------------------------------------- no runnable fix: the home says so
+
+
+def test_a_critical_breach_with_no_runnable_fix_has_no_next_action_but_still_a_first_breach(client, rt):
+    state, _ = load_scenario()
+    rt.store.put_state(state.model_copy(update={"facilities": [
+        f.model_copy(update={"drawn_fen": f.limit_fen}) if f.id in ("FAC-LINE", "FAC-IF") else
+        f.model_copy(update={"owner_approved": False}) if f.status.value != "COMMITTED" else f
+        for f in state.facilities]}))
+    h = client.get("/home", headers=OWNER).json()
+    # the Cash page must not say "no additional funding is needed" here: a breach is ahead and nothing can be run
+    assert h["status"] == "CRITICAL" and h["next_action"] is None
+    assert h["cash"]["first_breach_day"] == 12 and h["headline"] == "Your cash reserve becomes unsafe in 12 days."
+    assert [f["drawn_fen"] for f in h["facilities"] if f["id"] in ("FAC-LINE", "FAC-IF")] == [15_000_000, 35_000_000]
+
+
+def test_the_homes_facilities_and_lots_say_what_is_drawn_and_what_is_an_opening_balance(client, rt):
+    h = client.get("/home", headers=OWNER).json()
+    assert all(f["drawn_fen"] == 0 for f in h["facilities"])
+    to_day34(client, rt)
+    [breach] = [a for a in client.get("/alerts", headers=OWNER).json()["alerts"] if a["kind"] == "RESERVE_BREACH_AHEAD"]
+    approve_cure(client, rt, breach["id"])
+    h = client.get("/home", headers=OWNER).json()
+    assert sum(f["drawn_fen"] for f in h["facilities"]) > 0
+    assert all(lot["opening"] is False for lot in h["cash"]["funding_lots"])
+    # a balance older than the books is an opening balance, not funding received today
+    state = rt.store.get_state()
+    lots = [lot.model_copy(update={"assumed_date": True}) for lot in state.lots]
+    rt.store.put_state(state.model_copy(update={"lots": lots}))
+    h = client.get("/home", headers=OWNER).json()
+    assert h["cash"]["funding_lots"] and all(lot["opening"] is True for lot in h["cash"]["funding_lots"])

@@ -1,0 +1,2 @@
+$ tsc --noEmit
+EXIT 0 DURATION_S 4

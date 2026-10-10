@@ -5,7 +5,10 @@ import { AnnualisedCompact, offerLegs } from "@/components/annualised";
 import { AutonomyPanel } from "@/components/autonomy-panel";
 import { CodeBadge, OutcomeBadge, TierBadge, outcomeHasTier } from "@/components/badges";
 import { OperationResultBox } from "@/components/operation-result";
-import { Badge, Button, Hash, type Tone } from "@/components/ui";
+import { Disclosure } from "@/components/business/kit";
+import { Badge, Button, Chip, Hash, type Tone } from "@/components/ui";
+import { confirmWord } from "@/lib/confirm-word";
+import { useBusinessShell } from "@/lib/use-business-today";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
 import type { NlOperation, NlPlanStatus, NlPlanStep, NlResponse, NlVerdict } from "@/lib/types";
@@ -40,12 +43,9 @@ function StepText({ text }: { text: string }) {
   const { t } = useI18n();
   if (text.length <= LONG) return <span className="break-words">{text}</span>;
   return (
-    <details className="min-w-0">
-      <summary className="cursor-pointer break-words marker:text-ink-3">
-        {text.slice(0, LONG)}…<span className="sr-only"> {t("chat.plan.more")}</span>
-      </summary>
+    <Disclosure className="min-w-0" summary={<span className="break-words">{text.slice(0, LONG)}…<span className="sr-only"> {t("chat.plan.more")}</span></span>}>
       <span className="mt-1 block whitespace-pre-wrap break-words text-ink-2">{text}</span>
-    </details>
+    </Disclosure>
   );
 }
 
@@ -90,11 +90,10 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
         ))}
       </div>
       {verdict.violations.length ? (
-        <details className="text-sm">
-          <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.verdict.why")}</summary>
+        <Disclosure className="text-sm" summary={t("chat.verdict.why")}>
           <ul className="mt-1.5 space-y-2">
             {verdict.violations.map((v) => (
-              <li key={v.code} className="rounded-md border border-line bg-subtle px-2.5 py-2">
+              <li key={v.code} className="rounded-tile border border-line bg-subtle px-2.5 py-2">
                 <p className="font-mono text-xs font-semibold text-ink">{v.code}</p>
                 <p className="mt-0.5 break-words text-ink-2">{v.message}</p>
                 {v.observed || v.limit ? (
@@ -110,7 +109,7 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       ) : (
         <p className="text-xs text-ink-3">{te("outcome", verdict.outcome)}</p>
       )}
@@ -118,7 +117,40 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
   );
 }
 
-export function OperationList({ operations }: { operations: NlOperation[] }) {
+/**
+ * What the executor's operation is in audit terms: its own sentence, the operation id, the tier, the sequence and the
+ * hash. Business pages keep these behind "Audit details" (the same disclosure as Activity); the Demo views show them in the row.
+ */
+function OperationAudit({ o }: { o: NlOperation }) {
+  const { t, te } = useI18n();
+  return (
+    <Disclosure className="mt-1" testId="op-audit" summary={t("biz.auditDetails")}>
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+        <dt>{t("audit.executor")}</dt>
+        <dd className="break-words" data-testid="op-raw">{o.message_when || o.message}</dd>
+        <dt>{t("audit.opId")}</dt>
+        <dd className="break-all font-mono">{te("opkind", o.kind) || o.kind} · {o.op_id}</dd>
+        <dt>{t("ledger.seq")}</dt>
+        <dd className="tabular-nums">{o.seq ?? t("common.none")}</dd>
+        <dt>{t("ledger.tier")}</dt>
+        <dd>
+          <TierBadge tier={o.tier} />
+        </dd>
+        <dt>{t("ledger.hash")}</dt>
+        <dd>
+          <Hash value={o.entry_hash} />
+        </dd>
+      </dl>
+    </Disclosure>
+  );
+}
+
+/**
+ * The operations an action ran. In `business` mode each row is the business sentence (`event_text`, else the
+ * `message_when` twin, else the executor's sentence) and the status pill; the tier, sequence, operation id and hash
+ * move behind "Audit details". The Demo views and the chat keep the full row.
+ */
+export function OperationList({ operations, business = false }: { operations: NlOperation[]; business?: boolean }) {
   const { t, te } = useI18n();
   return (
     <section aria-label={t("chat.ops")} data-testid="chat-ops">
@@ -126,12 +158,23 @@ export function OperationList({ operations }: { operations: NlOperation[] }) {
       <ul className="space-y-2">
         {operations.map((o) => (
           <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
-            <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
-              <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
-              <TierBadge tier={o.tier} />
-              {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
-              <Hash value={o.entry_hash} />
-            </OperationResultBox>
+            {business ? (
+              <OperationResultBox status={o.status} message="" approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind} details={<OperationAudit o={o} />} showId={false}>
+                {/* A request that waits is said once, by the status and its link; the question is on the decision card and in the recent changes. */}
+                {o.status === "PENDING_APPROVAL" ? null : (
+                  <span className="min-w-0 break-words text-sm font-medium text-ink" data-testid="op-sentence">
+                    {o.event_text || o.message_when || o.message}
+                  </span>
+                )}
+              </OperationResultBox>
+            ) : (
+              <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
+                <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
+                <TierBadge tier={o.tier} />
+                {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
+                <Hash value={o.entry_hash} />
+              </OperationResultBox>
+            )}
           </li>
         ))}
       </ul>
@@ -143,23 +186,31 @@ export function AssistantTurn({
   response: r,
   active,
   busy,
+  restored = false,
   onSend,
 }: {
   response: NlResponse;
+  /** Read back from the browser after a refresh: its buttons are history, and what was pending lives on the Approvals page. */
+  restored?: boolean;
   /** Only the latest turn can be answered: confirmations and clarifications on older turns are history. */
   active: boolean;
   busy: boolean;
   onSend: (text: string, display?: string) => void;
 }) {
   const { t, te } = useI18n();
+  // A Business page says one outcome line in the owner's words (the reply); the verdict panels, tiers and operation rows are the Demo views'.
+  const business = useBusinessShell();
   const hasSecurity = r.security_events.length > 0;
   const ranNothing = r.operations.length === 0 && (hasSecurity || r.plan.length > 0);
   const zh = r.lang === "zh";
+  // The Business button says the words the server asked for in its reply ("Yes, run it" for a plan, "Yes, do it" for an approval); the dictionary word is the fallback.
+  const goLabel = business ? ((r.reply && confirmWord(r.reply)) ?? t("chat.goahead.business")) : t("chat.goahead");
   const refused = r.operations.some((o) => o.status === "REFUSED");
+  const pendingAfterRefresh = restored && (r.awaiting_confirmation || r.operations.some((o) => o.status === "PENDING_APPROVAL"));
 
   return (
     <div
-      className={`space-y-3 rounded-lg border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
+      className={`space-y-3 rounded-tile border bg-surface p-3 ${hasSecurity ? "border-bad-line" : "border-line"}`}
       data-testid="chat-turn"
       data-intent={r.intent}
     >
@@ -187,7 +238,7 @@ export function AssistantTurn({
       </p>
 
       {hasSecurity ? (
-        <div role="alert" className="rounded-md border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
+        <div role="alert" className="rounded-tile border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
           <p className="font-semibold">{t("chat.security.title", { n: r.security_events.length })}</p>
           <p className="mt-0.5">{t("chat.security.body")}</p>
           <p className="mt-1 break-all font-mono text-xs">{r.security_events.join(", ")}</p>
@@ -197,9 +248,9 @@ export function AssistantTurn({
         </div>
       ) : null}
 
-      {r.verdict ? <VerdictBlock verdict={r.verdict} /> : null}
-      {r.verdict?.annualised?.length ? <AnnualisedCompact legs={offerLegs(r.verdict.annualised, r.verdict.counters)} /> : null}
-      {r.verdict ? (
+      {r.verdict && !business ? <VerdictBlock verdict={r.verdict} /> : null}
+      {r.verdict?.annualised?.length && !business ? <AnnualisedCompact legs={offerLegs(r.verdict.annualised, r.verdict.counters)} /> : null}
+      {r.verdict && !business ? (
         <AutonomyPanel
           outcome={r.verdict.outcome}
           tier={r.verdict.required_tier}
@@ -224,7 +275,7 @@ export function AssistantTurn({
       ) : null}
 
       {r.clarification ? (
-        <section aria-label={t("chat.clarify")} className="rounded-md border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
+        <section aria-label={t("chat.clarify")} className="rounded-tile border border-info-line bg-info-bg px-3 py-2" data-testid="chat-clarify">
           <p className="text-sm font-medium text-info-fg">{r.clarification.question}</p>
           <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={t("chat.clarify.pick")}>
             {r.clarification.options.map((o) => (
@@ -243,13 +294,20 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      {r.awaiting_confirmation ? (
-        <section className="rounded-md border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
+      {pendingAfterRefresh ? (
+        <p className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" data-testid="chat-restored-pending">
+          {t("chat.restored.pending")}{" "}
+          <Link href="/approvals" className="font-medium underline">
+            {t("chat.restored.open")}
+          </Link>
+        </p>
+      ) : r.awaiting_confirmation ? (
+        <section className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
           <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
           <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", t("chat.goahead"))} data-testid="chat-goahead">
-              {t("chat.goahead")}
+            <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", goLabel)} data-testid="chat-goahead">
+              {goLabel}
             </Button>
             <Button variant="secondary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "取消" : "cancel", t("chat.cancelPlan"))} data-testid="chat-cancel">
               {t("chat.cancelPlan")}
@@ -258,21 +316,22 @@ export function AssistantTurn({
         </section>
       ) : null}
 
-      <details className="rounded-md border border-line px-3 py-2" open={hasSecurity || refused} data-testid="chat-details">
-        <summary className="cursor-pointer text-xs font-medium text-ink-2">{t("chat.details")}</summary>
-        <div className="mt-2 space-y-3">
-          <span data-testid="chat-intent" className="inline-block">
-            <Badge tone="brand">{te("nlintent", r.intent) || r.intent}</Badge>
-          </span>
+      <Disclosure className="rounded-tile border border-line px-3" defaultOpen={hasSecurity || refused} testId="chat-details" summary={t("chat.details")}>
+        <div className="space-y-3">
+          {business ? null : (
+            <span data-testid="chat-intent" className="inline-block">
+              <Chip>{te("nlintent", r.intent) || r.intent}</Chip>
+            </span>
+          )}
           {r.plan.length ? <PlanList plan={r.plan} /> : null}
-          {r.operations.length ? <OperationList operations={r.operations} /> : null}
+          {r.operations.length ? <OperationList operations={r.operations} business={business} /> : null}
           {ranNothing ? (
             <p className="text-xs font-medium text-ink-2" data-testid="chat-nothing-executed">
               {t("chat.ops.none")}
             </p>
           ) : null}
         </div>
-      </details>
+      </Disclosure>
     </div>
   );
 }

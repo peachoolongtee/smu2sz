@@ -36,10 +36,56 @@
     "cost_due_day": 47,
     "lands_day": 37,
     "lands_when": "in 3 days",
+    "lands_text": "If you approve today, the cash lands in 3 days.",
     "if_decline": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
-    "protects": "It keeps cash above your minimum cash reserve for the next 12 days.",
-    "reason": "effective annual cost 32.52% is above the mandate's 15.00% ceiling for what the agent may borrow alone (all charges on ¥200,000.00 held 10 days (day 37 until in 13 days), annualised = 32.52%)",
+    "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "residual": null,
+    "execution_status": "PENDING",
+    "reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+    "next_step_text": null,
+    "next_step_href": null,
+    "result_state_text": "Waiting for your approval",
+    "result_tone": "warn",
     "result_message": null,
-    "decided_when": null
-  }
+    "decided_when": null,
+    "created_when": "today"
+  },
+  "decision_id": "alert:ALERT-RESERVE-42:v7",
+  "decision_state": "AUTHORIZATION_REQUIRED",
+  "quote": {
+    "recorded": true,
+    "quoted_when": "today",
+    "lines": [
+      {
+        "label": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "op_id": "alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "amount_fen": 20000000,
+        "amount_display": "¥200,000.00",
+        "cost_fen": 178219,
+        "cost_display": "¥1,782.19",
+        "rate_text": "32.5%",
+        "cost_days": 10,
+        "lands_day": 37,
+        "lands_when": "in 3 days",
+        "above_ceiling": true
+      }
+    ],
+    "total_fen": 178219,
+    "total_display": "¥1,782.19",
+    "cost_note": null,
+    "rate_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+    "lands_day": 37,
+    "lands_when": "in 3 days",
+    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "if_declined": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
+    "needs_owner": true,
+    "text": null
+  },
+  "execution": {
+    "status": "PENDING",
+    "summary_text": "Waiting for your approval. Nothing has run."
+  },
+  "result_state_text": "Waiting for your approval",
+  "result_tone": "warn"
 }

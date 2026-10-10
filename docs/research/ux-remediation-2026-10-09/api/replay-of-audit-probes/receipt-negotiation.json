@@ -1,0 +1,150 @@
+{
+  "offer_id": "OFF-f806f79b6c21",
+  "outcome": "DEAL",
+  "rounds": [
+    {
+      "round": 1,
+      "counter_id": "CTR-193394b6ba8b",
+      "counter_label": "Option A",
+      "buyer_response": "ACCEPT",
+      "buyer_text": "Round 1. We accept Option A as proposed."
+    }
+  ],
+  "accepted_counter_id": "CTR-193394b6ba8b",
+  "commitment": {
+    "id": "CMT-a811295f3a59b55f",
+    "offer_id": "OFF-f806f79b6c21",
+    "offer_version": 1,
+    "counterparty_id": "BUYER-1",
+    "verdict_id": "VER-a899ca66120c",
+    "terms_hash": "342e81d5572b1ecd3a1b01f177dc698c8f418ef9df1fdfd17ec4d49f6f72a280",
+    "obligations": [
+      {
+        "id": "CTR-193394b6ba8b-O2",
+        "type": "IMMEDIATE_DISCOUNT",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 85,
+        "amount_fen": null,
+        "days_delta": null,
+        "target_terms_days": null,
+        "effective_day": 2,
+        "base": {
+          "kind": "INVOICE",
+          "amount_fen": 25720000,
+          "receivable_id": "RCV-A",
+          "events_per_year": null,
+          "amount_display": "¥257,200.00"
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "CTR-193394b6ba8b",
+            "start": 34,
+            "end": 134,
+            "text": "We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid on or before day 2."
+          }
+        ],
+        "confidence": 1.0,
+        "unresolved": [],
+        "rate_display": "0.85%"
+      }
+    ],
+    "status": "ACTIVE",
+    "nonce": "7063027967ce6981e0a00c94a9a7cbeb",
+    "expires_day": 7,
+    "mandate_version": 1,
+    "forward_value_fen": 0,
+    "forward_value_display": "¥0.00"
+  },
+  "operations": [
+    {
+      "op_id": "accept-CMT-a811295f3a59b55f",
+      "kind": "ACCEPT_OFFER",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 1,
+      "entry_hash": "86377216f00b1193f3d8454463b6c0f479a199bf197c5d715d825f5c00d95ec0",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Commitment CMT-a811295f3a59b55f is ACTIVE; forward concession ¥0.00 booked"
+    },
+    {
+      "op_id": "fund-OFF-f806f79b6c21-cooperative-0",
+      "kind": "DRAW_FACILITY",
+      "status": "EXECUTED",
+      "tier": "TIER_1",
+      "violations": [],
+      "seq": 2,
+      "entry_hash": "a555a4e6f4c730f1fa764852d8891333d0e3f29d728f4f8e4bd0847884e6382e",
+      "prev_hash": "86377216f00b1193f3d8454463b6c0f479a199bf197c5d715d825f5c00d95ec0",
+      "effective_day": 0,
+      "approval_id": null,
+      "message": "Drew ¥149,986.20 on FAC-LINE on day 0"
+    }
+  ],
+  "plan": {
+    "id": "PLAN-COM-6967b1df72ef",
+    "basis": "COMMITTED",
+    "need_fen": 14998620,
+    "actions": [
+      {
+        "kind": "DRAW",
+        "facility_id": "FAC-LINE",
+        "day": 0,
+        "amount_fen": 14998620,
+        "receivable_id": null,
+        "repay_day": 32,
+        "rate_bp": null,
+        "lands_day": 0,
+        "available_from_day": 0,
+        "amount_display": "¥149,986.20"
+      }
+    ],
+    "costs": [
+      {
+        "label": "Bank credit line: draw ¥149,986.20, repaid day 32",
+        "fen": 84157,
+        "facility_id": "FAC-LINE",
+        "formula": "149,986.20 × 6.4% × 32/365 = 841.57",
+        "needs_owner_approval": false,
+        "approval_reason": "",
+        "executable_now": true,
+        "not_executable_reason": "",
+        "display": "¥841.57"
+      }
+    ],
+    "total_cost_fen": 84157,
+    "admissible": true,
+    "violations": [],
+    "marginal_cost_annual": {
+      "num": 1301,
+      "den": 12000,
+      "text": "0.11"
+    },
+    "marginal_facility_id": "FAC-IF",
+    "rejected": [
+      {
+        "label": "Discount the whole invoice at 1.2%",
+        "reasons": [],
+        "note": "cost ¥1,953.60; admissible but dearer than the selected plan"
+      }
+    ],
+    "label": "committed plan: ¥841.57",
+    "needs_owner_approval": false,
+    "approval_reason": "",
+    "executable_now": true,
+    "not_executable_reason": "",
+    "available_from_day": null,
+    "need_display": "¥149,986.20",
+    "total_cost_display": "¥841.57"
+  },
+  "message": "CTR-193394b6ba8b accepted; commitment recorded; remaining gap funded.",
+  "transcript_hash": "802cf1c4946c483e21d6c89444465751ef705a8ba4ff2bc6108d36b36cdeaf34"
+}

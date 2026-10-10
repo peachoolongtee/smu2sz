@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
+import { PRE_HYDRATION } from "@/lib/pre-hydration";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FLOW",
+  title: { default: "FLOW 流", template: "%s · FLOW 流" },
   description: "FLOW 流: the AI working-capital agent that reads buyer terms, protects the cash reserve and funds the gap within the owner's signed limits.",
 };
 
@@ -15,13 +16,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Inter from Google Fonts; offline the system font takes over, so a build never depends on the network. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATION }} />
       </head>
       <body>
         <AppShell>{children}</AppShell>

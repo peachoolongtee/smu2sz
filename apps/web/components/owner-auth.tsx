@@ -6,7 +6,8 @@ import { closeSignIn, requestSignIn, setOwnerToken, signOut, useAuth } from "@/l
 import { DEMO_BUILD, DEMO_OWNER_TOKEN } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import { Badge, Button } from "./ui";
+import { errorText } from "@/lib/error-text";
+import { Badge, Button, inputClass } from "./ui";
 
 function SignInForm() {
   const { t } = useI18n();
@@ -30,7 +31,7 @@ function SignInForm() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) setError(t("auth.err.rejected"));
       else if (err instanceof ApiError && err.status === 503) setError(t("auth.err.unconfigured"));
-      else setError(err instanceof Error ? err.message : String(err));
+      else setError(errorText(err, t));
     } finally {
       setBusy(false);
     }
@@ -52,7 +53,7 @@ function SignInForm() {
       </div>
       <p className="text-sm text-ink-2">{t("auth.body")}</p>
       {notice ? (
-        <p role={error ? "alert" : "status"} className={`rounded-md border px-3 py-2 text-sm ${error ? "border-bad-line bg-bad-bg text-bad-fg" : "border-info-line bg-info-bg text-info-fg"}`}>
+        <p role={error ? "alert" : "status"} className={`rounded-tile border px-3 py-2 text-sm ${error ? "border-bad-line bg-bad-bg text-bad-fg" : "border-info-line bg-info-bg text-info-fg"}`}>
           {notice}
         </p>
       ) : null}
@@ -70,7 +71,7 @@ function SignInForm() {
           value={token}
           onChange={(e) => setToken(e.target.value)}
           aria-invalid={error ? true : undefined}
-          className="mt-1 min-h-10 w-full rounded-md border border-line-strong bg-surface px-3 font-mono text-sm text-ink"
+          className={`mt-1 w-full font-mono ${inputClass}`}
         />
         <p className="mt-1 text-xs text-ink-3">
           {DEMO_BUILD ? t("auth.demo.hint") : apiMode === "mock" ? t("auth.mock.hint") : null}
@@ -106,7 +107,7 @@ export function OwnerSignInDialog() {
       aria-labelledby="owner-auth-title"
       data-testid="owner-signin"
       onClose={closeSignIn}
-      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-(--radius-card) border border-line bg-surface p-5 text-ink shadow-xl backdrop:bg-ink/40"
+      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop backdrop:bg-ink/40"
     >
       {open ? <SignInForm /> : null}
     </dialog>

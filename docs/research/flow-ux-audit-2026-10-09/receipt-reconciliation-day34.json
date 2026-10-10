@@ -1,0 +1,90 @@
+{
+  "reconciliation": {
+    "as_of_day": 34,
+    "receipts": [
+      {
+        "seq": 4,
+        "entry_hash": "2929dee74c0acad52805ffa1df7168dda17b90fa4cbf83f1a831a2daae979510",
+        "op_id": "audit-partial-receipt",
+        "day": 2,
+        "receivable_id": "RCV-A",
+        "counterparty_id": "BUYER-1",
+        "received_fen": 12750690,
+        "face_fen": 42000000,
+        "agreed_discount_fen": 109310,
+        "expected_fen": 12750690,
+        "difference_fen": 0,
+        "commitment_id": "CMT-09c5b5e58e424153",
+        "bank_reference": "AUDIT-PARTIAL-1",
+        "status": "MATCHED",
+        "flagged": false,
+        "detail": "agreed early payment for ¥128,600.00 of face (commitment CMT-09c5b5e58e424153); up to ¥128,600.00 more may be settled early by day 2",
+        "formula": "P − post(d × P) = received, paid by day 2 (day 2): ¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
+        "received_display": "¥127,506.90",
+        "face_display": "¥420,000.00",
+        "agreed_discount_display": "¥1,093.10",
+        "expected_display": "¥127,506.90",
+        "difference_display": "¥0.00",
+        "detail_when": "agreed early payment for ¥128,600.00 of the invoice; up to ¥128,600.00 more may be settled early by today"
+      }
+    ],
+    "outstanding": [
+      {
+        "receivable_id": "RCV-A",
+        "counterparty_id": "BUYER-1",
+        "face_fen": 29140000,
+        "due_day": 32,
+        "status": "OPEN",
+        "past_due": true,
+        "face_display": "¥291,400.00"
+      },
+      {
+        "receivable_id": "RI:BUYER-1:2",
+        "counterparty_id": "BUYER-1",
+        "face_fen": 42000000,
+        "due_day": 47,
+        "status": "OPEN",
+        "past_due": false,
+        "face_display": "¥420,000.00"
+      },
+      {
+        "receivable_id": "RI:BUYER-1:32",
+        "counterparty_id": "BUYER-1",
+        "face_fen": 42000000,
+        "due_day": 77,
+        "status": "OPEN",
+        "past_due": false,
+        "face_display": "¥420,000.00"
+      }
+    ],
+    "matched": 1,
+    "flagged": 0,
+    "received_total_fen": 12750690,
+    "expected_total_fen": 12750690,
+    "chain_head_hash": "56bac1b68de31934ebdea60b8537948f65b2ad185c0aef591e636a45011d74b4",
+    "chain_valid": true,
+    "promised": [
+      {
+        "commitment_id": "CMT-09c5b5e58e424153",
+        "obligation_id": "CTR-193394b6ba8b-O2",
+        "receivable_id": "RCV-A",
+        "counterparty_id": "BUYER-1",
+        "promised_day": 2,
+        "face_fen": 12860000,
+        "discount_fen": 109310,
+        "expected_fen": 12750690,
+        "status": "RECEIVED",
+        "receipt_seq": 4,
+        "detail": "the agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of RCV-A arrived (commitment CMT-09c5b5e58e424153); the other ¥128,600.00 is due on the invoice's own day",
+        "formula": "¥128,600.00 × 85 bp = ¥1,093.10; ¥128,600.00 − ¥1,093.10 = ¥127,506.90",
+        "face_display": "¥128,600.00",
+        "discount_display": "¥1,093.10",
+        "expected_display": "¥127,506.90",
+        "detail_when": "The agreed ¥127,506.90 for ¥128,600.00 of the ¥257,200.00 agreed for early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago, arrived; the other ¥128,600.00 is due on the invoice's own day."
+      }
+    ],
+    "lapsed_promises": 0,
+    "received_total_display": "¥127,506.90",
+    "expected_total_display": "¥127,506.90"
+  }
+}

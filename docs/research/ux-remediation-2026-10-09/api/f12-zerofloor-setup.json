@@ -1,0 +1,188 @@
+[
+  {
+    "step": "reset",
+    "request": {
+      "method": "POST",
+      "path": "/demo/reset",
+      "body": {},
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "day",
+      "ok",
+      "scenario"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "offer",
+    "request": {
+      "method": "POST",
+      "path": "/offers",
+      "body": {
+        "fixture_id": "EX01_PACKAGE"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "documents",
+      "offer"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "evaluate",
+    "request": {
+      "method": "POST",
+      "path": "/offers/OFF-f806f79b6c21/evaluate",
+      "body": {
+        "fixture_id": "EX01_PACKAGE"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "annualised",
+      "autonomy",
+      "bound_obligations",
+      "business_action",
+      "calc_version",
+      "comparison",
+      "concession_values",
+      "counters",
+      "cure_plan",
+      "cured_trajectory",
+      "forward_concession",
+      "forward_concession_total_display"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "negotiate",
+    "request": {
+      "method": "POST",
+      "path": "/negotiate/OFF-f806f79b6c21",
+      "body": {
+        "buyer_profile": "cooperative"
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "accepted_counter_id",
+      "commitment",
+      "message",
+      "offer_id",
+      "operations",
+      "outcome",
+      "plan",
+      "rounds",
+      "transcript_hash"
+    ],
+    "result_message": null
+  },
+  {
+    "step": "clock day 2",
+    "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "body": {
+        "to_day": 2
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 0,
+    "status": 200,
+    "result_keys": [
+      "added_flow_ids",
+      "consumed_adjustment_ids",
+      "day",
+      "debt_service_fen",
+      "expired_commitment_ids",
+      "from_day",
+      "fulfilled_commitment_ids",
+      "issued_receivable_ids",
+      "lapsed_commitment_ids",
+      "lots_net_fen",
+      "posted_debt_payments",
+      "posted_debt_service"
+    ],
+    "result_message": "Clock moved from day 0 to day 2: 0 scheduled flow(s) posted (net ¥0.00), 0 invoice(s) issued, 0 commitment(s) expired"
+  },
+  {
+    "step": "clock day 30",
+    "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "body": {
+        "to_day": 30
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 2,
+    "status": 200,
+    "result_keys": [
+      "added_flow_ids",
+      "consumed_adjustment_ids",
+      "day",
+      "debt_service_fen",
+      "expired_commitment_ids",
+      "from_day",
+      "fulfilled_commitment_ids",
+      "issued_receivable_ids",
+      "lapsed_commitment_ids",
+      "lots_net_fen",
+      "posted_debt_payments",
+      "posted_debt_service"
+    ],
+    "result_message": "Clock moved from day 2 to day 30: 2 scheduled flow(s) posted (net −¥460,000.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 new scheduled flow(s) recorded, 1 early-payment commitment(s) ended: the promised payment did not arrive (CMT-f3a653ce80b5dedd, now EXPIRED)"
+  },
+  {
+    "step": "clock day 34",
+    "request": {
+      "method": "POST",
+      "path": "/clock/advance",
+      "body": {
+        "to_day": 34
+      },
+      "credential": [
+        "X-Owner-Token"
+      ]
+    },
+    "clock_day_before_request": 30,
+    "status": 200,
+    "result_keys": [
+      "added_flow_ids",
+      "consumed_adjustment_ids",
+      "day",
+      "debt_service_fen",
+      "expired_commitment_ids",
+      "from_day",
+      "fulfilled_commitment_ids",
+      "issued_receivable_ids",
+      "lapsed_commitment_ids",
+      "lots_net_fen",
+      "posted_debt_payments",
+      "posted_debt_service"
+    ],
+    "result_message": "Clock moved from day 30 to day 34: 0 scheduled flow(s) posted (net ¥0.00), 1 invoice(s) issued, 0 commitment(s) expired, 1 existing-debt payment(s) posted (−¥45,000.00)"
+  }
+]

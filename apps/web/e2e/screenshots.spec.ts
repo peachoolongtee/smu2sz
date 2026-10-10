@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { openStoryFold, runPlan, STORY_STEPS, walkStory } from "./helpers";
 
 /**
  * The screenshot walk of the brief's section 44: every Business page in every state the recorded demo path reaches, and the
@@ -34,6 +34,7 @@ async function shoot(page: Page, name: string, project: string) {
 
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
+  await openStoryFold(page, "story-today");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -71,7 +72,8 @@ test("Business pages on the opening books, after the deal is read and checked, a
   await page.goto("/");
   await shoot(page, "09-home-funded", p);
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  // The plan ran, so the page states the current funding; the comparison is folded away.
+  await expect(page.locator("#cash-current")).toBeVisible();
   await shoot(page, "10-cash-funded", p);
   await page.goto("/activity");
   await shoot(page, "11-activity-funded", p);
@@ -84,6 +86,9 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await shoot(page, "12-home-day34", p);
   await page.goto("/receivables");
   await shoot(page, "13-receivables-day34", p);
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-headline")).toBeVisible();
+  await shoot(page, "13b-cash-day34", p);
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible();
@@ -97,7 +102,8 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await page.goto("/");
   await shoot(page, "17-home-day34-approved", p);
   await page.goto("/cash");
-  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  // The plan ran, so the page states the current funding; the comparison is folded away.
+  await expect(page.locator("#cash-current")).toBeVisible();
   await shoot(page, "18-cash-day34-approved", p);
   await page.goto("/activity");
   await shoot(page, "19-activity-day34-approved", p);
@@ -109,13 +115,9 @@ test("Demo pages: the story, the stepper before and after the walk, and the engi
   await shoot(page, "20-demo-story", p);
   await page.goto("/mandate");
   await shoot(page, "21-demo-mandate-start", p);
-  for (let i = 0; i < 11; i++) {
-    const button = page.getByTestId("demo-next");
-    await expect(button).toBeEnabled();
-    await button.click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`${i + 1}/15`);
-  }
-  await shoot(page, "22-demo-mandate-step11", p);
+  await page.goto("/demo");
+  await walkStory(page, STORY_STEPS);
+  await shoot(page, "22-demo-stepper-last-step", p);
   await page.goto("/verdict");
   await shoot(page, "23-demo-verdict", p);
   await page.goto("/funding");

@@ -2,10 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useId, useState } from "react";
-import { PageIcon } from "@/components/business/kit";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge } from "@/components/documents";
-import { DealsIcon } from "@/components/icons";
 import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getContractFixtures, getDocuments, getState, submitDocument } from "@/lib/api";
 import { API_MODE } from "@/lib/config";
@@ -16,14 +14,6 @@ import { useAsync } from "@/lib/use-async";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
-/** The page's icon tile, the Deals one: a contract belongs to a deal. */
-function DocsIcon() {
-  return (
-    <PageIcon tone="violet">
-      <DealsIcon width={22} height={22} />
-    </PageIcon>
-  );
-}
 type Format = "md" | "docx" | "pdf";
 
 /**
@@ -66,7 +56,7 @@ function Documents() {
   if (contractsOff(list.error)) {
     return (
       <>
-        <PageHeader icon={<DocsIcon />} title={t("docs.title")} subtitle={t("docs.subtitle")} />
+        <PageHeader section="deals" title={t("docs.title")} subtitle={t("docs.subtitle")} />
         <Callout tone="info">{t("home.deals.off")}</Callout>
       </>
     );
@@ -74,7 +64,7 @@ function Documents() {
 
   return (
     <>
-      <PageHeader icon={<DocsIcon />} title={t("docs.title")} subtitle={t("docs.subtitle")} />
+      <PageHeader section="deals" title={t("docs.title")} subtitle={t("docs.subtitle")} />
       <div className="space-y-6">
         <Card id="docs-read" title={t("docs.read")} subtitle={t("docs.read.sub")}>
           <div className="grid gap-6 lg:grid-cols-2">

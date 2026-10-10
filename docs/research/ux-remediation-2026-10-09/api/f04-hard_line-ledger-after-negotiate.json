@@ -1,0 +1,59 @@
+{
+  "probe": "f04-hard_line-ledger-after-negotiate",
+  "request": {
+    "method": "GET",
+    "path": "/ledger",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "commitments": [],
+    "operations": [
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+        "kind": "DRAW_FACILITY",
+        "message": "Drew ¥150,000.00 on FAC-LINE on day 0",
+        "op_id": "fund-OFF-f806f79b6c21-hard_line-0",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "seq": 1,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Drew ¥150,000.00 on FAC-LINE on day 0",
+        "message_when": "Drew ¥150,000.00 on Bank credit line today",
+        "event_text": "¥150,000.00 drawn on the Bank credit line. Cash received today.",
+        "event_detail": null
+      },
+      {
+        "approval_id": null,
+        "effective_day": 0,
+        "entry_hash": "6793c0c2b3cfb24d43345184f7bfe7b862a56cb0b4aef591457445bfa9a45c40",
+        "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+        "message": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
+        "op_id": "fund-OFF-f806f79b6c21-hard_line-1",
+        "prev_hash": "3a58b1c3a966bc84e131779acc8606e389118068402a963f545ca955cf9e4dd0",
+        "seq": 2,
+        "status": "EXECUTED",
+        "tier": "TIER_1",
+        "violations": [],
+        "day": 0,
+        "requested_by": "AGENT",
+        "summary": "Advance ¥255,000.00 on RCV-A from FAC-IF on day 0; the cash lands on day 3 after the 3-day lead time, not today",
+        "message_when": "Advance ¥255,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days from Invoice financing (onboarded platform) today; the cash lands in 3 days, not today",
+        "event_text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days.",
+        "event_detail": "Financed through Invoice financing (onboarded platform)."
+      }
+    ],
+    "chain_valid": true,
+    "chain_length": 2,
+    "head_hash": "6793c0c2b3cfb24d43345184f7bfe7b862a56cb0b4aef591457445bfa9a45c40"
+  }
+}

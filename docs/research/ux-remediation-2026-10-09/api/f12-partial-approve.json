@@ -1,0 +1,30 @@
+{
+  "probe": "f12-partial-approve",
+  "request": {
+    "method": "POST",
+    "path": "/approvals/APR-000001",
+    "body": {
+      "decision": "APPROVE"
+    },
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "result": {
+      "op_id": "alert:ALERT-RESERVE-34:v7:0",
+      "kind": "SUBMIT_INVOICE_FOR_FINANCING",
+      "status": "EXECUTED",
+      "tier": "TIER_2",
+      "violations": [],
+      "seq": 8,
+      "entry_hash": "007f3f45009525d38a59ec07ef5410a7ecaf9cab4ff05058ec1e0f63b178413c",
+      "prev_hash": "b488b4c7729a2eeb75c0c125fca10992d35d3ba6aa5ab031164b361ff14fbd75",
+      "effective_day": 34,
+      "approval_id": "APR-000001",
+      "message": "Advance ¥27,506.90 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today"
+    }
+  }
+}

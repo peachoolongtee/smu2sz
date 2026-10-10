@@ -1,24 +1,14 @@
 "use client";
 
-import { Card } from "@/components/ui";
+import Link from "next/link";
+import { ChasePayment } from "@/components/business/chase-payment";
+import { Card, textLinkClass } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
+import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
-import type { BusinessAction, NegotiationView, Outcome, VerdictView } from "@/lib/types";
-import { whenText } from "@/lib/when";
-
-/** The server's business action, or its rule for an older recording: a REJECT with counters is "counter", without is "decline". */
-export function businessAction(v: VerdictView): BusinessAction {
-  if (v.business_action) return v.business_action;
-  return localAction(v.outcome, v.counters.length);
-}
-
-function localAction(outcome: Outcome, counters: number): BusinessAction {
-  if (outcome === "ACCEPT") return "accept";
-  if (outcome === "COUNTER" || (outcome === "REJECT" && counters > 0)) return "counter";
-  if (outcome === "REJECT") return "decline";
-  if (outcome === "NEEDS_OWNER_APPROVAL") return "needs_owner";
-  return "cannot";
-}
+import { businessAction } from "@/lib/presentation-fallbacks";
+import type { BusinessAction, DecisionView, VerdictView } from "@/lib/types";
+import type { Tone } from "@/components/ui";
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   accept: "biz.deals.action.accept",
@@ -28,73 +18,103 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | undefined> = {
+const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | undefined> = {
   accept: "ok",
-  counter: "warn",
+  // A recommendation is the brand's, not a status: it is the thing to do.
+  counter: "brand",
   decline: "bad",
   needs_owner: "warn",
   cannot: undefined,
 };
 
 /**
- * The decision in the owner's order (levels 1 to 3): the business action ("Counter recommended"), then the three numbers
- * that carry it: the 12-month cost of concessions against the owner's limit, the first reserve breach (its day and the
- * cash that day) and the worst point (a different day), plus one sentence when the early-payment discount is dearer
- * than funding. Every figure is a server display string; days are distances from today.
+ * What FLOW recommends, as one line (the workspace's "recommends" section): the server's business action ("Counter recommended"), or, once the
+ * response has been sent, the deal's record in the server's words ("Agreed", "Early payment did not arrive", "No deal: the buyer did not
+ * accept"), never the recommendation that preceded it and never the answer the browser kept from the click. The figures behind the
+ * recommendation are the workspace's cost and why-it-matters sections above; this card carries none of them.
  */
-export function DealDecision({ v, today, negotiation = null }: { v: VerdictView; today: number; negotiation?: NegotiationView | null }) {
+export function DealDecision({ v, record = null, text, reason = null }: { v: VerdictView; record?: DecisionView | null; text?: string; reason?: string | null }) {
   const { t } = useI18n();
   const action = businessAction(v);
-  // Once the buyer has answered, the headline is the outcome, not the recommendation that preceded it.
-  const outcome = negotiation?.outcome ?? null;
-  const headline = outcome === "DEAL" ? t("biz.deals.action.agreed") : outcome === "NO_DEAL" ? t("biz.deals.action.noDeal") : t(ACTION_KEY[action]);
-  const tone = outcome === "DEAL" ? "ok" : outcome === "NO_DEAL" ? "bad" : ACTION_TONE[action];
-  const tr = v.trajectory ?? null;
-  const breach = tr?.first_breach_day ?? null;
-  const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
-  const fc = v.forward_concession;
+  const progress = record ? dealProgress(record.state) : null;
+  // A record that has gone past "response ready" has an outcome; before that the recommendation is the headline.
+  const outcome = record && progress?.reached ? record.state : null;
+  const headline = outcome && record ? record.state_text : (text ?? t(ACTION_KEY[action]));
+  // An agreement in force is fine (ok), a lapse or a failure is not (bad); a closed matter is not an alarm (neutral); a waiting approval is a warning.
+  const tone = !progress || !progress.reached ? ACTION_TONE[action] : progress.tone === "good" ? "ok" : progress.tone === "bad" ? "bad" : progress.tone === "open" ? "warn" : undefined;
   return (
-    <Card id="deal-recommendation-card" tone={tone}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.recommendation")}</p>
-      <p className="mt-1 text-2xl font-semibold text-ink" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
-        {headline}
+    <Card id="deal-recommendation-card" tone={tone} className="[&>div]:py-3">
+      {/* The eyebrow says what the line is: the recommendation while there is one, where the deal stands once it has an outcome. */}
+      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-ink-3" data-testid="deal-eyebrow">{outcome ? t("biz.deals.stands") : t("biz.deals.recommends")}</span>
+        <span className="text-lg font-semibold text-ink sm:text-xl" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
+          {headline}
+        </span>
       </p>
-      {action !== "accept" && (tr || fc) ? <p className="mt-3 text-sm text-ink-2">{outcome ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}</p> : null}
-      <dl className="mt-2 grid gap-4 sm:grid-cols-3">
-        {v.concession_values.length || fc ? (
-          <div data-testid="deal-fact-cost">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.concessions")}</dt>
-            <dd className={`text-lg font-semibold tabular-nums ${fc?.over_cap ? "text-bad-fg" : "text-ink"}`}>{v.forward_concession_total_display}</dd>
-            {fc ? <dd className="text-xs text-ink-3">{t("biz.deals.fact.limit", { cap: fc.cap_display })}</dd> : null}
-          </div>
-        ) : null}
-        {tr ? (
-          <div data-testid="deal-fact-cash">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.breach")}</dt>
-            {breach !== null ? (
-              <>
-                <dd className="text-lg font-semibold text-bad-fg">{whenText(breach, today, t)}</dd>
-                {tr.first_breach_cash ? <dd className="text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</dd> : null}
-              </>
-            ) : (
-              <dd className="text-lg font-semibold text-ink">{t("biz.deals.fact.noBreach")}</dd>
-            )}
-          </div>
-        ) : null}
-        {tr && breach !== null ? (
-          <div data-testid="deal-fact-worst">
-            <dt className="text-xs font-medium text-ink-3">{t("biz.deals.fact.worst")}</dt>
-            {/* Below the reserve whenever there is a breach: the same red as the breach it follows. */}
-            <dd className="text-lg font-semibold tabular-nums text-bad-fg">{tr.min_cash.text}</dd>
-            <dd className="text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</dd>
-          </div>
-        ) : null}
-      </dl>
-      {dearer ? (
-        <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">
-          {t("biz.deals.discountDearer", { rate: dearer.observed ?? "", limit: (dearer.limit ?? "").replace(/^<\s*/, "") })}
+      {/* The first reason rides under the recommendation, so the answer and its cause are one glance. */}
+      {reason && !outcome ? (
+        <p className="mt-1 text-sm text-ink-2" data-testid="deal-recommendation-reason">
+          {reason}
         </p>
       ) : null}
+      {outcome && record ? <DealMoney record={record} /> : null}
     </Card>
+  );
+}
+
+/**
+ * After a deal: the money and what is left, from the record's execution and its lots, in the server's figures. "Received" for a lot that has
+ * landed, "arrives" for one still on its way; neutral until the cash has landed (then ok). What is left is the record's own remaining task.
+ */
+function DealMoney({ record }: { record: DecisionView }) {
+  const { t } = useI18n();
+  const lots = record.settlement ?? [];
+  const lines = lots.map((l) => ({
+    key: l.lot_id,
+    text: l.settled ? t("deal.money.received", { amount: l.principal_display, when: l.arrival_when }) : t("deal.money.arrives", { amount: l.principal_display, when: l.arrival_when }),
+    landed: l.settled,
+  }));
+  const landed = lines.length > 0 && lines.every((l) => l.landed);
+  const left = record.remaining_task?.text;
+  // A missed early payment leaves the shortfall to cover: the way to the funding options is always offered beside the chase (the server's own links, when it sends them, come first).
+  const sent = record.remaining_task?.links ?? [];
+  const links = record.state === "MISSED" && !sent.some((l) => l.href.startsWith("/cash")) ? [...sent, { label: t("deal.left.compare"), href: "/cash#cash-options" }] : sent;
+  // A missed early payment is the one state where the owner can chase: the invoice and the buyer come from the record's own promise.
+  const promise = record.state === "MISSED" ? (record.promises[0] as { receivable_id?: string } | undefined) : undefined;
+  if (!lines.length && !left && !links.length) return null;
+  const tone: Tone = landed ? "ok" : "neutral";
+  return (
+    <dl className="mt-2 space-y-1.5 border-t border-line pt-2 text-sm" data-testid="deal-money" data-tone={tone}>
+      {lines.length ? (
+        <div className="flex flex-wrap gap-x-3">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("deal.money")}</dt>
+          <dd className={landed ? "font-medium text-ok-fg" : "text-ink"} data-testid="deal-money-lines">
+            {lines.map((l) => (
+              <span key={l.key} className="mr-2 inline-block">
+                {l.text}
+              </span>
+            ))}
+          </dd>
+        </div>
+      ) : null}
+      {left ? (
+        <div className="flex flex-wrap gap-x-3">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("common.left")}</dt>
+          <dd className="text-ink" data-testid="deal-left">
+            {left}
+          </dd>
+        </div>
+      ) : null}
+      {links.length || promise?.receivable_id ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1" data-testid="deal-left-links">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className={textLinkClass}>
+              {l.label}
+            </Link>
+          ))}
+          {promise?.receivable_id ? <ChasePayment receivableId={promise.receivable_id} buyer={record.counterparty_name ?? ""} /> : null}
+        </div>
+      ) : null}
+    </dl>
   );
 }

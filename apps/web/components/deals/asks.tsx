@@ -2,6 +2,7 @@
 
 import { useI18n, type I18n } from "@/lib/i18n";
 import type { Displayed, Obligation } from "@/lib/types";
+import { Disclosure } from "@/components/business/kit";
 
 type Ob = Displayed<Obligation>;
 
@@ -48,34 +49,43 @@ function parsedParts(o: Ob, t: I18n["t"], te: I18n["te"]): string {
     .join(" · ");
 }
 
+/** The typed reading of every ask behind "How the agent read it" (the obligation's name and its fields). */
+export function ParsedTerms({ asks }: { asks: Ob[] }) {
+  const { t, te } = useI18n();
+  return (
+    <ul className="space-y-1.5 text-sm" data-testid="deal-parsed-list">
+      {asks.map((o) => (
+        <li key={o.id} className="flex flex-wrap items-baseline gap-x-2">
+          <span className="font-medium text-ink">{te("obligation", o.type)}</span>
+          <span className="text-ink-2">{parsedParts(o, t, te)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * "Buyer is asking for": the human lines first (level 1), the typed obligation model behind "View parsed terms"
- * (level 4). `asks` are the verdict's bound obligations when the deal is evaluated (they carry the terms delta), else
- * the compiled offer's.
+ * "Buyer is asking for", before the offer is checked: the human lines (level 1), the typed obligation model behind "How the agent read it"
+ * (level 4). `asks` are the compiled offer's obligations. Once the offer is checked the server's workspace states the asks and this reading
+ * moves under the Advanced details.
  */
 export function BuyerAsks({ asks }: { asks: Ob[] }) {
   const { t, te } = useI18n();
   if (!asks.length) return <p className="text-sm text-ink-2">{t("inbox.noObligations")}</p>;
   return (
     <>
-      <ul className="space-y-1.5" data-testid="deal-asks">
+      <ul className="space-y-1" data-testid="deal-asks">
         {asks.map((o) => (
-          <li key={o.id} className="text-base font-medium text-ink" data-testid={`deal-ask-${o.type}`}>
+          <li key={o.id} className="text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${o.type}`}>
             {askSentence(o, t, te)}
           </li>
         ))}
       </ul>
-      <details className="mt-3" data-testid="deal-parsed-terms">
-        <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.deals.parsed")}</summary>
-        <ul className="mt-1.5 space-y-1 text-sm">
-          {asks.map((o) => (
-            <li key={o.id} className="flex flex-wrap items-baseline gap-x-2">
-              <span className="font-medium text-ink">{te("obligation", o.type)}</span>
-              <span className="text-ink-2">{parsedParts(o, t, te)}</span>
-            </li>
-          ))}
-        </ul>
-      </details>
+      <Disclosure testId="deal-parsed-terms" className="mt-2" summary={t("biz.deals.parsed")}>
+        <div className="mt-1.5">
+          <ParsedTerms asks={asks} />
+        </div>
+      </Disclosure>
     </>
   );
 }

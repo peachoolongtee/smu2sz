@@ -127,13 +127,23 @@ Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Lin
 chain, the deal summary on Deals once a deal is agreed, the documents page, `SHOW_DEAL` in chat, four attacks, the
 golden equality test and the held-out harness (the set itself is pending). The demo reset opens on the three demo
 documents confirmed by the owner (three CONFIRM_DOCUMENT ledger entries; `Runtime.reset()` alone leaves the chain empty).
-`docs/SYSTEM_WALKTHROUGH.md` sections 5.19 and 12 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
+`docs/SYSTEM_WALKTHROUGH.md` sections 5.21 and 13 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
 0 harm; `scripts/demo_run.py` exit 0; `scripts/evaluate.py` every target PASS; language-boundary certification WRONG_MATERIAL 0
 (cache and fake, unchanged); web mock e2e 45 passed (1 skipped), live e2e 40 passed (2 skipped). Merged into the redesigned
 UI (`feat/upgrading-contracts`, 8 Oct): backend 5,716 passed, 33 skipped (the first run's one failure, two golden
 digests in `tests/books/test_modules_on_books.py` that feat/upgrading's Wave 1 had not updated, was fixed and that file
 re-run); scenarios 49/49; `scripts/demo_run.py` exit 0; web mock e2e 58 passed (7 skipped), live e2e 41 passed (2
 skipped).
+Then merged into `dev` as it stood late on 9 Oct (`b68c41c`: the UX remediation and its follow-ups; branch
+`feat/strategy-mvp-contracts`, gate on 10 Oct): Ian's screens kept, contract ingestion on them (the deal summary in
+Deals' agreements part once agreed, Documents a detail page of Deals with the way back, Activity's links), and the two
+pieces of feat/upgrading his port had not taken: the simulated buyer's lean in his send step's question ("Holds firm"
+ends with no deal) and the borrower file's tables (`docs/UX_SIMPLIFICATION_BRIEF.md` section 11). Our migration follows
+his as `0007_contract_records`; his bilingual presentation says the document decisions in both languages. Gate: backend
+6,712 passed, 37 skipped; scenarios 49/49; `scripts/demo_run.py` exit 0; 259 attacks (126 API + 133 chat) with 0 harm;
+web unit 91; mock e2e 159 passed (168 with `E2E_STRATEGY=1`); live e2e 79 passed (87 with the flag); on the Windows
+machine run the flagged live project with nothing else running: under load, six of its tests time out behind the first
+envelope read (about 50 s there), and they pass when run alone.
 
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
@@ -257,6 +267,13 @@ RESERVE_BREACH on the cash-corrected books, so the label file `fixtures/heldout/
 
 ## 6. What to do next, in order
 
+**Independent end-to-end FLOW UX audit, 9 Oct:** `docs/research/independent-flow-ux-audit-2026-10-09.md` contains the
+32-section report, 28 findings (4 P0, 14 P1, 10 P2), task walks and implementation order. Evidence is in
+`docs/research/flow-ux-audit-2026-10-09/`. This was an audit only: no proposed UX fixes were implemented. The original
+documented dev startup returned HTTP 500 from the malformed touch variant; the temporary correction used for inspection
+was restored. Prioritize F01/F03 time presentation, F02 essential approval terms and F04 execution-state wording, after
+restoring startup. The report distinguishes verified behavior from source-only paths and scoped test limitations.
+
 **The integration of 6 and 7 Oct (the owner's fourth brief) is done:** `docs/UX_INTEGRATION_BRIEF.md`, the wayfinder map
 (GitHub issue #13) and `docs/UX_AUDIT.md` section 18 record it; `docs/UX_INTEGRATION_REPORT.md` is the final report. The
 recommendation shown to the owner is the router's runnable plan (`services/api/app/funding/recommend.py`), the home carries its
@@ -272,7 +289,7 @@ debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the back
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
-   about 5,716 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
+   about 6,712 passed, 37 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
    chunk A = `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments
    tests/compiler tests/contracts tests/counterparties tests/covenants tests/egress tests/evals tests/financial
    tests/funding tests/ingest`;
@@ -283,8 +300,8 @@ debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the back
    `cd services/api && uv run python -m app.security.attacks --report` (259 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (58 passed, 7 skipped on 8 Oct, after the merge) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (41 passed, 2 skipped). Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (159 passed, 37 skipped on 10 Oct; 168 with `E2E_STRATEGY=1`) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (79 passed, 14 skipped; 87 with the flag). Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
    certification, needs a key; a five-item DeepSeek-only smoke passed on the Mac on 5 Oct), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and

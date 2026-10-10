@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { WhatIfControls, WhatIfParams, WhatIfPresetId, WhatIfSlider } from "@/lib/types";
-import { Card } from "./ui";
+import { Card, toggleClass } from "./ui";
 
 /**
  * The owner's levers. Sliders move integer days, integer bp and a server-listed face stop; every
@@ -62,7 +62,7 @@ function Slider({
         disabled={disabled}
         aria-valuetext={readout}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 disabled:cursor-not-allowed"
+        className="mt-2 h-2 w-full cursor-pointer accent-brand-600 touch:h-11 disabled:cursor-not-allowed"
       />
       {hint ? <p className="mt-1 text-xs text-ink-3">{hint}</p> : null}
     </div>
@@ -87,6 +87,7 @@ export function WhatIfControlsCard({
   const partial = params.settle_face_fen !== null;
   const faceIndex = partial ? stops.findIndex((s) => s.fen === params.settle_face_fen) : stops.length - 1;
   const faceStop = stops[faceIndex >= 0 ? faceIndex : stops.length - 1];
+  const middle = stops[Math.floor(stops.length / 2)];
 
   const termsHint =
     params.terms_days === controls.current_terms_days
@@ -94,7 +95,7 @@ export function WhatIfControlsCard({
       : t("whatif.terms.now", { n: controls.current_terms_days });
 
   return (
-    <Card id="whatif-controls" title={t("whatif.controls")}>
+    <Card id="whatif-controls" title={t("whatif.controls")} subtitle={t("whatif.controls.sub")}>
       <fieldset>
         <legend className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("whatif.presets")}</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -116,13 +117,7 @@ export function WhatIfControlsCard({
                     settle_face_fen: p.settle_face_fen,
                   })
                 }
-                className={`min-h-10 rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                  id === "actual" ? "col-span-2" : ""
-                } ${
-                  active
-                    ? "border-brand-600 bg-brand-50 text-brand-700"
-                    : "border-line-strong bg-surface text-ink hover:bg-subtle"
-                }`}
+                className={toggleClass(active, "md", `text-xs ${id === "actual" ? "col-span-2" : ""}`)}
               >
                 {t(`whatif.preset.${id}`)}
               </button>
@@ -149,16 +144,33 @@ export function WhatIfControlsCard({
           readout={params.discount_bp === 0 ? t("whatif.discount.off") : rate(params.discount_bp)}
           onChange={(v) => set({ discount_bp: v })}
         />
-        {/* A preset may settle only part of the invoice early (Option A); the amount is shown, not a separate control. */}
-        <p className="-mt-3 text-xs text-ink-3">
+        <div className="rounded-tile border border-line bg-subtle/60 p-3">
+          <label className="flex min-h-8 cursor-pointer items-center gap-2 text-sm text-ink-2 touch:min-h-11">
+            <input
+              type="checkbox"
+              checked={partial}
+              disabled={params.discount_bp === 0}
+              onChange={(e) => set({ settle_face_fen: e.target.checked ? middle.fen : null })}
+              className="size-4 accent-brand-600"
+            />
+            {t("whatif.partial", { id: controls.receivable_id })}
+          </label>
           {partial ? (
-            <>
-              {t("whatif.face")}: <output data-testid="whatif-face-readout" className="font-medium text-ink-2">{faceStop.display}</output>
-            </>
+            <div className="mt-2">
+              <Slider
+                id="whatif-face"
+                label={t("whatif.face")}
+                grid={{ min: 0, max: stops.length - 1, step: 1 }}
+                value={faceIndex >= 0 ? faceIndex : stops.length - 1}
+                readout={faceStop.display}
+                disabled={params.discount_bp === 0}
+                onChange={(i) => set({ settle_face_fen: stops[i].fen })}
+              />
+            </div>
           ) : (
-            t("whatif.face.whole", { face: controls.receivable_face_display })
+            <p className="mt-1 text-xs text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
           )}
-        </p>
+        </div>
         <Slider
           id="whatif-rebate"
           label={t("whatif.rebate")}

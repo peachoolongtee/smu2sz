@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, type Tone } from "@/components/ui";
+import { FoldChevron } from "@/components/business/kit";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import { localNames } from "@/lib/business-words";
 import type { MenuRow } from "@/lib/types";
 
 type Availability = "ready" | "approval" | "apply" | "unavailable";
@@ -26,7 +26,7 @@ function availability(r: MenuRow): Availability {
  * whether it can be used now. Ported from the `test/ui-ux` borrowing card; the figures are the server's `*_display`.
  */
 export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: Set<string> }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const order: Availability[] = ["ready", "approval", "apply", "unavailable"];
   const rows = [...menu].sort((a, b) => order.indexOf(availability(a)) - order.indexOf(availability(b)));
   return (
@@ -37,17 +37,17 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
         const hasRate = r.cost_display && r.cost_display !== "—";
         return (
           <li key={f.id}>
-            <details className="group rounded-lg border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
+            <details className="group rounded-tile border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 hover:bg-subtle [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 flex-1 basis-56">
-                  <span className="block text-sm font-medium text-ink">{localNames(f.name, lang)}</span>
+                  <span className="block text-sm font-medium text-ink">{f.name}</span>
                   <span className="block text-xs text-ink-2">
                     {[hasRate ? t("biz.facility.rate", { rate: r.cost_display }) : null, t("biz.facility.speed", { ttc: r.time_to_cash_display })].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 {inPlan.has(f.id) ? <Badge tone="brand">{t("biz.facility.inPlan")}</Badge> : null}
                 <Badge tone={availTone[av]}>{t(availKey[av])}</Badge>
-                <span aria-hidden className="text-ink-3 transition-transform group-open:rotate-90">›</span>
+                <FoldChevron />
               </summary>
               <div className="space-y-2 border-t border-line px-3 py-3 text-sm">
                 <dl className="grid gap-2 sm:grid-cols-3">

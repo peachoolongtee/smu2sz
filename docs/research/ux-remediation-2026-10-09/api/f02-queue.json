@@ -1,0 +1,64 @@
+{
+  "probe": "f02-queue",
+  "request": {
+    "method": "GET",
+    "path": "/approvals/queue",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "approvals": [
+      {
+        "id": "APR-000001",
+        "op_id": "NL-e2f5a678972b6bd2",
+        "kind": "ACCEPT_OFFER",
+        "op_json": "{\"day\":0,\"idempotency_key\":\"nl:f02:r:f02-1:1:ACCEPT_OFFER\",\"kind\":\"ACCEPT_OFFER\",\"mandate_version\":1,\"nonce\":\"nln-3b471747966b9eb46dbec18f1a9513fd\",\"offer_id\":\"OFF-c7fbf1dcb9b2\",\"offer_version\":1,\"op_id\":\"NL-e2f5a678972b6bd2\",\"requested_by\":\"AGENT\",\"source_verdict_id\":\"VER-e65cb16ac4fe\",\"terms_hash\":\"bffa5c1fbba00868269fb2806b828a609afc8e564078989e581aa2881c49dfa4\"}",
+        "reason": "the verdict requires owner approval",
+        "status": "PENDING",
+        "decided_by": null,
+        "decided_day": null,
+        "operation": {
+          "day": 0,
+          "idempotency_key": "nl:f02:r:f02-1:1:ACCEPT_OFFER",
+          "kind": "ACCEPT_OFFER",
+          "mandate_version": 1,
+          "nonce": "nln-3b471747966b9eb46dbec18f1a9513fd",
+          "offer_id": "OFF-c7fbf1dcb9b2",
+          "offer_version": 1,
+          "op_id": "NL-e2f5a678972b6bd2",
+          "requested_by": "AGENT",
+          "source_verdict_id": "VER-e65cb16ac4fe",
+          "terms_hash": "bffa5c1fbba00868269fb2806b828a609afc8e564078989e581aa2881c49dfa4"
+        },
+        "tier": "TIER_2",
+        "created_day": 0,
+        "amount_fen": null,
+        "amount_display": null,
+        "subject": "accept offer",
+        "result_message": null,
+        "presentation": {
+          "headline": "Approve this buyer agreement?",
+          "what": "Accept offer ¥0.00",
+          "facility_name": null,
+          "buyer_name": null,
+          "invoice": null,
+          "cost_display": null,
+          "rate_text": null,
+          "cost_due_day": null,
+          "lands_day": null,
+          "lands_when": null,
+          "if_decline": "Nothing runs; the request is closed.",
+          "protects": null,
+          "reason": "The verdict requires owner approval.",
+          "result_message": null,
+          "decided_when": null,
+          "created_when": "today"
+        }
+      }
+    ]
+  }
+}

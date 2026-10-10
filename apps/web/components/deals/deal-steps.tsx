@@ -1,50 +1,42 @@
 "use client";
 
-import Link from "next/link";
 import { CheckIcon } from "@/components/icons";
+import { Chip } from "@/components/ui";
+import { dealProgress } from "@/lib/decision";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import { useCurrentOffer } from "@/lib/use-current";
+import type { DecisionState } from "@/lib/types";
 
 /**
- * Where the owner is in one buyer deal, as one quiet line: Received · Analysed · Respond · Agreed. The agent's own
- * stages (receiving and analysing) are done by the time the owner looks, so the line never dominates the page. The
- * state comes from the session's current offer only; it decides nothing.
+ * Where one buyer deal stands, as one line of chips in the compact buyer header: Received · Analysed · Response ready · Sent · Agreed. The
+ * stage comes from the deal's decision record state and nothing else (ADR-0011, F06): the verdict's outcome, the session cache or a clicked
+ * button never moves it. One chip per stage: the ones behind are marked done, the one the deal is at (the last it completed) is strong and
+ * `aria-current`, the ones ahead are quiet. The chips link nowhere; the place to go next is the Action of the workspace, or the approval when the outcome waits
+ * on one. When the deal has closed the last chip says the record's own words ("Fulfilled", "No deal: the buyer did not accept"), and a deal
+ * that waits on the buyer says so in the stage it is stuck on.
  */
-const STEPS: { key: DictKey; href: string }[] = [
-  { key: "steps.received", href: "/deals" },
-  { key: "steps.analysed", href: "/deals" },
-  { key: "steps.respond", href: "/deals#counters" },
-  { key: "steps.agreed", href: "/deals#commitments" },
-];
+const STAGES: DictKey[] = ["steps.received", "steps.analysed", "steps.ready", "steps.sent"];
 
-export function DealSteps() {
+export function DealStage({ state, stateText }: { state: DecisionState | string; stateText: string }) {
   const { t } = useI18n();
-  const cur = useCurrentOffer();
-  const agreed = Boolean(cur.negotiation?.commitment) || cur.verdict?.outcome === "ACCEPT";
-  // A negotiation that ended without agreement closes the line too: the last step says so instead of "Agreed".
-  const noDeal = cur.negotiation?.outcome === "NO_DEAL";
-  const responded = Boolean(cur.negotiation) || cur.verdict?.outcome === "ACCEPT";
-  // How many steps are complete; the next one is the current step.
-  const done = !cur.offer ? 0 : !cur.verdict ? 1 : !responded ? 2 : agreed || noDeal ? 4 : 3;
+  const p = dealProgress(state as DecisionState);
+  // The deal is at the last stage it completed: Received (read, not yet checked), Response ready (checked), or, once it has an outcome, the last chip.
+  const at = p.reached ? STAGES.length : Math.max(p.done - 1, 0);
+  const status = (i: number) => (i < at ? "done" : i === at ? "current" : "todo");
+  const stages = [...STAGES.map((key, i) => ({ key, label: t(key), status: status(i) })), { key: "steps.agreed" as const, label: p.reached ? stateText : t("steps.agreed"), status: status(STAGES.length) }];
+  // A deal that waits on the buyer (needs clarification) says so in the stage it is stuck on.
+  const stuck = p.stalled ? stages.find((s) => s.status === "current") : undefined;
+  if (stuck) stuck.label = stateText;
   return (
-    <nav aria-label={t("steps.label")} className="mb-4" data-testid="deal-steps">
-      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
-        {STEPS.map((s, i) => {
-          const state = i < done ? "done" : i === done ? "current" : "todo";
-          const last = i === STEPS.length - 1;
-          const tone = noDeal && last ? "font-semibold text-bad-fg" : state === "done" ? "text-ok-fg" : state === "current" ? "font-semibold text-brand-700" : "text-ink-3";
-          return (
-            <li key={s.key} className="flex items-center gap-1">
-              {i > 0 ? <span className="text-ink-3">·</span> : null}
-              <Link href={s.href} aria-current={state === "current" ? "step" : undefined} className={`inline-flex items-center gap-1 rounded px-1.5 py-1 ${tone}`}>
-                {state === "done" && !(noDeal && last) ? <CheckIcon width={12} height={12} /> : null}
-                {noDeal && last ? t("steps.noDeal") : t(s.key)}
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <ol aria-label={t("steps.label")} className="mt-2 flex flex-wrap items-center gap-1 max-sm:mt-1 max-sm:gap-0.5" data-testid="deal-stage" data-state={state}>
+      {stages.map((s) => (
+        <li key={s.key} aria-current={s.status === "current" ? "step" : undefined} data-status={s.status}>
+          <Chip tone={s.status === "current" ? "brand" : "neutral"} className={`max-sm:px-1.5! ${s.status === "current" ? "font-bold" : s.status === "todo" ? "text-ink-3" : ""}`}>
+            {s.status === "done" ? <CheckIcon className="max-sm:hidden" /> : null}
+            {s.label}
+          </Chip>
+        </li>
+      ))}
+    </ol>
   );
 }

@@ -1,0 +1,93 @@
+{
+  "probe": "f24-evaluate-usd",
+  "request": {
+    "method": "POST",
+    "path": "/offers/OFF-c9d5f2694b9a/evaluate",
+    "body": {},
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "id": "VER-d48b8bcb35fc",
+    "offer_id": "OFF-c9d5f2694b9a",
+    "offer_version": 1,
+    "outcome": "NO_VERDICT",
+    "violations": [
+      {
+        "code": "UNRESOLVED_SCOPE",
+        "message": "No verdict: a material field has no evidence; clarification requested from BUYER-1",
+        "day": null,
+        "month": null,
+        "observed": "offer.currency",
+        "limit": "one grounded value per material field",
+        "curable": null,
+        "cure_cost_fen": null,
+        "cure_note": null,
+        "formula": "every material field has exactly one grounded value",
+        "inputs": {
+          "fields": "offer.currency",
+          "clarification": "requested",
+          "booked": "0"
+        },
+        "spans": [
+          {
+            "doc_id": "f24-usd",
+            "start": 40,
+            "end": 43,
+            "text": "USD"
+          }
+        ],
+        "message_when": "No verdict: a material field has no evidence; clarification requested from Foshan Home Retail Co.",
+        "cure_note_when": null
+      }
+    ],
+    "bound_obligations": [],
+    "concession_values": [],
+    "forward_concession_total_fen": 0,
+    "counters": [],
+    "plan": null,
+    "required_tier": "TIER_1",
+    "mandate_version": 1,
+    "state_version": 1,
+    "calc_version": "tl-v2.0",
+    "summary": "NO VERDICT: UNRESOLVED_SCOPE (offer.currency vs one grounded value per material field). Clarification requested from BUYER-1; nothing booked.",
+    "forward_concession_total_display": "¥0.00",
+    "business_action": "cannot",
+    "summary_when": "NO VERDICT: UNRESOLVED_SCOPE (offer.currency vs one grounded value per material field). Clarification requested from Foshan Home Retail Co.; nothing booked.",
+    "passed_checks": [],
+    "autonomy": {
+      "eligible": false,
+      "accepted_alone": false,
+      "whole_invoice": null,
+      "covered": [],
+      "gaps": [
+        "the compiler could not account for every figure and request in the message: the compilation is ABSTAINED, not clean; a term was not read (offer.currency); a discount does not state its invoice amount; non-CNY currency stated; text not read into the terms: 'usd'"
+      ],
+      "notes": [
+        "the compilation is ABSTAINED, not clean",
+        "a term was not read (offer.currency)",
+        "a discount does not state its invoice amount",
+        "non-CNY currency stated",
+        "text not read into the terms: 'usd'"
+      ]
+    },
+    "annualised": [],
+    "notes": [],
+    "trajectory": null,
+    "plan_committed": null,
+    "plan_expected": null,
+    "cure_plan": null,
+    "cured_trajectory": null,
+    "comparison": [],
+    "forward_concession": {
+      "total_fen": 0,
+      "total_display": "¥0.00",
+      "cap_fen": 500000,
+      "cap_display": "¥5,000.00",
+      "over_cap": false
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "probe": "f12-zerofloor-alerts-after",
+  "request": {
+    "method": "GET",
+    "path": "/alerts",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 34,
+  "status": 200,
+  "response": {
+    "day": 34,
+    "basis": "CONSERVATIVE",
+    "state_version": 7,
+    "projected_offer_id": null,
+    "counts": {
+      "CRITICAL": 1,
+      "WARNING": 3,
+      "INFO": 0
+    },
+    "alerts": [
+      {
+        "id": "ALERT-RESERVE-34",
+        "kind": "RESERVE_BREACH_AHEAD",
+        "severity": "CRITICAL",
+        "title": "Reserve breach ahead on day 34",
+        "detail": "Projected cash closes at ¥44,986.20 on day 34, ¥255,013.80 below the reserve floor; the gap peaks at ¥300,000.00 on day 42 and lasts to day 76. No committed facility can cure it; uncommitted facilities count as zero.",
+        "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥44,986.20 = ¥255,013.80 (day 34); max over days 34..76 = ¥300,000.00",
+        "day": 34,
+        "month": null,
+        "amount_fen": 25501380,
+        "committed_cure": false,
+        "commitment_id": null,
+        "receivable_id": null,
+        "inputs": {
+          "floor": "¥300,000.00",
+          "closing": "¥44,986.20",
+          "last_day": "76",
+          "worst_day": "42",
+          "max_shortfall": "¥300,000.00"
+        },
+        "suggested": [],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥255,013.80"
+      },
+      {
+        "id": "ALERT-PASTDUE-RCV-A",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Receivable RCV-A is 2 day(s) past due",
+        "detail": "¥420,000.00 outstanding from BUYER-1 was due on day 32 and is still OPEN. The conservative trajectory no longer counts on a dated receipt.",
+        "formula": "today − due_day = 34 − 32 = 2 > 0",
+        "day": 32,
+        "month": null,
+        "amount_fen": 42000000,
+        "committed_cure": null,
+        "commitment_id": null,
+        "receivable_id": "RCV-A",
+        "inputs": {
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "due_day": "32",
+          "outstanding": "¥420,000.00"
+        },
+        "suggested": [
+          {
+            "operation_kind": "RECEIVE_PAYMENT",
+            "facility_id": null,
+            "receivable_id": "RCV-A",
+            "commitment_id": null,
+            "offer_id": null,
+            "amount_fen": 42000000,
+            "note": "chase the buyer; record the receipt when the money lands",
+            "cost_fen": null,
+            "cost_days": null,
+            "annual_rate": null,
+            "cost_formula": "",
+            "above_apr_cap": false,
+            "executes_automatically": false,
+            "amount_display": "¥420,000.00"
+          }
+        ],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥420,000.00"
+      },
+      {
+        "id": "ALERT-EARLYPAY-b3dc91f19fa9",
+        "kind": "RECEIVABLE_PAST_DUE",
+        "severity": "WARNING",
+        "title": "Early payment on RCV-A did not arrive",
+        "detail": "The early payment promised under commitment CMT-f3a653ce80b5dedd for day 2 did not arrive. RCV-A (¥420,000.00 outstanding from BUYER-1) is back on its original due day, day 32, and the conservative trajectory is projected that way.",
+        "formula": "promised day − today = 2 − 34 < 0 and outstanding = ¥420,000.00 > 0",
+        "day": 34,
+        "month": null,
+        "amount_fen": 42000000,
+        "committed_cure": null,
+        "commitment_id": "CMT-f3a653ce80b5dedd",
+        "receivable_id": "RCV-A",
+        "inputs": {
+          "commitment_id": "CMT-f3a653ce80b5dedd",
+          "receivable_id": "RCV-A",
+          "counterparty_id": "BUYER-1",
+          "promised_day": "2",
+          "due_day": "32",
+          "obligation_id": "CTR-193394b6ba8b-O2"
+        },
+        "suggested": [
+          {
+            "operation_kind": "RECEIVE_PAYMENT",
+            "facility_id": null,
+            "receivable_id": "RCV-A",
+            "commitment_id": "CMT-f3a653ce80b5dedd",
+            "offer_id": null,
+            "amount_fen": 42000000,
+            "note": "chase the buyer; record the receipt when the money lands",
+            "cost_fen": null,
+            "cost_days": null,
+            "annual_rate": null,
+            "cost_formula": "",
+            "above_apr_cap": false,
+            "executes_automatically": false,
+            "amount_display": "¥420,000.00"
+          }
+        ],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥420,000.00"
+      },
+      {
+        "id": "ALERT-TRANSIT-alert:ALERT-RESERVE-34:v6:0",
+        "kind": "FUNDING_IN_TRANSIT",
+        "severity": "WARNING",
+        "title": "Reserve uncovered until Invoice financing (onboarded platform) cash lands on day 37",
+        "detail": "¥155,013.80 requested on day 34 on Invoice financing (onboarded platform) lands on day 37. Days 34 to 36 are below the ¥300,000.00 reserve floor until then: the cash is not in before day 37.",
+        "formula": "cash lands on request day + lead time = 34 + 3 = day 37; closing cash < floor on days 34..36",
+        "day": 37,
+        "month": null,
+        "amount_fen": 15501380,
+        "committed_cure": null,
+        "commitment_id": null,
+        "receivable_id": null,
+        "inputs": {
+          "facility_id": "FAC-IF",
+          "lot_id": "alert:ALERT-RESERVE-34:v6:0",
+          "request_day": "34",
+          "arrival_day": "37",
+          "uncovered_from": "34"
+        },
+        "suggested": [],
+        "actionable": false,
+        "basis": "CONSERVATIVE",
+        "amount_display": "¥155,013.80"
+      }
+    ],
+    "note": "A suggested operation is executed only through POST /alerts/{id}/act or POST /operations, never by itself."
+  }
+}

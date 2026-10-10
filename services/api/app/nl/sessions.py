@@ -36,6 +36,9 @@ class PendingPlan:
     state_version: int | None = None
     mandate_version: int | None = None
     day: int | None = None
+    # The economics shown with the plan, as the QUOTED fact the API layer stores when the plan runs (app/nl/quoting.py); None when none
+    # could be built. Never read by a confirmation: it only describes what the owner was shown.
+    quote: Any = None
 
     def bind(self, ctx: Any, ops: Any = None, cost: int | None = None) -> PendingPlan:
         """Fix the books and the operations this plan was built on (the context supplies today's state, mandate, day)."""
@@ -73,6 +76,7 @@ class Session:
     last_offer_id: str | None = None
     last_verdict_id: str | None = None
     last_fixture_id: str | None = None
+    bound_verdict_id: str | None = None  # the page's decision this session was last pointed at (app/nl/binding.py)
     offer_fixtures: dict[str, str] = field(default_factory=dict)  # offer id -> fixture id (declared costs)
     pending_plan: PendingPlan | None = None
     pending_clarification: PendingClarification | None = None

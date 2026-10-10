@@ -662,7 +662,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-go:1"
+    "trace_id": "rec-ex01-go:1",
+    "context_echo": null
   },
   "negotiate_ex01": {
     "session_id": "rec-ex01-go",
@@ -1365,7 +1366,8 @@
     },
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-go:2"
+    "trace_id": "rec-ex01-go:2",
+    "context_echo": null
   },
   "cancel": {
     "session_id": "rec-ex01-cancel",
@@ -1456,7 +1458,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-cancel:2"
+    "trace_id": "rec-ex01-cancel:2",
+    "context_echo": null
   },
   "explain_en": {
     "session_id": "rec-ex01-why",
@@ -1927,7 +1930,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-why:2"
+    "trace_id": "rec-ex01-why:2",
+    "context_echo": null
   },
   "explain_zh": {
     "session_id": "rec-ex01-why-zh",
@@ -2398,7 +2402,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-why-zh:2"
+    "trace_id": "rec-ex01-why-zh:2",
+    "context_echo": null
   },
   "goal": {
     "session_id": "rec-goal-go",
@@ -2777,7 +2782,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-go:1"
+    "trace_id": "rec-goal-go:1",
+    "context_echo": null
   },
   "goal_go": {
     "session_id": "rec-goal-go",
@@ -3077,7 +3083,8 @@
     },
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-go:2"
+    "trace_id": "rec-goal-go:2",
+    "context_echo": null
   },
   "amend_08": {
     "session_id": "rec-goal-08",
@@ -3456,7 +3463,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-08:2"
+    "trace_id": "rec-goal-08:2",
+    "context_echo": null
   },
   "amend_1_refused": {
     "session_id": "rec-goal-1",
@@ -3531,7 +3539,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-1:2"
+    "trace_id": "rec-goal-1:2",
+    "context_echo": null
   },
   "amend_fin": {
     "session_id": "rec-goal-fin",
@@ -3747,7 +3756,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-fin:2"
+    "trace_id": "rec-goal-fin:2",
+    "context_echo": null
   },
   "fund_gap": {
     "session_id": "rec-fund",
@@ -3963,7 +3973,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-fund:1"
+    "trace_id": "rec-fund:1",
+    "context_echo": null
   },
   "fund_gap_go": {
     "session_id": "rec-fund",
@@ -4025,7 +4036,10 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-fund:2"
+    "trace_id": "rec-fund:2",
+    "context_echo": null,
+    "decision_id": "nl:rec-fund:t1:e6647a56e3f3",
+    "decision_recorded": true
   },
   "status": {
     "session_id": "rec-status",
@@ -4043,7 +4057,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-status:1"
+    "trace_id": "rec-status:1",
+    "context_echo": null
   },
   "clarify_cash": {
     "session_id": "rec-vague",
@@ -4077,7 +4092,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-vague:1"
+    "trace_id": "rec-vague:1",
+    "context_echo": null
   },
   "clarify_cash_zh": {
     "session_id": "rec-vague-zh",
@@ -4111,7 +4127,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-vague-zh:1"
+    "trace_id": "rec-vague-zh:1",
+    "context_echo": null
   },
   "amend_08_zh": {
     "session_id": "rec-goal-08-zh",
@@ -4490,7 +4507,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-08-zh:2"
+    "trace_id": "rec-goal-08-zh:2",
+    "context_echo": null
   },
   "goal_zh": {
     "session_id": "rec-goal-go-zh",
@@ -4869,7 +4887,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-go-zh:1"
+    "trace_id": "rec-goal-go-zh:1",
+    "context_echo": null
   },
   "goal_go_zh": {
     "session_id": "rec-goal-go-zh",
@@ -5169,7 +5188,8 @@
     },
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-goal-go-zh:2"
+    "trace_id": "rec-goal-go-zh:2",
+    "context_echo": null
   },
   "evaluate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -5834,7 +5854,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-go-zh:1"
+    "trace_id": "rec-ex01-go-zh:1",
+    "context_echo": null
   },
   "negotiate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -6537,7 +6558,8 @@
     },
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-ex01-go-zh:2"
+    "trace_id": "rec-ex01-go-zh:2",
+    "context_echo": null
   },
   "fund_gap_zh": {
     "session_id": "rec-fund-zh",
@@ -6753,7 +6775,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-fund-zh:1"
+    "trace_id": "rec-fund-zh:1",
+    "context_echo": null
   },
   "fund_gap_go_zh": {
     "session_id": "rec-fund-zh",
@@ -6815,7 +6838,10 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-fund-zh:2"
+    "trace_id": "rec-fund-zh:2",
+    "context_echo": null,
+    "decision_id": "nl:rec-fund-zh:t1:ecac102d8f9e",
+    "decision_recorded": true
   },
   "status_zh": {
     "session_id": "rec-status-zh",
@@ -6833,7 +6859,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-status-zh:1"
+    "trace_id": "rec-status-zh:1",
+    "context_echo": null
   },
   "approve_none_zh": {
     "session_id": "rec-approve-zh",
@@ -6851,7 +6878,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-approve-zh:1"
+    "trace_id": "rec-approve-zh:1",
+    "context_echo": null
   },
   "approve_none": {
     "session_id": "rec-approve",
@@ -6869,12 +6897,13 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "rules",
-    "trace_id": "rec-approve:1"
+    "trace_id": "rec-approve:1",
+    "context_echo": null
   },
   "out_of_scope": {
     "session_id": "rec-scope",
     "turn": 1,
-    "reply": "I can't do that. I can evaluate a buyer's offer, negotiate with counters, get an invoice paid early, fund a projected cash gap, repay a facility, show cash status, explain a verdict, run a what-if, compare financing options, reconcile receipts, show the covenant ratios, evaluate an equipment purchase, prepare a borrower file, and approve or reject pending operations.",
+    "reply": "I can answer questions about your cash, deals, approvals and what changed; try \"What changed today?\"",
     "intent": "OUT_OF_SCOPE",
     "lang": "en",
     "plan": [],
@@ -6887,7 +6916,8 @@
     "negotiation": null,
     "security_events": [],
     "parse_source": "fallback",
-    "trace_id": "rec-scope:1"
+    "trace_id": "rec-scope:1",
+    "context_echo": null
   },
   "tier3": {
     "session_id": "rec-tier3",
@@ -6945,7 +6975,8 @@
       "SEC-OPS-000001"
     ],
     "parse_source": "rules",
-    "trace_id": "rec-tier3:1"
+    "trace_id": "rec-tier3:1",
+    "context_echo": null
   },
   "fastcapital": {
     "session_id": "rec-buyer-fastcapital",

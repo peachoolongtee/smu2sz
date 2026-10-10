@@ -1,0 +1,139 @@
+{
+  "offer": {
+    "offer_id": "OFF-f806f79b6c21",
+    "version": 1,
+    "counterparty_id": "BUYER-1",
+    "doc_ids": [
+      "EX01-msg"
+    ],
+    "received_day": 0,
+    "status": "COMPILED",
+    "obligations": [
+      {
+        "id": "OFF-f806f79b6c21-O1",
+        "type": "IMMEDIATE_DISCOUNT",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 120,
+        "amount_fen": null,
+        "days_delta": null,
+        "target_terms_days": null,
+        "effective_day": null,
+        "base": {
+          "kind": "INVOICE",
+          "amount_fen": 42000000,
+          "receivable_id": null,
+          "events_per_year": null,
+          "amount_display": "¥420,000.00"
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01-msg",
+            "start": 6,
+            "end": 36,
+            "text": "settle the ¥420k early at 1.2%"
+          }
+        ],
+        "confidence": 0.9,
+        "unresolved": [],
+        "rate_display": "1.20%"
+      },
+      {
+        "id": "OFF-f806f79b6c21-O2",
+        "type": "TERMS_EXTENSION",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": null,
+        "amount_fen": null,
+        "days_delta": null,
+        "target_terms_days": 60,
+        "effective_day": null,
+        "base": {
+          "kind": "FUTURE_INVOICES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+        },
+        "contingency": "FIRM",
+        "duration": {
+          "kind": "RECURRING_PERPETUAL",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01-msg",
+            "start": 44,
+            "end": 94,
+            "text": "extend our standard terms to 60 days going forward"
+          }
+        ],
+        "confidence": 0.95,
+        "unresolved": [
+          "current_terms_days"
+        ]
+      },
+      {
+        "id": "OFF-f806f79b6c21-O3",
+        "type": "CONTINGENT_REBATE",
+        "counterparty_id": "BUYER-1",
+        "rate_bp": 100,
+        "amount_fen": null,
+        "days_delta": null,
+        "target_terms_days": null,
+        "effective_day": null,
+        "base": {
+          "kind": "PERIOD_PURCHASES",
+          "amount_fen": null,
+          "receivable_id": null,
+          "events_per_year": null
+        },
+        "contingency": "CONTINGENT",
+        "duration": {
+          "kind": "ONE_OFF",
+          "invoices": null,
+          "end_day": null
+        },
+        "spans": [
+          {
+            "doc_id": "EX01-msg",
+            "start": 107,
+            "end": 126,
+            "text": "1% off next quarter"
+          }
+        ],
+        "confidence": 0.9,
+        "unresolved": [],
+        "rate_display": "1.00%"
+      }
+    ],
+    "abstentions": [],
+    "data_requests": [],
+    "authority_claims": [],
+    "funding_claims": [],
+    "compiler": "fixture-cache",
+    "prompt_version": "offer-v4",
+    "autonomy_eligible": false,
+    "autonomy_notes": [
+      "TERMS_EXTENSION leaves current_terms_days unresolved",
+      "a settlement date or window is stated but not read into the terms",
+      "EX01-msg holds a condition beyond the extracted terms",
+      "text not read into the terms: 'extend', 'standard', 'terms', 'going', 'forward', ..."
+    ]
+  },
+  "documents": [
+    {
+      "doc_id": "EX01-msg",
+      "channel": "chat",
+      "sender_id": "BUYER-1",
+      "received_day": 0,
+      "text": "We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.",
+      "parent_doc_id": null,
+      "filename": null
+    }
+  ]
+}

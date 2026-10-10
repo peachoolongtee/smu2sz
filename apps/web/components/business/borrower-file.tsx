@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip } from "@/components/business/kit";
+import { Chip } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { BorrowerFileSection } from "@/lib/types";
 
@@ -22,15 +22,18 @@ function figuresOf(row: BorrowerFileSection["rows"][number]): { text: string; ev
   return row.figures?.length ? row.figures : [{ text: row.value, evidence: row.evidence }];
 }
 
-function TableSection({ s }: { s: BorrowerFileSection }) {
+function TableSection({ s, title }: { s: BorrowerFileSection; title: string }) {
   const columns = s.columns ?? [];
   return (
-    // Wide tables scroll inside their card on a phone; the page itself never scrolls sideways.
-    <div className="-mx-1 overflow-x-auto px-1">
+    // Wide tables scroll inside their card on a phone; the page itself never scrolls sideways. As with TableWrap, the
+    // scrolling area is a named region a keyboard can reach.
+    <div className="-mx-1 overflow-x-auto px-1" role="region" aria-label={title} tabIndex={0}>
       <table className="w-full min-w-max border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-xs text-ink-3">
-            <th scope="col" className="py-2 pr-4 text-left font-medium" />
+            <th scope="col" className="py-2 pr-4 text-left font-medium">
+              <span className="sr-only">{title}</span>
+            </th>
             {columns.map((c) => (
               <th key={c} scope="col" className="px-3 py-2 text-right font-medium">
                 {c}
@@ -86,7 +89,7 @@ function ListSection({ s }: { s: BorrowerFileSection }) {
               ))}
               {estimate ? (
                 <span className="ml-2 align-middle">
-                  <Chip tone="orange">{t("biz.capex.file.ownerEstimate")}</Chip>
+                  <Chip tone="info">{t("biz.capex.file.ownerEstimate")}</Chip>
                 </span>
               ) : null}
             </dd>
@@ -101,21 +104,24 @@ export function BorrowerFileSections({ sections }: { sections: BorrowerFileSecti
   const { lang } = useI18n();
   return (
     <div className="space-y-3" data-testid="file-sections">
-      {sections.map((s) => (
-        <section key={s.key ?? s.title} className="rounded-2xl bg-subtle p-4" data-testid={`file-section-${s.key ?? s.title}`}>
-          <h3 className="mb-2 text-sm font-semibold text-ink">{lang === "zh" && s.title_zh ? s.title_zh : s.title}</h3>
-          {s.columns?.length ? <TableSection s={s} /> : <ListSection s={s} />}
-          {s.notes?.length ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-3">
-              {s.notes.map((n) => (
-                <li key={n}>
-                  <Shortened text={n} />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      ))}
+      {sections.map((s) => {
+        const title = lang === "zh" && s.title_zh ? s.title_zh : s.title;
+        return (
+          <section key={s.key ?? s.title} className="rounded-tile border border-line p-3" data-testid={`file-section-${s.key ?? s.title}`}>
+            <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3>
+            {s.columns?.length ? <TableSection s={s} title={title} /> : <ListSection s={s} />}
+            {s.notes?.length ? (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-3">
+                {s.notes.map((n) => (
+                  <li key={n}>
+                    <Shortened text={n} />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
     </div>
   );
 }

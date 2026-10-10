@@ -1,0 +1,20 @@
+{
+  "probe": "f04-cooperative-ledger-before-negotiate",
+  "request": {
+    "method": "GET",
+    "path": "/ledger",
+    "body": null,
+    "credential": [
+      "X-Owner-Token"
+    ]
+  },
+  "clock_day_before_request": 0,
+  "status": 200,
+  "response": {
+    "commitments": [],
+    "operations": [],
+    "chain_valid": true,
+    "chain_length": 0,
+    "head_hash": null
+  }
+}

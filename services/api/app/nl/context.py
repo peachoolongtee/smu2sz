@@ -46,6 +46,8 @@ class NlContext:
     lang: str
     trace_id: str
     request_id: str | None = None
+    binding: Any = None  # app.nl.binding.Binding: the validated page context of this owner turn, if any
+    reads: Any = None  # app.nl.binding.OwnerReads: the Home read and the business-words rewrite (owner turns only)
     results: list[OperationResult] = field(default_factory=list)
     sent: list[Any] = field(default_factory=list)  # the typed operations sent this turn
     events: list[str] = field(default_factory=list)

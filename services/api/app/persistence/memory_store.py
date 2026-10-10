@@ -47,10 +47,12 @@ from app.persistence.errors import (
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
+    PilotJournalRecord,
 )
 
 
@@ -60,7 +62,7 @@ class InMemoryLedgerStore:
     # Every container the store mutates; `transaction()` snapshots and restores exactly these.
     _CONTAINERS = (
         "_ops", "_nonces", "_commitments", "_states", "_mandates", "_offers", "_verdicts",
-        "_security_events", "_approvals", "_evidence_exports", "_llm_calls", "_evaluation_runs",
+        "_security_events", "_approvals", "_evidence_exports", "_llm_calls", "_evaluation_runs", "_decision_facts",
         "_contract_records",
     )
 
@@ -69,6 +71,7 @@ class InMemoryLedgerStore:
         self._tx_depth = 0
         self._llm_calls: list[LlmCallRecord] = []
         self._evaluation_runs: list[EvaluationRunRecord] = []
+        self._pilot_journal: list[PilotJournalRecord] = []  # kept by reset(), like telemetry; not in `_CONTAINERS`
         self._clear_ledger()
 
     # ------------------------------------------------------------ unit of work
@@ -110,6 +113,7 @@ class InMemoryLedgerStore:
         self._security_events: list[SecurityEvent] = []
         self._approvals: dict[str, ApprovalRecord] = {}
         self._evidence_exports: list[EvidenceExportRecord] = []
+        self._decision_facts: list[DecisionFactRecord] = []
         self._contract_records: dict[str, ContractRecord] = {}
 
     # ------------------------------------------------------------ operations log
@@ -381,6 +385,57 @@ class InMemoryLedgerStore:
         with self._lock:
             return list(self._evaluation_runs)
 
+    # ------------------------------------------------------------ the pilot's journal (docs/pilot/JOURNAL_SPEC.md)
+
+    def add_pilot_journal(
+        self,
+        *,
+        week: int,
+        sme: str,
+        answer: str,
+        flow_said: str,
+        snapshot_hash: str,
+        owner_did: str,
+        choice: str,
+        recorded_on: str,
+        state_version: int,
+        day: int,
+    ) -> PilotJournalRecord:
+        """Append one entry. Append-only: the store has no update or delete for it, and nothing here touches the books,
+        the operations log or the hash chain."""
+        with self._lock:
+            rec = PilotJournalRecord(
+                seq=len(self._pilot_journal) + 1, week=week, sme=sme, answer=answer, flow_said=flow_said,
+                snapshot_hash=snapshot_hash, owner_did=owner_did, choice=choice, recorded_on=recorded_on,
+                state_version=state_version, day=day, recorded_at=datetime.now(UTC).isoformat(),
+            )
+            self._pilot_journal.append(rec)
+            return rec
+
+    def pilot_journal(self) -> list[PilotJournalRecord]:
+        """Every entry, oldest first."""
+        with self._lock:
+            return list(self._pilot_journal)
+
+    # ------------------------------------------------------------ the decision record's facts (ADR-0011)
+
+    def add_decision_fact(self, record: DecisionFactRecord) -> DecisionFactRecord:
+        """Insert-if-absent on (decision_id, fact, fact_key): a second write returns the row already stored and changes
+        nothing. The store has no update or delete for it, and nothing here touches the books, the operations log or the
+        hash chain. `seq` and `recorded_at` are the store's."""
+        with self._lock:
+            for have in self._decision_facts:
+                if (have.decision_id, have.fact, have.fact_key) == (record.decision_id, record.fact, record.fact_key):
+                    return have
+            stored = replace(record, seq=len(self._decision_facts) + 1, recorded_at=datetime.now(UTC).isoformat())
+            self._decision_facts.append(stored)
+            return stored
+
+    def decision_facts(self, decision_id: str | None = None) -> list[DecisionFactRecord]:
+        """Every fact, oldest first; of one decision when `decision_id` is given."""
+        with self._lock:
+            return [f for f in self._decision_facts if decision_id is None or f.decision_id == decision_id]
+
     # ------------------------------------------------------------ evidence
 
     def export_evidence(self) -> str:
@@ -412,6 +467,7 @@ class InMemoryLedgerStore:
             if include_telemetry:
                 self._llm_calls = []
                 self._evaluation_runs = []
+                self._pilot_journal = []
 
 
 def _copy(value: object) -> object:

@@ -1,6 +1,7 @@
 "use client";
 
 import { createStore } from "./create-store";
+import type { Lang } from "./i18n";
 import type { BorrowerFileView, CapexApplyResult, CapexView, FundingView, NegotiationView, OfferView, VerdictView } from "./types";
 
 /**
@@ -10,6 +11,12 @@ import type { BorrowerFileView, CapexApplyResult, CapexView, FundingView, Negoti
 export interface DemoState {
   /** -1 until the stepper has started. */
   step: number;
+  /**
+   * The highest step that has finished (-1 before any). Back moves `step` and leaves this where it was: a step up to here is only shown,
+   * because the books already hold its result; only the step after it is run. Read it with `reachedOf`, which also covers a session
+   * saved before this field existed.
+   */
+  reached: number;
   offerId: string | null;
   offers: Record<string, OfferView>;
   /** offer_id -> server fixture id, for offers compiled from a demo fixture (evaluate passes it back). */
@@ -27,14 +34,44 @@ export interface DemoState {
   funding: FundingView | null;
   /** The reworded offer (EX01B), evaluated on the same books as EX01 before any operation executes. */
   rewordedId: string | null;
+  /** The buyer's message the story is about. The optional scenes read other messages; this is the one Deals returns to. */
+  storyOfferId: string | null;
+  /** The cure the story queued for the owner's approval (the approval card, its record and the day its cash lands), once it has been queued. */
+  cure: StoryCure | null;
+  /**
+   * What each finished step was told by the server (the sentences and figures of the responses it just received), by step id and in the
+   * language they were written in. The step's narration is built from these; a step with none, or in another language, shows its plain sentence.
+   */
+  facts: Record<string, StepFacts>;
   /** Bumped after every write so read hooks refetch. */
   version: number;
   busy: boolean;
+  /**
+   * The step being run, set when a run starts and cleared when it commits or fails. It is saved with the session, so a
+   * reload in the middle of a step leaves `running` set with `busy` false: the stepper then says the step was interrupted.
+   */
+  running: number | null;
   error: string | null;
+}
+
+/** The cure waiting for (or past) the owner's decision: ids and the server's own display strings, nothing computed. */
+export interface StoryCure {
+  approvalId: string;
+  decisionId: string | null;
+  /** The amount the owner is asked to approve, as the server wrote it ("¥200,000.00"); empty when the queue row had none. */
+  amount: string;
+  /** The day the cash lands, from the approval card; null when the card did not say. */
+  landsDay: number | null;
+}
+
+export interface StepFacts {
+  lang: Lang;
+  values: Record<string, string>;
 }
 
 export const INITIAL_DEMO: DemoState = {
   step: -1,
+  reached: -1,
   offerId: null,
   offers: {},
   fixtures: {},
@@ -45,16 +82,24 @@ export const INITIAL_DEMO: DemoState = {
   borrowerFile: null,
   funding: null,
   rewordedId: null,
+  storyOfferId: null,
+  cure: null,
+  facts: {},
   version: 0,
   busy: false,
+  running: null,
   error: null,
 };
 
 export const demoStore = createStore<DemoState>(INITIAL_DEMO, {
   storage: "session",
-  key: "tl-demo-v2",
+  key: "tl-demo-v3",
+  // A reload never restores a locked stepper: `busy` is not saved, `running` is (it is how a reload mid-step is recognised).
   sanitize: (s) => ({ ...s, busy: false, error: null }),
 });
+
+/** The highest finished step: never behind the pointer, whatever an older saved session held. */
+export const reachedOf = (d: Pick<DemoState, "step" | "reached">): number => Math.max(d.reached ?? -1, d.step);
 
 export function useDemo(): DemoState {
   return demoStore.useValue();
@@ -98,11 +143,35 @@ export function recordFunding(funding: FundingView): void {
   demoStore.set((s) => ({ ...s, funding, version: s.version + 1 }));
 }
 
+export function recordFacts(stepId: string, facts: StepFacts): void {
+  demoStore.set((s) => ({ ...s, facts: { ...s.facts, [stepId]: facts } }));
+}
+
+export function recordCure(cure: StoryCure): void {
+  demoStore.set((s) => ({ ...s, cure, version: s.version + 1 }));
+}
+
+/** The story's own offer is the current one again (the optional scenes read other messages and leave the story's where it was). */
+export function selectStoryOffer(): void {
+  const id = demoStore.get().storyOfferId;
+  if (id && demoStore.get().offerId !== id && demoStore.get().offers[id]) demoStore.set((s) => ({ ...s, offerId: id, version: s.version + 1 }));
+}
+
 /** Makes an already-compiled offer the one the screens show. */
 export function selectOffer(offerId: string, rewordedId?: string): void {
   demoStore.set((s) => ({ ...s, offerId, rewordedId: rewordedId ?? s.rewordedId, version: s.version + 1 }));
 }
 
+/**
+ * Clears the scenario's data (offers, verdicts, negotiations, funding, ids) and nothing that controls the running step: `busy`,
+ * `running`, `step` and `error` stay as they are, so a step that clears the books half-way (Setup, the walk) stays locked and
+ * keeps its place until `goToStep` commits it.
+ */
 export function clearDemo(): void {
+  demoStore.set((s) => ({ ...INITIAL_DEMO, busy: s.busy, running: s.running, step: s.step, error: s.error, version: s.version + 1 }));
+}
+
+/** Back to the first screen: the data and the step pointer both cleared (the Reset action, after the server has reset the books). */
+export function resetSession(): void {
   demoStore.set((s) => ({ ...INITIAL_DEMO, version: s.version + 1 }));
 }

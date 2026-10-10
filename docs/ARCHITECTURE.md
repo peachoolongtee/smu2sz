@@ -32,21 +32,22 @@ Everything lives under `services/api/app/`.
 | `covenants/` | DSCR, leverage, clean-down per facility definition | `evaluate()`, `ratios()` | domain, financial |
 | `mandate/` | canonical serialisation, Ed25519 signing, validity, tiers, mandate predicates | `canonical_bytes()`, `sign()`, `verify_signature()`, `check_validity()`, `tier_for()`, `check_predicates()` | domain |
 | `compiler/` | LLM adapter (Claude + DeepSeek), prompts, schemas, fixture cache, span validation, injection/data-request detection, term-sheet mode, contract mode (chunking at headings, every term grounded in its clause) | `compile_offer()`, `compile_term_sheet()`, `compile_contract()` | domain **only** (no state, no mandate, no menu) |
-| `persistence/` | SQLAlchemy tables, migrations, `LedgerStore` (SQL + in-memory) | `LedgerStore` | domain |
+| `persistence/` | SQLAlchemy tables, migrations, `LedgerStore` (SQL + in-memory); the append-only `decision_facts` table (migration 0006) with its insert-if-absent write and its reads; the `contract_records` table (migration 0007): each document read and the owner's decision on it | `LedgerStore` | domain |
 | `commitments/` | commitment lifecycle state machine, terms hash, nonce, expiry | `transition()`, `terms_hash()` | domain, persistence |
 | `funding/` | funding menu view, same-basis costing, grid-search router, marginal cost, break-even | `plan()`, `marginal_cost()`, `break_even_discount()` | domain, financial, covenants, mandate |
 | `verifier/` | verdict algorithm, reason codes, formulas, counter generation (priced from marginal cost) | `evaluate()`, `counters()` | domain, financial, covenants, mandate, funding |
 | `operations/` | the executor: tier check, mandate version/signature/expiry, nonce, idempotency, circuit breaker | `Executor.execute()`, `decide()`, `propose_commitment()` | domain, financial (charge helpers), mandate, commitments, persistence |
 | `security/` | attack catalogue, security-event logging helpers, refusal templates | `refuse()`, attack runners | domain, persistence |
 | `counterparties/` | deterministic buyer kernel (hidden reservation), template verbaliser | `BuyerKernel` | domain |
-| `nl/` | intent parsing, sessions (multi-turn: clarification, correction, fallback), plan → operations | `handle()` | everything above except compiler internals |
+| `nl/` | intent parsing, sessions (multi-turn: clarification, correction, fallback), plan → operations; since map #65 also the owner's page context (`binding.py`: ids validated against the stores), the read-only answers for the Business pages (`reads.py`: what changed, what are we waiting for, who to chase) and the owner-voice templates (`business.py`) | `handle()` | everything above except compiler internals |
 | `capex/` (flag) | NPV, payback, structure comparison; evaluation is side-effect free (`POST /capex/apply` is the separate owner step) | `evaluate_capex()` | domain, financial, covenants |
 | `borrower_file/` (flag) | 微业贷-style borrower file from verified state (HTML, then PDF/DOCX); read-only, with provenance (generation day, versions, evidence hash); queues nothing | `build()` | domain, financial, covenants, persistence |
 | `alerts/` (flag) | cash-flow alerts from the conservative trajectory; receipt reconciliation | `alerts()`, `reconcile()` | domain, financial |
 | `ingest/` | text from an uploaded file (Word, PDF with a text layer, plain text); refuses scans, other types and oversize files | `extract_text()` | nothing internal |
 | `contracts/` (flag) | contract records: a document read into a record, the suggested facility, the review view, the held-out scorer | `read_document()`, `record_view()`, `score()` | domain, compiler |
 | `deals/` (flag) | the deal summary: a confirmed contract beside the books, and its chat reply | `deal_summary()`, `deal_reply()` | domain, contracts, alerts (reconciliation), financial (invoice terms), operations (log reading), persistence |
-| `api/` | FastAPI routers, dependency wiring | HTTP | everything |
+| `decisions/` | the durable decision record (ADR-0011): three strict fact models (EVALUATED, SENT, QUOTED), deterministic decision identity, and the pure `derive()` / `waiting_for()` over stored records; pure, no I/O, no money; no engine module imports it (a test pins that) | `derive()`, `derive_all()`, `waiting_for()`, `decision_id_for()`, the fact models | domain, `persistence.records` only |
+| `api/` | FastAPI routers, dependency wiring; the presentation helpers that write the server's sentences in both languages (`presentation.py`, `engine_zh.py`, `receipt_facts.py`, `causality.py`, `workspace.py`, `quotes.py`) the routers added by map #65 (`decisions.py`, `collections.py`, `demo_bank.py`) and the contract ones (`documents.py`, `deals.py`) | HTTP | everything |
 
 A module may not import another module's internals, only its public functions. **Cycles are forbidden.**
 
@@ -148,19 +149,26 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/nl` | multi-turn session: `{session_id?, actor, text}` → `{reply, intent, plan, verdict?, operations[], clarification?}` |
+| `POST` | `/nl` | multi-turn session: `{session_id?, actor, text, lang?, context?}` → `{reply, intent, plan, verdict?, operations[], clarification?, context_echo?}`. `context` is the owner's page `{page, offer_id?, decision_id?, invoice_id?, since_day?}`: ids only, each looked up in the stores and ignored when unknown, never an amount or a sentence; a counterparty's context is dropped. `?mode=business` (owner token only) says the verdict, the plan, alert cures, repayments, approval replies, the status read and the confirmed runs in the owner's words, with no ids (an approval id only in a parenthesis), tier words or reason codes; the default `mode=demo` keeps the engine's replies. A turn that sends the operations of a plan shown earlier adds `decision_id` and `decision_recorded` (the QUOTED fact it stored) |
 | `POST` | `/offers` | submit documents → `CompiledOffer` |
-| `POST` | `/offers/{id}/evaluate` | → `Verdict` |
-| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel |
-| `POST` | `/router/plan` | → `FundingPlan` (committed + expected) |
+| `GET` | `/offers/{id}` | the stored offer with its latest verdict id and `decision_id` (owner only) |
+| `POST` | `/offers/{id}/evaluate` | → `Verdict`; adds `decision_id`, `evaluated_when`, a `send_scope` sentence per counter, and for the Advanced fold `label_when` / `observed_when` / `limit_when` on each passed check and `covered_when` / `gaps_when` / `notes_when` on `autonomy`, in `lang` |
+| `POST` | `/negotiate/{offer_id}` | bounded rounds with the buyer kernel; optional `verdict_id`, `counter_id`, `state_version` bind the send to what the owner read (409 `COUNTER_CHANGED` otherwise; 409 `ALREADY_SENT` when the same counter's agreement stands); adds `decision_id`, `execution`, `decision_recorded` |
+| `GET` | `/decisions`, `/decisions/{id}` | the decision record, derived on request from the stores plus three stored facts (ADR-0011); owner only; every sentence per `lang` |
+| `POST` | `/router/plan` | → `FundingPlan` (committed + expected); `comparison[]` rows carry the comparison contract: `group` (RECOMMENDED, ALTERNATIVE, CONDITIONAL_ON_BUYER, INSUFFICIENT, NOT_AVAILABLE_YET, BLOCKED), a `rank` only for the plans that can run, `router_order`, arrival, remaining gap, basis and consent words. The router's figures are unchanged |
 | `POST` | `/facilities/compile` | term sheet → `CompiledTermSheet` (owner must approve) |
 | `POST` | `/capex/evaluate` | flag `capex`; writes nothing |
 | `POST` | `/capex/apply` | flag `capex`; owner only, bound to the evaluation's state version; queues the Tier-2 application |
 | `POST` | `/borrower-file` | flag `borrower_file`; read-only owner action |
-| `POST` | `/operations` | typed operation → `OperationResult` |
-| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue |
-| `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server |
-| `POST` | `/demo/reset` | reload fixtures, clear the ledger |
+| `POST` | `/operations` | typed operation → `OperationResult`; a funding operation the executor queued for the owner adds `decision_id` (`approval:{id}`) and `decision_recorded` (its own figures stored as the QUOTED fact) |
+| `GET`/`POST` | `/approvals`, `/approvals/{id}` | the Tier-2 queue; `GET /approvals/queue?lang=` rows carry `decision_id`, `decision_state`, `quote` (the stored one for a decided row) and `execution` |
+| `POST` | `/alerts/{id}/act` | runs the bound cure; stores the quote the owner was shown (`decision_id`, `decision_recorded`) |
+| `GET` | `/state`, `/trajectory`, `/ledger`, `/audit`, `/mandate` | read views; money pre-formatted on the server; `/ledger` operations carry `decision_id`, the causality (what changed, why it matters now, what remains), `chain_text` and `chain_scope_text` |
+| `GET` | `/home` | the owner's home; first breach counted from today (`first_breach_day`, `first_breach_when`, `below_reserve_today`), `forecast_basis*`, `last_read_*`, `partial`, `open_decisions` (up to three) and `remaining_task` with `remaining_task_links` |
+| `GET` | `/receivables/{id}/chase` | the collection handoff for one open invoice: buyer, outstanding, due, lateness, the early-payment promise, the agreed terms, a copyable payment request in the owner's voice and, when the buyer has an agreement on file, a link to the buyer thread. Read-only, owner only; sends and stores nothing; 404 `RECEIVABLE_NOT_FOUND`, 422 `NOTHING_OUTSTANDING` |
+| `GET` | `/reconciliation` | each receipt that paid an agreed early payment carries four facts (received, face cleared, discount, still owed) and `window_state` (open or ended) |
+| `POST` | `/demo/reset` | reload fixtures, clear the ledger (and the decision facts) |
+| `POST` | `/demo/bank-receipt` | the guided Demo's one synthetic bank event; owner only and `DEMO_MODE` only (403 `DEMO_ONLY` otherwise). Posts the `RECEIVE_PAYMENT` the bank feed would post, requested by `SYSTEM`, for the one early payment the books are still waiting for, in the amount they promised, with bank reference `DEMO-RCPT-1`; a second call books nothing (409 `NO_PROMISED_RECEIPT`) |
 | `GET` | `/evidence` | JSONL execution evidence with hashes |
 | `POST` | `/documents` | flag `contracts`; owner only; a demo document, an upload (base64) or pasted text → a contract record with the agent's reading |
 | `GET` | `/documents`, `/documents/{id}` | flag `contracts`; owner only; the records, and one record's review view |
@@ -168,9 +176,11 @@ Every violation carries a `formula` and `inputs` the UI can show verbatim.
 | `GET` | `/deals`, `/deals/{buyer}` | flag `contracts`; owner only; the deal summary (shown on Deals once a deal is agreed) |
 | `GET` | `/fixtures/contracts` | flag `contracts`; owner only; the demo documents |
 
+Every Business read and write takes `lang=en|zh` (default `en`), and the server writes the sentences in that language; the figures are identical in both. The engine's own sentences (hash-chained or audit-level) stay in English and the Business presentation fields say them in the owner's words and, for `zh`, in Chinese (`app/api/engine_zh.py`).
+
 ## Storage
 
-SQLAlchemy 2. Tests and local dev use SQLite (`DATABASE_URL=sqlite:///...`); deploy uses Postgres via Docker Compose (ADR-0001). The same `LedgerStore` interface has an in-memory implementation for unit tests. Contract records live in `contract_records` (migration `0005_contract_records`, with row-level security on Postgres); a decision is a compare-and-swap on a PROPOSED record.
+SQLAlchemy 2. Tests and local dev use SQLite (`DATABASE_URL=sqlite:///...`); deploy uses Postgres via Docker Compose (ADR-0001). The same `LedgerStore` interface has an in-memory implementation for unit tests. Contract records live in `contract_records` (migration `0007_contract_records`, with row-level security on Postgres); a decision is a compare-and-swap on a PROPOSED record.
 
 ## Frontend
 
