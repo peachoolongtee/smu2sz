@@ -419,6 +419,11 @@ input[type="radio"] {
     opacity var(--dur) var(--ease-out);
   opacity: 0;
 }
+/* A fold's chevron turns with its own <details> only, never with an open fold around it (components/business/kit.tsx). */
+details[open] > summary .fold-chev {
+  rotate: 90deg;
+}
+
 details[open] > .disclosure-body {
   grid-template-rows: 1fr;
   opacity: 1;

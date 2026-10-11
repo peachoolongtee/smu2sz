@@ -11,8 +11,9 @@ import type { AlertItem, HomeNextAction } from "@/lib/types";
 
 /**
  * Level 2: the best next step, in the server's words, reduced to what the owner decides on: what it is, what it costs,
- * when the money is available and who decides. Everything else (what you receive, the cost of each part and its basis,
- * the lowest cash after, what happens if nothing is done, why this plan, the calculation) waits behind "Details".
+ * when the money is available and who decides. "Details" adds, in reading order: before and after side by side (with what you
+ * receive and the lowest cash after), the cost of each part, and why in one sentence; the reasoning, the formula, each part's
+ * arrival and the cost's assumptions fold once more under "Show the calculation".
  * "Run" asks once, then submits the same bound request as the alerts page (state version and suggestions as shown);
  * above the owner's limit the server only queues it. The answer is rendered by the page: the block leaves once the fix
  * has run, its answer must not.
@@ -115,71 +116,90 @@ export function NextActionBlock({ a, stateVersion, fixer }: { a: HomeNextAction;
               {a.needs_owner_reason}
             </p>
           ) : null}
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            {a.receive_display ? (
-              <div>
-                <dt className="text-xs font-medium text-ink-3">{t("biz.receive")}</dt>
-                <dd className="font-semibold tabular-nums text-ink" data-testid="next-action-receive">{a.receive_display}</dd>
-              </div>
-            ) : null}
-            {a.after_lowest_short ? (
-              <div>
-                <dt className="text-xs font-medium text-ink-3">{t("biz.lowestAfter")}</dt>
-                <dd className="font-semibold tabular-nums text-ink" data-testid="next-action-after-lowest">{a.after_lowest_short}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt className="text-xs font-medium text-ink-3">{t("biz.ifNothing")}</dt>
-              <dd className="text-ink" data-testid="next-action-if-nothing">{a.if_nothing}</dd>
+          {/* Before and after, side by side: the one comparison the owner reads first. */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-tile bg-bad-bg/60 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-bad-fg">{t("biz.ifNothing")}</p>
+              <p className="mt-1 text-ink" data-testid="next-action-if-nothing">{a.if_nothing}</p>
             </div>
-            <div>
-              <dt className="text-xs font-medium text-ink-3">{t("biz.after")}</dt>
-              <dd className="text-ink" data-testid="next-action-after">{a.after}</dd>
-            </div>
-          </dl>
-          {a.cost_breakdown.length > 1 ? (
-            <div>
-              <p className="text-xs font-medium text-ink-3">{t("biz.costTotal")}</p>
-              <ul className="mt-1 divide-y divide-line rounded-tile border border-line px-3" data-testid="next-action-cost-breakdown">
-                {a.cost_breakdown.map((c, i) => (
-                  <li key={i} className="flex items-baseline justify-between gap-3 py-1.5">
-                    <span className="min-w-0 text-ink-2">{c.label.replace(/:\s*$/, "")}</span>
-                    <span className="shrink-0 font-semibold tabular-nums text-ink">{c.display ?? ""}</span>
-                  </li>
-                ))}
-              </ul>
-              {a.cost_basis ? (
-                <p className="mt-1 text-xs text-ink-3" data-testid="next-action-cost-basis">{a.cost_basis}</p>
+            <div className="rounded-tile bg-ok-bg/70 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-ok-fg">{t("biz.afterPlan")}</p>
+              <p className="mt-1 text-ink" data-testid="next-action-after">{a.after}</p>
+              {a.receive_display || a.after_lowest_short ? (
+                <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
+                  {a.receive_display ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <dt className="text-ink-3">{t("biz.receive")}</dt>
+                      <dd className="font-bold tabular-nums text-ink" data-testid="next-action-receive">{a.receive_display}</dd>
+                    </div>
+                  ) : null}
+                  {a.after_lowest_short ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <dt className="text-ink-3">{t("biz.lowestAfter")}</dt>
+                      <dd className="font-bold tabular-nums text-ink" data-testid="next-action-after-lowest">{a.after_lowest_short}</dd>
+                    </div>
+                  ) : null}
+                </dl>
               ) : null}
             </div>
-          ) : a.cost_basis ? (
-            <p className="text-xs text-ink-3" data-testid="next-action-cost-basis">{a.cost_basis}</p>
+          </div>
+          {/* The cost by part: the source in bold, its terms in one quiet line (the full words are its title). */}
+          {a.cost_breakdown.length > 1 ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-ink-3">{t("biz.costTotal")}</p>
+              <ul className="mt-1.5 divide-y divide-line rounded-tile border border-line px-3" data-testid="next-action-cost-breakdown">
+                {a.cost_breakdown.map((c, i) => {
+                  const label = c.label.replace(/:\s*$/, "");
+                  const cut = label.indexOf(": ");
+                  const source = cut > 0 ? label.slice(0, cut) : label;
+                  const terms = cut > 0 ? label.slice(cut + 2) : null;
+                  return (
+                    <li key={i} className="flex items-baseline justify-between gap-3 py-2">
+                      <span className="min-w-0">
+                        <span className="block font-bold text-ink">{source}</span>
+                        {terms ? (
+                          <span className="block truncate text-xs text-ink-3" title={terms}>
+                            {terms}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="shrink-0 font-bold tabular-nums text-ink">{c.display ?? ""}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : null}
           {a.cheaper_option ? (
             <p className="text-ink-2" data-testid="next-action-cheaper">
               {t("biz.cheaper", { cost: a.cheaper_option.cost_total_display, n: a.cheaper_option.approvals })}
             </p>
           ) : null}
+          {/* Why, in one sentence; the reasoning, the formula, each part's arrival and the cost's assumptions fold under it. */}
           <div data-testid="next-action-why">
-            <p className="font-semibold text-ink">{t("biz.why")}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-3">{t("biz.why")}</p>
             <p className="mt-1 text-ink">{a.why}</p>
-            <p className="mt-1 text-ink-2">{a.detail}</p>
-          </div>
-          <div className="space-y-2" data-testid="next-action-calc">
-            <p className="font-semibold text-ink">{t("biz.calculation")}</p>
-            <p className="text-ink-2" data-testid="next-action-operation">{a.title}</p>
-            {a.formula ? <Formula>{a.formula}</Formula> : null}
-            <ul className="space-y-1">
-              {a.legs.map((leg) => (
-                <li key={leg.index} className="flex flex-wrap items-baseline justify-between gap-2 rounded-tile border border-line px-3 py-1.5">
-                  <span>{leg.label}</span>
-                  <span className="text-xs text-ink-3">
-                    {leg.cost_display ? t("alerts.cost", { cost: leg.cost_display }) : t("biz.noStatedCost")}
-                    {leg.lands_day !== null ? ` · ${t("biz.landsShort", { when: leg.lands_when ?? "" })}` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <Disclosure summary={t("biz.calculation")} className="mt-1" testId="next-action-calc-fold">
+              <div className="space-y-2 text-ink-2" data-testid="next-action-calc">
+                <p>{a.detail}</p>
+                <p data-testid="next-action-operation">{a.title}</p>
+                {a.formula ? <Formula>{a.formula}</Formula> : null}
+                <ul className="space-y-1">
+                  {a.legs.map((leg) => (
+                    <li key={leg.index} className="flex flex-wrap items-baseline justify-between gap-2 rounded-tile border border-line px-3 py-1.5">
+                      <span>{leg.label}</span>
+                      <span className="text-xs text-ink-3">
+                        {leg.cost_display ? t("alerts.cost", { cost: leg.cost_display }) : t("biz.noStatedCost")}
+                        {leg.lands_day !== null ? ` · ${t("biz.landsShort", { when: leg.lands_when ?? "" })}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {a.cost_basis ? (
+                  <p className="text-xs text-ink-3" data-testid="next-action-cost-basis">{a.cost_basis}</p>
+                ) : null}
+              </div>
+            </Disclosure>
           </div>
         </div>
       </Disclosure>
