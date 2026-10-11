@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.alerts import AlertKind, PromiseStatus, alerts, reconcile
+from app.api.presentation import Lang, t
 from app.contracts import buyer_terms, record_summary, term_display, term_view
 from app.contracts.derive import BuyerContractTerms, date_display, day_of
 from app.domain.models import (
@@ -85,6 +86,13 @@ def _contract(store: LedgerStore, counterparty_id: str) -> ContractRecord | None
     return max(recs, key=lambda r: r.decided_seq or 0) if recs else None
 
 
+def _basis_unknown(days: int | None, lang: Lang) -> str:
+    """The one sentence for a payment term whose days the contract does not count from anything: the check and the in-force
+    row say it alike, so the card never shows a match and a difference for the same term."""
+    return t(lang, f"The contract does not say what the {days} days count from; the books count from the invoice date.",
+             f"合同没有写明这 {days} 天从何时起算；账面按发票日起算。")
+
+
 def _terms(record: ContractRecord, field: ContractField) -> list[Any]:
     return [t for t in (record.contract.terms if record.contract else []) if t.field == field]
 
@@ -149,15 +157,18 @@ def _changes(store: LedgerStore, state: FinancialState, cp: str, record: Contrac
 
 
 def _in_force(state: FinancialState, cp: str, record: ContractRecord, implied: BuyerContractTerms,
-              commitments: list[Commitment]) -> list[dict[str, Any]]:
+              commitments: list[Commitment], lang: Lang = "en") -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     pay = _one(record, F.PAYMENT_TERMS)
     days = terms_in_force(state, cp)
     if days is not None:
         same = pay is not None and pay.days == days and pay.basis == PaymentBasis.INVOICE
+        unknown = pay is not None and pay.basis is None  # the days count from nothing the clause names
         rows.append({"key": "payment_terms", "label": "Payment terms", "value_display": f"{days} days",
-                     "vs_contract": "SAME" if same else "DIFFERENT" if pay is not None else "NOT_IN_CONTRACT",
-                     "contract_display": term_display(pay) if pay is not None else None})
+                     "vs_contract": ("NOT_COMPARABLE" if unknown else "SAME" if same else "DIFFERENT")
+                     if pay is not None else "NOT_IN_CONTRACT",
+                     "contract_display": term_display(pay) if pay is not None else None,
+                     "vs_contract_note": _basis_unknown(pay.days, lang) if unknown and pay is not None else None})
     ri = next((r for r in state.recurring_invoices if r.counterparty_id == cp), None)
     if ri is not None:
         ref = InvoiceRef(recurring_receivable_id(cp, ri.next_issue_day), cp, ri.next_issue_day)
@@ -226,7 +237,7 @@ def _invoices(store: LedgerStore, state: FinancialState, cp: str, day: int, rece
 
 
 def _checks(state: FinancialState, cp: str, record: ContractRecord, implied: BuyerContractTerms,
-            commitments: list[Commitment]) -> list[dict[str, Any]]:
+            commitments: list[Commitment], lang: Lang = "en") -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
 
     def at(field: ContractField) -> str:
@@ -240,6 +251,8 @@ def _checks(state: FinancialState, cp: str, record: ContractRecord, implied: Buy
         out.append({"status": "warn", "text": f"The contract counts the {pay.days} days from {basis}{at(F.PAYMENT_TERMS)}, "
                                               f"but the books count them from the invoice date: cash may arrive later "
                                               f"than projected."})
+    elif pay is not None and pay.basis is None:
+        out.append({"status": "info", "text": _basis_unknown(pay.days, lang)})
     elif pay is not None:
         out.append({"status": "ok", "text": f"The books count the payment terms from the invoice date, as the contract "
                                             f"does{at(F.PAYMENT_TERMS)}."})

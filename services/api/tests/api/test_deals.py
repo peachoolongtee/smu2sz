@@ -180,3 +180,45 @@ def test_an_accepted_terms_change_needs_a_written_amendment(client):
     texts = [x["text"] for x in deal["checks"] if x["status"] == "warn"]
     assert any("requires amendments made in writing and signed by both Parties (clause 9.1)" in t for t in texts), texts
     assert any(r["key"] == "payment_terms" and r["vs_contract"] == "DIFFERENT" for r in deal["in_force"])
+
+
+def _confirm_without_basis(client: TestClient) -> None:
+    """The demo contract whose payment term the reading left without a starting point (the rule reader always finds
+    one, so the reading is edited: a live model may drop it, and `basis_of` gives None for text that names none)."""
+    from app.api.runtime import get_runtime
+    from app.contracts import read_document
+    from app.domain.models import ContractField, DocumentKind
+
+    rt = get_runtime()
+    record = read_document(_demo_text(), DocumentKind.BUYER_CONTRACT, "BUYER-1", title="Supply agreement",
+                           source="text", day=0, facilities=[])
+    assert record.contract is not None
+    terms = [t.model_copy(update={"basis": None}) if t.field == ContractField.PAYMENT_TERMS else t
+             for t in record.contract.terms]
+    record = record.model_copy(update={"contract": record.contract.model_copy(update={"terms": terms})})
+    rid = rt.store.add_contract_record(record)
+    r = client.post(f"/documents/{rid}/confirm", json={"doc_hash": record.doc_hash}).json()
+    assert r["result"]["status"] == "EXECUTED"
+
+
+def test_a_payment_term_that_counts_from_nothing_is_not_comparable_in_the_check_and_in_force(client):
+    """"Payable within 45 days" names no starting point: the card must not say the books match the contract while the
+    in-force row says they differ. Both say the one sentence, and neither is a match or a difference."""
+    _confirm_without_basis(client)
+    sentence = "The contract does not say what the 45 days count from; the books count from the invoice date."
+    for text in (sentence,):
+        deal = client.get("/deals/BUYER-1").json()["deal"]
+        pay = next(x for x in deal["contract_terms"] if x["field"] == "PAYMENT_TERMS")
+        assert pay["basis"] is None and pay["days"] == 45
+        assert deal["checks"][0] == {"status": "info", "text": text}
+        row = next(r for r in deal["in_force"] if r["key"] == "payment_terms")
+        assert row["vs_contract"] == "NOT_COMPARABLE" and row["vs_contract_note"] == text
+        assert not any("as the contract does" in x["text"] for x in deal["checks"])
+
+
+def test_a_payment_term_with_a_basis_keeps_its_match_and_its_slip(client):
+    _confirm_text(client, _demo_text())
+    deal = client.get("/deals/BUYER-1").json()["deal"]
+    assert deal["checks"][0]["status"] == "ok" and "as the contract does" in deal["checks"][0]["text"]
+    row = next(r for r in deal["in_force"] if r["key"] == "payment_terms")
+    assert row["vs_contract"] == "SAME" and row["vs_contract_note"] is None
