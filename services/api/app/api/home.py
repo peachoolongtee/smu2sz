@@ -1118,6 +1118,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             "floor_fen": mandate.min_cash_fen,
             "lowest_fen": low_fen,
             "lowest_day": low_day,
+            # The lowest point's tone, said by the server: "bad" below zero, "warn" below the minimum cash reserve, else "ok".
+            "lowest_tone": "bad" if low_fen < 0 else "warn" if low_fen < mandate.min_cash_fen else "ok",
             # Headroom: cash minus the minimum cash reserve, today and at the lowest point ahead (the owner reads the
             # distance to the reserve, not the subtraction).
             "headroom_fen": state.cash_fen - mandate.min_cash_fen,

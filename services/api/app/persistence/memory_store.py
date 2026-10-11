@@ -16,13 +16,14 @@ from app.domain.models import (
     Commitment,
     CompiledOffer,
     ContractRecord,
+    DocumentKind,
     DocumentStatus,
     FinancialState,
     Mandate,
     SecurityEvent,
     Verdict,
 )
-from app.domain.ports import OperationRecord
+from app.domain.ports import ContractGuardRow, OperationRecord, guard_row
 from app.persistence.chain import (
     approval_id,
     build_evidence,
@@ -294,7 +295,8 @@ class InMemoryLedgerStore:
             rid = document_id(len(self._contract_records) + 1)
             self._contract_records[rid] = record.model_copy(update={"id": rid, "status": DocumentStatus.PROPOSED,
                                                                     "decided_day": None, "decided_seq": None,
-                                                                    "linked_facility_id": None})
+                                                                    "linked_facility_id": None,
+                                                                    "superseded_by": None})
             return rid
 
     def get_contract_record(self, record_id: str) -> ContractRecord | None:
@@ -305,6 +307,10 @@ class InMemoryLedgerStore:
         with self._lock:
             return list(self._contract_records.values())
 
+    def contract_guard_rows(self) -> list[ContractGuardRow]:
+        with self._lock:
+            return [guard_row(r) for r in self._contract_records.values()]
+
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         with self._lock:
             stored = self._contract_records.get(record.id)
@@ -314,6 +320,12 @@ class InMemoryLedgerStore:
                 raise DocumentAlreadyDecided(f"document {record.id} is {stored.status.value}")
             check_decision(stored, record)
             self._contract_records[record.id] = record
+            if record.status == DocumentStatus.CONFIRMED and record.kind == DocumentKind.BUYER_CONTRACT:
+                for earlier in list(self._contract_records.values()):  # a later confirmed contract replaces the earlier
+                    if (earlier.id != record.id and earlier.kind == DocumentKind.BUYER_CONTRACT
+                            and earlier.counterparty_id == record.counterparty_id
+                            and earlier.status == DocumentStatus.CONFIRMED and earlier.superseded_by is None):
+                        self._contract_records[earlier.id] = earlier.model_copy(update={"superseded_by": record.id})
             return record
 
     # ------------------------------------------------------------ telemetry

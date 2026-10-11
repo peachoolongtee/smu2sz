@@ -437,6 +437,7 @@ class ContractRecord(Contract):
     status: DocumentStatus = DocumentStatus.PROPOSED
     decided_day: Day | None = None
     decided_seq: int | None = None  # the log entry of the owner's decision
+    superseded_by: str | None = None  # BUYER_CONTRACT: the later confirmed contract of this buyer that replaced it
 
     @model_validator(mode="after")
     def _reading_matches_kind(self) -> ContractRecord:

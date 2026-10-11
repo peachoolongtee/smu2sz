@@ -419,7 +419,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
     with rt.lock:
         t = negotiate(counters[:1] if body.buyer_profile == "hard_line" else counters, profile, supplier_next)
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
-        ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_records(), state))
+        ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_guard_rows(), state))
         by_id = {c.id: c for c in counters}
         rounds = []
         for r in t.rounds:

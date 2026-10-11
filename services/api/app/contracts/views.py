@@ -11,6 +11,7 @@ A day is said as a distance from `today` ("3 days ago"), never as "day N", when 
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import Any
 
 from app.api.engine_zh import translate
@@ -29,6 +30,7 @@ from app.domain.models import (
     PriceUnit,
 )
 from app.domain.money import Ratio, bp, fmt_pct, fmt_yuan
+from app.domain.ports import ContractGuardRow
 
 F = ContractField
 AI_LABEL = "AI-generated, for reference"
@@ -89,9 +91,9 @@ def term_display(term: ContractTerm, anchor: str | None = None, lang: Lang = "en
         return head + (f", the first on {_date(term.date, anchor, lang, today)}" if term.date else "")
     if f == F.SCHEDULED_INVOICE:
         amount = f"{fmt_yuan(term.amount_fen)} " if term.amount_fen is not None else ""
-        if lang == "zh":
-            return f"{term.reference or '一张发票'}：{amount}于 {_date(term.date, anchor, lang, today)} 开具"
-        return f"{term.reference or 'An invoice'}: {amount}issued {_date(term.date, anchor, lang, today)}"
+        if lang == "zh":  # the contract's name for the invoice stays in `reference`, never in the sentence
+            return f"一张发票：{amount}于 {_date(term.date, anchor, lang, today)} 开具"
+        return f"An invoice: {amount}issued {_date(term.date, anchor, lang, today)}"
     if f == F.PAYMENT_TERMS and term.days is not None:
         if lang == "zh":
             basis = BASIS_TEXT_ZH[term.basis] if term.basis else "合同未注明的日期"
@@ -289,7 +291,7 @@ def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
         return t(lang, f"Rejected by you {when}".strip(), f"{when}被您拒绝".strip())
     if record.blocked:
         return t(lang, "Cannot be confirmed: it carries text addressed to the agent", "无法确认：其中含有写给代理的文字")
-    return t(lang, "Waiting for your decision", "等待您决定")
+    return t(lang, "Waiting for your review", "等待您审核")
 
 
 def _status_tone(record: ContractRecord) -> str:
@@ -301,13 +303,37 @@ def _status_tone(record: ContractRecord) -> str:
 
 
 def reading_status_text(status: str, lang: Lang) -> str:
-    """The reading's status in words: it was read, or the agent could not read it."""
-    return t(lang, "read" if status == "COMPILED" else "could not read",
-             "已读取" if status == "COMPILED" else "无法读取")
+    """The reading's status as a sentence the page shows as it is: the agent read it, could not, or found terms that disagree."""
+    if status == "COMPILED":
+        return t(lang, "The agent read this document.", "代理已读取此文件。")
+    if status == "CONFLICTING_SOURCES":
+        return t(lang, "The agent found terms that contradict each other.", "代理发现条款相互矛盾。")
+    return t(lang, "The agent could not read this document.", "代理无法读取此文件。")
+
+
+def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequence[ContractRecord | ContractGuardRow], lang: Lang,
+                      today: int | None) -> dict[str, Any]:
+    """What a later confirmed buyer contract means for this one, in the owner's words: `replaces` is the earlier contract this
+    one superseded, `superseded_by` the later one that superseded this. The ids stay in their fields; the sentences say when."""
+    replaced = next((r for r in records if r.superseded_by == record.id), None)
+    later = next((r for r in records if r.id == record.superseded_by), None) if record.superseded_by else None
+
+    def when(r: ContractRecord | ContractGuardRow | None) -> str:
+        said = when_text(r.decided_day, today, lang) if r is not None and today is not None and r.decided_day is not None else ""
+        return said or t(lang, "earlier", "之前")
+
+    return {
+        "replaces": replaced.id if replaced else None,
+        "replaces_text": t(lang, f"Replaces the contract you confirmed {when(replaced)}",
+                           f"取代您{when(replaced)}确认的合同") if replaced else None,
+        "superseded_by": record.superseded_by,
+        "superseded_by_text": t(lang, f"Replaced by a contract you confirmed {when(later)}",
+                                f"已被您{when(later)}确认的合同取代") if record.superseded_by else None,
+    }
 
 
 def record_summary(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
-                   today: int | None = None) -> dict[str, Any]:
+                   today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
     if record.kind == DocumentKind.BUYER_CONTRACT and record.contract is not None:
         n_blank = len(blanks(record))
         summary = t(lang, f"{len(record.contract.terms)} terms read, {n_blank} left blank",
@@ -326,16 +352,16 @@ def record_summary(record: ContractRecord, state: FinancialState | None, lang: L
         "decided_when": (when_text(record.decided_day, today, lang)
                          if today is not None and record.decided_day is not None else None),
         "linked_facility_id": record.linked_facility_id, "summary": summary, "blocked": record.blocked,
-        "flags": len(record.flags), "source": record.source,
+        "flags": len(record.flags), "source": record.source, **replacement_words(record, records, lang, today),
         "label": (AI_LABEL if lang != "zh" else AI_LABEL_ZH) if record.status != DocumentStatus.CONFIRMED
         else t(lang, "Read by the agent, confirmed by you", "由代理读取，经您确认"),
     }
 
 
 def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
-                today: int | None = None) -> dict[str, Any]:
+                today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
     anchor = state.as_of if state is not None else None
-    view = record_summary(record, state, lang, today)
+    view = record_summary(record, state, lang, today, records)
     view.update({
         "doc_hash": record.doc_hash,
         "document": {"doc_id": record.document.doc_id, "text": record.document.text},
@@ -384,4 +410,4 @@ def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang
 
 
 __all__ = ["AI_LABEL", "FIELD_LABELS", "blanks", "facility_summary", "flag_kind_text", "reading_status_text",
-           "reason_words", "record_summary", "record_view", "term_display", "term_view"]
+           "reason_words", "record_summary", "record_view", "replacement_words", "term_display", "term_view"]
