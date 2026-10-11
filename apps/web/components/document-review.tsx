@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
+import { DealPicture } from "@/components/deal-picture";
 import { TierBadge } from "@/components/badges";
 import { CLAUSE_KIND, ClauseQuote, DocStatusBadge, FIELD_KIND } from "@/components/documents";
 import { OperationResultBox } from "@/components/operation-result";
@@ -134,6 +135,9 @@ export function DocumentReview({ id }: { id: string }) {
           </div>
         ) : null}
       </Card>
+
+      {/* The answer first: what this deal means for cash, loans and rates. The clause-by-clause reading follows for checking. */}
+      <DealPicture doc={d} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}

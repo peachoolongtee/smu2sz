@@ -19,6 +19,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATION }} />
+        {/* Endowus's type: Lato for reading, a serif for headlines (DESIGN.md). Offline, the system stack in globals.css stands in. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* The root layout wraps every route, so this loads on every page (the rule targets the Pages Router's per-page heads). */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Libre+Caslon+Text:wght@400;700&display=swap"
+        />
       </head>
       <body>
         <AppShell>{children}</AppShell>

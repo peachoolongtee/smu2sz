@@ -22,34 +22,36 @@
    say where you are (a page's icon chip, a tab, a shortcut, an avatar) and never how things are going.
    `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
 @theme static {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+  --font-sans: "Lato", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  /* Display headings: a serif, as Endowus sets its headlines (their Calendas Plus is licensed; Libre Caslon is the open stand-in). */
+  --font-display: "Libre Caslon Text", Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --color-canvas: #f3f6fb;
+  --color-canvas: #f5f7fb;
   --color-surface: #ffffff;
-  --color-subtle: #eaf0f7;
-  --color-line: #dbe3ee;
-  --color-line-strong: #c2cddc; /* dividers between dense rows: decoration, not a boundary that must be seen */
-  --color-line-ui: #74849b; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.3:1 on subtle */
+  --color-subtle: #eff3f8;
+  --color-line: #e6eaf0;
+  --color-line-strong: #d3d9e2; /* dividers between dense rows: decoration, not a boundary that must be seen */
+  --color-line-ui: #768399; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.3:1 on subtle */
 
-  --color-ink: #0f1c2e;
-  --color-ink-2: #3f5068;
-  --color-ink-3: #5d6e84;
+  --color-ink: #24324a;
+  --color-ink-2: #4d5767;
+  --color-ink-3: #5a6577;
 
-  --color-brand-50: #e8f0fe;
-  --color-brand-100: #d3e2fc;
-  --color-brand-600: #1a5fe0; /* white on it: 5.6:1 */
-  --color-brand-700: #124bb8;
-  --color-brand-900: #0b1f4d; /* the deep block: the Home hero, the Demo strip */
+  --color-brand-50: #e6f1ff;
+  --color-brand-100: #d0e5ff;
+  --color-brand-600: #0368e9; /* white on it: 5.6:1 */
+  --color-brand-700: #0048a5;
+  --color-brand-900: #24324a; /* the deep block: the Home hero, the Demo strip */
   --color-on-deep: #ffffff; /* text on the deep block: 15.9:1 */
-  --color-on-deep-muted: #b7c3d9; /* captions on the deep block: 9:1 */
+  --color-on-deep-muted: #bcc6d6; /* captions on the deep block: 9:1 */
 
-  --color-ok-fg: #0b6b48;
-  --color-ok-bg: #e5f5ed;
-  --color-ok-line: #b2dec6;
-  --color-ok-solid: #1a8a5a;
-  --color-ok-bright: #6fdcae;
+  --color-ok-fg: #0a6b5f;
+  --color-ok-bg: #e2f6f3;
+  --color-ok-line: #a6e0d7;
+  --color-ok-solid: #12907f;
+  --color-ok-bright: #5ee3d8;
   --color-warn-fg: #82490a;
   --color-warn-bg: #fdf2d9;
   --color-warn-line: #ecd092;
@@ -60,23 +62,23 @@
   --color-bad-line: #f1b9b2;
   --color-bad-solid: #d2362a;
   --color-bad-bright: #ffb4ab;
-  --color-info-fg: #1447a6;
-  --color-info-bg: #e8f0fd;
-  --color-info-line: #b9cff4;
-  --color-info-solid: #2f6fe0;
-  --color-info-bright: #a9c8ff;
+  --color-info-fg: #0048a5;
+  --color-info-bg: #e6f1ff;
+  --color-info-line: #bcd8fd;
+  --color-info-solid: #0472ff;
+  --color-info-bright: #9bc7ff;
 
   /* Section hues, for wayfinding only: bg is the tint, fg the text on the tint (4.5:1), solid the fill behind a white icon or
      an icon on white (3:1). Never a status. Teal and orange are pushed away from ok-green and warn-amber on purpose. */
-  --color-sec-home-bg: #e8f0fe;
-  --color-sec-home-fg: #124bb8;
-  --color-sec-home-solid: #1a5fe0;
-  --color-sec-deals-bg: #f0ebfd;
-  --color-sec-deals-fg: #5532bf;
-  --color-sec-deals-solid: #6d4ad8;
-  --color-sec-cash-bg: #e1f4f6;
-  --color-sec-cash-fg: #07616e;
-  --color-sec-cash-solid: #0a8190;
+  --color-sec-home-bg: #e6f1ff;
+  --color-sec-home-fg: #0048a5;
+  --color-sec-home-solid: #0368e9;
+  --color-sec-deals-bg: #f1e9ff;
+  --color-sec-deals-fg: #5b2bbf;
+  --color-sec-deals-solid: #7c4ddb;
+  --color-sec-cash-bg: #dcf5f3;
+  --color-sec-cash-fg: #0a6366;
+  --color-sec-cash-solid: #0f8a8a;
   --color-sec-recv-bg: #fdeee0;
   --color-sec-recv-fg: #8f3f05;
   --color-sec-recv-solid: #c4570c;
@@ -85,28 +87,35 @@
   --color-sec-activity-solid: #c7366e;
 
   /* The cash chart's marks and nothing else: the line you read, the plan, the reserve, the danger band, the worst point. */
-  --color-chart-base: #1a5fe0;
-  --color-chart-plan: #0b6b48;
+  --color-chart-base: #0472ff;
+  --color-chart-plan: #12907f;
   --color-chart-reserve: #a3241a;
   --color-chart-danger: #fdecea;
   --color-chart-worst: #b7791f;
-  --color-chart-grid: #dbe3ee;
-  --color-chart-axis: #5d6e84;
+  --color-chart-grid: #e6eaf0;
+  --color-chart-axis: #5a6577;
+  /* The deal picture's series hues (Endowus graph colours): turquoise, purple, sky, navy. Never a status. */
+  --color-chart-teal: #38d0c7;
+  --color-chart-purple: #9b5fff;
+  --color-chart-sky: #9bc7ff;
+  --color-chart-navy: #24324a;
 
-  --color-focus: #1a5fe0;
+  --color-focus: #0368e9;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.4:1: the ring turns white inside it */
 
   /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
-  --shadow-card: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22);
-  --shadow-pop: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24);
+  --shadow-card: 0 1px 2px rgb(36 50 74 / 0.05), 0 6px 14px -10px rgb(36 50 74 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(36 50 74 / 0.06), 0 12px 22px -14px rgb(36 50 74 / 0.22);
+  --shadow-pop: 0 4px 8px rgb(36 50 74 / 0.06), 0 18px 36px -12px rgb(36 50 74 / 0.24);
   /* The Demo strip fixed to the bottom of a phone: the same soft shadow, cast upward. */
-  --shadow-up: 0 -4px 12px rgb(15 28 46 / 0.08);
+  --shadow-up: 0 -4px 12px rgb(36 50 74 / 0.08);
 
   /* One radius scale: pills for everything you press or type into, 16 px cards, 12 px inner tiles and rows. */
   --radius-pill: 9999px;
-  --radius-card: 16px;
-  --radius-tile: 12px;
+  --radius-card: 14px;
+  --radius-tile: 10px;
+  /* Endowus-style controls: buttons and fields are softly rounded rectangles, not pills. */
+  --radius-control: 8px;
 
   /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -118,9 +127,9 @@
   --default-transition-timing-function: var(--ease-out);
 
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
-  --color-new: #6b3fc0;
-  --color-new-bg: #f1ebfc;
-  --color-new-line: #d5c4f3;
+  --color-new: #7c4ddb;
+  --color-new-bg: #f1e9ff;
+  --color-new-line: #d9c6fb;
 }
 
 html {
@@ -376,13 +385,6 @@ input[type="radio"] {
       padding-bottom: calc(var(--dock-h, 0px) + 5rem);
     }
   }
-  /* Business pages (`.dock-pad-margin`): from 1440 px the 1180 px content leaves a margin wider than the pill, so it sits beside the page. */
-  @media (min-width: 90rem) {
-    .dock-pad.dock-pad-margin {
-      padding-bottom: 2.5rem;
-    }
-  }
-
   /* Ask FLOW. Phone: the last cell of the bar, 48 x 56 px, flush to the bar's bottom-right corner (the tab bar and the Demo stepper
      leave that cell free). From `sm`: a pill 16 px above the bar; from `lg`, 24 px from the corner. */
   .ask-trigger {

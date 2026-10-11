@@ -1,28 +1,28 @@
 ---
 name: FLOW web
-description: A light, flat fintech surface for a supplier's owner; one confident blue, status colour only for status, five section hues for wayfinding, one deep navy block.
+description: A light fintech surface for a supplier's owner in the manner of Endowus (midnight-blue ink, royal-blue action, serif headlines, a white sidebar), status colour only for status, five section hues for wayfinding, one deep navy block.
 colors:
-  canvas: "#f3f6fb"
+  canvas: "#f5f7fb"
   surface: "#ffffff"
-  subtle: "#eaf0f7"
-  line: "#dbe3ee"
-  line-strong: "#c2cddc"
-  line-ui: "#74849b"
-  ink: "#0f1c2e"
-  ink-2: "#3f5068"
-  ink-3: "#5d6e84"
-  brand-50: "#e8f0fe"
-  brand-100: "#d3e2fc"
-  brand-600: "#1a5fe0"
-  brand-700: "#124bb8"
-  brand-900: "#0b1f4d"
+  subtle: "#eff3f8"
+  line: "#e6eaf0"
+  line-strong: "#d3d9e2"
+  line-ui: "#768399"
+  ink: "#24324a"
+  ink-2: "#4d5767"
+  ink-3: "#5a6577"
+  brand-50: "#e6f1ff"
+  brand-100: "#d0e5ff"
+  brand-600: "#0368e9"
+  brand-700: "#0048a5"
+  brand-900: "#24324a"
   on-deep: "#ffffff"
-  on-deep-muted: "#b7c3d9"
-  ok-fg: "#0b6b48"
-  ok-bg: "#e5f5ed"
-  ok-line: "#b2dec6"
-  ok-solid: "#1a8a5a"
-  ok-bright: "#6fdcae"
+  on-deep-muted: "#bcc6d6"
+  ok-fg: "#0a6b5f"
+  ok-bg: "#e2f6f3"
+  ok-line: "#a6e0d7"
+  ok-solid: "#12907f"
+  ok-bright: "#5ee3d8"
   warn-fg: "#82490a"
   warn-bg: "#fdf2d9"
   warn-line: "#ecd092"
@@ -33,66 +33,70 @@ colors:
   bad-line: "#f1b9b2"
   bad-solid: "#d2362a"
   bad-bright: "#ffb4ab"
-  info-fg: "#1447a6"
-  info-bg: "#e8f0fd"
-  info-line: "#b9cff4"
-  info-solid: "#2f6fe0"
-  info-bright: "#a9c8ff"
-  sec-home-bg: "#e8f0fe"
-  sec-home-fg: "#124bb8"
-  sec-home-solid: "#1a5fe0"
-  sec-deals-bg: "#f0ebfd"
-  sec-deals-fg: "#5532bf"
-  sec-deals-solid: "#6d4ad8"
-  sec-cash-bg: "#e1f4f6"
-  sec-cash-fg: "#07616e"
-  sec-cash-solid: "#0a8190"
+  info-fg: "#0048a5"
+  info-bg: "#e6f1ff"
+  info-line: "#bcd8fd"
+  info-solid: "#0472ff"
+  info-bright: "#9bc7ff"
+  sec-home-bg: "#e6f1ff"
+  sec-home-fg: "#0048a5"
+  sec-home-solid: "#0368e9"
+  sec-deals-bg: "#f1e9ff"
+  sec-deals-fg: "#5b2bbf"
+  sec-deals-solid: "#7c4ddb"
+  sec-cash-bg: "#dcf5f3"
+  sec-cash-fg: "#0a6366"
+  sec-cash-solid: "#0f8a8a"
   sec-recv-bg: "#fdeee0"
   sec-recv-fg: "#8f3f05"
   sec-recv-solid: "#c4570c"
   sec-activity-bg: "#fce9f1"
   sec-activity-fg: "#a3225a"
   sec-activity-solid: "#c7366e"
-  chart-base: "#1a5fe0"
-  chart-plan: "#0b6b48"
+  chart-base: "#0472ff"
+  chart-plan: "#12907f"
   chart-reserve: "#a3241a"
   chart-danger: "#fdecea"
   chart-worst: "#b7791f"
-  chart-grid: "#dbe3ee"
-  chart-axis: "#5d6e84"
-  focus: "#1a5fe0"
+  chart-grid: "#e6eaf0"
+  chart-axis: "#5a6577"
+  chart-teal: "#38d0c7"
+  chart-purple: "#9b5fff"
+  chart-sky: "#9bc7ff"
+  chart-navy: "#24324a"
+  focus: "#0368e9"
   focus-on-deep: "#ffffff"
 typography:
   display:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "'Libre Caslon Text', Georgia, 'Times New Roman', 'Songti SC', SimSun, serif"
     fontSize: "36px"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "-0.025em"
   headline:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "24px"
     fontWeight: 600
     lineHeight: 1.375
   title:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "20px"
     fontWeight: 600
     lineHeight: 1.4
     letterSpacing: "-0.025em"
   figure:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "20px"
     fontWeight: 600
     lineHeight: 1.4
     fontFeature: "tnum"
   body:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.45
   label:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "12px"
     fontWeight: 600
     lineHeight: 1.33
@@ -104,8 +108,9 @@ typography:
     lineHeight: 1.625
 rounded:
   pill: "9999px"
-  card: "16px"
-  tile: "12px"
+  card: "14px"
+  tile: "10px"
+  control: "8px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -117,42 +122,42 @@ components:
   button-primary:
     backgroundColor: "{colors.brand-600}"
     textColor: "{colors.surface}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
     typography: "{typography.body}"
   button-primary-hover:
     backgroundColor: "{colors.brand-700}"
     textColor: "{colors.surface}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
   button-secondary-hover:
     backgroundColor: "{colors.subtle}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink-2}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
   button-danger:
     backgroundColor: "{colors.bad-solid}"
     textColor: "{colors.surface}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
   button-sm:
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 12px"
     height: "32px"
     typography: "{typography.label}"
@@ -183,7 +188,7 @@ components:
   input:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "40px"
     typography: "{typography.body}"
@@ -518,3 +523,25 @@ Every string is in the dictionary in both English and Chinese (`lib/dictionary.t
 - **Deals, the stage line:** the compact buyer card carries one line of chips under its meta line, Received · Analysed · Response ready · Sent · Agreed, from the record's state alone (`components/deals/deal-steps.tsx`). One chip per stage; the stage behind is neutral with a check (the check is dropped on a phone), the stage the deal is at is brand-tinted and bold with `aria-current="step"`, the ones ahead are `ink-3`. Nothing in the line links anywhere; a closed deal's last chip reads the record's own words.
 - **Demo story on a phone:** below 1024 px "More to show", "Today" and "The books" are one closed card-Disclosure each (`story-fold-<card id>`); a desktop keeps the three cards. The page is the story, and these are tools for after it.
 - **Home changes:** a change row whose `superseded_by` names another row on the page is not drawn (`lib/home-changes.ts`).
+
+## Amendments from the Endowus pass (11 October 2026)
+
+The owner asked for the look and flow of Endowus. The palette is read from Endowus's own stylesheet, not guessed:
+midnight blue `#24324a` is the ink and the deep block, royal blue `#0472ff` marks charts and information, and the action fill
+is their pressed shade `#0368e9` (white on it is 5.1:1; `#0472ff` itself is 4.3:1 and fails AA for 14 px text). The canvas is a
+pale blue-grey, the hairlines `#e6eaf0`, and the chart series take their graph turquoise `#38d0c7` and purple `#9b5fff`
+(`chart-teal`, `chart-purple`, plus `chart-sky` and `chart-navy`). Success shifts toward teal to sit with them.
+
+- **Type.** Lato for reading; a serif for page titles, the home hero's headline and figure, and the deal picture's figures
+  (`font-display`). Endowus's Calendas Plus is licensed; Libre Caslon Text is the open stand-in. Both load from Google Fonts in
+  the root layout; offline, the system stacks stand in.
+- **Shape.** Buttons, toggles and text fields are 8 px rounded rectangles (`rounded-control`), not pills. Badges, chips, avatars
+  and the segmented track stay round. Cards are 14 px with no rule under the header and 20 px of padding.
+- **Shell.** Business mode keeps the top bar (brand, approvals, mode, account) and puts the five sections in a white left
+  sidebar from `lg`, each an icon and a word; the current one takes the brand tint and a 4 px rail. Phones keep the bottom
+  tab bar. The sidebar's nav keeps `data-testid="nav-pills"`.
+- **Documents.** The upload is a drop zone: dropping a file reads it at once, and a demo document can be dragged from the list
+  onto it. The review opens on **This deal at a glance** (`components/deal-picture.tsx`): the money-moving terms as tiles, the
+  cash position over the forecast with the counterparty's receipts as bars (a lender agreement draws the recommended funding
+  instead), the cash the owner can reach (a donut), each source's interest rate, and every loan and line with its drawn part.
+  Every figure is a server string; fen and bp only size marks (INVARIANT 13).

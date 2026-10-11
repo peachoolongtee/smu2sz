@@ -138,7 +138,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-balance text-xl font-semibold tracking-tight text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
+          <h1 className={`text-balance font-display text-2xl font-normal tracking-tight text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
           {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
@@ -172,9 +172,9 @@ export function Card({
       className={`motion-reveal min-w-0 rounded-card border bg-surface shadow-card ${border} ${className}`}
     >
       {title ? (
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-sm font-semibold text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-base font-bold text-ink">
               {title}
             </h2>
             {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
@@ -182,7 +182,7 @@ export function Card({
           {actions}
         </div>
       ) : null}
-      <div className="p-4">{children}</div>
+      <div className={title ? "px-5 pb-5 pt-3" : "p-5"}>{children}</div>
     </section>
   );
 }
@@ -290,7 +290,7 @@ const variantClass: Record<ButtonVariant, string> = {
  * so a link that looks like a button is the same button.
  */
 export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
-  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
     size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${variantClass[variant]} ${className}`;
 }
@@ -318,7 +318,7 @@ export function Button({
 
 /** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
-  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-pill border font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+  return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
     size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
@@ -332,7 +332,7 @@ export function ButtonLink({ variant = "secondary", size = "md", className = "",
 }
 
 /** Text fields: a pill, 40 px tall, a line-ui boundary (3:1). A multi-line field takes `textareaClass`. */
-export const inputClass = "min-h-10 rounded-pill border border-line-ui bg-surface px-4 text-sm text-ink placeholder:text-ink-3";
+export const inputClass = "min-h-10 rounded-control border border-line-ui bg-surface px-4 text-sm text-ink placeholder:text-ink-3";
 export const textareaClass = "rounded-card border border-line-ui bg-surface px-4 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-3";
 
 export function Skeleton({ className = "" }: { className?: string }) {
