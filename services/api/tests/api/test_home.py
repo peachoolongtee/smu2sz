@@ -325,3 +325,17 @@ def test_one_fix_per_alert_the_other_family_is_refused_while_the_first_waits(cli
 def test_since_day_after_a_reset_falls_back_to_the_week(client):
     h = client.get("/home?since_day=34").json()  # a visit marker from a previous run, later than today
     assert h["since_day"] is None and h["changes"] == client.get("/home").json()["changes"]
+
+
+def test_the_lowest_point_carries_a_server_tone_bad_below_zero_warn_below_the_reserve_ok_otherwise(client):
+    """`cash.lowest_tone` on the home read (the cash page reads the same block)."""
+    rt = get_runtime()
+    state, mandate = load_scenario()
+    seen = {}
+    for extra_fen in (0, 25_000_000, 50_000_000):  # day 0's lowest point is -¥105k against a ¥300k reserve
+        rt.store.put_state(state.model_copy(update={"cash_fen": state.cash_fen + extra_fen}))
+        cash = client.get("/home").json()["cash"]
+        seen[extra_fen] = (cash["lowest_fen"], cash["lowest_tone"])
+    assert seen[0][0] < 0 and seen[0][1] == "bad"
+    assert 0 <= seen[25_000_000][0] < mandate.min_cash_fen and seen[25_000_000][1] == "warn"
+    assert seen[50_000_000][0] >= mandate.min_cash_fen and seen[50_000_000][1] == "ok"
