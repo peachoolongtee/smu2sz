@@ -952,6 +952,21 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     return items
 
 
+def _picture_days(traj: Any, today: int, floor: int, breach_day: int | None, low_day: int, action: dict[str, Any] | None,
+                  horizon_days: int) -> int:
+    """How many days from today the cash picture should show: 30, or four days past the last of the first breach, the lowest point, the day
+    the do-nothing line is back at or above the reserve and the plan's last landing day, whichever is later; never past 60 or the
+    horizon. Days only: nothing is computed that the projection and the plan do not already hold."""
+    marks = [low_day]
+    if breach_day is not None:
+        marks.append(breach_day)
+        back = next((d.day for d in traj.days if d.day > breach_day and d.closing_fen >= floor), None)
+        if back is not None:
+            marks.append(back)
+    marks += [leg["lands_day"] for leg in (action or {}).get("legs") or [] if isinstance(leg.get("lands_day"), int)]
+    return max(1, min(60, horizon_days, max(30, max(m - today for m in marks) + 4)))
+
+
 def _receivables_headline(past_due: list[dict[str, Any]], nxt: dict[str, Any] | None, today: int, lang: str,
                           no_plan: bool, open_count: int) -> dict[str, Any]:
     """The one sentence the receivables card leads with, from the block's own rows, and its tone: the lead late invoice (the longest
@@ -1108,6 +1123,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj, lang, today)
+        picture_days = _picture_days(traj, today, mandate.min_cash_fen, breach_day, low_day, action, mandate.horizon_days)
         # One reconciliation, one set of alerts and one parse of the log for the whole request: the decision record is read first and the
         # rest of the home reuses what it holds.
         partial = Partial()
@@ -1185,6 +1201,8 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             "series": series,
             "plan_series": plan_series,
             "axis": series_axis([series, plan_series], mandate.min_cash_fen),
+            "picture_days": picture_days,
+            "picture_title": t(lang, f"Your cash, next {picture_days} {'day' if picture_days == 1 else 'days'}", f"未来 {picture_days} 天的现金"),
             **basis,
         },
         "next_action": action,

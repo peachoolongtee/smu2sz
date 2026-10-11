@@ -56,3 +56,27 @@ def test_the_note_says_when_the_ranking_cannot_be_priced(client):
     worth = client.get("/receivables/worth")
     if worth.status_code == 200:
         assert worth.json()["no_plan"] is True and worth.json()["ranking_note"] == en["headline_note"]
+
+
+def test_the_cash_picture_says_how_many_days_it_shows(client):
+    client.post("/demo/reset", json={})
+    en, zh = client.get("/home").json()["cash"], client.get("/home", params={"lang": "zh"}).json()["cash"]
+    # day 0: the first breach is in 12 days, the lowest point in 30, the do-nothing line is back above the reserve with the receipt in 32,
+    # and the plan lands in 3: four days past the latest (32) is 36
+    assert en["picture_days"] == zh["picture_days"] == 36
+    assert en["picture_title"] == "Your cash, next 36 days" and zh["picture_title"] == "未来 36 天的现金"
+    assert en["picture_days"] <= en["horizon_days"]
+
+
+def test_the_picture_window_is_thirty_days_at_least_sixty_at_most_and_never_past_the_horizon():
+    from types import SimpleNamespace as NS
+
+    from app.api.home import _picture_days
+
+    traj = NS(days=[NS(day=d, closing_fen=0 if 10 <= d < 20 else 100) for d in range(121)])
+    assert _picture_days(traj, 0, 50, None, 3, None, 120) == 30  # calm: the lowest point is near
+    assert _picture_days(traj, 0, 50, 10, 12, None, 120) == 30  # back at or above on day 20: 24 < 30
+    assert _picture_days(traj, 0, 50, 10, 12, {"legs": [{"lands_day": 45}]}, 120) == 49  # a landing on day 45 + 4
+    assert _picture_days(traj, 0, 50, 10, 90, None, 120) == 60  # capped at 60
+    assert _picture_days(traj, 0, 50, 10, 90, None, 45) == 45  # and at the horizon
+    assert _picture_days(traj, 5, 50, 10, 12, None, 120) == 30  # days are counted from today
