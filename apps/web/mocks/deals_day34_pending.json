@@ -21,7 +21,9 @@
         "end_day": 334,
         "confirmed_day": 0,
         "end_when": "in 300 days",
-        "confirmed_when": "34 days ago"
+        "confirmed_when": "34 days ago",
+        "replaces": null,
+        "replaces_text": null
       },
       "pills": [
         {
@@ -59,7 +61,7 @@
           "key": "collecting",
           "label": "Collecting",
           "state": "now",
-          "note": "RCV-A late",
+          "note": "2 days late",
           "tone": "bad"
         },
         {
@@ -174,7 +176,7 @@
         {
           "field": "SCHEDULED_INVOICE",
           "label": "Scheduled invoice",
-          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (47 days ago)",
+          "value_display": "An invoice: ¥420,000.00 issued 18 Sep 2026 (47 days ago)",
           "clause": "Schedule 1, 1",
           "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
           "span": {
@@ -240,21 +242,21 @@
           "when": "34 days ago",
           "actor": "AGENT",
           "label": "Agent replied",
-          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; Option B: payment terms to 55 days and a price change of 0.30%"
+          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; Option B: payment terms to 55 days and a price change of 0.30%"
         },
         {
           "day": 0,
           "when": "34 days ago",
           "actor": "BUYER",
           "label": "Buyer accepted",
-          "text": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; booked by the agent within your limits"
+          "text": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago; booked by the agent within your limits"
         },
         {
           "day": 2,
           "when": "32 days ago",
           "actor": "BANK",
           "label": "Bank feed",
-          "text": "¥255,013.80 received on RCV-A (the agreed early payment)"
+          "text": "¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
         }
       ],
       "in_force": [
@@ -279,7 +281,7 @@
         {
           "key": "early_payment",
           "label": "Early payment",
-          "value_display": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago",
+          "value_display": "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due 32 days ago",
           "vs_contract": "DIFFERENT",
           "vs_contract_text": "Differs from the contract",
           "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
@@ -298,7 +300,7 @@
       "invoices": [
         {
           "id": "RCV-A",
-          "label": "RCV-A",
+          "label": "the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago",
           "issue_day": -13,
           "due_day": 32,
           "issue_when": "47 days ago",
@@ -329,7 +331,7 @@
           "status_text": "Advance waiting for you",
           "tone": "warn",
           "notes": [
-            "¥200,000.00 advance waiting for your approval (APR-000001)"
+            "¥200,000.00 advance waiting for your approval"
           ]
         },
         {
@@ -401,7 +403,7 @@
         },
         {
           "status": "ok",
-          "text": "RCV-A matches the contract's schedule (¥420,000.00, issued 47 days ago)."
+          "text": "An invoice in the books matches the contract's schedule (¥420,000.00, issued 47 days ago)."
         },
         {
           "status": "ok",
@@ -413,7 +415,7 @@
         }
       ],
       "next_action": {
-        "text": "Chase the ¥162,800.00 on RCV-A (2 days late). Review APR-000001: a ¥200,000.00 advance on the invoice issued 32 days ago to stay above your floor in 8 days.",
+        "text": "Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago. Review the ¥200,000.00 advance on the invoice issued 32 days ago to stay above your floor in 8 days.",
         "items": [
           {
             "kind": "CHASE",
@@ -445,14 +447,20 @@
           }
         ],
         "tone": "bad"
-      }
+      },
+      "open_offer": null,
+      "needs_you": true,
+      "needs_you_text": "An approval is waiting for you"
     },
     {
       "counterparty_id": "BUYER-2",
       "counterparty_name": "Dongguan Office Supplies Ltd.",
       "day": 34,
       "has_contract": false,
-      "pending_documents": []
+      "pending_documents": [],
+      "open_offer": null,
+      "needs_you": false,
+      "needs_you_text": null
     }
   ]
 }

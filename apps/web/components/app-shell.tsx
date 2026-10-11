@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { apiMode, getApprovals } from "@/lib/api";
+import { apiMode, getApprovals, getNavCounts } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
 import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
@@ -133,6 +133,39 @@ function ApprovalsBadge() {
       <span className="hidden sm:inline lg:hidden xl:inline">{t("approvals.badge", { n: pending })}</span>
     </Link>
   );
+}
+
+/**
+ * What needs the owner in each section, for the sidebar and the phone tab bar (GET /nav/counts: numbers only). One read per navigation and per
+ * action (`useAsync` refetches on `bump`), none while signed out; a failed read gives no counts and no error. Only Deals (something waits for
+ * the owner) and Receivables (an invoice is late) carry one; Approvals keeps its badge in the header.
+ */
+type NavKey = "/deals" | "/receivables";
+function useNavCounts(): Partial<Record<NavKey, number>> {
+  const { token } = useAuth();
+  const pathname = usePathname();
+  const { lang } = useI18n();
+  const counts = useAsync(() => (token ? getNavCounts(lang).catch(() => null) : Promise.resolve(null)), [Boolean(token), pathname, lang]);
+  const c = counts.data;
+  return c ? { "/deals": c.deals, "/receivables": c.receivables } : {};
+}
+
+const COUNT_LABEL: Record<NavKey, DictKey> = { "/deals": "biz.nav.count.deals", "/receivables": "biz.nav.count.receivables" };
+const COUNT_TONE: Record<NavKey, string> = { "/deals": "border-warn-line bg-warn-bg text-warn-fg", "/receivables": "border-bad-line bg-bad-bg text-bad-fg" };
+
+/** The small count on a nav item: nothing at zero. Its meaning is the link's accessible name, so the number itself is hidden from assistive tools. */
+function NavCount({ href, n, className = "" }: { href: string; n: number | undefined; className?: string }) {
+  if (!n || (href !== "/deals" && href !== "/receivables")) return null;
+  return (
+    <span aria-hidden className={`inline-flex h-5 min-w-5 items-center justify-center rounded-pill border px-1.5 text-xs font-bold tabular-nums ${COUNT_TONE[href]} ${className}`} data-testid={`nav-count-${href.slice(1)}`}>
+      {n}
+    </span>
+  );
+}
+
+/** The link's accessible name: the section's word, or with a count the sentence that says what the count means ("Deals, 1 needs you"). */
+function navName(t: ReturnType<typeof useI18n>["t"], href: string, key: DictKey, n: number | undefined): string {
+  return n && (href === "/deals" || href === "/receivables") ? t(COUNT_LABEL[href], { n }) : t(key);
 }
 
 /**
@@ -308,6 +341,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
   // A detail page the owner opened from a section (what-if and equipment from Cash, documents from Deals) says how to get back to it.
   const backTo = OWNER_DETAIL_ROUTES[pathname];
+  const counts = useNavCounts();
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
   return (
@@ -346,12 +380,14 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
+                      aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
                       className={`motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
                         active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
                       }`}
                     >
                       <Icon width={20} height={20} className={active ? "text-brand-600" : "text-ink-3"} />
-                      {t(n.key)}
+                      <span>{t(n.key)}</span>
+                      <NavCount href={n.href} n={counts[n.href as NavKey]} className="ml-auto" />
                     </Link>
                   </li>
                 );
@@ -392,10 +428,13 @@ function BusinessShell({ children }: { children: ReactNode }) {
                     <Link
                       href={n.href}
                       aria-current={active ? "page" : undefined}
-                      aria-label={t(n.key)}
-                      className={`motion-press flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                      aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
+                      className={`motion-press relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
                     >
-                      <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
+                      <span className="relative">
+                        <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
+                        <NavCount href={n.href} n={counts[n.href as NavKey]} className="absolute -right-3.5 -top-2" />
+                      </span>
                       <span className="max-w-full truncate">{t(TAB_LABEL[n.href] ?? n.key)}</span>
                     </Link>
                   </li>

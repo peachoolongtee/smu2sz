@@ -21,7 +21,7 @@
       "event_text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
       "event_detail": null,
       "what_changed": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
-      "why_it_matters": "The forecast stays above your minimum.",
+      "why_it_matters": "The forecast stays at or above your minimum.",
       "why_it_matters_as_of": "now",
       "what_remains": "Waiting for Invoice financing (onboarded platform) to land the funds in 3 days.",
       "approval_label": null,

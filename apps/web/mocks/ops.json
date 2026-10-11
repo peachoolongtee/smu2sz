@@ -54,7 +54,7 @@
     "requested_by": "AGENT",
     "message": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)",
     "summary": "Queued for owner approval (APR-000001): apply for facility FAC-ETL (¥600,000.00)",
-    "message_when": "Queued for owner approval (APR-000001): apply for facility Equipment term loan (¥600,000.00)",
+    "message_when": "Queued for owner approval: apply for facility Equipment term loan (¥600,000.00)",
     "event_text": "Waiting for your approval: an application for ¥600,000.00 on Equipment term loan.",
     "event_detail": "Apply for facility Equipment term loan (¥600,000.00).",
     "decision_id": "approval:APR-000001"
@@ -78,7 +78,7 @@
     "requested_by": "AGENT",
     "message": "Declined by the owner (APR-000001); nothing executed",
     "summary": "Declined by the owner (APR-000001); nothing executed",
-    "message_when": "Declined by the owner (APR-000001); nothing executed",
+    "message_when": "Declined by the owner; nothing executed",
     "event_text": "You declined an application for ¥600,000.00 on Equipment term loan.",
     "event_detail": null,
     "decision_id": "approval:APR-000001"

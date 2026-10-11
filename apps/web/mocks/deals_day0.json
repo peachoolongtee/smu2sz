@@ -21,7 +21,9 @@
         "end_day": 334,
         "confirmed_day": 0,
         "end_when": "in 334 days",
-        "confirmed_when": "today"
+        "confirmed_when": "today",
+        "replaces": null,
+        "replaces_text": null
       },
       "pills": [
         {
@@ -170,7 +172,7 @@
         {
           "field": "SCHEDULED_INVOICE",
           "label": "Scheduled invoice",
-          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
+          "value_display": "An invoice: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
           "clause": "Schedule 1, 1",
           "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
           "span": {
@@ -266,7 +268,7 @@
       "invoices": [
         {
           "id": "RCV-A",
-          "label": "RCV-A",
+          "label": "the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
           "issue_day": -13,
           "due_day": 32,
           "issue_when": "13 days ago",
@@ -333,7 +335,7 @@
         },
         {
           "status": "ok",
-          "text": "RCV-A matches the contract's schedule (¥420,000.00, issued 13 days ago)."
+          "text": "An invoice in the books matches the contract's schedule (¥420,000.00, issued 13 days ago)."
         },
         {
           "status": "ok",
@@ -345,14 +347,20 @@
         "items": [],
         "actions": [],
         "tone": "ok"
-      }
+      },
+      "open_offer": null,
+      "needs_you": false,
+      "needs_you_text": null
     },
     {
       "counterparty_id": "BUYER-2",
       "counterparty_name": "Dongguan Office Supplies Ltd.",
       "day": 0,
       "has_contract": false,
-      "pending_documents": []
+      "pending_documents": [],
+      "open_offer": null,
+      "needs_you": false,
+      "needs_you_text": null
     }
   ]
 }

@@ -160,7 +160,7 @@ function PictureBody({
         <dl className="mt-4 grid grid-cols-3 gap-3">
           <Figure label={t("pic.cashToday")} value={cash.cash_short} />
           {/* The comparison only sizes a mark (the figure's colour); it states no money. The words and amounts are the server's. */}
-          <Figure label={t("pic.lowest")} value={cash.lowest_short} sub={cash.lowest_when} bad={cash.lowest_fen < cash.floor_fen} />
+          <Figure label={t("pic.lowest")} value={cash.lowest_short} sub={cash.lowest_when} tone={cash.lowest_tone} />
           <Figure label={t("pic.reserve")} value={cash.floor_short} />
         </dl>
         <div className="mt-4 h-64 w-full sm:h-72" role="img" aria-label={t("pic.cash.aria", { today: cash.cash_short, lowest: cash.lowest_short, floor: cash.floor_short })}>
@@ -265,11 +265,11 @@ function PictureBody({
   );
 }
 
-function Figure({ label, value, sub, bad }: { label: string; value: string; sub?: string | null; bad?: boolean }) {
+function Figure({ label, value, sub, tone }: { label: string; value: string; sub?: string | null; tone?: "ok" | "warn" | "bad" }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-bold uppercase tracking-wide text-ink-3">{label}</dt>
-      <dd className={`mt-0.5 font-display text-lg tabular-nums sm:text-xl ${bad ? "text-bad-fg" : "text-ink"}`}>{value}</dd>
+      <dd className={`mt-0.5 font-display text-lg tabular-nums sm:text-xl ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-ink"}`}>{value}</dd>
       {sub ? <dd className="text-xs text-ink-3">{sub}</dd> : null}
     </div>
   );

@@ -257,7 +257,9 @@ test("the deal summary: the confirmed contract once the buyer agrees, then the d
   const rcvA = deal.invoices.find((i) => i.id === "RCV-A");
   assert.deepEqual([rcvA.status, rcvA.outstanding_display, rcvA.status_text], ["LATE", "¥162,800.00", "2 days late"]);
   assert.equal(deal.invoices.find((i) => i.status === "ADVANCE_WAITING").label, "Invoice issued 32 days ago");
-  assert.ok(deal.next_action.text.includes("Review APR-000001"));
+  // The sentence says the approval in words; the ids stay in their own fields.
+  assert.ok(deal.next_action.text.includes("advance on the invoice issued 32 days ago"));
+  assert.ok(!/(APR|RCV|OFF|DOC|VER)-/.test(deal.next_action.text));
   assert.ok(deal.checks.every((c) => c.status === "ok"));
   assert.equal(deal.owed_by_us.display_only, true);
   // Before the button the cure is not queued; after the owner approves it the invoice is financed.

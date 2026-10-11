@@ -139,9 +139,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
   const uploaded = whenWords(d.uploaded_when, d.uploaded_day, today, t);
   const decidedWhen = whenWords(d.decided_when, d.decided_day, today, t);
   const proposed = d.status === "PROPOSED";
-  // The reading in a sentence: the dictionary's (en and zh) when it knows the status; the server's own word ("read") only beside a status it does not.
-  const readWord = te("readstatus", d.reading_status);
-  const readingSaid = readWord && readWord !== d.reading_status ? readWord : (d.reading_text ?? "");
+  // The reading in a sentence, as the server wrote it in the owner's language.
+  const readingSaid = d.reading_text;
 
   function reload() {
     setProblem(null);
@@ -197,7 +196,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
   return (
     <>
       <div className="order-2" data-testid="doc-review" data-id={d.id} data-status={d.status} data-kind={d.kind}>
-        <Card id="doc-review" className="scroll-mt-20" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} today={today} />}>
+        <Card id="doc-review" className="scroll-mt-20" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} />}>
           <div className="flex flex-wrap items-center gap-2">
             <span data-testid="doc-ai-label">
               <Badge tone={d.status === "CONFIRMED" ? "ok" : "info"}>{d.status === "CONFIRMED" ? t("docs.confirmedLabel") : t("docs.aiLabel")}</Badge>
@@ -206,6 +205,11 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
               {readingSaid}
             </span>
           </div>
+          {d.replaces_text || d.superseded_by_text ? (
+            <p className="mt-2 text-xs text-ink-2" data-testid="doc-replaces">
+              {[d.replaces_text, d.superseded_by_text].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
           {flags.length ? (
             <div className="mt-3" data-testid="doc-flags">
               <Callout tone={d.blocked ? "bad" : "warn"} title={t("docs.flags", { n: flags.length })}>

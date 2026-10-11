@@ -41,11 +41,13 @@ import type {
   LedgerView,
   MandateView,
   Mode,
+  NavCounts,
   NegotiateRequest,
   NegotiationView,
   NlOpenerResponse,
   NlRequest,
   NlResponse,
+  OfferPictureView,
   OfferView,
   PlanRequest,
   EnvelopeView,
@@ -336,4 +338,16 @@ export async function decideDocument(id: string, decision: "confirm" | "reject",
 /** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */
 export async function getContractFixtures(): Promise<ContractFixture[]> {
   return isMock ? (await mock()).getContractFixtures() : (await live()).getContractFixtures();
+}
+
+// ------------------------------------------------------------------ the reads added with the UI overhaul
+
+/** GET /nav/counts?lang=: how many deals, approvals and late invoices need the owner now (numbers only, for the sidebar's badges). */
+export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts> {
+  return isMock ? (await mock()).getNavCounts(lang) : (await live()).getNavCounts(lang);
+}
+
+/** GET /offers/{offer_id}/picture?lang=: the cash line of an offer as asked and of each reply FLOW has ready. Display only. */
+export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
+  return isMock ? (await mock()).getOfferPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang);
 }

@@ -34,7 +34,8 @@ test("each row leads with the business sentence, the operation name is a muted l
   await expect(sentence).not.toContainText("what the agent may borrow alone");
   await expect(sentence).not.toContainText("RI:");
   await expect(row.getByTestId("activity-op")).toHaveText("Get cash early on an invoice");
-  await expect(row).toContainText("today");
+  // The day is the rail's caption (the group the entry sits under), not a line in the row.
+  await expect(page.getByTestId("activity-day-caption").first()).toHaveText("today");
   // The raw executor sentence, the operation id, the tier and the hashes stay under Audit details, closed until opened.
   const audit = row.locator("details");
   await expect(audit).not.toHaveAttribute("open", "");
@@ -139,7 +140,8 @@ test("each event says what changed, why it matters (labelled Now when it is toda
   await expect(requested.getByTestId("activity-record")).toHaveAttribute("href", /^\/decisions\/alert:ALERT-RESERVE-42/);
   const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
   // Today's forecast is one sentence, labelled Now, said once above the timeline; the row does not repeat it.
-  await expect(page.getByTestId("activity-now")).toContainText("Now");
+  // Today's forecast is the page's title: the h1 is the server's "now" sentence.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(await page.getByTestId("activity-now").innerText());
   await expect(page.getByTestId("activity-now")).toHaveCount(1);
   await expect(approved.getByTestId("activity-why")).toHaveCount(0);
   await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for Invoice financing");

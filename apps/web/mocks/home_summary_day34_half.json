@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": -2750690,
     "lowest_day": 42,
+    "lowest_tone": "bad",
     "headroom_fen": -12750690,
     "headroom_short": "−¥128k",
     "lowest_headroom_fen": -32750690,

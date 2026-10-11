@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
 import type { useFixAlert } from "@/components/home/fix-alert";
 import { approvalHref } from "@/components/operation-result";
+import { ActionBar } from "@/components/business/action-bar";
 import { Button, Formula, ButtonLink, Stat } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { AlertItem, HomeNextAction } from "@/lib/types";
@@ -192,12 +193,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { 
     const sized = a.legs.length === a.components.length && a.legs.every((l) => l.amount_fen !== null && l.amount_fen > 0);
     return (
       <>
-        <section
-          aria-labelledby="home-action-title"
-          className="motion-reveal z-10 flex flex-wrap items-center gap-x-8 gap-y-4 rounded-card border border-line-strong bg-surface/84 px-5 py-4 shadow-pop backdrop-blur-[18px] backdrop-saturate-150 max-sm:px-4 lg:sticky lg:bottom-4 short:py-3"
-          data-testid="home-next-action"
-          data-alert={a.alert_id}
-        >
+        <ActionBar aria-labelledby="home-action-title" data-testid="home-next-action" data-alert={a.alert_id}>
           <div className="flex min-w-0 flex-[2_1_20rem] flex-col gap-1.5">
             <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
             <h2 id="home-action-title" className="text-balance font-display text-xl font-extrabold leading-snug tracking-[-0.01em] text-ink sm:text-[1.375rem]" data-testid="next-action-title">
@@ -250,7 +246,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { 
 
           <div className="flex flex-wrap items-center gap-2.5">{actions}</div>
           {confirmPanel ? <div className="basis-full">{confirmPanel}</div> : null}
-        </section>
+        </ActionBar>
         {details(t("biz.plan.seeCalc"), "")}
       </>
     );

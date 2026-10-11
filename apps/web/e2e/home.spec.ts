@@ -88,7 +88,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action).not.toContainText("agent");
   await expect(fold).not.toContainText("agent");
   await expect(page.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
-  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
+  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays at or above your minimum cash reserve for the next 120 days");
   // "Why this" never quotes another plan's amounts as this plan's: the alert's own cure is said as a fallback.
   await expect(page.getByTestId("next-action-why")).toContainText("A fallback also exists");
   await expect(page.getByTestId("next-action-why")).toContainText("FLOW recommends the plan above.");
@@ -156,7 +156,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
 
   await expect(page.getByTestId("home-headline")).toHaveText("You're covered.");
-  await expect(page.getByTestId("home-note")).toContainText("Cash stays above your ¥300k minimum cash reserve for the next 120 days.");
+  await expect(page.getByTestId("home-note")).toContainText("Cash stays at or above your ¥300k minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   // On its way: the server's headline, and "Arriving" beside the cash already in hand (two figures, never one).
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255k funding arriving in 3 days");
@@ -193,7 +193,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(action).toContainText("32.5% a year for 10 days");
   await expect(page.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(action.getByTestId("next-action-needs-owner")).toContainText("above the 15.00% limit you signed");
-  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
+  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays at or above your minimum cash reserve for the next 120 days");
   // The router's cheaper two-invoice plan would need two approvals, so the one-approval cure is recommended and the option named.
   await expect(page.getByTestId("next-action-cheaper")).toContainText("¥1,706.10");
   await expect(page.getByTestId("next-action-cheaper")).toContainText("2 separate approvals");
@@ -422,4 +422,63 @@ test("the tour is off by default, starts from the account sheet, has two steps o
   await expect(page.getByTestId("tour")).toContainText("How much risk");
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("tour")).toHaveCount(0);
+});
+
+// ---- pages A1: the open offer on the deal row and the sidebar counts (the server's `open_offer`, `needs_you_text` and GET /nav/counts, recorded)
+
+test("a quiet day: the deal row has no offer and the sidebar carries no counts", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("home-deal-BUYER-1")).toBeVisible();
+  await expect(page.getByTestId("home-deal-offer-BUYER-1")).toHaveCount(0);
+  await expect(page.getByTestId("nav-pills").getByTestId("nav-count-deals")).toHaveCount(0);
+  await expect(page.getByTestId("nav-pills").getByTestId("nav-count-receivables")).toHaveCount(0);
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true })).toBeVisible();
+});
+
+test("an offer waiting: the deal row leads with it, FLOW's read follows the check, and the sidebar counts the deal", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await expect(page.getByTestId("next-step")).toBeVisible();
+  await page.goto("/");
+  const row = page.getByTestId("home-deal-BUYER-1");
+  await expect(page.getByTestId("home-deal-needs-BUYER-1")).toHaveText(/An offer is waiting for your reply/);
+  await expect(page.getByTestId("home-deal-needs-BUYER-1")).toHaveAttribute("data-tone", "warn");
+  const track = page.getByTestId("home-deal-stages-BUYER-1");
+  await expect(track.locator("li")).toHaveCount(5);
+  await expect(track.locator("li").first()).toHaveAttribute("data-state", "now");
+  await expect(row.getByTestId("home-deal-asks")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(row.getByTestId("home-deal-read")).toHaveCount(0); // FLOW has not read it yet
+  await expect(row.getByTestId("home-deal-action")).toHaveText("FLOW has not read it yet.");
+  const side = page.getByTestId("nav-pills");
+  await expect(side.getByTestId("nav-count-deals")).toHaveText("1");
+  await expect(side.getByRole("link", { name: "Deals, 1 needs you" })).toBeVisible();
+  await expect(side.getByTestId("nav-count-receivables")).toHaveCount(0);
+
+  // After FLOW's check: the read, the cost in the bad tone (it is over the owner's limit), the replies ready.
+  await page.goto("/deals");
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await page.goto("/");
+  await expect(track.locator("li").nth(1)).toHaveAttribute("data-state", "done");
+  await expect(track.locator("li").nth(2)).toHaveAttribute("data-state", "now");
+  await expect(row.getByTestId("home-deal-read")).toContainText("Don't accept as asked");
+  await expect(row.getByTestId("home-deal-cost")).toHaveText("¥28,326.92");
+  await expect(row.getByTestId("home-deal-cost")).toHaveCSS("color", "rgb(163, 36, 26)");
+  await expect(row.getByTestId("home-deal-action")).toHaveText("Two replies are ready to send.");
+  await expect(row.getByTestId("home-deal-open-BUYER-1")).toHaveAttribute("href", "/deals?buyer=BUYER-1");
+  expect(await proseOf(page)).not.toMatch(/\bOFF-|\bVER-/);
+});
+
+test("day 34: the sidebar counts the late invoice and the approval, and the count follows the language", async ({ page }) => {
+  await advanceTo34(page);
+  const side = page.getByTestId("nav-pills");
+  await expect(side.getByTestId("nav-count-receivables")).toHaveText("1");
+  await expect(side.getByRole("link", { name: "Receivables, 1 is late" })).toBeVisible();
+  await expect(side.getByTestId("nav-count-deals")).toHaveText("1");
+  await runPlan(page, "ALERT-RESERVE-42");
+  await expect(page.getByTestId("approvals-badge")).toContainText("1 approval waiting");
+  await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await page.reload();
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: /应收款，1 笔已逾期/ })).toBeVisible();
 });
