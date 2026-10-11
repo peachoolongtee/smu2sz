@@ -54,6 +54,7 @@ from app.domain.models import (
 F = ContractField
 I = re.IGNORECASE
 MAX_CHUNK_CHARS = 6_000
+MAX_CHUNKS = 40  # a contract that needs more chunks than this is refused before any model call (each chunk is a call)
 MATERIAL_FIELDS = (F.PRICE, F.PAYMENT_TERMS)  # a supply contract read without these is ABSTAINED
 
 # ---------------------------------------------------------------- chunking
@@ -87,6 +88,17 @@ def _pieces(text: str, start: int, end: int, limit: int) -> list[tuple[int, int]
         s = cut
     out.append((s, end))
     return out
+
+
+class ContractTooLong(ValueError):
+    """The contract needs more chunks than `MAX_CHUNKS`. Raised before any model call; nothing was read."""
+
+    code = "DOCUMENT_TOO_LONG"
+
+    def __init__(self, chunks: int) -> None:
+        super().__init__(f"the contract is too long to read: it needs {chunks} sections of reading and the limit is "
+                         f"{MAX_CHUNKS}; upload the part that sets the terms")
+        self.message_zh = f"合同太长，无法读取：需要读取 {chunks} 段，上限是 {MAX_CHUNKS} 段；请上传约定条款的部分"
 
 
 def chunk_document(doc: SourceDocument, limit: int = MAX_CHUNK_CHARS) -> list[Chunk]:
@@ -458,8 +470,10 @@ def _same_sentence(text: str, a: SourceSpan, b: SourceSpan) -> bool:
 
 __all__ = [
     "AGENT_ADDRESSED",
+    "MAX_CHUNKS",
     "MAX_CHUNK_CHARS",
     "Chunk",
+    "ContractTooLong",
     "build_contract",
     "chunk_document",
     "chunk_source",

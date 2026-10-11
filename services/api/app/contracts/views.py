@@ -3,12 +3,18 @@
 `record_view` is the review screen: the document text, every term beside its quote and span, the fields left blank
 and why, the flags, and for a lender agreement the agreement against the facility on the books. `record_summary` is
 the row the documents list shows. Every reading is labelled "AI-generated, for reference" until the owner confirms it.
+
+Every sentence is written by the server in the page's language (`lang`, "en" or "zh") and the figures are the same in both.
+A day is said as a distance from `today` ("3 days ago"), never as "day N", when `today` is given.
 """
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
+from app.api.engine_zh import translate
+from app.api.presentation import Lang, t, when_text
 from app.contracts.derive import date_display, day_of
 from app.domain.models import (
     MULTI_VALUED_CONTRACT_FIELDS,
@@ -36,69 +42,172 @@ FIELD_LABELS: dict[ContractField, str] = {
     F.LATE_INTEREST: "Late-payment interest", F.DELIVERABLE: "Deliverable", F.REQUIRED_DOCUMENT: "Document for payment",
     F.AMENDMENT: "Amendments",
 }
+FIELD_LABELS_ZH: dict[ContractField, str] = {
+    F.PARTY_SUPPLIER: "供应方", F.PARTY_BUYER: "买方", F.CONTRACT_REFERENCE: "合同编号", F.SIGNED_DATE: "签署日",
+    F.START_DATE: "开始日", F.END_DATE: "结束日", F.DURATION: "期限", F.PRICE: "价格", F.INVOICING: "开票",
+    F.SCHEDULED_INVOICE: "约定发票", F.PAYMENT_TERMS: "账期", F.EARLY_PAYMENT: "提前付款", F.MILESTONE: "阶段付款",
+    F.RETENTION: "质保金", F.LATE_INTEREST: "逾期利息", F.DELIVERABLE: "交付物", F.REQUIRED_DOCUMENT: "付款所需文件",
+    F.AMENDMENT: "修订",
+}
 BASIS_TEXT = {PaymentBasis.INVOICE: "the invoice date", PaymentBasis.DELIVERY: "delivery",
               PaymentBasis.ACCEPTANCE: "acceptance", PaymentBasis.MONTH_END: "the end of the invoice month"}
+BASIS_TEXT_ZH = {PaymentBasis.INVOICE: "发票日", PaymentBasis.DELIVERY: "交货", PaymentBasis.ACCEPTANCE: "验收",
+                 PaymentBasis.MONTH_END: "开票当月月末"}
+UNIT_TEXT_ZH = {PriceUnit.PER_DELIVERY: "每批交货", PriceUnit.PER_UNIT: "每单位", PriceUnit.PER_MONTH: "每月",
+                PriceUnit.LUMP_SUM: "总价"}
 UNIT_TEXT = {PriceUnit.PER_DELIVERY: "per delivery batch", PriceUnit.PER_UNIT: "per unit",
              PriceUnit.PER_MONTH: "per month", PriceUnit.LUMP_SUM: "in total"}
 NOT_FOUND_REASON = "The agent found no clause for this and left it blank."
+NOT_FOUND_REASON_ZH = "代理没有找到相关条款，已留空。"
 
 
-def _days(n: int, business: bool) -> str:
+def _days(n: int, business: bool, lang: Lang = "en") -> str:
+    if lang == "zh":
+        return f"{n} 个工作日" if business else f"{n} 天"
     return f"{n} {'business ' if business else ''}day{'' if n == 1 else 's'}"
 
 
-def _date(iso: str | None, anchor: str | None) -> str:
+def _date(iso: str | None, anchor: str | None, lang: Lang = "en", today: int | None = None) -> str:
+    """A calendar date, and when it is as a distance from today when the books' anchor and today are known."""
     if iso is None:
         return ""
-    return date_display(iso) + (f" (day {day_of(iso, anchor)})" if anchor else "")
+    when = when_text(day_of(iso, anchor), today, lang) if anchor and today is not None else ""
+    return date_display(iso, lang) + ((f"（{when}）" if lang == "zh" else f" ({when})") if when else "")
 
 
-def term_display(t: ContractTerm, anchor: str | None = None) -> str:
-    """One plain English line for a term, from its typed fields only."""
-    f = t.field
-    if f == F.PRICE and t.amount_fen is not None:
-        return f"{fmt_yuan(t.amount_fen)} {UNIT_TEXT.get(t.unit, '') if t.unit else ''}".strip()
+def term_display(term: ContractTerm, anchor: str | None = None, lang: Lang = "en", today: int | None = None) -> str:
+    """One plain line for a term, from its typed fields only."""
+    f = term.field
+    if f == F.PRICE and term.amount_fen is not None:
+        unit = (UNIT_TEXT_ZH if lang == "zh" else UNIT_TEXT).get(term.unit, "") if term.unit else ""
+        return f"{fmt_yuan(term.amount_fen)} {unit}".strip()
     if f == F.INVOICING:
-        head = f"Every {_days(t.days, False)}" if t.days else "Monthly"
-        return head + (f", the first on {_date(t.date, anchor)}" if t.date else "")
+        if lang == "zh":
+            return (f"每 {term.days} 天开票一次" if term.days else "每月开票") + (
+                f"，首张为 {_date(term.date, anchor, lang, today)}" if term.date else "")
+        head = f"Every {_days(term.days, False)}" if term.days else "Monthly"
+        return head + (f", the first on {_date(term.date, anchor, lang, today)}" if term.date else "")
     if f == F.SCHEDULED_INVOICE:
-        amount = f"{fmt_yuan(t.amount_fen)} " if t.amount_fen is not None else ""
-        return f"{t.reference or 'An invoice'}: {amount}issued {_date(t.date, anchor)}"
-    if f == F.PAYMENT_TERMS and t.days is not None:
-        return f"{_days(t.days, t.business_days)} from {BASIS_TEXT[t.basis] if t.basis else 'a date the clause does not state'}"
-    if f == F.EARLY_PAYMENT and t.rate_bp is not None:
-        window = f", within {_days(t.days, t.business_days)}" if t.days is not None else ""
-        return f"The buyer may settle early at {fmt_pct(bp(t.rate_bp))} off{window}"
-    if f == F.MILESTONE and t.rate_bp is not None:
-        return f"{fmt_pct(bp(t.rate_bp))} of the price {t.text or ''}".strip()
-    if f == F.RETENTION and t.rate_bp is not None:
-        period = (f" for {t.months} months" if t.months else f" for {_days(t.days, False)}" if t.days
-                  else f" {t.text}" if t.text else "")
-        return f"{fmt_pct(bp(t.rate_bp))} retained{period}"
-    if f == F.LATE_INTEREST and t.rate_bp is not None:
-        return f"{fmt_pct(bp(t.rate_bp))}{' ' + t.text if t.text else ''}"
+        amount = f"{fmt_yuan(term.amount_fen)} " if term.amount_fen is not None else ""
+        if lang == "zh":
+            return f"{term.reference or '一张发票'}：{amount}于 {_date(term.date, anchor, lang, today)} 开具"
+        return f"{term.reference or 'An invoice'}: {amount}issued {_date(term.date, anchor, lang, today)}"
+    if f == F.PAYMENT_TERMS and term.days is not None:
+        if lang == "zh":
+            basis = BASIS_TEXT_ZH[term.basis] if term.basis else "合同未注明的日期"
+            return f"自{basis}起 {_days(term.days, term.business_days, lang)}"
+        return (f"{_days(term.days, term.business_days)} from "
+                f"{BASIS_TEXT[term.basis] if term.basis else 'a date the clause does not state'}")
+    if f == F.EARLY_PAYMENT and term.rate_bp is not None:
+        if lang == "zh":
+            window = f"，须在 {_days(term.days, term.business_days, lang)}内" if term.days is not None else ""
+            return f"买方可提前付款，折扣 {fmt_pct(bp(term.rate_bp))}{window}"
+        window = f", within {_days(term.days, term.business_days)}" if term.days is not None else ""
+        return f"The buyer may settle early at {fmt_pct(bp(term.rate_bp))} off{window}"
+    if f == F.MILESTONE and term.rate_bp is not None:
+        return t(lang, f"{fmt_pct(bp(term.rate_bp))} of the price {term.text or ''}",
+                 f"价格的 {fmt_pct(bp(term.rate_bp))} {term.text or ''}").strip()
+    if f == F.RETENTION and term.rate_bp is not None:
+        if lang == "zh":
+            period = (f"，保留 {term.months} 个月" if term.months else f"，保留 {_days(term.days, False, lang)}" if term.days
+                      else f"，{term.text}" if term.text else "")
+            return f"质保金 {fmt_pct(bp(term.rate_bp))}{period}"
+        period = (f" for {term.months} months" if term.months else f" for {_days(term.days, False)}" if term.days
+                  else f" {term.text}" if term.text else "")
+        return f"{fmt_pct(bp(term.rate_bp))} retained{period}"
+    if f == F.LATE_INTEREST and term.rate_bp is not None:
+        return f"{fmt_pct(bp(term.rate_bp))}{' ' + term.text if term.text else ''}"
     if f in (F.SIGNED_DATE, F.START_DATE, F.END_DATE):
-        return _date(t.date, anchor)
-    if f == F.DURATION and t.months is not None:
-        return f"{t.months} months"
-    return t.text or t.value_text or ""
+        return _date(term.date, anchor, lang, today)
+    if f == F.DURATION and term.months is not None:
+        return t(lang, f"{term.months} months", f"{term.months} 个月")
+    return term.text or term.value_text or ""
 
 
-def term_view(t: ContractTerm, anchor: str | None) -> dict[str, Any]:
+def term_view(term: ContractTerm, anchor: str | None, lang: Lang = "en", today: int | None = None) -> dict[str, Any]:
     return {
-        "field": t.field.value, "label": FIELD_LABELS[t.field], "value_display": term_display(t, anchor),
-        "clause": t.clause, "quote": t.span.text, "span": {"start": t.span.start, "end": t.span.end},
-        "amount_fen": t.amount_fen, "amount_display": fmt_yuan(t.amount_fen) if t.amount_fen is not None else None,
-        "rate_bp": t.rate_bp, "rate_display": fmt_pct(bp(t.rate_bp)) if t.rate_bp is not None else None,
-        "days": t.days, "months": t.months, "date": t.date,
-        "date_display": date_display(t.date) if t.date else None,
-        "day": day_of(t.date, anchor) if t.date and anchor else None,
-        "basis": t.basis.value if t.basis else None, "unit": t.unit.value if t.unit else None,
-        "reference": t.reference, "text": t.text, "business_days": t.business_days,
+        "field": term.field.value, "label": (FIELD_LABELS_ZH if lang == "zh" else FIELD_LABELS)[term.field],
+        "value_display": term_display(term, anchor, lang, today),
+        "clause": term.clause, "quote": term.span.text, "span": {"start": term.span.start, "end": term.span.end},
+        "amount_fen": term.amount_fen,
+        "amount_display": fmt_yuan(term.amount_fen) if term.amount_fen is not None else None,
+        "rate_bp": term.rate_bp, "rate_display": fmt_pct(bp(term.rate_bp)) if term.rate_bp is not None else None,
+        "days": term.days, "months": term.months, "date": term.date,
+        "date_display": date_display(term.date, lang) if term.date else None,
+        "day": day_of(term.date, anchor) if term.date and anchor else None,
+        "basis": term.basis.value if term.basis else None, "unit": term.unit.value if term.unit else None,
+        "reference": term.reference, "text": term.text, "business_days": term.business_days,
     }
 
 
-def blanks(record: ContractRecord) -> list[dict[str, Any]]:
+# What the reading says about itself, in the owner's words. The compiler writes English reasons (the audit level, kept as
+# `reason_raw`); the ones the contract reader writes are a closed set, said here in Chinese. Any other reason goes through the
+# engine-sentence templates and, if none knows it, is said generally rather than left in English.
+_REASONS_ZH: tuple[tuple[re.Pattern[str], str], ...] = tuple((re.compile(p), z) for p, z in (
+    (r"term dropped: its \w+ is not inside its quoted evidence", "该条款已舍弃：其中的某个数值不在所引原文之内。"),
+    (r"term dropped: the .+ is stated twice with different values.*", "该条款已舍弃：同一数值的文字写法与数字写法不一致。"),
+    (r"term dropped: the .+ is not parseable as an exact value", "该条款已舍弃：无法读出确切数值。"),
+    (r"term dropped: its quote is not found verbatim in the document", "该条款已舍弃：引文在文件中找不到原句。"),
+    (r"term dropped: no .+ is stated in its quote", "该条款已舍弃：所引原文中没有写明所需内容。"),
+    (r"term dropped: it sits in text addressed to the agent.*", "该条款已舍弃：它位于写给代理的文字中，这类文字从不当作条款读取。"),
+    (r"note: the payment terms do not say what the days count from", "账期没有写明这些天数从何时起算。"),
+    (r"stated more than once with the same value: read once", "同一数值写了多次：只读取一次。"),
+    (r"clause dropped: quote not found verbatim in the term sheet", "该条款已舍弃：引文在文件中找不到原句。"),
+    (r"flag dropped: quote not found verbatim in the document", "该提示已舍弃：引文在文件中找不到原句。"),
+))
+_CONFLICT = re.compile(r"conflicting sources: (.+) state different values; neither is read, clarification needed")
+_UNREADABLE_ZH = "代理在读取时留下一条说明（英文原文见技术详情）。"
+
+
+def reason_words(reason: str, lang: Lang, state: FinancialState | None = None) -> str:
+    """A reason the reading gave for leaving something blank or noting something, in the page's language."""
+    if lang != "zh":
+        return reason
+    if reason == NOT_FOUND_REASON:
+        return NOT_FOUND_REASON_ZH
+    for pattern, zh in _REASONS_ZH:
+        if pattern.fullmatch(reason):
+            return zh
+    m = _CONFLICT.fullmatch(reason)
+    if m:
+        where = m.group(1).replace("an unnumbered clause", "未编号的条款")
+        return f"来源冲突：{where} 写了不同的数值，两处都不采用，需要向对方确认。"
+    said = translate(reason, [])
+    return said if said is not None and not re.search(r"[A-Za-z]{3,}", said) else _UNREADABLE_ZH
+
+
+_FLAG_WORDS = {
+    "INSTRUCTION_OVERRIDE": ("an instruction addressed to the agent", "写给代理的指令"),
+    "PRE_APPROVAL": ("a claimed approval", "声称已获批准"),
+    "PRIOR_AGREEMENT": ("a claimed earlier agreement", "声称已有约定"),
+    "URGENCY": ("pressure to hurry", "催促施压"),
+    "IMPERSONATION": ("a claim to speak for someone", "冒用他人身份"),
+}
+_FLAG_NOTES_ZH = {
+    "INSTRUCTION_OVERRIDE": "这是写给代理的文字，不是条款，该文件无法确认；请让对方提供干净的版本。",
+    "PRE_APPROVAL": "文字声称某项批准已经取得，但没有人通过代理给出过批准。",
+    "IMPERSONATION": "文字声称代表某人，或更改了付款信息：请与对方核实。",
+}
+
+
+def flag_kind_text(kind: str, lang: Lang) -> str:
+    """A flag's kind in words ("an instruction addressed to the agent"); a data request is one whatever it asks for."""
+    if kind.startswith("DATA_REQUEST"):
+        return t(lang, "a request for protected information", "索取受保护信息")
+    en, zh = _FLAG_WORDS.get(kind, ("a claim of authority", "声称拥有权限"))
+    return t(lang, en, zh)
+
+
+def flag_note(kind: str, blocking: bool, note: str, lang: Lang) -> str:
+    """The flag's note in the page's language; English is the note as the reader wrote it."""
+    if lang != "zh":
+        return note
+    if kind.startswith("DATA_REQUEST"):
+        return "文字要求提供代理的指令：该文件无法确认。" if blocking else "文字要求供应方披露受保护的信息。"
+    return _FLAG_NOTES_ZH.get(kind, "文字声称拥有权限。")
+
+
+def blanks(record: ContractRecord, lang: Lang = "en") -> list[dict[str, Any]]:
     """The fields the reading left blank, each with why: a dropped term's reason, a conflict, or not found."""
     c = record.contract
     if c is None:
@@ -106,50 +215,58 @@ def blanks(record: ContractRecord) -> list[dict[str, Any]]:
     out = []
     for f in [*c.not_found, *(F(a.field) for a in c.abstentions if a.reason.startswith("conflicting sources"))]:
         why = next((a.reason for a in c.abstentions if a.field == f.value and not a.field.startswith("note:")), None)
-        out.append({"field": f.value, "label": FIELD_LABELS[f], "reason": why or NOT_FOUND_REASON,
+        out.append({"field": f.value, "label": (FIELD_LABELS_ZH if lang == "zh" else FIELD_LABELS)[f],
+                    "reason": reason_words(why or NOT_FOUND_REASON, lang), "reason_raw": why or NOT_FOUND_REASON,
                     "multi": f in MULTI_VALUED_CONTRACT_FIELDS})
     return out
 
 
-def _facility_rows(agreed: Facility, books: Facility | None) -> list[dict[str, Any]]:
+def _facility_rows(agreed: Facility, books: Facility | None, lang: Lang = "en") -> list[dict[str, Any]]:
+    none = t(lang, "none", "无")
+
     def pct(v: int | None) -> str:
-        return fmt_pct(bp(v)) if v else "none"
+        return fmt_pct(bp(v)) if v else none
 
     def cov(f: Facility, kind: str) -> str:
         c = next((c for c in f.covenants if c.kind.value == kind), None)
         if c is None:
-            return "none"
+            return none
         if c.clean_down_days is not None:
-            return f"zero for {c.clean_down_days} consecutive days a year"
+            return t(lang, f"zero for {c.clean_down_days} consecutive days a year",
+                     f"每年须有连续 {c.clean_down_days} 天额度为零")
         return f"{Ratio.of(bp(c.threshold_bp or 0)).text}×"
 
     def fee(f: Facility) -> str:
-        return f"{pct(f.fee_bp_per_advance)} per {f.fee_period_days} days" if f.fee_bp_per_advance else "none"
+        return t(lang, f"{pct(f.fee_bp_per_advance)} per {f.fee_period_days} days",
+                 f"每 {f.fee_period_days} 天 {pct(f.fee_bp_per_advance)}") if f.fee_bp_per_advance else none
 
-    rows = [("Limit", fmt_yuan(agreed.limit_fen), books and fmt_yuan(books.limit_fen)),
-            ("Interest rate", pct(agreed.rate_bp), books and pct(books.rate_bp)),
-            ("Periodic fee", fee(agreed), books and fee(books)),
-            ("Upfront fee", pct(agreed.upfront_fee_bp), books and pct(books.upfront_fee_bp)),
-            ("Lead time", _days(agreed.lead_time_days, False), books and _days(books.lead_time_days, False)),
-            ("Advance rate", pct(agreed.advance_rate_bp), books and pct(books.advance_rate_bp)),
-            ("Minimum DSCR", cov(agreed, "DSCR_MIN"), books and cov(books, "DSCR_MIN")),
-            ("Maximum leverage", cov(agreed, "LEVERAGE_MAX"), books and cov(books, "LEVERAGE_MAX")),
-            ("Clean-down", cov(agreed, "CLEAN_DOWN"), books and cov(books, "CLEAN_DOWN"))]
+    rows = [(t(lang, "Limit", "额度"), fmt_yuan(agreed.limit_fen), books and fmt_yuan(books.limit_fen)),
+            (t(lang, "Interest rate", "利率"), pct(agreed.rate_bp), books and pct(books.rate_bp)),
+            (t(lang, "Periodic fee", "周期费用"), fee(agreed), books and fee(books)),
+            (t(lang, "Upfront fee", "前端费用"), pct(agreed.upfront_fee_bp), books and pct(books.upfront_fee_bp)),
+            (t(lang, "Lead time", "放款提前期"), _days(agreed.lead_time_days, False, lang),
+             books and _days(books.lead_time_days, False, lang)),
+            (t(lang, "Advance rate", "垫款比例"), pct(agreed.advance_rate_bp), books and pct(books.advance_rate_bp)),
+            (t(lang, "Minimum DSCR", "最低偿债覆盖率"), cov(agreed, "DSCR_MIN"), books and cov(books, "DSCR_MIN")),
+            (t(lang, "Maximum leverage", "最高杠杆"), cov(agreed, "LEVERAGE_MAX"), books and cov(books, "LEVERAGE_MAX")),
+            (t(lang, "Clean-down", "额度清零期"), cov(agreed, "CLEAN_DOWN"), books and cov(books, "CLEAN_DOWN"))]
     return [{"label": label, "agreement_display": a, "books_display": b, "same": b is not None and a == b}
             for label, a, b in rows]
 
 
-def facility_summary(f: Facility) -> str:
+def facility_summary(f: Facility, lang: Lang = "en") -> str:
     """"¥350,000.00 at 7.80% · 80% advance · 0.25% per 30 days · 3-day lead time"."""
-    parts = [f"{fmt_yuan(f.limit_fen)} at {fmt_pct(bp(f.rate_bp))}"]
+    parts = [t(lang, f"{fmt_yuan(f.limit_fen)} at {fmt_pct(bp(f.rate_bp))}", f"{fmt_yuan(f.limit_fen)}，利率 {fmt_pct(bp(f.rate_bp))}")]
     if f.advance_rate_bp:
-        parts.append(f"{fmt_pct(bp(f.advance_rate_bp))} advance")
+        parts.append(t(lang, f"{fmt_pct(bp(f.advance_rate_bp))} advance", f"垫款 {fmt_pct(bp(f.advance_rate_bp))}"))
     if f.fee_bp_per_advance:
-        parts.append(f"{fmt_pct(bp(f.fee_bp_per_advance))} per {f.fee_period_days} days")
-    parts.append("same-day funding" if f.lead_time_days == 0 else f"{f.lead_time_days}-day lead time")
+        parts.append(t(lang, f"{fmt_pct(bp(f.fee_bp_per_advance))} per {f.fee_period_days} days",
+                       f"每 {f.fee_period_days} 天 {fmt_pct(bp(f.fee_bp_per_advance))}"))
+    parts.append(t(lang, "same-day funding" if f.lead_time_days == 0 else f"{f.lead_time_days}-day lead time",
+                   "当日放款" if f.lead_time_days == 0 else f"提前 {f.lead_time_days} 天放款"))
     cd = next((c.clean_down_days for c in f.covenants if c.clean_down_days), None)
     if cd:
-        parts.append(f"line at zero {cd} days a year")
+        parts.append(t(lang, f"line at zero {cd} days a year", f"每年有 {cd} 天额度清零"))
     return " · ".join(parts)
 
 
@@ -158,44 +275,86 @@ def _name(state: FinancialState | None, counterparty_id: str) -> str:
     return cp.name if cp else counterparty_id
 
 
-def record_summary(record: ContractRecord, state: FinancialState | None) -> dict[str, Any]:
+def _kind_text(kind: DocumentKind, lang: Lang) -> str:
+    return t(lang, "Buyer contract" if kind == DocumentKind.BUYER_CONTRACT else "Lender agreement",
+             "买方合同" if kind == DocumentKind.BUYER_CONTRACT else "贷款方协议")
+
+
+def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
+    """Where the document stands, in the owner's words, with when it was decided as a distance from today."""
+    when = when_text(record.decided_day, today, lang) if today is not None and record.decided_day is not None else ""
+    if record.status == DocumentStatus.CONFIRMED:
+        return t(lang, f"Confirmed by you {when}".strip(), f"{when}经您确认".strip())
+    if record.status == DocumentStatus.REJECTED:
+        return t(lang, f"Rejected by you {when}".strip(), f"{when}被您拒绝".strip())
+    if record.blocked:
+        return t(lang, "Cannot be confirmed: it carries text addressed to the agent", "无法确认：其中含有写给代理的文字")
+    return t(lang, "Waiting for your decision", "等待您决定")
+
+
+def _status_tone(record: ContractRecord) -> str:
+    if record.status == DocumentStatus.CONFIRMED:
+        return "ok"
+    if record.status == DocumentStatus.REJECTED:
+        return "mute"
+    return "bad" if record.blocked else "warn"
+
+
+def reading_status_text(status: str, lang: Lang) -> str:
+    """The reading's status in words: it was read, or the agent could not read it."""
+    return t(lang, "read" if status == "COMPILED" else "could not read",
+             "已读取" if status == "COMPILED" else "无法读取")
+
+
+def record_summary(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
+                   today: int | None = None) -> dict[str, Any]:
     if record.kind == DocumentKind.BUYER_CONTRACT and record.contract is not None:
         n_blank = len(blanks(record))
-        summary = f"{len(record.contract.terms)} terms read, {n_blank} left blank"
+        summary = t(lang, f"{len(record.contract.terms)} terms read, {n_blank} left blank",
+                    f"已读取 {len(record.contract.terms)} 项条款，{n_blank} 项留空")
     else:
         ts = record.term_sheet
-        summary = (facility_summary(ts.proposed_facility) if ts and ts.proposed_facility
-                   else "the agent could not read a facility from it")
+        summary = (facility_summary(ts.proposed_facility, lang) if ts and ts.proposed_facility
+                   else t(lang, "the agent could not read a facility from it", "代理无法从中读出融资安排"))
     return {
-        "id": record.id, "kind": record.kind.value, "title": record.title, "counterparty_id": record.counterparty_id,
+        "id": record.id, "kind": record.kind.value, "kind_text": _kind_text(record.kind, lang), "title": record.title,
+        "counterparty_id": record.counterparty_id,
         "counterparty_name": _name(state, record.counterparty_id), "status": record.status.value,
+        "status_text": _status_text(record, lang, today), "status_tone": _status_tone(record),
         "uploaded_day": record.uploaded_day, "decided_day": record.decided_day, "decided_seq": record.decided_seq,
+        "uploaded_when": when_text(record.uploaded_day, today, lang) if today is not None else None,
+        "decided_when": (when_text(record.decided_day, today, lang)
+                         if today is not None and record.decided_day is not None else None),
         "linked_facility_id": record.linked_facility_id, "summary": summary, "blocked": record.blocked,
         "flags": len(record.flags), "source": record.source,
-        "label": AI_LABEL if record.status != DocumentStatus.CONFIRMED else "Read by the agent, confirmed by you",
+        "label": (AI_LABEL if lang != "zh" else AI_LABEL_ZH) if record.status != DocumentStatus.CONFIRMED
+        else t(lang, "Read by the agent, confirmed by you", "由代理读取，经您确认"),
     }
 
 
-def record_view(record: ContractRecord, state: FinancialState | None) -> dict[str, Any]:
+def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
+                today: int | None = None) -> dict[str, Any]:
     anchor = state.as_of if state is not None else None
-    view = record_summary(record, state)
+    view = record_summary(record, state, lang, today)
     view.update({
         "doc_hash": record.doc_hash,
         "document": {"doc_id": record.document.doc_id, "text": record.document.text},
-        "ai_label": AI_LABEL, "ai_label_zh": AI_LABEL_ZH,
-        "flags": [{"kind": f.kind, "blocking": f.blocking, "note": f.note, "quote": f.span.text,
+        "ai_label": AI_LABEL_ZH if lang == "zh" else AI_LABEL, "ai_label_zh": AI_LABEL_ZH,
+        "flags": [{"kind": f.kind, "kind_text": flag_kind_text(f.kind, lang), "blocking": f.blocking,
+                   "note": flag_note(f.kind, f.blocking, f.note, lang), "note_raw": f.note, "quote": f.span.text,
                    "span": {"start": f.span.start, "end": f.span.end}} for f in record.flags],
         "can_confirm": record.status == DocumentStatus.PROPOSED and not record.blocked,
     })
     if record.contract is not None:
         c = record.contract
         view.update({
-            "reading_status": c.status.value, "compiler": c.compiler, "prompt_version": c.prompt_version,
+            "reading_status": c.status.value, "reading_text": reading_status_text(c.status.value, lang),
+            "compiler": c.compiler, "prompt_version": c.prompt_version,
             "chunks": c.chunks,
-            "terms": [term_view(t, anchor) for t in c.terms],
-            "blanks": blanks(record),
-            "notes": [{"field": a.field.removeprefix("note:"), "reason": a.reason} for a in c.abstentions
-                      if a.field.startswith("note:")],
+            "terms": [term_view(x, anchor, lang, today) for x in c.terms],
+            "blanks": blanks(record, lang),
+            "notes": [{"field": a.field.removeprefix("note:"), "reason": reason_words(a.reason, lang),
+                       "reason_raw": a.reason} for a in c.abstentions if a.field.startswith("note:")],
         })
     if record.term_sheet is not None:
         ts = record.term_sheet
@@ -203,22 +362,26 @@ def record_view(record: ContractRecord, state: FinancialState | None) -> dict[st
         books = next((f for f in (state.facilities if state else []) if f.id == target), None)
         agreed = ts.proposed_facility
         view.update({
-            "reading_status": ts.status.value, "compiler": ts.compiler, "prompt_version": ts.prompt_version,
+            "reading_status": ts.status.value, "reading_text": reading_status_text(ts.status.value, lang),
+            "compiler": ts.compiler, "prompt_version": ts.prompt_version,
             "clauses": [{"field": cl.field, "value_text": cl.value_text, "quote": cl.span.text,
                          "span": {"start": cl.span.start, "end": cl.span.end}} for cl in ts.clauses],
             "facility": None if agreed is None else {
-                "kind": agreed.kind.value, "summary": facility_summary(agreed),
+                "kind": agreed.kind.value, "summary": facility_summary(agreed, lang),
                 "all_in_rate_display": fmt_pct(bp(ts.all_in_rate_bp)) if ts.all_in_rate_bp is not None else None,
                 "repayment": agreed.repayment.value,
                 "tier3": [{"field": cl.field, "quote": cl.span.text} for cl in ts.tier3_clauses],
             },
             "suggested_facility_id": record.suggested_facility_id,
+            "suggested_facility_name": next((f.name for f in (state.facilities if state else [])
+                                             if f.id == record.suggested_facility_id), None),
             "compared_with": books.id if books is not None else None,
-            "comparison": _facility_rows(agreed, books) if agreed is not None else [],
-            "notes": [{"field": a.field, "reason": a.reason} for a in ts.abstentions],
+            "comparison": _facility_rows(agreed, books, lang) if agreed is not None else [],
+            "notes": [{"field": a.field, "reason": reason_words(a.reason, lang), "reason_raw": a.reason}
+                      for a in ts.abstentions],
         })
     return view
 
 
-__all__ = ["AI_LABEL", "FIELD_LABELS", "blanks", "facility_summary", "record_summary", "record_view", "term_display",
-           "term_view"]
+__all__ = ["AI_LABEL", "FIELD_LABELS", "blanks", "facility_summary", "flag_kind_text", "reading_status_text",
+           "reason_words", "record_summary", "record_view", "term_display", "term_view"]

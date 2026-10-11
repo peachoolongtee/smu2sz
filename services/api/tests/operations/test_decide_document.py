@@ -80,6 +80,38 @@ def test_a_document_is_decided_once(store, ex):
     assert store.get_contract_record(rid).status == DocumentStatus.CONFIRMED
 
 
+def test_the_same_decision_sent_again_is_answered_with_the_first_and_appends_nothing(store, ex):
+    rid = _add(store, "MB_CREDIT_LINE_AGREEMENT")
+    h = store.get_contract_record(rid).doc_hash
+    first = ex.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=h, link_facility_id="FAC-LINE")
+    n = len(store.operations())
+    again = ex.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=h, link_facility_id="FAC-LINE")
+    assert again == first and again.status == OperationStatus.EXECUTED
+    assert (again.op_id, again.seq, again.entry_hash, again.prev_hash) == (first.op_id, first.seq, first.entry_hash,
+                                                                          first.prev_hash)
+    assert len(store.operations()) == n and store.verify_chain()
+
+
+def test_a_repeat_that_asks_for_anything_else_is_still_a_refusal(store, ex):
+    rid = _add(store, "MB_CREDIT_LINE_AGREEMENT")
+    h = store.get_contract_record(rid).doc_hash
+    ex.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=h, link_facility_id="FAC-LINE")
+    for kwargs in ({"confirm": False, "doc_hash": h}, {"confirm": True, "doc_hash": "a" * 64, "link_facility_id": "FAC-LINE"},
+                   {"confirm": True, "doc_hash": h}):
+        r = ex.decide_document(rid, Actor.OWNER, **kwargs)
+        assert r.status == OperationStatus.REFUSED, kwargs
+    assert store.get_contract_record(rid).status == DocumentStatus.CONFIRMED
+
+
+def test_the_same_rejection_sent_again_is_answered_with_the_first(store, ex):
+    rid = _add(store)
+    h = store.get_contract_record(rid).doc_hash
+    first = ex.decide_document(rid, Actor.OWNER, confirm=False, doc_hash=h)
+    n = len(store.operations())
+    assert ex.decide_document(rid, Actor.OWNER, confirm=False, doc_hash=h) == first
+    assert len(store.operations()) == n
+
+
 def test_an_unknown_document_is_refused_and_logged(store, ex):
     r = ex.decide_document("DOC-000404", Actor.OWNER, confirm=True, doc_hash="0" * 64)
     assert r.status == OperationStatus.REFUSED and "does not exist" in r.message

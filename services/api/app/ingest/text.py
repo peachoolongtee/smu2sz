@@ -14,10 +14,13 @@ from __future__ import annotations
 import io
 import re
 import unicodedata
+import zipfile
 from pathlib import PurePath
 
 MAX_BYTES = 5 * 1024 * 1024  # an upload larger than this is refused before it is parsed
 MAX_CHARS = 400_000  # about 120 pages of contract text
+MAX_UNZIPPED_BYTES = 20 * 1024 * 1024  # a Word file whose parts add up to more than this once unzipped is refused unopened
+MAX_PDF_PAGES = 60  # a PDF with more pages than this is refused before any page is read
 MIN_CHARS_PER_PAGE = 20  # a PDF averaging fewer letters and digits per page than this has no text layer
 
 TEXT_SUFFIXES = (".txt", ".md", ".markdown", ".text")
@@ -28,6 +31,12 @@ class IngestError(ValueError):
     """The document cannot be read. `code` is a stable reason for the API; the message is for the owner."""
 
     code = "UNREADABLE_DOCUMENT"
+    message_zh: str | None = None  # the same sentence for a Chinese page, where a limit has one
+
+    def __init__(self, message: str, *, message_zh: str | None = None) -> None:
+        super().__init__(message)
+        if message_zh is not None:
+            self.message_zh = message_zh
 
 
 class UnsupportedFileType(IngestError):
@@ -52,7 +61,8 @@ SCANNED_MESSAGE = "this PDF is a scan; upload a text PDF or Word file"
 def extract_text(filename: str, data: bytes) -> str:
     """The normalised text of one document. Raises an `IngestError` subclass when it cannot be read."""
     if len(data) > MAX_BYTES:
-        raise DocumentTooLarge(f"the file is larger than {MAX_BYTES // (1024 * 1024)} MB")
+        raise DocumentTooLarge(f"the file is larger than {MAX_BYTES // (1024 * 1024)} MB",
+                               message_zh=f"文件超过 {MAX_BYTES // (1024 * 1024)} MB")
     suffix = PurePath(filename or "").suffix.lower()
     if suffix in TEXT_SUFFIXES:
         text = _decode(data)
@@ -68,7 +78,8 @@ def extract_text(filename: str, data: bytes) -> str:
     if not text.strip():
         raise EmptyDocument("the document has no text")
     if len(text) > MAX_CHARS:
-        raise DocumentTooLarge(f"the document is longer than {MAX_CHARS:,} characters")
+        raise DocumentTooLarge(f"the document is longer than {MAX_CHARS:,} characters",
+                               message_zh=f"文档超过 {MAX_CHARS:,} 个字符")
     return text
 
 
@@ -102,13 +113,14 @@ def _decode(data: bytes) -> str:
 def _docx(data: bytes) -> str:
     if not data.startswith(b"PK"):
         raise IngestError("the file is not a Word .docx document")
+    _check_unzipped_size(data)
     try:
         import docx
         from docx.table import Table
         from docx.text.paragraph import Paragraph
 
         document = docx.Document(io.BytesIO(data))
-    except Exception as e:  # noqa: BLE001 - a corrupt or mislabelled file of any kind
+    except Exception as e:  # a corrupt or mislabelled file of any kind
         raise IngestError("the Word document could not be opened") from e
     blocks: list[str] = []
     body = document.element.body
@@ -126,6 +138,20 @@ def _docx(data: bytes) -> str:
     return "\n\n".join(blocks)
 
 
+def _check_unzipped_size(data: bytes) -> None:
+    """Refuse a Word file whose parts add up to more than `MAX_UNZIPPED_BYTES` once unzipped, before python-docx loads any
+    of it. The sizes are the archive's declared ones, and reading a part never returns more than its declared size."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            total = sum(info.file_size for info in archive.infolist())
+    except zipfile.BadZipFile as e:
+        raise IngestError("the Word document could not be opened") from e
+    if total > MAX_UNZIPPED_BYTES:
+        limit = MAX_UNZIPPED_BYTES // (1024 * 1024)
+        raise DocumentTooLarge(f"the Word file is larger than {limit} MB once unzipped; upload a smaller copy",
+                               message_zh=f"这份 Word 文件解压后超过 {limit} MB，请上传较小的版本")
+
+
 # ---------------------------------------------------------------- PDF
 
 
@@ -138,6 +164,10 @@ def _pdf(data: bytes) -> str:
         reader = PdfReader(io.BytesIO(data))
         if reader.is_encrypted and not reader.decrypt(""):
             raise IngestError("the PDF is password-protected; upload an unprotected copy")
+        n_pages = len(reader.pages)
+        if n_pages > MAX_PDF_PAGES:
+            raise DocumentTooLarge(f"the PDF has {n_pages} pages; the limit is {MAX_PDF_PAGES}",
+                                   message_zh=f"这份 PDF 有 {n_pages} 页，上限是 {MAX_PDF_PAGES} 页")
         pages = []
         for page in reader.pages:
             try:
@@ -146,7 +176,7 @@ def _pdf(data: bytes) -> str:
                 pages.append("")
     except IngestError:
         raise
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         raise IngestError("the PDF could not be opened") from e
     letters = sum(1 for p in pages for ch in p if ch.isalnum())
     if not pages or letters < MIN_CHARS_PER_PAGE * len(pages):
@@ -213,6 +243,8 @@ def unwrap(page: str) -> str:
 __all__ = [
     "MAX_BYTES",
     "MAX_CHARS",
+    "MAX_PDF_PAGES",
+    "MAX_UNZIPPED_BYTES",
     "SCANNED_MESSAGE",
     "SUPPORTED",
     "DocumentTooLarge",

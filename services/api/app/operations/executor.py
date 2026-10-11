@@ -520,6 +520,9 @@ class Executor:
             if rec is None:
                 return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} does not exist")
             if rec.status != DocumentStatus.PROPOSED:
+                again = self._same_decision(rec, confirm=confirm, doc_hash=doc_hash, link_facility_id=link_facility_id)
+                if again is not None:  # the same decision sent twice: answered with the first, nothing appended
+                    return again
                 return refuse(Code.PRECONDITION_FAILED, f"Document {document_id} is already {rec.status.value.lower()} "
                                                         f"(day {rec.decided_day})", status=rec.status.value)
             if not hmac.compare_digest(doc_hash.encode(), rec.doc_hash.encode()):
@@ -556,6 +559,22 @@ class Executor:
             return result
 
         return self._atomically(once)
+
+    def _same_decision(self, rec: Any, *, confirm: bool, doc_hash: str, link_facility_id: str | None) -> OperationResult | None:
+        """The result of the owner's first decision on `rec`, when this request asks for exactly that decision again (the
+        same verdict, the same document hash, the same link): a repeat is not a new act, so it appends nothing to the log.
+        None for anything else, which the caller refuses."""
+        from app.domain.models import DocumentStatus
+
+        decided = DocumentStatus.CONFIRMED if confirm else DocumentStatus.REJECTED
+        if (rec.status != decided or rec.decided_seq is None or link_facility_id != rec.linked_facility_id
+                or not hmac.compare_digest(doc_hash.encode(), rec.doc_hash.encode())):
+            return None
+        entry = next((e for e in reversed(self._store.operations()) if e.seq == rec.decided_seq), None)
+        if entry is None:
+            return None
+        return OperationResult.model_validate_json(entry.result_json).model_copy(
+            update={"seq": entry.seq, "entry_hash": entry.entry_hash, "prev_hash": entry.prev_hash})
 
     def circuit_open(self, counterparty_id: str) -> bool:
         return self._recent_refusals(counterparty_id, self._clock()) >= CIRCUIT_THRESHOLD

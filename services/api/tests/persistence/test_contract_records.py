@@ -87,3 +87,39 @@ def test_reset_clears_the_records_and_a_failed_unit_of_work_keeps_none(store):
     assert [r.id for r in store.contract_records()] == ["DOC-000001"]
     store.reset()
     assert store.contract_records() == []
+
+
+# ---------------------------------------------------------------- the stored hash vouches only for the stored text
+
+
+def test_a_record_whose_hash_is_not_the_hash_of_its_text_does_not_load():
+    from pydantic import ValidationError
+
+    from app.domain.models import ContractRecord, text_hash
+
+    rec = _record()
+    assert rec.doc_hash == text_hash(rec.document.text)
+    tampered = rec.model_dump()
+    tampered["document"]["text"] = tampered["document"]["text"].replace("forty-five (45)", "ninety (90)")
+    assert tampered["document"]["text"] != rec.document.text
+    with pytest.raises(ValidationError, match="not the hash of the stored document text"):
+        ContractRecord.model_validate(tampered)
+    assert ContractRecord.model_validate(rec.model_dump()) == rec
+    assert ContractRecord.model_validate_json(rec.model_dump_json()) == rec
+
+
+def test_a_row_edited_in_the_database_fails_to_load_rather_than_vouch_for_other_text(tmp_path: Path):
+    from pydantic import ValidationError
+    from sqlalchemy import text
+
+    s = SqlLedgerStore(f"sqlite:///{tmp_path / 'ledger.db'}")
+    try:
+        rid = s.add_contract_record(_record())
+        assert s.get_contract_record(rid) is not None
+        with s.engine.begin() as conn:
+            conn.execute(text("UPDATE contract_records SET payload_json = replace(payload_json, 'forty-five', 'ninety-nine') "
+                              "WHERE id = :id"), {"id": rid})
+        with pytest.raises(ValidationError, match="not the hash of the stored document text"):
+            s.get_contract_record(rid)
+    finally:
+        s.dispose()

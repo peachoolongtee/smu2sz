@@ -77,7 +77,7 @@ def test_day_zero_after_confirmation(client):
     assert [s["state"] for s in deal["stages"]] == ["done", "skipped", "skipped", "now", "todo"]
     assert all(x["status"] == "ok" for x in deal["checks"]), deal["checks"]
     assert [i["id"] for i in deal["invoices"]] == ["RCV-A"] and deal["invoices"][0]["status"] == "NOT_DUE"
-    assert deal["next_invoice"] == {"day": 2, "amount_display": "¥420,000.00"}
+    assert deal["next_invoice"] == {"day": 2, "when": "in 2 days", "amount_display": "¥420,000.00"}
     assert deal["next_action"]["text"] == "Nothing needs you on this deal today."
 
 
@@ -88,20 +88,20 @@ def test_the_golden_demo_on_day_34_matches_the_prototype(client):
     assert deal["day"] == 34
     assert [p["label"] for p in deal["pills"]] == ["Payment overdue", "1 approval waiting"]
     assert [(s["key"], s["state"], s["note"]) for s in deal["stages"]] == [
-        ("read", "done", "day 0"), ("negotiated", "done", "day 0"), ("early_payment", "done", "day 2"),
-        ("collecting", "now", "RCV-A late"), ("fulfilled", "todo", "day 334")]
+        ("read", "done", "34 days ago"), ("negotiated", "done", "34 days ago"), ("early_payment", "done", "32 days ago"),
+        ("collecting", "now", "RCV-A late"), ("fulfilled", "todo", "in 300 days")]
     assert [(e["day"], e["label"]) for e in deal["changes"]] == [
         (0, "You confirmed"), (0, "Buyer asked"), (0, "Agent replied"), (0, "Buyer accepted"), (2, "Bank feed")]
-    assert deal["changes"][3]["text"] == ("early settlement of ¥257,200.00 of RCV-A at 0.85%, paid by day 2; booked "
-                                          "by the agent (Tier 1)")
+    assert deal["changes"][3]["text"] == ("early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; "
+                                          "booked by the agent within your limits")
     assert deal["changes"][4]["text"] == "¥255,013.80 received on RCV-A (the agreed early payment)"
     rcv = deal["invoices"][0]
     assert (rcv["id"], rcv["outstanding_display"], rcv["due_day"], rcv["status"], rcv["status_text"]) == (
         "RCV-A", "¥162,800.00", 32, "LATE", "2 days late")
-    assert rcv["notes"] == ["¥257,200.00 settled early on day 2"]
+    assert rcv["notes"] == ["¥257,200.00 settled early 32 days ago"]
     second = deal["invoices"][1]
     assert (second["label"], second["status"], second["notes"]) == (
-        "Invoice of day 2", "ADVANCE_WAITING", ["¥200,000.00 advance waiting for your approval (APR-000001)"])
+        "Invoice issued 32 days ago", "ADVANCE_WAITING", ["¥200,000.00 advance waiting for your approval (APR-000001)"])
     assert deal["invoices"][2]["status"] == "NOT_DUE"
     force = {r["key"]: (r["value_display"], r["vs_contract"]) for r in deal["in_force"]}
     assert force["payment_terms"] == ("45 days", "SAME") and force["price"] == ("¥420,000.00", "SAME")
@@ -109,8 +109,8 @@ def test_the_golden_demo_on_day_34_matches_the_prototype(client):
     assert all(x["status"] == "ok" for x in deal["checks"])
     assert any("0.85% early payment is within the contract's 1.20%" in x["text"] for x in deal["checks"])
     assert deal["next_action"]["text"] == ("Chase the ¥162,800.00 on RCV-A (2 days late). Review APR-000001: a "
-                                           "¥200,000.00 advance on the invoice of day 2 to stay above your floor on "
-                                           "day 42.")
+                                           "¥200,000.00 advance on the invoice issued 32 days ago to stay above your "
+                                           "floor in 8 days.")
     assert [a["href"] for a in deal["next_action"]["actions"]] == ["/approvals", "/reconciliation"]
     assert [d["text"] for d in deal["owed_by_us"]["documents"]] == [
         "a delivery note signed by the Buyer's warehouse", "a VAT special invoice (fapiao) for the Batch",
@@ -180,3 +180,61 @@ def test_an_accepted_terms_change_needs_a_written_amendment(client):
     texts = [x["text"] for x in deal["checks"] if x["status"] == "warn"]
     assert any("requires amendments made in writing and signed by both Parties (clause 9.1)" in t for t in texts), texts
     assert any(r["key"] == "payment_terms" and r["vs_contract"] == "DIFFERENT" for r in deal["in_force"])
+
+
+def _confirm_edited(client: TestClient, field: str, **update: object) -> None:
+    """The demo contract with one term of the reading edited (the rule reader always finds a payment term's starting
+    point and reads every price per delivery, so the reading is edited as a live model's could differ), then confirmed."""
+    from app.api.runtime import get_runtime
+    from app.contracts import read_document
+    from app.domain.models import ContractField, DocumentKind
+
+    rt = get_runtime()
+    record = read_document(_demo_text(), DocumentKind.BUYER_CONTRACT, "BUYER-1", title="Supply agreement",
+                           source="text", day=0, facilities=[])
+    assert record.contract is not None
+    terms = [t.model_copy(update=update) if t.field == ContractField(field) else t for t in record.contract.terms]
+    record = record.model_copy(update={"contract": record.contract.model_copy(update={"terms": terms})})
+    rid = rt.store.add_contract_record(record)
+    r = client.post(f"/documents/{rid}/confirm", json={"doc_hash": record.doc_hash}).json()
+    assert r["result"]["status"] == "EXECUTED"
+
+
+def test_a_payment_term_that_counts_from_nothing_is_not_comparable_in_the_check_and_in_force(client):
+    """"Payable within 45 days" names no starting point: the card must not say the books match the contract while the
+    in-force row says they differ. Both say the one sentence, and neither is a match or a difference."""
+    _confirm_edited(client, "PAYMENT_TERMS", basis=None)
+    sentence = "The contract does not say what the 45 days count from; the books count from the invoice date."
+    for text in (sentence,):
+        deal = client.get("/deals/BUYER-1").json()["deal"]
+        pay = next(x for x in deal["contract_terms"] if x["field"] == "PAYMENT_TERMS")
+        assert pay["basis"] is None and pay["days"] == 45
+        assert deal["checks"][0] == {"status": "info", "text": text}
+        row = next(r for r in deal["in_force"] if r["key"] == "payment_terms")
+        assert row["vs_contract"] == "NOT_COMPARABLE" and row["vs_contract_note"] == text
+        assert not any("as the contract does" in x["text"] for x in deal["checks"])
+
+
+def test_a_payment_term_with_a_basis_keeps_its_match_and_its_slip(client):
+    _confirm_text(client, _demo_text())
+    deal = client.get("/deals/BUYER-1").json()["deal"]
+    assert deal["checks"][0]["status"] == "ok" and "as the contract does" in deal["checks"][0]["text"]
+    row = next(r for r in deal["in_force"] if r["key"] == "payment_terms")
+    assert row["vs_contract"] == "SAME" and row["vs_contract_note"] is None
+
+
+@pytest.mark.parametrize(("unit", "sentence"), [
+    ("PER_UNIT", "The contract prices per unit; the books hold the invoice face."),
+    ("LUMP_SUM", "The contract prices as a lump sum; the books hold the invoice face."),
+    ("PER_MONTH", "The contract prices per month; the books hold the invoice face."),
+])
+def test_a_price_per_unit_or_in_total_is_not_comparable_with_the_invoice_face(client, unit, sentence):
+    from app.domain.models import PriceUnit
+
+    _confirm_edited(client, "PRICE", unit=PriceUnit(unit))
+    deal = client.get("/deals/BUYER-1").json()["deal"]
+    row = next(r for r in deal["in_force"] if r["key"] == "price")
+    assert row["vs_contract"] == "NOT_COMPARABLE" and row["vs_contract_note"] == sentence
+    assert row["value_display"] == "¥420,000.00"
+    assert {"status": "info", "text": sentence} in deal["checks"]
+    assert not any("the contract price is" in x["text"] for x in deal["checks"])

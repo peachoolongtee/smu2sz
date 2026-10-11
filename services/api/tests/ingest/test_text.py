@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import io
+import zipfile
 from pathlib import Path
 
 import pytest
 
 from app.ingest import (
     MAX_BYTES,
+    MAX_PDF_PAGES,
+    MAX_UNZIPPED_BYTES,
     SCANNED_MESSAGE,
     DocumentTooLarge,
     EmptyDocument,
@@ -130,8 +133,8 @@ def test_a_page_number_alone_does_not_count_as_a_text_layer():
 
 
 def test_a_text_pdf_is_read():
-    pdf = _pdf([b"BT /F1 10 Tf 14 TL 56 786 Td (4.2 Each invoice is payable forty-five \\(45\\) days after the "
-                b"Invoice Date.) Tj ET"])
+    pdf = _pdf([(b"BT /F1 10 Tf 14 TL 56 786 Td (4.2 Each invoice is payable forty-five \\(45\\) days after the "
+                 b"Invoice Date.) Tj ET")])
     assert extract_text("t.pdf", pdf) == "4.2 Each invoice is payable forty-five (45) days after the Invoice Date."
 
 
@@ -153,6 +156,54 @@ def test_unreadable_or_unsupported_files_are_refused(name, data, exc):
 def test_a_file_over_the_size_limit_is_refused_before_parsing():
     with pytest.raises(DocumentTooLarge):
         extract_text("big.txt", b"a" * (MAX_BYTES + 1))
+
+
+def _zip_with(*entries: tuple[str, bytes]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, body in entries:
+            z.writestr(name, body)
+    return buf.getvalue()
+
+
+def test_a_word_file_that_unzips_past_the_cap_is_refused_before_it_is_loaded(monkeypatch):
+    """A few kilobytes of zeros inflate to more than the cap: the sum of the declared sizes refuses it, python-docx
+    never opens it."""
+    import docx
+
+    def loaded(*_a: object, **_k: object) -> None:
+        raise AssertionError("python-docx must not open an oversize archive")
+
+    monkeypatch.setattr(docx, "Document", loaded)
+    bomb = _zip_with(("[Content_Types].xml", b"<Types/>"), ("word/media/big.bin", bytes(MAX_UNZIPPED_BYTES + 1)))
+    assert len(bomb) < MAX_BYTES  # small enough to pass the upload size check
+    with pytest.raises(DocumentTooLarge) as e:
+        extract_text("bomb.docx", bomb)
+    assert e.value.code == "DOCUMENT_TOO_LARGE" and "20 MB once unzipped" in str(e.value) and e.value.message_zh
+
+
+def test_the_cap_sums_every_entry_not_just_the_largest():
+    half = bytes(MAX_UNZIPPED_BYTES // 2 + 1)
+    with pytest.raises(DocumentTooLarge):
+        extract_text("two.docx", _zip_with(("word/a.bin", half), ("word/b.bin", half)))
+
+
+def test_a_word_file_just_under_the_cap_is_still_read():
+    import docx
+
+    d = docx.Document()
+    d.add_paragraph("Clause 1.")
+    buf = io.BytesIO()
+    d.save(buf)
+    assert extract_text("ok.docx", buf.getvalue()) == "Clause 1."
+
+
+def test_a_pdf_over_the_page_cap_is_refused_before_any_page_is_read():
+    page = b"BT /F1 10 Tf 56 786 Td (4.2 Each invoice is payable forty-five days after the Invoice Date.) Tj ET"
+    assert extract_text("ok.pdf", _pdf([page] * MAX_PDF_PAGES))
+    with pytest.raises(DocumentTooLarge) as e:
+        extract_text("long.pdf", _pdf([page] * (MAX_PDF_PAGES + 1)))
+    assert str(e.value) == f"the PDF has {MAX_PDF_PAGES + 1} pages; the limit is {MAX_PDF_PAGES}" and e.value.message_zh
 
 
 def test_every_refusal_carries_a_stable_code():
@@ -180,8 +231,8 @@ def test_unwrap_joins_a_year_or_amount_at_the_start_of_a_wrapped_line():
             "A short line.")
     out = unwrap(page)
     assert out.split("\n\n") == [
-        "2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 2026 "
-        "ends, and the Bank makes available a revolving working-capital credit line with a facility limit of RMB 150,000.",
+        ("2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 2026 "
+         "ends, and the Bank makes available a revolving working-capital credit line with a facility limit of RMB 150,000."),
         "A short line.",
     ]
 

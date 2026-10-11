@@ -126,7 +126,7 @@ def test_a_document_from_an_unregistered_counterparty_is_not_read_and_is_logged(
 def test_an_injected_instruction_is_flagged_blocks_confirmation_and_is_logged(client):
     from app.api.runtime import get_runtime
 
-    name, data = contract_fixture_bytes("FHR_SUPPLY_AGREEMENT")
+    _, data = contract_fixture_bytes("FHR_SUPPLY_AGREEMENT")
     text = data.decode().replace("8. CONFIDENTIALITY", INJECTED + "8. CONFIDENTIALITY")
     r = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "text": text})
     d = r.json()["document"]
@@ -160,9 +160,11 @@ def test_confirm_is_logged_in_the_chain_and_changes_no_money_state(client):
 
 def test_a_stale_hash_confirms_nothing(client):
     d = _upload(client)
-    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": "a" * 64}).json()
-    assert r["result"]["status"] == "REFUSED" and r["result"]["violations"][0]["code"] == "TERMS_CHANGED"
-    assert r["document"]["status"] == "PROPOSED"
+    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": "a" * 64})
+    detail = r.json()["detail"]
+    assert r.status_code == 409 and detail["code"] == "TERMS_CHANGED"
+    assert detail["result"]["status"] == "REFUSED" and detail["result"]["violations"][0]["code"] == "TERMS_CHANGED"
+    assert client.get(f"/documents/{d['id']}").json()["document"]["status"] == "PROPOSED"
 
 
 def test_reject_and_link(client):
@@ -191,3 +193,169 @@ def test_the_fixture_list(client):
     fx = client.get("/fixtures/contracts").json()["contracts"]
     assert [f["id"] for f in fx] == ["FHR_SUPPLY_AGREEMENT", "MB_CREDIT_LINE_AGREEMENT", "GBR_INVOICE_FINANCING_AGREEMENT"]
     assert fx[1]["link_facility_id"] == "FAC-LINE" and fx[0]["formats"] == ["md", "docx", "pdf"]
+
+
+# ---------------------------------------------------------------- limits, and the runtime lock stays free
+
+
+def _zip_bomb() -> bytes:
+    import io
+    import zipfile
+
+    from app.ingest import MAX_UNZIPPED_BYTES
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", b"<Types/>")
+        z.writestr("word/media/big.bin", bytes(MAX_UNZIPPED_BYTES + 1))
+    return buf.getvalue()
+
+
+def _long_pdf() -> bytes:
+    from app.ingest import MAX_PDF_PAGES
+    from tests.ingest.test_text import _pdf
+
+    page = b"BT /F1 10 Tf 56 786 Td (4.2 Each invoice is payable forty-five days after the Invoice Date.) Tj ET"
+    return _pdf([page] * (MAX_PDF_PAGES + 1))
+
+
+def _many_sections() -> str:
+    from app.compiler.contract import MAX_CHUNK_CHARS, MAX_CHUNKS, chunk_document, contract_document
+    from app.domain.models import DocumentKind
+
+    body = ("Each invoice is payable forty-five (45) days after the Invoice Date. " * 100)[:MAX_CHUNK_CHARS - 200]
+    text = "\n\n".join(f"{n}. SECTION {n}\n\n{body}" for n in range(1, MAX_CHUNKS + 6))
+    assert len(text) <= 400_000
+    assert len(chunk_document(contract_document(text, DocumentKind.BUYER_CONTRACT, "BUYER-1"))) > MAX_CHUNKS
+    return text
+
+
+@pytest.mark.parametrize(("body", "words", "zh"), [
+    ({"filename": "bomb.docx", "content_base64": _b64(_zip_bomb())}, "larger than 20 MB once unzipped", "解压后超过 20 MB"),
+    ({"filename": "long.pdf", "content_base64": _b64(_long_pdf())}, "the PDF has 61 pages; the limit is 60", "61 页"),
+    ({"text": _many_sections()}, "too long to read", "合同太长"),
+])
+def test_an_oversize_zip_a_long_pdf_and_a_long_contract_are_refused_with_a_sentence_and_no_record(client, monkeypatch, body,
+                                                                                               words, zh):
+    from app.compiler.service import Compiler
+
+    def model_call(*_a: object, **_k: object) -> None:
+        raise AssertionError("a refused document must reach no model")
+
+    monkeypatch.setattr(Compiler, "_run", model_call)
+    r = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", **body})
+    detail = r.json()["detail"]
+    assert r.status_code == 413, r.text
+    assert words in detail["message"] and zh in detail["message_zh"]
+    assert client.get("/documents").json()["documents"] == []
+
+
+def test_the_runtime_lock_is_free_while_the_file_is_read_and_while_the_reading_runs(client, monkeypatch):
+    """`rt.lock` is re-entrant, so the probe takes it from another thread: it can be had only if the request thread does
+    not hold it."""
+    import threading
+
+    from app.api import documents
+    from app.api.runtime import get_runtime
+
+    rt = get_runtime()
+    seen: dict[str, bool] = {}
+
+    def lock_is_free() -> bool:
+        got: list[bool] = []
+
+        def probe() -> None:
+            ok = rt.lock.acquire(timeout=1)
+            got.append(ok)
+            if ok:
+                rt.lock.release()
+
+        th = threading.Thread(target=probe)
+        th.start()
+        th.join()
+        return got[0]
+
+    extract, read = documents.extract_text, documents.read_document
+
+    def watched_extract(name: str, data: bytes) -> str:
+        seen["extract"] = lock_is_free()
+        return extract(name, data)
+
+    def watched_read(*a: object, **k: object):  # type: ignore[no-untyped-def]
+        seen["read"] = lock_is_free()
+        return read(*a, **k)
+
+    monkeypatch.setattr(documents, "extract_text", watched_extract)
+    monkeypatch.setattr(documents, "read_document", watched_read)
+    d = _upload(client)
+    assert seen == {"extract": True, "read": True}
+    assert client.get(f"/documents/{d['id']}").status_code == 200
+
+
+def test_another_route_is_answered_while_a_document_is_being_read(client, monkeypatch):
+    import threading
+
+    from app.api import documents
+
+    started, release = threading.Event(), threading.Event()
+    extract = documents.extract_text
+
+    def slow(name: str, data: bytes) -> str:
+        started.set()
+        assert release.wait(10)
+        return extract(name, data)
+
+    monkeypatch.setattr(documents, "extract_text", slow)
+    out: dict[str, int] = {}
+    th = threading.Thread(target=lambda: out.update(
+        status=client.post("/documents", json={"fixture_id": "FHR_SUPPLY_AGREEMENT"}).status_code))
+    th.start()
+    try:
+        assert started.wait(10)
+        assert client.get("/documents").status_code == 200  # would block here if the upload held the lock
+    finally:
+        release.set()
+        th.join(10)
+    assert out == {"status": 200}
+
+
+# ---------------------------------------------------------------- deciding twice
+
+
+def test_a_repeated_confirm_returns_the_first_result_and_the_chain_does_not_grow(client):
+    d = _upload(client)
+    body = {"doc_hash": d["doc_hash"]}
+    first = client.post(f"/documents/{d['id']}/confirm", json=body)
+    length = len(client.get("/ledger").json()["operations"])
+    again = client.post(f"/documents/{d['id']}/confirm", json=body)
+    assert first.status_code == again.status_code == 200
+    assert again.json()["result"] == first.json()["result"] and again.json()["result"]["status"] == "EXECUTED"
+    assert len(client.get("/ledger").json()["operations"]) == length
+    assert client.get("/ledger").json()["chain_valid"]
+
+
+def test_the_other_decision_on_a_decided_document_is_a_409(client):
+    d = _upload(client)
+    client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
+    r = client.post(f"/documents/{d['id']}/reject", json={"doc_hash": d["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
+    assert r.json()["detail"]["status"] == "CONFIRMED"
+    assert client.get(f"/documents/{d['id']}").json()["document"]["status"] == "CONFIRMED"
+    rejected = _upload(client, "MB_CREDIT_LINE_AGREEMENT")
+    client.post(f"/documents/{rejected['id']}/reject", json={"doc_hash": rejected["doc_hash"]})
+    r = client.post(f"/documents/{rejected['id']}/confirm", json={"doc_hash": rejected["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
+
+
+def test_a_decision_lost_to_a_concurrent_writer_is_a_409_not_a_500(client, monkeypatch):
+    from app.operations import Executor
+    from app.persistence import DocumentAlreadyDecided
+
+    d = _upload(client)
+
+    def lost(*_a: object, **_k: object) -> None:
+        raise DocumentAlreadyDecided(f"document {d['id']} was decided concurrently")
+
+    monkeypatch.setattr(Executor, "decide_document", lost)
+    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"

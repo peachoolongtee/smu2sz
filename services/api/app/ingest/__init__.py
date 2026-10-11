@@ -6,6 +6,8 @@ Public API: `extract_text(filename, data) -> str` and the `IngestError` family (
 from app.ingest.text import (
     MAX_BYTES,
     MAX_CHARS,
+    MAX_PDF_PAGES,
+    MAX_UNZIPPED_BYTES,
     SCANNED_MESSAGE,
     SUPPORTED,
     DocumentTooLarge,
@@ -21,6 +23,8 @@ from app.ingest.text import (
 __all__ = [
     "MAX_BYTES",
     "MAX_CHARS",
+    "MAX_PDF_PAGES",
+    "MAX_UNZIPPED_BYTES",
     "SCANNED_MESSAGE",
     "SUPPORTED",
     "DocumentTooLarge",

@@ -5,8 +5,10 @@ change no books. The bare `Runtime.reset()` that tests and harnesses use still l
 
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
+import app.api.runtime as rtmod
 from app.api.runtime import get_runtime, set_runtime
 
 FIXTURES = ["FHR_SUPPLY_AGREEMENT", "MB_CREDIT_LINE_AGREEMENT", "GBR_INVOICE_FINANCING_AGREEMENT"]
@@ -80,3 +82,71 @@ def test_a_fresh_start_opens_where_the_demo_reset_does(monkeypatch):
         assert next(d for d in deals if d["counterparty_id"] == "BUYER-1")["has_contract"] is True
     finally:
         set_runtime(None)
+
+
+# ---------------------------------------------------------------- starting without them
+
+
+@pytest.fixture(params=["memory", "sqlite"])
+def cold_start(request, tmp_path, monkeypatch):  # type: ignore[no-untyped-def]
+    """A process start on an empty store (DEMO_MODE on), the runtime not yet built."""
+    monkeypatch.setenv("DATABASE_URL", "memory" if request.param == "memory" else f"sqlite:///{tmp_path / 'ledger.db'}")
+    monkeypatch.setenv("DEMO_MODE", "1")
+    monkeypatch.delenv("OWNER_PUBLIC_KEY_HEX", raising=False)
+    set_runtime(None)
+    yield monkeypatch
+    rt = rtmod._runtime
+    if rt is not None and hasattr(rt.store, "dispose"):
+        rt.store.dispose()
+    set_runtime(None)
+
+
+def _fails_on(monkeypatch, nth: int):  # type: ignore[no-untyped-def]
+    """Make the nth reading of a demo document fail, as a missing or changed fixture would."""
+    from app.api import documents
+
+    real, calls = documents.read_document, []
+
+    def flaky(*args, **kwargs):  # type: ignore[no-untyped-def]
+        calls.append(1)
+        if len(calls) == nth:
+            raise ValueError("the demo document cannot be read")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(documents, "read_document", flaky)
+
+
+@pytest.mark.parametrize("nth", [1, 2, 3])
+def test_a_start_where_a_demo_document_cannot_be_read_goes_on_without_any_of_them(cold_start, caplog, nth):
+    _fails_on(cold_start, nth)
+    with caplog.at_level("WARNING", logger=rtmod.__name__):
+        rt = get_runtime()  # does not raise
+    assert [r.levelname for r in caplog.records if r.name == rtmod.__name__] == ["WARNING"]
+    assert "starting without them" in caplog.records[-1].getMessage() and caplog.records[-1].exc_info is not None
+    # all or none: the confirmations that came before the failure are rolled back with it
+    assert rt.store.contract_records() == [] and rt.store.operations() == []
+    from app.main import app
+
+    client = TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})
+    assert client.get("/documents").json()["documents"] == []
+    assert client.get("/state").status_code == 200
+
+
+def test_a_demo_reset_where_the_documents_cannot_be_read_still_resets(cold_start, caplog):
+    from app.main import app
+
+    client = TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})
+    assert len(client.get("/documents").json()["documents"]) == 3  # a normal start has them
+    _fails_on(cold_start, 1)
+    with caplog.at_level("WARNING", logger=rtmod.__name__):
+        r = client.post("/demo/reset")
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert client.get("/documents").json()["documents"] == [] and client.get("/ledger").json()["operations"] == []
+    assert any("starting without them" in rec.getMessage() for rec in caplog.records)
+
+
+def test_a_normal_start_still_opens_on_the_three_confirmed_documents(cold_start, caplog):
+    with caplog.at_level("WARNING", logger=rtmod.__name__):
+        rt = get_runtime()
+    assert [d.status.value for d in rt.store.contract_records()] == ["CONFIRMED"] * 3
+    assert not [r for r in caplog.records if r.name == rtmod.__name__]
