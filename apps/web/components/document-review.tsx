@@ -321,13 +321,12 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
         <Card
           id="doc-decide"
           title={t("docs.decide")}
-          subtitle={d.title}
           tone={proposed ? "warn" : undefined}
           className={proposed ? "max-lg:sticky max-lg:bottom-(--dock-h) max-lg:z-20 sm:max-lg:pr-36" : ""}
         >
           {proposed ? (
             <>
-              <p id={hintId} className="text-sm text-ink-2">
+              <p id={hintId} className="text-sm text-ink-2 max-sm:text-xs">
                 {t("docs.decide.hint")}
               </p>
               {lender && d.suggested_facility_id ? (
@@ -335,7 +334,7 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
                   <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" aria-describedby={linkHintId} className="mt-0.5 size-5 shrink-0" />
                   <span>
                     {facility ? t("docs.link", { name: facility }) : t("docs.link.generic")}
-                    <span id={linkHintId} className="block text-xs text-ink-3">
+                    <span id={linkHintId} className="block text-xs text-ink-3 max-sm:sr-only">
                       {t("docs.link.hint")}
                     </span>
                   </span>

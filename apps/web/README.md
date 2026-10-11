@@ -140,9 +140,16 @@ or rejects it (`POST /documents/{id}/confirm|reject {doc_hash, link_facility_id?
 changes no books.
 
 The demo reset opens on the three demo documents read by the agent and confirmed by the owner (the first three ledger
-entries). The deal summary sits on Deals (`components/deals/deal-summary.tsx`): once both parties have agreed a deal (the
-"Terms negotiated" stage done in `GET /deals`) it follows what was agreed, the next step points at it, and it links to the
-contract. `/documents` is a Business route opened from a summary and an engine view in Demo mode; Activity links each
+entries). The deal summary sits on Deals, inside "Your agreements" (`components/deals/deal-summary.tsx`, rendered by
+`commitments.tsx`): once both parties have agreed a deal (the "Terms negotiated" stage done in `GET /deals`) each buyer's
+agreement shows a headline, two to four facts and the one next action, with the stages, contract terms, changes, terms in
+force, invoices, what is owed and the checks behind one fold, and links to the contract. A failed `GET /deals` shows the
+standard error state in that section. `GET /deals`, `GET /documents` and `GET /documents/{id}` take `lang` like `GET /ledger`
+and are read again when the language changes; Business pages say every "when" from the server's `*_when` string (else as a
+distance from today) and keep ids, the entry number, the reader and the hash behind the Audit details fold. Confirm and reject
+are irreversible and hash-bound: both buttons go dead while one is sent, a changed text (`TERMS_CHANGED`) or an earlier
+decision (`ALREADY_DECIDED`) is said in words with a Reload, the facility link starts unticked, and below 1024 px the decision
+card is a bar at the foot of the screen above the tab bar. `/documents` is a Business route opened from a summary and an engine view in Demo mode; Activity links each
 confirmation to its contract. "Read again" on a demo document is a new reading to review and confirm or reject.
 
 Mock mode (`lib/mock/documents.ts`) starts from the same point and serves the three demo documents as the live API left

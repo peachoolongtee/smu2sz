@@ -345,12 +345,11 @@ test.describe("against the live API", () => {
 
     // The executor's own refusal for the same cause arrives as a 200 with a REFUSED result.
     await page.unroute(apiUrl("/documents/DOC-000004/confirm"));
-    await page.route(apiUrl("/documents/DOC-000004/confirm"), async (route) => {
-      const real = await route.fetch();
-      const body = (await real.json()) as { result: Record<string, unknown> };
-      body.result = { ...body.result, status: "REFUSED", violations: [{ code: "TERMS_CHANGED", message: "hash" }] };
-      await route.fulfill({ response: real, json: body });
-    });
+    await page.route(apiUrl("/documents/DOC-000004/confirm"), (route) =>
+      route.fulfill({
+        json: { result: { op_id: "OP-X", kind: "CONFIRM_DOCUMENT", status: "REFUSED", tier: "TIER_2", violations: [{ code: "TERMS_CHANGED", message: "hash" }], message: "DOC-000004 hash" }, document: {} },
+      }),
+    );
     await confirm.click();
     await expect(problem).toHaveAttribute("data-problem", "changed");
 
