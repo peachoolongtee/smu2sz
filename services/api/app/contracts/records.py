@@ -7,7 +7,6 @@ provenance. Nothing here writes the books or decides: the owner confirms through
 
 from __future__ import annotations
 
-import hashlib
 from collections.abc import Sequence
 
 from app.compiler import compile_contract, compile_term_sheet
@@ -19,13 +18,14 @@ from app.domain.models import (
     ContractRecord,
     DocumentKind,
     Facility,
+    text_hash,
 )
 
 KIND_TITLES = {DocumentKind.BUYER_CONTRACT: "Buyer contract", DocumentKind.LENDER_AGREEMENT: "Lender agreement"}
 
 
 def doc_hash(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return text_hash(text)  # the one function, in the domain, that the record also checks itself against
 
 
 def suggest_facility(ts: CompiledTermSheet, counterparty_id: str, facilities: Sequence[Facility]) -> str | None:

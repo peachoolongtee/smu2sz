@@ -10,6 +10,7 @@ Conventions (see docs/ARCHITECTURE.md):
 
 from __future__ import annotations
 
+import hashlib
 from enum import StrEnum
 from typing import Annotated, Literal
 
@@ -410,6 +411,12 @@ class DocumentFlag(Contract):
     note: str
 
 
+def text_hash(text: str) -> str:
+    """The sha256 (hex) of a document's text as UTF-8: the one function that binds an owner's decision to the exact text
+    shown. A `ContractRecord` is built with it and refuses to load when its stored hash is not this of its stored text."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 class ContractRecord(Contract):
     """A document the agent read: its text, the reading, and the owner's decision on it. Confirmation is logged in
     the hash chain (CONFIRM_DOCUMENT) and changes no money state."""
@@ -439,6 +446,14 @@ class ContractRecord(Contract):
             raise ValueError("a lender agreement record holds a term-sheet reading and no contract")
         if self.kind == DocumentKind.BUYER_CONTRACT and (self.linked_facility_id or self.suggested_facility_id):
             raise ValueError("only a lender agreement links to a facility")
+        return self
+
+    @model_validator(mode="after")
+    def _hash_matches_text(self) -> ContractRecord:
+        """The hash the owner's decision is bound to is the hash of the text stored beside it: a row edited in the database
+        fails to load rather than vouch for other text."""
+        if self.doc_hash != text_hash(self.document.text):
+            raise ValueError("the stored document hash is not the hash of the stored document text")
         return self
 
     @property
