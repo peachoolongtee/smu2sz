@@ -69,7 +69,7 @@ colors:
   focus-on-deep: "#ffffff"
 typography:
   display:
-    fontFamily: "'Plus Jakarta Sans', Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontFamily: "'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "40px"
     fontWeight: 800
     lineHeight: 1.12
@@ -298,7 +298,7 @@ Seven tokens for the cash chart's marks and nothing else: `chart-base` (the line
 **Body Font:** Lato if the machine has it, else Inter, then `ui-sans-serif` / `system-ui` and the platform's Latin and CJK faces (PingFang SC, Hiragino Sans GB, Microsoft YaHei, Noto Sans CJK SC)
 **Label/Mono Font:** `ui-monospace`, SF Mono, JetBrains Mono, Menlo, Consolas (hashes, formulas, code)
 
-**Character:** one sans family in two voices: the display voice is Plus Jakarta Sans at weight 800 with `-0.02em` to `-0.025em` tracking, everything else is the body sans. Nothing is fetched from a font host: the Demo is judged where Google Fonts cannot be reached. Lato is named first in the body stack so a machine that has it uses it; every stack falls back to faces the platform already has, and the layout must hold in the fallback (it is what the tests and the screenshots see). Weight does the work: 800 for headlines, 600 for titles, figures and labels, 500 for controls and row titles, 400 for sentences. Antialiased, `text-size-adjust: 100%`. The serif and the "Flow Figures" digit workaround are gone: a sans face sets lining figures by itself.
+**Character:** one sans family in two voices: the display voice is Plus Jakarta Sans at weight 800 with `-0.02em` to `-0.025em` tracking, everything else is the body sans. The face is bundled (`@fontsource-variable/plus-jakarta-sans`, imported once in `app/layout.tsx`, registered as "Plus Jakarta Sans Variable"): its woff2 files are served by the app itself, only the subsets a page uses are fetched, and nothing comes from a font host, so "no runtime web font" stays true where Google Fonts cannot be reached (the Demo is judged there). Lato is named first in the body stack so a machine that has it uses it; every stack falls back to faces the platform already has, and the layout must hold in the fallback (it is what the tests and the screenshots see). Weight does the work: 800 for headlines, 600 for titles, figures and labels, 500 for controls and row titles, 400 for sentences. Antialiased, `text-size-adjust: 100%`. The serif and the "Flow Figures" digit workaround are gone: a sans face sets lining figures by itself.
 
 ### Hierarchy
 - **Display** (800, 28 px, 36 px from `sm`, 40 px from `lg`, line-height 1.12, `-0.025em`): the Home headline, the one `h1` on the page; the cash figure beside the picture is 24 px; the Today card's day number is 30 px.
