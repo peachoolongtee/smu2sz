@@ -268,7 +268,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
         {proposed ? (
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
             <div className="min-w-0 grow basis-96">
-              <h2 id="doc-decide-title" className="font-display text-xl text-ink sm:text-2xl">
+              <h2 id="doc-decide-title" className="font-display text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-2xl">
                 {t("docs.decide")}
               </h2>
               <p id={hintId} className="mt-1 text-sm text-ink-2 max-sm:text-xs">

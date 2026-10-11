@@ -138,7 +138,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-balance font-display text-2xl font-normal tracking-tight text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
+          <h1 className={`text-balance font-display text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
           {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
