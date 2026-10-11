@@ -65,7 +65,7 @@ export default function WhatIfPage() {
             ) : null}
             <WhatIfSummaryCard r={result} loading={loading} today={today} />
             <WhatIfCashCard r={result} today={today} />
-            <Disclosure card summary={t("whatif.details")} testId="whatif-details">
+            <Disclosure className="border-t border-line pt-1" summary={t("whatif.details")} testId="whatif-details">
               <div className="space-y-6">
                 <WhatIfVerdictCard r={result} loading={loading} />
                 <div className="grid gap-6 xl:grid-cols-2">

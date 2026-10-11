@@ -77,7 +77,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       </Card>
 
       {d.interpretation?.terms.length ? (
-        <Card id="record-terms" title={t("rec.terms")} subtitle={t("rec.terms.sub")}>
+        <Card flat id="record-terms" title={t("rec.terms")} subtitle={t("rec.terms.sub")}>
           <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink" data-testid="record-terms">
             {d.interpretation.terms.map((x, i) => (
               <li key={i} className="break-words">
@@ -89,7 +89,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.evaluation ? (
-        <Card id="record-response" title={t("rec.response")} subtitle={t("rec.evaluated", { when: d.evaluation.evaluated_when })}>
+        <Card flat id="record-response" title={t("rec.response")} subtitle={t("rec.evaluated", { when: d.evaluation.evaluated_when })}>
           <p className="text-sm font-semibold text-ink" data-testid="record-action">
             {d.evaluation.business_action_text}
           </p>
@@ -133,7 +133,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.quote ? (
-        <Card id="record-quote" title={t("rec.quote")}>
+        <Card flat id="record-quote" title={t("rec.quote")}>
           <div className="-mt-3">
             <QuoteBlock id={d.id} quote={d.quote} missing={d.quote.recorded ? null : d.quote.text} alwaysLines />
           </div>
@@ -141,7 +141,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.authorization || d.agreement ? (
-        <Card id="record-standing" title={t("rec.standing")}>
+        <Card flat id="record-standing" title={t("rec.standing")}>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
             {d.authorization ? (
               <>
@@ -166,7 +166,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.operations.length ? (
-        <Card id="record-operations" title={t("rec.operations")}>
+        <Card flat id="record-operations" title={t("rec.operations")}>
           <ol className="divide-y divide-line" data-testid="record-operations">
             {d.operations.map((o) => (
               <li key={o.op_id} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5 text-sm">
@@ -180,7 +180,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.settlement.length ? (
-        <Card id="record-settlement" title={t("rec.settlement")}>
+        <Card flat id="record-settlement" title={t("rec.settlement")}>
           <ul className="space-y-1.5 text-sm" data-testid="record-settlement">
             {d.settlement.map((l) => (
               <li key={l.lot_id} className="flex flex-wrap items-baseline gap-x-2">
@@ -194,7 +194,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       ) : null}
 
       {d.promises.length || d.receipts.length ? (
-        <Card id="record-payments" title={t("rec.payments")}>
+        <Card flat id="record-payments" title={t("rec.payments")}>
           <ul className="space-y-2 text-sm text-ink" data-testid="record-payments">
             {[...d.promises, ...d.receipts].map((x, i) => (
               <li key={i} className="break-words">
