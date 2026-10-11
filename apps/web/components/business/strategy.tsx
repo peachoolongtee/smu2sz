@@ -25,12 +25,12 @@ export function ActionChip({ action }: { action: ReceivableWorth["action"] }) {
 export function WorthText({ row, testId, align = "left" }: { row: ReceivableWorth; testId: string; align?: "left" | "right" }) {
   const { t } = useI18n();
   return (
-    <span className={`block whitespace-nowrap text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
+    <span className={`block text-pretty text-sm tabular-nums text-ink ${align === "right" ? "text-right" : ""}`} data-testid={testId}>
       {row.no_saving ? (
         row.worth_text
       ) : (
         <>
-          <span className="text-ink-3">{t("biz.strategy.saves")}</span> <span className="font-semibold">{row.net_saving_display}</span>
+          <span className="text-ink-3">{t("biz.strategy.saves")}</span> <span className="whitespace-nowrap font-semibold">{row.net_saving_display}</span>
         </>
       )}
     </span>

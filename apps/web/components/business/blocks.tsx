@@ -93,7 +93,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   );
   const rest = changes.slice(CHANGES_SHOWN);
   return (
-    <Card id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
+    <Card flat id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-changes-empty">
           {t("biz.changes.none")}
@@ -124,7 +124,7 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
       ? { buyer: r.next_receipt.buyer_name, amount: r.next_receipt.face_display, when: r.next_receipt.due_when }
       : null;
   return (
-    <Card id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className={textLinkClass}>{t("biz.receivables.open")}</Link>}>
+    <Card flat id="home-receivables" title={t("biz.receivables")} subtitle={t("biz.receivables.sub", { total: r.open_total_display, n: r.open_count })} actions={<Link href="/receivables" className={textLinkClass}>{t("biz.receivables.open")}</Link>}>
       <div className="-my-1 divide-y divide-line">
         {r.past_due.length ? (
           <ul className="motion-rise divide-y divide-line" data-testid="home-late-list">
@@ -157,25 +157,36 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
   );
 }
 
-/** Levels 3 and 4, closed by default: the warnings, the facilities and the debt readings. What is on its way is said once, in the hero. */
+/**
+ * Warnings and the details. The warnings are "Also on your radar", one quiet row of items above the fold (nothing is shown when there are none);
+ * the fold keeps the facilities and the debt readings, closed by default. What is on its way is said once, in the headline's lines.
+ */
 export function DetailsBlock({ h }: { h: HomeView }) {
   const { t } = useI18n();
   return (
-    <Disclosure card testId="home-details" summary={t("biz.details")}>
+    <>
+      {h.warnings.length ? (
+        <section aria-labelledby="home-radar-title" className="motion-reveal" data-testid="home-radar">
+          <h2 id="home-radar-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            {t("biz.radar")}
+          </h2>
+          <ul className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
+            {h.warnings.map((w) => (
+              <li key={w.id} className="flex min-w-0 flex-[1_1_16rem] gap-3" data-testid={`home-warning-${w.kind}`}>
+                <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-tile bg-warn-bg text-warn-fg">
+                  <AlertIcon width={16} height={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-ink">{w.title}</span>
+                  <span className="block text-sm text-ink-2">{w.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <Disclosure testId="home-details" summary={t("biz.details")} className="border-t border-line-strong pt-2">
       <div className="space-y-5">
-        {h.warnings.length ? (
-          <section>
-            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.warnings")}</h3>
-            <ul className="space-y-1.5 text-sm">
-              {h.warnings.map((w) => (
-                <li key={w.id} data-testid={`home-warning-${w.kind}`}>
-                  <span className="font-medium text-ink">{w.title}</span>
-                  <span className="block text-xs text-ink-2">{w.detail}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
         <section>
           <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.facilities")}</h3>
           <TableWrap label={t("biz.facilities")}>
@@ -226,6 +237,7 @@ export function DetailsBlock({ h }: { h: HomeView }) {
           </Link>
         </p>
       </div>
-    </Disclosure>
+      </Disclosure>
+    </>
   );
 }

@@ -14,12 +14,13 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.alerts import alerts
+from app.alerts import Severity, alerts
 from app.api.auth import require_feature, require_owner
 from app.api.decisions import execution_view, latest_verdict_for, load_context, record_fact
 from app.api.display import displayed
-from app.api.home import next_action
+from app.api.home import _alert_actions, _series, next_action
 from app.api.presentation import (
+    RECOMMENDED_PLAN_KEY,
     approval_reason_words,
     business_action,
     business_text,
@@ -34,6 +35,8 @@ from app.api.presentation import (
     plan_when,
     row_legs,
     send_scope_text,
+    series_axes,
+    series_axis,
     t,
     with_roles,
 )
@@ -419,7 +422,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
     with rt.lock:
         t = negotiate(counters[:1] if body.buyer_profile == "hard_line" else counters, profile, supplier_next)
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
-        ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_records(), state))
+        ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_guard_rows(), state))
         by_id = {c.id: c for c in counters}
         rounds = []
         for r in t.rounds:
@@ -540,6 +543,28 @@ def _extension_probe(state) -> Obligation:
                       spans=[SourceSpan(doc_id="PROBE", start=0, end=0, text="")], confidence=1.0)
 
 
+def _add_series(rows: list[dict], actions_by_key: dict[str, list], found: list, books: Books, mandate, today: int, lang: str) -> None:
+    """Each comparison row gains `series`: the cash projection if that plan ran (the points `GET /home` gives `cash.plan_series`, from
+    the same projector with the row's own actions), and `series_note` when it cannot be projected. The plan the next-step card shows
+    when it is the alert's cure is projected from the alert's own legs, as the card does. Nothing is priced or decided here."""
+    state = books.state
+    cure = next((a for a in found if a.actionable and a.severity == Severity.CRITICAL), None)
+    for row in rows:
+        actions = (_alert_actions(state, cure, today) if row["key"] == RECOMMENDED_PLAN_KEY and cure is not None
+                   else actions_by_key.get(row["key"]))
+        row["series"], row["series_note"] = None, None
+        if not actions:
+            row["series_note"] = t(lang, "This option moves no money, so there is no separate cash line for it.",
+                                   "此方案不涉及资金，没有单独的现金曲线。")
+            continue
+        try:
+            traj = project(state, books.with_([]), actions, Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
+        except EngineError:
+            row["series_note"] = t(lang, "Cash cannot be projected for this option.", "无法为此方案预测现金。")
+            continue
+        row["series"] = _series(state, traj, lang, from_day=today)
+
+
 @router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
 def router_plan(lang: str = "en") -> dict:
     """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
@@ -571,9 +596,11 @@ def router_plan(lang: str = "en") -> dict:
             "reason": "; ".join(r.notes), "limit_display": r.limit_display, "available_display": r.available_display,
             "committed": r.committed, "short_term_only": r.short_term_only,
         })
+    compared = compare(books.state, books.with_([]), mandate)
     rows = [{**_row_view(r, state, rt.day, lang), "total_fen": r.cost_fen, "total_display": r.cost_display,
              "selected": r.result.value == "SELECTED"}
-            for r in compare(books.state, books.with_([]), mandate)]
+            for r in compared]
+    found: list = []
     with rt.lock:
         try:  # the same reading the home makes of the open alerts, so the comparison names the plan the next-step card shows
             found = alerts(state, mandate, rt.store, rt.day)
@@ -582,6 +609,8 @@ def router_plan(lang: str = "en") -> dict:
         except EngineError:
             action = None
     comparison, recommended_key = with_roles(rows, action, state, rt.day, lang)
+    _add_series(comparison, {r.key: list(r.actions) for r in compared}, found if action is not None else [], books, mandate,
+                max(rt.day, state.as_of_day), lang)
     by_label = {b.basis: b for b in bases}
     names = {f.id: f.name for f in state.facilities}
     notional, committed_b, expected_b = (bases + [None, None, None])[:3]
@@ -604,6 +633,8 @@ def router_plan(lang: str = "en") -> dict:
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
         "comparison": comparison,
+        "series_axis": series_axis([r.get("series") for r in comparison], mandate.min_cash_fen),
+        "series_axes": series_axes([r.get("series") for r in comparison], mandate.min_cash_fen, (30, 60, 120)),
         "comparison_order_text": comparison_order_text(lang),
         "recommended_key": recommended_key,
     }

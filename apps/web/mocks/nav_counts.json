@@ -1,0 +1,44 @@
+{
+  "quiet": {
+    "lang": "en",
+    "day": 0,
+    "deals": 0,
+    "approvals": 0,
+    "receivables": 0
+  },
+  "offer_received": {
+    "lang": "en",
+    "day": 0,
+    "deals": 1,
+    "approvals": 0,
+    "receivables": 0
+  },
+  "offer_evaluated": {
+    "lang": "en",
+    "day": 0,
+    "deals": 1,
+    "approvals": 0,
+    "receivables": 0
+  },
+  "day34": {
+    "lang": "en",
+    "day": 34,
+    "deals": 1,
+    "approvals": 0,
+    "receivables": 1
+  },
+  "pending": {
+    "lang": "en",
+    "day": 34,
+    "deals": 1,
+    "approvals": 1,
+    "receivables": 1
+  },
+  "approved": {
+    "lang": "en",
+    "day": 34,
+    "deals": 1,
+    "approvals": 0,
+    "receivables": 1
+  }
+}

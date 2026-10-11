@@ -226,8 +226,8 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await expect(rcvA).toHaveAttribute("data-status", "LATE");
   await expect(rcvA).toContainText("¥162,800.00");
   await expect(rcvA).toContainText("2 days late");
-  await expect(deal.getByTestId("deal-changes")).toContainText("¥255,013.80 received on RCV-A");
-  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 on RCV-A (2 days late).");
+  await expect(deal.getByTestId("deal-changes")).toContainText("¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co.");
+  await expect(deal.getByTestId("deal-next")).toContainText("Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago.");
 
   // The owner lets the agent fix the reserve alert from the home: the fix waits for approval, and the summary says so.
   await page.goto("/");
@@ -236,7 +236,7 @@ test("day 34: the deal summary tells the story and points at the approval", asyn
   await page.goto("/deals");
   await expect(deal.getByTestId("deal-pills")).toContainText("1 approval waiting");
   await expect(deal.getByTestId("deal-invoice-RI:BUYER-1:2")).toHaveAttribute("data-status", "ADVANCE_WAITING");
-  await expect(deal.getByTestId("deal-next")).toContainText("Review APR-000001");
+  await expect(deal.getByTestId("deal-next")).toContainText("Review the ¥200,000.00 advance on the invoice issued 32 days ago");
   await deal.getByRole("link", { name: "Review approval" }).click();
   await expect(page).toHaveURL(/\/approvals/);
 });
@@ -267,7 +267,7 @@ test("Business words: no day numbers, ids, entry numbers, hashes, env names or r
   expect(shown).not.toMatch(/\bday \d/i);
   expect(shown).not.toMatch(/ledger|hash|entry #|COMPILED|ABSTAINED|CONFLICTING|TIER|FEATURE_|NEXT_PUBLIC|API_MODE/i);
   await expect(page.getByTestId("doc-reading")).toHaveText("The agent read this document.");
-  await expect(page.getByTestId("doc-review").getByTestId("doc-status")).toContainText("Waiting for your decision");
+  await expect(page.getByTestId("doc-review").getByTestId("doc-status")).toContainText("Waiting for your review");
   // The ids, the reader and the hash are one click away.
   await page.getByTestId("doc-audit").locator("summary").click();
   await expect(page.getByTestId("doc-id")).toHaveText("DOC-000004");

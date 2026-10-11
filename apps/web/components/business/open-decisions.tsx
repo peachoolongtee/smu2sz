@@ -42,7 +42,7 @@ export function RemainingTaskBlock({ text, links, decisionId, primary = false }:
 export function WaitingOnBlock({ decisions }: { decisions: DecisionSummary[] }) {
   const { t } = useI18n();
   return (
-    <Card id="home-waiting-on" title={t("biz.waitingOn")} subtitle={t("biz.waitingOn.sub")}>
+    <Card flat id="home-waiting-on" title={t("biz.waitingOn")} subtitle={t("biz.waitingOn.sub")}>
       <ul className="motion-rise -my-1 divide-y divide-line" data-testid="home-waiting-on-list">
         {decisions.map((d) => (
           <li key={d.id}>

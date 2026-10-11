@@ -107,5 +107,5 @@ def test_the_ledger_and_the_act_results_carry_message_when_and_the_queue_the_req
     for op in ledger["operations"]:
         assert op["message_when"] is not None and not DAY_N.search(op["message_when"]), op["message_when"]
     tail = ledger["operations"][-1]
-    assert tail["summary"] == res["message"] and tail["message_when"] == res["message_when"]
+    assert tail["summary"] == res["message"] and tail["message_when"] == res["message_when"].replace(" (APR-000001)", "")
     assert ledger["chain_valid"] is True  # a presentation field, not a change to the chained entry

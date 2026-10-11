@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": -10500000,
     "lowest_day": 30,
+    "lowest_tone": "bad",
     "headroom_fen": 10000000,
     "headroom_short": "¥100k",
     "lowest_headroom_fen": -40500000,
@@ -2474,6 +2475,215 @@
         "net_short": "−¥45k"
       }
     ],
+    "axis": {
+      "min_fen": -20000000,
+      "max_fen": 100000000,
+      "ticks": [
+        {
+          "value_fen": -20000000,
+          "label": "−¥200k",
+          "value_display": "−¥200,000.00"
+        },
+        {
+          "value_fen": 0,
+          "label": "¥0",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k",
+          "value_display": "¥200,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
+        },
+        {
+          "value_fen": 60000000,
+          "label": "¥600k",
+          "value_display": "¥600,000.00"
+        },
+        {
+          "value_fen": 80000000,
+          "label": "¥800k",
+          "value_display": "¥800,000.00"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k",
+          "value_display": "¥1,000,000.00"
+        }
+      ],
+      "min_display": "−¥200,000.00",
+      "max_display": "¥1,000,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "36": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "60": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "120": {
+        "min_fen": -50000000,
+        "max_fen": 150000000,
+        "ticks": [
+          {
+            "value_fen": -50000000,
+            "label": "−¥500k",
+            "value_display": "−¥500,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 150000000,
+            "label": "¥1,500k",
+            "value_display": "¥1,500,000.00"
+          }
+        ],
+        "min_display": "−¥500,000.00",
+        "max_display": "¥1,500,000.00"
+      }
+    },
+    "picture_days": 36,
+    "picture_title": "未来 36 天的现金",
     "forecast_basis_text": "按到期日预计的发票回款和已承诺的融资；已逾期未付的款项不计入；假定额度于32 天后还款。",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2505,18 +2715,22 @@
     "outcome_title": "筹措 ¥405k 资金",
     "components": [
       {
+        "amount_fen": 15000000,
         "amount_short": "¥150k",
         "what": "Bank credit line",
         "lands_when": "今天",
         "name_display": "Bank credit line",
-        "cost_display": "¥841.64"
+        "cost_display": "¥841.64",
+        "amount_display": "¥150,000.00"
       },
       {
+        "amount_fen": 25500000,
         "amount_short": "¥255k",
         "what": "以Foshan Home Retail Co. 的 ¥420k 发票融资",
         "lands_when": "3 天后",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥2,272.29"
+        "cost_display": "¥2,272.29",
+        "amount_display": "¥255,000.00"
       }
     ],
     "receive_short": "¥405k",
@@ -2593,7 +2807,7 @@
     "needs_owner_reason": null,
     "authority_text": "在您签署的授权内，无需额外批准。",
     "if_nothing": "12 天后比最低现金储备低 ¥240,000.00；缺口在30 天后最大，为 ¥405,000.00。",
-    "after": "未来 120 天现金都保持在您的最低现金储备以上。",
+    "after": "未来 120 天现金都不低于您的最低现金储备。",
     "why": "在有界搜索范围内，您已承诺的额度能及时覆盖缺口的最便宜方案。",
     "detail": "预计现金将在12 天后降至 ¥60,000.00，比最低现金储备低 ¥240,000.00；缺口在30 天后最大，为 ¥405,000.00，持续到31 天后。另有备选方案：从Bank credit line提款 ¥150,000.00；以发票在Invoice financing (onboarded platform)融资 ¥336,000.00，费用 ¥2,994.08（年化 11.2%，29 天）；FLOW 推荐上面的方案。",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
@@ -2642,7 +2856,10 @@
       "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票"
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "没有逾期。下一笔：来自Foshan Home Retail Co.的 ¥420,000.00，32 天后到期。",
+    "headline_tone": "ok",
+    "headline_note": null
   },
   "warnings": [
     {

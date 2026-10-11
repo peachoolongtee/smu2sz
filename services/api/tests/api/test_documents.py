@@ -359,3 +359,21 @@ def test_a_decision_lost_to_a_concurrent_writer_is_a_409_not_a_500(client, monke
     monkeypatch.setattr(Executor, "decide_document", lost)
     r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
     assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
+
+
+def test_an_upload_over_the_size_cap_is_refused_with_a_sentence_and_no_record(client):
+    from app.ingest import MAX_BYTES
+
+    big = _b64(b"a" * (MAX_BYTES + 1))
+    r = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "filename": "big.txt",
+                                        "content_base64": big})
+    assert r.status_code == 413, r.text
+    detail = r.json()["detail"]
+    assert detail["code"] == "DOCUMENT_TOO_LARGE" and "larger than 5 MB" in detail["message"] and "超过 5 MB" in detail["message_zh"]
+    assert client.get("/documents").json()["documents"] == []
+
+
+def test_pasted_text_over_the_character_cap_is_refused_and_no_record_is_made(client):
+    r = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "text": "a" * 400_001})
+    assert r.status_code == 422, r.text
+    assert client.get("/documents").json()["documents"] == []

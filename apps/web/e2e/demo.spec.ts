@@ -302,7 +302,7 @@ test("the capex application stays the owner's click and its approval is logged",
   await page.getByTestId("capex-apply").click();
   await expect(page.getByTestId("capex-applied")).toBeVisible();
   await page.goto("/approvals");
-  await page.getByRole("button", { name: "Approve" }).first().click();
+  await page.getByRole("button", { name: /^Approve/ }).first().click();
   await expect(page.getByText("Approved").first()).toBeVisible();
   await page.goto("/ledger");
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");

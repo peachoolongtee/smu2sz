@@ -89,28 +89,29 @@ def test_the_golden_demo_on_day_34_matches_the_prototype(client):
     assert [p["label"] for p in deal["pills"]] == ["Payment overdue", "1 approval waiting"]
     assert [(s["key"], s["state"], s["note"]) for s in deal["stages"]] == [
         ("read", "done", "34 days ago"), ("negotiated", "done", "34 days ago"), ("early_payment", "done", "32 days ago"),
-        ("collecting", "now", "RCV-A late"), ("fulfilled", "todo", "in 300 days")]
+        ("collecting", "now", "2 days late"), ("fulfilled", "todo", "in 300 days")]
     assert [(e["day"], e["label"]) for e in deal["changes"]] == [
         (0, "You confirmed"), (0, "Buyer asked"), (0, "Agent replied"), (0, "Buyer accepted"), (2, "Bank feed")]
-    assert deal["changes"][3]["text"] == ("early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; "
-                                          "booked by the agent within your limits")
-    assert deal["changes"][4]["text"] == "¥255,013.80 received on RCV-A (the agreed early payment)"
+    assert deal["changes"][3]["text"] == (
+        "early settlement of ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. at 0.85%, payment due "
+        "32 days ago; booked by the agent within your limits")
+    assert deal["changes"][4]["text"] == "¥255,013.80 received on the ¥420,000.00 invoice to Foshan Home Retail Co. (the agreed early payment)"
     rcv = deal["invoices"][0]
     assert (rcv["id"], rcv["outstanding_display"], rcv["due_day"], rcv["status"], rcv["status_text"]) == (
         "RCV-A", "¥162,800.00", 32, "LATE", "2 days late")
     assert rcv["notes"] == ["¥257,200.00 settled early 32 days ago"]
     second = deal["invoices"][1]
     assert (second["label"], second["status"], second["notes"]) == (
-        "Invoice issued 32 days ago", "ADVANCE_WAITING", ["¥200,000.00 advance waiting for your approval (APR-000001)"])
+        "Invoice issued 32 days ago", "ADVANCE_WAITING", ["¥200,000.00 advance waiting for your approval"])
     assert deal["invoices"][2]["status"] == "NOT_DUE"
     force = {r["key"]: (r["value_display"], r["vs_contract"]) for r in deal["in_force"]}
     assert force["payment_terms"] == ("45 days", "SAME") and force["price"] == ("¥420,000.00", "SAME")
     assert force["early_payment"][1] == "DIFFERENT" and force["rebate"] == ("None", "NONE")
     assert all(x["status"] == "ok" for x in deal["checks"])
     assert any("0.85% early payment is within the contract's 1.20%" in x["text"] for x in deal["checks"])
-    assert deal["next_action"]["text"] == ("Chase the ¥162,800.00 on RCV-A (2 days late). Review APR-000001: a "
-                                           "¥200,000.00 advance on the invoice issued 32 days ago to stay above your "
-                                           "floor in 8 days.")
+    assert deal["next_action"]["text"] == (
+        "Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago. Review the "
+        "¥200,000.00 advance on the invoice issued 32 days ago to stay above your floor in 8 days.")
     assert [a["href"] for a in deal["next_action"]["actions"]] == ["/approvals", "/reconciliation"]
     assert [d["text"] for d in deal["owed_by_us"]["documents"]] == [
         "a delivery note signed by the Buyer's warehouse", "a VAT special invoice (fapiao) for the Batch",

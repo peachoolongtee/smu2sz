@@ -123,3 +123,14 @@ def test_a_row_edited_in_the_database_fails_to_load_rather_than_vouch_for_other_
             s.get_contract_record(rid)
     finally:
         s.dispose()
+
+
+def test_confirming_a_second_buyer_contract_marks_the_first_superseded_in_both_stores(store):
+    a, b = (store.add_contract_record(_record()) for _ in range(2))
+    for rid, seq in ((a, 3), (b, 5)):
+        rec = store.get_contract_record(rid)
+        store.decide_contract_record(rec.model_copy(update={"status": DocumentStatus.CONFIRMED, "decided_day": 0, "decided_seq": seq}))
+    assert (store.get_contract_record(a).superseded_by, store.get_contract_record(b).superseded_by) == (b, None)
+    c = store.add_contract_record(_record())
+    store.decide_contract_record(store.get_contract_record(c).model_copy(update={"status": DocumentStatus.REJECTED}))
+    assert [r.superseded_by for r in store.contract_records()] == [b, None, None]  # a rejection replaces nothing

@@ -15,7 +15,7 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await story(page, "tl-mock-approval-story", "agreement");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
   await expect(card.getByTestId("approval-buyer")).toHaveText("Foshan Home Retail Co.");
   const terms = card.getByTestId("approval-terms");
   await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co.");
@@ -85,10 +85,9 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
   const hero = page.getByTestId("home-status");
   await expect(hero).toContainText("Below reserve today");
-  // Already under the minimum: the tile is how far under (¥255k), with today's cash (¥45k) as its caption, never cash under a "below" label.
-  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥255k");
-  await expect(hero).toContainText("Short of your minimum today");
-  await expect(hero).toContainText("Cash today ¥45k");
+  // Already under the minimum: today's cash (¥45k) is the figure beside the chart, and nothing says "N days ago".
+  await expect(page.getByTestId("home-cash")).toHaveText("¥45k");
+  await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");

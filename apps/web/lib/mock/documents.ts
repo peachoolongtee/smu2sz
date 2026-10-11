@@ -24,6 +24,8 @@ import type {
 import fixturesJson from "../../mocks/contracts_fixtures.json";
 import dealsDay0 from "../../mocks/deals_day0.json";
 import dealsDay0Agreed from "../../mocks/deals_day0_agreed.json";
+import dealsDay0Evaluated from "../../mocks/deals_day0_evaluated.json";
+import dealsDay0Received from "../../mocks/deals_day0_received.json";
 import dealsDay0Reconfirmed from "../../mocks/deals_day0_reconfirmed.json";
 import dealsDay34Approved from "../../mocks/deals_day34_approved.json";
 import dealsDay34Open from "../../mocks/deals_day34_open.json";
@@ -40,6 +42,8 @@ export interface SeedOperation {
   requested_by: OperationView["requested_by"];
   message: string;
   summary: string;
+  /** The document the owner decided (the mock's own id for the reading). */
+  document_id?: string;
 }
 
 interface Recorded {
@@ -81,7 +85,7 @@ function seededDocs(): DocState[] {
 export function seedOperations(): SeedOperation[] {
   return [...FIXTURES]
     .sort((a, b) => (RECORDED[a.id].seeded.decided_seq ?? 0) - (RECORDED[b.id].seeded.decided_seq ?? 0))
-    .map((f) => RECORDED[f.id].seeded_operation);
+    .map((f) => ({ ...RECORDED[f.id].seeded_operation, document_id: RECORDED[f.id].seeded.id }));
 }
 
 /** The documents read in this session, and whether the buyer has agreed a deal (the deal summary shows from then on). */
@@ -164,6 +168,12 @@ function summaryOf(v: DocumentView): DocumentSummary {
     uploaded_day: v.uploaded_day,
     decided_day: v.decided_day,
     decided_seq: v.decided_seq,
+    status_text: v.status_text,
+    status_tone: v.status_tone,
+    replaces: v.replaces,
+    replaces_text: v.replaces_text,
+    superseded_by: v.superseded_by,
+    superseded_by_text: v.superseded_by_text,
     linked_facility_id: v.linked_facility_id,
     summary: v.summary,
     blocked: v.blocked,
@@ -226,7 +236,7 @@ export function mockDecide(
   decision: "confirm" | "reject",
   docHash: string,
   linkFacilityId: string | null,
-  book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number }) => OperationView,
+  book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number; document_id?: string }) => OperationView,
 ): DocumentDecision {
   requireOwner();
   const d = byId(id);
@@ -248,7 +258,7 @@ export function mockDecide(
   }
   const day = mockClock().day;
   const res = recorded.result;
-  const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day });
+  const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day, document_id: d.id });
   d.status = decision === "confirm" ? "CONFIRMED" : "REJECTED";
   d.unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
   d.decided_day = day;
@@ -266,7 +276,7 @@ export function mockDecide(
  * again and confirmed (the deal follows the reading confirmed last), and any new reading of it waiting for the owner. From day
  * 34 the recordings are the demo path's, on which the deal was agreed.
  */
-export function mockDeals(): DealsView {
+export function mockDeals(openOffer: "received" | "evaluated" | null = null): DealsView {
   requireOwner();
   const docs = load();
   const supply = docs.filter((d) => d.fixture_id === SUPPLY_AGREEMENT);
@@ -277,9 +287,13 @@ export function mockDeals(): DealsView {
     day < NEWS_DAY
       ? state().agreed
         ? dealsDay0Agreed
-        : reconfirmed
-          ? dealsDay0Reconfirmed
-          : dealsDay0
+        : openOffer === "evaluated"
+          ? dealsDay0Evaluated
+          : openOffer === "received"
+            ? dealsDay0Received
+            : reconfirmed
+              ? dealsDay0Reconfirmed
+              : dealsDay0
       : stage === "approved"
         ? dealsDay34Approved
         : stage === "pending"

@@ -138,7 +138,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-balance font-display text-2xl font-normal tracking-tight text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
+          <h1 className={`text-balance font-display text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
           {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
@@ -155,6 +155,7 @@ export function Card({
   className = "",
   id,
   tone,
+  flat = false,
 }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -163,8 +164,28 @@ export function Card({
   className?: string;
   id?: string;
   tone?: Tone;
+  /** No card chrome (the seamless Home): a small-caps heading over the content, no box, no fill, no shadow. */
+  flat?: boolean;
 }) {
   const border = tone ? toneBorder[tone] : "border-line";
+  if (flat) {
+    return (
+      <section id={id} aria-labelledby={title && id ? `${id}-title` : undefined} className={`motion-reveal min-w-0 ${className}`}>
+        {title ? (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line-strong pb-2">
+            <div className="min-w-0">
+              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+                {title}
+              </h2>
+              {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
+            </div>
+            {actions}
+          </div>
+        ) : null}
+        <div className={title ? "pt-2" : ""}>{children}</div>
+      </section>
+    );
+  }
   return (
     <section
       id={id}
@@ -219,6 +240,7 @@ export function Stat({
   captionTestId,
   rootTestId,
   row = false,
+  bare = false,
   press,
   className = "",
 }: {
@@ -240,15 +262,17 @@ export function Stat({
   rootTestId?: string;
   /** Below the small breakpoint the tile is one row (the label, then the figure at the right, the caption under both) so a phone reads several facts in a few lines; from `sm` it is the tile. */
   row?: boolean;
+  /** An unboxed fact (pages A1): no tile, a hairline above the label; the figure and caption are as in the tile. */
+  bare?: boolean;
   /** A tile that leads somewhere on this page (a filter): one quiet text button, stretched over the whole tile like a link tile's link. */
   press?: { label: string; onPress: () => void; testId?: string };
   className?: string;
 }) {
   const deep = surface === "deep";
   const note = caption ?? hint;
-  const box = deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
+  const box = bare ? "border-t border-line-strong" : deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
-    <div className={`min-w-0 rounded-tile px-4 py-3 ${press ? "motion-lift relative hover:bg-subtle" : ""} ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
+    <div className={`min-w-0 ${bare ? "py-2.5" : "rounded-tile px-4 py-3"} ${press ? "motion-lift relative hover:bg-subtle" : ""} ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
       <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
       <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>

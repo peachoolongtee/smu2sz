@@ -31,12 +31,14 @@ import type {
   HomeView,
   LedgerView,
   MandateView,
+  NavCounts,
   Mode,
   NegotiateRequest,
   NegotiationView,
   NlOpenerResponse,
   NlRequest,
   NlResponse,
+  OfferPictureView,
   OfferView,
   OperationView,
   PlanRequest,
@@ -203,6 +205,11 @@ export const live = {
       body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
     }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
+
+  /** GET /nav/counts: numbers only (deals needing the owner, approvals pending, late invoices). */
+  getNavCounts: (lang: "en" | "zh" = "en") => http<NavCounts>("GET", `/nav/counts?lang=${lang}`),
+  /** GET /offers/{id}/picture: the offer's cash line as asked and of each reply ready. */
+  getOfferPicture: (offerId: string, lang: "en" | "zh" = "en") => http<OfferPictureView>("GET", `/offers/${enc(offerId)}/picture?lang=${lang}`),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

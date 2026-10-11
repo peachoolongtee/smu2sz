@@ -18,13 +18,16 @@ from app.api.display import displayed
 from app.api.presentation import (
     agreement_words,
     business_text,
+    document_decision_words,
     event_words,
     first_breach_ahead,
     kind_text,
     last_read,
     live_windows,
     party_name,
+    when_text,
     window_is_live,
+    without_record_ids,
 )
 from app.api.runtime import get_runtime
 from app.api.views import Money, TrajectoryView, trajectory_view
@@ -41,7 +44,7 @@ router = APIRouter(dependencies=[Depends(require_owner)])
 
 
 def _op_view(o, state=None, today: int | None = None, commitments=(), decided=frozenset(), agreements=None, live=None,
-             lang: str = "en", causality: Causality | None = None) -> dict:
+             lang: str = "en", causality: Causality | None = None, documents=None) -> dict:
     """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
     `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today) and
     `event_text` / `event_detail` the business sentence for what happened (`event_words`), presentation reads added when
@@ -63,11 +66,20 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
               "summary": summary})
     if state is not None and today is not None:
         window_live = o.kind == "RECEIVE_PAYMENT" and window_is_live(live, op.get("receivable_id") if isinstance(op, dict) else None)
-        v["message_when"] = business_text(state, summary, today, lang, agreements, window_live)
+        v["day_when"] = when_text(v["day"], today, lang) if isinstance(v["day"], int) else None
+        v["message_when"] = without_record_ids(business_text(state, summary, today, lang, agreements, window_live))
         words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
                             message=str(res.get("message") or ""), approval_id=res.get("approval_id"),
                             day=v["day"] if isinstance(v["day"], int) else None, today=today, lang=lang,
                             decided=res.get("approval_id") in decided, agreements=agreements, window_live=window_live)
+        if o.kind in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT") and isinstance(op, dict) and res.get("status") == "EXECUTED":
+            # the owner's decision on a document the agent read, in the document's own words (never its id or reference code)
+            record = (documents or {}).get(op.get("document_id"))
+            words = document_decision_words(state, confirmed=o.kind == "CONFIRM_DOCUMENT", title=record.title if record else None,
+                                            kind=record.kind.value if record else None, link_facility_id=op.get("link_facility_id"),
+                                            lang=lang)
+            v["document_id"] = op.get("document_id")
+            v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
         text = words["event_text"] or v["message_when"]
         if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
             cmt = next((c for c in commitments if c.id in summary), None)
@@ -173,7 +185,8 @@ def get_ledger(lang: str = "en") -> dict:
         causality = Causality(ctx, _forecast_now(rt, state, mandate, commitments, today) if ops else None, today, lang)
         refused, events = _refusal_counts(rt, ops)
         chain_valid = rt.store.verify_chain()
-        views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality) for o in ops]
+        documents = {r.id: r for r in rt.store.contract_records()} if any(o.kind.endswith("_DOCUMENT") for o in ops) else {}
+        views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents) for o in ops]
         mark_changed(views)
         return {
             "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],

@@ -14,7 +14,6 @@ const Placeholder = () => (
   </div>
 );
 
-export const CashForecast = dynamic(() => import("@/components/business/cash-forecast").then((m) => m.CashForecast), { ssr: false, loading: Placeholder });
 export const CashChart = dynamic(() => import("@/components/charts").then((m) => m.CashChart), { ssr: false, loading: Placeholder });
 export const DebtChart = dynamic(() => import("@/components/charts").then((m) => m.DebtChart), { ssr: false, loading: Placeholder });
 export const ConcessionMeter = dynamic(() => import("@/components/charts").then((m) => m.ConcessionMeter), { ssr: false, loading: Placeholder });

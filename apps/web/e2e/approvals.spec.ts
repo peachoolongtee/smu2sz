@@ -1,6 +1,6 @@
 import { expect, test as signedOut } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { filledBrand, runPlan } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -68,7 +68,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   const card = page.locator("#approval-APR-000001");
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
   await expect(card.getByTestId("approval-reason")).toContainText("Apply for facility Equipment term loan");
   await expect(card.getByTestId("approval-detail-APR-000001")).toBeHidden();
   await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
@@ -91,7 +91,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.goto("/demo");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
-  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await expect(page.getByTestId("home-day")).toContainText("34");
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
@@ -147,4 +147,80 @@ signedOut("signed out, an owner page asks for the sign-in in words, not an error
   await expect(dialog).toBeHidden();
   await ask.getByRole("button", { name: "Owner sign-in" }).click();
   await expect(dialog).toBeVisible();
+});
+
+// ---- pages A1 (part 2): the approval is the page's answer, and its picture
+
+async function toPendingCure(page: import("@playwright/test").Page) {
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toContainText("34");
+  await page.goto("/");
+  await runPlan(page, "ALERT-RESERVE-42");
+  await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
+  await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
+}
+
+test("with one approval waiting the page's one h1 is its question, the card does not repeat it, and the picture shows both lines", async ({ page }) => {
+  await toPendingCure(page);
+  const h1 = page.getByRole("heading", { level: 1 });
+  await expect(h1).toHaveCount(1);
+  await expect(h1).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  const card = page.locator("#approval-APR-000001");
+  await expect(card.getByTestId("approval-headline")).toHaveCount(0);
+  // The three facts, then the picture: the decline line is the baseline and the approve line the alternative, each lowest point named in the server's words.
+  await expect(card.getByTestId("approval-lands")).toBeVisible();
+  const picture = card.getByTestId("approval-picture");
+  await expect(picture).toBeVisible();
+  await expect(picture).toHaveAttribute("data-plan", "yes");
+  await expect(picture.getByTestId("picture-line-nothing")).toBeVisible();
+  await expect(picture.getByTestId("picture-line-plan")).toBeVisible();
+  await expect(picture.getByTestId("picture-view-nothing")).toHaveText("If you decline");
+  await expect(picture.getByTestId("picture-view-plan")).toHaveText("If you approve");
+  await expect(card.getByTestId("approval-lowest-decline")).toContainText("Lowest ¥");
+  await expect(card.getByTestId("approval-lowest-approve")).toContainText("Lowest ¥");
+  // No chips; the server's two sentences are the captions, under the chart.
+  await expect(picture.getByTestId("picture-chips")).toHaveCount(0);
+  const [pb, cb] = [await picture.boundingBox(), await card.getByTestId("approval-if-decline").boundingBox()];
+  expect(cb!.y).toBeGreaterThan(pb!.y + 150);
+  await expect(card.getByTestId("approval-after")).toBeVisible();
+  // The quote waits behind one fold; the one filled primary is Approve.
+  await expect(card.getByTestId("approval-quote")).toBeHidden();
+  await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
+  await expect(card.getByTestId("approval-quote")).toBeVisible();
+  expect(await filledBrand(page)).toBe(1);
+});
+
+test("an agreement approval shows its terms and no picture", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-approval-story", "agreement"));
+  await page.goto("/approvals");
+  const card = page.locator("#approval-APR-000001");
+  await expect(card.getByTestId("approval-terms")).toBeVisible();
+  await expect(card.getByTestId("approval-picture")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(card.getByTestId("approval-if-decline")).toBeVisible();
+});
+
+test("a decided approval is a row on a hairline under the plain title, and the page does not scroll sideways at 390 px", async ({ page }) => {
+  await toPendingCure(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const card = page.locator("#approval-APR-000001");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await card.getByRole("button", { name: /^Approve/ }).click();
+  await expect(card.getByTestId("approval-decided-APR-000001")).toBeVisible();
+  await expect(page.getByTestId("approvals-decided")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Approvals");
+  await expect(page.getByTestId("approval-headline")).toHaveText("You approved ¥200,000.00 of invoice financing.");
+  expect(await filledBrand(page)).toBe(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("the approval's new strings are in Chinese too", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await toPendingCure(page);
+  const card = page.locator("#approval-APR-000001");
+  await expect(card.getByTestId("approval-picture").getByTestId("picture-view-plan")).toHaveText("如果您批准");
+  await expect(card.getByTestId("approval-picture").getByTestId("picture-view-nothing")).toHaveText("如果您拒绝");
+  await expect(card.getByTestId("approval-lowest-decline")).toContainText("最低");
 });

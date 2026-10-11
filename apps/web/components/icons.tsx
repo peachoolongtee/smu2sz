@@ -156,3 +156,21 @@ export const SparkIcon = (p: P) => (
     <path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.6 2.6M15.4 15.4 18 18M18 6l-2.6 2.6M8.6 15.4 6 18" />
   </svg>
 );
+
+// ---- pages A1 (part 1): who acted on an Activity entry (16 px, like the base set)
+export const UserIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="5.5" r="2.5" />
+    <path d="M3 13.5c.6-2.6 2.6-4 5-4s4.4 1.4 5 4" />
+  </svg>
+);
+export const BankIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2 6.5 8 3l6 3.5M3.5 7.5v4M6.5 7.5v4M9.5 7.5v4M12.5 7.5v4M2.5 13h11" />
+  </svg>
+);
+export const StoreIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2.5 6.5 3.5 3h9l1 3.5M3 6.5h10M3.5 6.5v7h9v-7M6.5 13.5v-3h3v3" />
+  </svg>
+);

@@ -153,6 +153,8 @@ live e2e 86 / 94; zero retries. The walkthrough's section 14 lists what the fixe
 
 The session handoff of 12 Oct 2026, with the delegation protocol, the owner's recorded decisions, the outstanding list by owner and the instructions for the merge's API debt, is `docs/handover/08_session_handoff_2026-10-12.md`; map #88's research is under `docs/research/customer-economics-2026-10-10/` and its specification is `docs/CUSTOMER_ECONOMICS_BRIEF.md`.
 
+**The UI overhaul of 12 Oct 2026 (the owner's instruction; mockup "A1 · Seamless").** Every Business page except Deals was rebuilt to one pattern: the answer as the heading on the page, one picture, one raised action, everything else unboxed (`apps/web/DESIGN.md`, last four sections); the API gained additive presentation reads for the pictures and ticket #103's API half. The engine is unchanged. What was built, the gate, what is open (the owner's choice of the Deals layout first) and how the session worked are in `docs/handover/09_session_handoff_2026-10-12_ui_overhaul.md`: read it before this file's older sections.
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.

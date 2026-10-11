@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
+    "lowest_tone": "warn",
     "headroom_fen": 0,
     "headroom_short": "¥0.00",
     "lowest_headroom_fen": -20000000,
@@ -2475,6 +2476,147 @@
         "net_short": "¥0.00"
       }
     ],
+    "axis": {
+      "min_fen": 10000000,
+      "max_fen": 50000000,
+      "ticks": [
+        {
+          "value_fen": 10000000,
+          "label": "¥100k",
+          "value_display": "¥100,000.00"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k",
+          "value_display": "¥200,000.00"
+        },
+        {
+          "value_fen": 30000000,
+          "label": "¥300k",
+          "value_display": "¥300,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k",
+          "value_display": "¥500,000.00"
+        }
+      ],
+      "min_display": "¥100,000.00",
+      "max_display": "¥500,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": 10000000,
+        "max_fen": 50000000,
+        "ticks": [
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          }
+        ],
+        "min_display": "¥100,000.00",
+        "max_display": "¥500,000.00"
+      },
+      "60": {
+        "min_fen": 10000000,
+        "max_fen": 70000000,
+        "ticks": [
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 70000000,
+            "label": "¥700k",
+            "value_display": "¥700,000.00"
+          }
+        ],
+        "min_display": "¥100,000.00",
+        "max_display": "¥700,000.00"
+      },
+      "120": {
+        "min_fen": 0,
+        "max_fen": 150000000,
+        "ticks": [
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 150000000,
+            "label": "¥1,500k",
+            "value_display": "¥1,500,000.00"
+          }
+        ],
+        "min_display": "¥0.00",
+        "max_display": "¥1,500,000.00"
+      }
+    },
+    "picture_days": 30,
+    "picture_title": "Your cash, next 30 days",
     "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded.",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2506,11 +2648,13 @@
     "outcome_title": "Secure ¥200k of funding",
     "components": [
       {
+        "amount_fen": 20000000,
         "amount_short": "¥200k",
         "what": "against the ¥420k invoice to Foshan Home Retail Co.",
         "lands_when": "in 3 days",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥1,782.19"
+        "cost_display": "¥1,782.19",
+        "amount_display": "¥200,000.00"
       }
     ],
     "receive_short": "¥200k",
@@ -2569,7 +2713,7 @@
     "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
-    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
     "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below your minimum cash reserve; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A funding plan is available: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
@@ -2606,7 +2750,7 @@
       "lands_when": "in 3 days",
       "lands_text": "If you approve today, the cash lands in 3 days.",
       "if_decline": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
-      "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
+      "protects": "Cash stays at or above your minimum cash reserve for the next 120 days.",
       "residual": null,
       "execution_status": "PENDING"
     }
@@ -2721,7 +2865,10 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "¥162,800.00 from Foshan Home Retail Co. is 2 days late.",
+    "headline_tone": "bad",
+    "headline_note": null
   },
   "warnings": [
     {

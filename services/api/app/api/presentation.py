@@ -236,6 +236,58 @@ def fmt_short(fen: int) -> str:
     return fmt_yuan_short(fen)
 
 
+_TICK_STEPS = (1, 2, 5)  # times a power of ten
+_MIN_TICK_STEP_FEN = 100_000  # never finer than ¥1,000: the short labels would repeat
+_MAX_TICKS = 7
+_MIN_TICKS = 3
+
+
+def tick_label(value_fen: int) -> str:
+    """A tick's label: the short formatter's, except zero, which is "¥0" (an axis has no use for the fen)."""
+    return "¥0" if value_fen == 0 else fmt_short(value_fen)
+
+
+def axis_ticks(min_fen: int, max_fen: int) -> list[dict[str, Any]]:
+    """3 to 7 round ticks (`value_fen`, `label`) that cover [min_fen, max_fen] on a chart's money axis, ascending. The step is the
+    smallest 1, 2 or 5 times a power of ten (at least ¥1,000) whose ticks fit in seven; the ticks run from the largest multiple of the
+    step at or below the minimum to the smallest multiple at or above the maximum, so zero is among them whenever the range crosses or
+    touches it. Labels are the short formatter's (zero is "¥0"), so a page never formats a tick."""
+    lo_v, hi_v = min(min_fen, max_fen), max(min_fen, max_fen)
+    step = _MIN_TICK_STEP_FEN
+    while True:
+        for m in _TICK_STEPS:
+            size = step * m
+            lo = (lo_v // size) * size
+            hi = -((-hi_v) // size) * size
+            if (hi - lo) // size + 1 <= _MAX_TICKS:
+                ticks = list(range(lo, hi + 1, size))
+                while len(ticks) < _MIN_TICKS:
+                    ticks.append(ticks[-1] + size)
+                return [{"value_fen": v, "label": tick_label(v)} for v in ticks]
+        step *= 10
+
+
+def series_axis(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None = None,
+                window_days: int | None = None) -> dict[str, Any] | None:
+    """The money axis for any number of cash series (the points' `closing_fen`) and the reserve line drawn with them: its ticks and
+    the domain they span. `window_days` keeps only the points within that many days of the first day drawn (the days a picture shows).
+    None when there is no series to draw."""
+    first = min((p["day"] for s in series if s for p in s), default=None)
+    values = [p["closing_fen"] for s in series if s for p in s if window_days is None or p["day"] - first <= window_days]
+    if not values:
+        return None
+    if floor_fen is not None:
+        values.append(floor_fen)
+    ticks = axis_ticks(min(values), max(values))
+    return {"min_fen": ticks[0]["value_fen"], "max_fen": ticks[-1]["value_fen"], "ticks": ticks}
+
+
+def series_axes(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None, windows: Sequence[int]) -> dict[str, Any]:
+    """`series_axis` for each window in days, keyed by the window ("30", "60", "120"): a page that switches between views reads the axis of
+    the one it shows."""
+    return {str(w): series_axis(series, floor_fen, w) for w in sorted(set(windows))}
+
+
 # ---------------------------------------------------------------- days, as the owner reads them
 
 def first_breach_ahead(traj: Any, today: int, floor: int) -> tuple[int, int] | None:
@@ -1990,3 +2042,55 @@ def send_scope_text(lang: Lang, label: str | None = None) -> str:
     return t(lang, f"Sends {which} to the buyer (the reply is simulated); records the agreement, with your approval when it changes "
                    f"terms; runs the funding for any remaining gap within your limits.",
              f"向买方发送{which}（回复为模拟）；记录协议，若改变条款则需您批准；在您的额度内为剩余缺口融资。")
+
+
+# ---------------------------------------------------------------- the owner's decision on a document, in words
+
+_DOC_REF = re.compile(r"\s+(?=\S*\d)[A-Z0-9][A-Za-z0-9_./-]*$")  # a trailing reference code ("GBR-IF-2026-118")
+_ID_PAREN = re.compile(r"\s*[(（](?:APR|DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER)-[\w-]+[)）]")
+_DOC_KIND_WORDS = {"BUYER_CONTRACT": ("the buyer contract", "买方合同"), "LENDER_AGREEMENT": ("the lender agreement", "贷款方协议")}
+
+
+def without_record_ids(text: str | None) -> str | None:
+    """A sentence without the parenthesised record id the executor writes after "Queued for owner approval"; the id lives in the row's
+    own id fields."""
+    return _ID_PAREN.sub("", text) if text is not None else None
+
+
+def document_name(title: str | None, kind: str | None, lang: Lang = "en") -> str:
+    """A document as the owner names it: its title without the contract's reference code ("the invoice financing agreement"), in the
+    kind's own words when the title is not one the books know (Chinese) or still holds a code."""
+    from app.api.engine_zh import _DOC_TITLES
+
+    plain = _DOC_REF.sub("", (title or "").strip())
+    known = plain in _DOC_TITLES
+    fallback = _DOC_KIND_WORDS.get(kind or "", ("the document", "该文件"))
+    if lang == "zh":
+        return _DOC_TITLES[plain] if known else fallback[1]
+    if known:
+        return "the " + plain[:1].lower() + plain[1:]
+    if plain and not _ID_CODES.search(plain):
+        return f"“{plain}”"
+    return fallback[0]
+
+
+_ID_CODES = re.compile(r"(?:DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER|APR)-|RI:")
+
+
+def document_decision_words(state: FinancialState | None, *, confirmed: bool, title: str | None, kind: str | None,
+                            link_facility_id: str | None, lang: Lang = "en") -> dict[str, str | None]:
+    """`event_text` / `event_detail` of the owner's CONFIRM_DOCUMENT / REJECT_DOCUMENT: a Business sentence from the record (its kind and
+    title in words), never its id or the contract's reference code. A confirmed document changes nothing in the books."""
+    name = document_name(title, kind, lang)
+    if not confirmed:
+        return {"event_text": t(lang, f"You rejected {name}. Nothing was recorded from it.", f"您已驳回{name}。未从中记录任何内容。"),
+                "event_detail": None}
+    detail = None
+    if link_facility_id:
+        fac = facility_name(state, link_facility_id) if state is not None else ""
+        if fac:
+            detail = t(lang, f"Linked to {fac} for reference; the facility itself is unchanged.",
+                       f"已关联到{fac}以供参考；该融资工具本身未变。")
+    return {"event_text": t(lang, f"You confirmed {name}, as FLOW read it. Nothing in the books changed.",
+                            f"您已确认{name}，按 FLOW 读取的内容。账本未作任何更改。"),
+            "event_detail": detail}

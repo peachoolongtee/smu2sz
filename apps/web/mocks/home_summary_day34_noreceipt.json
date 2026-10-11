@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": -15501380,
     "lowest_day": 42,
+    "lowest_tone": "bad",
     "headroom_fen": -25501380,
     "headroom_short": "−¥255k",
     "lowest_headroom_fen": -45501380,
@@ -2475,6 +2476,210 @@
         "net_short": "¥0.00"
       }
     ],
+    "axis": {
+      "min_fen": -20000000,
+      "max_fen": 40000000,
+      "ticks": [
+        {
+          "value_fen": -20000000,
+          "label": "−¥200k",
+          "value_display": "−¥200,000.00"
+        },
+        {
+          "value_fen": -10000000,
+          "label": "−¥100k",
+          "value_display": "−¥100,000.00"
+        },
+        {
+          "value_fen": 0,
+          "label": "¥0",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 10000000,
+          "label": "¥100k",
+          "value_display": "¥100,000.00"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k",
+          "value_display": "¥200,000.00"
+        },
+        {
+          "value_fen": 30000000,
+          "label": "¥300k",
+          "value_display": "¥300,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
+        }
+      ],
+      "min_display": "−¥200,000.00",
+      "max_display": "¥400,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": -20000000,
+        "max_fen": 30000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": -10000000,
+            "label": "−¥100k",
+            "value_display": "−¥100,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥300,000.00"
+      },
+      "47": {
+        "min_fen": -20000000,
+        "max_fen": 40000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": -10000000,
+            "label": "−¥100k",
+            "value_display": "−¥100,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥400,000.00"
+      },
+      "60": {
+        "min_fen": -20000000,
+        "max_fen": 40000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": -10000000,
+            "label": "−¥100k",
+            "value_display": "−¥100,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥400,000.00"
+      },
+      "120": {
+        "min_fen": -50000000,
+        "max_fen": 150000000,
+        "ticks": [
+          {
+            "value_fen": -50000000,
+            "label": "−¥500k",
+            "value_display": "−¥500,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 150000000,
+            "label": "¥1,500k",
+            "value_display": "¥1,500,000.00"
+          }
+        ],
+        "min_display": "−¥500,000.00",
+        "max_display": "¥1,500,000.00"
+      }
+    },
+    "picture_days": 47,
+    "picture_title": "Your cash, next 47 days",
     "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded.",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2506,11 +2711,13 @@
     "outcome_title": "Secure ¥155k of funding",
     "components": [
       {
+        "amount_fen": 15501380,
         "amount_short": "¥155k",
         "what": "against the ¥420k invoice to Foshan Home Retail Co.",
         "lands_when": "in 3 days",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥1,381.32"
+        "cost_display": "¥1,381.32",
+        "amount_display": "¥155,013.80"
       }
     ],
     "receive_short": "¥155k",
@@ -2662,7 +2869,10 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
     },
     "promised": null,
-    "lapsed_promises": 1
+    "lapsed_promises": 1,
+    "headline": "¥420,000.00 from Foshan Home Retail Co. is 2 days late.",
+    "headline_tone": "bad",
+    "headline_note": "No committed funding plan covers the shortfall, so nothing is priced: ranked by how late each invoice is, then by amount."
   },
   "warnings": [
     {

@@ -150,6 +150,8 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
       return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
         .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
         .filter((el) => {
+          // Measured where a finger would meet it: scrolled to the middle of the window, clear of the fixed tab bar.
+          el.scrollIntoView({ block: "center" });
           const r = el.getBoundingClientRect();
           const cx = r.x + r.width / 2;
           const cy = r.y + r.height / 2;
@@ -291,7 +293,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
   measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
-  // Cash: the position strip, the plan, then the comparison; its options list starts inside the first two screens.
+  // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   const options = (await topOf(page, "cash-options-list"))!;
@@ -304,8 +306,9 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const chart = (await topOf(page, "cash-chart"))!;
   expect((await topOf(page, "cash-answer"))!.top).toBeLessThan(plan.top);
   expect(plan.top).toBeLessThan(options.top);
-  expect(options.top, "the options list starts inside the first two screens").toBeLessThan(2 * 915);
-  expect(options.top).toBeLessThan(chart.top);
+  // The picture now leads the page's content (pages A1), so the options sit under it, inside the first three screens.
+  expect(options.top, "the options list starts inside the first three screens").toBeLessThan(3 * 915);
+  expect(chart.top).toBeLessThan(options.top);
   measured.cash = { answer: await topOf(page, "cash-answer"), plan, primary: { top: Math.round(cashBox.y), bottom: Math.round(cashBox.y + cashBox.height) }, facts: await topOf(page, "cash-figures"), options, chart, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
   // The three numbers the review asks for: the bottom edge of each page's primary action (all inside 915).
@@ -369,15 +372,13 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash,
   expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
 });
 
-test("a 1366 x 768 laptop: Home's primary ends in the first screen, with the stat tiles behind Why", async ({ page }, testInfo) => {
+test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The tiles are folded behind Why (the first screen is the answer and the priced action); a taller window shows them.
-  await expect(page.getByTestId("home-floor")).toBeHidden();
-  await page.getByTestId("home-why").locator("> summary").click();
+  // The cash and the minimum sit beside the chart; the bar is sticky, so the primary stays in the first screen however far the page runs on.
   await expect(page.getByTestId("home-floor")).toBeVisible();
   await page.setViewportSize({ width: 1366, height: 900 });
   await expect(page.getByTestId("home-floor")).toBeVisible();
@@ -388,7 +389,7 @@ test("at tablet width (820) the open invoices are a list, so the Buyer column is
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto("/receivables");
   await expect(page.getByTestId("recv-open-list")).toBeVisible();
-  await expect(page.locator("table")).toBeHidden();
+  await expect(page.locator("#recv-open table")).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 

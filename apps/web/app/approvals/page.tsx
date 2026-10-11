@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApprovalCard } from "@/components/approval-card";
+import { ApprovalCard, type ApprovalCash } from "@/components/approval-card";
 import { ShieldCheckIcon } from "@/components/icons";
 import { Badge, EmptyState, ErrorState, LoadingBlock, PageHeader, SlowNotice } from "@/components/ui";
 import { ReadWhen } from "@/components/business/freshness";
-import { ApiError, decideApproval, getApprovalsRead } from "@/lib/api";
+import { ApiError, decideApproval, getApprovalsRead, getHome } from "@/lib/api";
 import { bump } from "@/lib/demo-store";
 import { isTimeout } from "@/lib/errors";
 import { isWriteConflictDetail } from "@/lib/live/retry";
@@ -21,6 +21,11 @@ export default function ApprovalsPage() {
   const read = useAsync(getApprovalsRead, [lang]);
   // The queue as before: `list.data` is the rows; the read's own freshness word rides beside it.
   const list = { data: read.data?.approvals, error: read.error, reload: read.reload };
+  // The minimum cash reserve and today, for the picture of a waiting funding request. A failed read only means no picture.
+  const homeRead = useAsync(() => getHome(lang), [lang]);
+  const cash: ApprovalCash | null = homeRead.data
+    ? { day: homeRead.data.day, floor_fen: homeRead.data.cash.floor_fen, floor_short: homeRead.data.cash.floor_short, horizon_days: homeRead.data.cash.horizon_days }
+    : null;
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
@@ -62,7 +67,13 @@ export default function ApprovalsPage() {
     }
   }
 
-  const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
+  const waiting = list.data?.filter((a) => a.status === "PENDING") ?? [];
+  const decided = list.data?.filter((a) => a.status !== "PENDING") ?? [];
+  const pending = waiting.length;
+  // The page answers "what are you asking me": with one approval waiting, its question is the page's own heading and the card does not repeat it;
+  // with several, a counted sentence; with none, the plain title.
+  const single = waiting.length === 1 ? waiting[0] : null;
+  const title = single ? <span data-testid="approval-headline">{single.presentation?.headline ?? single.subject}</span> : pending > 1 ? t("biz.appr.headline.many", { n: pending }) : t("appr.title");
 
   // A link such as /approvals#approval-APR-000001 (from an alert waiting for approval) lands on that card once the queue has loaded.
   const loaded = Boolean(list.data);
@@ -76,7 +87,7 @@ export default function ApprovalsPage() {
       <PageHeader
         section="home"
         icon={ShieldCheckIcon}
-        title={t("appr.title")}
+        title={title}
         subtitle={narrow && pending ? undefined : t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
@@ -103,19 +114,31 @@ export default function ApprovalsPage() {
       ) : list.data.length === 0 ? (
         <EmptyState title={t("appr.empty.title")} body={t("appr.empty.body")} />
       ) : (
-        <ul className="max-w-3xl space-y-6">
-          {list.data.map((a) => (
-            <li key={a.id} className="min-w-0">
-              <ApprovalCard
-                a={a}
-                busyId={busyId}
-                resultMessage={results[a.id]}
-                onDecide={(id, d) => void decide(id, d)}
-                onRetry={list.reload}
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="max-w-4xl space-y-8">
+          {waiting.length ? (
+            <ul className="space-y-6" data-testid="approvals-waiting">
+              {waiting.map((a) => (
+                <li key={a.id} className="min-w-0">
+                  <ApprovalCard a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} cash={cash} headlineInPage={single?.id === a.id} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {decided.length ? (
+            <section aria-labelledby="appr-decided-title" data-testid="approvals-decided">
+              <h2 id="appr-decided-title" className="border-b border-line-strong pb-2 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+                {t("biz.appr.decided.title")}
+              </h2>
+              <ul>
+                {decided.map((a) => (
+                  <li key={a.id} className="min-w-0">
+                    <ApprovalCard a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
       )}
     </>
   );

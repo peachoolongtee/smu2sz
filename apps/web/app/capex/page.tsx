@@ -95,25 +95,28 @@ export default function CapexPage() {
             ) : null}
           </Callout>
 
-          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} tone={capex.npv_fen < 0 ? "bad" : "ok"} />
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-1 lg:grid-cols-4">
+            <Stat bare label={t("capex.npv")} value={capex.npv_display} hint={capex.request.label} tone={capex.npv_fen < 0 ? "bad" : "ok"} />
             <Stat
+              bare
               label={t("capex.payback")}
               value={capex.payback_month !== null ? t("capex.paybackValue", { n: capex.payback_month }) : t("common.none")}
             />
             <Stat
+              bare
               label={t("capex.leverage")}
               value={capex.leverage_financed ? `${capex.leverage_financed.text}×` : t("common.none")}
               hint={t("capex.leverage.limit", { limit: capex.leverage_limit_display })}
             />
             <Stat
+              bare
               label={t("capex.leverageExt")}
               value={capex.leverage_with_extension ? `${capex.leverage_with_extension.text}×` : t("common.none")}
               hint={t("capex.leverageExt.hint")}
             />
           </dl>
 
-          <Card id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
+          <Card flat id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
             <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
             <TableWrap label={t("capex.structures")}>
               <table className={`${tableCls} min-w-[50rem]`}>
@@ -249,7 +252,7 @@ export default function CapexPage() {
             ) : null}
           </Card>
 
-          <Card id="assumptions" title={t("biz.capex.basis")}>
+          <Card flat id="assumptions" title={t("biz.capex.basis")}>
             {/* The basis in short: a heading and one line each, every figure the server's; the server's full wording one tap away. */}
             <ul className="space-y-3 text-sm" data-testid="capex-basis">
               {(
@@ -294,6 +297,7 @@ export default function CapexPage() {
 
           {file ? (
             <Card
+              flat
               id="file"
               title={t("capex.file.title")}
               subtitle={file.style}

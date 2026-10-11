@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": -10500000,
     "lowest_day": 30,
+    "lowest_tone": "bad",
     "headroom_fen": 10000000,
     "headroom_short": "¥100k",
     "lowest_headroom_fen": -40500000,
@@ -2474,6 +2475,215 @@
         "net_short": "−¥45k"
       }
     ],
+    "axis": {
+      "min_fen": -20000000,
+      "max_fen": 100000000,
+      "ticks": [
+        {
+          "value_fen": -20000000,
+          "label": "−¥200k",
+          "value_display": "−¥200,000.00"
+        },
+        {
+          "value_fen": 0,
+          "label": "¥0",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k",
+          "value_display": "¥200,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
+        },
+        {
+          "value_fen": 60000000,
+          "label": "¥600k",
+          "value_display": "¥600,000.00"
+        },
+        {
+          "value_fen": 80000000,
+          "label": "¥800k",
+          "value_display": "¥800,000.00"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k",
+          "value_display": "¥1,000,000.00"
+        }
+      ],
+      "min_display": "−¥200,000.00",
+      "max_display": "¥1,000,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "36": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "60": {
+        "min_fen": -20000000,
+        "max_fen": 100000000,
+        "ticks": [
+          {
+            "value_fen": -20000000,
+            "label": "−¥200k",
+            "value_display": "−¥200,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          }
+        ],
+        "min_display": "−¥200,000.00",
+        "max_display": "¥1,000,000.00"
+      },
+      "120": {
+        "min_fen": -50000000,
+        "max_fen": 150000000,
+        "ticks": [
+          {
+            "value_fen": -50000000,
+            "label": "−¥500k",
+            "value_display": "−¥500,000.00"
+          },
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 150000000,
+            "label": "¥1,500k",
+            "value_display": "¥1,500,000.00"
+          }
+        ],
+        "min_display": "−¥500,000.00",
+        "max_display": "¥1,500,000.00"
+      }
+    },
+    "picture_days": 36,
+    "picture_title": "Your cash, next 36 days",
     "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded; assumed line repayment in 32 days.",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2505,18 +2715,22 @@
     "outcome_title": "Secure ¥405k of funding",
     "components": [
       {
+        "amount_fen": 15000000,
         "amount_short": "¥150k",
         "what": "Bank credit line",
         "lands_when": "today",
         "name_display": "Bank credit line",
-        "cost_display": "¥841.64"
+        "cost_display": "¥841.64",
+        "amount_display": "¥150,000.00"
       },
       {
+        "amount_fen": 25500000,
         "amount_short": "¥255k",
         "what": "against the ¥420k invoice to Foshan Home Retail Co.",
         "lands_when": "in 3 days",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥2,272.29"
+        "cost_display": "¥2,272.29",
+        "amount_display": "¥255,000.00"
       }
     ],
     "receive_short": "¥405k",
@@ -2593,7 +2807,7 @@
     "needs_owner_reason": null,
     "authority_text": "Within your signed limits. No additional approval required.",
     "if_nothing": "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days.",
-    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest plan your committed facilities can fund in time, within the bounded search.",
     "detail": "Projected cash closes at ¥60,000.00 in 12 days, ¥240,000.00 below your minimum cash reserve; the gap peaks at ¥405,000.00 in 30 days and lasts until 31 days from now. A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) for ¥336,000.00, at ¥2,994.08 (11.2% a year for 29 days); FLOW recommends the plan above.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥60,000.00 = ¥240,000.00 (day 12); max over days 12..31 = ¥405,000.00",
@@ -2642,7 +2856,10 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "Nobody is late. Next: ¥420,000.00 from Foshan Home Retail Co., due in 32 days.",
+    "headline_tone": "ok",
+    "headline_note": null
   },
   "warnings": [
     {

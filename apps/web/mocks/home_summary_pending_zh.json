@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
+    "lowest_tone": "warn",
     "headroom_fen": 0,
     "headroom_short": "¥0.00",
     "lowest_headroom_fen": -20000000,
@@ -2475,6 +2476,147 @@
         "net_short": "¥0.00"
       }
     ],
+    "axis": {
+      "min_fen": 10000000,
+      "max_fen": 50000000,
+      "ticks": [
+        {
+          "value_fen": 10000000,
+          "label": "¥100k",
+          "value_display": "¥100,000.00"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k",
+          "value_display": "¥200,000.00"
+        },
+        {
+          "value_fen": 30000000,
+          "label": "¥300k",
+          "value_display": "¥300,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k",
+          "value_display": "¥500,000.00"
+        }
+      ],
+      "min_display": "¥100,000.00",
+      "max_display": "¥500,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": 10000000,
+        "max_fen": 50000000,
+        "ticks": [
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          }
+        ],
+        "min_display": "¥100,000.00",
+        "max_display": "¥500,000.00"
+      },
+      "60": {
+        "min_fen": 10000000,
+        "max_fen": 70000000,
+        "ticks": [
+          {
+            "value_fen": 10000000,
+            "label": "¥100k",
+            "value_display": "¥100,000.00"
+          },
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 70000000,
+            "label": "¥700k",
+            "value_display": "¥700,000.00"
+          }
+        ],
+        "min_display": "¥100,000.00",
+        "max_display": "¥700,000.00"
+      },
+      "120": {
+        "min_fen": 0,
+        "max_fen": 150000000,
+        "ticks": [
+          {
+            "value_fen": 0,
+            "label": "¥0",
+            "value_display": "¥0.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 150000000,
+            "label": "¥1,500k",
+            "value_display": "¥1,500,000.00"
+          }
+        ],
+        "min_display": "¥0.00",
+        "max_display": "¥1,500,000.00"
+      }
+    },
+    "picture_days": 30,
+    "picture_title": "未来 30 天的现金",
     "forecast_basis_text": "按到期日预计的发票回款和已承诺的融资；已逾期未付的款项不计入。",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2506,11 +2648,13 @@
     "outcome_title": "筹措 ¥200k 资金",
     "components": [
       {
+        "amount_fen": 20000000,
         "amount_short": "¥200k",
         "what": "以Foshan Home Retail Co. 的 ¥420k 发票融资",
         "lands_when": "3 天后",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥1,782.19"
+        "cost_display": "¥1,782.19",
+        "amount_display": "¥200,000.00"
       }
     ],
     "receive_short": "¥200k",
@@ -2569,7 +2713,7 @@
     "needs_owner_reason": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "if_nothing": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
-    "after": "未来 120 天现金都保持在您的最低现金储备以上。",
+    "after": "未来 120 天现金都不低于您的最低现金储备。",
     "why": "最便宜的方案合计 ¥1,706.10（含预测期内其他利息与费用少付的 ¥788.97），但需要 2 次单独批准；此方案只需一次。两者都在“您的融资方案”中。",
     "detail": "预计现金将在8 天后降至 ¥100,000.00，比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00，持续到12 天后。有可用的融资方案：以发票在Invoice financing (onboarded platform)融资 ¥200,000.00，成本 ¥1,782.19（年化 32.5%，10 天）；该方案的年化成本高于您签署的无需批准融资上限 15.00%，因此执行前需要您批准。",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
@@ -2606,7 +2750,7 @@
       "lands_when": "3 天后",
       "lands_text": "若您今天批准，资金将于3 天后到账。",
       "if_decline": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。",
-      "protects": "未来 120 天现金都保持在您的最低现金储备以上。",
+      "protects": "未来 120 天现金都不低于您的最低现金储备。",
       "residual": null,
       "execution_status": "PENDING"
     }
@@ -2721,7 +2865,10 @@
       "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票"
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "来自Foshan Home Retail Co.的 ¥162,800.00 已逾期 2 天。",
+    "headline_tone": "bad",
+    "headline_note": null
   },
   "warnings": [
     {

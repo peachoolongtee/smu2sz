@@ -4,7 +4,7 @@ import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
 import { ActionChip, ActionText, RankingNote, WorthSentence, WorthText } from "@/components/business/strategy";
-import { Badge, Card, TableWrap, tableCls, tdCls, thCls, toggleClass } from "@/components/ui";
+import { Badge, toggleClass } from "@/components/ui";
 import { focusInvoice } from "@/lib/chat-context";
 import { isOverdue } from "@/lib/receivables-order";
 import { useI18n } from "@/lib/i18n";
@@ -15,7 +15,7 @@ export type RecvFilter = "all" | "late" | "soon";
 
 
 /** An invoice that is not late but falls due within this many days is "Due soon" (the page counts days; it computes no money). */
-const DUE_SOON_DAYS = 14;
+export const DUE_SOON_DAYS = 14;
 
 /**
  * The open invoices: pill filters (All / Late / Due soon), then a table on a desktop and a stacked list on a phone, the same facts
@@ -35,6 +35,7 @@ export function ReceivablesTable({
   chase,
   filter,
   onFilter,
+  highlight = null,
 }: {
   invoices: OutstandingReceivable[];
   asOfDay: number;
@@ -46,6 +47,8 @@ export function ReceivablesTable({
   chase: Set<string>;
   filter: RecvFilter;
   onFilter: (f: RecvFilter) => void;
+  /** The row the picture's mark pointed at: it takes a quiet tint and a brand edge until another is chosen. */
+  highlight?: string | null;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -88,7 +91,13 @@ export function ReceivablesTable({
   const cols = worth ? 7 : 5;
 
   return (
-    <Card id="recv-open" title={t("biz.recv.open")} subtitle={t("biz.recv.open.sub")}>
+    <section id="recv-open" aria-labelledby="recv-open-title" className="scroll-mt-20">
+      <div className="mb-3 border-b border-line pb-2">
+        <h2 id="recv-open-title" className="text-base font-extrabold text-ink">
+          {t("biz.recv.open")}
+        </h2>
+        <p className="text-xs text-ink-3">{t("biz.recv.open.sub")}</p>
+      </div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         {showFilters ? (
           <div role="group" aria-label={t("biz.recv.filter.label")} className="flex flex-wrap gap-1.5" data-testid="recv-filters">
@@ -120,7 +129,7 @@ export function ReceivablesTable({
             const buyer = buyerName(o.counterparty_id);
             const n = rank.get(o.receivable_id);
             return (
-              <li key={o.receivable_id} id={o.receivable_id} className="scroll-mt-20 py-3 text-sm">
+              <li key={o.receivable_id} id={o.receivable_id} className={`scroll-mt-20 py-3 text-sm ${highlight === o.receivable_id ? "-mx-2 rounded-tile bg-brand-50 px-2" : ""}`} data-highlight={highlight === o.receivable_id ? "true" : undefined}>
                 <div className="flex items-center gap-3">
                   <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
                   <span className="min-w-0 flex-1">
@@ -161,7 +170,7 @@ export function ReceivablesTable({
 
       {shown.length ? (
         <div className="hidden lg:block">
-          <TableWrap label={t("biz.recv.open")}>
+          <div role="region" aria-label={t("biz.recv.open")} tabIndex={0} className="overflow-x-auto">
             <table className={tableCls}>
               <thead>
                 <tr>
@@ -196,18 +205,24 @@ export function ReceivablesTable({
                   const expanded = open.has(o.receivable_id);
                   const panel = `recv-detail-${o.receivable_id}`;
                   return [
-                    <tr key={o.receivable_id} id={o.receivable_id} className={`scroll-mt-20 ${o.past_due ? "bg-bad-bg/40" : ""}`} data-testid={`recv-${o.receivable_id}`}>
+                    <tr
+                      key={o.receivable_id}
+                      id={o.receivable_id}
+                      className={`scroll-mt-20 ${highlight === o.receivable_id ? "bg-brand-50" : o.past_due ? "bg-bad-bg/40" : ""}`}
+                      data-testid={`recv-${o.receivable_id}`}
+                      data-highlight={highlight === o.receivable_id ? "true" : undefined}
+                    >
                       {worth ? <td className={`${tdCls} text-right font-semibold tabular-nums text-ink-3`}>{n !== undefined ? n + 1 : ""}</td> : null}
-                      <td className={`${tdCls} font-medium`}>
+                      <td className={`${tdCls} min-w-52 font-medium`}>
                         <span className="flex items-center gap-3">
                           <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                          <span className="min-w-0">{buyer}</span>
+                          <span className="min-w-0 break-words">{buyer}</span>
                         </span>
                       </td>
                       <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{o.face_display}</td>
                       <td className={`${tdCls} whitespace-nowrap tabular-nums`}>{whenText(o.due_day, asOfDay, t)}</td>
                       <td className={tdCls}>{status(o)}</td>
-                      {worth ? <td className={`${tdCls} text-right`}>{w ? <WorthText row={w} testId={`recv-worth-${o.receivable_id}`} align="right" /> : null}</td> : null}
+                      {worth ? <td className={`${tdCls} max-w-44 text-right`}>{w ? <WorthText row={w} testId={`recv-worth-${o.receivable_id}`} align="right" /> : null}</td> : null}
                       <td className={tdCls}>
                         <span className="flex items-center justify-between gap-2">
                           {w ? <ActionChip action={w.action} /> : <span />}
@@ -228,7 +243,7 @@ export function ReceivablesTable({
                     </tr>,
                     expanded ? (
                       <tr key={`${o.receivable_id}-detail`} id={panel} data-testid={panel}>
-                        <td colSpan={cols} className="border-b border-line bg-subtle/60 px-3 py-3">
+                        <td colSpan={cols} className="border-b border-line px-3 py-3">
                           <div className={worth ? "pl-12" : ""}>
                             <RowDetail o={o} w={w} testId={`recv-action-${o.receivable_id}`} />
                           </div>
@@ -241,12 +256,16 @@ export function ReceivablesTable({
                 ))}
               </tbody>
             </table>
-          </TableWrap>
+          </div>
         </div>
       ) : null}
-    </Card>
+    </section>
   );
 }
+
+const tableCls = "w-full border-collapse text-left text-sm [&_tbody_tr:last-child_td]:border-b-0";
+const thCls = "whitespace-nowrap border-b border-line-strong px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3";
+const tdCls = "border-b border-line px-3 py-3 align-middle";
 
 /** The small heading over a group of rows ("Overdue first", "Ranked by what collecting saves you"); in the table it is the row-group's header cell. */
 function GroupHeading({ children, table = false }: { children: ReactNode; table?: boolean }) {

@@ -149,7 +149,8 @@ ALERTS_RAW = [r"\.alerts\[\]\.(title|detail|formula)", r"\.alerts\[\]\.inputs\..
               r"\.note"]
 RECON_RAW = [r"\.reconciliation\.(promised|receipts)\[\]\.(detail|formula)"]
 QUEUE_RAW = [r"\.approvals\[\]\.(reason|result_message|op_json|subject)", r"\.approvals\[\]\.operation\..*",
-             r"\.approvals\[\]\.quote\.lines\[\]\.(op_id|kind)", r"\.approvals\[\]\.quote\.actual\[\]\..*"]
+             r"\.approvals\[\]\.quote\.lines\[\]\.(op_id|kind)", r"\.approvals\[\]\.quote\.actual\[\]\..*",
+             r"\.approvals\[\]\.presentation\.series_if_(declined|approved)\[\]\.events\[\]\.label(_short)?"]
 LEDGER_RAW = [r"\.operations\[\]\.(message|summary)", r"\.operations\[\]\.violations\[\]\..*", r"\.commitments\[\]\..*"]
 HOME_RAW = [r"\.next_action\.(formula|detail_raw)", r"\.next_action\.legs\[\]\.formula", r"\.next_action\.cost_breakdown\[\]\.formula",
             r"\.cash\.series\[\]\.events\[\]\.label", r"\.cash\.plan_series\[\]\.events\[\]\.label",

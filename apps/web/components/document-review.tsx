@@ -139,9 +139,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
   const uploaded = whenWords(d.uploaded_when, d.uploaded_day, today, t);
   const decidedWhen = whenWords(d.decided_when, d.decided_day, today, t);
   const proposed = d.status === "PROPOSED";
-  // The reading in a sentence: the dictionary's (en and zh) when it knows the status; the server's own word ("read") only beside a status it does not.
-  const readWord = te("readstatus", d.reading_status);
-  const readingSaid = readWord && readWord !== d.reading_status ? readWord : (d.reading_text ?? "");
+  // The reading in a sentence, as the server wrote it in the owner's language.
+  const readingSaid = d.reading_text;
 
   function reload() {
     setProblem(null);
@@ -197,7 +196,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
   return (
     <>
       <div className="order-2" data-testid="doc-review" data-id={d.id} data-status={d.status} data-kind={d.kind}>
-        <Card id="doc-review" className="scroll-mt-20" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} today={today} />}>
+        <Card id="doc-review" className="scroll-mt-20" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} />}>
           <div className="flex flex-wrap items-center gap-2">
             <span data-testid="doc-ai-label">
               <Badge tone={d.status === "CONFIRMED" ? "ok" : "info"}>{d.status === "CONFIRMED" ? t("docs.confirmedLabel") : t("docs.aiLabel")}</Badge>
@@ -206,6 +205,11 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
               {readingSaid}
             </span>
           </div>
+          {d.replaces_text || d.superseded_by_text ? (
+            <p className="mt-2 text-xs text-ink-2" data-testid="doc-replaces">
+              {[d.replaces_text, d.superseded_by_text].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
           {flags.length ? (
             <div className="mt-3" data-testid="doc-flags">
               <Callout tone={d.blocked ? "bad" : "warn"} title={t("docs.flags", { n: flags.length })}>
@@ -268,7 +272,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
         {proposed ? (
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
             <div className="min-w-0 grow basis-96">
-              <h2 id="doc-decide-title" className="font-display text-xl text-ink sm:text-2xl">
+              <h2 id="doc-decide-title" className="font-display text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-2xl">
                 {t("docs.decide")}
               </h2>
               <p id={hintId} className="mt-1 text-sm text-ink-2 max-sm:text-xs">
@@ -365,7 +369,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}
-          <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
+          <Card flat id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
             <div className="max-h-96 overflow-y-auto">
               <AnnotatedText
                 ariaLabel={t("docs.annotated")}
@@ -385,14 +389,14 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
           </Card>
 
           <div className="min-w-0 space-y-4">
-            <Card id="doc-terms" title={lender ? t("docs.clauses", { n: read.length }) : t("docs.terms", { n: read.length })}>
+            <Card flat id="doc-terms" title={lender ? t("docs.clauses", { n: read.length }) : t("docs.terms", { n: read.length })}>
               <ol className="space-y-2" data-testid="doc-terms">
                 {read.map(itemRow)}
               </ol>
             </Card>
 
             {d.blanks?.length ? (
-              <Card id="doc-blanks" title={t("docs.blanks", { n: d.blanks.length })}>
+              <Card flat id="doc-blanks" title={t("docs.blanks", { n: d.blanks.length })}>
                 <ul className="space-y-1.5" data-testid="doc-blanks">
                   {d.blanks.map((b) => (
                     <li key={b.field} className="text-sm">
@@ -405,7 +409,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             ) : null}
 
             {lender && d.facility ? (
-              <Card id="doc-facility" title={t("docs.facility")} subtitle={d.facility.summary}>
+              <Card flat id="doc-facility" title={t("docs.facility")} subtitle={d.facility.summary}>
                 {d.facility.all_in_rate_display ? <p className="text-sm text-ink-2">{t("docs.allIn", { rate: d.facility.all_in_rate_display })}</p> : null}
                 {d.compared_with && d.comparison?.length ? (
                   <div className="mt-3">
@@ -457,7 +461,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             ) : null}
 
             {d.notes.length ? (
-              <Card id="doc-notes" title={t("docs.notes")}>
+              <Card flat id="doc-notes" title={t("docs.notes")}>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
                   {d.notes.map((x, i) => (
                     <li key={i}>{x.reason}</li>
