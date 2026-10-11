@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import Alert, alerts
+from app.api.approval_lines import FUNDING_KINDS, NO_LINES, approval_lines
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.decisions import approval_decision, execution_view, load_context, quote_for, record_fact
 from app.api.home import cure_after
@@ -242,6 +243,8 @@ def _approvals_queue(rt, lang: str) -> dict:
             d["presentation"] = approval_words(state, op, a.kind, rt.day, alert, lang, plan_costs if pending else None, after=after,
                                                status=d["status"], agreement=terms)
             d["presentation"]["residual"] = residual
+            d["presentation"].update(approval_lines(state, obs, rt.store.get_mandate(), a.op_json, alert, rt.day, lang)
+                                     if pending and a.kind in FUNDING_KINDS else dict(NO_LINES))
             d["presentation"]["execution_status"] = _execution_status(d["status"], run.result.status.value if run is not None else None)
             if terms is not None and d["amount_display"] is None:
                 d["amount_display"] = d["presentation"]["amount_display"]  # the agreement's scope, never ¥0.00

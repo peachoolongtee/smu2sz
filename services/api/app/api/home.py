@@ -188,8 +188,12 @@ def _headline(found: list[Alert], mandate: Mandate, traj: Any, horizon: int, tod
         return {"headline": head, "note": note, "worst": worst, "plan_note": plan_note}
     warnings = [a for a in found if a.severity == Severity.WARNING]
     head = t(lang, "You're covered.", "您的现金是安全的。")
-    note = t(lang, f"Cash stays above your {floor} minimum cash reserve for the next {horizon} days.",
-             f"未来 {horizon} 天现金都保持在您 {floor} 的最低现金储备以上。")
+    if low_fen == mandate.min_cash_fen:  # the lowest point sits exactly on the reserve: "at or above", not "above"
+        note = t(lang, f"Cash stays at or above your {floor} minimum cash reserve for the next {horizon} days.",
+                 f"未来 {horizon} 天现金都不低于您 {floor} 的最低现金储备。")
+    else:
+        note = t(lang, f"Cash stays above your {floor} minimum cash reserve for the next {horizon} days.",
+                 f"未来 {horizon} 天现金都保持在您 {floor} 的最低现金储备以上。")
     thin = next((a for a in warnings if a.kind == AlertKind.RESERVE_HEADROOM_LOW), None)
     if thin is not None and thin.day is not None and not thin.amount_fen:
         note += " " + t(lang, f"It comes close: cash sits exactly on the minimum cash reserve {_distance(thin.day, today, lang)}.",
@@ -421,6 +425,10 @@ def _after_words(after: Any, floor: int, today: int, horizon: int, lang: str) ->
     """The after-state of a plan from its own projection: the first day cash is below the reserve, if any."""
     first = next((d.day for d in after.days if d.day >= today and d.closing_fen < floor), None)
     if first is None:
+        lowest = min((d.closing_fen for d in after.days if d.day >= today), default=None)
+        if lowest is not None and lowest == floor:  # the plan's lowest point is exactly the reserve
+            return t(lang, f"Cash stays at or above your minimum cash reserve for the next {horizon} days.",
+                     f"未来 {horizon} 天现金都不低于您的最低现金储备。")
         return t(lang, f"Cash stays above your minimum cash reserve for the next {horizon} days.",
                  f"未来 {horizon} 天现金都保持在您的最低现金储备以上。")
     return t(lang, f"Cash stays above your minimum cash reserve for the next {max(first - 1 - today, 0)} days.",

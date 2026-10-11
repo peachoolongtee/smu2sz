@@ -49,7 +49,7 @@ def test_day_zero_answers_safe_do_cost(client):
     assert a["lands_day"] == 3 and [leg["lands_day"] for leg in a["legs"]] == [0, 3]
     assert [leg["cost_display"] for leg in a["legs"]] == ["¥841.64", "¥2,272.29"]
     assert a["if_nothing"] == "¥240,000.00 below your minimum cash reserve in 12 days; the gap peaks at ¥405,000.00 in 30 days."
-    assert a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    assert a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
     # the alert's own cure (a different plan, priced on its own basis) is a fallback beside the recommendation, not its figures
     assert "A committed cure exists" not in a["detail"] and "lasts until in" not in a["detail"]
     assert ("A fallback also exists: draw on Bank credit line ¥150,000.00 and finance an invoice on Invoice financing (onboarded platform) "
@@ -87,7 +87,7 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     h = client.get("/home").json()
     assert h["status"] == "WATCH" and h["next_action"] is None
     assert h["headline"] == "You're covered." and h["plan_note"] is None
-    assert h["note"].startswith("Cash stays above your ¥300k minimum cash reserve for the next 120 days.")
+    assert h["note"].startswith("Cash stays at or above your ¥300k minimum cash reserve for the next 120 days.")
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
                                                 "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days",
                                                 "headline": "¥255k funding arriving in 3 days"}]
@@ -208,7 +208,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     assert a["cost_display"] == "¥1,782.19" and a["cost_total_display"] == "¥1,782.19" and a["rate_text"] == "32.5%" and a["lands_day"] == 37
     assert a["needs_owner_reason"] == "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
     assert a["authority_text"].startswith("Needs your approval: The yearly cost of 32.5%")
-    assert a["lands_when"] == "in 3 days" and a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    assert a["lands_when"] == "in 3 days" and a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
     # The router's cheapest plan (¥80,000 on RI:BUYER-1:32 + ¥120,000 on RI:BUYER-1:2) needs two approvals, so the
     # single-approval cure is shown and the cheaper option is named (wayfinder #15 refinement)
     assert a["plan_source"] == "alert" and a["cheaper_option"]["approvals"] == 2
@@ -232,7 +232,7 @@ def test_a_late_buyer_is_named_in_receivables_and_changes(client):
     [card] = client.get("/home").json()["approvals"]
     assert card["if_decline"] == "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
     # one cure, one horizon: the approval card says what the home says (the plan projected on the books), on the home and in the queue
-    assert card["protects"] == a["after"] == "Cash stays above your minimum cash reserve for the next 120 days."
+    assert card["protects"] == a["after"] == "Cash stays at or above your minimum cash reserve for the next 120 days."
     [row] = client.get("/approvals/queue").json()["approvals"]
     assert row["presentation"]["reason"] == ("The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.")
     assert card["reason"] == row["presentation"]["reason"]
@@ -339,3 +339,24 @@ def test_the_lowest_point_carries_a_server_tone_bad_below_zero_warn_below_the_re
     assert seen[0][0] < 0 and seen[0][1] == "bad"
     assert 0 <= seen[25_000_000][0] < mandate.min_cash_fen and seen[25_000_000][1] == "warn"
     assert seen[50_000_000][0] >= mandate.min_cash_fen and seen[50_000_000][1] == "ok"
+
+def _traj(*closings):
+    from types import SimpleNamespace
+    return SimpleNamespace(days=[SimpleNamespace(day=i, closing_fen=c) for i, c in enumerate(closings)])
+
+
+def test_the_after_sentence_says_at_or_above_only_when_the_lowest_point_is_the_reserve():
+    from app.api.causality import Forecast, consequence_text, forecast_of
+    from app.api.home import _after_words
+    floor = 30_000_000
+    on = _traj(40_000_000, floor, 35_000_000)
+    over = _traj(40_000_000, floor + 1, 35_000_000)
+    assert _after_words(on, floor, 0, 120, "en") == "Cash stays at or above your minimum cash reserve for the next 120 days."
+    assert _after_words(over, floor, 0, 120, "en") == "Cash stays above your minimum cash reserve for the next 120 days."
+    assert _after_words(on, floor, 0, 120, "zh") == "未来 120 天现金都不低于您的最低现金储备。"
+    assert _after_words(over, floor, 0, 120, "zh") == "未来 120 天现金都保持在您的最低现金储备以上。"
+    assert consequence_text(forecast_of(on, 0, floor), 0, "en") == "The forecast stays at or above your minimum."
+    assert consequence_text(forecast_of(over, 0, floor), 0, "en") == "The forecast stays above your minimum."
+    assert consequence_text(forecast_of(on, 0, floor), 0, "zh") == "预测现金不低于您的最低现金储备。"
+    assert consequence_text(Forecast(floor, None, None), 0, "en") == "The forecast stays above your minimum."
+

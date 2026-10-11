@@ -33,16 +33,20 @@ class Forecast:
     floor_fen: int
     breach_day: int | None
     breach_cash_fen: int | None
+    lowest_fen: int | None = None  # the lowest closing cash from today on
 
 
 def forecast_of(traj: Any, today: int, floor_fen: int) -> Forecast:
     ahead = first_breach_ahead(traj, today, floor_fen)
-    return Forecast(floor_fen, ahead[0] if ahead else None, ahead[1] if ahead else None)
+    lowest = min((d.closing_fen for d in traj.days if d.day >= today), default=None)
+    return Forecast(floor_fen, ahead[0] if ahead else None, ahead[1] if ahead else None, lowest)
 
 
 def consequence_text(fc: Forecast, today: int, lang: str) -> str:
     """The forecast now: "Cash forecast is now ¥240,000.00 below your minimum in 12 days" or "The forecast stays above your minimum"."""
     if fc.breach_day is None or fc.breach_cash_fen is None:
+        if fc.lowest_fen is not None and fc.lowest_fen == fc.floor_fen:  # the lowest point sits exactly on the reserve
+            return t(lang, "The forecast stays at or above your minimum.", "预测现金不低于您的最低现金储备。")
         return t(lang, "The forecast stays above your minimum.", "预测现金保持在您的最低现金储备以上。")
     gap = fmt_yuan(fc.floor_fen - fc.breach_cash_fen)
     when = when_text(fc.breach_day, today, lang)

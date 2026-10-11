@@ -44,7 +44,7 @@ def test_when_the_forecast_stays_above_the_minimum_the_sentence_says_so(client, 
     a = client.get("/home", headers=OWNER).json()["next_action"]
     client.post(f"/alerts/{a['alert_id']}/act", headers=OWNER, json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
     ops = _ledger(client)["operations"]
-    assert ops and all(o["why_it_matters"] == "The forecast stays above your minimum." for o in ops if o["status"] == "EXECUTED")
+    assert ops and all(o["why_it_matters"] == "The forecast stays at or above your minimum." for o in ops if o["status"] == "EXECUTED")
 
 
 def test_the_forecast_sentence_is_in_chinese_and_the_ledger_reads_the_forecast_once(client, rt, monkeypatch):
