@@ -17,11 +17,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import require_feature, require_owner
 from app.api.runtime import Runtime, get_runtime
+from app.compiler import ContractTooLong
 from app.contracts import read_document, record_view
 from app.deals import documents_for
 from app.domain.fixtures import contract_fixture_bytes, load_contract_fixtures
 from app.domain.models import Actor, DocumentKind, SecurityEvent, SecurityEventKind
-from app.ingest import IngestError, extract_text
+from app.ingest import DocumentTooLarge, IngestError, extract_text
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
 
@@ -61,6 +62,10 @@ def _event(kind: SecurityEventKind, day: int, counterparty_id: str | None, detai
                                               detail=detail, spans=spans or []))
 
 
+def _refusal(code: str, message: str, message_zh: str | None) -> dict[str, str]:
+    return {"code": code, "message": message, **({"message_zh": message_zh} if message_zh else {})}
+
+
 @router.post("/documents")
 def post_document(body: DocumentIn) -> dict:
     rt = get_runtime()
@@ -91,11 +96,14 @@ def post_document(body: DocumentIn) -> dict:
             name, data, source = "pasted.txt", body.text.encode("utf-8"), "text"
         else:
             raise HTTPException(422, {"code": "DOCUMENT_REQUIRED", "message": "a fixture, an upload or text is required"})
+    # The registry check, then the slow part (the file, its text, the reading) with the runtime lock released: a large or
+    # crafted file must never hold up every other route. The lock is taken again only to store the record.
     with rt.lock:
         state = rt.store.get_state()
+        day = rt.day
         party = next((c for c in state.counterparties if c.id == cp), None)
         if party is None or not party.known:
-            _event(SecurityEventKind.UNKNOWN_COUNTERPARTY, rt.day, cp,
+            _event(SecurityEventKind.UNKNOWN_COUNTERPARTY, day, cp,
                    f"a {kind.value.lower().replace('_', ' ')} naming {cp}, who is not on the owner's registry, was "
                    f"refused before it was read")
             raise HTTPException(422, {"code": "UNKNOWN_COUNTERPARTY",
@@ -104,18 +112,22 @@ def post_document(body: DocumentIn) -> dict:
         if party.role != _ROLE[kind]:
             raise HTTPException(422, {"code": "COUNTERPARTY_ROLE_MISMATCH",
                                       "message": f"{cp} is a {party.role.lower()}, not a {_ROLE[kind].lower()}"})
-        try:
-            text = extract_text(name, data)
-        except IngestError as e:
-            raise HTTPException(422, {"code": e.code, "message": str(e)}) from None
-        record = read_document(text, kind, cp, title=title, source=source, day=rt.day, facilities=state.facilities)
+    try:
+        text = extract_text(name, data)
+        record = read_document(text, kind, cp, title=title, source=source, day=day, facilities=state.facilities)
+    except IngestError as e:
+        raise HTTPException(413 if isinstance(e, DocumentTooLarge) else 422,
+                            _refusal(e.code, str(e), e.message_zh)) from None
+    except ContractTooLong as e:
+        raise HTTPException(413, _refusal(e.code, str(e), e.message_zh)) from None
+    with rt.lock:
         rid = rt.store.add_contract_record(record)
         stored = rt.store.get_contract_record(rid)
         assert stored is not None
         for f in stored.flags:
             if f.blocking:
                 _event(SecurityEventKind.INJECTION, rt.day, cp, f"{rid}: {f.note}", [f.span])
-        return {"document": record_view(stored, state)}
+        return {"document": record_view(stored, rt.store.get_state())}
 
 
 @router.get("/documents")
