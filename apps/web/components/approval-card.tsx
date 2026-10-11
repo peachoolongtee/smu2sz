@@ -7,6 +7,7 @@ import { CashPicture } from "@/components/business/cash-picture";
 import { Badge, Button, Callout, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
+import { useNarrow } from "@/lib/use-narrow";
 import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
 
 /** Operations that carry a price. A quote that was never recorded is said for these only; an application or an agreement has no price to miss. */
@@ -116,6 +117,8 @@ export function ApprovalCard({
   headlineInPage?: boolean;
 }) {
   const { t, te } = useI18n();
+  // On a phone the buttons come up the screen: they sit right after the reason, before the picture.
+  const narrow = useNarrow();
   const isPending = a.status === "PENDING";
   const p = a.presentation;
   // What the decision run did, in the server's words (the decision record's execution block); the older fields are the fallback.
@@ -319,6 +322,22 @@ export function ApprovalCard({
 
   if (isPending) {
     // The picture: the cash line if the owner declines and if the owner approves, against the minimum; the server's two sentences are its captions.
+    const decide = (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            loading={busyId === `${a.id}:APPROVE`}
+            disabled={approveDisabled(a, busyId !== null)}
+            aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
+            onClick={() => onDecide(a.id, "APPROVE")}
+          >
+            {p?.approve_label ?? (a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve"))}
+          </Button>
+          <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
+            {t("appr.reject")}
+          </Button>
+        </div>
+    );
     const picture = cash && p?.series_if_declined?.length && p?.series_if_approved?.length ? <ApprovalPicture a={a} cash={cash} after={afterText} decline={declineText} /> : null;
     return (
       <section
@@ -350,6 +369,7 @@ export function ApprovalCard({
           </dd>
         </dl>
 
+        {narrow ? decide : null}
         {picture}
         {termsBlock}
         {picture ? null : (
@@ -373,20 +393,7 @@ export function ApprovalCard({
         )}
         {quoteFold}
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="primary"
-            loading={busyId === `${a.id}:APPROVE`}
-            disabled={approveDisabled(a, busyId !== null)}
-            aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
-            onClick={() => onDecide(a.id, "APPROVE")}
-          >
-            {p?.approve_label ?? (a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve"))}
-          </Button>
-          <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
-            {t("appr.reject")}
-          </Button>
-        </div>
+        {narrow ? null : decide}
         {recordLink}
         {auditFold}
       </section>

@@ -96,7 +96,7 @@ test("Business pages on day 34: the fix needs approval, waits, then is approved"
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals/);
   await shoot(page, "15-approvals-pending", p);
-  await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
   await expect(page.locator("#approval-APR-000001")).toContainText("Approved");
   await shoot(page, "16-approvals-approved", p);
   await page.goto("/");

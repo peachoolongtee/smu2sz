@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { runPlan, walkStory } from "./helpers";
+import { filledBrand, runPlan, walkStory } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -23,9 +23,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await page.goto("/cash");
   await expect(page.getByTestId("cash-headline")).toHaveText("Your cash reserve becomes unsafe in 12 days.");
   // Headroom is said directly: cash minus the reserve, today and at the lowest point ahead.
-  // Four fact tiles (cash today, the reserve, when cash becomes unsafe, the worst point); the headroom is the caption of the tile it belongs to.
+  // Four facts on the picture's header row (cash today, the minimum, when cash becomes unsafe, the worst point); the headroom is the caption of the one it belongs to.
   const figures = page.getByTestId("cash-figures");
-  await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum cash reserve", "Cash becomes unsafe", "Worst point"]);
+  await expect(figures.locator("dt")).toHaveText(["Cash today", "Minimum", "Cash becomes unsafe", "Worst point"]);
   await expect(page.getByTestId("cash-unsafe-when")).toHaveText("in 12 days");
   await expect(page.getByTestId("cash-headroom")).toHaveText("Your cash is ¥100k above it");
   await expect(figures).toContainText("Lowest point: ¥405k below your minimum");
@@ -33,27 +33,29 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
-  // The sections come in the owner's order: risk, plan, options, forecast.
-  const order = await page.evaluate(() => ["cash-answer", "home-next-action", "cash-options", "cash-chart"].map((id) => (document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`))?.getBoundingClientRect().top ?? -1));
-  expect(order[0]).toBeLessThan(order[1]);
-  expect(order[1]).toBeLessThan(order[2]);
-  expect(order[2]).toBeLessThan(order[3]);
+  // The sections come in the owner's order: the answer, the picture, the plan bar, the options (the bar is sticky, so the order is the document's).
+  const inOrder = await page.evaluate(() => {
+    const els = ["cash-answer", "cash-chart", "home-next-action", "cash-options"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`));
+    return els.every((el, i) => el !== null && (i === 0 || (els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0));
+  });
+  expect(inOrder).toBe(true);
   // The comparison is the server's: grouped and ordered as it sent them, one sentence saying how, a numeral only where the server ranked.
   const options = page.getByTestId("cash-options-list");
   await expect(options).not.toContainText("Router optimum");
   await expect(options).not.toContainText("Cheapest committed plan");
-  // The recommended plan is said once, in the plan card above; the server's ordering sentence starts from it, so it is not drawn over the alternatives.
-  await expect(page.getByTestId("cash-options-order")).toHaveCount(0);
-  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
-  await expect(options).not.toContainText("Recommended");
+  // The recommended plan is the first row of the radio group and the one chosen by default; the server's ordering sentence starts from it.
+  await expect(page.getByTestId("cash-options-order")).toHaveCount(1);
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
+  await expect(page.getByTestId("cash-options-RECOMMENDED").locator("input[type=radio]")).toBeChecked();
   await expect(page.locator("#cash-options")).not.toContainText("ranked by cost");
   expect(await options.locator("[data-group]").evaluateAll((els) => els.filter((el) => el.hasAttribute("data-testid") && el.getAttribute("data-testid")!.startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
+    "RECOMMENDED",
     "CONDITIONAL_ON_BUYER",
     "INSUFFICIENT",
     "NOT_AVAILABLE_YET",
   ]);
-  // The plan itself is the card's: its cost is on the page once, and the options hold no second copy of it.
-  expect((await page.locator("main").innerText()).match(/¥3,113\.93/g)).toHaveLength(1);
+  // The plan's cost is on the plan bar and on its own row, in the server's string.
+  expect((await page.locator("main").innerText()).match(/¥3,113\.93/g)).toHaveLength(2);
   // What depends on the buyer is its own group, never numbered, saying whose consent it needs; the server's order puts the cheaper first.
   const conditional = page.getByTestId("cash-options-CONDITIONAL_ON_BUYER");
   await expect(conditional.locator("h3")).toHaveText("Only if the buyer agrees to early payment");
@@ -80,7 +82,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(chart).toHaveAttribute("data-lowest", "-10500000");
   await expect(chart).toHaveAttribute("data-horizon", "60");
   await expect(chart).toContainText("If you do nothing");
-  await expect(chart).toContainText("With the recommended plan");
+  // The alternative line is the chosen plan, under its own name.
+  await expect(chart.getByTestId("picture-view-plan")).toHaveText("Chosen plan");
+  await expect(chart.getByTestId("picture-table")).toContainText("Bank credit line + Invoice financing (onboarded platform)");
   await expect(chart).toContainText("Receipt from Foshan Home Retail Co.");
   await expect(chart).not.toContainText("Receipt the ¥420");
   // The subtitle says what the line counts, in the server's words; the Basis fold has the facts behind it; the conclusion says how fresh it is.
@@ -94,12 +98,11 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   await expect(basis.getByTestId("forecast-basis-repayment")).toHaveText("in 32 days");
   await expect(basis).toContainText("Overdue payments are left out.");
   await expect(page.getByTestId("cash-read-when")).toHaveText("Cash read today");
-  // A day with several events is labelled by its net, never by its largest component: day 47's receipt (+¥420k) and operating bill (−¥100k) read "Net ¥320k".
+  // The 30 / 60 / 120-day switch drives the picture's window: the 120-day picture reaches the receipt and the operating bill of day 47.
+  await page.getByTestId("forecast-horizon-30").click();
+  await expect(chart).toHaveAttribute("data-horizon", "30");
   await page.getByTestId("forecast-horizon-120").click();
-  await expect(chart).toContainText("Net ¥320k");
-  await expect(chart.locator("svg").first()).not.toContainText("Operating bill");
-  await page.getByTestId("forecast-horizon-60").click();
-  await page.getByTestId("forecast-horizon-120").click();
+  await expect(chart.getByTestId("picture-table")).toContainText("Operating bill");
   await expect(chart).toHaveAttribute("data-horizon", "120");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // No "day N" in the prose, the options included: the rows say the server's `note_when` ("cash in 21 days"), never the router's "cash on day 21".
@@ -186,13 +189,13 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
   const alternative = page.getByTestId("cash-options-ALTERNATIVE");
   await expect(alternative.locator("h3")).toHaveText("Another way to fund it");
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("#2");
-  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
   await expect(alternative.locator('[data-key="router_optimum"]')).toContainText("¥1,706.10");
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   // The server's roles say it in the alternative's chip, so the grey "a cheaper option exists" note is not drawn a second time;
   // and the first row is titled with its sources, not the generic "Recommended plan".
   await expect(page.getByTestId("cash-cheaper-option")).toHaveCount(0);
-  await expect(options.locator('[data-key="recommended_plan"]')).toHaveCount(0);
+  await expect(options.locator('[data-key="recommended_plan"]')).toHaveCount(1);
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
@@ -238,4 +241,92 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
   await expect(page.locator("#activity-timeline")).toContainText("Each entry is sealed to the one before it.");
   await expect(page.locator("#activity-refused")).toContainText("Nothing has been refused yet");
+});
+
+// ---- pages A1 (part 2): the picture, the ways to cover the gap as a radio group, the facility bars
+
+test("the page has one h1 (the server's headline) and one filled primary, and no card chrome above the picture", async ({ page }) => {
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-headline")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your cash reserve becomes unsafe in 12 days.");
+  expect(await filledBrand(page)).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("choosing a plan row draws its line on the picture under its name; a row with no line says why and leaves the baseline", async ({ page }) => {
+  await page.goto("/cash");
+  const picture = page.getByTestId("cash-picture");
+  await expect(picture).toHaveAttribute("data-plan", "yes");
+  await expect(picture.getByTestId("picture-line-plan")).toBeVisible();
+  await expect(picture.getByTestId("picture-table")).toContainText("Bank credit line + Invoice financing (onboarded platform)");
+  const recommended = page.locator("li[data-key=router_optimum]");
+  await expect(recommended.locator("input[type=radio]")).toBeChecked();
+  // The credit line alone leaves a gap: its line is drawn, named for it, and the row is the chosen one.
+  await page.locator("li[data-key=line_only] label").click();
+  await expect(page.locator("li[data-key=line_only] input[type=radio]")).toBeChecked();
+  await expect(recommended.locator("input[type=radio]")).not.toBeChecked();
+  await expect(picture.getByTestId("picture-table")).toContainText("Credit line only");
+  await expect(picture.getByTestId("picture-line-plan")).toBeVisible();
+  await expect(page.getByTestId("cash-forecast")).toHaveAttribute("data-alternative", "line_only");
+  // A plan the server could not project has no line: its note shows and the picture is the baseline alone.
+  await page.locator("li[data-key=line_guaranteed_loan] label").click();
+  await expect(page.locator("li[data-key=line_guaranteed_loan]").getByTestId("cash-option-series-note")).toHaveText("Cash cannot be projected for this option.");
+  await expect(picture).toHaveAttribute("data-plan", "no");
+  await expect(picture.getByTestId("picture-line-plan")).toHaveCount(0);
+});
+
+test("each option carries a cost bar sized against the dearest row and a coverage bar with its uncovered part said in words", async ({ page }) => {
+  await page.goto("/cash");
+  const pct = async (key: string) => Number(await page.locator(`li[data-key=${key}] [data-testid=cash-option-cost-bar]`).getAttribute("data-pct"));
+  expect(await pct("full_discount")).toBe(100);
+  expect(await pct("router_optimum")).toBeGreaterThan(await pct("line_only"));
+  expect(await pct("router_optimum")).toBeLessThan(100);
+  const gap = page.locator("li[data-key=line_only]");
+  await expect(gap.getByTestId("cash-option-coverage")).toHaveAttribute("data-gap", "25500000");
+  await expect(gap).toContainText("Uncovered ¥255,000.00");
+  await expect(page.locator("li[data-key=router_optimum] [data-testid=cash-option-coverage]")).toHaveAttribute("data-gap", "0");
+});
+
+test("your funding sources: a utilisation bar per facility with the server's limit, drawn and available", async ({ page }) => {
+  await page.goto("/cash");
+  const line = page.getByTestId("cash-facility-FAC-LINE");
+  await expect(line).toContainText("Bank credit line");
+  await expect(line).toContainText("¥150,000.00");
+  await expect(line.getByTestId("cash-facility-bar")).toHaveAttribute("data-pct", "0");
+  await expect(line).toContainText("cash in same day");
+  await page.goto("/demo");
+  await page.getByTestId("home-days").fill("34");
+  await page.getByTestId("home-advance").click();
+  await expect(page.getByTestId("home-day")).toHaveText("Day 34");
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-facility-FAC-LINE")).toBeVisible();
+  await expect.poll(async () => Math.max(...(await page.getByTestId("cash-facility-bar").evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-pct"))))))).toBeGreaterThan(0);
+});
+
+test("the plan bar is sticky at 1280 px and in flow, right after the headline, at 390 px", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/cash");
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByTestId("home-next-action")).toBeVisible();
+  expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
+  const order = await page.evaluate(() => {
+    const bar = document.querySelector('[data-testid="home-next-action"]')!;
+    const chart = document.getElementById("cash-chart")!;
+    return (bar.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  });
+  expect(order).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("the new strings are in Chinese too", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await page.goto("/cash");
+  await expect(page.getByTestId("cash-options-list")).toBeVisible();
+  await expect(page.getByTestId("cash-options-list")).toContainText("成本");
+  await expect(page.getByTestId("cash-options-list")).toContainText("已覆盖");
+  await expect(page.getByRole("heading", { name: "您的融资来源" })).toBeVisible();
+  await expect(page.getByTestId("cash-figures")).toContainText("最低储备");
 });

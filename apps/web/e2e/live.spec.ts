@@ -58,7 +58,7 @@ test("the borrower file downloads as HTML and Word, and the owner approves the o
 
   await page.goto("/approvals");
   await expect(page.getByText("1 pending")).toBeVisible();
-  const approve = page.getByRole("button", { name: "Approve" });
+  const approve = page.getByRole("button", { name: /^Approve/ });
   await approve.first().click();
   await expect(page.getByText("0 pending")).toBeVisible();
   // The decided card says it in its title (past tense) and in its one state word.
@@ -220,7 +220,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   // The price the owner is quoted is the one stored when the request was made (F13).
   await expect(approvalCard.getByTestId("approval-quote")).toContainText("Quoted when requested (today)");
   await expect(approvalCard.getByTestId("approval-cost")).toContainText("¥1,782.19");
-  await approvalCard.getByRole("button", { name: "Approve" }).click();
+  await approvalCard.getByRole("button", { name: /^Approve/ }).click();
   await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
   await expect(approvalCard.locator('[data-testid^="approval-state-"]')).toContainText("Approved, cash arrives in 3 days");
   // Decided: the quote is still there (it does not vanish with the pending alert), behind its own fold, with what actually happened beside it.
@@ -290,7 +290,7 @@ test("an approval is refused when the server does not recognise the owner", asyn
     return route.continue({ headers });
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: "Approve" }).first().click();
+  await page.getByRole("button", { name: /^Approve/ }).first().click();
   await expect(page.getByText(/only the owner may decide|rejected the owner token/i)).toBeVisible();
   await expect(page.getByText("1 pending")).toBeVisible();
 });
@@ -331,7 +331,7 @@ test("a write that lost a race is sent once more after the hint, and succeeds", 
     return posts === 1 ? route.fulfill(CONFLICT) : route.continue();
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: "Approve" }).first().click();
+  await page.getByRole("button", { name: /^Approve/ }).first().click();
   await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
   expect(posts).toBe(2);
 });
@@ -345,7 +345,7 @@ test("a second conflict is not retried again: the error says the books were busy
     return route.fulfill(CONFLICT);
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: "Approve" }).first().click();
+  await page.getByRole("button", { name: /^Approve/ }).first().click();
   await expect(page.getByText(/books were busy/i)).toBeVisible();
   await expect(page.getByText("1 pending")).toBeVisible();
   expect(posts).toBe(2);
@@ -654,20 +654,22 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
 test("Cash: the comparison arrives grouped and ordered by the API, and the forecast says what it counts", async ({ page, request }) => {
   await ownerPost(request)("/demo/reset", {});
   await page.goto("/cash");
-  // The recommended plan is the plan card's, said once; the options under it are the alternatives, with no ordering sentence that starts from the plan.
+  // The recommended plan is the first row of the radio group (chosen by default), and the ordering sentence starts from it.
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
-  await expect(page.getByTestId("cash-options-order")).toHaveCount(0);
+  await expect(page.getByTestId("cash-options-order")).toHaveCount(1);
   expect(await page.getByTestId("cash-options-list").locator("[data-group]").evaluateAll((els) => els.filter((el) => (el.getAttribute("data-testid") ?? "").startsWith("cash-options-")).map((el) => el.getAttribute("data-group")))).toEqual([
+    "RECOMMENDED",
     "CONDITIONAL_ON_BUYER",
     "INSUFFICIENT",
     "NOT_AVAILABLE_YET",
   ]);
-  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(0);
+  await expect(page.getByTestId("cash-options-RECOMMENDED")).toHaveCount(1);
   await expect(page.getByTestId("cash-options-CONDITIONAL_ON_BUYER")).not.toContainText("#");
   await expect(page.locator("#cash-chart")).toContainText("Expected invoice payments at their due dates and committed funding; overdue payments are excluded");
   await expect(page.getByTestId("cash-read-when")).toHaveText("Cash read today");
   await page.getByTestId("forecast-horizon-120").click();
-  await expect(page.getByTestId("cash-forecast")).toContainText("Net ¥320k");
+  await expect(page.getByTestId("cash-forecast")).toHaveAttribute("data-horizon", "120");
+  await expect(page.getByTestId("cash-picture").getByTestId("picture-table")).toContainText("Operating bill");
 });
 
 test("Activity: each row says what changed, why it matters (Now) and what remains; the approval request is history with a link; the chain words are the API's", async ({ page, request }) => {
@@ -675,7 +677,7 @@ test("Activity: each row says what changed, why it matters (Now) and what remain
   await page.goto("/");
   await runPlan(page.getByTestId("home-next-action"), "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: "Approve" }).click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
   await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
   await page.goto("/activity");
   const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });

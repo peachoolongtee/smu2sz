@@ -133,6 +133,8 @@ export interface CashPictureProps {
   resetKey?: string;
   /** Sentences set under the chart (the server's two "if you decline / after" sentences on an approval). */
   captions?: ReactNode;
+  /** A shorter name for the alternative on the toggle when its name on the line is long (a plan named by its sources). */
+  toggleAlternativeLabel?: string;
 }
 
 /** True when the alternative is a line of its own: some day closes at another figure than the baseline. */
@@ -140,7 +142,7 @@ export function linesDiffer(baseline: HomeSeriesPoint[], alternative: HomeSeries
   return Boolean(alternative?.length && alternative.some((p) => baseline.find((s) => s.day === p.day)?.closing_fen !== p.closing_fen));
 }
 
-export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions }: CashPictureProps) {
+export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel }: CashPictureProps) {
   const { t } = useI18n();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
@@ -392,7 +394,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
             onChange={setView}
             options={[
               { value: "nothing", label: baselineLabel, testId: "picture-view-nothing" },
-              { value: "plan", label: alternativeLabel, testId: "picture-view-plan" },
+              { value: "plan", label: toggleAlternativeLabel ?? alternativeLabel, testId: "picture-view-plan" },
             ]}
           />
         ) : null}

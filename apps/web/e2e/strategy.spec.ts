@@ -277,7 +277,7 @@ test.describe("desktop", () => {
     await page.goto("/");
     await runPlan(page, "ALERT-RESERVE-42");
     await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-    await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
+    await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
     await expect(page.getByTestId("approval-result-APR-000001")).toContainText("the cash lands");
     await page.goto("/cash");
     await expect(sentence).toBeVisible();
