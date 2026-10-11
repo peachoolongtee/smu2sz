@@ -6,10 +6,12 @@ import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
 import { CashPicture } from "@/components/home/cash-picture";
+import { HomeDeals } from "@/components/home/deals";
+import { contractsOff } from "@/components/documents";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
-import { getHome, getReceivablesWorth } from "@/lib/api";
+import { getDeals, getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { withoutSuperseded } from "@/lib/home-changes";
@@ -42,6 +44,8 @@ export default function HomePage() {
   // or when the read fails, so the home is then exactly what it was; never read with the flag off.
   const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
   const worth = worthRead.data;
+  // The owner's deals, read beside the home: a failed read is one quiet line with Retry and never blanks the page (a server with contract reading off has none to show).
+  const dealsRead = useAsync(() => getDeals(lang), [lang]);
   // Remember this visit once the home has loaded, so the next visit asks "since then".
   useEffect(() => {
     if (!view.data) return;
@@ -104,6 +108,7 @@ export default function HomePage() {
           {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. */}
           {narrow ? action : picture}
           {narrow ? picture : action}
+          <HomeDeals deals={dealsRead.data?.deals} loading={dealsRead.loading} failed={Boolean(dealsRead.error) && !contractsOff(dealsRead.error)} onRetry={dealsRead.reload} />
           {narrow ? (
             <>
               {decisions}

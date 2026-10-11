@@ -205,12 +205,24 @@ export function CashPicture({ h }: { h: HomeView }) {
 
   // The reserve, named on its line.
   const reserveY = yOf(floor);
-  place("reserve", t("biz.picture.reserve", { amount: cash.floor_short }), "warn", true, [
-    { x: pl + 4, y: reserveY + 17, anchor: "start" },
-    { x: pl + 4, y: reserveY - 7, anchor: "start" },
-    { x: pr, y: reserveY + 17, anchor: "end" },
-    { x: pr, y: reserveY - 7, anchor: "end" },
-  ], true);
+  // Below `sm` the label is only ever tried under the dashed line at the left edge and is skipped like any other that would touch a line (the
+  // header row still says the minimum); wider it may also sit above the line or at the right edge, and is drawn even when crowded.
+  const phone = W < 640;
+  place(
+    "reserve",
+    t("biz.picture.reserve", { amount: cash.floor_short }),
+    "warn",
+    true,
+    phone
+      ? [{ x: pl + 4, y: reserveY + 17, anchor: "start" }]
+      : [
+          { x: pl + 4, y: reserveY + 17, anchor: "start" },
+          { x: pl + 4, y: reserveY - 7, anchor: "start" },
+          { x: pr, y: reserveY + 17, anchor: "end" },
+          { x: pr, y: reserveY - 7, anchor: "end" },
+        ],
+    !phone,
+  );
 
   // Marks that the server names: the first breach (one pulse), the lowest points.
   const breachPt = breach !== null && breach <= end ? { x: xOf(breach), y: yOf(valueAt(baseSegs, breach)) } : null;

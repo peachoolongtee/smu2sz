@@ -2164,6 +2164,12 @@ export const en = {
   "biz.picture.table": "Cash on the days that matter",
   "biz.plan.approval": "Your approval",
   "biz.plan.seeCalc": "See the calculation",
+  "biz.homeDeals.title": "Your deals",
+  "biz.homeDeals.all": "All deals",
+  "biz.homeDeals.noContract": "No contract on file yet. Nothing needs you today.",
+  "biz.homeDeals.add": "Add the contract",
+  "biz.homeDeals.open": "Open this deal",
+  "biz.homeDeals.failed": "Your deals could not be read just now.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4326,4 +4332,10 @@ export const zh: Record<DictKey, string> = {
   "biz.picture.table": "关键日期的现金",
   "biz.plan.approval": "您的批准",
   "biz.plan.seeCalc": "查看计算过程",
+  "biz.homeDeals.title": "您的交易",
+  "biz.homeDeals.all": "全部交易",
+  "biz.homeDeals.noContract": "尚未登记合同，今天没有需要您处理的事项。",
+  "biz.homeDeals.add": "添加合同",
+  "biz.homeDeals.open": "查看这笔交易",
+  "biz.homeDeals.failed": "暂时无法读取您的交易。",
 };
