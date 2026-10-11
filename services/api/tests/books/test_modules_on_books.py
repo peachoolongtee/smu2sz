@@ -149,6 +149,8 @@ _ROW_DISPLAY = ("status", "reason_kind", "shortfall_fen", "shortfall_display", "
                 # offset it nets against; `legs` goes whole (name_display, cost_display, amounts all derive from the actions)
                 "role", "role_reason", "legs", "leg_costs_fen", "name_display", "offset_fen", "offset_display",
                 "offset_label",
+                # UI reads (12 Oct): each row's cash line if the plan ran; a projection for the page's picture, not a router figure
+                "series", "series_note",
                 # Wave 3 (F18): the comparison contract's group, rank and words (the golden is of the router's rows and figures)
                 "group", "group_text", "rank", "arrival_day", "arrival_when", "arrival_text", "available_when", "uncovered_display",
                 "remaining_gap_fen", "remaining_gap_display", "remaining_gap_text", "basis_text", "consent_text")
