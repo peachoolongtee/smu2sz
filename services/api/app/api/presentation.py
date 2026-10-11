@@ -238,12 +238,20 @@ def fmt_short(fen: int) -> str:
 
 _TICK_STEPS = (1, 2, 5)  # times a power of ten
 _MIN_TICK_STEP_FEN = 100_000  # never finer than ¥1,000: the short labels would repeat
+_MAX_TICKS = 7
+_MIN_TICKS = 3
+
+
+def tick_label(value_fen: int) -> str:
+    """A tick's label: the short formatter's, except zero, which is "¥0" (an axis has no use for the fen)."""
+    return "¥0" if value_fen == 0 else fmt_short(value_fen)
 
 
 def axis_ticks(min_fen: int, max_fen: int) -> list[dict[str, Any]]:
-    """3 to 5 round ticks (`value_fen`, `label`) that cover [min_fen, max_fen] on a chart's money axis, ascending. The step is the
-    smallest 1, 2 or 5 times a power of ten (at least ¥1,000) whose ticks fit in five; the ticks are multiples of the step, so zero is
-    among them whenever the range crosses it. Labels are the short formatter's, so a page never formats a tick."""
+    """3 to 7 round ticks (`value_fen`, `label`) that cover [min_fen, max_fen] on a chart's money axis, ascending. The step is the
+    smallest 1, 2 or 5 times a power of ten (at least ¥1,000) whose ticks fit in seven; the ticks run from the largest multiple of the
+    step at or below the minimum to the smallest multiple at or above the maximum, so zero is among them whenever the range crosses or
+    touches it. Labels are the short formatter's (zero is "¥0"), so a page never formats a tick."""
     lo_v, hi_v = min(min_fen, max_fen), max(min_fen, max_fen)
     step = _MIN_TICK_STEP_FEN
     while True:
@@ -251,24 +259,33 @@ def axis_ticks(min_fen: int, max_fen: int) -> list[dict[str, Any]]:
             size = step * m
             lo = (lo_v // size) * size
             hi = -((-hi_v) // size) * size
-            if (hi - lo) // size + 1 <= 5:
+            if (hi - lo) // size + 1 <= _MAX_TICKS:
                 ticks = list(range(lo, hi + 1, size))
-                while len(ticks) < 3:
+                while len(ticks) < _MIN_TICKS:
                     ticks.append(ticks[-1] + size)
-                return [{"value_fen": v, "label": fmt_short(v)} for v in ticks]
+                return [{"value_fen": v, "label": tick_label(v)} for v in ticks]
         step *= 10
 
 
-def series_axis(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None = None) -> dict[str, Any] | None:
+def series_axis(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None = None,
+                window_days: int | None = None) -> dict[str, Any] | None:
     """The money axis for any number of cash series (the points' `closing_fen`) and the reserve line drawn with them: its ticks and
-    the domain they span. None when there is no series to draw."""
-    values = [p["closing_fen"] for s in series if s for p in s]
+    the domain they span. `window_days` keeps only the points within that many days of the first day drawn (the days a picture shows).
+    None when there is no series to draw."""
+    first = min((p["day"] for s in series if s for p in s), default=None)
+    values = [p["closing_fen"] for s in series if s for p in s if window_days is None or p["day"] - first <= window_days]
     if not values:
         return None
     if floor_fen is not None:
         values.append(floor_fen)
     ticks = axis_ticks(min(values), max(values))
     return {"min_fen": ticks[0]["value_fen"], "max_fen": ticks[-1]["value_fen"], "ticks": ticks}
+
+
+def series_axes(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None, windows: Sequence[int]) -> dict[str, Any]:
+    """`series_axis` for each window in days, keyed by the window ("30", "60", "120"): a page that switches between views reads the axis of
+    the one it shows."""
+    return {str(w): series_axis(series, floor_fen, w) for w in sorted(set(windows))}
 
 
 # ---------------------------------------------------------------- days, as the owner reads them

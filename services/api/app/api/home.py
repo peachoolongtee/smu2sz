@@ -51,6 +51,7 @@ from app.api.presentation import (
     party_name,
     receivable_face,
     relative_days,
+    series_axes,
     series_axis,
     t,
     when_text,
@@ -1200,7 +1201,9 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
             "series": series,
             "plan_series": plan_series,
-            "axis": series_axis([series, plan_series], mandate.min_cash_fen),
+            # the money axis of the days the picture shows (`picture_days`), and of each view the Cash page switches between
+            "axis": series_axis([series, plan_series], mandate.min_cash_fen, picture_days),
+            "axes": series_axes([series, plan_series], mandate.min_cash_fen, (30, 60, 120, picture_days)),
             "picture_days": picture_days,
             "picture_title": t(lang, f"Your cash, next {picture_days} {'day' if picture_days == 1 else 'days'}", f"未来 {picture_days} 天的现金"),
             **basis,
