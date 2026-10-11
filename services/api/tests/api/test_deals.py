@@ -182,9 +182,9 @@ def test_an_accepted_terms_change_needs_a_written_amendment(client):
     assert any(r["key"] == "payment_terms" and r["vs_contract"] == "DIFFERENT" for r in deal["in_force"])
 
 
-def _confirm_without_basis(client: TestClient) -> None:
-    """The demo contract whose payment term the reading left without a starting point (the rule reader always finds
-    one, so the reading is edited: a live model may drop it, and `basis_of` gives None for text that names none)."""
+def _confirm_edited(client: TestClient, field: str, **update: object) -> None:
+    """The demo contract with one term of the reading edited (the rule reader always finds a payment term's starting
+    point and reads every price per delivery, so the reading is edited as a live model's could differ), then confirmed."""
     from app.api.runtime import get_runtime
     from app.contracts import read_document
     from app.domain.models import ContractField, DocumentKind
@@ -193,8 +193,7 @@ def _confirm_without_basis(client: TestClient) -> None:
     record = read_document(_demo_text(), DocumentKind.BUYER_CONTRACT, "BUYER-1", title="Supply agreement",
                            source="text", day=0, facilities=[])
     assert record.contract is not None
-    terms = [t.model_copy(update={"basis": None}) if t.field == ContractField.PAYMENT_TERMS else t
-             for t in record.contract.terms]
+    terms = [t.model_copy(update=update) if t.field == ContractField(field) else t for t in record.contract.terms]
     record = record.model_copy(update={"contract": record.contract.model_copy(update={"terms": terms})})
     rid = rt.store.add_contract_record(record)
     r = client.post(f"/documents/{rid}/confirm", json={"doc_hash": record.doc_hash}).json()
@@ -204,7 +203,7 @@ def _confirm_without_basis(client: TestClient) -> None:
 def test_a_payment_term_that_counts_from_nothing_is_not_comparable_in_the_check_and_in_force(client):
     """"Payable within 45 days" names no starting point: the card must not say the books match the contract while the
     in-force row says they differ. Both say the one sentence, and neither is a match or a difference."""
-    _confirm_without_basis(client)
+    _confirm_edited(client, "PAYMENT_TERMS", basis=None)
     sentence = "The contract does not say what the 45 days count from; the books count from the invoice date."
     for text in (sentence,):
         deal = client.get("/deals/BUYER-1").json()["deal"]
@@ -222,3 +221,20 @@ def test_a_payment_term_with_a_basis_keeps_its_match_and_its_slip(client):
     assert deal["checks"][0]["status"] == "ok" and "as the contract does" in deal["checks"][0]["text"]
     row = next(r for r in deal["in_force"] if r["key"] == "payment_terms")
     assert row["vs_contract"] == "SAME" and row["vs_contract_note"] is None
+
+
+@pytest.mark.parametrize(("unit", "sentence"), [
+    ("PER_UNIT", "The contract prices per unit; the books hold the invoice face."),
+    ("LUMP_SUM", "The contract prices as a lump sum; the books hold the invoice face."),
+    ("PER_MONTH", "The contract prices per month; the books hold the invoice face."),
+])
+def test_a_price_per_unit_or_in_total_is_not_comparable_with_the_invoice_face(client, unit, sentence):
+    from app.domain.models import PriceUnit
+
+    _confirm_edited(client, "PRICE", unit=PriceUnit(unit))
+    deal = client.get("/deals/BUYER-1").json()["deal"]
+    row = next(r for r in deal["in_force"] if r["key"] == "price")
+    assert row["vs_contract"] == "NOT_COMPARABLE" and row["vs_contract_note"] == sentence
+    assert row["value_display"] == "¥420,000.00"
+    assert {"status": "info", "text": sentence} in deal["checks"]
+    assert not any("the contract price is" in x["text"] for x in deal["checks"])

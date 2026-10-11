@@ -29,6 +29,7 @@ from app.domain.models import (
     ObligationType,
     Outcome,
     PaymentBasis,
+    PriceUnit,
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
@@ -91,6 +92,22 @@ def _basis_unknown(days: int | None, lang: Lang) -> str:
     row say it alike, so the card never shows a match and a difference for the same term."""
     return t(lang, f"The contract does not say what the {days} days count from; the books count from the invoice date.",
              f"合同没有写明这 {days} 天从何时起算；账面按发票日起算。")
+
+
+def _price_not_comparable(unit: PriceUnit | None, lang: Lang) -> str:
+    """The sentence for a price the books cannot be held against: the books hold one invoice face, so only a price per
+    delivery is comparable with it."""
+    if unit == PriceUnit.LUMP_SUM:
+        return t(lang, "The contract prices as a lump sum; the books hold the invoice face.",
+                 "合同按总价计价；账面记录的是发票金额。")
+    if unit == PriceUnit.PER_MONTH:
+        return t(lang, "The contract prices per month; the books hold the invoice face.",
+                 "合同按月计价；账面记录的是发票金额。")
+    if unit is None:
+        return t(lang, "The contract does not price per delivery; the books hold the invoice face.",
+                 "合同不是按每批交货计价；账面记录的是发票金额。")
+    return t(lang, "The contract prices per unit; the books hold the invoice face.",
+             "合同按单价计价；账面记录的是发票金额。")
 
 
 def _terms(record: ContractRecord, field: ContractField) -> list[Any]:
@@ -174,10 +191,12 @@ def _in_force(state: FinancialState, cp: str, record: ContractRecord, implied: B
         ref = InvoiceRef(recurring_receivable_id(cp, ri.next_issue_day), cp, ri.next_issue_day)
         face = int(issue_terms(state, ref, ri.face_fen, ri.terms_days)["face_fen"])  # type: ignore[call-overload]
         price = _one(record, F.PRICE)
+        unpriced = price is not None and implied.face_fen is None  # per unit, per month or a lump sum
         rows.append({"key": "price", "label": "Price per invoice", "value_display": fmt_yuan(face),
-                     "vs_contract": ("SAME" if implied.face_fen == face else "DIFFERENT") if price is not None
-                     else "NOT_IN_CONTRACT",
-                     "contract_display": term_display(price) if price is not None else None})
+                     "vs_contract": ("NOT_COMPARABLE" if unpriced else "SAME" if implied.face_fen == face else "DIFFERENT")
+                     if price is not None else "NOT_IN_CONTRACT",
+                     "contract_display": term_display(price) if price is not None else None,
+                     "vs_contract_note": _price_not_comparable(implied.unit, lang) if unpriced else None})
     early = [o for c in commitments if c.status in (*LIVE, CommitmentStatus.FULFILLED) for o in c.obligations
              if o.type == ObligationType.IMMEDIATE_DISCOUNT]
     clause = _one(record, F.EARLY_PAYMENT)
@@ -264,6 +283,9 @@ def _checks(state: FinancialState, cp: str, record: ContractRecord, implied: Buy
                              f"{at(F.PRICE)}." if same else
                              f"The books invoice {fmt_yuan(ri.face_fen)}, but the contract price is "
                              f"{fmt_yuan(implied.face_fen)}{at(F.PRICE)}.")})
+    price = _one(record, F.PRICE)
+    if ri is not None and price is not None and implied.face_fen is None:
+        out.append({"status": "info", "text": _price_not_comparable(implied.unit, lang)})
     if ri is not None and implied.every_days is not None:
         same = ri.every_days == implied.every_days
         out.append({"status": "ok" if same else "warn",
