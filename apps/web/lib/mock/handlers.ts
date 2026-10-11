@@ -171,7 +171,7 @@ function seededStore(): Store {
   for (const t of documents.seedOperations()) {
     const seq = s.ops.length + 1;
     const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
-    const base = { op_id: t.op_id, kind: t.kind, status: t.status, tier: t.tier, violations: [], seq, message: t.message, day: 0, requested_by: t.requested_by, summary: t.summary };
+    const base = { op_id: t.op_id, kind: t.kind, status: t.status, tier: t.tier, violations: [], seq, message: t.message, day: 0, requested_by: t.requested_by, summary: t.summary, ...(t.document_id ? { document_id: t.document_id } : {}) };
     s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
   }
   return s;
@@ -263,7 +263,7 @@ function append(
 }
 
 /** Books an operation the recorded API answer reports (a cure the agent ran, a document the owner decided), on the same hash chain as the rest. */
-type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; day: number; requested_by?: OperationView["requested_by"] };
+type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; document_id?: string | null; day: number; requested_by?: OperationView["requested_by"] };
 export function appendRecorded(r: Recorded): OperationView {
   seedStory();
   const s = load();
@@ -280,6 +280,7 @@ export function appendRecorded(r: Recorded): OperationView {
     day: r.day,
     requested_by: r.requested_by ?? ("AGENT" as const),
     decision_id: r.decision_id ?? null,
+    ...(r.document_id ? { document_id: r.document_id } : {}),
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
     ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null, ...causalFor(r.event_text) } : {}),

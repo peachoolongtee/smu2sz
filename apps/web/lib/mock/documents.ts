@@ -42,6 +42,8 @@ export interface SeedOperation {
   requested_by: OperationView["requested_by"];
   message: string;
   summary: string;
+  /** The document the owner decided (the mock's own id for the reading). */
+  document_id?: string;
 }
 
 interface Recorded {
@@ -83,7 +85,7 @@ function seededDocs(): DocState[] {
 export function seedOperations(): SeedOperation[] {
   return [...FIXTURES]
     .sort((a, b) => (RECORDED[a.id].seeded.decided_seq ?? 0) - (RECORDED[b.id].seeded.decided_seq ?? 0))
-    .map((f) => RECORDED[f.id].seeded_operation);
+    .map((f) => ({ ...RECORDED[f.id].seeded_operation, document_id: RECORDED[f.id].seeded.id }));
 }
 
 /** The documents read in this session, and whether the buyer has agreed a deal (the deal summary shows from then on). */
@@ -234,7 +236,7 @@ export function mockDecide(
   decision: "confirm" | "reject",
   docHash: string,
   linkFacilityId: string | null,
-  book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number }) => OperationView,
+  book: (r: { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; day: number; document_id?: string }) => OperationView,
 ): DocumentDecision {
   requireOwner();
   const d = byId(id);
@@ -256,7 +258,7 @@ export function mockDecide(
   }
   const day = mockClock().day;
   const res = recorded.result;
-  const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day });
+  const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day, document_id: d.id });
   d.status = decision === "confirm" ? "CONFIRMED" : "REJECTED";
   d.unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
   d.decided_day = day;

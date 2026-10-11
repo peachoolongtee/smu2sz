@@ -2184,6 +2184,15 @@ export const en = {
   "biz.recv.pic.press": "Show this invoice in the list",
   "biz.recv.facts": "The state of what you are owed",
   "biz.recv.bar.overdue": "Overdue",
+  // ---- pages A1 (part 1): Activity
+  "biz.activity.details": "Details",
+  "biz.activity.filter.label": "Show entries",
+  "biz.activity.filter.all": "All",
+  "biz.activity.filter.money": "Money",
+  "biz.activity.filter.decisions": "Decisions",
+  "biz.activity.filter.documents": "Documents",
+  "biz.activity.filter.none": "Nothing in this view.",
+  "biz.activity.rail": "What happened, newest first",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4366,4 +4375,13 @@ export const zh: Record<DictKey, string> = {
   "biz.recv.pic.press": "在列表中查看这张发票",
   "biz.recv.facts": "您应收款项的概况",
   "biz.recv.bar.overdue": "逾期",
+  // ---- pages A1 (part 1): Activity
+  "biz.activity.details": "详情",
+  "biz.activity.filter.label": "筛选记录",
+  "biz.activity.filter.all": "全部",
+  "biz.activity.filter.money": "资金",
+  "biz.activity.filter.decisions": "决定",
+  "biz.activity.filter.documents": "文件",
+  "biz.activity.filter.none": "此视图中没有记录。",
+  "biz.activity.rail": "发生的事，最新在前",
 };
