@@ -19,6 +19,7 @@ from app.api.demo_bank import router as demo_bank_router
 from app.api.documents import router as documents_router
 from app.api.errors import install_error_handlers
 from app.api.home import router as home_router
+from app.api.nav import router as nav_router
 from app.api.nl import router as nl_router
 from app.api.offers import router as offers_router
 from app.api.operations import router as operations_router
@@ -57,6 +58,7 @@ app.include_router(pilot_router)
 app.include_router(collections_router)
 app.include_router(documents_router)
 app.include_router(deals_router)
+app.include_router(nav_router)
 
 
 @app.get("/health")
