@@ -2162,6 +2162,8 @@ export const en = {
   "biz.picture.lowest": "Lowest {amount}",
   "biz.picture.chips": "What moves your cash",
   "biz.picture.table": "Cash on the days that matter",
+  "biz.plan.approval": "Your approval",
+  "biz.plan.seeCalc": "See the calculation",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4322,4 +4324,6 @@ export const zh: Record<DictKey, string> = {
   "biz.picture.lowest": "最低 {amount}",
   "biz.picture.chips": "影响您现金的事项",
   "biz.picture.table": "关键日期的现金",
+  "biz.plan.approval": "您的批准",
+  "biz.plan.seeCalc": "查看计算过程",
 };

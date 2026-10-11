@@ -86,7 +86,7 @@ export default function HomePage() {
     </div>
   ) : null;
 
-  const action = h?.next_action ? <NextActionBlock key="action" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
+  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
   const picture = h ? <CashPicture key="picture" h={h} /> : null;
 
   return (

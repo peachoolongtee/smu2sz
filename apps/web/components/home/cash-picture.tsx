@@ -378,7 +378,8 @@ export function CashPicture({ h }: { h: HomeView }) {
       </div>
 
       {/* The same picture as a table, for a screen reader and anyone who prefers numbers: the labelled days, in the server's figures. */}
-      <table className="sr-only" data-testid="picture-table">
+      <div className="sr-only">
+      <table data-testid="picture-table">
         <caption>{t("biz.picture.table")}</caption>
         <thead>
           <tr>
@@ -403,6 +404,7 @@ export function CashPicture({ h }: { h: HomeView }) {
           })}
         </tbody>
       </table>
+      </div>
 
       {chips.length ? (
         <div className="flex flex-wrap items-center gap-2" data-testid="picture-chips" role="group" aria-label={t("biz.picture.chips")}>

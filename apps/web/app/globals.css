@@ -42,6 +42,7 @@
 
   --color-brand-50: #e6f1ff;
   --color-brand-100: #d0e5ff;
+  --color-brand-300: #8fb6ff; /* the lighter second part of the plan bar's funding bar: decorative, every part is named in its legend */
   --color-brand-600: #0368e9; /* white on it: 5.0:1 */
   --color-brand-700: #0048a5;
   --color-brand-900: #24324a; /* the deep block: the Home hero, the Demo strip */
