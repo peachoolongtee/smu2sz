@@ -35,6 +35,7 @@ from app.api.presentation import (
     plan_when,
     row_legs,
     send_scope_text,
+    series_axis,
     t,
     with_roles,
 )
@@ -631,6 +632,7 @@ def router_plan(lang: str = "en") -> dict:
             "bases": [json.loads(b.model_dump_json()) for b in by_label.values()],
         }),
         "comparison": comparison,
+        "series_axis": series_axis([r.get("series") for r in comparison], mandate.min_cash_fen),
         "comparison_order_text": comparison_order_text(lang),
         "recommended_key": recommended_key,
     }

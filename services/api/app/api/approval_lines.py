@@ -7,13 +7,13 @@ from typing import Any
 
 from app.alerts import Alert
 from app.api.home import _alert_actions, _distance, _lowest_ahead, _series
-from app.api.presentation import fmt_short
+from app.api.presentation import fmt_short, series_axis
 from app.domain.models import FinancialState, Mandate, Mode
 from app.financial import EngineError, project
 from app.funding.admission import action_for
 from app.operations.log import parse_operation
 
-NO_LINES = {"series_if_declined": None, "series_if_approved": None, "lowest_if_declined_short": None, "lowest_if_declined_when": None,
+NO_LINES = {"series_axis": None, "series_if_declined": None, "series_if_approved": None, "lowest_if_declined_short": None, "lowest_if_declined_when": None,
          "lowest_if_declined_fen": None, "lowest_if_approved_short": None, "lowest_if_approved_when": None,
          "lowest_if_approved_fen": None}
 
@@ -38,9 +38,11 @@ def approval_lines(state: FinancialState, obs: list[Any], mandate: Mandate, op_j
     except EngineError:
         return dict(NO_LINES)
     (low_d, day_d), (low_a, day_a) = _lowest_ahead(declined, today), _lowest_ahead(approved, today)
+    if_declined, if_approved = _series(state, declined, lang, from_day=today), _series(state, approved, lang, from_day=today)
     return {
-        "series_if_declined": _series(state, declined, lang, from_day=today),
-        "series_if_approved": _series(state, approved, lang, from_day=today),
+        "series_if_declined": if_declined,
+        "series_if_approved": if_approved,
+        "series_axis": series_axis([if_declined, if_approved], mandate.min_cash_fen),
         "lowest_if_declined_fen": low_d, "lowest_if_declined_short": fmt_short(low_d), "lowest_if_declined_when": _distance(day_d, today, lang),
         "lowest_if_approved_fen": low_a, "lowest_if_approved_short": fmt_short(low_a), "lowest_if_approved_when": _distance(day_a, today, lang),
     }

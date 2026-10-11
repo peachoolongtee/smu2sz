@@ -16,7 +16,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.auth import require_owner
 from app.api.decisions import latest_verdict_for
 from app.api.home import _distance, _lowest_ahead, _series
-from app.api.presentation import buyer_of_receivable, first_breach_ahead, fmt_short, option_label, party_name
+from app.api.presentation import (
+    buyer_of_receivable,
+    first_breach_ahead,
+    fmt_short,
+    option_label,
+    party_name,
+    series_axis,
+)
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
 from app.books import current_books
@@ -98,13 +105,15 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                        "若买方接受。您授权内的融资无法覆盖全部缺口。")
         replies.append({"counter_id": c.id, "label": label, "series": _line(books.state, traj, today, lang),
                         **_lowest(books.state, traj, today, lang), "note": note})
+    asked_series = _line(books.state, asked, today, lang)
     return {
         "offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today,
-        "asked": {"label": say(lang, "As asked", "按对方要求"), "series": _line(books.state, asked, today, lang),
+        "asked": {"label": say(lang, "As asked", "按对方要求"), "series": asked_series,
                   **_lowest(books.state, asked, today, lang),
                   "first_breach_day": breach[0] if breach else None,
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None},
         "replies": replies,
+        "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }
 

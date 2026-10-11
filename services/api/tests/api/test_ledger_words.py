@@ -54,3 +54,13 @@ def test_a_document_decision_reads_as_a_business_sentence_with_the_documents_id_
     assert zh[3]["event_text"] == "您已驳回供货协议。未从中记录任何内容。"
     assert not any(CODES.search(r[k]) for r in rows + zh for k in SENTENCES if isinstance(r.get(k), str))
     assert all("document_id" not in r for r in every if not r["kind"].endswith("_DOCUMENT"))
+
+
+def test_every_entry_says_its_day_as_a_distance_from_today(client):
+    _walk(client, receipt="half")
+    en, zh = _ledger_rows(client, "en"), _ledger_rows(client, "zh")
+    first, last = en[0], en[-1]
+    assert (first["day"], first["day_when"], zh[0]["day_when"]) == (0, "34 days ago", "34 天前")
+    assert (last["day"], last["day_when"], zh[-1]["day_when"]) == (34, "today", "今天")
+    assert all(isinstance(r["day_when"], str) for r in en + zh)
+    assert not any(c.isascii() and c.isalpha() for r in zh for c in r["day_when"])

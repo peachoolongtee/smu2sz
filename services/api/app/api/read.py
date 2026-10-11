@@ -25,6 +25,7 @@ from app.api.presentation import (
     last_read,
     live_windows,
     party_name,
+    when_text,
     window_is_live,
     without_record_ids,
 )
@@ -65,6 +66,7 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
               "summary": summary})
     if state is not None and today is not None:
         window_live = o.kind == "RECEIVE_PAYMENT" and window_is_live(live, op.get("receivable_id") if isinstance(op, dict) else None)
+        v["day_when"] = when_text(v["day"], today, lang) if isinstance(v["day"], int) else None
         v["message_when"] = without_record_ids(business_text(state, summary, today, lang, agreements, window_live))
         words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
                             message=str(res.get("message") or ""), approval_id=res.get("approval_id"),

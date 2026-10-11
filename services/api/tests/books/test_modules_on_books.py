@@ -167,6 +167,7 @@ def _without_display_fields(plan: dict[str, Any]) -> dict[str, Any]:
     out = json.loads(json.dumps(plan))
     out.pop("recommended_key", None)  # Wave 8 pass A: names the recommended comparison row; `recommended_plan` is never a row here
     out.pop("comparison_order_text", None)  # Wave 3: how the list is ordered
+    out.pop("series_axis", None)  # UI reads 2: the ticks of the rows' cash lines, a picture and not a router figure
     # Wave 3 (F18) lists the rows in the order the owner reads them; the golden is of the router's spec 7.4 order, kept as `router_order`
     out["comparison"] = sorted(out["comparison"], key=lambda r: r.pop("router_order"))
     for key in ("committed", "expected"):

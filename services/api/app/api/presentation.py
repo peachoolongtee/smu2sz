@@ -236,6 +236,41 @@ def fmt_short(fen: int) -> str:
     return fmt_yuan_short(fen)
 
 
+_TICK_STEPS = (1, 2, 5)  # times a power of ten
+_MIN_TICK_STEP_FEN = 100_000  # never finer than ¥1,000: the short labels would repeat
+
+
+def axis_ticks(min_fen: int, max_fen: int) -> list[dict[str, Any]]:
+    """3 to 5 round ticks (`value_fen`, `label`) that cover [min_fen, max_fen] on a chart's money axis, ascending. The step is the
+    smallest 1, 2 or 5 times a power of ten (at least ¥1,000) whose ticks fit in five; the ticks are multiples of the step, so zero is
+    among them whenever the range crosses it. Labels are the short formatter's, so a page never formats a tick."""
+    lo_v, hi_v = min(min_fen, max_fen), max(min_fen, max_fen)
+    step = _MIN_TICK_STEP_FEN
+    while True:
+        for m in _TICK_STEPS:
+            size = step * m
+            lo = (lo_v // size) * size
+            hi = -((-hi_v) // size) * size
+            if (hi - lo) // size + 1 <= 5:
+                ticks = list(range(lo, hi + 1, size))
+                while len(ticks) < 3:
+                    ticks.append(ticks[-1] + size)
+                return [{"value_fen": v, "label": fmt_short(v)} for v in ticks]
+        step *= 10
+
+
+def series_axis(series: Sequence[Sequence[dict[str, Any]] | None], floor_fen: int | None = None) -> dict[str, Any] | None:
+    """The money axis for any number of cash series (the points' `closing_fen`) and the reserve line drawn with them: its ticks and
+    the domain they span. None when there is no series to draw."""
+    values = [p["closing_fen"] for s in series if s for p in s]
+    if not values:
+        return None
+    if floor_fen is not None:
+        values.append(floor_fen)
+    ticks = axis_ticks(min(values), max(values))
+    return {"min_fen": ticks[0]["value_fen"], "max_fen": ticks[-1]["value_fen"], "ticks": ticks}
+
+
 # ---------------------------------------------------------------- days, as the owner reads them
 
 def first_breach_ahead(traj: Any, today: int, floor: int) -> tuple[int, int] | None:

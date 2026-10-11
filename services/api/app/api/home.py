@@ -51,6 +51,7 @@ from app.api.presentation import (
     party_name,
     receivable_face,
     relative_days,
+    series_axis,
     t,
     when_text,
     window_is_live,
@@ -607,7 +608,8 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
             what = t(lang, f"repay {leg['facility_name']}", f"偿还{leg['facility_name']}")
         else:
             what = leg["label"]
-        components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when"),
+        components.append({"amount_fen": leg["amount_fen"] or 0, "amount_short": fmt_short(leg["amount_fen"] or 0),
+                           "what": what, "lands_when": leg.get("lands_when"),
                            "name_display": leg["name_display"], "cost_display": leg["cost_display"]})
     repay = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] == "REPAY_FACILITY")
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD and receive:
@@ -950,8 +952,45 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     return items
 
 
+def _picture_days(traj: Any, today: int, floor: int, breach_day: int | None, low_day: int, action: dict[str, Any] | None,
+                  horizon_days: int) -> int:
+    """How many days from today the cash picture should show: 30, or four days past the last of the first breach, the lowest point, the day
+    the do-nothing line is back at or above the reserve and the plan's last landing day, whichever is later; never past 60 or the
+    horizon. Days only: nothing is computed that the projection and the plan do not already hold."""
+    marks = [low_day]
+    if breach_day is not None:
+        marks.append(breach_day)
+        back = next((d.day for d in traj.days if d.day > breach_day and d.closing_fen >= floor), None)
+        if back is not None:
+            marks.append(back)
+    marks += [leg["lands_day"] for leg in (action or {}).get("legs") or [] if isinstance(leg.get("lands_day"), int)]
+    return max(1, min(60, horizon_days, max(30, max(m - today for m in marks) + 4)))
+
+
+def _receivables_headline(past_due: list[dict[str, Any]], nxt: dict[str, Any] | None, today: int, lang: str,
+                          no_plan: bool, open_count: int) -> dict[str, Any]:
+    """The one sentence the receivables card leads with, from the block's own rows, and its tone: the lead late invoice (the longest
+    overdue, then the largest), else the next one due, else nothing owed. `headline_note` is the quiet caveat when what collecting each
+    invoice saves cannot be priced (no committed plan covers the shortfall), in the words the receivables-worth read writes."""
+    from app.strategy.collections import NO_PLAN_NOTE
+
+    if past_due:
+        lead = min(past_due, key=lambda r: (-r["days_late"], -r["face_fen"], r["receivable_id"]))
+        n = lead["days_late"]
+        text = t(lang, f"{lead['face_display']} from {lead['buyer_name']} is {n} {'day' if n == 1 else 'days'} late.",
+                 f"来自{lead['buyer_name']}的 {lead['face_display']} 已逾期 {n} 天。")
+        tone = "bad"
+    elif nxt is not None:
+        text = t(lang, f"Nobody is late. Next: {nxt['face_display']} from {nxt['buyer_name']}, due {nxt['due_when']}.",
+                 f"没有逾期。下一笔：来自{nxt['buyer_name']}的 {nxt['face_display']}，{nxt['due_when']}到期。")
+        tone = "warn" if nxt["due_day"] <= today else "ok"
+    else:
+        text, tone = t(lang, "Nothing is owed to you right now.", "目前没有应收款。"), "ok"
+    return {"headline": text, "headline_tone": tone, "headline_note": t(lang, *NO_PLAN_NOTE) if no_plan and open_count else None}
+
+
 def _receivables(state: FinancialState, store: Any, today: int, lang: str, partial: Partial | None = None,
-                 reconciled: Reconciled | None = None) -> dict[str, Any]:
+                 reconciled: Reconciled | None = None, no_plan: bool = False) -> dict[str, Any]:
     try:
         report = (reconciled if reconciled is not None else _new_reconciled(store)).report(today)
     except Exception:  # the block is a supporting read: it reads as unknown, never as "nothing owed", and the home says so
@@ -959,7 +998,9 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
         if partial is not None:
             partial.add("reconciliation")
         return {"open_count": 0, "open_total_display": None, "overdue_total_display": None, "past_due": [], "next_receipt": None,
-                "promised": None, "lapsed_promises": 0}
+                "promised": None, "lapsed_promises": 0,
+                "headline": t(lang, "Receivables could not be read just now.", "暂时无法读取应收款。"), "headline_tone": "warn",
+                "headline_note": None}
     rows: list[dict[str, Any]] = []
     for o in report.outstanding:
         rows.append({"receivable_id": o.receivable_id, "buyer_id": o.counterparty_id,
@@ -982,7 +1023,8 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
                    "when": when_text(p.promised_day, today, lang) if p.promised_day is not None else None}
     return {"open_count": len(rows), "open_total_display": fmt_yuan(total),
             "overdue_total_display": fmt_yuan(overdue), "past_due": past_due,
-            "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises}
+            "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises,
+            **_receivables_headline(past_due, nxt, today, lang, no_plan, len(rows))}
 
 
 def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] | None:
@@ -1081,6 +1123,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj, lang, today)
+        picture_days = _picture_days(traj, today, mandate.min_cash_fen, breach_day, low_day, action, mandate.horizon_days)
         # One reconciliation, one set of alerts and one parse of the log for the whole request: the decision record is read first and the
         # rest of the home reuses what it holds.
         partial = Partial()
@@ -1092,7 +1135,9 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
         changes = _changes(books.state, rt.store, found, today, lang, since_day, causality, partial, reconciled,
                            record.entries if record is not None else None)
-        receivables = _receivables(books.state, rt.store, today, lang, partial, reconciled)
+        breach_alert = _breach(found)  # no committed plan covers the shortfall: the router found none to price a receipt against
+        receivables = _receivables(books.state, rt.store, today, lang, partial, reconciled,
+                                   no_plan=breach_alert is not None and not breach_alert.committed_cure)
         in_transit = _in_transit(books.state, today, lang)
         funding_lots = _funding_lots(books.state, today, lang)
         agreements = {c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()}
@@ -1155,6 +1200,9 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
             "series": series,
             "plan_series": plan_series,
+            "axis": series_axis([series, plan_series], mandate.min_cash_fen),
+            "picture_days": picture_days,
+            "picture_title": t(lang, f"Your cash, next {picture_days} {'day' if picture_days == 1 else 'days'}", f"未来 {picture_days} 天的现金"),
             **basis,
         },
         "next_action": action,
