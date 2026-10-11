@@ -135,13 +135,6 @@ function PictureBody({
 
   const facilities = state.state.facilities.filter((f) => f.limit_fen > 0 && (f.status === "COMMITTED" || f.id === focusFacility));
   const debts = state.state.debts ?? [];
-  const maxLimit = Math.max(1, ...facilities.map((f) => f.limit_fen), ...debts.map((d) => d.principal_fen));
-  const rates = [
-    ...facilities.map((f) => ({ id: f.id, name: f.name, bp: f.rate_bp, display: f.rate_display, focus: f.id === focusFacility })),
-    ...debts.flatMap((d) => (d.rate_display ? [{ id: d.id, name: d.label, bp: d.rate_bp ?? 0, display: d.rate_display, focus: false }] : [])),
-  ];
-  const maxBp = Math.max(1, ...rates.map((r) => r.bp));
-
   // Cash you can reach: cash today and each committed line's undrawn part. The slices are sized by fen (plotting); every label is the server's.
   const reach = [
     { name: t("pic.reach.cash"), fen: Math.max(cash.cash_fen, 0), display: cash.cash_display },
@@ -153,7 +146,7 @@ function PictureBody({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       {/* Cash position */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card lg:row-span-2" data-testid="deal-picture-cash">
+      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-cash">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.cash")}</h3>
           <p className="mt-0.5 text-xs text-ink-3">{t(lender ? "pic.cash.lender" : "pic.cash.sub", { n: horizon, name })}</p>
@@ -230,58 +223,33 @@ function PictureBody({
         </div>
       </figure>
 
-      {/* Interest rates */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-rates">
-        <figcaption>
-          <h3 className="text-base font-bold text-ink">{t("pic.rates")}</h3>
-          <p className="mt-0.5 text-xs text-ink-3">{t("pic.rates.sub")}</p>
-        </figcaption>
-        <ul className="mt-4 space-y-3">
-          {rates.map((r) => (
-            <li key={r.id}>
-              <div className="flex items-baseline justify-between gap-2 text-sm">
-                <span className={`min-w-0 truncate ${r.focus ? "font-bold text-ink" : "text-ink-2"}`} title={r.name}>
-                  {r.name}
-                  {r.focus ? <span className="ml-2 rounded-pill bg-sec-deals-bg px-2 py-px text-[11px] font-bold text-sec-deals-fg">{t("pic.thisDoc")}</span> : null}
-                </span>
-                <span className="shrink-0 font-bold tabular-nums text-ink">{r.display}</span>
-              </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-pill bg-subtle">
-                <div className="h-full rounded-pill" style={{ width: `${Math.max(2, (r.bp / maxBp) * 100)}%`, background: r.focus ? C.plan : C.cash }} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </figure>
-
       {/* Loans and credit lines */}
       <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card lg:col-span-2" data-testid="deal-picture-loans">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.loans")}</h3>
           <p className="mt-0.5 text-xs text-ink-3">{t("pic.loans.sub")}</p>
         </figcaption>
-        <ul className="mt-4 grid gap-x-8 gap-y-4 md:grid-cols-2">
+        <ul className="mt-3 grid gap-x-8 md:grid-cols-2">
           {facilities.map((f) => (
-            <li key={f.id} className={`rounded-tile p-3 ${f.id === focusFacility ? "bg-sec-deals-bg ring-1 ring-new-line" : "bg-subtle"}`} data-testid={`deal-picture-facility-${f.id}`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <li key={f.id} className={`border-b border-line py-2.5 ${f.id === focusFacility ? "-mx-2 rounded-tile border-transparent bg-sec-deals-bg px-2" : ""}`} data-testid={`deal-picture-facility-${f.id}`}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                 <span className="min-w-0 text-sm font-bold text-ink">
                   {f.name}
                   {f.id === focusFacility ? <span className="ml-2 rounded-pill bg-surface px-2 py-px text-[11px] font-bold text-sec-deals-fg">{t("pic.thisDoc")}</span> : null}
                 </span>
-                <span className="text-xs font-bold text-ink-2">{t("pic.rateAt", { rate: f.rate_display })}</span>
+                <span className="text-sm font-bold tabular-nums text-ink">{t("pic.rateAt", { rate: f.rate_display })}</span>
               </div>
-              <Meter used={f.drawn_fen} total={maxLimit} limit={f.limit_fen} />
-              <p className="mt-1 text-xs text-ink-2">{t("pic.drawnOf", { drawn: f.drawn_display, limit: f.limit_display })}</p>
+              <Meter used={f.drawn_fen} limit={f.limit_fen} />
+              <p className="mt-1 text-xs text-ink-3">{t("pic.drawnOf", { drawn: f.drawn_display, limit: f.limit_display })}</p>
             </li>
           ))}
           {debts.map((d) => (
-            <li key={d.id} className="rounded-tile bg-subtle p-3" data-testid={`deal-picture-debt-${d.id}`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <li key={d.id} className="border-b border-line py-2.5" data-testid={`deal-picture-debt-${d.id}`}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                 <span className="min-w-0 text-sm font-bold text-ink">{d.label}</span>
-                {d.rate_display ? <span className="text-xs font-bold text-ink-2">{t("pic.rateAt", { rate: d.rate_display })}</span> : null}
+                {d.rate_display ? <span className="text-sm font-bold tabular-nums text-ink">{t("pic.rateAt", { rate: d.rate_display })}</span> : null}
               </div>
-              <Meter used={d.principal_fen} total={maxLimit} limit={d.principal_fen} tone="navy" />
-              <p className="mt-1 text-xs text-ink-2">{t("pic.loanLine", { principal: d.principal_display, monthly: d.monthly_debt_service_display })}</p>
+              <p className="mt-1 text-xs text-ink-3">{t("pic.loanLine", { principal: d.principal_display, monthly: d.monthly_debt_service_display })}</p>
             </li>
           ))}
         </ul>
@@ -300,13 +268,11 @@ function Figure({ label, value, sub, bad }: { label: string; value: string; sub?
   );
 }
 
-/** A line's size against the largest on the books (the track), its drawn part filled. Plotting only. */
-function Meter({ used, total, limit, tone = "brand" }: { used: number; total: number; limit: number; tone?: "brand" | "navy" }) {
+/** How much of this line is used: the track is its own limit, the fill what is drawn. Plotting only. */
+function Meter({ used, limit }: { used: number; limit: number }) {
   return (
-    <div className="mt-2 h-2.5 overflow-hidden rounded-pill bg-surface">
-      <div className="relative h-full rounded-pill" style={{ width: `${(limit / total) * 100}%`, background: tone === "navy" ? C.sky : "var(--color-brand-100)" }}>
-        <div className="absolute inset-y-0 left-0 rounded-pill" style={{ width: limit ? `${(used / limit) * 100}%` : 0, background: tone === "navy" ? C.navy : C.cash }} />
-      </div>
+    <div className="mt-2 h-1.5 overflow-hidden rounded-pill bg-brand-100">
+      <div className="h-full rounded-pill" style={{ width: limit ? `${Math.min(100, (used / limit) * 100)}%` : 0, background: C.cash }} />
     </div>
   );
 }
