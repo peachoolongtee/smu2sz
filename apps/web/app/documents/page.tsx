@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useId, useState } from "react";
+import { Suspense, useId, useMemo, useRef, useState, type DragEvent } from "react";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge, whenWords } from "@/components/documents";
 import { Button, Callout, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
@@ -13,6 +13,9 @@ import type { Counterparty, DocumentKind, DocumentSummary, SubmitDocumentRequest
 import { useAsync } from "@/lib/use-async";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+/** A demo document dragged from the list onto the drop zone carries its fixture id and chosen format under this type. */
+const FIXTURE_MIME = "application/x-flow-fixture";
+const READABLE = /\.(pdf|docx|txt|md)$/i;
 
 type Format = "md" | "docx" | "pdf";
 
@@ -32,7 +35,12 @@ export default function DocumentsPage() {
 function Documents() {
   const { t, lang } = useI18n();
   const router = useRouter();
-  const selected = useSearchParams().get("id");
+  const params = useSearchParams();
+  const selected = params.get("id");
+  // A clause link (the deal summary): `at` is the term's span in the text, `clause` its number; the review lights it up.
+  const at = params.get("at");
+  const clause = params.get("clause");
+  const focus = useMemo(() => (at || clause ? { at, clause } : undefined), [at, clause]);
   // The list is read in the owner's language and again when it changes: the server writes the sentences and the "when" words.
   const list = useAsync(() => getDocuments(lang), [lang]);
   const state = useAsync(getState, []);
@@ -50,6 +58,8 @@ function Documents() {
       const view = await submitDocument(req);
       bump();
       open(view.id);
+      // The answer to the drop: bring the review into view once it has rendered, its header, the decision and the deal picture in that order.
+      window.setTimeout(() => document.getElementById("doc-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 600);
     } catch (e) {
       setError(e instanceof Error ? e : new Error(String(e)));
     }
@@ -67,11 +77,12 @@ function Documents() {
   return (
     <>
       <PageHeader section="deals" title={t("docs.title")} subtitle={t("docs.subtitle")} />
-      <div className="space-y-6">
-        <Card id="docs-read" title={t("docs.read")} subtitle={t("docs.read.sub")}>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <DemoDocuments existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
+      {/* A flex column, not a stack: the review's parts are ordered (the decision is a bar at the foot of a phone, under the header on a desktop). */}
+      <div className="flex flex-col gap-8">
+        <Card id="docs-read" className="order-1" title={t("docs.read")} subtitle={t("docs.read.sub")}>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <UploadForm parties={parties} onRead={read} />
+            <DemoDocuments existing={docs} nameOf={nameOf} onRead={read} onOpen={open} />
           </div>
           {error ? (
             <div className="mt-4">
@@ -80,7 +91,15 @@ function Documents() {
           ) : null}
         </Card>
 
-        <Card id="docs-list" title={t("docs.list")}>
+        {selected ? (
+          <DocumentReview key={selected} id={selected} today={today} focus={focus} />
+        ) : (
+          <div className="order-2">
+            <EmptyState title={t("docs.select")} />
+          </div>
+        )}
+
+        <Card id="docs-list" className="order-6" title={t("docs.list")}>
           {list.error ? (
             <ErrorState error={list.error} onRetry={list.reload} />
           ) : !list.data ? (
@@ -121,8 +140,6 @@ function Documents() {
             </TableWrap>
           )}
         </Card>
-
-        {selected ? <DocumentReview key={selected} id={selected} today={today} /> : <EmptyState title={t("docs.select")} />}
       </div>
     </>
   );
@@ -163,7 +180,16 @@ function DemoDocuments({
             const last = made.length ? made[made.length - 1] : null;
             const format = formats[f.id] ?? "md";
             return (
-              <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2" data-testid={`fixture-${f.id}`}>
+              <li
+                key={f.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
+                  e.dataTransfer.effectAllowed = "copy";
+                }}
+                className="flex cursor-grab flex-wrap items-center justify-between gap-2 rounded-tile border border-line bg-surface px-3 py-2.5 hover:border-brand-100 hover:shadow-lift active:cursor-grabbing"
+                data-testid={`fixture-${f.id}`}
+              >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">{f.title}</p>
                   <p className="text-xs text-ink-3">
@@ -223,43 +249,73 @@ async function toBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-/** The owner's own file: what it is, who it is with (a known buyer or lender on the registry), and the file itself. */
+/**
+ * The owner's own file, as a drop zone: say what it is and who it is with, then drop the file (it is read at once) or choose it and press
+ * Upload and read. A demo document dragged from the list beside it is read the same way.
+ */
 function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req: SubmitDocumentRequest) => Promise<void> }) {
   const { t, te } = useI18n();
   const kindId = useId();
   const partyId = useId();
   const fileId = useId();
+  const input = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<DocumentKind>("BUYER_CONTRACT");
   const [party, setParty] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const role = kind === "BUYER_CONTRACT" ? "BUYER" : "LENDER";
   const options = parties.filter((c) => c.role === role && c.known);
   const chosen = options.some((c) => c.id === party) ? party : (options[0]?.id ?? "");
 
-  async function upload() {
-    if (!file || !chosen) return;
-    if (file.size > MAX_BYTES) {
+  async function upload(f: File | null = file) {
+    if (!f || !chosen) return;
+    if (f.size > MAX_BYTES) {
       setError(t("docs.tooBig"));
       return;
     }
-    setBusy(true);
+    setBusy(f.name);
     setError(null);
     try {
-      await onRead({ kind, counterparty_id: chosen, filename: file.name, content_base64: await toBase64(file) });
+      await onRead({ kind, counterparty_id: chosen, filename: f.name, content_base64: await toBase64(f) });
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
+  }
+
+  async function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setOver(false);
+    if (busy) return;
+    const fixture = e.dataTransfer.getData(FIXTURE_MIME);
+    if (fixture) {
+      setBusy(t("docs.demo"));
+      setError(null);
+      try {
+        await onRead(JSON.parse(fixture) as SubmitDocumentRequest);
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+    const dropped = e.dataTransfer.files?.[0];
+    if (!dropped) return;
+    if (!READABLE.test(dropped.name)) {
+      setError(t("docs.drop.unsupported"));
+      return;
+    }
+    setFile(dropped);
+    await upload(dropped);
   }
 
   const field = `${inputClass} w-full touch:min-h-11`;
   return (
     <section className="min-w-0">
-      <h3 className="text-sm font-semibold text-ink">{t("docs.own")}</h3>
+      <h3 className="text-sm font-bold text-ink">{t("docs.own")}</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor={kindId} className="mb-1 block text-xs font-medium text-ink-2">
+          <label htmlFor={kindId} className="mb-1 block text-xs font-bold text-ink-2">
             {t("docs.kind")}
           </label>
           <select id={kindId} value={kind} onChange={(e) => setKind(e.target.value as DocumentKind)} className={field}>
@@ -271,7 +327,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           </select>
         </div>
         <div>
-          <label htmlFor={partyId} className="mb-1 block text-xs font-medium text-ink-2">
+          <label htmlFor={partyId} className="mb-1 block text-xs font-bold text-ink-2">
             {t("docs.counterparty")}
           </label>
           <select id={partyId} value={chosen} onChange={(e) => setParty(e.target.value)} className={field}>
@@ -282,21 +338,50 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             ))}
           </select>
         </div>
-        <div className="sm:col-span-2">
-          <label htmlFor={fileId} className="mb-1 block text-xs font-medium text-ink-2">
-            {t("docs.file")}
-          </label>
-          <input
-            id={fileId}
-            type="file"
-            accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-ink-2 file:mr-3 file:min-h-10 file:rounded-pill file:border file:border-line-ui file:bg-surface file:px-4 file:text-sm file:font-medium file:text-ink touch:file:min-h-11"
-          />
+      </div>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          if (!over) setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => void onDrop(e)}
+        className={`mt-3 flex flex-col items-center justify-center rounded-card border-2 border-dashed px-5 py-8 text-center transition-colors ${
+          over ? "border-brand-600 bg-brand-50" : "border-line-strong bg-subtle/60"
+        }`}
+        data-testid="doc-dropzone"
+        data-over={over || undefined}
+      >
+        <span aria-hidden className={`grid size-12 place-items-center rounded-full ${over ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-600"}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 16V4M7 9l5-5 5 5" />
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+          </svg>
+        </span>
+        <p className="mt-3 text-base font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
+        <p className="mt-1 max-w-md text-xs text-ink-3">{t("docs.drop.sub")}</p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Button size="sm" onClick={() => input.current?.click()} disabled={busy !== null}>
+            {t("docs.drop.choose")}
+          </Button>
+          {file && !busy ? <span className="max-w-56 truncate text-xs font-bold text-ink-2">{file.name}</span> : null}
         </div>
+        <label htmlFor={fileId} className="mt-3 block text-xs text-ink-3">
+          {t("docs.file")}
+        </label>
+        <input
+          ref={input}
+          id={fileId}
+          type="file"
+          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="sr-only"
+        />
+        <p className="mt-1 text-xs text-ink-3">{t("docs.drop.demoHint")}</p>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button variant="primary" loading={busy} disabled={!file || !chosen} onClick={() => void upload()} data-testid="doc-upload">
+        <Button variant="primary" loading={busy !== null && busy !== t("docs.demo")} disabled={!file || !chosen} onClick={() => void upload()} data-testid="doc-upload">
           {t("docs.upload")}
         </Button>
         {API_MODE === "mock" ? <span className="text-xs text-ink-3">{t("docs.mockUpload")}</span> : null}

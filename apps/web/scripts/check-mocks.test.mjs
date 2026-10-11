@@ -256,11 +256,11 @@ test("the deal summary: the confirmed contract once the buyer agrees, then the d
   assert.ok(deal.changes.some((c) => c.label === "Buyer accepted" && c.text.includes(fmtYuan(golden.counter_a_face))));
   const rcvA = deal.invoices.find((i) => i.id === "RCV-A");
   assert.deepEqual([rcvA.status, rcvA.outstanding_display, rcvA.status_text], ["LATE", "¥162,800.00", "2 days late"]);
-  assert.equal(deal.invoices.find((i) => i.status === "ADVANCE_WAITING").label, "Invoice of day 2");
+  assert.equal(deal.invoices.find((i) => i.status === "ADVANCE_WAITING").label, "Invoice issued 32 days ago");
   assert.ok(deal.next_action.text.includes("Review APR-000001"));
   assert.ok(deal.checks.every((c) => c.status === "ok"));
   assert.equal(deal.owed_by_us.display_only, true);
   // Before the button the cure is not queued; after the owner approves it the invoice is financed.
   assert.deepEqual(mock("deals_day34_open.json").deals[0].pills.map((p) => p.label), ["Payment overdue"]);
-  assert.equal(mock("deals_day34_approved.json").deals[0].invoices.find((i) => i.label === "Invoice of day 2").status, "FINANCED");
+  assert.equal(mock("deals_day34_approved.json").deals[0].invoices.find((i) => i.label === "Invoice issued 32 days ago").status, "FINANCED");
 });

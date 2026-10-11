@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
+import { DealPicture } from "@/components/deal-picture";
 import { CLAUSE_KIND, ClauseQuote, DocStatusBadge, FIELD_KIND, whenWords } from "@/components/documents";
 import { OperationResultBox } from "@/components/operation-result";
 import { Badge, Button, Callout, Card, Chip, ErrorState, LoadingBlock, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
@@ -47,6 +48,24 @@ function itemsOf(d: DocumentView, t: I18n["t"], te: I18n["te"]): { read: Item[];
   return { read, flags };
 }
 
+/** The item a clause link points at: the term with that exact span (`at=start-end`), else the first term with that clause number. */
+function focusTarget(d: DocumentView, t: I18n["t"], te: I18n["te"], focus: { at: string | null; clause: string | null }): string | null {
+  const { read } = itemsOf(d, t, te);
+  const m = focus.at ? /^(\d+)-(\d+)$/.exec(focus.at) : null;
+  const bySpan = m ? read.find((it) => it.span.start === Number(m[1]) && it.span.end === Number(m[2])) : undefined;
+  const byClause = focus.clause ? read.find((it) => it.clause === focus.clause) : undefined;
+  return (bySpan ?? byClause)?.id ?? null;
+}
+
+/** A linked clause lands in the upper third of the document pane (not at its edge), without moving the page. */
+function revealInPane(id: string): void {
+  const mark = document.querySelector(`mark[data-annotation~="${id}"]`);
+  const pane = mark?.closest(".overflow-y-auto");
+  if (!mark || !pane) return;
+  const delta = mark.getBoundingClientRect().top - pane.getBoundingClientRect().top - pane.clientHeight / 3;
+  pane.scrollTo({ top: pane.scrollTop + delta, behavior: "smooth" });
+}
+
 /** Brings the highlighted clause into view inside the document pane (keyboard focus on a term). */
 function reveal(id: string): void {
   if (typeof document === "undefined") return;
@@ -75,7 +94,7 @@ function problemOf(e: unknown): Problem {
  * stay reachable on a phone (a bar at the foot of the screen below the desktop layout), and answer a changed text or an earlier
  * decision in words with the way forward. Ids, the entry number, the reader and the hash are behind the Audit details fold.
  */
-export function DocumentReview({ id, today = null }: { id: string; today?: number | null }) {
+export function DocumentReview({ id, today = null, focus }: { id: string; today?: number | null; focus?: { at: string | null; clause: string | null } }) {
   const { t, te, lang } = useI18n();
   const doc = useAsync(() => getDocument(id, lang), [id, lang]);
   const [active, setActive] = useState<string | null>(null);
@@ -87,6 +106,26 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
   const reasonId = useId();
   const hintId = useId();
   const linkHintId = useId();
+
+  // Arriving from a clause link (the deal summary's "§4.2"): that term stays lit while nothing else is hovered, and its words are
+  // brought into view once per arrival.
+  const loaded = doc.data;
+  const pinned = loaded && focus && (focus.at || focus.clause) ? focusTarget(loaded, t, te, focus) : null;
+  const scrolled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pinned || !loaded) return;
+    const key = `${loaded.id}|${pinned}`;
+    if (scrolled.current === key) return;
+    scrolled.current = key;
+    // The deal picture above loads its charts after this and pushes the text down: scroll again once the layout has settled.
+    const go = (behavior: ScrollBehavior) => {
+      document.getElementById("doc-text")?.scrollIntoView({ behavior, block: "start" });
+      revealInPane(pinned);
+    };
+    window.setTimeout(() => go("smooth"), 150);
+    window.setTimeout(() => go("auto"), 1200);
+  }, [pinned, loaded]);
+  const lit = active ?? pinned;
 
   if (doc.error) return <ErrorState error={doc.error} onRetry={doc.reload} />;
   if (!doc.data) return <LoadingBlock rows={3} />;
@@ -100,6 +139,9 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
   const uploaded = whenWords(d.uploaded_when, d.uploaded_day, today, t);
   const decidedWhen = whenWords(d.decided_when, d.decided_day, today, t);
   const proposed = d.status === "PROPOSED";
+  // The reading in a sentence: the dictionary's (en and zh) when it knows the status; the server's own word ("read") only beside a status it does not.
+  const readWord = te("readstatus", d.reading_status);
+  const readingSaid = readWord && readWord !== d.reading_status ? readWord : (d.reading_text ?? "");
 
   function reload() {
     setProblem(null);
@@ -138,7 +180,7 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
         reveal(it.id);
       }}
       onBlur={() => setActive(null)}
-      className={`rounded-tile border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${active === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
+      className={`rounded-tile border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${lit === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
     >
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="inline-grid min-w-5 place-items-center rounded-pill bg-ink px-1.5 text-xs font-bold leading-5 text-white">{it.n}</span>
@@ -154,14 +196,14 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
 
   return (
     <>
-      <div className="space-y-6" data-testid="doc-review" data-id={d.id} data-status={d.status} data-kind={d.kind}>
-        <Card id="doc-review" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} today={today} />}>
+      <div className="order-2" data-testid="doc-review" data-id={d.id} data-status={d.status} data-kind={d.kind}>
+        <Card id="doc-review" className="scroll-mt-20" title={d.title} subtitle={subtitle} actions={<DocStatusBadge doc={d} today={today} />}>
           <div className="flex flex-wrap items-center gap-2">
             <span data-testid="doc-ai-label">
               <Badge tone={d.status === "CONFIRMED" ? "ok" : "info"}>{d.status === "CONFIRMED" ? t("docs.confirmedLabel") : t("docs.aiLabel")}</Badge>
             </span>
             <span className="text-xs text-ink-3" data-testid="doc-reading">
-              {d.reading_text ?? te("readstatus", d.reading_status)}
+              {readingSaid}
             </span>
           </div>
           {flags.length ? (
@@ -208,16 +250,128 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
             </dl>
           </Disclosure>
         </Card>
+      </div>
+
+      {/* The decision sits right under the document's header, where the owner lands: a reading that waits for them is the first thing on the page, in the brand's
+          frame; once decided it is one quiet line. It cannot be undone, so it says so above the controls. Below the desktop layout it is a bar at the foot of the
+          screen (above the tab bar, clear of the Ask FLOW pill) so a phone never scrolls past eighteen terms to find it: it is a sibling of the review's other parts
+          and ordered last there, because a sticky element rests within its parent and stays where the order puts it. */}
+      <section
+        id="doc-decide"
+        aria-labelledby="doc-decide-title"
+        className={`motion-reveal rounded-card ${
+          proposed
+            ? "order-3 max-lg:order-5 max-lg:sticky max-lg:bottom-(--dock-h) max-lg:z-20 border-2 border-brand-600 bg-brand-50 p-4 shadow-lift sm:p-6 sm:max-lg:pr-36"
+            : `order-3 border px-5 py-3.5 ${d.status === "CONFIRMED" ? "border-ok-line bg-ok-bg" : "border-line bg-surface"}`
+        }`}
+      >
+        {proposed ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="min-w-0 grow basis-96">
+              <h2 id="doc-decide-title" className="font-display text-xl text-ink sm:text-2xl">
+                {t("docs.decide")}
+              </h2>
+              <p id={hintId} className="mt-1 text-sm text-ink-2 max-sm:text-xs">
+                {t("docs.decide.hint")}
+              </p>
+              {lender && d.suggested_facility_id ? (
+                <label className="mt-2 flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm text-ink">
+                  <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" aria-describedby={linkHintId} className="mt-0.5 size-5 shrink-0" />
+                  <span>
+                    {facility ? t("docs.link", { name: facility }) : t("docs.link.generic")}
+                    <span id={linkHintId} className="block text-xs text-ink-3 max-sm:sr-only">
+                      {t("docs.link.hint")}
+                    </span>
+                  </span>
+                </label>
+              ) : null}
+              {d.can_confirm ? null : (
+                <p id={reasonId} className="mt-2 text-sm font-semibold text-bad-fg" data-testid="doc-cannot-confirm">
+                  {d.blocked ? t("docs.flags.blocked") : t("docs.cannotConfirm")}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 max-sm:w-full">
+              <Button
+                variant="primary"
+                className="max-sm:grow sm:min-w-36"
+                disabled={!d.can_confirm || busy !== null}
+                loading={busy === "confirm"}
+                aria-describedby={d.can_confirm ? hintId : `${reasonId} ${hintId}`}
+                onClick={() => void decide("confirm", d)}
+                data-testid="doc-confirm"
+              >
+                {t("docs.confirm")}
+              </Button>
+              <Button className="max-sm:grow sm:min-w-28" disabled={busy !== null} loading={busy === "reject"} aria-describedby={hintId} onClick={() => void decide("reject", d)} data-testid="doc-reject">
+                {t("docs.reject")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink">
+            <span id="doc-decide-title" className="font-bold">
+              {t("docs.decide")}
+            </span>
+            <span data-testid="doc-decided">
+              {d.status === "CONFIRMED"
+                ? decidedWhen
+                  ? t("docs.decided.confirmed", { when: decidedWhen })
+                  : t("docs.decided.confirmed.plain")
+                : decidedWhen
+                  ? t("docs.decided.rejected", { when: decidedWhen })
+                  : t("docs.decided.rejected.plain")}
+            </span>
+          </p>
+        )}
+        {decision ? (
+          <div className="mt-3">
+            <OperationResultBox
+              status={decision.result.status}
+              message={
+                (decision.result.kind === "REJECT_DOCUMENT" ? t("docs.result.rejected") : t("docs.result.confirmed")) +
+                (decision.document.linked_facility_id ? ` ${facility ? t("docs.result.linked", { name: facility }) : t("docs.result.linked.generic")}` : "")
+              }
+              testId="doc-result"
+              kind={decision.result.kind}
+            >
+              <span className="text-sm font-medium text-ink">{te("opkind", decision.result.kind)}</span>
+            </OperationResultBox>
+          </div>
+        ) : null}
+        {problem?.kind === "error" ? (
+          <div className="mt-3" data-testid="doc-problem" data-problem="error">
+            <ErrorState error={problem.error} />
+          </div>
+        ) : problem ? (
+          <div className="mt-3" role="alert" data-testid="doc-problem" data-problem={problem.kind}>
+            <Callout tone={problem.kind === "decided" ? "info" : "bad"}>
+              <p className="font-medium text-ink">
+                {problem.kind === "changed" ? t("docs.err.changed") : problem.kind === "decided" ? t("docs.err.decided") : problem.kind === "refused" ? t("docs.err.refused") : t("docs.err.generic")}
+              </p>
+              {problem.kind === "changed" || problem.kind === "refused" ? (
+                <Button className="mt-2" size="sm" onClick={reload} data-testid="doc-reload">
+                  {t("docs.err.reload")}
+                </Button>
+              ) : null}
+            </Callout>
+          </div>
+        ) : null}
+      </section>
+
+      <div className="order-4 space-y-6">
+        {/* The answer first: what this deal means for cash, loans and rates. The clause-by-clause reading follows for checking. */}
+        <DealPicture doc={d} />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}
-          <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="lg:sticky lg:top-28 lg:self-start">
+          <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
             <div className="max-h-96 overflow-y-auto">
               <AnnotatedText
                 ariaLabel={t("docs.annotated")}
                 text={d.document.text}
                 annotations={all.map((it) => ({ id: it.id, kind: it.kind, start: it.span.start, end: it.span.end, n: it.n, label: it.label }))}
-                activeId={active}
+                activeId={lit}
                 onActivate={setActive}
               />
             </div>
@@ -314,99 +468,6 @@ export function DocumentReview({ id, today = null }: { id: string; today?: numbe
           </div>
         </div>
       </div>
-
-        {/* An undoable-looking choice that is not: the controls sit at the foot of the screen below the desktop layout (above the tab bar, clear of the Ask FLOW pill), so a
-            phone never scrolls past eighteen terms to find them. Decided, the card is an ordinary one. It is a sibling of the review, not inside it: a sticky
-          element stays within its parent, and the review starts below the page's list. */}
-        <Card
-          id="doc-decide"
-          title={t("docs.decide")}
-          tone={proposed ? "warn" : undefined}
-          className={proposed ? "max-lg:sticky max-lg:bottom-(--dock-h) max-lg:z-20 sm:max-lg:pr-36" : ""}
-        >
-          {proposed ? (
-            <>
-              <p id={hintId} className="text-sm text-ink-2 max-sm:text-xs">
-                {t("docs.decide.hint")}
-              </p>
-              {lender && d.suggested_facility_id ? (
-                <label className="mt-2 flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm text-ink">
-                  <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" aria-describedby={linkHintId} className="mt-0.5 size-5 shrink-0" />
-                  <span>
-                    {facility ? t("docs.link", { name: facility }) : t("docs.link.generic")}
-                    <span id={linkHintId} className="block text-xs text-ink-3 max-sm:sr-only">
-                      {t("docs.link.hint")}
-                    </span>
-                  </span>
-                </label>
-              ) : null}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  className="max-sm:grow"
-                  disabled={!d.can_confirm || busy !== null}
-                  loading={busy === "confirm"}
-                  aria-describedby={d.can_confirm ? hintId : `${reasonId} ${hintId}`}
-                  onClick={() => void decide("confirm", d)}
-                  data-testid="doc-confirm"
-                >
-                  {t("docs.confirm")}
-                </Button>
-                <Button className="max-sm:grow" disabled={busy !== null} loading={busy === "reject"} aria-describedby={hintId} onClick={() => void decide("reject", d)} data-testid="doc-reject">
-                  {t("docs.reject")}
-                </Button>
-              </div>
-              {d.can_confirm ? null : (
-                <p id={reasonId} className="mt-2 text-xs text-ink-2" data-testid="doc-cannot-confirm">
-                  {d.blocked ? t("docs.flags.blocked") : t("docs.cannotConfirm")}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-ink-2" data-testid="doc-decided">
-              {d.status === "CONFIRMED"
-                ? decidedWhen
-                  ? t("docs.decided.confirmed", { when: decidedWhen })
-                  : t("docs.decided.confirmed.plain")
-                : decidedWhen
-                  ? t("docs.decided.rejected", { when: decidedWhen })
-                  : t("docs.decided.rejected.plain")}
-            </p>
-          )}
-          {decision ? (
-            <div className="mt-3">
-              <OperationResultBox
-                status={decision.result.status}
-                message={
-                  (decision.result.kind === "REJECT_DOCUMENT" ? t("docs.result.rejected") : t("docs.result.confirmed")) +
-                  (decision.document.linked_facility_id ? ` ${facility ? t("docs.result.linked", { name: facility }) : t("docs.result.linked.generic")}` : "")
-                }
-                testId="doc-result"
-                kind={decision.result.kind}
-              >
-                <span className="text-sm font-medium text-ink">{te("opkind", decision.result.kind)}</span>
-              </OperationResultBox>
-            </div>
-          ) : null}
-          {problem?.kind === "error" ? (
-            <div className="mt-3" data-testid="doc-problem" data-problem="error">
-              <ErrorState error={problem.error} />
-            </div>
-          ) : problem ? (
-            <div className="mt-3" role="alert" data-testid="doc-problem" data-problem={problem.kind}>
-              <Callout tone={problem.kind === "decided" ? "info" : "bad"}>
-                <p className="font-medium text-ink">
-                  {problem.kind === "changed" ? t("docs.err.changed") : problem.kind === "decided" ? t("docs.err.decided") : problem.kind === "refused" ? t("docs.err.refused") : t("docs.err.generic")}
-                </p>
-                {problem.kind === "changed" || problem.kind === "refused" ? (
-                  <Button className="mt-2" size="sm" onClick={reload} data-testid="doc-reload">
-                    {t("docs.err.reload")}
-                  </Button>
-                ) : null}
-              </Callout>
-            </div>
-          ) : null}
-        </Card>
     </>
   );
 }

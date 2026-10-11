@@ -22,3 +22,17 @@ test("the borrower file's contents show its tables with their columns, not joine
   await expect(card.getByTestId("file-sections")).not.toContainText(/[0-9a-f]{64}/);
   await expect(card.getByText("Your estimate").first()).toBeVisible();
 });
+
+test("how this was worked out reads as short headings, with the server's full assumptions one tap away", async ({ page }) => {
+  await page.goto("/capex");
+  await page.getByRole("button", { name: "Evaluate the ¥600k machine" }).click();
+  await page.getByText("How this was worked out").click();
+  const basis = page.getByTestId("capex-basis");
+  await expect(basis.locator("li")).toHaveCount(7);
+  await expect(basis).toContainText("Lowest financing charges");
+  await expect(basis).toContainText("¥22,000.00 a month from month 4 to month 60");
+  await expect(basis).toContainText("more than 10.00% a year");
+  await expect(page.getByTestId("capex-assumptions")).toBeHidden();
+  await page.getByText("Full assumptions").click();
+  await expect(page.getByTestId("capex-assumptions")).toContainText("ranked on lowest total financing charges");
+});

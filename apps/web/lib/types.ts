@@ -1366,7 +1366,14 @@ export interface CapexRequest {
 
 /** POST /capex/evaluate: side-effect free, writes nothing. */
 export type CapexView = Displayed<{
-  request: CapexRequest;
+  /** The request as the server read it, with its defaults filled in and their display strings. */
+  request: CapexRequest & {
+    monthly_uplift_display?: string;
+    uplift_start_month?: number;
+    life_months?: number;
+    hurdle_display?: string;
+    payback_limit_months?: number;
+  };
   npv_fen: Fen;
   /** null: no payback within the life. */
   payback_month: number | null;
@@ -2687,7 +2694,16 @@ export interface DealView {
   contract_terms?: ContractTermView[];
   blanks?: DocumentBlank[];
   changes?: { day: Day | null; when?: string | null; actor: "BUYER" | "AGENT" | "OWNER" | "BANK"; label: string; text: string }[];
-  in_force?: { key: string; label: string; value_display: string; vs_contract: "SAME" | "DIFFERENT" | "NOT_IN_CONTRACT" | "NONE"; contract_display: string | null }[];
+  in_force?: {
+    key: string;
+    label: string;
+    value_display: string;
+    vs_contract: "SAME" | "DIFFERENT" | "NOT_IN_CONTRACT" | "NOT_COMPARABLE" | "NONE";
+    /** The comparison in the owner's words (the page's language), and for a term that cannot be compared, why. */
+    vs_contract_text?: string;
+    vs_contract_note?: string | null;
+    contract_display: string | null;
+  }[];
   invoices?: {
     id: string;
     label: string;

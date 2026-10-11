@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
-import { ClauseLabel, ClauseQuote, DealHeading } from "@/components/documents";
+import { DealHeading } from "@/components/documents";
 import { Callout, Chip, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { DealTone, DealView, StageState } from "@/lib/types";
@@ -32,8 +32,13 @@ const TICK: Record<"ok" | "warn" | "info" | "todo", { cls: string; glyph: string
   info: { cls: "border border-line-strong bg-subtle text-ink-3", glyph: "·" },
   todo: { cls: "border border-line-strong bg-subtle text-ink-3", glyph: "·" },
 };
-/** A term row: a label beside its value, one column on a phone. */
-const TERM = "grid items-baseline gap-x-3 gap-y-0.5 sm:grid-cols-[9rem_minmax(0,1fr)]";
+/** Who did it, by the hue of their part of the product (never a status). */
+const ACTOR: Record<"BUYER" | "AGENT" | "OWNER" | "BANK", string> = {
+  BUYER: "bg-sec-deals-bg text-sec-deals-fg",
+  AGENT: "bg-brand-50 text-brand-700",
+  OWNER: "bg-sec-recv-bg text-sec-recv-fg",
+  BANK: "bg-sec-cash-bg text-sec-cash-fg",
+};
 const TH = "whitespace-nowrap border-b border-line px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-3";
 const TD = "border-b border-line p-2 align-top tabular-nums";
 
@@ -54,15 +59,43 @@ function clauseRange(clauses: (string | null)[]): string | null {
   return lo === hi ? `§${lo}` : `§${lo}–${hi}`;
 }
 
+/** Where a clause link lands: the confirmed contract on the documents page, that term lit up and scrolled into view. */
+function clauseHref(docId: string, focus: { span?: { start: number; end: number } | null; clause?: string | null }): string {
+  const q = new URLSearchParams({ id: docId });
+  if (focus.span) q.set("at", `${focus.span.start}-${focus.span.end}`);
+  if (focus.clause) q.set("clause", focus.clause);
+  return `/documents?${q.toString()}`;
+}
+
+/** "§4.2 ↗": the clause as a link into the contract (its words are the tooltip and open in the document, not here). */
+function ClauseLink({ docId, clause, span, quote }: { docId: string | null; clause: string | null; span?: { start: number; end: number } | null; quote?: string }) {
+  const { t } = useI18n();
+  const label = clause ? (/^\d/.test(clause) ? t("deal.clause", { n: clause }) : clause) : t("deal.seeClause");
+  if (!docId) return clause ? <span className="font-mono text-xs text-ink-3">{label}</span> : null;
+  return (
+    <Link
+      href={clauseHref(docId, { span, clause })}
+      title={quote ? `“${quote}”` : undefined}
+      aria-label={t("deal.openClause", { clause: label })}
+      className="motion-press hit inline-flex min-h-8 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-pill bg-sec-deals-bg px-2 font-mono text-xs font-semibold text-sec-deals-fg hover:underline"
+    >
+      {label}
+      <span aria-hidden>↗</span>
+    </Link>
+  );
+}
+
 /**
  * The summary of one agreed deal (brief 03), inside the buyer's agreement on Deals: a headline (where it stands, in the server's pills), two to
  * four facts, and the one thing to do; the stages, the contract's terms, what changed, what is in force, the invoices, what you owe and the
- * checks are behind one fold. The page passes GET /deals; every amount, date and sentence is a server string, and a day is said as a distance
+ * checks are behind one fold, in the order the owner asks: where the deal is, what we signed (each term with its clause as a link into the document), what
+ * changed (each difference as Contract then Now, who did what), the money, what we owe them and the check. The page passes GET /deals; every amount, date and sentence is a server string, and a day is said as a distance
  * from `today` where the server sent no `*_when` of its own.
  */
 export function DealSummary({ deal, today }: { deal: DealView; today: number }) {
   const { t, te } = useI18n();
   const c = deal.contract;
+  const docId = c?.record_id ?? null;
   const meta = [c?.title, c?.signed_display ? t("deal.signed", { date: c.signed_display }) : null, c?.term_display, c?.cadence_display].filter(Boolean).join(" · ");
   const blanks = deal.blanks ?? [];
   const owed = deal.owed_by_us ?? { display_only: true, deliverables: [], documents: [] };
@@ -74,6 +107,11 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
   const here = stages.find((s) => s.state === "now") ?? [...stages].reverse().find((s) => s.state === "done") ?? null;
   const lead = next ? (next.actions.find((a) => a.primary) ?? next.actions[0] ?? null) : null;
   const others = next ? next.actions.filter((a) => a !== lead) : [];
+  const inForce = deal.in_force ?? [];
+  const changed = inForce.filter((r) => r.vs_contract === "DIFFERENT" || r.vs_contract === "NOT_IN_CONTRACT" || r.vs_contract === "NOT_COMPARABLE");
+  const same = inForce.filter((r) => r.vs_contract === "SAME" || r.vs_contract === "NONE");
+  const checks = deal.checks ?? [];
+  const flagged = checks.filter((ch) => ch.status === "warn").length;
 
   return (
     <div className="mt-3 border-t border-line pt-3" data-testid={`deal-summary-${deal.counterparty_id}`}>
@@ -100,10 +138,10 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
           <dt className="text-xs text-ink-3">{t("deal.facts.contract")}</dt>
           <dd className="break-words font-medium text-ink">
             {meta}
-            {c?.record_id ? (
+            {docId ? (
               <>
                 {" · "}
-                <Link href={`/documents?id=${encodeURIComponent(c.record_id)}`} className={textLinkClass} data-testid="deal-contract-link">
+                <Link href={`/documents?id=${encodeURIComponent(docId)}`} className={textLinkClass} data-testid="deal-contract-link">
                   {t("deals.summary.contract")}
                 </Link>
               </>
@@ -162,69 +200,87 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
             </ol>
           ) : null}
 
+          {/* What the contract says: each term's value, and its clause as a link into the document. */}
           <section className="min-w-0" data-testid="deal-contract">
             <DealHeading>
               {t("deal.contract")} <Chip tone="ok">{t("docs.confirmedLabel")}</Chip>
             </DealHeading>
-            <dl className="grid gap-2">
+            <dl className="divide-y divide-line">
               {deal.contract_terms?.map((term, i) => (
-                <div key={`${term.field}-${i}`} className={TERM}>
-                  <dt className="text-sm text-ink-3">{te("contractfield", term.field) || term.label}</dt>
-                  <dd className="min-w-0 font-medium text-ink">
-                    {term.value_display}
-                    <ClauseQuote clause={term.clause} quote={term.quote} />
+                <div key={`${term.field}-${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 py-1.5 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto]">
+                  <dt className="col-span-2 text-sm text-ink-3 sm:col-span-1">{te("contractfield", term.field) || term.label}</dt>
+                  <dd className="min-w-0 font-medium text-ink">{term.value_display}</dd>
+                  <dd>
+                    <ClauseLink docId={docId} clause={term.clause} span={term.span} quote={term.quote} />
                   </dd>
                 </div>
               ))}
-              {blanks.length ? (
-                <div className={TERM} data-testid="deal-blanks">
-                  <dt className="text-sm text-ink-3">{t("deal.notFound")}</dt>
-                  <dd className="min-w-0 font-medium">
-                    <span className="flex flex-wrap gap-1">
-                      {blanks.map((b) => (
-                        <Chip key={b.field}>{te("contractfield", b.field) || b.label}</Chip>
-                      ))}
-                    </span>
-                    <span className="mt-1 block border-l-2 border-line-strong pl-2 text-xs font-normal text-ink-3">{t("deal.notFoundHint")}</span>
-                  </dd>
-                </div>
-              ) : null}
             </dl>
+            {blanks.length ? (
+              <p className="mt-2 text-xs text-ink-3" data-testid="deal-blanks">
+                {t("deal.notInContractList", { list: blanks.map((b) => te("contractfield", b.field) || b.label).join(", ") })}
+                <span className="mt-1 block border-l-2 border-line-strong pl-2">{t("deal.notFoundHint")}</span>
+              </p>
+            ) : null}
           </section>
 
+          {/* What changed: each difference as Contract then Now, the unchanged terms in one line, then who did what. */}
           <section className="min-w-0">
             <DealHeading>{t("deal.changes")}</DealHeading>
-            <ol className="grid gap-2.5" data-testid="deal-changes">
+            <div className="space-y-2" data-testid="deal-in-force">
+              {changed.map((r) => (
+                <div key={r.key} className={`rounded-tile border px-3 py-2 ${r.vs_contract === "NOT_COMPARABLE" ? "border-line bg-subtle" : "border-warn-line bg-warn-bg/50"}`} data-vs={r.vs_contract}>
+                  <p className="text-xs font-bold text-ink">{r.label}</p>
+                  <div className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 text-sm">
+                    {r.vs_contract === "DIFFERENT" && r.contract_display ? (
+                      <>
+                        <span className="text-ink-3">{t("deal.wasNow.contract")}</span>
+                        <span className="text-ink-3 line-through decoration-ink-3/40">{r.contract_display}</span>
+                      </>
+                    ) : null}
+                    <span className={`font-bold ${r.vs_contract === "NOT_COMPARABLE" ? "text-ink-2" : "text-warn-fg"}`}>
+                      {r.vs_contract === "DIFFERENT" ? t("deal.wasNow.now") : r.vs_contract === "NOT_IN_CONTRACT" ? t("deal.newTerm") : (r.vs_contract_text ?? t("deal.vs.NOT_COMPARABLE"))}
+                    </span>
+                    <span className="font-semibold text-ink">{r.value_display}</span>
+                  </div>
+                  {r.vs_contract_note ? <p className="mt-1 text-xs text-ink-3">{r.vs_contract_note}</p> : null}
+                </div>
+              ))}
+              {same.length ? (
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="mr-0.5 font-semibold text-ink-3">{t("deal.unchanged")}</span>
+                  {same.map((r) => (
+                    <span key={r.key} className="inline-flex items-center gap-1 rounded-pill border border-line bg-surface px-2 py-0.5 text-ink-2" data-vs={r.vs_contract}>
+                      {r.vs_contract === "SAME" ? (
+                        <span aria-hidden className="text-ok-fg">
+                          ✓
+                        </span>
+                      ) : null}
+                      {r.label} <b className="font-semibold text-ink">{r.value_display}</b>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <DealHeading className="mt-4">{t("deal.history")}</DealHeading>
+            <ol className="relative grid gap-2.5 before:absolute before:bottom-3 before:left-3.5 before:top-3 before:w-px before:bg-line" data-testid="deal-changes">
               {deal.changes?.map((ch, i) => (
-                <li key={i} className="grid gap-x-2.5 sm:grid-cols-[6rem_minmax(0,1fr)]">
-                  <span className="pt-px text-xs text-ink-3">{when(ch.when, ch.day)}</span>
+                <li key={i} className="relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5">
+                  <span aria-hidden className={`z-10 grid size-7 place-items-center rounded-full text-xs font-bold ${ACTOR[ch.actor]}`}>
+                    {te("deal.actor", ch.actor).slice(0, 1).toUpperCase()}
+                  </span>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">{ch.label}</p>
-                    <p className="break-words text-ink">{ch.text}</p>
+                    <p className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                      <span className="font-bold text-ink">{ch.label}</span>
+                      <span className="sr-only">{te("deal.actor", ch.actor)}</span>
+                      <span className="text-ink-3">{when(ch.when, ch.day)}</span>
+                    </p>
+                    <p className="break-words text-sm leading-snug text-ink-2">{ch.text}</p>
                   </div>
                 </li>
               ))}
             </ol>
-          </section>
-
-          <section className="min-w-0">
-            <DealHeading>{t("deal.inForce")}</DealHeading>
-            <dl className="grid gap-2" data-testid="deal-in-force">
-              {deal.in_force?.map((r) => (
-                <div key={r.key} className={TERM} data-vs={r.vs_contract}>
-                  <dt className="text-sm text-ink-3">{r.label}</dt>
-                  <dd className="min-w-0 font-medium text-ink">
-                    {r.value_display}{" "}
-                    {r.vs_contract === "NONE" ? null : (
-                      <StatePill tone={r.vs_contract === "SAME" ? "ok" : r.vs_contract === "DIFFERENT" ? "warn" : "info"}>{te("deal.vs", r.vs_contract)}</StatePill>
-                    )}
-                    {r.vs_contract === "DIFFERENT" && r.contract_display ? (
-                      <span className="mt-1 block text-xs font-normal text-ink-3">{t("deal.vsContract", { text: r.contract_display })}</span>
-                    ) : null}
-                  </dd>
-                </div>
-              ))}
-            </dl>
           </section>
 
           <section className="min-w-0">
@@ -275,19 +331,24 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
             <DealHeading>
               {t("deal.owed")} <Chip>{range ? t("deal.owedFrom", { range }) : t("deal.owedBadge")}</Chip>
             </DealHeading>
-            <Owed title={t("deal.deliverables")} items={owed.deliverables} />
+            <Owed title={t("deal.deliverables")} items={owed.deliverables} docId={docId} />
             <div className="mt-2.5">
-              <Owed title={t("deal.documents")} items={owed.documents} />
+              <Owed title={t("deal.documents")} items={owed.documents} docId={docId} />
             </div>
           </section>
 
+          {/* The check in one line, then the list: the fold already hides it, so no second fold inside it. */}
           <section className="min-w-0">
             <DealHeading>{t("deal.checks")}</DealHeading>
-            <ul className="grid gap-1.5" data-testid="deal-checks">
-              {deal.checks?.map((ch, i) => (
+            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+              <Tick kind={flagged ? "warn" : "ok"} />
+              <span className={flagged ? "text-warn-fg" : "text-ok-fg"}>{flagged ? t("deal.checksSome", { bad: flagged, n: checks.length }) : t("deal.checksAll", { n: checks.length })}</span>
+            </p>
+            <ul className="mt-2 grid gap-1.5" data-testid="deal-checks">
+              {checks.map((ch, i) => (
                 <li key={i} className="flex items-baseline gap-2" data-status={ch.status}>
                   <Tick kind={ch.status} />
-                  <span className="min-w-0 text-ink">{ch.text}</span>
+                  <span className="min-w-0 text-ink-2">{ch.text}</span>
                 </li>
               ))}
             </ul>
@@ -311,8 +372,8 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
   );
 }
 
-/** What the supplier owes, listed from the contract with its clause; shown, never tracked (brief 03, Q1). */
-function Owed({ title, items }: { title: string; items: { text: string | null; clause: string | null; quote: string }[] }) {
+/** What the supplier owes, listed from the contract with its clause as a link into it; shown, never tracked (brief 03, Q1). */
+function Owed({ title, items, docId }: { title: string; items: { text: string | null; clause: string | null; quote: string }[]; docId: string | null }) {
   const { t } = useI18n();
   return (
     <>
@@ -325,8 +386,8 @@ function Owed({ title, items }: { title: string; items: { text: string | null; c
               <span className="min-w-0 text-ink">
                 {it.text ?? it.quote}
                 {it.clause ? (
-                  <span className="ml-1">
-                    <ClauseLabel clause={it.clause} />
+                  <span className="ml-1.5">
+                    <ClauseLink docId={docId} clause={it.clause} quote={it.quote} />
                   </span>
                 ) : null}
               </span>

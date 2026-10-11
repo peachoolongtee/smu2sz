@@ -121,7 +121,7 @@ test("the documents: the three demo documents confirmed, each term of the supply
   const price = terms.locator("li", { hasText: "¥420,000.00 per delivery batch" });
   await expect(price).toContainText("§3.1");
   await expect(price).toContainText("RMB 420,000");
-  await expect(terms).toContainText("Every 30 days, the first on 3 Oct 2026 (day 2)");
+  await expect(terms).toContainText("Every 30 days, the first on 3 Oct 2026 (in 2 days)");
   await expect(page.getByTestId("doc-blanks")).toContainText("Retention");
   // Focusing a term highlights its clause in the document.
   const id = (await price.getAttribute("data-testid"))!.replace("doc-item-", "");
@@ -267,7 +267,7 @@ test("Business words: no day numbers, ids, entry numbers, hashes, env names or r
   expect(shown).not.toMatch(/\bday \d/i);
   expect(shown).not.toMatch(/ledger|hash|entry #|COMPILED|ABSTAINED|CONFLICTING|TIER|FEATURE_|NEXT_PUBLIC|API_MODE/i);
   await expect(page.getByTestId("doc-reading")).toHaveText("The agent read this document.");
-  await expect(page.getByTestId("doc-review").getByTestId("doc-status")).toContainText("Waiting for your review");
+  await expect(page.getByTestId("doc-review").getByTestId("doc-status")).toContainText("Waiting for your decision");
   // The ids, the reader and the hash are one click away.
   await page.getByTestId("doc-audit").locator("summary").click();
   await expect(page.getByTestId("doc-id")).toHaveText("DOC-000004");
