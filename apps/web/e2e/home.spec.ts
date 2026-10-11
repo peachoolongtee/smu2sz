@@ -483,3 +483,30 @@ test("day 34: the sidebar counts the late invoice and the approval, and the coun
   await page.reload();
   await expect(page.getByTestId("nav-pills").getByRole("link", { name: /应收款，1 笔已逾期/ })).toBeVisible();
 });
+
+// The lowest points are the labels that must never be dropped: on the opening books both lines' lowest figures (the server's short strings) are drawn inside the picture at every width.
+for (const [w, h, both] of [
+  [1280, 800, true],
+  [1440, 900, true],
+  [390, 844, false],
+] as const) {
+  test(`the lowest points are labelled inside the cash picture at ${w} px`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto("/");
+    const picture = page.getByTestId("home-picture");
+    await expect(picture.getByTestId("picture-line-nothing")).toHaveCount(1);
+    const svg = picture.locator("svg[role=img]");
+    const box = (await svg.boundingBox())!;
+    const inside = async (text: string) => {
+      const label = svg.locator("text", { hasText: text });
+      await expect(label).toHaveCount(1);
+      const b = (await label.boundingBox())!;
+      expect(b.x).toBeGreaterThanOrEqual(box.x - 1);
+      expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 6);
+      expect(b.y).toBeGreaterThanOrEqual(box.y);
+      expect(b.y + b.height).toBeLessThanOrEqual(box.y + box.height);
+    };
+    await inside("Lowest −¥105k");
+    if (both) await inside("Lowest ¥300k");
+  });
+}
