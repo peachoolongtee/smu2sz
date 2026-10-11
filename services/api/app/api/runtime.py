@@ -13,6 +13,7 @@ empty after a restart. The books, mandate, approvals, nonces and the operations 
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import dataclass, field
 from typing import Any
@@ -26,6 +27,9 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.operations import Executor
 from app.persistence import InMemoryLedgerStore, SqlLedgerStore
 from app.persistence.errors import NotFound
+
+
+log = logging.getLogger(__name__)
 
 
 class StartupError(RuntimeError):
@@ -159,12 +163,18 @@ class Runtime:
 
 def _confirm_demo_documents(rt: Runtime, scenario: str) -> None:
     """Three logged CONFIRM_DOCUMENT entries for the demo documents, which were written to match the golden books.
-    Skipped for other scenarios and when contract ingestion is switched off."""
+    Skipped for other scenarios and when contract ingestion is switched off. The documents are a convenience of the demo's
+    starting point, never a condition of starting: if they cannot be read or confirmed (a missing fixture, a changed reader),
+    the three are rolled back together, a warning is logged and the runtime starts without them."""
     if scenario != "golden_sme" or not get_settings().features.contracts:
         return
     from app.api.documents import confirm_demo_documents
 
-    confirm_demo_documents(rt)
+    try:
+        with rt.store.transaction():
+            confirm_demo_documents(rt)
+    except Exception:
+        log.warning("the demo documents could not be read at startup; starting without them", exc_info=True)
 
 
 def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
