@@ -183,6 +183,7 @@ export default function ActivityPage() {
       ) : (
         <div className="space-y-8">
           <section id="activity-timeline" aria-label={t("biz.activity.rail")}>
+            <p className="mb-3 text-xs text-ink-3">{t("biz.activity.timeline.sub")}</p>
             {showChips ? (
               <div role="group" aria-label={t("biz.activity.filter.label")} className="mb-4 flex flex-wrap gap-1.5" data-testid="activity-filters">
                 {([["all", t("biz.activity.filter.all"), entries], ...kinds.map((c) => [c, t(`biz.activity.filter.${c}`), counts[c]] as const)] as const).map(([id, label, n]) => (
