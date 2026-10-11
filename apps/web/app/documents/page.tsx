@@ -56,8 +56,8 @@ function Documents() {
       const view = await submitDocument(req);
       bump();
       open(view.id);
-      // The deal picture is the answer to the drop: bring it into view once the review has rendered.
-      window.setTimeout(() => document.getElementById("deal-picture-title")?.scrollIntoView({ behavior: "smooth", block: "start" }), 600);
+      // The answer to the drop: bring the review into view once it has rendered, its header, the decision and the deal picture in that order.
+      window.setTimeout(() => document.getElementById("doc-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 600);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }

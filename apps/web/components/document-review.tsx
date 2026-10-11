@@ -148,6 +148,7 @@ export function DocumentReview({ id, focus }: { id: string; focus?: { at: string
     <div className="space-y-6" data-testid="doc-review" data-id={d.id} data-status={d.status} data-kind={d.kind}>
       <Card
         id="doc-review"
+        className="scroll-mt-20"
         title={d.title}
         subtitle={`${d.id} · ${d.counterparty_name} · ${te("dockind", d.kind)} · ${t("common.dayN", { n: d.uploaded_day })}`}
         actions={<DocStatusBadge doc={d} />}
@@ -173,6 +174,60 @@ export function DocumentReview({ id, focus }: { id: string; focus?: { at: string
           </div>
         ) : null}
       </Card>
+
+      {/* The decision sits right under the document's header, where the owner lands: a reading that waits for them is the first
+          thing on the page, in the brand's frame; once decided it is one quiet line. */}
+      <section
+        id="doc-decide"
+        aria-labelledby="doc-decide-title"
+        className={`motion-reveal rounded-card ${d.status === "PROPOSED" ? "border-2 border-brand-600 bg-brand-50 p-5 shadow-lift sm:p-6" : "border border-ok-line bg-ok-bg px-5 py-3.5"}`}
+      >
+        {d.status === "PROPOSED" ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="min-w-0 flex-[1_1_24rem]">
+              <h2 id="doc-decide-title" className="font-display text-xl text-ink sm:text-2xl">
+                {t("docs.decide")}
+              </h2>
+              <p className="mt-1 text-sm text-ink-2">{t("docs.decide.hint")}</p>
+              {d.blocked ? <p className="mt-2 text-sm font-semibold text-bad-fg">{t("docs.flags.blocked")}</p> : null}
+              {lender && d.suggested_facility_id ? (
+                <label className="mt-3 flex items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" className="size-4" />
+                  {t("docs.link", { id: d.suggested_facility_id })}
+                </label>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" className="min-w-36" disabled={!d.can_confirm} loading={busy === "confirm"} onClick={() => void decide("confirm", d)} data-testid="doc-confirm">
+                {t("docs.confirm")}
+              </Button>
+              <Button className="min-w-28" loading={busy === "reject"} onClick={() => void decide("reject", d)} data-testid="doc-reject">
+                {t("docs.reject")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="flex flex-wrap items-center gap-2 text-sm text-ink" data-testid="doc-decided">
+            <span id="doc-decide-title" className="font-bold">
+              {t("docs.decide")}:
+            </span>
+            {t("docs.decided", { day: d.decided_day ?? 0, seq: d.decided_seq ?? 0 })}
+          </p>
+        )}
+        {decision ? (
+          <div className="mt-3">
+            <OperationResultBox status={decision.result.status} message={decision.result.message} testId="doc-result" kind={decision.result.kind}>
+              <span className="text-sm font-medium text-ink">{te("opkind", decision.result.kind)}</span>
+              <TierBadge tier={decision.result.tier as Tier} />
+            </OperationResultBox>
+          </div>
+        ) : null}
+        {error ? (
+          <div className="mt-3">
+            <ErrorState error={error} />
+          </div>
+        ) : null}
+      </section>
 
       {/* The answer first: what this deal means for cash, loans and rates. The clause-by-clause reading follows for checking. */}
       <DealPicture doc={d} />
@@ -282,44 +337,6 @@ export function DocumentReview({ id, focus }: { id: string; focus?: { at: string
         </div>
       </div>
 
-      <Card id="doc-decide" title={t("docs.decide")} tone={d.status === "PROPOSED" ? "warn" : undefined}>
-        {d.status === "PROPOSED" ? (
-          <>
-            <p className="text-sm text-ink-2">{t("docs.decide.hint")}</p>
-            {lender && d.suggested_facility_id ? (
-              <label className="mt-3 flex items-center gap-2 text-sm text-ink">
-                <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" className="size-4" />
-                {t("docs.link", { id: d.suggested_facility_id })}
-              </label>
-            ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="primary" disabled={!d.can_confirm} loading={busy === "confirm"} onClick={() => void decide("confirm", d)} data-testid="doc-confirm">
-                {t("docs.confirm")}
-              </Button>
-              <Button loading={busy === "reject"} onClick={() => void decide("reject", d)} data-testid="doc-reject">
-                {t("docs.reject")}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-ink-2" data-testid="doc-decided">
-            {t("docs.decided", { day: d.decided_day ?? 0, seq: d.decided_seq ?? 0 })}
-          </p>
-        )}
-        {decision ? (
-          <div className="mt-3">
-            <OperationResultBox status={decision.result.status} message={decision.result.message} testId="doc-result" kind={decision.result.kind}>
-              <span className="text-sm font-medium text-ink">{te("opkind", decision.result.kind)}</span>
-              <TierBadge tier={decision.result.tier as Tier} />
-            </OperationResultBox>
-          </div>
-        ) : null}
-        {error ? (
-          <div className="mt-3">
-            <ErrorState error={error} />
-          </div>
-        ) : null}
-      </Card>
     </div>
   );
 }
