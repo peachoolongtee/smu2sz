@@ -103,7 +103,7 @@ export default function HomePage() {
         <div className="space-y-5 sm:space-y-7" aria-busy={view.loading}>
           <StatusBlock h={h} />
           <PartialRead partial={h.partial} onRetry={view.reload} />
-          <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+          <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null}
           {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. */}
           {narrow ? action : picture}

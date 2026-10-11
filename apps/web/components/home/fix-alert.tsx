@@ -187,6 +187,7 @@ export function FixResult({
   slow = false,
   rechecked = false,
   onRecheck,
+  flat = false,
 }: {
   result: AlertActResult | null;
   error: string | null;
@@ -196,6 +197,8 @@ export function FixResult({
   /** The state was read again after a timeout: say so, so a missing result is not read as a success. */
   rechecked?: boolean;
   onRecheck?: () => void;
+  /** The seamless Home: the answer sits on the page under a hairline, no card. */
+  flat?: boolean;
 }) {
   const { t } = useI18n();
   const business = useBusinessShell();
@@ -211,7 +214,7 @@ export function FixResult({
   // The one thing that happened is "it waits for your approval": the next-step tile and the decision row already say that, once each.
   if (business && result.pending_approval && !result.executed && !result.refused) return null;
   return (
-    <section aria-label={t("alerts.fix.title")} className="space-y-2 rounded-card border border-line bg-surface p-4 shadow-card" data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className={flat ? "space-y-2 border-t border-line-strong pt-3" : "space-y-2 rounded-card border border-line bg-surface p-4 shadow-card"} data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
