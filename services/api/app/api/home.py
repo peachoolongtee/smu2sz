@@ -51,6 +51,7 @@ from app.api.presentation import (
     party_name,
     receivable_face,
     relative_days,
+    series_axis,
     t,
     when_text,
     window_is_live,
@@ -1182,6 +1183,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             # the recommended plan applied ("with the recommended plan"). The browser draws these and computes nothing.
             "series": series,
             "plan_series": plan_series,
+            "axis": series_axis([series, plan_series], mandate.min_cash_fen),
             **basis,
         },
         "next_action": action,
