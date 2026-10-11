@@ -130,7 +130,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3 sm:mt-5 sm:gap-x-10">
         <div>
           <p className="text-sm text-on-deep-muted">{t("biz.cashToday")}</p>
-          <p className="font-display text-4xl font-normal leading-none tabular-nums tracking-tight text-on-deep sm:text-5xl lg:text-6xl short:lg:text-5xl" data-testid="home-cash">
+          <p className="font-display text-4xl font-normal leading-none lining-nums tabular-nums tracking-tight text-on-deep sm:text-5xl lg:text-6xl short:lg:text-5xl" data-testid="home-cash">
             {h.cash.cash_short}
           </p>
         </div>

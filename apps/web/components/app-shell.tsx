@@ -334,7 +334,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
       <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-surface px-3 py-5 lg:flex">
+        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-surface px-3 pb-20 pt-5 lg:flex">
           <nav aria-label={t("nav.label")} data-testid="nav-pills">
             <ul className="space-y-1">
               {BUSINESS_NAV.map((n) => {
@@ -466,7 +466,7 @@ function DemoShell({ children }: { children: ReactNode }) {
       <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
       {/* The strip above is 36 px of the first screen: the footer reserves that height (pb-12) so a 768 px window never cuts it, and the column scrolls when it must. */}
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-12 pt-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-20 pt-4 lg:flex">
         <div className="px-2">
           <Brand href="/demo" />
         </div>

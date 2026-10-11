@@ -21,11 +21,25 @@
    chart marks, a white icon on a chip: 3:1), the -bright tokens for pills and figures on the deep block. The sec-* tokens
    say where you are (a page's icon chip, a tab, a shortcut, an avatar) and never how things are going.
    `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
+/* Figures in the serif headlines. The fallback serif (Georgia) sets old-style numerals ("400" reads "4oo") and has no lining alternate, so the
+   digits and the yen sign of the display stack come from a sans face the machine already has: a local() source only, nothing is fetched. Where
+   none of these is installed the digits stay in the serif. Used by `--font-display` below, ahead of the serif. */
+@font-face {
+  font-family: "Flow Figures";
+  src:
+    local("Inter"),
+    local("Helvetica Neue"),
+    local("Arial"),
+    local("Segoe UI"),
+    local("Roboto");
+  unicode-range: U+0030-0039, U+00A5;
+}
+
 @theme static {
   --font-sans: "Lato", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   /* Display headings: a serif. Neither named face is shipped (no runtime font host is reachable from every place the Demo runs): a machine that has Libre Caslon Text uses it, any other falls to Georgia or Songti. */
-  --font-display: "Libre Caslon Text", Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+  --font-display: "Flow Figures", "Libre Caslon Text", Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
   --color-canvas: #f5f7fb;
@@ -385,7 +399,7 @@ input[type="radio"] {
     }
   }
   /* Ask FLOW. Phone: the last cell of the bar, 48 x 56 px, flush to the bar's bottom-right corner (the tab bar and the Demo stepper
-     leave that cell free). From `sm`: a pill 16 px above the bar; from `lg`, 24 px from the corner. */
+     leave that cell free). From `sm`: a pill 16 px above the bar; from `lg`, in the sidebar's foot. */
   .ask-trigger {
     right: 0;
     bottom: env(safe-area-inset-bottom, 0px);
@@ -400,9 +414,12 @@ input[type="radio"] {
       height: auto;
     }
   }
+  /* From `lg` the sidebar narrows the column and leaves no gutter at the right (80 px at 1440, 43 px at 1366, against a 124 px pill), so
+     the pill moves into the sidebar's own foot, in the room both sidebars keep for it (`pb-20`), and never floats over a card. */
   @media (min-width: 64rem) {
     .ask-trigger {
-      right: 1.5rem;
+      right: auto;
+      left: 0.75rem;
       bottom: calc(var(--dock-h, 0px) + 1.5rem);
     }
   }
