@@ -3,8 +3,8 @@ import { expect, test } from "./fixtures";
 import { filledBrand } from "./helpers";
 
 /**
- * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the deep hero on the
- * Home alone, a status pill that changes while the block does not, one filled brand button per Business page, the Demo's
+ * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
+ * canvas with a light status pill and one frosted plan bar, one filled brand button per Business page, the Demo's
  * own strip, no gradients, no status green on a channel chip or the owner's disc, and the text pairs on the hero at AA.
  */
 
@@ -13,7 +13,8 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 const BRAND_900 = "rgb(36, 50, 74)";
-const BAD_BRIGHT = "rgb(255, 180, 171)";
+const BAD_BG = "rgb(253, 236, 234)";
+const CANVAS = "rgb(245, 247, 251)";
 
 const bg = (l: Locator) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
 const color = (l: Locator) => l.evaluate((el) => getComputedStyle(el).color);
@@ -31,30 +32,32 @@ function contrast(a: string, b: string): number {
   return (x + 0.05) / (y + 0.05);
 }
 
-test("the Home hero is one solid deep block; the status is the pill, and the pill word is dark on a bright fill", async ({ page }) => {
+test("the Home headline sits on the canvas with no card; the status is a light pill, and its word and the text meet AA", async ({ page }) => {
   await page.goto("/");
   const hero = page.getByTestId("home-status");
-  expect(await bg(hero)).toBe(BRAND_900);
+  // No card, no deep block, no gradient: the header is transparent on the canvas.
+  expect(await bg(hero)).toBe("rgba(0, 0, 0, 0)");
   expect(await hero.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
   const pill = page.getByTestId("home-status-word");
-  expect(await bg(pill)).toBe(BAD_BRIGHT);
-  // At AA: the headline and the muted note on the deep block, the pill word on its fill.
-  expect(contrast(await color(page.getByTestId("home-headline")), BRAND_900)).toBeGreaterThan(4.5);
-  expect(contrast(await color(page.getByTestId("home-note")), BRAND_900)).toBeGreaterThan(4.5);
-  expect(contrast(await color(pill), BAD_BRIGHT)).toBeGreaterThan(4.5);
-  // The figures that are the status wear the bright red; the reserve stays white.
-  expect(contrast(await color(page.getByTestId("home-breach-cash")), BRAND_900)).toBeGreaterThan(4.5);
-  expect(await color(page.getByTestId("home-breach-cash"))).toBe(BAD_BRIGHT);
-  expect(await color(page.getByTestId("home-floor"))).toBe("rgb(255, 255, 255)");
-  // Calm when healthy: the block stays navy, only the pill turns green.
+  expect(await bg(pill)).toBe(BAD_BG);
+  expect(contrast(await color(page.getByTestId("home-headline")), CANVAS)).toBeGreaterThan(4.5);
+  expect(contrast(await color(page.getByTestId("home-note")), CANVAS)).toBeGreaterThan(4.5);
+  expect(contrast(await color(pill), BAD_BG)).toBeGreaterThan(4.5);
+  // The headline is one colour: the server's sentence is never parsed or part-coloured.
+  expect(await page.getByTestId("home-headline").evaluate((el) => el.children.length)).toBe(0);
+  // The plan bar is the one raised surface: a frosted fill (translucent, not opaque) and the deepest shadow.
+  const bar = page.getByTestId("home-next-action");
+  expect(await bar.evaluate((el) => getComputedStyle(el).backgroundColor)).toMatch(/\/ 0\.84\)$/);
+  expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
+  // Calm when healthy: the pill turns amber, and there is still no deep block.
   await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
   await page.getByTestId("fix-ALERT-RESERVE-12").click();
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  expect(await bg(page.getByTestId("home-status"))).toBe(BRAND_900);
-  expect(await bg(page.getByTestId("home-status-word"))).toBe("rgb(245, 185, 66)");
+  expect(await bg(page.getByTestId("home-status"))).toBe("rgba(0, 0, 0, 0)");
+  expect(await bg(page.getByTestId("home-status-word"))).toBe("rgb(253, 242, 217)");
 });
 
-test("one filled brand button per Business page, no gradient anywhere, the deep block only on the Home", async ({ page }) => {
+test("one filled brand button per Business page, no gradient anywhere, the deep block only in the Demo strip", async ({ page }) => {
   for (const [path, expected, loaded] of [
     ["/", 1, "[data-testid=home-next-action]"],
     ["/cash", 1, "[data-testid=cash-forecast]"],

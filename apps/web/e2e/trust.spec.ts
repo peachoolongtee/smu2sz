@@ -85,10 +85,9 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
   const hero = page.getByTestId("home-status");
   await expect(hero).toContainText("Below reserve today");
-  // Already under the minimum: the tile is how far under (¥255k), with today's cash (¥45k) as its caption, never cash under a "below" label.
-  await expect(page.getByTestId("home-breach-cash")).toHaveText("¥255k");
-  await expect(hero).toContainText("Short of your minimum today");
-  await expect(hero).toContainText("Cash today ¥45k");
+  // Already under the minimum: today's cash (¥45k) is the figure beside the chart, and nothing says "N days ago".
+  await expect(page.getByTestId("home-cash")).toHaveText("¥45k");
+  await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");

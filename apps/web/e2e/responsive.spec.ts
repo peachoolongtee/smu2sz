@@ -150,6 +150,8 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
       return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
         .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
         .filter((el) => {
+          // Measured where a finger would meet it: scrolled to the middle of the window, clear of the fixed tab bar.
+          el.scrollIntoView({ block: "center" });
           const r = el.getBoundingClientRect();
           const cx = r.x + r.width / 2;
           const cy = r.y + r.height / 2;
@@ -369,15 +371,13 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash,
   expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
 });
 
-test("a 1366 x 768 laptop: Home's primary ends in the first screen, with the stat tiles behind Why", async ({ page }, testInfo) => {
+test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The tiles are folded behind Why (the first screen is the answer and the priced action); a taller window shows them.
-  await expect(page.getByTestId("home-floor")).toBeHidden();
-  await page.getByTestId("home-why").locator("> summary").click();
+  // The cash and the minimum sit beside the chart; the bar is sticky, so the primary stays in the first screen however far the page runs on.
   await expect(page.getByTestId("home-floor")).toBeVisible();
   await page.setViewportSize({ width: 1366, height: 900 });
   await expect(page.getByTestId("home-floor")).toBeVisible();
