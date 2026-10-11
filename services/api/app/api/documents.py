@@ -16,12 +16,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import require_feature, require_owner
+from app.api.errors import ALREADY_DECIDED_CODE
 from app.api.runtime import Runtime, get_runtime
 from app.compiler import ContractTooLong
 from app.contracts import read_document, record_view
 from app.deals import documents_for
 from app.domain.fixtures import contract_fixture_bytes, load_contract_fixtures
-from app.domain.models import Actor, DocumentKind, SecurityEvent, SecurityEventKind
+from app.domain.models import Actor, DocumentKind, DocumentStatus, SecurityEvent, SecurityEventKind
 from app.ingest import DocumentTooLarge, IngestError, extract_text
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
@@ -148,11 +149,17 @@ def get_document(document_id: str) -> dict:
 
 
 def _decide(document_id: str, body: DecisionIn, confirm: bool) -> dict:
+    """The owner's decision. The same decision sent again is answered with the first (same op_id and log position, nothing
+    appended); the other decision on a decided document is refused and answered 409 `ALREADY_DECIDED`."""
     rt = get_runtime()
-    if rt.store.get_contract_record(document_id) is None:
+    before = rt.store.get_contract_record(document_id)
+    if before is None:
         raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
     result = rt.executor.decide_document(document_id, Actor.OWNER, confirm=confirm, doc_hash=body.doc_hash,
                                          link_facility_id=body.link_facility_id)
+    if result.status.value == "REFUSED" and before.status != DocumentStatus.PROPOSED:
+        raise HTTPException(409, {"code": ALREADY_DECIDED_CODE, "message": result.message,
+                                  "status": before.status.value, "result": result.model_dump(mode="json")})
     rec = rt.store.get_contract_record(document_id)
     assert rec is not None
     return {"result": result.model_dump(mode="json"), "document": record_view(rec, rt.store.get_state())}

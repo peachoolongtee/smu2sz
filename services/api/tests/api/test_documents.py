@@ -315,3 +315,45 @@ def test_another_route_is_answered_while_a_document_is_being_read(client, monkey
         release.set()
         th.join(10)
     assert out == {"status": 200}
+
+
+# ---------------------------------------------------------------- deciding twice
+
+
+def test_a_repeated_confirm_returns_the_first_result_and_the_chain_does_not_grow(client):
+    d = _upload(client)
+    body = {"doc_hash": d["doc_hash"]}
+    first = client.post(f"/documents/{d['id']}/confirm", json=body)
+    length = len(client.get("/ledger").json()["operations"])
+    again = client.post(f"/documents/{d['id']}/confirm", json=body)
+    assert first.status_code == again.status_code == 200
+    assert again.json()["result"] == first.json()["result"] and again.json()["result"]["status"] == "EXECUTED"
+    assert len(client.get("/ledger").json()["operations"]) == length
+    assert client.get("/ledger").json()["chain_valid"]
+
+
+def test_the_other_decision_on_a_decided_document_is_a_409(client):
+    d = _upload(client)
+    client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
+    r = client.post(f"/documents/{d['id']}/reject", json={"doc_hash": d["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
+    assert r.json()["detail"]["status"] == "CONFIRMED"
+    assert client.get(f"/documents/{d['id']}").json()["document"]["status"] == "CONFIRMED"
+    rejected = _upload(client, "MB_CREDIT_LINE_AGREEMENT")
+    client.post(f"/documents/{rejected['id']}/reject", json={"doc_hash": rejected["doc_hash"]})
+    r = client.post(f"/documents/{rejected['id']}/confirm", json={"doc_hash": rejected["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
+
+
+def test_a_decision_lost_to_a_concurrent_writer_is_a_409_not_a_500(client, monkeypatch):
+    from app.operations import Executor
+    from app.persistence import DocumentAlreadyDecided
+
+    d = _upload(client)
+
+    def lost(*_a: object, **_k: object) -> None:
+        raise DocumentAlreadyDecided(f"document {d['id']} was decided concurrently")
+
+    monkeypatch.setattr(Executor, "decide_document", lost)
+    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "ALREADY_DECIDED"
