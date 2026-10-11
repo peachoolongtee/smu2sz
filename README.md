@@ -36,7 +36,7 @@ Switch to **Demo** in the header, click **Start demo** and sign in as the owner 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 6,712 passed, 37 skipped on 10 Oct 2026 (dev with feat/upgrading and contract ingestion merged; Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run, about 72 min)
+cd services/api && uv run pytest                     # 6,813 passed, 37 skipped on 12 Oct 2026 (dev with contract ingestion, its review fixes and the reskin; macOS, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run, about 17 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit
 cd apps/web && pnpm exec playwright install chromium   # once
 cd apps/web && pnpm test:e2e:mock                    # no backend: 159 passed, 37 skipped (168 and 28 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)

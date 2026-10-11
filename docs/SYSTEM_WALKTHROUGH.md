@@ -1379,3 +1379,32 @@ recorded with the deterministic grammar (`rules-v1`); `cd services/api && uv run
 | Four attacks: an instruction inside a clause, an unregistered lender's agreement, a buyer asking for another buyer's contract, a non-owner confirmation | 5.17 | `security/test_nl_attacks.py`, `services/api/evals/security/latest_report.md` |
 | The web: the deal summary on Deals after the negotiation (merged into the redesigned UI), the documents page with the review screen (a Business route opened from a deal summary, and a Demo engine view), Activity's links to the contracts, recorded mocks, English and Chinese | 6 | `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/responsive.spec.ts`, `apps/web/scripts/check-mocks.test.mjs` |
 | The demo opens on the three demo documents confirmed by the owner (three logged confirmations, no books changed), so the deal summary is ready as soon as a deal is agreed; a demo document can be read again | 5.21 | `api/test_demo_documents.py`, `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/demo.spec.ts` |
+
+## 14. The 11 to 12 October merge: contract ingestion, its review fixes and the reskin
+
+Merged into `dev` on 12 Oct 2026 through `int/contracts`: `feat/strategy-mvp-contracts` (section 13, Chromo369369, rebased on the
+remediation), the two review branches `fix/contracts-api` and `fix/contracts-web`, and `feat/endowus-redesign` (haoencheo2025).
+ADR-0012 records the design: a confirmed contract is a record the deal summary reads, never the books; the owner's decision is an
+owner-only, hash-bound operation on the chain; the stability set changed additively by explicit exception.
+
+What the review fixes changed (the code review's and the design review's findings, all with tests): a payment term that does not
+say what its days count from is NOT_COMPARABLE on the deal card, in the checks and in force, never a match; a price per unit, per
+month or in total is NOT_COMPARABLE, not DIFFERENT; an uploaded document is read outside the runtime lock with caps on the unzipped
+size (20 MB), PDF pages (60) and reading chunks (40); a repeated decision on a document answers with the first decision and appends
+no log row, a different decision is 409 `ALREADY_DECIDED`, a stale hash 409 `TERMS_CHANGED`; a `ContractRecord` validates its hash
+against its text on load; `GET /deals`, `GET /documents` and `GET /documents/{id}` take `lang` and give every sentence in both
+languages with relative-day words and no ids or enums in Business text (`tests/deals/test_lang.py`); startup no longer fails when the
+demo documents cannot be read. On the web: Business words throughout the Documents and deal surfaces, `lang` on the three reads,
+the confirm and reject controls as an irreversible action (both disabled while busy, the reason beside the button, the facility link
+off by default and named, the 409s in words), the deal summary folded into "Your agreements" with a headline, a few facts and one action.
+
+The reskin: a desktop sidebar of the five sections (the phone tab bar unchanged), a revised palette and type scale with the contrast
+ratios recomputed in `apps/web/DESIGN.md`, a deal picture (cash line, reach donut, facility meters; fen sizes marks, every label is a
+server string), next step first with clause links into the document, a drop zone on Documents. No runtime font host: the two named
+faces are not shipped (Google Fonts is unreachable from mainland China); the stacks fall back to the system faces.
+
+Gate on `int/contracts` before the merge, zero retries: API 6,813 passed, 37 skipped; web unit 91; typecheck, lint and build clean;
+mock e2e 163 default and 172 with the strategy flag; live e2e 86 default and 94 with the strategy flag (one contract spec updated to the
+idempotent decision). Screenshots at four widths under `docs/screenshots/contracts-reskin-2026-10-12/`. Debt filed as #103; the one
+team branch not merged, `feat/ui-changes-biz` (a money-in-and-out chart), is the owner's decision on #104. The held-out contracts of
+brief 03 section 6.8 are still unwritten: no accuracy claim is made for the reading.

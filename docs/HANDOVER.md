@@ -145,6 +145,12 @@ web unit 91; mock e2e 159 passed (168 with `E2E_STRATEGY=1`); live e2e 79 passed
 machine run the flagged live project with nothing else running: under load, six of its tests time out behind the first
 envelope read (about 50 s there), and they pass when run alone.
 
+Merged into `dev` on 12 Oct 2026 (`int/contracts`): the contracts branch, its review fixes (`fix/contracts-api`, `fix/contracts-web`),
+ADR-0012 and the reskin (`feat/endowus-redesign`). Gate on this machine: API 6,813 passed, 37 skipped; web unit 91; mock e2e 163 / 172;
+live e2e 86 / 94; zero retries. The walkthrough's section 14 lists what the fixes changed; the debt is ticket #103; `feat/ui-changes-biz`
+(a money-in-and-out chart) is the owner's decision on #104. Fonts are not shipped: vendor Lato and Libre Caslon Text under
+`apps/web/public/fonts` if the look matters on the judging machine.
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.
