@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useId, useState } from "react";
 import { DocumentReview } from "@/components/document-review";
-import { contractsOff, DocStatusBadge } from "@/components/documents";
-import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { contractsOff, DocStatusBadge, whenWords } from "@/components/documents";
+import { Button, Callout, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getContractFixtures, getDocuments, getState, submitDocument } from "@/lib/api";
 import { API_MODE } from "@/lib/config";
 import { bump } from "@/lib/demo-store";
@@ -30,12 +30,14 @@ export default function DocumentsPage() {
 }
 
 function Documents() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const selected = useSearchParams().get("id");
-  const list = useAsync(getDocuments, []);
+  // The list is read in the owner's language and again when it changes: the server writes the sentences and the "when" words.
+  const list = useAsync(() => getDocuments(lang), [lang]);
   const state = useAsync(getState, []);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const today = list.data?.day ?? null;
   const docs = list.data?.documents ?? [];
   const parties = state.data?.state.counterparties ?? [];
   const nameOf = (id: string) => parties.find((c) => c.id === id)?.name ?? id;
@@ -49,7 +51,7 @@ function Documents() {
       bump();
       open(view.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e : new Error(String(e)));
     }
   }
 
@@ -105,14 +107,12 @@ function Documents() {
                         <button type="button" onClick={() => open(d.id)} className="text-left font-medium text-brand-700 underline underline-offset-2">
                           {d.title}
                         </button>
-                        <span className="block break-words text-xs text-ink-3">
-                          {d.id} · {d.summary}
-                        </span>
+                        <span className="block break-words text-xs text-ink-3">{d.summary}</span>
                       </td>
                       <td className={tdCls}>{d.counterparty_name}</td>
-                      <td className={`${tdCls} whitespace-nowrap`}>{t("common.dayN", { n: d.uploaded_day })}</td>
+                      <td className={`${tdCls} whitespace-nowrap`}>{whenWords(d.uploaded_when, d.uploaded_day, today, t)}</td>
                       <td className={tdCls}>
-                        <DocStatusBadge doc={d} />
+                        <DocStatusBadge doc={d} today={today} />
                       </td>
                     </tr>
                   ))}
@@ -122,7 +122,7 @@ function Documents() {
           )}
         </Card>
 
-        {selected ? <DocumentReview key={selected} id={selected} /> : <EmptyState title={t("docs.select")} />}
+        {selected ? <DocumentReview key={selected} id={selected} today={today} /> : <EmptyState title={t("docs.select")} />}
       </div>
     </>
   );
@@ -163,7 +163,7 @@ function DemoDocuments({
             const last = made.length ? made[made.length - 1] : null;
             const format = formats[f.id] ?? "md";
             return (
-              <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2" data-testid={`fixture-${f.id}`}>
+              <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2" data-testid={`fixture-${f.id}`}>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">{f.title}</p>
                   <p className="text-xs text-ink-3">
@@ -183,7 +183,7 @@ function DemoDocuments({
                     id={`fmt-${f.id}`}
                     value={format}
                     onChange={(e) => setFormats((s) => ({ ...s, [f.id]: e.target.value as Format }))}
-                    className="min-h-8 rounded-md border border-line-strong bg-surface px-2 text-xs"
+                    className={`${inputClass} touch:min-h-11`}
                   >
                     {f.formats.map((x) => (
                       <option key={x} value={x}>
@@ -253,7 +253,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
     }
   }
 
-  const field = "min-h-9 w-full rounded-md border border-line-strong bg-surface px-2.5 text-sm";
+  const field = `${inputClass} w-full touch:min-h-11`;
   return (
     <section className="min-w-0">
       <h3 className="text-sm font-semibold text-ink">{t("docs.own")}</h3>
@@ -291,7 +291,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
             type="file"
             accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-ink-2 file:mr-3 file:rounded-md file:border file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
+            className="block w-full text-sm text-ink-2 file:mr-3 file:min-h-10 file:rounded-pill file:border file:border-line-ui file:bg-surface file:px-4 file:text-sm file:font-medium file:text-ink touch:file:min-h-11"
           />
         </div>
       </div>

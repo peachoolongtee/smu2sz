@@ -2553,6 +2553,8 @@ export interface DocumentBlank {
 
 export interface DocumentFlagView {
   kind: string;
+  /** The kind in words (the `lang` read); absent from an older server. */
+  kind_text?: string;
   blocking: boolean;
   note: string;
   quote: string;
@@ -2570,6 +2572,12 @@ export interface DocumentSummary {
   uploaded_day: Day;
   decided_day: Day | null;
   decided_seq: number | null;
+  /** Server words for when (the `lang` read): "today", "3 days ago". Absent from an older server, then the page says the day as a distance from today. */
+  uploaded_when?: string;
+  decided_when?: string | null;
+  /** The status in the server's words ("Confirmed by you today") and the tone the server chose for it; absent from an older server. */
+  status_text?: string;
+  status_tone?: StateTone;
   linked_facility_id: string | null;
   /** Server text: "18 terms read, 3 left blank" or the facility in one line. */
   summary: string;
@@ -2589,6 +2597,8 @@ export interface DocumentView extends Omit<DocumentSummary, "flags"> {
   flags: DocumentFlagView[];
   can_confirm: boolean;
   reading_status: "COMPILED" | "ABSTAINED" | "CONFLICTING_SOURCES";
+  /** The reading in words ("Read in full", "Could not read"); the Technical fold keeps the code. Absent from an older server. */
+  reading_text?: string;
   compiler: string;
   prompt_version: string;
   chunks?: number;
@@ -2598,6 +2608,8 @@ export interface DocumentView extends Omit<DocumentSummary, "flags"> {
   clauses?: { field: string; value_text: string; quote: string; span: TextSpan }[];
   facility?: { kind: string; summary: string; all_in_rate_display: string | null; repayment: string; tier3: { field: string; quote: string }[] } | null;
   suggested_facility_id?: string | null;
+  /** The suggested facility's name, as the owner knows it (the checkbox says it); absent from an older server. */
+  suggested_facility_name?: string | null;
   compared_with?: string | null;
   comparison?: { label: string; agreement_display: string; books_display: string | null; same: boolean }[];
 }
@@ -2667,18 +2679,23 @@ export interface DealView {
     cadence_display: string | null;
     end_day: Day | null;
     confirmed_day: Day | null;
+    /** Server words for when the owner confirmed it; absent from an older server. */
+    confirmed_when?: string | null;
   };
   pills?: { label: string; tone: DealTone }[];
   stages?: { key: "read" | "negotiated" | "early_payment" | "collecting" | "fulfilled"; label: string; state: StageState; note: string; tone: DealTone | null }[];
   contract_terms?: ContractTermView[];
   blanks?: DocumentBlank[];
-  changes?: { day: Day | null; actor: "BUYER" | "AGENT" | "OWNER" | "BANK"; label: string; text: string }[];
+  changes?: { day: Day | null; when?: string | null; actor: "BUYER" | "AGENT" | "OWNER" | "BANK"; label: string; text: string }[];
   in_force?: { key: string; label: string; value_display: string; vs_contract: "SAME" | "DIFFERENT" | "NOT_IN_CONTRACT" | "NONE"; contract_display: string | null }[];
   invoices?: {
     id: string;
     label: string;
     issue_day: Day;
     due_day: Day;
+    /** Server words for the two days ("today", "in 12 days"); absent from an older server. */
+    issue_when?: string;
+    due_when?: string;
     amount_fen: Fen;
     amount_display: string;
     outstanding_fen: Fen;
@@ -2688,7 +2705,7 @@ export interface DealView {
     tone: DealTone;
     notes: string[];
   }[];
-  next_invoice?: { day: Day; amount_display: string } | null;
+  next_invoice?: { day: Day; when?: string; amount_display: string } | null;
   owed_by_us?: {
     display_only: boolean;
     deliverables: { text: string | null; clause: string | null; quote: string }[];

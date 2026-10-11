@@ -65,6 +65,8 @@ interface DocState {
   uploaded_day: number;
   decided_day: number | null;
   decided_seq: number | null;
+  /** The owner confirmed a lender agreement without linking it to the facility the recording linked. */
+  unlinked?: boolean;
 }
 
 /** The demo's starting point, in ledger order. */
@@ -147,7 +149,8 @@ function viewOf(d: DocState): DocumentView {
   const r = RECORDED[d.fixture_id];
   if (d.seeded) return { ...clone<DocumentView>(r.seeded), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
   const recorded = d.status === "CONFIRMED" ? r.confirmed.document : d.status === "REJECTED" ? r.rejected.document : r.reread;
-  return { ...renumber(clone<DocumentView>(recorded), r.reread.id, d.id), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
+  const view = { ...renumber(clone<DocumentView>(recorded), r.reread.id, d.id), uploaded_day: d.uploaded_day, decided_day: d.decided_day, decided_seq: d.decided_seq };
+  return d.unlinked ? { ...view, linked_facility_id: null } : view;
 }
 
 function summaryOf(v: DocumentView): DocumentSummary {
@@ -195,10 +198,8 @@ export function mockDocument(id: string): DocumentView {
 export function mockSubmit(req: SubmitDocumentRequest): DocumentView {
   requireOwner();
   if (!req.fixture_id || !RECORDED[req.fixture_id]) {
-    throw new ApiError(
-      422,
-      "Mock mode reads only the three demo documents. Set NEXT_PUBLIC_API_MODE=live to upload a Word or PDF file or paste text.",
-    );
+    // The owner's words: no variable name, no mode name (Business mode shows neither).
+    throw new ApiError(422, "Uploading needs the live server; the Demo reads its three sample documents.");
   }
   const docs = load();
   const fresh: DocState = {
@@ -230,19 +231,26 @@ export function mockDecide(
   requireOwner();
   const d = byId(id);
   const r = RECORDED[d.fixture_id];
-  if (d.status !== "PROPOSED") throw new ApiError(409, `Document ${id} is already ${d.status.toLowerCase()}.`);
+  // The two 409s carry the code the live API gives (`detail.code`), which the review screen words for the owner.
+  if (d.status !== "PROPOSED") throw new ApiError(409, "You already decided this document.", { code: "ALREADY_DECIDED", message: "You already decided this document." });
   if (docHash !== r.reread.doc_hash) {
-    throw new ApiError(409, "Mock mode replays only decisions on the text it showed. Read the document again.");
+    throw new ApiError(409, "The document changed since you opened it. Reload it and decide again.", { code: "TERMS_CHANGED", message: "The document changed since you opened it. Reload it and decide again." });
   }
   const recorded = renumber(clone<DocumentDecision>(decision === "confirm" ? r.confirmed : r.rejected), r.reread.id, id);
   const recordedLink = recorded.document.linked_facility_id;
-  if (decision === "confirm" && (linkFacilityId ?? null) !== recordedLink) {
-    throw new ApiError(409, `Mock mode replays the recorded link (${recordedLink ?? "none"}). Set NEXT_PUBLIC_API_MODE=live to link another facility.`);
+  if (decision === "confirm" && linkFacilityId && linkFacilityId !== recordedLink) {
+    throw new ApiError(409, "The Demo can only link the facility it was recorded with.", { code: "LINK_NOT_RECORDED", message: "The Demo can only link the facility it was recorded with." });
+  }
+  // Confirming without the link (the box starts unticked) is the recording with the link left off: the facility stays as the books have it.
+  if (decision === "confirm" && !linkFacilityId && recordedLink) {
+    recorded.document.linked_facility_id = null;
+    recorded.result.message = recorded.result.message.replace(/; linked to .*$/, "");
   }
   const day = mockClock().day;
   const res = recorded.result;
   const op = book({ kind: res.kind, status: res.status, tier: res.tier as OperationView["tier"], message: res.message, day });
   d.status = decision === "confirm" ? "CONFIRMED" : "REJECTED";
+  d.unlinked = decision === "confirm" && !linkFacilityId && Boolean(recordedLink);
   d.decided_day = day;
   d.decided_seq = op.seq;
   save();
