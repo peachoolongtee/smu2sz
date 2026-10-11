@@ -151,6 +151,8 @@ live e2e 86 / 94; zero retries. The walkthrough's section 14 lists what the fixe
 (a money-in-and-out chart) is the owner's decision on #104. Fonts are not shipped: vendor Lato and Libre Caslon Text under
 `apps/web/public/fonts` if the look matters on the judging machine.
 
+The session handoff of 12 Oct 2026, with the delegation protocol, the owner's recorded decisions, the outstanding list by owner and the instructions for the merge's API debt, is `docs/handover/08_session_handoff_2026-10-12.md`; map #88's research is under `docs/research/customer-economics-2026-10-10/` and its specification is `docs/CUSTOMER_ECONOMICS_BRIEF.md`.
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.

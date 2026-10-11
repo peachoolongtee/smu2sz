@@ -39,8 +39,8 @@ Switch to **Demo** in the header, click **Start demo** and sign in as the owner 
 cd services/api && uv run pytest                     # 6,813 passed, 37 skipped on 12 Oct 2026 (dev with contract ingestion, its review fixes and the reskin; macOS, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run, about 17 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit
 cd apps/web && pnpm exec playwright install chromium   # once
-cd apps/web && pnpm test:e2e:mock                    # no backend: 159 passed, 37 skipped (168 and 28 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
-cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 79 passed, 14 skipped (87 and 6 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
+cd apps/web && pnpm test:e2e:mock                    # no backend: 163 passed, 41 skipped (172 and 32 with E2E_STRATEGY=1; 12 Oct 2026, after the contracts and reskin merge)
+cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 86 passed, 14 skipped (94 and 6 with E2E_STRATEGY=1; 12 Oct 2026, after the contracts and reskin merge)
 ```
 
 All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-curve test in `slow.spec.ts`), which run only with `E2E_STRATEGY=1`; the mock skips include the same ones. The live project starts an API on :8000 and a web build on :3000 itself, so those ports must be free; `E2E_API_PORT`, `E2E_LIVE_PORT` and `E2E_PORT` (mock, default 3100) move them. Two switches change the live API: `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db` makes the API that Playwright starts use that file instead of `memory`, and `E2E_REUSE_API=1` starts no API and runs against one already listening on `E2E_API_PORT` (start it yourself with `CORS_ORIGINS` set to the live web origin; then `E2E_DATABASE_URL` is ignored). In my runs of `live.spec.ts` and of the whole live project on a SQLite file, the file ended with the seed state (the `operations` table empty), because the specs reset the books. Details in `apps/web/README.md`.
