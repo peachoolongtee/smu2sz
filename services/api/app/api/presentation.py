@@ -1990,3 +1990,55 @@ def send_scope_text(lang: Lang, label: str | None = None) -> str:
     return t(lang, f"Sends {which} to the buyer (the reply is simulated); records the agreement, with your approval when it changes "
                    f"terms; runs the funding for any remaining gap within your limits.",
              f"向买方发送{which}（回复为模拟）；记录协议，若改变条款则需您批准；在您的额度内为剩余缺口融资。")
+
+
+# ---------------------------------------------------------------- the owner's decision on a document, in words
+
+_DOC_REF = re.compile(r"\s+(?=\S*\d)[A-Z0-9][A-Za-z0-9_./-]*$")  # a trailing reference code ("GBR-IF-2026-118")
+_ID_PAREN = re.compile(r"\s*[(（](?:APR|DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER)-[\w-]+[)）]")
+_DOC_KIND_WORDS = {"BUYER_CONTRACT": ("the buyer contract", "买方合同"), "LENDER_AGREEMENT": ("the lender agreement", "贷款方协议")}
+
+
+def without_record_ids(text: str | None) -> str | None:
+    """A sentence without the parenthesised record id the executor writes after "Queued for owner approval"; the id lives in the row's
+    own id fields."""
+    return _ID_PAREN.sub("", text) if text is not None else None
+
+
+def document_name(title: str | None, kind: str | None, lang: Lang = "en") -> str:
+    """A document as the owner names it: its title without the contract's reference code ("the invoice financing agreement"), in the
+    kind's own words when the title is not one the books know (Chinese) or still holds a code."""
+    from app.api.engine_zh import _DOC_TITLES
+
+    plain = _DOC_REF.sub("", (title or "").strip())
+    known = plain in _DOC_TITLES
+    fallback = _DOC_KIND_WORDS.get(kind or "", ("the document", "该文件"))
+    if lang == "zh":
+        return _DOC_TITLES[plain] if known else fallback[1]
+    if known:
+        return "the " + plain[:1].lower() + plain[1:]
+    if plain and not _ID_CODES.search(plain):
+        return f"“{plain}”"
+    return fallback[0]
+
+
+_ID_CODES = re.compile(r"(?:DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER|APR)-|RI:")
+
+
+def document_decision_words(state: FinancialState | None, *, confirmed: bool, title: str | None, kind: str | None,
+                            link_facility_id: str | None, lang: Lang = "en") -> dict[str, str | None]:
+    """`event_text` / `event_detail` of the owner's CONFIRM_DOCUMENT / REJECT_DOCUMENT: a Business sentence from the record (its kind and
+    title in words), never its id or the contract's reference code. A confirmed document changes nothing in the books."""
+    name = document_name(title, kind, lang)
+    if not confirmed:
+        return {"event_text": t(lang, f"You rejected {name}. Nothing was recorded from it.", f"您已驳回{name}。未从中记录任何内容。"),
+                "event_detail": None}
+    detail = None
+    if link_facility_id:
+        fac = facility_name(state, link_facility_id) if state is not None else ""
+        if fac:
+            detail = t(lang, f"Linked to {fac} for reference; the facility itself is unchanged.",
+                       f"已关联到{fac}以供参考；该融资工具本身未变。")
+    return {"event_text": t(lang, f"You confirmed {name}, as FLOW read it. Nothing in the books changed.",
+                            f"您已确认{name}，按 FLOW 读取的内容。账本未作任何更改。"),
+            "event_detail": detail}
