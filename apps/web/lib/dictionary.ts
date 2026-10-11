@@ -2153,6 +2153,15 @@ export const en = {
   "docformat.docx": "Word",
   "docformat.pdf": "PDF",
   "nav.backToDeals": "Back to Deals",
+  "biz.picture.title": "Your cash ahead",
+  "biz.picture.today": "Today",
+  "biz.picture.minimum": "Minimum",
+  "biz.picture.view": "Which forecast to show",
+  "biz.picture.plan": "With FLOW's plan",
+  "biz.picture.reserve": "Minimum cash reserve {amount}",
+  "biz.picture.lowest": "Lowest {amount}",
+  "biz.picture.chips": "What moves your cash",
+  "biz.picture.table": "Cash on the days that matter",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4304,4 +4313,13 @@ export const zh: Record<DictKey, string> = {
   "docformat.docx": "Word",
   "docformat.pdf": "PDF",
   "nav.backToDeals": "返回交易",
+  "biz.picture.title": "您未来的现金",
+  "biz.picture.today": "今天",
+  "biz.picture.minimum": "最低储备",
+  "biz.picture.view": "要显示的预测",
+  "biz.picture.plan": "采用 FLOW 方案",
+  "biz.picture.reserve": "最低现金储备 {amount}",
+  "biz.picture.lowest": "最低 {amount}",
+  "biz.picture.chips": "影响您现金的事项",
+  "biz.picture.table": "关键日期的现金",
 };

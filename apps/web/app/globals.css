@@ -488,6 +488,42 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   }
 }
 
+/* The cash picture's one draw (components/home/cash-picture.tsx): the do-nothing line draws first, the plan after it, each about 900 ms, then the
+   shortfall and the labels fade in. A deliberate exception to "transform and opacity only" (stroke-dashoffset); once, on mount. The reduced-motion
+   block below leaves every part in its final state at once. */
+@keyframes picture-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes picture-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.picture-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: picture-draw 900ms var(--ease-out) forwards;
+}
+.picture-draw-second {
+  animation-delay: 900ms;
+}
+.picture-fade {
+  opacity: 0;
+  animation: picture-fade 400ms var(--ease-out) forwards;
+}
+/* The first breach's one pulse, on an SVG circle (the HTML dot uses .motion-pulse). */
+.picture-pulse {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dot-pulse 900ms var(--ease-out) 1200ms 1 forwards;
+}
+
 /* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal
    specificity, so the later rule wins, and the other order left the ellipsis hidden under reduced motion. */
 .spinner-dots {
