@@ -23,6 +23,8 @@ export interface ChosenLine {
   series: HomeSeriesPoint[] | null;
   /** The y axis the plans' lines share (the plan response's `series_axis`); the home read's axis stands when absent. */
   axis?: PictureAxis | null;
+  /** The same, one per window of the 30 / 60 / 120-day switch, keyed by days as a string. */
+  axes?: Record<string, PictureAxis> | null;
   lowestShort?: string | null;
 }
 
@@ -131,7 +133,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
           alternativeLowestLabel: chosen?.lowestShort ? t("biz.picture.lowest", { amount: chosen.lowestShort }) : null,
         }}
         horizonDays={cash.horizon_days}
-        axis={(chosen?.series ? chosen.axis : null) ?? cash.axis}
+        axis={chosen?.series ? (chosen.axes?.[String(horizon)] ?? chosen.axis ?? cash.axes?.[String(horizon)] ?? cash.axis) : (cash.axes?.[String(horizon)] ?? cash.axis)}
         windowDays={horizon}
         resetKey={chosen?.key ?? ""}
         toggleAlternativeLabel={chosen ? t("biz.cash.chosenPlan") : undefined}

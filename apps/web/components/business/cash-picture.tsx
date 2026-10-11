@@ -183,20 +183,24 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const planSegs = hasPlan && planPoints ? segments(planPoints.filter((p) => p.day >= today), end) : [];
 
   // Scale from the data: both lines in the window, zero and the reserve always inside, 8% of padding.
-  const levels = [0, floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
+  // With the server's axis the domain is exactly its range, widened only for what is drawn (a line or the reserve), never for zero.
+  const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
+  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
-  const hasAxis = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
+  const hasAxis = axisOk;
   const yLo = hasAxis && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = hasAxis && axis ? Math.max(axis.max_fen, hi) : hi + pad;
-  const H = W < 520 ? 250 : 300;
+  // With the server's axis the plot keeps its height and the picture grows 16 px at the foot: the room under the plot for the lowest point's label, above the day ticks.
+  const padB = PAD.b + (hasAxis ? 16 : 0);
+  const H = (W < 520 ? 250 : 300) + (hasAxis ? 16 : 0);
   // The tick labels live in a gutter at the left of the plot, as wide as the widest label.
   const gutter = hasAxis && axis ? Math.ceil(Math.max(...axis.ticks.map((k) => textWidth(k.label, false)))) + 8 : 0;
   const pl = PAD.l + gutter;
   const pr = W - PAD.r;
   const pt = PAD.t;
-  const pb = H - PAD.b;
+  const pb = H - padB;
   const xOf = (d: number) => r1(pl + ((d - today) / last) * Math.max(pr - pl, 1));
   const yOf = (v: number) => r1(pt + ((yHi - v) / (yHi - yLo)) * (pb - pt));
   const valueAt = (segs: Seg[], d: number) => segs.find((s) => d >= s.d0 && d < s.d1)?.v ?? segs[segs.length - 1]?.v ?? 0;
@@ -239,17 +243,17 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   obstacles.push({ x0: pl, x1: pr, y0: yOf(floor) - 2, y1: yOf(floor) + 2 });
   if (yLo < 0) obstacles.push({ x0: pl, x1: pr, y0: yOf(0) - 2, y1: yOf(0) + 2 });
   const placed: Label[] = [];
-  const fits = (b: Box) => b.x0 >= pl && b.x1 <= pr + 4 && b.y0 >= 4 && b.y1 <= pb + 2 && !obstacles.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
+  const fits = (b: Box, bottom = pb + 2) => b.x0 >= pl && b.x1 <= pr + 4 && b.y0 >= 4 && b.y1 <= bottom && !obstacles.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
   const boxOf = (x: number, y: number, anchor: Anchor, text: string, bold: boolean): Box => {
     const w = textWidth(text, bold);
     const x0 = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
     return { x0, x1: x0 + w, y0: y - FONT, y1: y + 4 };
   };
   /** Try the spots in order; the first that fits is drawn and its box becomes an obstacle for the next label. */
-  const place = (key: string, text: string, tone: Label["tone"], bold: boolean, spots: { x: number; y: number; anchor: Anchor }[], force = false): boolean => {
+  const place = (key: string, text: string, tone: Label["tone"], bold: boolean, spots: { x: number; y: number; anchor: Anchor }[], force = false, bottom = pb + 2): boolean => {
     for (const [i, s] of spots.entries()) {
       const b = boxOf(s.x, s.y, s.anchor, text, bold);
-      if (fits(b) || (force && i === spots.length - 1)) {
+      if (fits(b, bottom) || (force && i === spots.length - 1)) {
         placed.push({ key, x: s.x, y: s.y, anchor: s.anchor, text, tone, bold });
         obstacles.push({ ...b, y0: b.y0 - 1, y1: b.y1 + 1 });
         return true;
@@ -263,9 +267,32 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
     { x: px - 8, y: py - 8, anchor: "end" as Anchor },
     { x: px - 8, y: py + 18, anchor: "end" as Anchor },
   ];
-  const around = (px: number, py: number) => [{ x: px, y: py + 22, anchor: "middle" as Anchor }, { x: px, y: py - 12, anchor: "middle" as Anchor }, ...beside(px, py)];
+  const around = (px: number, py: number) => [
+    { x: px, y: py + 22, anchor: "middle" as Anchor },
+    { x: px, y: py - 12, anchor: "middle" as Anchor },
+    ...beside(px, py),
+    // The lowest point is the one label that must be there: when the first spots are taken, try higher ones.
+    { x: px - 8, y: py - 26, anchor: "end" as Anchor },
+    { x: px + 8, y: py - 26, anchor: "start" as Anchor },
+    { x: px, y: py - 34, anchor: "middle" as Anchor },
+  ];
 
-  // The reserve, named on its line.
+  // Marks that the server names: the first breach (one pulse), the lowest points.
+  const breachPt = breach !== null && breach <= end ? { x: xOf(breach), y: yOf(valueAt(baseSegs, breach)) } : null;
+  const lowestPt = lowestDay <= end ? { x: xOf(lowestDay), y: yOf(valueAt(baseSegs, lowestDay)) } : null;
+  const lowestIsReserve = Boolean(markers.lowestIsFloor);
+  let planLow: { x: number; y: number } | null = null;
+  if (showPlan && planSegs.length) {
+    const m = planSegs.reduce((a, s) => (s.v < a.v ? s : a), planSegs[0]);
+    planLow = { x: xOf(m.d0), y: yOf(m.v) };
+  }
+  for (const p of [breachPt, lowestPt, planLow]) if (p) obstacles.push({ x0: p.x - 7, x1: p.x + 7, y0: p.y - 7, y1: p.y + 7 });
+
+  // Priority 1: the lowest points of each drawn line. They may sit below, above or to either side of their point, and may use the room left under the plot (the x labels start below it).
+  if (lowestPt && !lowestIsReserve && markers.lowestLabel) place("lowest", markers.lowestLabel, nothingTone, true, around(lowestPt.x, lowestPt.y), false, pb + 20);
+  if (planLow && markers.alternativeLowestLabel) place("plan-lowest", markers.alternativeLowestLabel, "ok", true, around(planLow.x, planLow.y), false, pb + 20);
+
+  // Priority 2: the reserve, named on its line.
   const reserveY = yOf(floor);
   // Below `sm` the label is only ever tried under the dashed line at the left edge and is skipped like any other that would touch a line (the
   // header row still says the minimum); wider it may also sit above the line or at the right edge, and is drawn even when crowded.
@@ -285,17 +312,6 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
         ],
     !phone,
   );
-
-  // Marks that the server names: the first breach (one pulse), the lowest points.
-  const breachPt = breach !== null && breach <= end ? { x: xOf(breach), y: yOf(valueAt(baseSegs, breach)) } : null;
-  const lowestPt = lowestDay <= end ? { x: xOf(lowestDay), y: yOf(valueAt(baseSegs, lowestDay)) } : null;
-  const lowestIsReserve = Boolean(markers.lowestIsFloor);
-  let planLow: { x: number; y: number } | null = null;
-  if (showPlan && planSegs.length) {
-    const m = planSegs.reduce((a, s) => (s.v < a.v ? s : a), planSegs[0]);
-    planLow = { x: xOf(m.d0), y: yOf(m.v) };
-  }
-  for (const p of [breachPt, lowestPt, planLow]) if (p) obstacles.push({ x0: p.x - 7, x1: p.x + 7, y0: p.y - 7, y1: p.y + 7 });
 
   // The lines are named beside themselves, so colour is never the only channel. A lone line is named on its longest flat stretch. Two lines are
   // named where they are apart: the longest stretch where they differ by more than a label's height, each label on its own line's side
@@ -345,8 +361,6 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
     }
   }
 
-  if (lowestPt && !lowestIsReserve && markers.lowestLabel) place("lowest", markers.lowestLabel ?? "", nothingTone, true, around(lowestPt.x, lowestPt.y));
-  if (planLow && markers.alternativeLowestLabel) place("plan-lowest", markers.alternativeLowestLabel, "ok", true, around(planLow.x, planLow.y));
 
   // The events: the three largest on the do-nothing line, and the plan's own draws and advances; each beside its step.
   type Ev = { key: string; day: number; amount: number; text: string; neg: boolean; y: number };
@@ -434,7 +448,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
         </ul>
       ) : null}
 
-      <div ref={frame} className="w-full" style={{ minHeight: W < 520 ? 250 : 300 }}>
+      <div ref={frame} className="w-full" style={{ minHeight: H }}>
         {W > 0 ? (
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
             {bandDay !== undefined ? (

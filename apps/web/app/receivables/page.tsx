@@ -88,7 +88,18 @@ export default function ReceivablesPage() {
 
   return (
     <>
-      <PageHeader section="recv" title={sentence && r?.headline ? <span className={r.headline_tone === "bad" ? "text-bad-fg" : r.headline_tone === "warn" ? "text-warn-fg" : ""} data-tone={r.headline_tone ?? undefined}>{sentence}</span> : (sentence ?? t("nav.receivables"))} subtitle={sentence ? note : t("biz.recv.subtitle")} />
+      {r?.headline && (r.headline_tone === "bad" || r.headline_tone === "warn") ? (
+        // The server's tone as a status pill above the heading, built like Home's; the heading itself stays in the ink colour.
+        <span
+          className={`mb-2 inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.06em] ${r.headline_tone === "bad" ? "border-bad-line bg-bad-bg text-bad-fg" : "border-warn-line bg-warn-bg text-warn-fg"}`}
+          data-testid="recv-status-word"
+          data-tone={r.headline_tone}
+        >
+          <span aria-hidden className={`size-1.5 shrink-0 rounded-pill ${r.headline_tone === "bad" ? "bg-bad-solid" : "bg-warn-solid"}`} />
+          {t(r.headline_tone === "bad" ? "biz.recv.pill.bad" : "biz.recv.pill.warn")}
+        </span>
+      ) : null}
+      <PageHeader section="recv" title={sentence ?? t("nav.receivables")} subtitle={sentence ? note : t("biz.recv.subtitle")} />
       {error ? (
         <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
       ) : !data || !r ? (
