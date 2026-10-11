@@ -14,6 +14,7 @@
     "floor_fen": 30000000,
     "lowest_fen": 10000000,
     "lowest_day": 42,
+    "lowest_tone": "warn",
     "headroom_fen": 0,
     "headroom_short": "¥0.00",
     "lowest_headroom_fen": -20000000,
@@ -2569,7 +2570,7 @@
     "needs_owner_reason": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
     "if_nothing": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
-    "after": "Cash stays above your minimum cash reserve for the next 120 days.",
+    "after": "Cash stays at or above your minimum cash reserve for the next 120 days.",
     "why": "The cheapest option, ¥1,706.10 in all (including ¥788.97 less in other interest and fees across the forecast), needs 2 separate approvals; this one needs one. Both are under your funding options.",
     "detail": "Projected cash closes at ¥100,000.00 in 8 days, ¥200,000.00 below your minimum cash reserve; the gap peaks at ¥200,000.00 in 8 days and lasts until 12 days from now. A funding plan is available: finance an invoice on Invoice financing (onboarded platform) ¥200,000.00, cost ¥1,782.19 (32.5% a year for 10 days); that is above the 15.00% limit you signed for funding without your approval, so it needs your approval before it runs.",
     "formula": "shortfall = floor − closing_d: ¥300,000.00 − ¥100,000.00 = ¥200,000.00 (day 42); max over days 42..46 = ¥200,000.00",
@@ -2606,7 +2607,7 @@
       "lands_when": "in 3 days",
       "lands_text": "If you approve today, the cash lands in 3 days.",
       "if_decline": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
-      "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
+      "protects": "Cash stays at or above your minimum cash reserve for the next 120 days.",
       "residual": null,
       "execution_status": "PENDING"
     }

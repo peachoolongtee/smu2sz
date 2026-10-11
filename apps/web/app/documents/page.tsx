@@ -131,7 +131,7 @@ function Documents() {
                       <td className={tdCls}>{d.counterparty_name}</td>
                       <td className={`${tdCls} whitespace-nowrap`}>{whenWords(d.uploaded_when, d.uploaded_day, today, t)}</td>
                       <td className={tdCls}>
-                        <DocStatusBadge doc={d} today={today} />
+                        <DocStatusBadge doc={d} />
                       </td>
                     </tr>
                   ))}

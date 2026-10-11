@@ -90,26 +90,10 @@ export function whenWords(server: string | null | undefined, day: number | null 
 const STATUS_TONE: Record<DocumentStatus, Tone> = { PROPOSED: "warn", CONFIRMED: "ok", REJECTED: "neutral" };
 
 /** Where a document stands in the server's words and tone: waiting for the owner (with the AI label), confirmed, rejected, or blocked by a flag. */
-export function DocStatusBadge({
-  doc,
-  today = null,
-}: {
-  doc: Pick<DocumentSummary, "status" | "decided_day" | "blocked"> & Partial<Pick<DocumentSummary, "decided_when" | "status_text" | "status_tone">>;
-  /** The day the page is on, for a server that sent no `decided_when`. */
-  today?: number | null;
-}) {
-  const { t, te } = useI18n();
-  const when = whenWords(doc.decided_when, doc.decided_day, today, t);
-  const decided = (key: "docs.confirmedWhen" | "docs.rejectedWhen", word: string) => (when ? t(key, { when }) : word);
-  const text =
-    doc.status_text ??
-    (doc.status === "CONFIRMED"
-      ? decided("docs.confirmedWhen", te("docstatus", "CONFIRMED"))
-      : doc.status === "REJECTED"
-        ? decided("docs.rejectedWhen", te("docstatus", "REJECTED"))
-        : doc.blocked
-          ? t("docs.blocked")
-          : te("docstatus", doc.status));
+export function DocStatusBadge({ doc }: { doc: Pick<DocumentSummary, "status" | "blocked" | "status_text"> & Partial<Pick<DocumentSummary, "status_tone">> }) {
+  const { t } = useI18n();
+  // The server writes the whole sentence ("Confirmed by you 3 days ago", "Waiting for your review"); the page adds nothing to it.
+  const text = doc.status_text;
   const tone: Tone = doc.status_tone ?? (doc.status === "PROPOSED" && doc.blocked ? "bad" : STATUS_TONE[doc.status]);
   return (
     <span className="flex flex-wrap gap-1.5" data-testid="doc-status" data-status={doc.status}>

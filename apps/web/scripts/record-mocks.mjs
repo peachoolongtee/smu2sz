@@ -276,6 +276,8 @@ if (STRATEGY) {
 
 await reset();
 files["state.json"] = await live.getState();
+const navCounts = {}; // GET /nav/counts at the moments the sidebar shows (the mock chooses among them by its story state)
+navCounts.quiet = await live.getNavCounts("en");
 files["mandate.json"] = await live.getMandate();
 // Opening books: the alerts and reconciliation the owner sees before anything happens, and the home summary (GET /home).
 files["alerts.json"] = await live.getAlerts();
@@ -302,11 +304,18 @@ for (const s of ENGINE_STEPS) {
   if (s.id === "inbox") {
     files["offer_ex01.json"] = d.offers[d.offerId];
     await snap("received.ex01", dealId(d.offerId));
+    // The deals read with the offer waiting and FLOW has not read it yet; the sidebar counts that deal.
+    files["deals_day0_received.json"] = await live.getDeals();
+    navCounts.offer_received = await live.getNavCounts("en");
   }
   if (s.id === "trajectory") {
     verdictEx01 = d.verdicts[d.offerId];
     files["verdict_ex01.json"] = verdictEx01;
     await snap("ready.ex01", dealId(d.offerId));
+    // FLOW's read of the package offer, before any reply is sent: the deal's open offer, the sidebar count and the offer's cash picture.
+    files["deals_day0_evaluated.json"] = await live.getDeals();
+    navCounts.offer_evaluated = await live.getNavCounts("en");
+    files["offer_picture_ex01.json"] = { en: await live.getOfferPicture(d.offerId, "en"), zh: await live.getOfferPicture(d.offerId, "zh") };
     // The trajectory page: the position with the offer applied (conservative decides) and the position today (expected).
     files["trajectory_conservative.json"] = await live.getTrajectory("CONSERVATIVE", verdictEx01);
     files["trajectory_expected.json"] = await live.getTrajectory("EXPECTED", verdictEx01);
@@ -487,6 +496,7 @@ await toDay34(async () => {
   ops.receive_payment = template(receipt);
 });
 files["home_alerts_day34.json"] = await live.getAlerts();
+navCounts.day34 = await live.getNavCounts("en"); // the late invoice, the reserve alert open
 files["home_summary_day34.json"] = await live.getHome("en");
 files["home_summary_day34_zh.json"] = await live.getHome("zh");
 files["trajectory_conservative_day34.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
@@ -512,6 +522,7 @@ files["home_act.json"] = await live.actOnAlert(reserve.id, {
   suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
 });
 if (files["home_act.json"].results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+navCounts.pending = await live.getNavCounts("en"); // the cure waits for the owner's approval
 files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
 files["home_summary_pending.json"] = await live.getHome("en");
 files["home_summary_pending_zh.json"] = await live.getHome("zh");
@@ -528,6 +539,8 @@ await snap("cure_approved", files["home_approval_pending.json"].decision_id);
 // The log after the decision: the earlier "waiting" entry now reads in the past, beside "You approved ..." (the mock replays that).
 files["home_ledger_approved.json"] = await live.getLedger();
 files["home_alerts_after.json"] = await live.getAlerts();
+navCounts.approved = await live.getNavCounts("en");
+files["nav_counts.json"] = navCounts;
 files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
 files["home_summary_after.json"] = await live.getHome("en");

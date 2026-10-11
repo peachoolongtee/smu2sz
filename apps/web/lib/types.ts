@@ -897,6 +897,8 @@ export interface OperationView extends Displayed<OperationResult> {
   event_detail?: string | null;
   /** The decision record the operation belongs to (GET /ledger); null for an operation no record claims. Absent in older recordings. */
   decision_id?: string | null;
+  /** The document a document decision is about (GET /ledger); null otherwise. */
+  document_id?: string | null;
   /** Causality (GET /ledger, Wave 3): what changed, why it matters, what remains. All absent in an older recording. */
   what_changed?: string | null;
   /** The cash forecast as of now ("now"), or the entry's own quote for an approval request (null). Never a per-event replay. */
@@ -1029,6 +1031,9 @@ export type ComparisonRow = Displayed<{
   role?: ComparisonRole;
   /** One sentence on why the row has that role ("Cheapest in all, but it needs 2 separate approvals; the recommended plan needs one."). */
   role_reason?: string | null;
+  /** The cash line of the plan if it ran (the home point shape), or null with `series_note` saying why; absent in an older answer. */
+  series?: HomeSeriesPoint[] | null;
+  series_note?: string | null;
   /** The sources the plan draws on ("Bank credit line + Invoice financing"). */
   name_display?: string;
   /** Each leg with its source's name and its own cost, in the order the router priced them. */
@@ -1269,6 +1274,15 @@ export interface ApprovalPresentation {
   result_tone?: StateTone | null;
   /** A cure that does not restore the reserve says what stays short. */
   residual?: { shortfall_display: string; from_when: string; restores_reserve: boolean; text?: string; lowest_when?: string | null; shortfall_today_display?: string | null } | null;
+  /** The cash line if the request is declined / approved and each line's lowest point (a pending funding request); null where a cash line means nothing. */
+  series_if_declined?: HomeSeriesPoint[] | null;
+  series_if_approved?: HomeSeriesPoint[] | null;
+  lowest_if_declined_fen?: Fen | null;
+  lowest_if_declined_short?: string | null;
+  lowest_if_declined_when?: string | null;
+  lowest_if_approved_fen?: Fen | null;
+  lowest_if_approved_short?: string | null;
+  lowest_if_approved_when?: string | null;
 }
 
 export type ApprovalExecutionStatus = "EXECUTED" | "REFUSED" | "PENDING" | "DECLINED" | "DUPLICATE";
@@ -2456,6 +2470,8 @@ export interface HomeView {
     cash_short: string;
     floor_short: string;
     lowest_short: string;
+    /** The server's tone for the lowest point (bad under zero, warn under the reserve, ok otherwise); absent in an older recording. */
+    lowest_tone?: "ok" | "warn" | "bad";
     /** What is driving the risk, from the projection's own events (at most two sentences). */
     drivers: string[];
     lowest_when: string;
@@ -2583,8 +2599,13 @@ export interface DocumentSummary {
   uploaded_when?: string;
   decided_when?: string | null;
   /** The status in the server's words ("Confirmed by you today") and the tone the server chose for it; absent from an older server. */
-  status_text?: string;
+  status_text: string;
   status_tone?: StateTone;
+  /** A later confirmed buyer contract: the earlier one it replaces and the later one that replaced this (ids stay in their fields; the sentences say when). */
+  replaces?: string | null;
+  replaces_text?: string | null;
+  superseded_by?: string | null;
+  superseded_by_text?: string | null;
   linked_facility_id: string | null;
   /** Server text: "18 terms read, 3 left blank" or the facility in one line. */
   summary: string;
@@ -2605,7 +2626,7 @@ export interface DocumentView extends Omit<DocumentSummary, "flags"> {
   can_confirm: boolean;
   reading_status: "COMPILED" | "ABSTAINED" | "CONFLICTING_SOURCES";
   /** The reading in words ("Read in full", "Could not read"); the Technical fold keeps the code. Absent from an older server. */
-  reading_text?: string;
+  reading_text: string;
   compiler: string;
   prompt_version: string;
   chunks?: number;
@@ -2688,6 +2709,10 @@ export interface DealView {
     confirmed_day: Day | null;
     /** Server words for when the owner confirmed it; absent from an older server. */
     confirmed_when?: string | null;
+    replaces?: string | null;
+    replaces_text?: string | null;
+    end_when?: string | null;
+    signed_when?: string | null;
   };
   pills?: { label: string; tone: DealTone }[];
   stages?: { key: "read" | "negotiated" | "early_payment" | "collecting" | "fulfilled"; label: string; state: StageState; note: string; tone: DealTone | null }[];
@@ -2734,6 +2759,29 @@ export interface DealView {
     actions: { key: string; label: string; href: string; primary: boolean }[];
     tone: DealTone;
   };
+  /** The buyer's offer waiting for the owner, with FLOW's read of it; null when none is open. */
+  open_offer?: OpenOffer | null;
+  /** Something on this deal waits for the owner, and the pill's words for it. */
+  needs_you?: boolean;
+  needs_you_text?: string | null;
+}
+
+/** A buyer's open offer on the deals read (GET /deals): what it asks, FLOW's read, the cost against the owner's limit and the five-step track. */
+export interface OpenOffer {
+  offer_id: string;
+  verdict_id: string | null;
+  received_when: string;
+  asks_text: string;
+  /** FLOW's read; null until the offer is analysed. */
+  read_text: string | null;
+  action_text: string;
+  cost_display: string | null;
+  cost_window_text: string | null;
+  limit_display: string | null;
+  over_limit: boolean;
+  replies_ready: number;
+  stages: { key: "received" | "analysed" | "reply_ready" | "sent" | "agreed"; label: string; state: StageState }[];
+  tone: DealTone;
 }
 
 export interface DealsView {
@@ -2963,4 +3011,37 @@ export interface BankReceiptResult {
   day: Day;
   op_id: string;
   result: OperationResult;
+}
+
+// ------------------------------------------------------------------ pages A1: the reads added with the UI overhaul (additive)
+
+/** GET /nav/counts: what needs the owner in each section now (numbers only). `receivables` counts invoices past their due day. */
+export interface NavCounts {
+  lang?: "en" | "zh";
+  day?: Day;
+  deals: number;
+  approvals: number;
+  receivables: number;
+}
+
+/** One line of an offer's cash picture (the home point shape) with its lowest point; a reply that cannot be projected has `series` null. */
+export interface OfferPictureLine {
+  label: string;
+  series: HomeSeriesPoint[] | null;
+  lowest_fen: Fen | null;
+  lowest_short: string | null;
+  lowest_when: string | null;
+}
+
+/** GET /offers/{offer_id}/picture: the offer as asked and one line per reply FLOW has ready. Display only. */
+export interface OfferPictureView {
+  offer_id: string;
+  verdict_id: string | null;
+  lang: "en" | "zh";
+  day: Day;
+  asked: OfferPictureLine & { first_breach_day: Day | null; first_breach_when: string | null };
+  replies: (OfferPictureLine & { counter_id: string; note?: string })[];
+  floor_fen: Fen;
+  floor_short: string;
+  horizon_days: number;
 }

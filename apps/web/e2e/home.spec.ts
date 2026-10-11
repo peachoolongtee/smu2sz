@@ -88,7 +88,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action).not.toContainText("agent");
   await expect(fold).not.toContainText("agent");
   await expect(page.getByTestId("next-action-if-nothing")).toContainText("¥240,000.00 below your minimum cash reserve in 12 days");
-  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
+  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays at or above your minimum cash reserve for the next 120 days");
   // "Why this" never quotes another plan's amounts as this plan's: the alert's own cure is said as a fallback.
   await expect(page.getByTestId("next-action-why")).toContainText("A fallback also exists");
   await expect(page.getByTestId("next-action-why")).toContainText("FLOW recommends the plan above.");
@@ -156,7 +156,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
 
   await expect(page.getByTestId("home-headline")).toHaveText("You're covered.");
-  await expect(page.getByTestId("home-note")).toContainText("Cash stays above your ¥300k minimum cash reserve for the next 120 days.");
+  await expect(page.getByTestId("home-note")).toContainText("Cash stays at or above your ¥300k minimum cash reserve for the next 120 days.");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   // On its way: the server's headline, and "Arriving" beside the cash already in hand (two figures, never one).
   await expect(page.getByTestId("home-in-transit")).toContainText("¥255k funding arriving in 3 days");
@@ -193,7 +193,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(action).toContainText("32.5% a year for 10 days");
   await expect(page.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(action.getByTestId("next-action-needs-owner")).toContainText("above the 15.00% limit you signed");
-  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days");
+  await expect(page.getByTestId("next-action-after")).toContainText("Cash stays at or above your minimum cash reserve for the next 120 days");
   // The router's cheaper two-invoice plan would need two approvals, so the one-approval cure is recommended and the option named.
   await expect(page.getByTestId("next-action-cheaper")).toContainText("¥1,706.10");
   await expect(page.getByTestId("next-action-cheaper")).toContainText("2 separate approvals");

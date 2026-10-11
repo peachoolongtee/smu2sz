@@ -7,7 +7,6 @@ import { SpanQuote } from "@/components/offer-parts";
 import { Badge, Card, Chip, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { getAudit, getLedger, getState } from "@/lib/api";
 import { API_MODE, STRATEGY_MVP } from "@/lib/config";
-import { idsToNames } from "@/lib/business-words";
 import { useI18n } from "@/lib/i18n";
 import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
@@ -44,7 +43,7 @@ function ApprovalLine({ o }: { o: OperationView }) {
 
 /**
  * Activity: everything that happened, in order. Each row leads with the server's business sentence (`event_text`: what happened, in the owner's
- * words); an older recording without it gets `message_when`, then the executor's sentence with ids named. The executor's own
+ * words); an older recording without it gets `message_when`. The executor's own
  * sentence, the operation id, the tier and the hashes are under audit details.
  */
 export default function ActivityPage() {
@@ -53,9 +52,8 @@ export default function ActivityPage() {
   const audit = useAsync(getAudit, [lang]);
   const books = useAsync(getState, []);
   const data = ledger.data;
-  // Ids in the executor's sentences become names on this screen (the ids stay in the audit details).
-  const named = [...(books.data?.state.facilities ?? []), ...(books.data?.state.counterparties ?? [])].map((x) => ({ id: x.id, name: x.name }));
-  const words = (text: string) => idsToNames(text, named);
+  // The server's sentences hold no ids; the one id this page shows is an agreement's buyer, said by name.
+  const buyerName = (id: string) => books.data?.state.counterparties.find((x) => x.id === id)?.name ?? id;
   // The plain name of an operation kind; a kind the dictionary does not know reads "Change", never the raw code.
   const kindLabel = (kind: string) => {
     const label = te("opkind", kind);
@@ -110,7 +108,7 @@ export default function ActivityPage() {
                 {ops.map((o) => (
                   <li key={`${o.seq}-${o.op_id}`} data-testid={`activity-${o.kind}`} data-status={o.status}>
                     <div className="py-3">
-                      <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.what_changed || o.event_text || o.message_when || words(o.summary) || kindLabel(o.kind)}</p>
+                      <p className="break-words text-sm font-medium text-ink" data-testid="activity-event">{o.what_changed || o.event_text || o.message_when || kindLabel(o.kind)}</p>
                       {o.event_detail ? <p className="break-words text-xs text-ink-2" data-testid="activity-detail">{o.event_detail}</p> : null}
                       {o.why_it_matters && o.why_it_matters_as_of !== "now" && o.why_it_matters_changed !== false ? (
                         <p className="mt-1 break-words text-sm text-ink-2" data-testid="activity-why">
@@ -201,7 +199,7 @@ export default function ActivityPage() {
                 {data.commitments.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line px-3 py-2 text-sm">
                     <span>
-                      <span className="font-medium text-ink">{words(c.counterparty_id)}</span>
+                      <span className="font-medium text-ink">{buyerName(c.counterparty_id)}</span>
                       <span className="block text-xs text-ink-3">
                         {t(c.expires_day < today ? "biz.activity.expired" : "biz.activity.expires", { when: whenText(c.expires_day, today, t) })} · {t("biz.activity.concessions")}: {c.forward_value_display}
                       </span>
@@ -249,7 +247,7 @@ export default function ActivityPage() {
                         <OpStatusBadge status={o.status} />
                         <span className="font-medium">{kindLabel(o.kind)}</span>
                       </div>
-                      <p className="mt-1 text-ink-2">{o.event_text || o.message_when || words(o.summary)}</p>
+                      <p className="mt-1 text-ink-2">{o.event_text || o.message_when || kindLabel(o.kind)}</p>
                     </li>
                   ))}
                   {audit.data.events.map((e) => (

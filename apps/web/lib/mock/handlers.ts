@@ -29,6 +29,8 @@ import type {
   CapexView,
   ContractFixture,
   DealsView,
+  NavCounts,
+  OfferPictureView,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -68,6 +70,8 @@ import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
+import navCountsJson from "../../mocks/nav_counts.json";
+import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
@@ -921,7 +925,54 @@ export async function demoReset(scenario?: string): Promise<void> {
 export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
   void lang;
   await delay();
-  return documents.mockDeals();
+  return documents.mockDeals(openOfferStage());
+}
+
+/**
+ * Where the package offer (EX01) stands on the books: received (submitted, not read), evaluated (read, no reply sent), or null (nothing open:
+ * not submitted, or a reply was sent). The deals read and the nav counts are chosen by it; the other demo offers do not open one.
+ */
+function openOfferStage(): "received" | "evaluated" | null {
+  const s = load();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE")?.view.offer.offer_id;
+  if (!ex01 || !s.offers[ex01] || s.negotiated[ex01]) return null;
+  return s.evaluated.includes(ex01) ? "evaluated" : "received";
+}
+
+// ------------------------------------------------------------------ the sidebar's counts and an offer's cash picture (UI overhaul reads)
+
+/** GET /nav/counts: the recorded answer for this point of the story. The approvals are counted from the queue the mock holds. */
+export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts> {
+  void lang;
+  await delay();
+  seedApprovalStory();
+  const recorded = cast<Record<"quiet" | "offer_received" | "offer_evaluated" | "day34" | "pending" | "approved", NavCounts>>(navCountsJson);
+  const day = home.mockClock().day;
+  const stage = home.cureStage();
+  const picked =
+    day >= home.NEWS_DAY
+      ? stage === "approved"
+        ? recorded.approved
+        : stage === "pending"
+          ? recorded.pending
+          : recorded.day34
+      : openOfferStage() === "evaluated"
+        ? recorded.offer_evaluated
+        : openOfferStage() === "received"
+          ? recorded.offer_received
+          : recorded.quiet;
+  const approvals = load().approvals.filter((a) => a.status === "PENDING").length;
+  return { ...clone(picked), approvals };
+}
+
+/** GET /offers/{id}/picture: recorded for the package offer, in both languages; any other offer has no picture. */
+export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
+  await delay();
+  const s = load();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
+  const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
+  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
