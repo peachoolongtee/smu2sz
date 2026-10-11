@@ -2162,6 +2162,17 @@ export const en = {
   "biz.homeDeals.open": "Open this deal",
   "biz.homeDeals.failed": "Your deals could not be read just now.",
   "biz.radar": "Also on your radar",
+  // ---- pages A1 (part 1): the open offer on Home's deal row and the sidebar counts
+  "biz.homeDeals.asks": "What they ask",
+  "biz.homeDeals.read": "FLOW's read",
+  "biz.homeDeals.received": "Offer received {when}",
+  "dealstage.received": "Received",
+  "dealstage.analysed": "Analysed",
+  "dealstage.reply_ready": "Reply ready",
+  "dealstage.sent": "Sent",
+  "dealstage.agreed": "Agreed",
+  "biz.nav.count.deals": "Deals, {n} {n|needs|need} you",
+  "biz.nav.count.receivables": "Receivables, {n} {n|is|are} late",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4322,4 +4333,15 @@ export const zh: Record<DictKey, string> = {
   "biz.homeDeals.open": "查看这笔交易",
   "biz.homeDeals.failed": "暂时无法读取您的交易。",
   "biz.radar": "您还需留意",
+  // ---- pages A1 (part 1): the open offer on Home's deal row and the sidebar counts
+  "biz.homeDeals.asks": "对方的要求",
+  "biz.homeDeals.read": "FLOW 的判断",
+  "biz.homeDeals.received": "{when}收到报价",
+  "dealstage.received": "已收到",
+  "dealstage.analysed": "已分析",
+  "dealstage.reply_ready": "回复已备好",
+  "dealstage.sent": "已发送",
+  "dealstage.agreed": "已达成",
+  "biz.nav.count.deals": "交易，{n} 项需要您处理",
+  "biz.nav.count.receivables": "应收款，{n} 笔已逾期",
 };

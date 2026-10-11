@@ -1,7 +1,16 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import type { DealView, StageState } from "@/lib/types";
+import type { DealTone, StageState } from "@/lib/types";
+
+/** One step: a deal's five stages carry a note and a tone; an open offer's five steps (received to agreed) carry neither. */
+export interface TrackStage {
+  key: string;
+  label: string;
+  state: StageState;
+  note?: string;
+  tone?: DealTone | null;
+}
 
 const DOT: Record<StageState, string> = {
   done: "border-brand-600 bg-brand-600",
@@ -18,7 +27,7 @@ const NOW_BAD = "border-bad-fg bg-bad-bg ring-3 ring-bad-bg";
  * step joined by a rail, the step's name and its state in words as well as in the dot's colour. Shared by the deal summary on Deals and the deals
  * on Home, so the two cannot disagree. Nothing is drawn for a deal with no stages.
  */
-export function StageTrack({ stages, testId = "deal-stages" }: { stages: NonNullable<DealView["stages"]>; testId?: string }) {
+export function StageTrack({ stages, testId = "deal-stages" }: { stages: TrackStage[]; testId?: string }) {
   const { t, te } = useI18n();
   if (!stages.length) return null;
   return (
@@ -41,7 +50,7 @@ export function StageTrack({ stages, testId = "deal-stages" }: { stages: NonNull
             <span className="font-normal" data-testid="deal-stage-state">
               {te("dealstate", s.state)}
             </span>
-            <small className="hidden text-xs font-normal text-ink-3 sm:block">{s.note}</small>
+            {s.note ? <small className="hidden text-xs font-normal text-ink-3 sm:block">{s.note}</small> : null}
           </li>
         );
       })}

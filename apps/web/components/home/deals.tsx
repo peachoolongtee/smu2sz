@@ -38,6 +38,63 @@ function DealRow({ deal }: { deal: DealView }) {
     );
   }
   const meta = [c.title, c.signed_display ? t("deal.signed", { date: c.signed_display }) : null, c.term_display, c.cadence_display].filter(Boolean).join(" · ");
+  const open = deal.open_offer;
+  const link = `/deals?buyer=${encodeURIComponent(deal.counterparty_id)}`;
+  if (open) {
+    const bad = open.over_limit && open.cost_display ? open.cost_display : null;
+    const readParts = open.read_text ? (bad && open.read_text.includes(bad) ? open.read_text.split(bad) : [open.read_text]) : [];
+    return (
+      <article className="space-y-4 border-b border-line-strong py-5" data-testid={`home-deal-${deal.counterparty_id}`}>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <Avatar tone={toneFor(deal.counterparty_name)}>{initials(deal.counterparty_name)}</Avatar>
+          <h3 className="break-words text-base font-extrabold text-ink">{deal.counterparty_name}</h3>
+          {deal.needs_you_text ? (
+            <StatePill tone="warn" testId={`home-deal-needs-${deal.counterparty_id}`}>
+              {deal.needs_you_text}
+            </StatePill>
+          ) : null}
+          <span className="text-sm text-ink-3">{t("biz.homeDeals.received", { when: open.received_when })}</span>
+        </div>
+        <div className="max-w-3xl">
+          <StageTrack stages={open.stages} testId={`home-deal-stages-${deal.counterparty_id}`} />
+        </div>
+        <div className="grid gap-x-9 gap-y-3 md:grid-cols-2" data-testid={`home-deal-offer-${deal.counterparty_id}`}>
+          <div className="min-w-0">
+            <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.asks")}</h4>
+            <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-asks">
+              {open.asks_text}
+            </p>
+          </div>
+          {readParts.length ? (
+            <div className="min-w-0">
+              <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.read")}</h4>
+              <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-read">
+                {readParts.map((part, i) => (
+                  <span key={i}>
+                    {i > 0 ? (
+                      <strong className="font-bold text-bad-fg" data-testid="home-deal-cost">
+                        {bad}
+                      </strong>
+                    ) : null}
+                    {part}
+                  </span>
+                ))}
+              </p>
+            </div>
+          ) : null}
+        </div>
+        <p className="text-sm text-ink-2" data-testid="home-deal-action">
+          {open.action_text}
+        </p>
+        {c.replaces_text ? <p className="text-sm text-ink-3">{c.replaces_text}</p> : null}
+        <div>
+          <ButtonLink href={link} data-testid={`home-deal-open-${deal.counterparty_id}`}>
+            {t("biz.homeDeals.open")}
+          </ButtonLink>
+        </div>
+      </article>
+    );
+  }
   const change = latest(deal.changes ?? []);
   return (
     <article className="flex flex-wrap items-start gap-x-9 gap-y-5 border-b border-line-strong py-5" data-testid={`home-deal-${deal.counterparty_id}`}>
@@ -53,6 +110,7 @@ function DealRow({ deal }: { deal: DealView }) {
             ))}
           </div>
           {meta ? <p className="break-words text-sm text-ink-3">{meta}</p> : null}
+          {c.replaces_text ? <p className="text-sm text-ink-3">{c.replaces_text}</p> : null}
           {change ? (
             <p className="text-sm text-ink">
               <strong className="font-bold">{change.label}:</strong> {change.text}
@@ -60,7 +118,7 @@ function DealRow({ deal }: { deal: DealView }) {
           ) : null}
           {deal.next_action?.text ? <p className="text-sm text-ink-2">{deal.next_action.text}</p> : null}
           <div className="mt-1">
-            <ButtonLink href={`/deals?buyer=${encodeURIComponent(deal.counterparty_id)}`} data-testid={`home-deal-open-${deal.counterparty_id}`}>
+            <ButtonLink href={link} data-testid={`home-deal-open-${deal.counterparty_id}`}>
               {t("biz.homeDeals.open")}
             </ButtonLink>
           </div>
@@ -78,6 +136,7 @@ function DealRow({ deal }: { deal: DealView }) {
 /**
  * "Your deals" on Home: one unboxed row per deal from GET /deals, a hairline between rows. A deal with a confirmed contract shows the buyer, the
  * server's pills, the contract in the read's own display strings, the five-step track, the newest change and the next thing to do; a deal
+ * with an open offer leads with it (the `needs_you_text` pill, the offer's five-step track, what it asks, FLOW's read and what to do); a deal
  * without one says so quietly and links to where the contract is added. A failed read is one quiet line with Retry and never blanks Home.
  * Every word is the server's, or a label of the app's.
  */
