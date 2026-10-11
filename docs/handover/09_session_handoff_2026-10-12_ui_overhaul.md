@@ -58,7 +58,7 @@ field, `ContractRecord.superseded_by`).**
 
 ## 3. The gate on the merged tree (this machine, Windows, zero retries)
 
-Run by the lead on `int/ui-overhaul` at 5490ebd (the tree merged into `dev`), one command after another on an otherwise idle machine:
+Run by the lead on `int/ui-overhaul` (the tree merged into `dev`), one command after another on an otherwise idle machine: the backend rows at 5490ebd, the web rows again at f8a317f after a last web-only fix (on Cash the plan bar sits in flow, so nothing covers the chart), with the same counts both times:
 
 | Check | Result |
 | --- | --- |
