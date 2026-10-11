@@ -5,6 +5,7 @@ import { PartialRead } from "@/components/business/freshness";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
+import { CashPicture } from "@/components/home/cash-picture";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
@@ -85,6 +86,9 @@ export default function HomePage() {
     </div>
   ) : null;
 
+  const action = h?.next_action ? <NextActionBlock key="action" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
+  const picture = h ? <CashPicture key="picture" h={h} /> : null;
+
   return (
     <>
       {view.error ? (
@@ -92,12 +96,14 @@ export default function HomePage() {
       ) : !h ? (
         <LoadingBlock rows={3} />
       ) : (
-        <div className="space-y-4 sm:space-y-6" aria-busy={view.loading}>
+        <div className="space-y-5 sm:space-y-7" aria-busy={view.loading}>
           <StatusBlock h={h} />
           <PartialRead partial={h.partial} onRetry={view.reload} />
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null}
-          {h.next_action ? <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null}
+          {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. */}
+          {narrow ? action : picture}
+          {narrow ? picture : action}
           {narrow ? (
             <>
               {decisions}

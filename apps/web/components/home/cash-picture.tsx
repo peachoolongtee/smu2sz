@@ -128,7 +128,7 @@ export function CashPicture({ h }: { h: HomeView }) {
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
-  const yLo = lo - pad;
+  const yLo = lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = hi + pad;
   const H = W < 520 ? 250 : 300;
   const pl = PAD.l;
@@ -175,6 +175,7 @@ export function CashPicture({ h }: { h: HomeView }) {
   addLine(baseSegs);
   if (showPlan) addLine(planSegs);
   obstacles.push({ x0: pl, x1: pr, y0: yOf(floor) - 2, y1: yOf(floor) + 2 });
+  if (yLo < 0) obstacles.push({ x0: pl, x1: pr, y0: yOf(0) - 2, y1: yOf(0) + 2 });
   const placed: Label[] = [];
   const fits = (b: Box) => b.x0 >= pl && b.x1 <= pr + 4 && b.y0 >= 4 && b.y1 <= pb + 2 && !obstacles.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0);
   const boxOf = (x: number, y: number, anchor: Anchor, text: string, bold: boolean): Box => {
