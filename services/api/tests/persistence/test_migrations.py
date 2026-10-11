@@ -35,6 +35,7 @@ EXPECTED_TABLES = {
     "llm_calls",
     "evaluation_runs",
     "evidence_exports",
+    "contract_records",
     "pilot_journal",
     "decision_facts",
 }

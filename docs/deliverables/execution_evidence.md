@@ -315,7 +315,8 @@ python3 scripts/verify_evidence.py /tmp/s01_export.jsonl
 
 Expected:
 - `1/1 scenarios passed`;
-- `VALID: 4 operations, 0 security events, head <hash>…`;
+- `VALID: 7 operations, 0 security events, head <hash>…`: the demo reset's three document confirmations (the demo opens on the
+  confirmed demo documents, brief 03), then S01's four operations;
 - a chain that matches `/tmp/tl-s01/evidence/S01_scene1_counter_accept.jsonl` in length and structure. The head hash differs from run to run (each session's idempotency keys carry a random token), so compare the verifier's VALID result, not the head.
 
 `GET /evidence` requires the owner token (it returns 401 without it). `demo-owner-token` is a published **demo-only** credential, accepted only while `DEMO_MODE` is on (the default for local runs; the Docker Compose deployment turns it off).

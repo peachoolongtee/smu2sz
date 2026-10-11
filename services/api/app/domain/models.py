@@ -10,6 +10,7 @@ Conventions (see docs/ARCHITECTURE.md):
 
 from __future__ import annotations
 
+import hashlib
 from enum import StrEnum
 from typing import Annotated, Literal
 
@@ -280,7 +281,8 @@ class Facility(Contract):
 
 
 class TermSheetClause(Contract):
-    field: Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "equity", "covenant"]
+    field: Literal["principal", "rate", "fee", "tenor", "lead_time", "guarantee", "collateral", "equity", "covenant",
+                   "advance_rate"]
     value_text: str
     span: SourceSpan
 
@@ -300,6 +302,163 @@ class CompiledTermSheet(Contract):
     status: CompileStatus
     compiler: str
     prompt_version: str
+
+
+# ---------------------------------------------------------------- contracts (read by the agent, confirmed by the owner)
+#
+# docs/handover/03_contract_ingestion_brief.md. A contract reading is shown and confirmed, nothing more: no term of
+# it is projected, verified or executed, and a confirmed contract never writes the books (the language model never
+# sets the starting state). Every term carries the span it was read from; no span, no term.
+
+
+class ContractField(StrEnum):
+    PARTY_SUPPLIER = "PARTY_SUPPLIER"
+    PARTY_BUYER = "PARTY_BUYER"
+    CONTRACT_REFERENCE = "CONTRACT_REFERENCE"
+    SIGNED_DATE = "SIGNED_DATE"
+    START_DATE = "START_DATE"
+    END_DATE = "END_DATE"
+    DURATION = "DURATION"
+    PRICE = "PRICE"  # per delivery or per unit, or a lump sum
+    INVOICING = "INVOICING"  # cadence, and the first scheduled invoice date when stated
+    SCHEDULED_INVOICE = "SCHEDULED_INVOICE"  # an invoice the contract schedules on a stated date
+    PAYMENT_TERMS = "PAYMENT_TERMS"  # days, with what they count from (invoice, delivery, acceptance)
+    EARLY_PAYMENT = "EARLY_PAYMENT"  # a discount for settling early, and its window
+    MILESTONE = "MILESTONE"  # a share of the price due on a trigger
+    RETENTION = "RETENTION"
+    LATE_INTEREST = "LATE_INTEREST"
+    DELIVERABLE = "DELIVERABLE"  # what the supplier must deliver (display only)
+    REQUIRED_DOCUMENT = "REQUIRED_DOCUMENT"  # a document payment depends on (display only)
+    AMENDMENT = "AMENDMENT"  # how the contract may be changed
+
+
+# Fields a contract may state several times with different values (each is its own term); every other field has one
+# value, and two clauses stating different values for it are conflicting sources.
+MULTI_VALUED_CONTRACT_FIELDS = frozenset({
+    ContractField.SCHEDULED_INVOICE, ContractField.MILESTONE, ContractField.DELIVERABLE, ContractField.REQUIRED_DOCUMENT,
+})
+
+
+class PaymentBasis(StrEnum):
+    """What payment terms count from. The books count every term from the invoice date."""
+
+    INVOICE = "INVOICE"
+    DELIVERY = "DELIVERY"
+    ACCEPTANCE = "ACCEPTANCE"
+    MONTH_END = "MONTH_END"  # the end of the month of the invoice (月结)
+
+
+class PriceUnit(StrEnum):
+    PER_DELIVERY = "PER_DELIVERY"  # per batch, delivery or shipment
+    PER_UNIT = "PER_UNIT"
+    PER_MONTH = "PER_MONTH"
+    LUMP_SUM = "LUMP_SUM"
+
+
+class ContractTerm(Contract):
+    """One term read from a contract. Every value is parsed by code from a fragment inside `span`; the model supplies
+    no number, date or classification of its own."""
+
+    field: ContractField
+    span: SourceSpan
+    clause: str | None = None  # where the span sits, as the document numbers it ("4.2", "6.1(b)", "Schedule 1, 1")
+    value_text: str | None = None  # the fragment that states the value, as written
+    amount_fen: Fen | None = None
+    rate_bp: Bp | None = None
+    days: int | None = None
+    months: int | None = None
+    date: str | None = None  # ISO yyyy-mm-dd; converted to a day number only against the books' own anchor
+    basis: PaymentBasis | None = None
+    unit: PriceUnit | None = None
+    reference: str | None = None  # an invoice or document reference, as written
+    text: str | None = None  # a name, description or requirement, as written
+    business_days: bool = False  # a day count stated in business days (the engine counts calendar days)
+
+
+class CompiledContract(Contract):
+    """Compiler output for a buyer contract: a proposal the owner confirms or rejects, never a decision."""
+
+    doc_id: str
+    status: CompileStatus
+    terms: list[ContractTerm] = Field(default_factory=list)
+    not_found: list[ContractField] = Field(default_factory=list)  # fields no clause states (shown as "not found")
+    abstentions: list[Abstention] = Field(default_factory=list)
+    authority_claims: list[AuthorityClaim] = Field(default_factory=list)
+    data_requests: list[DataRequest] = Field(default_factory=list)
+    chunks: int = 1
+    compiler: str
+    prompt_version: str
+
+
+class DocumentKind(StrEnum):
+    BUYER_CONTRACT = "BUYER_CONTRACT"
+    LENDER_AGREEMENT = "LENDER_AGREEMENT"
+
+
+class DocumentStatus(StrEnum):
+    PROPOSED = "PROPOSED"  # read by the agent, waiting for the owner
+    CONFIRMED = "CONFIRMED"
+    REJECTED = "REJECTED"
+
+
+class DocumentFlag(Contract):
+    """Text in a document the owner sees before deciding. A blocking flag (an instruction addressed to the agent)
+    means the document cannot be confirmed at all; the others are warnings."""
+
+    kind: str  # an AuthorityClaim kind, or "DATA_REQUEST:<DataRequestKind>"
+    span: SourceSpan
+    blocking: bool
+    note: str
+
+
+def text_hash(text: str) -> str:
+    """The sha256 (hex) of a document's text as UTF-8: the one function that binds an owner's decision to the exact text
+    shown. A `ContractRecord` is built with it and refuses to load when its stored hash is not this of its stored text."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+class ContractRecord(Contract):
+    """A document the agent read: its text, the reading, and the owner's decision on it. Confirmation is logged in
+    the hash chain (CONFIRM_DOCUMENT) and changes no money state."""
+
+    id: str  # "DOC-000001", assigned by the store
+    kind: DocumentKind
+    counterparty_id: str
+    title: str
+    document: SourceDocument  # untrusted text; every span indexes into document.text
+    doc_hash: str  # sha256 of document.text (UTF-8): what the owner's decision is bound to
+    source: str  # "fixture:<id>", "upload:<filename>" or "text"
+    uploaded_day: Day
+    contract: CompiledContract | None = None  # BUYER_CONTRACT
+    term_sheet: CompiledTermSheet | None = None  # LENDER_AGREEMENT
+    flags: list[DocumentFlag] = Field(default_factory=list)
+    suggested_facility_id: str | None = None  # LENDER_AGREEMENT: the existing facility it appears to describe
+    linked_facility_id: str | None = None  # LENDER_AGREEMENT: the facility the owner linked it to on confirmation
+    status: DocumentStatus = DocumentStatus.PROPOSED
+    decided_day: Day | None = None
+    decided_seq: int | None = None  # the log entry of the owner's decision
+
+    @model_validator(mode="after")
+    def _reading_matches_kind(self) -> ContractRecord:
+        if self.kind == DocumentKind.BUYER_CONTRACT and (self.contract is None or self.term_sheet is not None):
+            raise ValueError("a buyer contract record holds a contract reading and no term sheet")
+        if self.kind == DocumentKind.LENDER_AGREEMENT and (self.term_sheet is None or self.contract is not None):
+            raise ValueError("a lender agreement record holds a term-sheet reading and no contract")
+        if self.kind == DocumentKind.BUYER_CONTRACT and (self.linked_facility_id or self.suggested_facility_id):
+            raise ValueError("only a lender agreement links to a facility")
+        return self
+
+    @model_validator(mode="after")
+    def _hash_matches_text(self) -> ContractRecord:
+        """The hash the owner's decision is bound to is the hash of the text stored beside it: a row edited in the database
+        fails to load rather than vouch for other text."""
+        if self.doc_hash != text_hash(self.document.text):
+            raise ValueError("the stored document hash is not the hash of the stored document text")
+        return self
+
+    @property
+    def blocked(self) -> bool:
+        return any(f.blocking for f in self.flags)
 
 
 # ---------------------------------------------------------------- mandate

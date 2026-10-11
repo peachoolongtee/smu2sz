@@ -22,6 +22,11 @@ import type {
   CapexRequest,
   CapexView,
   EnvelopeView,
+  ContractFixture,
+  DealsView,
+  DocumentDecision,
+  DocumentsList,
+  DocumentView,
   FundingView,
   HomeView,
   LedgerView,
@@ -40,6 +45,7 @@ import type {
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
+  SubmitDocumentRequest,
   SubmitOfferRequest,
   TrajectoryView,
   VerdictView,
@@ -184,6 +190,19 @@ export const live = {
   demoBankReceipt: () => http<BankReceiptResult>("POST", "/demo/bank-receipt", { body: {} }),
 
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
+
+  // contract ingestion (brief 03): every route needs the owner token; the responses already have the page's shape
+  getDeals: (lang: "en" | "zh" = "en") => http<DealsView>("GET", `/deals${lang === "zh" ? "?lang=zh" : ""}`),
+  getDocuments: (lang: "en" | "zh" = "en") => http<DocumentsList>("GET", `/documents${lang === "zh" ? "?lang=zh" : ""}`),
+  getDocument: async (id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> =>
+    (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).document,
+  submitDocument: async (req: SubmitDocumentRequest): Promise<DocumentView> =>
+    (await http<{ document: DocumentView }>("POST", "/documents", { body: req })).document,
+  decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null) =>
+    http<DocumentDecision>("POST", `/documents/${enc(id)}/${decision}`, {
+      body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
+    }),
+  getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

@@ -1,0 +1,383 @@
+{
+  "day": 0,
+  "lang": "en",
+  "deals": [
+    {
+      "counterparty_id": "BUYER-1",
+      "counterparty_name": "Foshan Home Retail Co.",
+      "day": 0,
+      "has_contract": true,
+      "pending_documents": [],
+      "label": "Read by the agent, confirmed by you",
+      "contract": {
+        "record_id": "DOC-000001",
+        "title": "Supply agreement FHR-2026-07",
+        "reference": "FHR-2026-07",
+        "signed_display": "1 Sep 2026",
+        "signed_day": -30,
+        "signed_when": "30 days ago",
+        "term_display": "12 months",
+        "cadence_display": "an invoice every 30 days",
+        "end_day": 334,
+        "confirmed_day": 0,
+        "end_when": "in 334 days",
+        "confirmed_when": "today"
+      },
+      "pills": [
+        {
+          "label": "On track",
+          "tone": "ok"
+        }
+      ],
+      "stages": [
+        {
+          "key": "read",
+          "label": "Contract read",
+          "state": "done",
+          "note": "today",
+          "tone": null
+        },
+        {
+          "key": "negotiated",
+          "label": "Terms negotiated",
+          "state": "done",
+          "note": "today",
+          "tone": null
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment in",
+          "state": "pending",
+          "note": "awaited",
+          "tone": null
+        },
+        {
+          "key": "collecting",
+          "label": "Collecting",
+          "state": "now",
+          "note": "1 open",
+          "tone": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "Fulfilled",
+          "state": "todo",
+          "note": "in 334 days",
+          "tone": null
+        }
+      ],
+      "contract_terms": [
+        {
+          "field": "PRICE",
+          "label": "Price",
+          "value_display": "¥420,000.00 per delivery batch",
+          "clause": "3.1",
+          "quote": "The Buyer shall pay the Supplier RMB 420,000 (four hundred and twenty thousand yuan) for each Batch",
+          "span": {
+            "start": 1127,
+            "end": 1226
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": "PER_DELIVERY",
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "INVOICING",
+          "label": "Invoicing",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (in 2 days)",
+          "clause": "4.1",
+          "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
+          "span": {
+            "start": 1425,
+            "end": 1538
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 30,
+          "months": null,
+          "date": "2026-10-03",
+          "date_display": "3 Oct 2026",
+          "day": 2,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "PAYMENT_TERMS",
+          "label": "Payment terms",
+          "value_display": "45 days from the invoice date",
+          "clause": "4.2",
+          "quote": "Each invoice is payable forty-five (45) days after the Invoice Date",
+          "span": {
+            "start": 1545,
+            "end": 1612
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": null,
+          "rate_display": null,
+          "days": 45,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": "INVOICE",
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "EARLY_PAYMENT",
+          "label": "Early payment",
+          "value_display": "The buyer may settle early at 1.20% off, within 2 days",
+          "clause": "4.4",
+          "quote": "The Buyer may settle any invoice early, within two (2) days of the Supplier's written request, at a discount of 1.2% of the invoice amount",
+          "span": {
+            "start": 1733,
+            "end": 1871
+          },
+          "amount_fen": null,
+          "amount_display": null,
+          "rate_bp": 120,
+          "rate_display": "1.20%",
+          "days": 2,
+          "months": null,
+          "date": null,
+          "date_display": null,
+          "day": null,
+          "basis": null,
+          "unit": null,
+          "reference": null,
+          "text": null,
+          "business_days": false
+        },
+        {
+          "field": "SCHEDULED_INVOICE",
+          "label": "Scheduled invoice",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
+          "clause": "Schedule 1, 1",
+          "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
+          "span": {
+            "start": 3566,
+            "end": 3660
+          },
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "rate_bp": null,
+          "rate_display": null,
+          "days": null,
+          "months": null,
+          "date": "2026-09-18",
+          "date_display": "18 Sep 2026",
+          "day": -13,
+          "basis": null,
+          "unit": null,
+          "reference": "RCV-A",
+          "text": null,
+          "business_days": false
+        }
+      ],
+      "blanks": [
+        {
+          "field": "MILESTONE",
+          "label": "Milestone payment",
+          "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
+          "multi": true
+        },
+        {
+          "field": "RETENTION",
+          "label": "Retention",
+          "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
+          "multi": false
+        },
+        {
+          "field": "LATE_INTEREST",
+          "label": "Late-payment interest",
+          "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
+          "multi": false
+        }
+      ],
+      "changes": [
+        {
+          "day": 0,
+          "when": "today",
+          "actor": "OWNER",
+          "label": "You confirmed",
+          "text": "Supply agreement FHR-2026-07, as the agent read it"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "actor": "BUYER",
+          "label": "Buyer asked",
+          "text": "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "actor": "AGENT",
+          "label": "Agent replied",
+          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due in 2 days; Option B: payment terms to 55 days and a price change of 0.30%"
+        },
+        {
+          "day": 0,
+          "when": "today",
+          "actor": "BUYER",
+          "label": "Buyer accepted",
+          "text": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due in 2 days; booked by the agent within your limits"
+        }
+      ],
+      "in_force": [
+        {
+          "key": "payment_terms",
+          "label": "Payment terms",
+          "value_display": "45 days",
+          "vs_contract": "SAME",
+          "vs_contract_text": "Same as the contract",
+          "contract_display": "45 days from the invoice date",
+          "vs_contract_note": null
+        },
+        {
+          "key": "price",
+          "label": "Price per invoice",
+          "value_display": "¥420,000.00",
+          "vs_contract": "SAME",
+          "vs_contract_text": "Same as the contract",
+          "contract_display": "¥420,000.00 per delivery batch",
+          "vs_contract_note": null
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment",
+          "value_display": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due in 2 days",
+          "vs_contract": "DIFFERENT",
+          "vs_contract_text": "Differs from the contract",
+          "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
+          "vs_contract_note": null
+        },
+        {
+          "key": "rebate",
+          "label": "Rebates and concessions",
+          "value_display": "None",
+          "vs_contract": "NONE",
+          "vs_contract_text": "Nothing to compare",
+          "contract_display": null,
+          "vs_contract_note": null
+        }
+      ],
+      "invoices": [
+        {
+          "id": "RCV-A",
+          "label": "RCV-A",
+          "issue_day": -13,
+          "due_day": 32,
+          "issue_when": "13 days ago",
+          "due_when": "in 32 days",
+          "amount_fen": 42000000,
+          "amount_display": "¥420,000.00",
+          "outstanding_fen": 42000000,
+          "outstanding_display": "¥420,000.00",
+          "status": "NOT_DUE",
+          "status_text": "Not due",
+          "tone": "mute",
+          "notes": []
+        }
+      ],
+      "next_invoice": {
+        "day": 2,
+        "when": "in 2 days",
+        "amount_display": "¥420,000.00"
+      },
+      "owed_by_us": {
+        "display_only": true,
+        "deliverables": [
+          {
+            "text": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan",
+            "clause": "5.1",
+            "quote": "The Supplier shall deliver each Batch of Products to the Buyer's distribution centre in Shunde, Foshan"
+          },
+          {
+            "text": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display",
+            "clause": "5.2",
+            "quote": "Each Batch shall conform to the specifications in Schedule 2 and be packed for retail display"
+          }
+        ],
+        "documents": [
+          {
+            "text": "a delivery note signed by the Buyer's warehouse",
+            "clause": "6.1(a)",
+            "quote": "a delivery note signed by the Buyer's warehouse"
+          },
+          {
+            "text": "a VAT special invoice (fapiao) for the Batch",
+            "clause": "6.1(b)",
+            "quote": "a VAT special invoice (fapiao) for the Batch"
+          },
+          {
+            "text": "a quality inspection certificate for the Batch",
+            "clause": "6.1(c)",
+            "quote": "a quality inspection certificate for the Batch"
+          }
+        ]
+      },
+      "checks": [
+        {
+          "status": "ok",
+          "text": "The books count the payment terms from the invoice date, as the contract does (clause 4.2)."
+        },
+        {
+          "status": "ok",
+          "text": "Each invoice in the books is ¥420,000.00, the price in the contract (clause 3.1)."
+        },
+        {
+          "status": "ok",
+          "text": "The books issue an invoice every 30 days, as the contract says (clause 4.1)."
+        },
+        {
+          "status": "ok",
+          "text": "RCV-A matches the contract's schedule (¥420,000.00, issued 13 days ago)."
+        },
+        {
+          "status": "ok",
+          "text": "The agreed 0.85% early payment is within the contract's 1.20% (clause 4.4)."
+        },
+        {
+          "status": "ok",
+          "text": "No accepted change alters the contract's terms, so no amendment is needed (clause 9.1)."
+        }
+      ],
+      "next_action": {
+        "text": "Nothing needs you on this deal today.",
+        "items": [],
+        "actions": [],
+        "tone": "ok"
+      }
+    },
+    {
+      "counterparty_id": "BUYER-2",
+      "counterparty_name": "Dongguan Office Supplies Ltd.",
+      "day": 0,
+      "has_contract": false,
+      "pending_documents": []
+    }
+  ]
+}

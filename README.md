@@ -36,11 +36,11 @@ Switch to **Demo** in the header, click **Start demo** and sign in as the owner 
 **3. Test.**
 
 ```bash
-cd services/api && uv run pytest                     # 5,446 passed, 33 skipped on 3 Oct 2026 (Windows, SKIP_PERF_BENCH=1: the latency benchmarks skipped; two sequential chunks, about 14 min)
+cd services/api && uv run pytest                     # 6,813 passed, 37 skipped on 12 Oct 2026 (dev with contract ingestion, its review fixes and the reskin; macOS, SKIP_PERF_BENCH=1: the latency benchmarks skipped; one run, about 17 min)
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit
 cd apps/web && pnpm exec playwright install chromium   # once
-cd apps/web && pnpm test:e2e:mock                    # no backend: 135 passed, 33 skipped (9 Oct 2026, feat/ux-remediation)
-cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 69 passed, 12 skipped (9 Oct 2026)
+cd apps/web && pnpm test:e2e:mock                    # no backend: 159 passed, 37 skipped (168 and 28 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
+cd apps/web && pnpm test:e2e:live                    # needs uv; starts its own API (in-memory) and web build: 79 passed, 14 skipped (87 and 6 with E2E_STRATEGY=1; 10 Oct 2026, after the merge)
 ```
 
 All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-curve test in `slow.spec.ts`), which run only with `E2E_STRATEGY=1`; the mock skips include the same ones. The live project starts an API on :8000 and a web build on :3000 itself, so those ports must be free; `E2E_API_PORT`, `E2E_LIVE_PORT` and `E2E_PORT` (mock, default 3100) move them. Two switches change the live API: `E2E_DATABASE_URL=sqlite:////absolute/path/e2e.db` makes the API that Playwright starts use that file instead of `memory`, and `E2E_REUSE_API=1` starts no API and runs against one already listening on `E2E_API_PORT` (start it yourself with `CORS_ORIGINS` set to the live web origin; then `E2E_DATABASE_URL` is ignored). In my runs of `live.spec.ts` and of the whole live project on a SQLite file, the file ended with the seed state (the `operations` table empty), because the specs reset the books. Details in `apps/web/README.md`.
@@ -49,7 +49,8 @@ All 12 live skips are strategy tests (11 in `strategy.spec.ts` and the price-cur
 
 ```bash
 python3 scripts/run_scenarios.py --inproc                         # 49 scripted /nl tasks + evidence → services/api/evals/e2e/latest/
-cd services/api && uv run python -m app.security.attacks --report # 255 attacks (122 API + 133 chat, including the NL-CS consent attacks and each buyer attack with and without the buyer's key), 0 with harm
+cd services/api && uv run python -m app.security.attacks --report # 259 attacks (126 API + 133 chat, including the NL-CS consent attacks, each buyer attack with and without the buyer's key, and four on contract ingestion), 0 with harm
+PYTHONUTF8=1 uv run --project services/api python scripts/evaluate_contracts.py   # held-out contract readings → services/api/evals/contracts_heldout_report.md (the set is pending, so the report says so)
 uv run --project services/api python scripts/evaluate.py          # full offline evaluation (about 5 min) → services/api/evals/latest_report.md
 uv run --project services/api python scripts/evaluate.py --suite offers --heldout fixtures/heldout3   # the independent held-out set
 PYTHONUTF8=1 uv run --project services/api python scripts/certify_language_boundary.py --backend cache   # 231-item language-boundary certification; also --backend fake; WRONG_MATERIAL 0 in both. --backend live is pending an API key
@@ -82,6 +83,7 @@ Flags are environment variables read by `services/api/app/config.py` (`1` on, `0
 | Alerts and reconciliation | Cash-flow alerts from the conservative trajectory, each with an executable cure (`POST /alerts/{id}/act`); receipt reconciliation, including promised early payments (AWAITED, RECEIVED, LAPSED, SETTLED_OTHERWISE) | `FEATURE_ALERTS` | on |
 | Current books and clock | Accepted commitments change every later projection; a simulated clock (`POST /clock/advance`); partial settlement; re-verification of a verdict at the moment of commitment (ADR-0006) | core | on |
 | Expected-mode plans | Display-only expected-basis funding plan beside the committed one | `FEATURE_EXPECTED_PLANS` | on |
+| Contract ingestion and the deal summary | Upload a signed buyer contract or a lender agreement (Word, PDF with text, or text); the agent reads it with every term beside its quoted clause, labelled "AI-generated, for reference"; the owner confirms or rejects it (an owner-only operation logged in the chain, which changes no books); once a deal is agreed, the Deals page sets the confirmed contract beside the live books; `SHOW_DEAL` in chat ("where are we with Foshan?") | `FEATURE_CONTRACTS` | on |
 
 Other switches: `LLM_MODE=cache|live`, `LLM_PRIMARY=claude|deepseek`, `DATABASE_URL` (SQLite by default, `memory`, or Postgres), and `DEMO_MODE`.
 

@@ -316,7 +316,7 @@ test("the label toggle switches the UI to Chinese and back", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
 });
 
-test("reset clears the session", async ({ page }) => {
+test("reset clears the session back to the demo's starting point", async ({ page }) => {
   await page.goto("/demo");
   await page.getByTestId("demo-next").click();
   await expect(page).toHaveURL(/\/deals/);
@@ -326,7 +326,11 @@ test("reset clears the session", async ({ page }) => {
   await expect(page).toHaveURL(/\/demo/);
   await expect(stripOf(page)).toContainText("Walk the story");
   await page.goto("/ledger");
-  await expect(page.getByText("No operations yet")).toBeVisible();
+  // The demo opens on the three demo documents read by the agent and confirmed by the owner; nothing else is logged.
+  const ops = page.locator("#operations tbody tr");
+  await expect(ops).toHaveCount(3);
+  await expect(ops.filter({ hasText: "Confirm document" })).toHaveCount(3);
+  await expect(page.getByTestId("chain-status")).toContainText("3 entries");
 });
 
 // ---------------------------------------------------------------- Show, Replay, Reset and the in-flight lock (Wave 6, ticket #75)
@@ -428,14 +432,15 @@ test("Show opens a finished step and changes nothing; Replay runs it again and i
   await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
   expect(await ledgerEntries(page)).toBe(entries);
 
-  // Replay of the first step is the deliberate reset: day 0, no operations, the story at step 1.
+  // Replay of the first step is the deliberate reset: day 0, the story at step 1, and nothing logged but the owner's confirmation of
+  // the three demo documents the demo opens on (brief 03).
   await page.goto("/demo");
   await page.getByTestId("story-replay-1").click();
   await expect(page).toHaveURL(/\/deals/);
   await expect(strip(page)).toContainText(`step 1 of ${STORY_STEPS}`);
   await page.goto("/demo");
   await expect(page.getByTestId("home-day")).toHaveText("Day 0");
-  expect(await ledgerEntries(page)).toBe(0);
+  expect(await ledgerEntries(page)).toBe(3);
 
   // Reset starts the story over.
   await page.goto("/demo");

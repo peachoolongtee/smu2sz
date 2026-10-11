@@ -1,4 +1,4 @@
-"""The compiler entry points: `compile_offer` and `compile_term_sheet`.
+"""The compiler entry points: `compile_offer`, `compile_term_sheet` and `compile_contract`.
 
 Backend chain:
 - LLM_MODE=cache (default): fixture cache, then the rules grammar.
@@ -6,6 +6,9 @@ Backend chain:
   first two).
 Whatever backend answers, its extraction goes through the same grounding (span validation, value
 parsing, lexicon union, conflict detection). The output is a proposal only.
+
+A contract is read chunk by chunk (`compiler.contract.chunk_document`); each chunk takes the backend chain on its own,
+so a recorded chunk replays even when another chunk of the same document falls through to the rules grammar.
 """
 
 from __future__ import annotations
@@ -19,16 +22,24 @@ from typing import TypeVar
 import structlog
 
 from app.compiler.backends import ClaudeBackend, DeepSeekBackend
-from app.compiler.base import BackendError, LLMBackend, OfferResult, TermSheetResult
+from app.compiler.base import BackendError, ContractResult, LLMBackend, OfferResult, TermSheetResult
 from app.compiler.cache import CacheBackend
+from app.compiler.contract import MAX_CHUNKS, ContractTooLong, build_contract, chunk_document, chunk_source
 from app.compiler.grounding import build_offer, build_term_sheet, docs_hash
-from app.compiler.prompts import PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
+from app.compiler.prompts import CONTRACT_PROMPT_VERSION, PROMPT_VERSION, TERM_SHEET_PROMPT_VERSION
 from app.compiler.rules import RulesBackend
 from app.config import Settings, get_settings
-from app.domain.models import CompiledOffer, CompiledTermSheet, SourceDocument
+from app.domain.models import CompiledContract, CompiledOffer, CompiledTermSheet, SourceDocument
 
 log = structlog.get_logger("termsledger.compiler")
-R = TypeVar("R", OfferResult, TermSheetResult)
+R = TypeVar("R", OfferResult, TermSheetResult, ContractResult)
+
+
+def _extract_contract(backend: LLMBackend, chunk: SourceDocument) -> ContractResult:
+    fn = getattr(backend, "extract_contract", None)
+    if fn is None:  # a backend written before contracts: the chain moves on
+        raise BackendError(f"{getattr(backend, 'name', 'backend')} cannot read contracts")
+    return fn(chunk)
 
 
 def cache_dir(settings: Settings) -> Path:
@@ -83,6 +94,20 @@ class Compiler:
         res = self._run(lambda b: b.extract_term_sheet(doc), TERM_SHEET_PROMPT_VERSION, h)
         return build_term_sheet(doc, res.extraction, res.model_id, TERM_SHEET_PROMPT_VERSION)
 
+    def compile_contract(self, doc: SourceDocument) -> CompiledContract:
+        """A buyer contract, read chunk by chunk and grounded as one document. A proposal for the owner only."""
+        chunks = chunk_document(doc)
+        if len(chunks) > MAX_CHUNKS:  # every chunk is a model call in live mode: refuse before the first
+            raise ContractTooLong(len(chunks))
+        parts = []
+        models: list[str] = []
+        for chunk in chunks:
+            cdoc = chunk_source(doc, chunk)
+            res = self._run(lambda b, d=cdoc: _extract_contract(b, d), CONTRACT_PROMPT_VERSION, docs_hash([cdoc]))
+            parts.append((chunk, res.extraction))
+            models.append(res.model_id)
+        return build_contract(doc, parts, "+".join(dict.fromkeys(models)), CONTRACT_PROMPT_VERSION)
+
 
 @lru_cache(maxsize=1)
 def _default_compiler() -> Compiler:
@@ -95,3 +120,7 @@ def compile_offer(docs: list[SourceDocument], counterparty_id: str) -> CompiledO
 
 def compile_term_sheet(doc: SourceDocument) -> CompiledTermSheet:
     return _default_compiler().compile_term_sheet(doc)
+
+
+def compile_contract(doc: SourceDocument) -> CompiledContract:
+    return _default_compiler().compile_contract(doc)

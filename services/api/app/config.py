@@ -55,6 +55,7 @@ class Features:
     envelope: bool = field(default_factory=lambda: _flag("FEATURE_ENVELOPE", default=False))
     price_curve: bool = field(default_factory=lambda: _flag("FEATURE_PRICE_CURVE", default=False))
     collections_worth: bool = field(default_factory=lambda: _flag("FEATURE_COLLECTIONS_WORTH", default=False))
+    contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
     pilot_journal: bool = field(default_factory=lambda: _flag("FEATURE_PILOT_JOURNAL", default=False))  # map #58, default off
 
 

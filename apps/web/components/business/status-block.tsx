@@ -8,7 +8,7 @@ import { versusMinimum } from "@/lib/minimum";
 import { useNarrow, useShort } from "@/lib/use-narrow";
 import type { HomeStatus, HomeView } from "@/lib/types";
 
-/** The status word's pill on the deep block: the bright tone fills it, the ink is dark on it (9.7 to 10.2:1). The block itself never changes colour: the pill does. */
+/** The status word's pill on the deep block: the bright tone fills it, the ink is dark on it (7.3 to 8.2:1). The block itself never changes colour: the pill does. */
 const PILL: Record<HomeStatus, string> = {
   SAFE: "bg-ok-bright",
   WATCH: "bg-warn-bright",
@@ -110,7 +110,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       </dl>
   );
   return (
-    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-4 text-on-deep sm:p-5 short:sm:p-4" data-testid="home-status" data-status={h.status}>
+    <section aria-labelledby="home-status-title" className="on-deep motion-reveal rounded-card bg-brand-900 p-5 text-on-deep sm:p-7 short:sm:p-5" data-testid="home-status" data-status={h.status}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink ${pill}`} data-testid="home-status-word">
           {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
@@ -120,7 +120,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
         <ReadWhen when={h.cash.last_read_when} testId="home-read-when" deep />
       </div>
-      <h1 id="home-status-title" className="mt-1.5 sm:mt-3 text-balance text-xl font-semibold leading-snug text-on-deep sm:text-2xl lg:text-3xl short:lg:text-2xl" data-testid="home-headline">
+      <h1 id="home-status-title" className="mt-1.5 sm:mt-3 text-balance font-display text-xl font-normal leading-snug text-on-deep sm:text-2xl lg:text-[2rem] short:lg:text-2xl" data-testid="home-headline">
         {h.headline}
       </h1>
       <p className="mt-1.5 max-w-3xl text-pretty text-sm text-on-deep-muted sm:text-base" data-testid="home-note">
@@ -130,7 +130,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
       <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3 sm:mt-5 sm:gap-x-10">
         <div>
           <p className="text-sm text-on-deep-muted">{t("biz.cashToday")}</p>
-          <p className="text-3xl font-semibold leading-none tabular-nums tracking-tight text-on-deep sm:text-4xl lg:text-5xl short:lg:text-4xl" data-testid="home-cash">
+          <p className="font-display text-4xl font-normal leading-none lining-nums tabular-nums tracking-tight text-on-deep sm:text-5xl lg:text-6xl short:lg:text-5xl" data-testid="home-cash">
             {h.cash.cash_short}
           </p>
         </div>

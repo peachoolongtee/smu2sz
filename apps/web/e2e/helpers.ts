@@ -22,7 +22,7 @@ export async function resetBooks(request: APIRequestContext): Promise<void> {
   expect(res.ok()).toBeTruthy();
 }
 
-const BRAND_600 = "rgb(26, 95, 224)";
+const BRAND_600 = "rgb(3, 104, 233)";
 
 /** Visible elements filled with the brand blue: the page's primary actions. */
 export async function filledBrand(page: Page): Promise<number> {

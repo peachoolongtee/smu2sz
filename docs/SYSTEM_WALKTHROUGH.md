@@ -10,6 +10,8 @@ and nothing here moves real money. Paths are relative to `services/api/app/` unl
 `docs/`, `fixtures/` or `scripts/`.
 
 Update of 10 Oct 2026: section 12 records the UX remediation of 9 to 10 Oct (wayfinder map #65, branch `feat/ux-remediation`, 28 audit findings closed, `docs/UX_REMEDIATION_REPORT.md`). Sections 1 to 11 keep their 3 Oct text; where the remediation added a route, a module or a page, sections 4, 5 and 6 say so in place, and section 9 carries the current test counts. The remediation changed no engine rule, so the figures in section 7 stand.
+Contract ingestion (brief 03) was added on 5 Oct 2026 on the branch `feat/contract-ingestion`: section 5.21 describes
+it, section 6 its screens, section 10 its limits and section 13 lists each change with its test file.
 
 Contents
 
@@ -25,6 +27,7 @@ Contents
 10. Known limits
 11. The 3 Oct 2026 changes, each with its test file
 12. The 9 to 10 October changes (map #65)
+13. Contract ingestion (brief 03), 5 Oct 2026
 
 ---
 
@@ -84,8 +87,9 @@ A Tier-2 operation returns `PENDING_APPROVAL` and sits in the approvals queue. A
 ### Feature flags (`config.py`)
 
 `FEATURE_TERMS_GUARD`, `FEATURE_DEBT_DESK`, `FEATURE_CAPEX`, `FEATURE_BORROWER_FILE`,
-`FEATURE_BUYER_NEGOTIATION`, `FEATURE_SECURITY_SCENES`, `FEATURE_ALERTS`, `FEATURE_EXPECTED_PLANS` all default on.
-A disabled feature answers `FEATURE_DISABLED`.
+`FEATURE_BUYER_NEGOTIATION`, `FEATURE_SECURITY_SCENES`, `FEATURE_ALERTS`, `FEATURE_EXPECTED_PLANS` and
+`FEATURE_CONTRACTS` (contract ingestion and the deal summary, section 5.21) all default on. A disabled feature answers
+`FEATURE_DISABLED`.
 
 ---
 
@@ -172,13 +176,18 @@ state + mandate + commitments ─► books ──┘      │  ▲              
 clock ─► state            bank feed ─► executor                          │
 alerts ◄─ books, financial, operations log ──► act ──────────────────────┘
 nl (chat) ─► compiler, verifier, funding, alerts, capex, borrower_file, executor; every reply ─► egress
+uploaded document ─► ingest ─► compiler ─► contracts (record) ─► owner confirms (executor, log only)
+deals ◄─ confirmed contract, books, operations log, reconciliation
 api ─► everything; web ─► api
 ```
 
 | Module | Owns | Reads | Called by |
 | --- | --- | --- | --- |
 | `domain` | Contracts, money arithmetic, fixture loaders | nothing | all |
-| `compiler` | Text → typed offer, grounding, coverage proof, flag lexicon | documents only (never state or mandate) | api, nl |
+| `compiler` | Text → typed offer, term sheet or contract reading; grounding, coverage proof, flag lexicon | documents only (never state or mandate) | api, nl |
+| `ingest` | File → text: Word, PDF with a text layer, plain text; refuses scans, other types and oversize files | the uploaded bytes | api |
+| `contracts` | Contract records: reading a document into a record, the suggested facility, the review view, the held-out scorer | compiler, state (facilities, counterparties) | api, deals |
+| `deals` | The deal summary: a confirmed contract beside the books, and its chat reply | contract records, state, commitments, operations log, reconciliation | api, nl |
 | `financial` | The day-by-day engine, charges, amortisation, the existing-debt schedule (`debts.py`), concession valuation | state, obligations, funding actions | verifier, funding, alerts, capex, borrower file, nl |
 | `books` | Current books: state plus the live commitments' obligations | state, commitments | verifier, alerts, nl, api |
 | `funding` | Funding menu, same-basis rates (`rates.action_rate`), the router, break-even, admission (`admission.py`), the leg rule shared by both (`legs.py`) | state, mandate, financial, covenants | verifier, nl, api, capex, executor |
@@ -758,10 +767,11 @@ counters. Nothing is stored, sent or executed.
 
 ### 5.17 Security testing and the scoreboard (`security/`)
 
-255 attacks on 3 Oct 2026 (`services/api/evals/security/latest_report.md`): 122 through the API in 14 classes
+259 attacks on 5 Oct 2026 (`services/api/evals/security/latest_report.md`): 126 through the API in 14 classes
 (prompt injection, fake lender, fake historical concession, privilege escalation, mandate and reserve exfiltration,
 cross-buyer, replay, expired commitment, revoked or forged mandate, changed offer, canary extraction, social
-engineering, failure recovery) and 133 through chat as the owner (43), a buyer (64) and an agent-key holder (26).
+engineering, failure recovery; the four contract-ingestion attacks DOC-01 to DOC-04 of section 5.21 fall in the
+injection, fake-lender, cross-buyer and privilege-escalation classes) and 133 through chat as the owner (43), a buyer (64) and an agent-key holder (26).
 The buyer attacks run twice, once with no channel key (`NL-CX01`) and once with the buyer's own key (`NL-CX01K`).
 The 41 consent attacks `NL-CS01` to `NL-CS41` send negated, questioning, conditional, future-dated,
 foreign-currency, unreadable-amount and "do not approve" texts in English and Chinese with the owner token and
@@ -824,6 +834,77 @@ arrives through this route. It is owner only and `DEMO_MODE` only (403 `DEMO_ONL
 (requested by `SYSTEM`) for the one early payment the books are still waiting for, in the amount they promised, with bank reference
 `DEMO-RCPT-1`; a second call books nothing (409 `NO_PROMISED_RECEIPT`). The bank-feed key stays on the server.
 
+### 5.21 Contract ingestion and the deal summary (`ingest/`, `compiler/contract*.py`, `contracts/`, `deals/`)
+
+The owner uploads a signed contract with a buyer, or a lender agreement. The agent reads it; the owner checks the
+reading against the text and confirms or rejects it; a confirmed contract is shown beside the live books on the deal
+card. The agent read it, the owner confirmed it: a document never changes the books. No receivable, recurring
+invoice, facility or operation is created from one, and the language model sets no financial state.
+
+1. **Text** (`ingest/text.py`). Word (paragraphs and tables in body order), PDF with a text layer (pages joined, visual
+   line wraps joined back into paragraphs), `.txt` and `.md`. Refused with a reason: a scanned PDF ("this PDF is a
+   scan; upload a text PDF or Word file"), any other file type, more than 5 MB, more than 400,000 characters, an empty
+   document. The text is normalised (line endings, NFC, control characters, blank lines) before it is hashed, so the
+   Word and PDF copies of a demo document give the same text and the same hash.
+2. **Reading a buyer contract** (`compiler/contract.py`, prompt `contract-v1`). The text is split at its section
+   headings into chunks of at most 6,000 characters, and each chunk goes through the same backend chain as an offer:
+   with `LLM_MODE=cache` a recorded reading, then the rules grammar (`compiler/contract_rules.py`, recorded as
+   `rules-v1`); live, Claude, then DeepSeek, then rules. The schema has 18 fields: the parties, the agreement number,
+   the signed, start and end dates, the duration, the price and its unit, the invoicing cadence, scheduled invoices,
+   the payment terms and what they count from (invoice, delivery, acceptance, month end), early payment, milestones,
+   retention, late-payment interest, deliverables, the documents payment depends on, and how the contract is amended.
+   Every value must quote its clause. Grounding finds the quote verbatim and maps it back into the whole document,
+   and every amount, rate, period and date is parsed in code from the quoted words (`compiler/contract_parsing.py`),
+   never taken from the model. Words and figures that disagree ("thirty (45) days") are a conflict; two clauses that
+   disagree on one field give CONFLICTING_SOURCES; a field with no clause is listed as not found, with the reason.
+   The flag lexicon runs on every sentence with contract boilerplate filtered out; text addressed to the agent, or
+   asking for its instructions, is a blocking flag: the document cannot be confirmed and a security event is logged.
+3. **Reading a lender agreement.** The term-sheet path (prompt `termsheet-v3`) now also reads an advance rate, a
+   "facility limit of" principal, same-day or "within three (3) days" funding, DSCR and leverage thresholds (written
+   with ×, "times" or ":1") and a clean-down period, and takes a fee's period from the fee's own sentence. The reading
+   is a proposed facility; the record suggests the facility on the books from the same lender and of the same kind,
+   and the review screen sets the agreement against it row by row. The demo agreements reproduce FAC-LINE and FAC-IF
+   exactly (`tests/contracts/test_golden_equality.py`).
+4. **Records** (`ContractRecord`, table `contract_records`, migration `0007`, with row-level security on PostgreSQL).
+   A record holds the text, its SHA-256, the reading, the flags, the suggested and linked facility, and the status
+   PROPOSED, CONFIRMED or REJECTED. A document is read only for a counterparty on the registry with the matching role
+   (a buyer contract with a buyer, a lender agreement with a lender); an unknown sender is refused before anything
+   is read, with an UNKNOWN_COUNTERPARTY security event.
+5. **Confirming** (`Executor.decide_document`). Owner only: anyone else gets INSUFFICIENT_AUTHORITY and a
+   PRIVILEGE_ESCALATION event. The decision is bound to the hash of the text the owner reviewed (another hash:
+   TERMS_CHANGED), made once (PRECONDITION_FAILED after that), and refused for a blocked document. A link must be a
+   lender agreement being confirmed, to a facility of that lender and of the agreement's kind. The decision is logged
+   in the hash chain as CONFIRM_DOCUMENT or REJECT_DOCUMENT (Tier 2, requested by the owner, with the document id and
+   hash), and the record keeps the log sequence number. Nothing else is written.
+6. **Routes** (owner only, behind `FEATURE_CONTRACTS`). `POST /documents` takes a demo document (`fixture_id`, and
+   `format` md, docx or pdf), an upload (`filename` and `content_base64`, with `kind` and `counterparty_id`) or pasted
+   `text`. `GET /documents`, `GET /documents/{id}` (the review view: the text, every term with its span and quote, the
+   blanks and why, the flags, the "AI-generated, for reference" label), `POST /documents/{id}/confirm` and `/reject`
+   (`doc_hash`, and `link_facility_id` for a lender agreement), `GET /fixtures/contracts`, `GET /deals`,
+   `GET /deals/{buyer}`.
+7. **The deal summary** (`deals/`, on the Deals page). For each buyer with a confirmed contract: its terms with their clauses and the fields
+   left blank; what changed since signing (the confirmation, the buyer's offers, the agent's replies, the accepted
+   commitment, the bank receipts); the terms in force against the contract (same, different, not in the contract);
+   the buyer's invoices from the books (paid, late, advance waiting for the owner, financed, due today, not due) and
+   the next one; what the supplier owes (deliverables and payment documents, shown with their quotes and not tracked);
+   checks of the books against the contract; the deal stage; and the next action, with links. The Deals page shows it
+   after the negotiation, once both parties have agreed (a commitment with the buyer accepted, the "Terms negotiated"
+   stage done), right after what was agreed; the next step then points at it, and it links to the contract it was built
+   from. Before a deal is agreed, and for a buyer without a confirmed contract, it is not shown.
+8. **Chat.** "where are we with Foshan?" or "跟佛山的合同进展如何" is SHOW_DEAL: owner only and read-only, it answers
+   with the deal summary in plain lines, in English or Chinese; with two buyers and no name it asks which.
+9. **Egress.** Every contract record's values (price and other amounts, rates, payment terms, the agreement number,
+   a lender agreement's limit and rates) are protected values owned by that counterparty, whether or not the reading
+   was confirmed. Another buyer asking for them is refused and they are never sent to anyone else.
+10. **The demo's starting point.** `POST /demo/reset` (`Runtime.reset_demo`) and a fresh start on an empty store read
+   the three demo documents exactly as an upload is read and confirm them as the owner through the executor, so the
+   chain opens with three CONFIRM_DOCUMENT entries (DOC-000001 to DOC-000003, day 0) and the deal summary is ready the
+   moment a deal is agreed on Deals. The books are untouched, and the home's "What changed" leaves the confirmations out
+   (Activity lists them, each linking to its contract). Reading a demo document again is a new reading (DOC-000004 on fresh demo
+   books) that the owner confirms or rejects; the deal follows the buyer contract confirmed last. `Runtime.reset()`
+   alone, which the tests, the attack harness, the certification, the scenario runner and `scripts/demo_run.py` use,
+   leaves the chain empty, so their figures (the 14 ledger entries of section 7 among them) are unchanged.
+
 ---
 
 ## 6. The web app (`apps/web`)
@@ -842,7 +923,8 @@ read as they did.
 | Page | Answers |
 | --- | --- |
 | `/` Home | Am I safe (a status word and one sentence from `GET /home`; "Below reserve today." when cash is already under the reserve, the series starting today, when it was read and whether any read is partial), what should I do (the next step carries the one primary button: the best action with what is received, the cost and rate, the landing day, who decides, what if nothing, the after-state, or Review and decide when an approval is pending), what is left after a partial rescue (the remaining-task card with links), what we are waiting on, what changed, who has not paid, and the details behind a disclosure |
-| Deals | One workspace in the server's order: the buyer card with a state chip from the decision record, what FLOW recommends, the priced response with a two-step bound Send and its "This will" lines, then the asks, the cost, why it matters, the agreements and one Advanced fold; the Inbox is folded to one row; `?buyer=` opens a buyer's thread |
+| Deals | One workspace in the server's order: the buyer card with a state chip from the decision record, what FLOW recommends, the priced response with a two-step bound Send and its "This will" lines, then the asks, the cost, why it matters, the agreements and one Advanced fold; the Inbox is folded to one row; `?buyer=` opens a buyer's thread. Once both parties have agreed a deal, its summary (section 5.21): the confirmed contract's terms with their clauses beside the live books, what changed since signing, the terms in force, the invoices, what each side owes, the contract check and the next step, with a link to the contract |
+| Documents | The contracts and lender agreements the agent has read: read a demo document (Markdown, Word or PDF) again or upload a file; the review screen highlights every clause beside the term the agent gave, lists the fields left blank and the flags, sets a lender agreement against the facility on the books, and labels the reading "AI-generated, for reference" until the owner confirms or rejects it. Opened from a deal summary, with the way back to Deals; an engine view in Demo mode |
 | Cash & funding | The answer sentence, the cash line against the safe level with its forecast basis as the subtitle and net day labels, the ways to cover the gap drawn by the server's groups and ranks, the remaining task, doors to the what-if sandbox and the equipment purchase, the monthly readings as a disclosure |
 | Receivables | The top action above the tiles with Chase payment (the dialog from `GET /receivables/{id}/chase`), open invoices by buyer name with days late, promised early payments, the four facts on every receipt, the ranking disclosure |
 | Approvals | Each pending item as a question with the terms, the economic effect and the timing above the buttons; Approve is disabled, with the reason, when the terms cannot be loaded; a decided card leads with the result in the server's tone and keeps the cost that was quoted; ids and tier under Show details |
@@ -997,12 +1079,29 @@ for other money.
 
 ## 9. Tests, evidence and how to run everything
 
+After the merge of feat/upgrading and contract ingestion into `dev` (`feat/strategy-mvp-contracts`, 10 Oct 2026): 6,712 backend
+tests passed, 37 skipped; 49 of 49 scripted chat scenarios; `scripts/demo_run.py` exit 0; 259 attacks, 0 with harm; the
+web app's lint, typecheck and unit checks (91) pass, mock e2e 159 passed (168 with the strategy
+flag) and live e2e 79 passed (87 with it).
+
 State at 10 Oct 2026, from the remediation report's section 12 (`docs/UX_REMEDIATION_REPORT.md`; `feat/ux-remediation` at `41a0add`, whose only commits after the last code commit `c87a3a6` are documents): the whole API suite 6398 passed, 37 skipped after the Wave 7 API merge, with the golden digests unchanged throughout; web, with zero retries after Wave 7: unit 76, mock e2e 135 on the default build and 144 with the strategy flag, live e2e 69 and 77; axe reports zero serious or critical findings at 412 and 1440 px. The Wave 8 gate that reruns all of this on the final head from a clean clone, on the SQLite file store and in memory, is recorded under `docs/research/ux-remediation-2026-10-09/gate/` and was not yet written when this section was refreshed. The documentation pass that refreshed this section re-ran only `tests/decisions`, `tests/api/test_demo_bank_receipt.py` and `tests/api/test_collections.py` (144 passed). Everything else in this section, including the scenario, attack, evaluation, certification and concurrency figures, is the 3 Oct record below and was not re-run.
+
+After the merge into the redesigned UI (`feat/upgrading-contracts`, 8 Oct 2026): 5,716 backend tests passed, 33 skipped;
+49 of 49 scripted chat scenarios; `scripts/demo_run.py` exit 0; the web app's lint, typecheck and unit checks (17) pass,
+mock e2e 58 passed (7 skipped) and live e2e 41 passed (2 skipped).
+
+On `feat/contract-ingestion` (5 to 8 Oct 2026, contract ingestion added): 5,669 backend tests passed, 33 skipped (the
+same skips as below), in one run (about 21 minutes on a quiet machine); 49 of 49 scripted chat scenarios (87 turns); 259 attacks (126 API, 133
+chat), 0 with harm; `scripts/demo_run.py` exit 0 with the same 14 ledger entries; `scripts/evaluate.py` with every
+target passing (the same 15 held-out label mismatches as at `db097e0`, only timings and the four new attacks changed);
+the language-boundary certification unchanged in the cache and fake runs (WRONG_MATERIAL 0); the web app's lint, typecheck, build
+and unit checks (17) pass, mock e2e 45 passed (1 skipped, a live-only test) and live e2e 40 passed (2 skipped,
+mock-only). The rest of this section is the state at `db097e0`.
 
 The 3 Oct record, kept as written: at `db097e0` on the Windows machine: 5,446 backend tests passed, 33 skipped (7 router latency benchmarks (`SKIP_PERF_BENCH=1`; their targets were set on another machine), 15 exhaustive router differential cases that run only with `ROUTER_DIFF_FULL=1`, 10 PostgreSQL concurrency cases that need `TERMSLEDGER_TEST_DATABASE_URL`, and the SQL variant of a corrupted-row test, which the attack catalogue covers (FR-12c)), run as
 two sequential chunks (chunk A: `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock
 tests/commitments tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial
-tests/funding`; chunk B: `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier
+tests/funding`, plus `tests/contracts tests/ingest` since contract ingestion; chunk B: `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier
 tests/whatif tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`); 49 of 49 scripted
 chat scenarios (87 turns), 49 evidence chains valid; 255 attacks (122 API, 133 chat), 0 with harm;
 `scripts/evaluate.py` with every target passing (runnable optimality 26/26, priced 26/26); the language-boundary
@@ -1045,6 +1144,7 @@ The scenario, attack and evaluation runs rewrite tracked files under `services/a
 | `scripts/run_scenarios.py` | Results, per-task evidence and transcripts under `services/api/evals/e2e/latest` |
 | `scripts/evaluate.py` | `services/api/evals/latest_report.{md,json}` |
 | `scripts/verify_evidence.py` | VALID or INVALID for one evidence file |
+| `scripts/evaluate_contracts.py` | The held-out contract readings, `services/api/evals/contracts_heldout_report.{md,json}` (pending until the set exists) |
 | `scripts/build_deliverables.py` | The three official docx files under `docs/deliverables/out` |
 | `scripts/demo_run.py` | The 17-step path printed to the terminal; writes nothing |
 | `apps/web/scripts/record-mocks.mjs` | Every web mock file, from a running API |
@@ -1130,8 +1230,15 @@ decision.
   terms items (H09a, H09b, H12a, H39) are labelled NEEDS_OWNER_APPROVAL and now return REJECT with
   RESERVE_BREACH on the cash-corrected books (the owner cannot approve past a hard rule); the labels were not
   changed, so those four, and the near-miss pair H12, are reported as misses.
+- **Contracts.** A confirmed contract is shown, never booked: a new buyer's contract does not create its receivables
+  or recurring invoices, and a lender agreement does not add or change a facility (the owner's ADD_FACILITY still
+  does). Deliverables and payment documents are listed, not tracked. Scanned PDFs are refused (no OCR). The demo
+  readings are recorded (`rules-v1`, the deterministic grammar, since no model key was available); the grammar was
+  written against the three demo documents, so it says nothing about other contracts. The held-out set that would
+  measure that is pending (`services/api/evals/contracts_heldout_report.md` says so and quotes no figure). The demo
+  documents are English; a Chinese contract has not been tried. The deal summary's text is English only.
 - **Not built.** Named stress scenarios, payment by acceptance bill, recurring outflows, Chinese server text,
-  deployment, an "AI-generated" label in the UI, a LICENSE file. The statutory-due-date module and the mock
+  deployment, a LICENSE file. The statutory-due-date module and the mock
   lender were deleted rather than left empty.
 - **Not verified.** Live-model mode: the language-boundary certification harness is built and passes in cache and fake
   modes (WRONG_MATERIAL 0 on 231 items) but has not run against a real model, which needs a key (LC1, U-001); the
@@ -1247,3 +1354,57 @@ unless they start with `apps/`.
 What this section does not claim. The zh sentences are template glosses and await a native reader. The decision record's Postgres
 behaviour awaits the G4 run. No screen-reader session, zoom or real-device pass was run and no WCAG conformance is claimed. The report's
 section 14 lists the remaining debt.
+
+## 13. Contract ingestion (brief 03), 5 Oct 2026
+
+Built on `feat/contract-ingestion` from `experiments` (`docs/handover/03_contract_ingestion_brief.md`). The owner's
+decisions: deliverables are shown, not tracked (Q1); confirmation is an owner-only operation logged in the chain (Q2);
+a confirmed contract never changes the books (Q3); English contracts (Q4). With no model key, the demo readings were
+recorded with the deterministic grammar (`rules-v1`); `cd services/api && uv run python -m app.compiler.record_cache
+--source live --only contracts` records them again with the live model when a key is set. Test paths are under `services/api/tests/` unless they start with
+`apps/`.
+
+| Change | Where it is described | Test file |
+| --- | --- | --- |
+| Text extraction from Word, text PDF, `.txt` and `.md`, with refusals for scans, other types, size and empty files | 5.21 | `ingest/test_text.py` |
+| The contract schema, prompt `contract-v1`, grounding, chunking at headings, words-and-figures conflicts, boilerplate-filtered flags | 5.21 | `compiler/test_contract.py`, `compiler/test_cache.py` |
+| Lender agreements on the term-sheet path (`termsheet-v3`): advance rate, limit, same-day and three-day funding, DSCR, leverage, clean-down, the fee period | 5.21 | `compiler/test_term_sheet_agreements.py` |
+| Contract records, both stores, migration `0007` | 5.21 | `persistence/test_contract_records.py`, `persistence/test_migrations.py` |
+| CONFIRM_DOCUMENT and REJECT_DOCUMENT: owner only, bound to the hash, once, logged, no books written | 5.21 | `operations/test_decide_document.py` |
+| The document and deal routes, the registry and role checks, the injection events | 5.21 | `api/test_documents.py`, `api/test_deals.py` |
+| SHOW_DEAL in chat, owner only | 5.12, 5.19 | `nl/test_show_deal.py`, `nl/test_capabilities.py` |
+| Contract terms as protected values | 5.13, 5.19 | `egress/test_contract_values.py` |
+| The three demo documents (Markdown, Word, PDF) reproduce the demo books: the recurring invoices, RCV-A, the early-payment terms, FAC-LINE and FAC-IF | 5.21 | `contracts/test_golden_equality.py` |
+| The held-out harness and report (the set is pending) | 10 | `contracts/test_heldout_scoring.py`, `scripts/evaluate_contracts.py` |
+| Four attacks: an instruction inside a clause, an unregistered lender's agreement, a buyer asking for another buyer's contract, a non-owner confirmation | 5.17 | `security/test_nl_attacks.py`, `services/api/evals/security/latest_report.md` |
+| The web: the deal summary on Deals after the negotiation (merged into the redesigned UI), the documents page with the review screen (a Business route opened from a deal summary, and a Demo engine view), Activity's links to the contracts, recorded mocks, English and Chinese | 6 | `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/responsive.spec.ts`, `apps/web/scripts/check-mocks.test.mjs` |
+| The demo opens on the three demo documents confirmed by the owner (three logged confirmations, no books changed), so the deal summary is ready as soon as a deal is agreed; a demo document can be read again | 5.21 | `api/test_demo_documents.py`, `apps/web/e2e/documents.spec.ts`, `apps/web/e2e/demo.spec.ts` |
+
+## 14. The 11 to 12 October merge: contract ingestion, its review fixes and the reskin
+
+Merged into `dev` on 12 Oct 2026 through `int/contracts`: `feat/strategy-mvp-contracts` (section 13, Chromo369369, rebased on the
+remediation), the two review branches `fix/contracts-api` and `fix/contracts-web`, and `feat/endowus-redesign` (haoencheo2025).
+ADR-0012 records the design: a confirmed contract is a record the deal summary reads, never the books; the owner's decision is an
+owner-only, hash-bound operation on the chain; the stability set changed additively by explicit exception.
+
+What the review fixes changed (the code review's and the design review's findings, all with tests): a payment term that does not
+say what its days count from is NOT_COMPARABLE on the deal card, in the checks and in force, never a match; a price per unit, per
+month or in total is NOT_COMPARABLE, not DIFFERENT; an uploaded document is read outside the runtime lock with caps on the unzipped
+size (20 MB), PDF pages (60) and reading chunks (40); a repeated decision on a document answers with the first decision and appends
+no log row, a different decision is 409 `ALREADY_DECIDED`, a stale hash 409 `TERMS_CHANGED`; a `ContractRecord` validates its hash
+against its text on load; `GET /deals`, `GET /documents` and `GET /documents/{id}` take `lang` and give every sentence in both
+languages with relative-day words and no ids or enums in Business text (`tests/deals/test_lang.py`); startup no longer fails when the
+demo documents cannot be read. On the web: Business words throughout the Documents and deal surfaces, `lang` on the three reads,
+the confirm and reject controls as an irreversible action (both disabled while busy, the reason beside the button, the facility link
+off by default and named, the 409s in words), the deal summary folded into "Your agreements" with a headline, a few facts and one action.
+
+The reskin: a desktop sidebar of the five sections (the phone tab bar unchanged), a revised palette and type scale with the contrast
+ratios recomputed in `apps/web/DESIGN.md`, a deal picture (cash line, reach donut, facility meters; fen sizes marks, every label is a
+server string), next step first with clause links into the document, a drop zone on Documents. No runtime font host: the two named
+faces are not shipped (Google Fonts is unreachable from mainland China); the stacks fall back to the system faces.
+
+Gate on `int/contracts` before the merge, zero retries: API 6,813 passed, 37 skipped; web unit 91; typecheck, lint and build clean;
+mock e2e 163 default and 172 with the strategy flag; live e2e 86 default and 94 with the strategy flag (one contract spec updated to the
+idempotent decision). Screenshots at four widths under `docs/screenshots/contracts-reskin-2026-10-12/`. Debt filed as #103; the one
+team branch not merged, `feat/ui-changes-biz` (a money-in-and-out chart), is the owner's decision on #104. The held-out contracts of
+brief 03 section 6.8 are still unwritten: no accuracy claim is made for the reading.

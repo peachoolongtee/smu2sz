@@ -1228,6 +1228,34 @@ _VERDICT_PHRASES: tuple[tuple[re.Pattern[str], str], ...] = tuple((re.compile(p)
 ))
 
 
+# ---------------------------------------------------------------- the owner's decision on a contract the agent read (brief 03)
+
+# A document's title as the reading gives it: the demo titles and the defaults (`contracts.records.KIND_TITLES`, "Contract {ref}")
+# are said in Chinese with the reference kept; a title the owner typed stays as written.
+_DOC_TITLES = {"Supply agreement": "供货协议", "Credit line agreement": "信用额度协议", "Invoice financing agreement": "发票融资协议",
+               "Buyer contract": "买方合同", "Lender agreement": "贷款协议", "Contract": "合同"}
+_DOC_TITLE = re.compile(r"(?P<kind>" + "|".join(sorted(map(re.escape, _DOC_TITLES), key=len, reverse=True)) + r")(?: (?P<ref>[A-Z0-9][\w-]*))?")
+
+
+def _doc_title(title: str) -> str:
+    m = _DOC_TITLE.fullmatch(title)
+    if m is None:
+        return title
+    return _DOC_TITLES[m["kind"]] + (f" {m['ref']}" if m["ref"] else "")
+
+
+@rule(r"Document (?P<id>DOC-\d{6}) \((?P<title>.+?)\) confirmed by the owner: the agent read it, the owner confirmed it; nothing in the books"
+      rf" changed(?:; linked to (?P<fac>{N}|FAC-[\w-]+) for reference \(the facility itself is unchanged\))?")
+def _doc_confirmed(m: re.Match[str]) -> str:
+    out = f"文件 {m['id']}（{_doc_title(m['title'])}）已由您确认：代理读取了该文件，您确认了读取结果；账本未作任何更改"
+    return out + (f"；已关联到{m['fac']}以供参考（该融资工具本身未变）" if m["fac"] else "")
+
+
+@rule(r"Document (?P<id>DOC-\d{6}) \((?P<title>.+?)\) rejected by the owner; nothing recorded from it")
+def _doc_rejected(m: re.Match[str]) -> str:
+    return f"文件 {m['id']}（{_doc_title(m['title'])}）已由您驳回；未从中记录任何内容"
+
+
 # ---------------------------------------------------------------- the verdict's Advanced fold: passed checks and the autonomy proof
 # `passed_checks[].label / observed / limit` and `autonomy.covered / gaps / notes` are the verifier's and the compiler's English. The
 # evaluate view says each beside the original as `*_when`; these templates are what the Chinese one is made from. Figures, rates and names

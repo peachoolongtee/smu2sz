@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
-import { Badge, Button, Callout, Card, ErrorState, SlowNotice, textLinkClass } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
@@ -12,7 +12,7 @@ import { useNarrow } from "@/lib/use-narrow";
 import { useI18n } from "@/lib/i18n";
 import { errorText } from "@/lib/error-text";
 import type { Mode } from "@/lib/mode";
-import type { CounterChangedDetail, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
+import type { BuyerProfile, CounterChangedDetail, CounterProposal, Displayed, NegotiationView, VerdictView } from "@/lib/types";
 import { Disclosure } from "@/components/business/kit";
 
 type Counter = Displayed<CounterProposal> & { text_when?: string; rationale_when?: string; label_when?: string | null; outbound_blocked?: boolean };
@@ -158,10 +158,12 @@ function NegotiationOutcome({ negotiation }: { negotiation: NegotiationView }) {
  * One counter's send control. Above the button, in 14 px ink, what sending does: "This will" and the server's lines (the agreement it
  * records, the funding it draws or requests, the estimated cost), or the server's one `send_scope` sentence when it sent no lines. The first
  * press asks once, as Home's Run does; the second sends exactly what is shown. The outbound guard's hold says the wording was held back.
+ * The question also asks how the demo's simulated buyer leans (feat/upgrading): open to a counter, or holding firm, which refuses it.
  */
-function SendControl({ c, lines, primary, sending, busy, onSend }: { c: Counter; lines: string[] | null; primary: boolean; sending: boolean; busy: boolean; onSend: () => void }) {
+function SendControl({ c, lines, primary, sending, busy, onSend }: { c: Counter; lines: string[] | null; primary: boolean; sending: boolean; busy: boolean; onSend: (profile: BuyerProfile) => void }) {
   const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
+  const [profile, setProfile] = useState<BuyerProfile>("cooperative");
   // The outbound guard held this counter's wording back: it cannot be sent as it stands.
   const held = Boolean(c.outbound_blocked);
   const scopeId = `scope-${optionDomId(c.label)}`;
@@ -191,8 +193,26 @@ function SendControl({ c, lines, primary, sending, busy, onSend }: { c: Counter;
             {t("biz.deals.send.confirmTitle", { label: name })}
           </p>
           <p className="mt-0.5 text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
+            <Segmented<BuyerProfile>
+              label={t("biz.deals.send.profile")}
+              name={`deal-buyer-profile-${c.id}`}
+              value={profile}
+              onChange={setProfile}
+              options={[
+                { value: "cooperative", label: t("biz.deals.send.cooperative") },
+                { value: "hard_line", label: t("biz.deals.send.hardLine") },
+              ]}
+            />
+          </div>
+          {profile === "hard_line" ? (
+            <p className="mt-2 text-sm text-ink-2" data-testid={`deal-send-refusal${suffix}`}>
+              {t("biz.deals.send.ifRefuseOne")}
+            </p>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="primary" loading={sending} disabled={busy} onClick={() => { onSend(); setConfirming(false); }} data-testid={`deal-send-confirm${suffix}`}>
+            <Button variant="primary" loading={sending} disabled={busy} onClick={() => { onSend(profile); setConfirming(false); }} data-testid={`deal-send-confirm${suffix}`}>
               {sending ? t("biz.deals.sending") : t("biz.deals.send.confirmGo", { label: name })}
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => setConfirming(false)} data-testid={`deal-send-cancel${suffix}`}>
@@ -290,13 +310,13 @@ export function RecommendedResponse({
   const withdrawn = Boolean(changed && !changed.counters.length);
   const counters = withdrawn ? [] : shown.counters;
 
-  async function send(c: Counter) {
+  async function send(c: Counter, profile: BuyerProfile = "cooperative") {
     setSending(c.id);
     setError(null);
     setSlow(false);
     setRechecked(false);
     try {
-      recordNegotiation(await negotiate(offerId, { buyer_profile: "cooperative", verdict_id: shown.verdictId, counter_id: c.id, state_version: shown.stateVersion }));
+      recordNegotiation(await negotiate(offerId, { buyer_profile: profile, verdict_id: shown.verdictId, counter_id: c.id, state_version: shown.stateVersion }));
       setRefused(null);
     } catch (e) {
       const moved = counterChanged(e);
@@ -339,7 +359,7 @@ export function RecommendedResponse({
   // The server's "This will" lines belong to the priced response (the recommended counter); another counter keeps its one sentence.
   const pricedLines = (c: Counter): string[] | null => (v.workspace?.priced_response?.counter_id === c.id ? (v.workspace.priced_response.send_scope_lines ?? null) : null);
   const controlFor = (c: Counter, primary: boolean) =>
-    mode === "business" ? <SendControl c={c} lines={pricedLines(c)} primary={primary} sending={sending === c.id} busy={busy} onSend={() => void send(c)} /> : undefined;
+    mode === "business" ? <SendControl c={c} lines={pricedLines(c)} primary={primary} sending={sending === c.id} busy={busy} onSend={(profile) => void send(c, profile)} /> : undefined;
 
   return (
     <Card id="counters" title={t("biz.deals.response")} subtitle={narrow ? undefined : t("biz.deals.counters.sub")}>

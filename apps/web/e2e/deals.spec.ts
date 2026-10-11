@@ -327,3 +327,21 @@ test("?buyer= selects that buyer's deal: the chase dialog's thread link lands on
   await expect(page.getByTestId("inbox-list")).toBeVisible();
   await expect(page.locator("#deal-selected")).toHaveCount(0);
 });
+
+test("the confirm step asks how the simulated buyer leans; a buyer who holds firm refuses, and the deal ends in No deal", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  const response = page.locator("#counters");
+  await response.getByTestId("deal-send").click();
+  const box = response.getByTestId("deal-send-confirm-box");
+  await expect(box).toContainText("Simulated buyer");
+  await expect(box.getByLabel("Open to a counter")).toBeChecked();
+  await expect(box.getByTestId("deal-send-refusal")).toHaveCount(0);
+  await box.getByLabel("Holds firm").check();
+  await expect(box.getByTestId("deal-send-refusal")).toContainText("there is no deal");
+  await box.getByTestId("deal-send-confirm").click();
+  await expect(page.getByTestId("deal-recommendation")).toHaveAttribute("data-outcome", "NO_DEAL");
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
+  await expect(response.getByTestId("deal-send")).toHaveCount(0);
+});

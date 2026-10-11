@@ -599,6 +599,7 @@ _KIND_TEXT = {
     "REPAY_FACILITY": ("Repayment", "还款"), "APPLY_FOR_FACILITY": ("Facility application", "融资申请"),
     "COUNTER_OFFER": ("Counter sent", "已发送还价"), "REVOKE_COMMITMENT": ("Agreement revoked", "协议已撤销"),
     "ADD_FACILITY": ("Facility added", "已添加融资工具"),
+    "CONFIRM_DOCUMENT": ("Document confirmed", "文件已确认"), "REJECT_DOCUMENT": ("Document rejected", "文件已驳回"),
 }
 
 

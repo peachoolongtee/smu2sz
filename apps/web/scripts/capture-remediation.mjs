@@ -165,7 +165,7 @@ const tid = (page, id) => page.getByTestId(id);
 /** The first visible brand-blue filled button or link in main, a dialog or the Demo stepper: the page's primary action, in document y. */
 async function primaryOf(page, fullPage) {
   return page.evaluate((fullPage) => {
-    const BRAND = "rgb(26, 95, 224)";
+    const BRAND = "rgb(3, 104, 233)"; // --color-brand-600 (#0368e9) since the 12 Oct reskin
     const visible = (el) => {
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);

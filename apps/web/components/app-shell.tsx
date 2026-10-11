@@ -33,6 +33,7 @@ const DEMO_NAV: { href: string; key: DictKey; group: "story" | "engine" }[] = [
   { href: "/chat", key: "nav.chat", group: "story" },
   { href: "/mandate", key: "nav.mandate", group: "engine" },
   { href: "/inbox", key: "nav.inbox", group: "engine" },
+  { href: "/documents", key: "nav.documents", group: "engine" },
   { href: "/trajectory", key: "nav.trajectory", group: "engine" },
   { href: "/funding", key: "nav.funding", group: "engine" },
   { href: "/verdict", key: "nav.verdict", group: "engine" },
@@ -297,13 +298,15 @@ function useDock(ref: RefObject<HTMLElement | null>) {
 const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
 const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
+/** The way back from a detail page, by the section it opens from. */
+const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals" };
 
 function BusinessShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
   const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
   const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
-  // A detail page the owner opened from a section (what-if, equipment) says how to get back to it.
+  // A detail page the owner opened from a section (what-if and equipment from Cash, documents from Deals) says how to get back to it.
   const backTo = OWNER_DETAIL_ROUTES[pathname];
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
@@ -313,33 +316,12 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <Tour />
       <Backdrop />
-      <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-2 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-6 lg:px-6">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
-          {/* Desktop: the five sections as pills on a quiet track. Phones get the tab bar at the bottom instead. */}
-          <nav aria-label={t("nav.label")} className="hidden min-w-0 lg:block" data-testid="nav-pills">
-            <ul className="mx-auto flex w-max items-center gap-1 rounded-pill bg-subtle p-1">
-              {BUSINESS_NAV.map((n) => {
-                const active = pathname === n.href;
-                return (
-                  <li key={n.href}>
-                    <Link
-                      href={n.href}
-                      aria-current={active ? "page" : undefined}
-                      className={`motion-press flex min-h-9 items-center whitespace-nowrap rounded-pill px-3.5 text-sm font-medium xl:px-4 ${
-                        active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-line hover:text-ink"
-                      }`}
-                    >
-                      {t(n.key)}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <ApprovalsBadge />
-            <span className="hidden sm:inline-flex lg:hidden xl:inline-flex" data-testid="demo-data-indicator">
+            <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
@@ -349,15 +331,46 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="dock-pad dock-pad-margin mx-auto w-full max-w-[1180px] px-4 pt-5 lg:px-6 lg:pt-6">
+      {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
+          Phones get the tab bar at the bottom instead. */}
+      <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-surface px-3 pb-20 pt-5 lg:flex">
+          <nav aria-label={t("nav.label")} data-testid="nav-pills">
+            <ul className="space-y-1">
+              {BUSINESS_NAV.map((n) => {
+                const active = pathname === n.href;
+                const section = TAB_SECTION[n.href];
+                const Icon = SECTIONS[section].icon;
+                return (
+                  <li key={n.href}>
+                    <Link
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      className={`motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
+                        active ? "bg-brand-50 font-bold text-brand-700" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
+                      }`}
+                    >
+                      {active ? <span aria-hidden className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-brand-600" /> : null}
+                      <Icon width={20} height={20} className={active ? "text-brand-600" : "text-ink-3"} />
+                      {t(n.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+          <p className="mt-auto px-3 text-xs leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+        </aside>
+      <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
         {backTo ? (
-          <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid="back-to-cash">
+          <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid={`back-to-${backTo.slice(1)}`}>
             <ArrowLeftIcon width={14} height={14} />
-            {t("nav.backToCash")}
+            {t(BACK_LABEL[backTo] ?? "nav.backToCash")}
           </Link>
         ) : null}
         {children}
       </main>
+      </div>
       {/* Phones: a tab bar with the same five sections, as in a banking app. */}
       <nav ref={bar} aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
         {/* Below sm the bar's last cell (3rem) is Ask FLOW, which ChatPanel fixes in place; from sm the bar is the five tabs. */}
@@ -453,7 +466,7 @@ function DemoShell({ children }: { children: ReactNode }) {
       <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <SkipLink />
       {/* The strip above is 36 px of the first screen: the footer reserves that height (pb-12) so a 768 px window never cuts it, and the column scrolls when it must. */}
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-12 pt-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-20 pt-4 lg:flex">
         <div className="px-2">
           <Brand href="/demo" />
         </div>

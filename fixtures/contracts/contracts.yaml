@@ -1,0 +1,26 @@
+# Demo documents for contract ingestion (docs/handover/03_contract_ingestion_brief.md, section 6.6).
+# Synthetic: each was written to match fixtures/scenarios/golden_sme.json, and each says so in its own text.
+# `file` is the canonical text the agent reads when the demo picks the fixture; `formats` are generated copies
+# (scripts/build_contract_files.py) that exercise the .docx and text-PDF upload path.
+# `link_facility_id` is the existing facility the owner links a lender agreement to on confirmation.
+contracts:
+  - id: FHR_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-1
+    title: Supply agreement FHR-2026-07
+    file: fhr-2026-07-supply-agreement.md
+    formats: [docx, pdf]
+  - id: MB_CREDIT_LINE_AGREEMENT
+    kind: LENDER_AGREEMENT
+    counterparty_id: BANK-1
+    title: Credit line agreement MB-CL-2026-031
+    file: mb-cl-2026-031-credit-line-agreement.md
+    formats: [docx, pdf]
+    link_facility_id: FAC-LINE
+  - id: GBR_INVOICE_FINANCING_AGREEMENT
+    kind: LENDER_AGREEMENT
+    counterparty_id: PLATFORM-1
+    title: Invoice financing agreement GBR-IF-2026-118
+    file: gbr-if-2026-118-invoice-financing-agreement.md
+    formats: [docx, pdf]
+    link_facility_id: FAC-IF

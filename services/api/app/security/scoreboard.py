@@ -28,7 +28,7 @@ from app.domain.models import (
     Verdict,
 )
 from app.domain.ports import LedgerStore
-from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, scan
+from app.egress import AllowedValue, allowed_for_counter, protected_for, scan
 from app.operations import security_summary
 from app.persistence import ApprovalStatus
 
@@ -199,7 +199,7 @@ def disclosed_fields(store: LedgerStore, texts: Iterable[OutboundText]) -> list[
     items = list(texts)
     if not items:
         return []
-    pset = ProtectedSet.build(store.get_state(), store.get_mandate())
+    pset = protected_for(store)
     found: set[str] = set()
     for t in items:
         found.update(leak.label for leak in scan(t.text, pset, recipient_id=t.recipient_id, allow=t.allow))

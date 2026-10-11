@@ -64,8 +64,8 @@ def test_catalogue_covers_every_group_and_role() -> None:
     assert set(NL_CATEGORIES) == {a["category"] for a in CATALOGUE}
     assert {a["role"] for a in CATALOGUE} == {"owner", "counterparty", "agent"}
     assert {a.get("lang", "en") for a in CATALOGUE} == {"en", "zh"}
-    # the 122 catalogue attacks are untouched and not part of this group
-    assert len(load_catalogue()) == 122 and not set(ids) & {a["id"] for a in load_catalogue()}
+    # the 126 catalogue attacks (122 + the four contract-ingestion attacks) are untouched and not part of this group
+    assert len(load_catalogue()) == 126 and not set(ids) & {a["id"] for a in load_catalogue()}
 
 
 @pytest.mark.parametrize("attack_id", _params(HARM_GROUPS))

@@ -122,6 +122,35 @@ Re-run on the Mac on 5 Oct 2026 at `bac61f3` (the application code is unchanged 
 
 Re-run in the cloud on 5 Oct 2026 after the UI redesign (`feat/ux-redesign`, Linux, `SKIP_PERF_BENCH=1`, two chunks): backend 5,452 passed, 33 skipped, 0 failed; scenarios 49/49 (87 turns); `scripts/demo_run.py` exit 0; attacks 255 (122 API + 133 chat), 0 with harm; web mock e2e 36 passed, 1 skipped; web live e2e 31 passed (the `live.spec.ts` home checks rewritten for the Business home). The application engine is unchanged by the redesign; `GET /home` and the queue's `presentation` fields are presentation reads.
 
+**Contract ingestion (5 Oct 2026, branch `feat/contract-ingestion` from `experiments`, local commits).** Brief 03
+(`docs/handover/03_contract_ingestion_brief.md`) is built: document upload and reading, owner confirmation logged in the
+chain, the deal summary on Deals once a deal is agreed, the documents page, `SHOW_DEAL` in chat, four attacks, the
+golden equality test and the held-out harness (the set itself is pending). The demo reset opens on the three demo
+documents confirmed by the owner (three CONFIRM_DOCUMENT ledger entries; `Runtime.reset()` alone leaves the chain empty).
+`docs/SYSTEM_WALKTHROUGH.md` sections 5.21 and 13 describe it. Its gate (8 Oct): backend 5,669 passed, 33 skipped; scenarios 49/49; 259 attacks (126 API + 133 chat) with
+0 harm; `scripts/demo_run.py` exit 0; `scripts/evaluate.py` every target PASS; language-boundary certification WRONG_MATERIAL 0
+(cache and fake, unchanged); web mock e2e 45 passed (1 skipped), live e2e 40 passed (2 skipped). Merged into the redesigned
+UI (`feat/upgrading-contracts`, 8 Oct): backend 5,716 passed, 33 skipped (the first run's one failure, two golden
+digests in `tests/books/test_modules_on_books.py` that feat/upgrading's Wave 1 had not updated, was fixed and that file
+re-run); scenarios 49/49; `scripts/demo_run.py` exit 0; web mock e2e 58 passed (7 skipped), live e2e 41 passed (2
+skipped).
+Then merged into `dev` as it stood late on 9 Oct (`b68c41c`: the UX remediation and its follow-ups; branch
+`feat/strategy-mvp-contracts`, gate on 10 Oct): Ian's screens kept, contract ingestion on them (the deal summary in
+Deals' agreements part once agreed, Documents a detail page of Deals with the way back, Activity's links), and the two
+pieces of feat/upgrading his port had not taken: the simulated buyer's lean in his send step's question ("Holds firm"
+ends with no deal) and the borrower file's tables (`docs/UX_SIMPLIFICATION_BRIEF.md` section 11). Our migration follows
+his as `0007_contract_records`; his bilingual presentation says the document decisions in both languages. Gate: backend
+6,712 passed, 37 skipped; scenarios 49/49; `scripts/demo_run.py` exit 0; 259 attacks (126 API + 133 chat) with 0 harm;
+web unit 91; mock e2e 159 passed (168 with `E2E_STRATEGY=1`); live e2e 79 passed (87 with the flag); on the Windows
+machine run the flagged live project with nothing else running: under load, six of its tests time out behind the first
+envelope read (about 50 s there), and they pass when run alone.
+
+Merged into `dev` on 12 Oct 2026 (`int/contracts`): the contracts branch, its review fixes (`fix/contracts-api`, `fix/contracts-web`),
+ADR-0012 and the reskin (`feat/endowus-redesign`). Gate on this machine: API 6,813 passed, 37 skipped; web unit 91; mock e2e 163 / 172;
+live e2e 86 / 94; zero retries. The walkthrough's section 14 lists what the fixes changed; the debt is ticket #103; `feat/ui-changes-biz`
+(a money-in-and-out chart) is the owner's decision on #104. Fonts are not shipped: vendor Lato and Libre Caslon Text under
+`apps/web/public/fonts` if the look matters on the judging machine.
+
 **The owner stopped the red-team rounds on 3 Oct.** Five rounds (3, 7, 3, 7 and 6 findings) are done and all fixed.
 The engine is in **stability mode**: fix regressions, keep the evidence regenerated, rehearse the demo, keep the
 documents true. No broad features and no more red-team rounds unless the owner asks.
@@ -266,18 +295,19 @@ debt is listed at the end of `docs/UX_AUDIT.md`. The list below remains the back
 1. Read the three mission documents first: `docs/AGENT_MISSION.md`, `docs/CONTINUOUS_OPTIMIZATION.md` (the live
    tracker; `docs/NEXT_FIXES.md` is history) and `docs/FINANCIAL_SEMANTICS.md`.
 2. Run the gate. From `services/api`, as two sequential chunks (about 8 and 6 minutes on Windows; expect
-   about 5,446 passed, 33 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
+   about 6,712 passed, 37 skipped in all), each `SKIP_PERF_BENCH=1 uv run pytest -o addopts= -q -p no:cacheprovider`:
    chunk A = `tests/alerts tests/api tests/books tests/borrower_file tests/capex tests/clock tests/commitments
-   tests/compiler tests/counterparties tests/covenants tests/egress tests/evals tests/financial tests/funding`;
+   tests/compiler tests/contracts tests/counterparties tests/covenants tests/egress tests/evals tests/financial
+   tests/funding tests/ingest`;
    chunk B = `tests/mandate tests/nl tests/operations tests/persistence tests/security tests/verifier tests/whatif
    tests/concurrency tests/certification tests/test_fixtures.py tests/test_money.py`. From the repo root, with
    `PYTHONUTF8=1`: `uv run --project services/api python scripts/run_scenarios.py --inproc` (49/49),
    `uv run --project services/api python scripts/demo_run.py` (exit 0, 14 ledger entries),
-   `cd services/api && uv run python -m app.security.attacks --report` (255 attacks, 0 with harm),
+   `cd services/api && uv run python -m app.security.attacks --report` (259 attacks, 0 with harm),
    `uv run --project services/api python scripts/evaluate.py` (every target PASS; about 6 minutes), and
    `uv run --project services/api python scripts/certify_language_boundary.py --backend cache` and `--backend fake`
-   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (36 passed, 1 skipped after the redesign) and, if another
-   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test`. Scenario, attack, evaluation and certification runs rewrite tracked files under
+   (WRONG_MATERIAL 0). For the web app `E2E_TARGET=mock pnpm exec playwright test` (159 passed, 37 skipped on 10 Oct; 168 with `E2E_STRATEGY=1`) and, if another
+   program holds port 8000, `E2E_API_PORT=8010 E2E_TARGET=live pnpm exec playwright test` (79 passed, 14 skipped; 87 with the flag). Scenario, attack, evaluation and certification runs rewrite tracked files under
    `services/api/evals/`; commit them only when the task is to refresh evidence.
 3. Open rows of the backlog (`docs/CONTINUOUS_OPTIMIZATION.md` section 1): PG1 (PostgreSQL run, needs a URL), LC1 (live
    certification, needs a key; a five-item DeepSeek-only smoke passed on the Mac on 5 Oct), NR1 (the "no runnable plan" worlds: should the agent propose drawing the line and

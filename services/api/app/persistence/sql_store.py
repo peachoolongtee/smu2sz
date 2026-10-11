@@ -54,6 +54,8 @@ from sqlalchemy.sql.dml import Delete, Update
 from app.domain.models import (
     Commitment,
     CompiledOffer,
+    ContractRecord,
+    DocumentStatus,
     FinancialState,
     Mandate,
     SecurityEvent,
@@ -67,8 +69,10 @@ from app.persistence.chain import (
     GENESIS_HASH,
     approval_id,
     build_evidence,
+    check_decision,
     compute_entry_hash,
     content_sha256,
+    document_id,
     head_hash,
     offer_fingerprint,
     op_identity,
@@ -79,6 +83,7 @@ from app.persistence.errors import (
     AppendOnlyViolation,
     ApprovalAlreadyDecided,
     ConcurrentWriteConflict,
+    DocumentAlreadyDecided,
     NonceAlreadyUsed,
     NotFound,
     OfferVersionConflict,
@@ -659,6 +664,50 @@ class SqlLedgerStore:
         if res.rowcount == 0:
             raise ApprovalAlreadyDecided(f"approval {approval_id_} is {row.status}")
         return _approval(row)
+
+    # ------------------------------------------------------------ contract records (brief 03)
+
+    def add_contract_record(self, record: ContractRecord) -> str:
+        def _add(conn: Connection) -> str:
+            n = conn.execute(select(func.count()).select_from(t.contract_records)).scalar_one()
+            rid = document_id(int(n) + 1)
+            rec = record.model_copy(update={"id": rid, "status": DocumentStatus.PROPOSED, "decided_day": None,
+                                            "decided_seq": None, "linked_facility_id": None})
+            conn.execute(insert(t.contract_records).values(
+                id=rid, kind=rec.kind.value, counterparty_id=rec.counterparty_id, status=rec.status.value,
+                doc_hash=rec.doc_hash, uploaded_day=rec.uploaded_day, decided_day=None,
+                payload_json=canonical_json(rec)))
+            return rid
+
+        return self._retry(_add)
+
+    def get_contract_record(self, record_id: str) -> ContractRecord | None:
+        cr = t.contract_records
+        rows = self._read_all(cr, cr.c.row_id, cr.c.id == record_id)
+        return ContractRecord.model_validate_json(rows[0].payload_json) if rows else None
+
+    def contract_records(self) -> list[ContractRecord]:
+        cr = t.contract_records
+        return [ContractRecord.model_validate_json(r.payload_json) for r in self._read_all(cr, cr.c.row_id)]
+
+    def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
+        cr = t.contract_records
+        with self.transaction():
+            conn = self._tx()
+            assert conn is not None
+            row = conn.execute(select(cr).where(cr.c.id == record.id)).first()
+            if row is None:
+                raise NotFound(f"document {record.id} not found")
+            stored = ContractRecord.model_validate_json(row.payload_json)
+            if stored.status != DocumentStatus.PROPOSED:
+                raise DocumentAlreadyDecided(f"document {record.id} is {stored.status.value}")
+            check_decision(stored, record)
+            res = conn.execute(
+                update(cr).where(cr.c.id == record.id, cr.c.status == DocumentStatus.PROPOSED.value)
+                .values(status=record.status.value, decided_day=record.decided_day, payload_json=canonical_json(record)))
+            if res.rowcount == 0:  # another writer decided it between the read and the update
+                raise DocumentAlreadyDecided(f"document {record.id} was decided concurrently")
+        return record
 
     # ------------------------------------------------------------ telemetry
 

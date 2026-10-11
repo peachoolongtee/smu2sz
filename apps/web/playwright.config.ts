@@ -65,8 +65,8 @@ export default defineConfig({
       ? [
           {
             name: "live",
-            // The same demo walk and what-if spec as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang)\.spec\.ts/,
+            // The same demo walk, what-if and document specs as mock mode, plus the live-only checks and the adapter contract tests.
+            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents)\.spec\.ts/,
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]

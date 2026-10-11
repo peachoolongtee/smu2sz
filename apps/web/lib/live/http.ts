@@ -164,5 +164,6 @@ export async function downloadFile(path: string, filename: string): Promise<void
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Released a moment later: revoking in the same tick can cancel the download in Firefox and Safari.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

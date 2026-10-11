@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -29,5 +30,7 @@ def test_loading_the_engine_does_not_load_the_journal() -> None:
         "sys.exit(1 if any(m == 'app.pilot' or m.startswith('app.pilot.') or m == 'app.api.pilot' for m in sys.modules) else 0)"
     )
     result = subprocess.run([sys.executable, "-I", "-c", code], cwd=APP.parent, capture_output=True, text=True, check=False,
-                            env={"PYTHONPATH": str(APP.parent), "TERMSLEDGER_NO_DOTENV": "1", "PATH": "/usr/bin:/bin"})
+                            # Windows needs SYSTEMROOT to start Winsock (asyncio imports it); nothing else passes through.
+                            env={"PYTHONPATH": str(APP.parent), "TERMSLEDGER_NO_DOTENV": "1", "PATH": "/usr/bin:/bin",
+                                 **({"SYSTEMROOT": os.environ["SYSTEMROOT"]} if "SYSTEMROOT" in os.environ else {})})
     assert result.returncode == 0, result.stderr

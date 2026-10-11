@@ -301,6 +301,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
             return cap.capex_intent(ctx, slots)
         case Intent.BORROWER_FILE:
             return cap.borrower_file(ctx, slots, text)
+        case Intent.SHOW_DEAL:
+            return cap.show_deal(ctx, slots)
         case Intent.EXPLAIN:
             return explain(ctx, slots, text)
         case Intent.WHAT_IF:

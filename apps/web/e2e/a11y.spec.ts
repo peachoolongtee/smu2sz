@@ -66,6 +66,32 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await scan(page, "decision page");
 });
 
+test("contract ingestion and the send step: the documents and a review, the buyer choice, the deal summary, the borrower file", async ({ page }) => {
+  await page.goto("/documents");
+  await expect(page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT")).toBeVisible();
+  await scan(page, "/documents");
+  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  await scan(page, "/documents review");
+  await checkedDeal(page);
+  const response = page.locator("#counters");
+  await response.getByTestId("deal-send").click();
+  await response.getByTestId("deal-send-confirm-box").getByLabel("Holds firm").check();
+  await scan(page, "/deals the send step");
+  await response.getByTestId("deal-send-confirm-box").getByLabel("Open to a counter").check();
+  await response.getByTestId("deal-send-confirm").click();
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
+  await scan(page, "/deals the deal summary");
+  await page.getByTestId("deal-details-BUYER-1").locator("summary").click();
+  await expect(page.getByTestId("deal-stages")).toBeVisible();
+  await scan(page, "/deals the deal summary, unfolded");
+  await page.goto("/capex");
+  await page.getByRole("button", { name: "Evaluate the ¥600k machine" }).click();
+  await page.getByTestId("capex-file").click();
+  await expect(page.getByTestId("file-sections")).toBeVisible();
+  await scan(page, "/capex the borrower file");
+});
+
 test("an approval waiting, the chase dialog and the remaining task at day 34", async ({ page }) => {
   await checkedDeal(page);
   await sendCounter(page.locator("#counters"));

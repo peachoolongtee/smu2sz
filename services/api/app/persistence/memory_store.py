@@ -15,6 +15,8 @@ from datetime import UTC, datetime
 from app.domain.models import (
     Commitment,
     CompiledOffer,
+    ContractRecord,
+    DocumentStatus,
     FinancialState,
     Mandate,
     SecurityEvent,
@@ -24,8 +26,10 @@ from app.domain.ports import OperationRecord
 from app.persistence.chain import (
     approval_id,
     build_evidence,
+    check_decision,
     compute_entry_hash,
     content_sha256,
+    document_id,
     head_hash,
     offer_fingerprint,
     op_identity,
@@ -34,6 +38,7 @@ from app.persistence.chain import (
 )
 from app.persistence.errors import (
     ApprovalAlreadyDecided,
+    DocumentAlreadyDecided,
     NonceAlreadyUsed,
     NotFound,
     OfferVersionConflict,
@@ -58,6 +63,7 @@ class InMemoryLedgerStore:
     _CONTAINERS = (
         "_ops", "_nonces", "_commitments", "_states", "_mandates", "_offers", "_verdicts",
         "_security_events", "_approvals", "_evidence_exports", "_llm_calls", "_evaluation_runs", "_decision_facts",
+        "_contract_records",
     )
 
     def __init__(self) -> None:
@@ -108,6 +114,7 @@ class InMemoryLedgerStore:
         self._approvals: dict[str, ApprovalRecord] = {}
         self._evidence_exports: list[EvidenceExportRecord] = []
         self._decision_facts: list[DecisionFactRecord] = []
+        self._contract_records: dict[str, ContractRecord] = {}
 
     # ------------------------------------------------------------ operations log
 
@@ -279,6 +286,35 @@ class InMemoryLedgerStore:
             decided = replace(current, status=status, decided_by=str(by), decided_day=day)
             self._approvals[approval_id_] = decided
             return decided
+
+    # ------------------------------------------------------------ contract records (brief 03)
+
+    def add_contract_record(self, record: ContractRecord) -> str:
+        with self._lock:
+            rid = document_id(len(self._contract_records) + 1)
+            self._contract_records[rid] = record.model_copy(update={"id": rid, "status": DocumentStatus.PROPOSED,
+                                                                    "decided_day": None, "decided_seq": None,
+                                                                    "linked_facility_id": None})
+            return rid
+
+    def get_contract_record(self, record_id: str) -> ContractRecord | None:
+        with self._lock:
+            return self._contract_records.get(record_id)
+
+    def contract_records(self) -> list[ContractRecord]:
+        with self._lock:
+            return list(self._contract_records.values())
+
+    def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
+        with self._lock:
+            stored = self._contract_records.get(record.id)
+            if stored is None:
+                raise NotFound(f"document {record.id} not found")
+            if stored.status != DocumentStatus.PROPOSED:
+                raise DocumentAlreadyDecided(f"document {record.id} is {stored.status.value}")
+            check_decision(stored, record)
+            self._contract_records[record.id] = record
+            return record
 
     # ------------------------------------------------------------ telemetry
 

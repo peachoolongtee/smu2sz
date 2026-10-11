@@ -17,6 +17,7 @@ from collections.abc import Sequence
 from fractions import Fraction
 
 from app.compiler import boundary, coverage, lexicon
+from app.compiler.contract_parsing import business_days, parse_lead_days
 from app.compiler.parsing import (
     MONEY_PAT,
     find_money,
@@ -1006,6 +1007,11 @@ _CLAUSE_FIELD_MAP: dict[str, str] = {}
 _TIER3_FIELDS = {"guarantee", "collateral", "equity"}
 _NEGATED = re.compile(r"\b(?:no|not|without|unsecured|waived?|none)\b|无需|不需要|无须|免", re.IGNORECASE)
 _PERIODIC_FEE = re.compile(r"(?:per|every)\s+(?:(?P<d>\d+)\s*days?|month|advance|period)|每(?:月|笔|期)", re.IGNORECASE)
+# A fee charged per stated number of days, read in the fee's whole sentence: "for each period of thirty (30) days",
+# "per 30-day period", "every 30 days". It wins over the generic forms above ("of each advance").
+_FEE_PERIOD_DAYS = re.compile(
+    r"\b(?:per|every|for\s+each|each)\s+(?:period\s+of\s+)?(?:[a-z]+(?:-[a-z]+)?\s+)?\(?(?P<d>\d{1,3})\)?\s*[- ]?days?\b",
+    re.IGNORECASE)
 _KIND_LABEL = {
     FacilityKind.CREDIT_LINE: "working-capital / credit line",
     FacilityKind.INVOICE_FINANCING: "invoice financing",
@@ -1018,35 +1024,60 @@ _KIND_LABEL = {
 }
 
 
+_DSCR_CUE = re.compile(r"\bDSCR\b|debt[- ]service[- ]coverage", re.IGNORECASE)
+_LEVERAGE_CUE = re.compile(r"\bleverage\b|\bdebt\s*(?:/|to)\s*EBITDA\b|\b(?:total|net)\s+debt\b(?=[^.;]{0,80}\bEBITDA\b)",
+                           re.IGNORECASE)
+_CLEAN_DOWN_CUE = re.compile(r"clean[- ]?down|(?:reduced|repaid|brought)\s+(?:down\s+)?to\s+zero|\bzero\s+balance\b",
+                             re.IGNORECASE)
+# A ratio as covenants state it: "1.25x", "1.25 ×", "2.5 times", "1.25:1".
+_MULTIPLE = re.compile(r"(?P<n>\d+(?:\.\d+)?)\s*(?:x\b|×|times\b|:\s*1\b)", re.IGNORECASE)
+_CLEAN_DAYS = re.compile(r"(?:[a-z]+(?:-[a-z]+)?\s+)?\(?(?P<n>\d{1,3})\)?\s*(?:consecutive\s+)?(?:calendar\s+)?days?\b",
+                         re.IGNORECASE)
+
+
+def _ratio_after(t: str, cue: re.Pattern[str], fallback: str) -> str | None:
+    """The ratio a covenant clause states after its cue ("a debt service coverage ratio (DSCR) of at least 1.25
+    times"): the first explicit multiple after the cue; failing that, a bare number within 25 characters of it."""
+    c = cue.search(t)
+    if c is None:
+        return None
+    m = _MULTIPLE.search(t, c.end())
+    if m:
+        return m.group("n")
+    m = re.search(fallback, t, re.IGNORECASE)
+    return m.group(1) if m else None
+
+
 def _covenants(facility_id: str, clauses: Sequence[TermSheetClause]) -> list[Covenant]:
     out: list[Covenant] = []
     for c in clauses:
         if c.field != "covenant":
             continue
         t = c.span.text
-        m = re.search(r"(?:DSCR|debt\s+service\s+coverage)[^0-9]{0,25}(\d+(?:\.\d+)?)\s*x?", t, re.IGNORECASE)
-        if m:
+        n = _ratio_after(t, _DSCR_CUE, r"(?:DSCR|debt\s+service\s+coverage)[^0-9]{0,25}(\d+(?:\.\d+)?)\s*x?")
+        if n:
             out.append(Covenant(
                 id=f"{facility_id}-DSCR", facility_id=facility_id, kind=CovenantKind.DSCR_MIN,
-                threshold_bp=round_half_up(Fraction(m.group(1)) * 10_000),
+                threshold_bp=round_half_up(Fraction(n) * 10_000),
                 definition="as stated in the term sheet clause (monthly EBITDA / scheduled debt service assumed)",
-                formula=f"EBITDA_m / DS_m >= {m.group(1)}",
+                formula=f"EBITDA_m / DS_m >= {n}",
             ))
-        m = re.search(r"(?:leverage|debt\s*/\s*EBITDA)[^0-9]{0,25}(\d+(?:\.\d+)?)\s*x?", t, re.IGNORECASE)
-        if m:
+        n = _ratio_after(t, _LEVERAGE_CUE, r"(?:leverage|debt\s*/\s*EBITDA)[^0-9]{0,25}(\d+(?:\.\d+)?)\s*x?")
+        if n:
             out.append(Covenant(
                 id=f"{facility_id}-LEV", facility_id=facility_id, kind=CovenantKind.LEVERAGE_MAX,
-                threshold_bp=round_half_up(Fraction(m.group(1)) * 10_000),
+                threshold_bp=round_half_up(Fraction(n) * 10_000),
                 definition="as stated in the term sheet clause (total debt / annualised EBITDA assumed)",
-                formula=f"Debt / (12 x EBITDA_m) <= {m.group(1)}",
+                formula=f"Debt / (12 x EBITDA_m) <= {n}",
             ))
-        m = re.search(r"clean[- ]?down[^0-9]{0,25}(\d+)\s*(?:consecutive\s+)?days?", t, re.IGNORECASE)
+        cd = _CLEAN_DOWN_CUE.search(t)
+        m = _CLEAN_DAYS.search(t, cd.end()) if cd else None
         if m:
             out.append(Covenant(
                 id=f"{facility_id}-CD", facility_id=facility_id, kind=CovenantKind.CLEAN_DOWN,
-                clean_down_days=int(m.group(1)),
+                clean_down_days=int(m.group("n")),
                 definition="as stated in the term sheet clause",
-                formula=f"zero balance for {m.group(1)} consecutive days per year",
+                formula=f"zero balance for {m.group('n')} consecutive days per year",
             ))
     return out
 
@@ -1087,12 +1118,18 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
                     vs.append(v)
         return vs
 
+    def lead_days(text: str) -> int | None:  # "3 days", "three (3) days", "the same day" (0)
+        p = parse_lead_days(text)
+        return p.value if p.ok else None  # type: ignore[return-value]
+
     conflict = False
     principal_vals = values("principal", parse_money)
     rate_vals = values("rate", parse_rate_bp)
     tenor_vals = values("tenor", parse_tenor_months)
-    lead_vals = values("lead_time", parse_days)
-    for name, vs in (("principal", principal_vals), ("rate", rate_vals), ("tenor", tenor_vals), ("lead_time", lead_vals)):
+    lead_vals = values("lead_time", lead_days)
+    advance_vals = values("advance_rate", parse_rate_bp)
+    for name, vs in (("principal", principal_vals), ("rate", rate_vals), ("tenor", tenor_vals), ("lead_time", lead_vals),
+                     ("advance_rate", advance_vals)):
         if len(vs) > 1:
             conflict = True
             abst.append(Abstention(
@@ -1103,6 +1140,11 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
     rate = rate_vals[0] if rate_vals else None
     tenor = tenor_vals[0] if tenor_vals else None
     lead = lead_vals[0] if lead_vals else None
+    advance = advance_vals[0] if advance_vals else None
+    if lead is not None and any(f == "lead_time" and business_days(c.value_text) for f, c, _ in raw):
+        abst.append(Abstention(field="note:lead_time.business_days", spans=[tc.span for f, _, tc in raw if f == "lead_time"],
+                               reason="lead time stated in business days; the engine counts calendar days, so a weekend "
+                                      "can make the real wait longer"))
 
     upfront_bp: Fraction = Fraction(0)
     periodic_bp: int = 0
@@ -1110,7 +1152,13 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
     for f, c, tc in raw:
         if f != "fee":
             continue
-        pm = _PERIODIC_FEE.search(tc.span.text)
+        # The period may sit outside the quoted fee ("a service fee of 0.25% ... for each period of thirty (30)
+        # days"): read it in the fee's whole sentence.
+        s0, e0 = lexicon.sentence_bounds(doc.text, tc.span.start)
+        _, e1 = lexicon.sentence_bounds(doc.text, max(tc.span.start, tc.span.end - 1))
+        sentence = doc.text[s0:max(e0, e1)]
+        pd = _FEE_PERIOD_DAYS.search(sentence)
+        pm = pd or _PERIODIC_FEE.search(sentence)
         rv = parse_rate_bp(c.value_text)
         mv = parse_money(c.value_text) if rv is None else None
         if pm and rv is not None:
@@ -1178,6 +1226,7 @@ def build_term_sheet(doc: SourceDocument, ex: TermSheetExtraction, compiler_id: 
             fee_bp_per_advance=periodic_bp,
             fee_period_days=period_days,
             upfront_fee_bp=round_half_up(upfront_bp),
+            advance_rate_bp=advance,
             lead_time_days=lead if lead is not None else UNSTATED_LEAD_TIME_DAYS,
             term_months=tenor,
             repayment=repayment,

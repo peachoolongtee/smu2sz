@@ -29,6 +29,11 @@ import type {
   CapexRequest,
   CapexView,
   ClockView,
+  ContractFixture,
+  DealsView,
+  DocumentDecision,
+  DocumentsList,
+  DocumentView,
   DecisionList,
   DecisionView,
   FundingView,
@@ -49,6 +54,7 @@ import type {
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
+  SubmitDocumentRequest,
   SubmitOfferRequest,
   TrajectoryView,
   VerdictView,
@@ -297,4 +303,37 @@ export async function downloadFile(path: string, filename: string): Promise<void
 /** GET /evidence: JSONL execution evidence with hashes. */
 export async function getEvidence(): Promise<string> {
   return isMock ? (await mock()).getEvidence() : (await live()).getEvidence();
+}
+
+// ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
+// Owner only, every route. A reading is a proposal: nothing counts until the owner confirms it, and confirming writes no books.
+
+/** GET /deals?lang=: one card per buyer, from the confirmed contract and the current books; the server's sentences in the owner's language, the figures identical. */
+export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+  return isMock ? (await mock()).getDeals(lang) : (await live()).getDeals(lang);
+}
+
+/** GET /documents?lang=: every document the agent has read, newest last. */
+export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
+  return isMock ? (await mock()).getDocuments(lang) : (await live()).getDocuments(lang);
+}
+
+/** GET /documents/{id}?lang=: the reading beside the document text, for review. */
+export async function getDocument(id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  return isMock ? (await mock()).getDocument(id, lang) : (await live()).getDocument(id, lang);
+}
+
+/** POST /documents: a demo document, an uploaded file (base64) or pasted text. The agent reads it; nothing is confirmed. */
+export async function submitDocument(req: SubmitDocumentRequest): Promise<DocumentView> {
+  return isMock ? (await mock()).submitDocument(req) : (await live()).submitDocument(req);
+}
+
+/** POST /documents/{id}/confirm | reject: the owner's decision, bound to the hash of the text shown (logged in the chain). */
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId?: string | null): Promise<DocumentDecision> {
+  return isMock ? (await mock()).decideDocument(id, decision, docHash, linkFacilityId ?? null) : (await live()).decideDocument(id, decision, docHash, linkFacilityId ?? null);
+}
+
+/** GET /fixtures/contracts: the demo documents (synthetic; each written to match the demo books). */
+export async function getContractFixtures(): Promise<ContractFixture[]> {
+  return isMock ? (await mock()).getContractFixtures() : (await live()).getContractFixtures();
 }

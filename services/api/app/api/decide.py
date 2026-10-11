@@ -70,7 +70,14 @@ from app.domain.models import (
     SubmitInvoiceForFinancing,
 )
 from app.domain.money import fmt_pct, fmt_yuan, post
-from app.egress import AllowedValue, ProtectedSet, allowed_for_counter, guard
+from app.egress import (
+    AllowedValue,
+    ProtectedSet,
+    allowed_for_counter,
+    contract_private_values,
+    guard,
+    protected_for,
+)
 from app.financial import EngineError, extension_pro_forma, project
 from app.funding import (
     break_even_discount,
@@ -105,7 +112,7 @@ def _counter_allow(c: CounterProposal) -> list[AllowedValue]:
 
 def _guarded_counters(rt: Runtime, offer: CompiledOffer, counters: list[CounterProposal], lang: str = "en") -> list[dict]:
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
-    ps = ProtectedSet.build(state, mandate)
+    ps = protected_for(rt.store)  # the books, the mandate and the contract records (brief 03)
     out = []
     for c in counters:
         g = guard(c.text, ps, recipient_id=offer.counterparty_id, allow=_counter_allow(c), day=rt.day)
@@ -412,7 +419,7 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
     with rt.lock:
         t = negotiate(counters[:1] if body.buyer_profile == "hard_line" else counters, profile, supplier_next)
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
-        ps = ProtectedSet.build(state, mandate)
+        ps = ProtectedSet.build(state, mandate, extra_private=contract_private_values(rt.store.contract_records(), state))
         by_id = {c.id: c for c in counters}
         rounds = []
         for r in t.rounds:

@@ -4,8 +4,8 @@ import { openStoryFold, STORY_STEPS, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
-const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
-const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
+const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
+const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -161,6 +161,16 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
     });
     expect(short, `${route}: controls a finger cannot hit at 44 px`).toEqual([]);
   }
+});
+
+test("the document review fits the viewport", async ({ page }) => {
+  await page.goto("/documents");
+  await page.getByTestId("fixture-read-FHR_SUPPLY_AGREEMENT").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
+  expect(await overflowX(page), "the review screen overflows horizontally").toBeLessThanOrEqual(1);
+  await page.getByTestId("doc-confirm").click();
+  await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
+  expect(await overflowX(page), "the confirmed review overflows horizontally").toBeLessThanOrEqual(1);
 });
 
 test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {
@@ -402,6 +412,8 @@ test("phone: the Demo story keeps 'More to show', 'Today' and 'The books' under 
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   const view = page.viewportSize()?.height ?? 915;
   // Measured 2.7 screens at 412 x 915 with the folds and the compact step rows; the eleven steps are the page. Under two is open.
-  expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3);
+  // The limit is three screens plus 16 px for the reskin's type: the page title is a 24 px / 32 px serif (was 20 / 28) and a card's padding is 20 px
+  // (was 16), which together add about 8 px to this page. The bound moved by that, not by the page's length.
+  expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3 + 16);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

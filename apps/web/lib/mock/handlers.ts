@@ -27,6 +27,11 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  ContractFixture,
+  DealsView,
+  DocumentDecision,
+  DocumentsList,
+  DocumentView,
   FundingView,
   HomeView,
   LedgerView,
@@ -46,6 +51,7 @@ import type {
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
+  SubmitDocumentRequest,
   SubmitOfferRequest,
   TrajectoryView,
   VerdictView,
@@ -56,6 +62,7 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
@@ -129,7 +136,7 @@ const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictVie
 
 const SECURITY_FIXTURE = "SEC_DEMO_FASTCAPITAL";
 const GENESIS = "0".repeat(64);
-const STORAGE_KEY = "tl-mock-store-v1";
+const STORAGE_KEY = "tl-mock-store-v2";
 
 interface Store {
   offers: Record<string, OfferView>;
@@ -151,6 +158,21 @@ const emptyStore = (): Store => ({
   securityScene: false,
 });
 
+/**
+ * The demo's starting point, as live: the books untouched and the ledger opening on the owner's confirmation of the three
+ * demo documents (CONFIRM_DOCUMENT, Tier 2), recorded from the demo reset.
+ */
+function seededStore(): Store {
+  const s = emptyStore();
+  for (const t of documents.seedOperations()) {
+    const seq = s.ops.length + 1;
+    const prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
+    const base = { op_id: t.op_id, kind: t.kind, status: t.status, tier: t.tier, violations: [], seq, message: t.message, day: 0, requested_by: t.requested_by, summary: t.summary };
+    s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  }
+  return s;
+}
+
 let memory: Store | null = null;
 
 function load(): Store {
@@ -163,10 +185,10 @@ function load(): Store {
         return memory;
       }
     } catch {
-      /* fall through to an empty store */
+      /* fall through to the demo's starting point */
     }
   }
-  memory = emptyStore();
+  memory = seededStore();
   return memory;
 }
 
@@ -236,9 +258,9 @@ function append(
   return op;
 }
 
-/** Books an operation the recorded API answer reports (a cure the agent ran), on the same hash chain as the rest. */
-type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; day: number };
-export function appendRecorded(r: Recorded): void {
+/** Books an operation the recorded API answer reports (a cure the agent ran, a document the owner decided), on the same hash chain as the rest. */
+type Recorded = { kind: string; status: OperationView["status"]; tier: OperationView["tier"]; message: string; message_when?: string | null; event_text?: string | null; event_detail?: string | null; decision_id?: string | null; day: number; requested_by?: OperationView["requested_by"] };
+export function appendRecorded(r: Recorded): OperationView {
   seedStory();
   const s = load();
   const seq = s.ops.length + 1;
@@ -252,14 +274,16 @@ export function appendRecorded(r: Recorded): void {
     seq,
     message: r.message,
     day: r.day,
-    requested_by: "AGENT" as const,
+    requested_by: r.requested_by ?? ("AGENT" as const),
     decision_id: r.decision_id ?? null,
     summary: r.message,
     ...(r.message_when ? { message_when: r.message_when } : {}),
     ...(r.event_text ? { event_text: r.event_text, event_detail: r.event_detail ?? null, ...causalFor(r.event_text) } : {}),
   };
-  s.ops.push({ ...base, prev_hash: prev, entry_hash: entryHash(base, prev) });
+  const op: OperationView = { ...base, prev_hash: prev, entry_hash: entryHash(base, prev) };
+  s.ops.push(op);
   save();
+  return op;
 }
 
 /**
@@ -269,9 +293,13 @@ export function appendRecorded(r: Recorded): void {
  */
 function seedStory(): void {
   const s = load();
-  if (home.mockClock().day < home.NEWS_DAY || s.ops.length || s.commitments.length) return;
+  // The demo opens on the owner's confirmation of the three demo documents (seededStore): a ledger with nothing beyond
+  // them has not walked the story.
+  if (home.mockClock().day < home.NEWS_DAY || s.ops.length > documents.seedOperations().length || s.commitments.length) return;
   const rec = cast<LedgerView>(ledgerDay34);
-  let prev = GENESIS;
+  // The recording starts at the demo reset, so it opens on the same confirmations: it replaces them rather than repeat them.
+  if (rec.operations.some((o) => o.kind === "CONFIRM_DOCUMENT")) s.ops = [];
+  let prev = s.ops.length ? (s.ops[s.ops.length - 1].entry_hash ?? GENESIS) : GENESIS;
   for (const o of rec.operations) {
     const base = { ...clone(o), seq: s.ops.length + 1 };
     const entry_hash = entryHash(base, prev);
@@ -556,6 +584,8 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
     res.operations = ops;
     if (res.commitment) s.commitments.push(clone(res.commitment));
     result = res;
+    // Both parties agreed: the Deals page shows the deal summary from now on, as live.
+    documents.markDealAgreed();
   } else {
     const ops = [append("draw_line_hard_line"), append("submit_invoice")];
     const res = clone(cast<NegotiationView>(negNoDeal));
@@ -879,7 +909,45 @@ export async function demoReset(scenario?: string): Promise<void> {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
-  memory = emptyStore();
+  memory = seededStore();
   save();
   home.resetHome();
+  documents.resetDocuments();
+}
+
+// ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
+
+// The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
+export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+  void lang;
+  await delay();
+  return documents.mockDeals();
+}
+
+export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
+  void lang;
+  await delay();
+  return documents.mockDocuments();
+}
+
+export async function getDocument(id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  void lang;
+  await delay();
+  return documents.mockDocument(id);
+}
+
+export async function submitDocument(req: SubmitDocumentRequest): Promise<DocumentView> {
+  await delay();
+  return documents.mockSubmit(req);
+}
+
+/** The owner's decision is an owner operation on the same chain as the rest (CONFIRM_DOCUMENT / REJECT_DOCUMENT, Tier 2). */
+export async function decideDocument(id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null): Promise<DocumentDecision> {
+  await delay();
+  return documents.mockDecide(id, decision, docHash, linkFacilityId, (r) => appendRecorded({ ...r, requested_by: "OWNER" }));
+}
+
+export async function getContractFixtures(): Promise<ContractFixture[]> {
+  await delay();
+  return documents.mockContractFixtures();
 }

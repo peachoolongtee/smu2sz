@@ -97,6 +97,11 @@ test("day 34: Activity lists the agreement Receivables lists, not 'No commitment
 });
 
 test("an empty log has no chain badge", async ({ page }) => {
+  // The demo opens on the owner's confirmation of the three demo documents (brief 03); a log with no entry at all, a business's first
+  // day, is set up here in the mock's own store.
+  await page.addInitScript(() =>
+    sessionStorage.setItem("tl-mock-store-v2", JSON.stringify({ offers: {}, evaluated: [], negotiated: {}, ops: [], commitments: [], approvals: [], securityScene: false })),
+  );
   await page.goto("/activity");
   await expect(page.getByTestId("activity-empty")).toBeVisible();
   await expect(page.getByTestId("chain-status")).toHaveCount(0);

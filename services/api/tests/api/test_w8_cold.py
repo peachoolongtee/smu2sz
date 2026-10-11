@@ -90,11 +90,13 @@ def test_operation_rows_carry_their_kind_in_the_owners_words_and_keep_the_raw_ki
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
     en, zh = _both(client, "/ledger")
     kinds = {o["kind"]: (o["kind_text"]) for o in en["operations"]}
+    # The demo opens on the owner's confirmation of the three demo documents (contract ingestion, brief 03).
     assert kinds == {"ACCEPT_OFFER": "Agreement recorded", "DRAW_FACILITY": "Credit line drawn", "ADVANCE_CLOCK": "Time passed",
-                     "RECEIVE_PAYMENT": "Payment received", "SUBMIT_INVOICE_FOR_FINANCING": "Invoice financing requested"}
+                     "RECEIVE_PAYMENT": "Payment received", "SUBMIT_INVOICE_FOR_FINANCING": "Invoice financing requested",
+                     "CONFIRM_DOCUMENT": "Document confirmed"}
     assert {o["kind"]: o["kind_text"] for o in zh["operations"]} == {
         "ACCEPT_OFFER": "协议已记录", "DRAW_FACILITY": "信用额度已提款", "ADVANCE_CLOCK": "时间已推进", "RECEIVE_PAYMENT": "已收到付款",
-        "SUBMIT_INVOICE_FOR_FINANCING": "已申请发票融资"}
+        "SUBMIT_INVOICE_FOR_FINANCING": "已申请发票融资", "CONFIRM_DOCUMENT": "文件已确认"}
     assert [o["kind"] for o in en["operations"]] == [o["kind"] for o in zh["operations"]]
     funding = next(r for r in client.get("/decisions").json()["decisions"] if r["family"] == "FUNDING")
     record = client.get(f"/decisions/{funding['id']}", params={"lang": "zh"}).json()

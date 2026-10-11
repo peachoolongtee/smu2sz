@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
+import { isAgreed } from "@/components/deals/deal-summary";
+import { contractsOff } from "@/components/documents";
 import { DealDecision } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
 import { RecommendedResponse } from "@/components/deals/response";
@@ -13,7 +15,7 @@ import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { dealRecordId, getClock, getLedger, getState, submitOffer } from "@/lib/api";
+import { dealRecordId, getClock, getDeals, getLedger, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
@@ -57,6 +59,10 @@ export default function DealsPage() {
   // The deals' records: each message's words in the inbox are its record's state, read again whenever the books or the clock move.
   const records = useDecisions({ family: "DEAL" });
   const clock = useAsync(getClock, []);
+  // The deal summaries (contract ingestion): read again whenever a negotiation is recorded (the store's version moves) and when the language changes, since the
+  // server writes their sentences. A failed read is shown, not hidden; only a server with contract reading switched off has none to show.
+  const dealsView = useAsync(() => getDeals(lang), [lang]);
+  const dealsError = contractsOff(dealsView.error) ? undefined : dealsView.error;
   // The simulated clock: every day on this page is said as a distance from it.
   const today = clock.data?.day ?? books.data?.day ?? 0;
   const known = books.data ? new Set(books.data.state.counterparties.map((c) => c.id)) : null;
@@ -160,7 +166,19 @@ export default function DealsPage() {
 
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
 
-  const commitments = <ActiveCommitments key="commitments" today={today} buyerName={buyerName} hideEmpty />;
+  // Once both parties have agreed, each buyer's deal summary (the confirmed contract beside the books) sits inside that buyer's agreement: one section, not two.
+  const commitments = (
+    <ActiveCommitments
+      key="commitments"
+      today={today}
+      buyerName={buyerName}
+      hideEmpty
+      agreed={(dealsView.data?.deals ?? []).filter(isAgreed)}
+      dealsDay={dealsView.data?.day ?? null}
+      dealsError={dealsError}
+      onRetryDeals={dealsView.reload}
+    />
+  );
 
   const abstentions = offer?.offer.abstentions.length ? (
     <div className="mt-3" data-testid="deal-abstentions">

@@ -14,14 +14,16 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from app.compiler.base import BackendError, OfferResult, TermSheetResult
+from app.compiler.base import BackendError, ContractResult, OfferResult, TermSheetResult
 from app.compiler.prompts import (
+    CONTRACT_SYSTEM_PROMPT,
     OFFER_SYSTEM_PROMPT,
     TERM_SHEET_SYSTEM_PROMPT,
+    contract_user_message,
     offer_user_message,
     term_sheet_user_message,
 )
-from app.compiler.schema import OfferExtraction, TermSheetExtraction
+from app.compiler.schema import ContractExtraction, OfferExtraction, TermSheetExtraction
 from app.domain.models import SourceDocument
 
 M = TypeVar("M", bound=BaseModel)
@@ -121,6 +123,12 @@ class ClaudeBackend:
         )
         return TermSheetResult(ex, served)
 
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+        ex, served = self._call(
+            self.hard_model, CONTRACT_SYSTEM_PROMPT, contract_user_message(chunk), ContractExtraction, "high"
+        )
+        return ContractResult(ex, served)
+
 
 # ---------------------------------------------------------------- DeepSeek
 
@@ -200,4 +208,9 @@ class DeepSeekBackend:
     def extract_term_sheet(self, doc: SourceDocument) -> TermSheetResult:
         return TermSheetResult(
             self._call(TERM_SHEET_SYSTEM_PROMPT, term_sheet_user_message(doc), TermSheetExtraction), self.model
+        )
+
+    def extract_contract(self, chunk: SourceDocument) -> ContractResult:
+        return ContractResult(
+            self._call(CONTRACT_SYSTEM_PROMPT, contract_user_message(chunk), ContractExtraction), self.model
         )
