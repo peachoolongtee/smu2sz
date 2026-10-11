@@ -183,11 +183,13 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const planSegs = hasPlan && planPoints ? segments(planPoints.filter((p) => p.day >= today), end) : [];
 
   // Scale from the data: both lines in the window, zero and the reserve always inside, 8% of padding.
-  const levels = [0, floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
+  // With the server's axis the domain is exactly its range, widened only for what is drawn (a line or the reserve), never for zero.
+  const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
+  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
-  const hasAxis = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
+  const hasAxis = axisOk;
   const yLo = hasAxis && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = hasAxis && axis ? Math.max(axis.max_fen, hi) : hi + pad;
   const H = W < 520 ? 250 : 300;
@@ -263,7 +265,15 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
     { x: px - 8, y: py - 8, anchor: "end" as Anchor },
     { x: px - 8, y: py + 18, anchor: "end" as Anchor },
   ];
-  const around = (px: number, py: number) => [{ x: px, y: py + 22, anchor: "middle" as Anchor }, { x: px, y: py - 12, anchor: "middle" as Anchor }, ...beside(px, py)];
+  const around = (px: number, py: number) => [
+    { x: px, y: py + 22, anchor: "middle" as Anchor },
+    { x: px, y: py - 12, anchor: "middle" as Anchor },
+    ...beside(px, py),
+    // The lowest point is the one label that must be there: when the first spots are taken, try higher ones.
+    { x: px - 8, y: py - 26, anchor: "end" as Anchor },
+    { x: px + 8, y: py - 26, anchor: "start" as Anchor },
+    { x: px, y: py - 34, anchor: "middle" as Anchor },
+  ];
 
   // The reserve, named on its line.
   const reserveY = yOf(floor);

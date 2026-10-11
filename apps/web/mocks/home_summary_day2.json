@@ -1255,13 +1255,18 @@
     ],
     "plan_series": null,
     "axis": {
-      "min_fen": 0,
-      "max_fen": 150000000,
+      "min_fen": 30000000,
+      "max_fen": 90000000,
       "ticks": [
         {
-          "value_fen": 0,
-          "label": "¥0.00",
-          "value_display": "¥0.00"
+          "value_fen": 30000000,
+          "label": "¥300k",
+          "value_display": "¥300,000.00"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k",
+          "value_display": "¥400,000.00"
         },
         {
           "value_fen": 50000000,
@@ -1269,18 +1274,202 @@
           "value_display": "¥500,000.00"
         },
         {
-          "value_fen": 100000000,
-          "label": "¥1,000k",
-          "value_display": "¥1,000,000.00"
+          "value_fen": 60000000,
+          "label": "¥600k",
+          "value_display": "¥600,000.00"
         },
         {
-          "value_fen": 150000000,
-          "label": "¥1,500k",
-          "value_display": "¥1,500,000.00"
+          "value_fen": 70000000,
+          "label": "¥700k",
+          "value_display": "¥700,000.00"
+        },
+        {
+          "value_fen": 80000000,
+          "label": "¥800k",
+          "value_display": "¥800,000.00"
+        },
+        {
+          "value_fen": 90000000,
+          "label": "¥900k",
+          "value_display": "¥900,000.00"
         }
       ],
-      "min_display": "¥0.00",
-      "max_display": "¥1,500,000.00"
+      "min_display": "¥300,000.00",
+      "max_display": "¥900,000.00"
+    },
+    "axes": {
+      "30": {
+        "min_fen": 30000000,
+        "max_fen": 90000000,
+        "ticks": [
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 70000000,
+            "label": "¥700k",
+            "value_display": "¥700,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 90000000,
+            "label": "¥900k",
+            "value_display": "¥900,000.00"
+          }
+        ],
+        "min_display": "¥300,000.00",
+        "max_display": "¥900,000.00"
+      },
+      "32": {
+        "min_fen": 30000000,
+        "max_fen": 90000000,
+        "ticks": [
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 70000000,
+            "label": "¥700k",
+            "value_display": "¥700,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 90000000,
+            "label": "¥900k",
+            "value_display": "¥900,000.00"
+          }
+        ],
+        "min_display": "¥300,000.00",
+        "max_display": "¥900,000.00"
+      },
+      "60": {
+        "min_fen": 30000000,
+        "max_fen": 90000000,
+        "ticks": [
+          {
+            "value_fen": 30000000,
+            "label": "¥300k",
+            "value_display": "¥300,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 50000000,
+            "label": "¥500k",
+            "value_display": "¥500,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 70000000,
+            "label": "¥700k",
+            "value_display": "¥700,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 90000000,
+            "label": "¥900k",
+            "value_display": "¥900,000.00"
+          }
+        ],
+        "min_display": "¥300,000.00",
+        "max_display": "¥900,000.00"
+      },
+      "120": {
+        "min_fen": 20000000,
+        "max_fen": 140000000,
+        "ticks": [
+          {
+            "value_fen": 20000000,
+            "label": "¥200k",
+            "value_display": "¥200,000.00"
+          },
+          {
+            "value_fen": 40000000,
+            "label": "¥400k",
+            "value_display": "¥400,000.00"
+          },
+          {
+            "value_fen": 60000000,
+            "label": "¥600k",
+            "value_display": "¥600,000.00"
+          },
+          {
+            "value_fen": 80000000,
+            "label": "¥800k",
+            "value_display": "¥800,000.00"
+          },
+          {
+            "value_fen": 100000000,
+            "label": "¥1,000k",
+            "value_display": "¥1,000,000.00"
+          },
+          {
+            "value_fen": 120000000,
+            "label": "¥1,200k",
+            "value_display": "¥1,200,000.00"
+          },
+          {
+            "value_fen": 140000000,
+            "label": "¥1,400k",
+            "value_display": "¥1,400,000.00"
+          }
+        ],
+        "min_display": "¥200,000.00",
+        "max_display": "¥1,400,000.00"
+      }
     },
     "picture_days": 32,
     "picture_title": "Your cash, next 32 days",

@@ -1113,8 +1113,9 @@ export interface FundingView {
   menu: MenuRow[];
   marginal: MarginalCostView;
   comparison: ComparisonRow[];
-  /** The y axis shared by every row's `series`; absent from an older server. */
+  /** The y axis shared by every row's `series` over the whole horizon, and one per window ("30", "60", "120"); absent from an older server. */
   series_axis?: PictureAxis | null;
+  series_axes?: Record<string, PictureAxis> | null;
   /** The key of the row whose `role` is "recommended" (the plan the home's next-step card shows); absent from older answers. */
   recommended_key?: string | null;
   /** One sentence on how the rows are ordered ("The recommended plan first, then the other plans that can run now, cheapest first..."). */
@@ -2514,6 +2515,8 @@ export interface HomeView {
     plan_series: HomeSeriesPoint[] | null;
     /** The picture's y axis (range and labelled ticks), how many days it shows and its title ("Your cash, next 36 days"); absent from an older server. */
     axis?: PictureAxis | null;
+    /** The same axis for each window the picture can show, keyed by days as a string ("30", "60", "120" and the picture's own). */
+    axes?: Record<string, PictureAxis> | null;
     picture_days?: number | null;
     picture_title?: string | null;
     /** What the forecast counts, in one sentence, and the same as facts. */

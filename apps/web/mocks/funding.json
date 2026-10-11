@@ -6000,7 +6000,7 @@
     "ticks": [
       {
         "value_fen": 0,
-        "label": "¥0.00"
+        "label": "¥0"
       },
       {
         "value_fen": 50000000,
@@ -6015,6 +6015,90 @@
         "label": "¥1,500k"
       }
     ]
+  },
+  "series_axes": {
+    "30": {
+      "min_fen": 0,
+      "max_fen": 100000000,
+      "ticks": [
+        {
+          "value_fen": 0,
+          "label": "¥0"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k"
+        },
+        {
+          "value_fen": 60000000,
+          "label": "¥600k"
+        },
+        {
+          "value_fen": 80000000,
+          "label": "¥800k"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k"
+        }
+      ]
+    },
+    "60": {
+      "min_fen": 0,
+      "max_fen": 100000000,
+      "ticks": [
+        {
+          "value_fen": 0,
+          "label": "¥0"
+        },
+        {
+          "value_fen": 20000000,
+          "label": "¥200k"
+        },
+        {
+          "value_fen": 40000000,
+          "label": "¥400k"
+        },
+        {
+          "value_fen": 60000000,
+          "label": "¥600k"
+        },
+        {
+          "value_fen": 80000000,
+          "label": "¥800k"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k"
+        }
+      ]
+    },
+    "120": {
+      "min_fen": 0,
+      "max_fen": 150000000,
+      "ticks": [
+        {
+          "value_fen": 0,
+          "label": "¥0"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k"
+        },
+        {
+          "value_fen": 150000000,
+          "label": "¥1,500k"
+        }
+      ]
+    }
   },
   "comparison_order_text": "The recommended plan first, then the other plans that can run now, cheapest first. Plans that depend on the buyer, leave a gap or are not available yet follow, and are not ranked.",
   "recommended_key": "router_optimum"

@@ -2212,6 +2212,8 @@ export const en = {
   "biz.recv.pic.table": "The invoices and promised payments in the picture, by day",
   "biz.recv.pic.press": "Show this invoice in the list",
   "biz.recv.facts": "The state of what you are owed",
+  "biz.recv.pill.bad": "Late payment",
+  "biz.recv.pill.warn": "Due now",
   "biz.recv.bar.overdue": "Overdue",
   // ---- pages A1 (part 1): Activity
   "biz.activity.details": "Details",
@@ -4432,6 +4434,8 @@ export const zh: Record<DictKey, string> = {
   "biz.recv.pic.table": "图中的发票和承诺付款，按日期排列",
   "biz.recv.pic.press": "在列表中查看这张发票",
   "biz.recv.facts": "您应收款项的概况",
+  "biz.recv.pill.bad": "逾期未付",
+  "biz.recv.pill.warn": "即将到期",
   "biz.recv.bar.overdue": "逾期",
   // ---- pages A1 (part 1): Activity
   "biz.activity.details": "详情",
