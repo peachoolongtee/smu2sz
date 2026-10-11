@@ -369,7 +369,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}
-          <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
+          <Card flat id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
             <div className="max-h-96 overflow-y-auto">
               <AnnotatedText
                 ariaLabel={t("docs.annotated")}
@@ -389,14 +389,14 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
           </Card>
 
           <div className="min-w-0 space-y-4">
-            <Card id="doc-terms" title={lender ? t("docs.clauses", { n: read.length }) : t("docs.terms", { n: read.length })}>
+            <Card flat id="doc-terms" title={lender ? t("docs.clauses", { n: read.length }) : t("docs.terms", { n: read.length })}>
               <ol className="space-y-2" data-testid="doc-terms">
                 {read.map(itemRow)}
               </ol>
             </Card>
 
             {d.blanks?.length ? (
-              <Card id="doc-blanks" title={t("docs.blanks", { n: d.blanks.length })}>
+              <Card flat id="doc-blanks" title={t("docs.blanks", { n: d.blanks.length })}>
                 <ul className="space-y-1.5" data-testid="doc-blanks">
                   {d.blanks.map((b) => (
                     <li key={b.field} className="text-sm">
@@ -409,7 +409,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             ) : null}
 
             {lender && d.facility ? (
-              <Card id="doc-facility" title={t("docs.facility")} subtitle={d.facility.summary}>
+              <Card flat id="doc-facility" title={t("docs.facility")} subtitle={d.facility.summary}>
                 {d.facility.all_in_rate_display ? <p className="text-sm text-ink-2">{t("docs.allIn", { rate: d.facility.all_in_rate_display })}</p> : null}
                 {d.compared_with && d.comparison?.length ? (
                   <div className="mt-3">
@@ -461,7 +461,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             ) : null}
 
             {d.notes.length ? (
-              <Card id="doc-notes" title={t("docs.notes")}>
+              <Card flat id="doc-notes" title={t("docs.notes")}>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-ink-2">
                   {d.notes.map((x, i) => (
                     <li key={i}>{x.reason}</li>

@@ -244,7 +244,7 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
   // The Source and Invoice facts say what the request is, so there is no sentence under the title repeating it.
   await expect(card).toContainText("the ¥420,000.00 invoice to Foshan Home Retail Co.");
   await expect(card).not.toContainText("Finance ¥200,000.00 of the ¥420,000.00 invoice");
@@ -264,7 +264,7 @@ test("day 34: the approval card is a question with the cost, the landing day and
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Tier 2");
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("alert:ALERT-RESERVE-42:v7:0");
 
-  await card.getByRole("button", { name: "Approve" }).click();
+  await card.getByRole("button", { name: /^Approve/ }).click();
   await expect(card.getByTestId("approval-result-APR-000001")).toContainText("the cash lands in 3 days");
   await expect(card).toContainText("Approved");
   await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided today.");

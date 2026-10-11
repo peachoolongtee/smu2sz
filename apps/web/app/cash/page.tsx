@@ -1,52 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
-import { CashForecast } from "@/components/lazy-charts";
+import { useEffect, useState } from "react";
+import { CashForecast, type ChosenLine } from "@/components/business/cash-forecast";
 import { CurrentFunding } from "@/components/business/current-funding";
 import { PartialRead } from "@/components/business/freshness";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
-import { FundingOptions, isRecommendedRow } from "@/components/business/funding-options";
+import { FundingOptions, isRecommendedRow, optionName, rowKey } from "@/components/business/funding-options";
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, PageHeader, Stat, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
+import { Badge, Card, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
 import { getHome, getPriceCurve, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { FundingView } from "@/lib/types";
+import type { FundingView, HomeView, MenuRow } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
-import { versusMinimum } from "@/lib/minimum";
 import { splitSentence } from "@/lib/price-sentence";
 import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
 
-/** "Lowest forecast headroom −¥405k": the second line of the caption under the lowest point. */
-function LowestHeadroom({ short, fen }: { short: string | undefined; fen?: number }) {
+/** Your funding sources: each facility with how much of its limit is drawn (a bar sized by `drawn_fen` against `limit_fen`), the server's limit, drawn and available strings and how fast the money arrives. */
+function FundingSources({ facilities, menu }: { facilities: HomeView["facilities"]; menu: MenuRow[] | undefined }) {
   const { t } = useI18n();
-  if (short === undefined) return null;
-  const v = versusMinimum(short, fen, true);
-  return <span className="block font-semibold tabular-nums text-ink-2">{t(v.key, { amount: v.amount })}</span>;
-}
-
-/**
- * A quiet door to another page: a bordered tile with what it is for and a text link, the link stretched over the whole tile so
- * the tile is the target (one link per tile, in the page's tab order, with the same name as before).
- */
-function DoorTile({ id, title, sub, href, label }: { id: string; title: string; sub: string; href: string; label: string }) {
+  const rows = facilities.filter((f) => (f.limit_fen ?? 1) > 0);
+  if (!rows.length) return null;
   return (
-    <div id={id} className="motion-lift relative flex items-center justify-between gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card hover:bg-subtle">
-      <div className="min-w-0">
-        <h2 className="text-sm font-semibold text-ink">{title}</h2>
-        <p className="mt-0.5 text-xs text-ink-3">{sub}</p>
-      </div>
-      <Link href={href} className="inline-flex shrink-0 items-center gap-1 rounded-pill text-xs font-medium text-brand-700 underline underline-offset-2 after:absolute after:inset-0 after:rounded-card">
-        {label}
-        <ChevronRightIcon />
-      </Link>
-    </div>
+    <ul className="divide-y divide-line" data-testid="cash-facilities">
+      {rows.map((f) => {
+        const pct = f.limit_fen && f.drawn_fen !== undefined && f.limit_fen > 0 ? Math.min((f.drawn_fen / f.limit_fen) * 100, 100) : 0;
+        const ttc = menu?.find((m) => m.facility.id === f.id)?.time_to_cash_display;
+        return (
+          <li key={f.id} className="py-3" data-testid={`cash-facility-${f.id}`}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+              <span className="text-sm font-semibold text-ink">{f.name}</span>
+              {ttc ? <span className="text-xs text-ink-3">{t("biz.facility.speed", { ttc })}</span> : null}
+            </div>
+            <div role="img" aria-label={`${t("biz.cash.sources.used")}: ${f.drawn_display} / ${f.limit_display}`} className="mt-1.5 h-1.5 max-w-md rounded-pill bg-subtle" data-testid="cash-facility-bar" data-pct={Math.round(pct)}>
+              <div className="h-full rounded-pill bg-brand-600" style={{ width: `${pct}%` }} />
+            </div>
+            <dl className="mt-1.5 flex flex-wrap gap-x-6 gap-y-0.5 text-xs text-ink-2">
+              <div className="flex gap-1.5"><dt>{t("fund.limit")}</dt><dd className="font-semibold tabular-nums text-ink">{f.limit_display}</dd></div>
+              <div className="flex gap-1.5"><dt>{t("biz.drawn")}</dt><dd className="font-semibold tabular-nums text-ink">{f.drawn_display}</dd></div>
+              <div className="flex gap-1.5"><dt>{t("biz.available")}</dt><dd className="font-semibold tabular-nums text-ink">{f.available_display}</dd></div>
+            </dl>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -84,7 +87,7 @@ function PriceSentence({ sentence }: { sentence: string }) {
 export default function CashPage() {
   const { t, te, lang } = useI18n();
   const demo = useDemo();
-  // A phone reads the status, then the plan to run, then the four facts as a short list, then the options.
+  // A phone reads the answer, then the plan to run, then the picture; a desktop reads the picture and then the plan bar under it.
   const narrow = useNarrow();
   const home = useAsync(() => getHome(lang), [lang]);
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
@@ -95,9 +98,10 @@ export default function CashPage() {
   const curve = curveRead.data;
   const fixer = useFixAlert();
   useEffect(() => onSignedIn(() => bump()), []);
+  // The plan the owner picked in "Ways to cover the gap"; null until one is picked (the recommended plan is then the chosen one).
+  const [picked, setPicked] = useState<string | null>(null);
   const h = home.data;
   const view = traj.data;
-  const unsafe = h?.cash.first_breach_day !== null && h?.cash.first_breach_day !== undefined;
   // Covered means no action is needed AND no breach is ahead: a critical alert with no runnable fix has no next action
   // either, and the page must not then say "no additional funding is needed".
   const covered = Boolean(h) && !h?.next_action && h?.cash.first_breach_day === null;
@@ -106,10 +110,6 @@ export default function CashPage() {
   // snapshot is "Other plans considered", and without a snapshot there is nothing to show.
   const snapshot = demo.funding;
   const plan = useAsync(async () => (!h ? null : covered ? (snapshot ?? null) : await planFunding({}, lang)), [Boolean(h), covered, Boolean(snapshot), h?.state_version, lang]);
-  // Already under the minimum today: the tile is how far under (the shortfall), with today's cash as its caption.
-  const shortToday = h?.cash.below_reserve_today && h.cash.headroom_short !== undefined ? versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false).amount : null;
-  // When the first breach is also the lowest point it is one fact: one tile, not the same figure and day twice.
-  const breachIsWorst = unsafe && h?.cash.first_breach_day === h?.cash.lowest_day;
   const statusTone = h?.status === "CRITICAL" ? "bad" : h?.status === "SAFE" ? "ok" : "warn";
 
   /** The comparison worth showing: none when a fresh plan on covered books says "no funding needed". */
@@ -117,68 +117,15 @@ export default function CashPage() {
     const rows = p?.comparison ?? [];
     return rows.length === 1 && rows[0].key === "router_optimum" && !rows[0].actions?.length ? [] : rows;
   };
-  // The recommended plan is said once. While the plan card above holds it (an open gap with a plan to run), the options under it are the
-  // alternatives; once covered, the decision-time comparison is history and keeps the plan that was chosen.
   const recommendedKey = h?.next_action?.plan_source === "router" ? "router_optimum" : null;
-  const planCard = Boolean(h?.next_action);
-  const alternatives = (p: FundingView | undefined) => (planCard ? comparison(p).filter((c) => !isRecommendedRow(c, recommendedKey)) : comparison(p));
-
-  // Four facts: today's cash, the reserve, when cash becomes unsafe, the worst point. The headroom is the caption of the tile it belongs to.
-  const figures = h ? (
-    <dl className={`grid gap-2 sm:gap-3 ${breachIsWorst ? "sm:grid-cols-3" : "sm:grid-cols-4"}`} data-testid="cash-figures">
-      <Stat row label={t("biz.cashToday")} value={h.cash.cash_short} />
-      <Stat
-        row
-        label={t("biz.reserveMin")}
-        value={h.cash.floor_short}
-        caption={
-          h.cash.headroom_short !== undefined ? (
-            <>
-              <span className="font-semibold tabular-nums text-ink-2" data-testid="cash-headroom">{t(versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).key, { amount: versusMinimum(h.cash.headroom_short, h.cash.headroom_fen, false, true).amount })}</span>
-            </>
-          ) : undefined
-        }
-      />
-      {breachIsWorst ? (
-        <Stat
-          row
-          label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstBreachIsWorst")}
-          tone="bad"
-          value={shortToday ?? h.cash.first_breach_cash_short}
-          caption={
-            <>
-              {shortToday ? <span className="block">{t("biz.cashNow", { amount: h.cash.cash_short })}</span> : null}
-              {h.cash.first_breach_when && !h.cash.below_reserve_today ? <span className="block">{h.cash.first_breach_when}</span> : null}
-              <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
-            </>
-          }
-        />
-      ) : (
-        <>
-          <Stat
-          row
-            label={h.cash.below_reserve_today ? t("biz.shortToday") : t("biz.firstUnsafeDay")}
-            tone={unsafe ? "bad" : "neutral"}
-            testId="cash-unsafe-when"
-            value={h.cash.below_reserve_today ? (shortToday ?? h.cash.first_breach_cash_short) : (h.cash.first_breach_when ?? t("biz.cash.neverUnsafe", { n: h.cash.horizon_days }))}
-            caption={shortToday ? t("biz.cashNow", { amount: h.cash.cash_short }) : undefined}
-          />
-          <Stat
-          row
-            label={unsafe ? t("biz.worstPoint") : t("biz.lowestAhead")}
-            tone={unsafe ? "bad" : "neutral"}
-            value={h.cash.lowest_short}
-            caption={
-              <>
-                {h.cash.lowest_when ? <span className="block">{h.cash.lowest_when}</span> : null}
-                <LowestHeadroom short={h.cash.lowest_headroom_short} fen={h.cash.lowest_headroom_fen} />
-              </>
-            }
-          />
-        </>
-      )}
-    </dl>
-  ) : null;
+  const rows = comparison(plan.data ?? undefined);
+  // The chosen plan: the picked row, else the recommended one. Its cash line is the alternative on the picture, under its own name.
+  const recommendedRow = rows.find((r) => isRecommendedRow(r, recommendedKey));
+  const chosenRow = rows.find((r) => rowKey(r) === picked) ?? recommendedRow;
+  const chosen: ChosenLine | null =
+    chosenRow && plan.data
+      ? { key: rowKey(chosenRow), label: optionName(chosenRow, plan.data.menu, t), series: chosenRow.series ?? null, lowestShort: recommendedRow && rowKey(recommendedRow) === rowKey(chosenRow) ? h?.next_action?.after_lowest_short : null }
+      : null;
 
   const options = plan.error ? (
     <ErrorState error={plan.error} onRetry={plan.reload} />
@@ -187,15 +134,8 @@ export default function CashPage() {
   ) : (
     <>
       {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
-      {planCard && comparison(plan.data).length > 0 && alternatives(plan.data).length === 0 ? (
-        <p className="text-sm text-ink-3" data-testid="cash-options-none">
-          {t("biz.cash.options.none")}
-        </p>
-      ) : (
-        // The server's ordering sentence starts from the recommended plan; with that plan held by the card above, it would describe a list that is not here.
-        <FundingOptions rows={alternatives(plan.data)} menu={plan.data.menu} recommendedKey={recommendedKey} orderText={planCard && alternatives(plan.data).length !== comparison(plan.data).length ? null : plan.data.comparison_order_text} />
-      )}
-      {/* A server that names each row's role has already said so in the alternative's chip, so the grey note would say it twice. */}
+      <FundingOptions rows={rows} menu={plan.data.menu} recommendedKey={recommendedKey} orderText={plan.data.comparison_order_text} chosenKey={chosen?.key ?? null} onChoose={setPicked} />
+      {/* A server that names each row's role has already said so in the alternative's pill, so the grey note would say it twice. */}
       {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
         <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
           {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
@@ -206,7 +146,7 @@ export default function CashPage() {
           <p className="text-ink-2">{t("plan.need", { need: plan.data.committed.need_display })}</p>
           <ul className="space-y-1.5">
             {plan.data.committed.costs.map((c) => (
-              <li key={c.label} className="rounded-tile border border-line px-3 py-1.5">
+              <li key={c.label} className="border-b border-line py-1.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span>{c.label_when ?? c.label}</span>
                   <span className="font-medium tabular-nums">{c.display}</span>
@@ -224,96 +164,99 @@ export default function CashPage() {
           </p>
         </div>
       </Disclosure>
-      <Disclosure testId="cash-sources" className="mt-3" summary={t("biz.cash.sources")}>
-        <div className="mt-2">
-          <FacilityExplainer menu={plan.data.menu} inPlan={new Set(plan.data.committed.actions.map((a) => a.facility_id))} />
-        </div>
-      </Disclosure>
     </>
   );
 
+  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
+  const picture = h ? (
+    <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} className="motion-reveal min-w-0 space-y-2">
+      <CashForecast h={h} chosen={chosen} />
+      {/* What the line counts, in the server's words. */}
+      <p className="text-xs text-ink-3">{h.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}</p>
+    </section>
+  ) : null;
+  // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
+  const slot = h && !h.next_action ? h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : covered ? <CurrentFunding h={h} /> : null : null;
+
   return (
     <>
-      <PageHeader section="cash" title={t("nav.cash")} subtitle={narrow ? undefined : t("biz.cash.subtitle")} />
-      <div className="space-y-6">
-        {home.error ? (
-          <ErrorState error={home.error} onRetry={home.reload} />
-        ) : !h ? (
-          <LoadingBlock rows={2} />
-        ) : (
-          <>
-            <section id="cash-answer" aria-label={t("biz.cash.risk")} className="space-y-3">
-              {/* The status is one compact row: its pill and the sentence. The facts are the tiles under it. */}
-              <div className="motion-reveal rounded-card border border-line bg-surface p-4 shadow-card">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <Badge tone={statusTone}>{h.status_text ?? te("homestatus", h.status)}</Badge>
-                  <p className="text-xl font-semibold text-ink" data-testid="cash-headline">
-                    {h.headline}
+      {home.error ? (
+        <ErrorState error={home.error} onRetry={home.reload} />
+      ) : !h ? (
+        <LoadingBlock rows={3} />
+      ) : (
+        <div className="space-y-5 sm:space-y-7" aria-busy={home.loading}>
+          <header id="cash-answer" className="motion-reveal flex flex-col items-start gap-2.5" data-testid="cash-status" data-status={h.status}>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Badge tone={statusTone}>{h.status_text ?? te("homestatus", h.status)}</Badge>
+              {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
+              {h.cash.last_read_when ? (
+                <p className="text-xs text-ink-3" data-testid="cash-read-when">
+                  {t("biz.cash.readWhen", { when: h.cash.last_read_when })}
+                </p>
+              ) : null}
+            </div>
+            <h1 className="max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem]" data-testid="cash-headline">
+              {h.headline}
+            </h1>
+            <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="cash-note">
+              {h.note}
+            </p>
+            {curve ? (
+              narrow ? (
+                <Disclosure className="-mt-1" summary={t("biz.cash.priceFold")} testId="cash-price-fold">
+                  <p className="pb-1 text-sm text-ink-2" data-testid="cash-price-sentence">
+                    {curve.sentence}
                   </p>
-                  {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
-                  {h.cash.last_read_when ? (
-                    <p className="text-xs text-ink-3" data-testid="cash-read-when">
-                      {t("biz.cash.readWhen", { when: h.cash.last_read_when })}
-                    </p>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-sm text-ink-2">{h.note}</p>
-                {curve ? (
-                  narrow ? (
-                    <Disclosure className="mt-1" summary={t("biz.cash.priceFold")} testId="cash-price-fold">
-                      <p className="pb-1 text-sm text-ink-2" data-testid="cash-price-sentence">
-                        {curve.sentence}
-                      </p>
-                    </Disclosure>
-                  ) : (
-                    <PriceSentence sentence={curve.sentence} />
-                  )
-                ) : null}
-                {/* A failed read is not "no price to show": it says so, with Retry (a feature that is off returns nothing and says nothing). */}
-                {curveRead.error ? (
-                  <div className="mt-2" data-testid="cash-curve-failed">
-                    <ErrorState error={t("biz.cash.curve.failed")} onRetry={curveRead.reload} />
-                  </div>
-                ) : null}
-              </div>
-              {narrow ? null : figures}
-            </section>
-
-            <PartialRead partial={h.partial} onRetry={home.reload} />
-            <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-            {h.next_action ? (
-              <NextActionBlock a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
-            ) : h.remaining_task ? (
-              // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
-              <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} />
-            ) : covered ? (
-              <CurrentFunding h={h} />
+                </Disclosure>
+              ) : (
+                <PriceSentence sentence={curve.sentence} />
+              )
             ) : null}
-            {narrow ? figures : null}
+            {/* A failed read is not "no price to show": it says so, with Retry (a feature that is off returns nothing and says nothing). */}
+            {curveRead.error ? (
+              <div data-testid="cash-curve-failed">
+                <ErrorState error={t("biz.cash.curve.failed")} onRetry={curveRead.reload} />
+              </div>
+            ) : null}
+          </header>
 
-          </>
-        )}
+          <PartialRead partial={h.partial} onRetry={home.reload} />
+          <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+          {slot}
+          {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan bar sits under it. */}
+          {narrow ? action : picture}
+          {narrow ? picture : action}
 
-        {covered ? (
-          !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
-            <Disclosure card testId="cash-options" summary={t("biz.cash.options.considered")}>
-              <div>{options}</div>
-            </Disclosure>
-          )
-        ) : (
-          <Card id="cash-options" title={t("biz.cash.options.title")} subtitle={t("biz.cash.options.sub3")}>
-            {options}
+          {covered ? (
+            !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
+              <Disclosure card testId="cash-options" summary={t("biz.cash.options.considered")}>
+                <div>{options}</div>
+              </Disclosure>
+            )
+          ) : (
+            <Card flat id="cash-options" title={t("biz.cash.options")} subtitle={t("biz.cash.options.sub3")}>
+              {options}
+            </Card>
+          )}
+
+          <Card flat id="cash-sources-now" title={t("biz.cash.sources.title")} subtitle={t("biz.cash.sources.sub")}>
+            <FundingSources facilities={h.facilities} menu={plan.data?.menu} />
+            {plan.data ? (
+              <Disclosure testId="cash-sources" className="mt-2" summary={t("biz.cash.sources")}>
+                <div className="mt-2">
+                  <FacilityExplainer menu={plan.data.menu} inPlan={new Set(plan.data.committed.actions.map((a) => a.facility_id))} />
+                </div>
+              </Disclosure>
+            ) : null}
           </Card>
-        )}
 
-        <Card id="cash-chart" title={t("biz.cash.forecast")} subtitle={h?.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}>
-          {home.error ? <ErrorState error={home.error} onRetry={home.reload} /> : !h ? <LoadingBlock rows={2} /> : <CashForecast h={h} />}
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (
-            <Disclosure testId="cash-readings" className="mt-3 border-t border-line pt-2" summary={t("biz.readings")}>
+            <Disclosure testId="cash-readings" className="border-t border-line pt-1" summary={t("biz.readings")}>
               <div>
                 {/* The first line is the home's own reading (the same projection as the table's first month). */}
-                {h?.cash.dscr_text || h?.cash.leverage_text ? (
+                {h.cash.dscr_text || h.cash.leverage_text ? (
                   <p className="mb-2 text-sm text-ink" data-testid="cash-readings-now">
                     {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
                   </p>
@@ -346,13 +289,26 @@ export default function CashPage() {
               </div>
             </Disclosure>
           ) : null}
-        </Card>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <DoorTile id="cash-whatif" title={t("biz.cash.whatif")} sub={t("biz.cash.whatif.sub")} href="/whatif" label={t("biz.cash.whatif.open")} />
-          <DoorTile id="cash-capex" title={t("biz.cash.capex")} sub={t("biz.cash.capex.sub")} href="/capex" label={t("biz.cash.capex.open")} />
+          {/* Two quiet doors to other pages. */}
+          <nav aria-label={t("biz.cash.doors")} className="flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-4">
+            <div id="cash-whatif" className="min-w-0">
+              <Link href="/whatif" className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`}>
+                {t("biz.cash.whatif.open")}
+                <ChevronRightIcon />
+              </Link>
+              <p className="text-xs text-ink-3">{t("biz.cash.whatif.sub")}</p>
+            </div>
+            <div id="cash-capex" className="min-w-0">
+              <Link href="/capex" className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`}>
+                {t("biz.cash.capex.open")}
+                <ChevronRightIcon />
+              </Link>
+              <p className="text-xs text-ink-3">{t("biz.cash.capex.sub")}</p>
+            </div>
+          </nav>
         </div>
-      </div>
+      )}
     </>
   );
 }

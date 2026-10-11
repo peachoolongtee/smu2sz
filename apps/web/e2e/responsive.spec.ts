@@ -293,7 +293,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
   measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
-  // Cash: the position strip, the plan, then the comparison; its options list starts inside the first two screens.
+  // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   const options = (await topOf(page, "cash-options-list"))!;
@@ -306,8 +306,9 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const chart = (await topOf(page, "cash-chart"))!;
   expect((await topOf(page, "cash-answer"))!.top).toBeLessThan(plan.top);
   expect(plan.top).toBeLessThan(options.top);
-  expect(options.top, "the options list starts inside the first two screens").toBeLessThan(2 * 915);
-  expect(options.top).toBeLessThan(chart.top);
+  // The picture now leads the page's content (pages A1), so the options sit under it, inside the first three screens.
+  expect(options.top, "the options list starts inside the first three screens").toBeLessThan(3 * 915);
+  expect(chart.top).toBeLessThan(options.top);
   measured.cash = { answer: await topOf(page, "cash-answer"), plan, primary: { top: Math.round(cashBox.y), bottom: Math.round(cashBox.y + cashBox.height) }, facts: await topOf(page, "cash-figures"), options, chart, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
   // The three numbers the review asks for: the bottom edge of each page's primary action (all inside 915).

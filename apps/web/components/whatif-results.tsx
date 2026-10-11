@@ -57,6 +57,7 @@ export function WhatIfVerdictCard({ r, loading }: { r: WhatIfResult; loading: bo
   const { t } = useI18n();
   return (
     <Card
+      flat
       id="whatif-engine"
       title={t("whatif.engine")}
       actions={
@@ -125,6 +126,7 @@ export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; load
   const be = r.break_even;
   return (
     <Card
+      flat
       id="whatif-verdict"
       title={t("whatif.verdict")}
       actions={
@@ -174,6 +176,7 @@ export function WhatIfCashCard({ r, today }: { r: WhatIfResult; today: number })
   const horizon = tr.days.length ? tr.days[tr.days.length - 1].day : 0;
   return (
     <Card
+      flat
       id="whatif-cash"
       title={t("whatif.cash")}
       subtitle={t("whatif.cash.sub")}
@@ -233,7 +236,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
   const { t } = useI18n();
   const f = r.forward;
   return (
-    <Card id="whatif-meter" title={t("whatif.meter")} subtitle={t("whatif.meter.sub")} tone={f.over_cap ? "bad" : undefined}>
+    <Card flat id="whatif-meter" title={t("whatif.meter")} subtitle={t("whatif.meter.sub")} tone={f.over_cap ? "bad" : undefined}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p
           className={`text-2xl font-semibold tabular-nums ${f.over_cap ? "text-bad-fg" : "text-ink"}`}
@@ -270,7 +273,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
 export function WhatIfCovenantsCard({ r }: { r: WhatIfResult }) {
   const { t } = useI18n();
   return (
-    <Card id="whatif-covenants" title={t("whatif.covenants")}>
+    <Card flat id="whatif-covenants" title={t("whatif.covenants")}>
       <ul className="flex flex-wrap gap-2" data-testid="whatif-covenants">
         {r.covenants.map((c) => (
           <li
@@ -297,7 +300,7 @@ export function WhatIfPlanCard({ r }: { r: WhatIfResult }) {
   const be = r.break_even;
   const needsFunding = Boolean(p && p.actions.length);
   return (
-    <Card id="whatif-plan" title={t("whatif.plan")}>
+    <Card flat id="whatif-plan" title={t("whatif.plan")}>
       <p className="text-2xl font-semibold tabular-nums text-ink" data-testid="whatif-plan-total">
         {needsFunding && p ? p.total_cost_display : t("whatif.plan.none")}
       </p>
@@ -335,7 +338,7 @@ export function WhatIfCountersCard({ r }: { r: WhatIfResult }) {
   const { t } = useI18n();
   if (!r.counters.length) return null;
   return (
-    <Card id="whatif-counters" title={t("whatif.counters")}>
+    <Card flat id="whatif-counters" title={t("whatif.counters")}>
       <ul className="grid gap-3 sm:grid-cols-2">
         {r.counters.map((c) => (
           <li key={c.label} className="rounded-tile border border-line p-3">
@@ -355,7 +358,7 @@ export function WhatIfCountersCard({ r }: { r: WhatIfResult }) {
 export function WhatIfTestedCard({ r }: { r: WhatIfResult }) {
   const { t } = useI18n();
   return (
-    <Card id="whatif-tested" title={t("whatif.tested")} subtitle={t("whatif.tested.sub")}>
+    <Card flat id="whatif-tested" title={t("whatif.tested")} subtitle={t("whatif.tested.sub")}>
       <ul className="space-y-1.5 text-sm">
         {r.description.obligations.map((o) => (
           <li key={o.obligation_type} className="flex flex-wrap items-baseline gap-2">

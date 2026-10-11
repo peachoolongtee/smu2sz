@@ -99,7 +99,7 @@ function Documents() {
           </div>
         )}
 
-        <Card id="docs-list" className="order-6" title={t("docs.list")}>
+        <Card flat id="docs-list" className="order-6" title={t("docs.list")}>
           {list.error ? (
             <ErrorState error={list.error} onRetry={list.reload} />
           ) : !list.data ? (
