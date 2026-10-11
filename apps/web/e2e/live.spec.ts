@@ -218,7 +218,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
   const approvalCard = page.locator('[id^="approval-APR-"]').first();
   // The price the owner is quoted is the one stored when the request was made (F13).
-  await expect(approvalCard.getByTestId("approval-quote")).toContainText("Quoted when requested (today)");
+  await expect(approvalCard.locator('[data-testid^="approval-quoted-"] > summary')).toContainText("Quoted when requested (today)");
   await expect(approvalCard.getByTestId("approval-cost")).toContainText("¥1,782.19");
   await approvalCard.getByRole("button", { name: /^Approve/ }).click();
   await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
@@ -682,8 +682,9 @@ test("Activity: each row says what changed, why it matters (Now) and what remain
   await page.goto("/activity");
   const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
   await expect(approved.getByTestId("activity-event")).toHaveText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
-  // Today's forecast is said once above the timeline, labelled Now; the row does not repeat it.
-  await expect(page.getByTestId("activity-now")).toContainText("Now");
+  // Today's forecast is said once, as the page's one h1 (the server's "now" sentence); the row does not repeat it.
+  await expect(page.getByTestId("activity-now")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(await page.getByTestId("activity-now").innerText());
   await expect(approved.getByTestId("activity-why")).toHaveCount(0);
   await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for");
   const requested = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "Approval requested:" });
