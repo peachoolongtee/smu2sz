@@ -369,7 +369,8 @@ test("the new Home strings read in Chinese", async ({ page }) => {
   await page.goto("/");
   await openAccountMenu(page);
   await page.getByLabel("中文").check();
-  await expect(page.getByTestId("home-picture")).toContainText("您未来的现金");
+  await expect(page.getByTestId("home-picture")).toContainText("未来 36 天的现金");
+  await expect(page.getByTestId("picture-ytick").first()).toBeVisible(); // the server's own y labels
   await expect(page.getByTestId("picture-view-plan")).toHaveText("采用 FLOW 方案");
   await expect(page.getByTestId("home-deals")).toContainText("您的交易");
   await expect(page.getByTestId("next-action-details").locator("> summary")).toHaveText("查看计算过程");

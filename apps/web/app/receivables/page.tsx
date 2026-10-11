@@ -88,7 +88,7 @@ export default function ReceivablesPage() {
 
   return (
     <>
-      <PageHeader section="recv" title={sentence ?? t("nav.receivables")} subtitle={sentence ? note : t("biz.recv.subtitle")} />
+      <PageHeader section="recv" title={sentence && r?.headline ? <span className={r.headline_tone === "bad" ? "text-bad-fg" : r.headline_tone === "warn" ? "text-warn-fg" : ""} data-tone={r.headline_tone ?? undefined}>{sentence}</span> : (sentence ?? t("nav.receivables"))} subtitle={sentence ? note : t("biz.recv.subtitle")} />
       {error ? (
         <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
       ) : !data || !r ? (

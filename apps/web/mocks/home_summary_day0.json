@@ -2475,6 +2475,41 @@
         "net_short": "−¥45k"
       }
     ],
+    "axis": {
+      "min_fen": -50000000,
+      "max_fen": 150000000,
+      "ticks": [
+        {
+          "value_fen": -50000000,
+          "label": "−¥500k",
+          "value_display": "−¥500,000.00"
+        },
+        {
+          "value_fen": 0,
+          "label": "¥0.00",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k",
+          "value_display": "¥500,000.00"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k",
+          "value_display": "¥1,000,000.00"
+        },
+        {
+          "value_fen": 150000000,
+          "label": "¥1,500k",
+          "value_display": "¥1,500,000.00"
+        }
+      ],
+      "min_display": "−¥500,000.00",
+      "max_display": "¥1,500,000.00"
+    },
+    "picture_days": 36,
+    "picture_title": "Your cash, next 36 days",
     "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded; assumed line repayment in 32 days.",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2506,18 +2541,22 @@
     "outcome_title": "Secure ¥405k of funding",
     "components": [
       {
+        "amount_fen": 15000000,
         "amount_short": "¥150k",
         "what": "Bank credit line",
         "lands_when": "today",
         "name_display": "Bank credit line",
-        "cost_display": "¥841.64"
+        "cost_display": "¥841.64",
+        "amount_display": "¥150,000.00"
       },
       {
+        "amount_fen": 25500000,
         "amount_short": "¥255k",
         "what": "against the ¥420k invoice to Foshan Home Retail Co.",
         "lands_when": "in 3 days",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥2,272.29"
+        "cost_display": "¥2,272.29",
+        "amount_display": "¥255,000.00"
       }
     ],
     "receive_short": "¥405k",
@@ -2643,7 +2682,10 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "Nobody is late. Next: ¥420,000.00 from Foshan Home Retail Co., due in 32 days.",
+    "headline_tone": "ok",
+    "headline_note": null
   },
   "warnings": [
     {

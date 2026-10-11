@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint } from "@/lib/types";
+import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
 
 /**
  * The cash picture: the owner's cash over the days ahead as a step line, a second step line when there is an alternative (Home: "with FLOW's
@@ -13,7 +13,8 @@ import type { HomeSeriesPoint } from "@/lib/types";
  *
  * Every word and figure on it is a string the server sent (the callers pass `floorLabel`, the lowest points' labels, each event's `label_short`
  * and `amount_short`, the aria label); the `*_fen` and `day` numbers only place a mark (INVARIANT 13). No axis figures are
- * made here: where the server sent no short string for a level there is no tick, and the reserve line and the markers carry the numbers.
+ * made here: the y ticks are the server's own (`axis.ticks[].label`, placed at `value_fen`); with no axis there are no ticks, and the reserve line and
+ * the markers carry the numbers.
  * Labels that would overlap one already placed, a line or the edge of the plot are skipped; the chips below name every event.
  */
 const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
@@ -135,6 +136,8 @@ export interface CashPictureProps {
   captions?: ReactNode;
   /** A shorter name for the alternative on the toggle when its name on the line is long (a plan named by its sources). */
   toggleAlternativeLabel?: string;
+  /** The server's y axis: its range is the scale (widened only if a line would leave it) and its labelled ticks are drawn in a gutter at the left. Without it the picture scales to its data and draws no ticks. */
+  axis?: PictureAxis | null;
 }
 
 /** True when the alternative is a line of its own: some day closes at another figure than the baseline. */
@@ -142,7 +145,7 @@ export function linesDiffer(baseline: HomeSeriesPoint[], alternative: HomeSeries
   return Boolean(alternative?.length && alternative.some((p) => baseline.find((s) => s.day === p.day)?.closing_fen !== p.closing_fen));
 }
 
-export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel }: CashPictureProps) {
+export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel, axis }: CashPictureProps) {
   const { t } = useI18n();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
@@ -184,10 +187,13 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
-  const yLo = lo - Math.max((hi - lo) * 0.14, 1);
-  const yHi = hi + pad;
+  const hasAxis = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
+  const yLo = hasAxis && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
+  const yHi = hasAxis && axis ? Math.max(axis.max_fen, hi) : hi + pad;
   const H = W < 520 ? 250 : 300;
-  const pl = PAD.l;
+  // The tick labels live in a gutter at the left of the plot, as wide as the widest label.
+  const gutter = hasAxis && axis ? Math.ceil(Math.max(...axis.ticks.map((k) => textWidth(k.label, false)))) + 8 : 0;
+  const pl = PAD.l + gutter;
   const pr = W - PAD.r;
   const pt = PAD.t;
   const pb = H - PAD.b;
@@ -372,6 +378,17 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
     .map((c, index) => ({ ...c, index }));
   const bandDay = focus !== null ? chips.find((c) => c.index === focus)?.day : undefined;
 
+  // ---- the server's y ticks: a hairline and its label in the gutter, skipping a tick that would crowd the one before it
+  const yTicks: { key: number; y: number; label: string }[] = [];
+  if (hasAxis && axis) {
+    for (const k of [...axis.ticks].sort((a, b) => b.value_fen - a.value_fen)) {
+      const y = yOf(k.value_fen);
+      if (y < pt - 4 || y > pb + 4) continue;
+      if (yTicks.length && y - yTicks[yTicks.length - 1].y < FONT + 3) continue;
+      yTicks.push({ key: k.value_fen, y, label: k.label });
+    }
+  }
+
   // ---- ticks along the foot: today, then a distance every 5, 10 or 20 days, spaced at least 76 px apart
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
@@ -423,6 +440,14 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
             {bandDay !== undefined ? (
               <rect data-testid="picture-band" x={xOf(bandDay) - 1} y={pt - 8} width={Math.max(xOf(bandDay + 1) - xOf(bandDay), 12) + 2} height={pb - pt + 8} rx={6} className="fill-brand-600/12" />
             ) : null}
+            {yTicks.map((k) => (
+              <g key={`y${k.key}`} data-testid="picture-ytick">
+                <line x1={pl} x2={pr} y1={k.y} y2={k.y} className="stroke-line" strokeWidth={1} opacity={0.7} />
+                <text x={pl - 6} y={k.y + 4} textAnchor="end" className="fill-ink-3">
+                  {k.label}
+                </text>
+              </g>
+            ))}
             {shortfall.map((pts, i) => (
               <polygon key={`s${i}`} points={pts} className={`fill-bad-solid/10 ${fade}`} style={fadeStyle} />
             ))}

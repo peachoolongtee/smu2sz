@@ -199,7 +199,7 @@ export default function ActivityPage() {
                 {groups.map((g) => (
                   <div key={`${g.day}-${g.rows[0].seq}`} className="motion-rise" data-testid="activity-day">
                     <h3 className="relative z-10 pb-1 pl-12 pt-5 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3 first:pt-0" data-testid="activity-day-caption">
-                      <span className="inline-block first-letter:uppercase">{whenText(g.day, today, t)}</span>
+                      <span className="inline-block first-letter:uppercase">{g.rows[0].day_when || whenText(g.day, today, t)}</span>
                     </h3>
                     <ol>
                       {g.rows.map((o) =>

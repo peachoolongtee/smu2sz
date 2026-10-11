@@ -6,7 +6,7 @@ import { Disclosure } from "@/components/business/kit";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { versusMinimum } from "@/lib/minimum";
-import type { HomeSeriesPoint, HomeView } from "@/lib/types";
+import type { HomeSeriesPoint, HomeView, PictureAxis } from "@/lib/types";
 
 /**
  * The cash forecast on /cash: the shared cash picture fed from the home read (baseline `cash.series`; the alternative is the plan the owner chose in
@@ -21,6 +21,8 @@ export interface ChosenLine {
   key: string;
   label: string;
   series: HomeSeriesPoint[] | null;
+  /** The y axis the plans' lines share (the plan response's `series_axis`); the home read's axis stands when absent. */
+  axis?: PictureAxis | null;
   lowestShort?: string | null;
 }
 
@@ -129,6 +131,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
           alternativeLowestLabel: chosen?.lowestShort ? t("biz.picture.lowest", { amount: chosen.lowestShort }) : null,
         }}
         horizonDays={cash.horizon_days}
+        axis={(chosen?.series ? chosen.axis : null) ?? cash.axis}
         windowDays={horizon}
         resetKey={chosen?.key ?? ""}
         toggleAlternativeLabel={chosen ? t("biz.cash.chosenPlan") : undefined}

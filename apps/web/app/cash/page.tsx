@@ -124,7 +124,7 @@ export default function CashPage() {
   const chosenRow = rows.find((r) => rowKey(r) === picked) ?? recommendedRow;
   const chosen: ChosenLine | null =
     chosenRow && plan.data
-      ? { key: rowKey(chosenRow), label: optionName(chosenRow, plan.data.menu, t), series: chosenRow.series ?? null, lowestShort: recommendedRow && rowKey(recommendedRow) === rowKey(chosenRow) ? h?.next_action?.after_lowest_short : null }
+      ? { key: rowKey(chosenRow), label: optionName(chosenRow, plan.data.menu, t), series: chosenRow.series ?? null, axis: plan.data.series_axis, lowestShort: recommendedRow && rowKey(recommendedRow) === rowKey(chosenRow) ? h?.next_action?.after_lowest_short : null }
       : null;
 
   const options = plan.error ? (

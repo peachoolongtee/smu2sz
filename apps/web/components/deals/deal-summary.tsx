@@ -138,6 +138,7 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
                 </Link>
               </>
             ) : null}
+            {c?.replaces_text ? <span className="block text-xs font-normal text-ink-3" data-testid="deal-replaces">{c.replaces_text}</span> : null}
           </dd>
         </div>
         {deal.next_invoice ? (
