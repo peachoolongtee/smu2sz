@@ -950,8 +950,30 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     return items
 
 
+def _receivables_headline(past_due: list[dict[str, Any]], nxt: dict[str, Any] | None, today: int, lang: str,
+                          no_plan: bool, open_count: int) -> dict[str, Any]:
+    """The one sentence the receivables card leads with, from the block's own rows, and its tone: the lead late invoice (the longest
+    overdue, then the largest), else the next one due, else nothing owed. `headline_note` is the quiet caveat when what collecting each
+    invoice saves cannot be priced (no committed plan covers the shortfall), in the words the receivables-worth read writes."""
+    from app.strategy.collections import NO_PLAN_NOTE
+
+    if past_due:
+        lead = min(past_due, key=lambda r: (-r["days_late"], -r["face_fen"], r["receivable_id"]))
+        n = lead["days_late"]
+        text = t(lang, f"{lead['face_display']} from {lead['buyer_name']} is {n} {'day' if n == 1 else 'days'} late.",
+                 f"来自{lead['buyer_name']}的 {lead['face_display']} 已逾期 {n} 天。")
+        tone = "bad"
+    elif nxt is not None:
+        text = t(lang, f"Nobody is late. Next: {nxt['face_display']} from {nxt['buyer_name']}, due {nxt['due_when']}.",
+                 f"没有逾期。下一笔：来自{nxt['buyer_name']}的 {nxt['face_display']}，{nxt['due_when']}到期。")
+        tone = "warn" if nxt["due_day"] <= today else "ok"
+    else:
+        text, tone = t(lang, "Nothing is owed to you right now.", "目前没有应收款。"), "ok"
+    return {"headline": text, "headline_tone": tone, "headline_note": t(lang, *NO_PLAN_NOTE) if no_plan and open_count else None}
+
+
 def _receivables(state: FinancialState, store: Any, today: int, lang: str, partial: Partial | None = None,
-                 reconciled: Reconciled | None = None) -> dict[str, Any]:
+                 reconciled: Reconciled | None = None, no_plan: bool = False) -> dict[str, Any]:
     try:
         report = (reconciled if reconciled is not None else _new_reconciled(store)).report(today)
     except Exception:  # the block is a supporting read: it reads as unknown, never as "nothing owed", and the home says so
@@ -959,7 +981,9 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
         if partial is not None:
             partial.add("reconciliation")
         return {"open_count": 0, "open_total_display": None, "overdue_total_display": None, "past_due": [], "next_receipt": None,
-                "promised": None, "lapsed_promises": 0}
+                "promised": None, "lapsed_promises": 0,
+                "headline": t(lang, "Receivables could not be read just now.", "暂时无法读取应收款。"), "headline_tone": "warn",
+                "headline_note": None}
     rows: list[dict[str, Any]] = []
     for o in report.outstanding:
         rows.append({"receivable_id": o.receivable_id, "buyer_id": o.counterparty_id,
@@ -982,7 +1006,8 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
                    "when": when_text(p.promised_day, today, lang) if p.promised_day is not None else None}
     return {"open_count": len(rows), "open_total_display": fmt_yuan(total),
             "overdue_total_display": fmt_yuan(overdue), "past_due": past_due,
-            "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises}
+            "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises,
+            **_receivables_headline(past_due, nxt, today, lang, no_plan, len(rows))}
 
 
 def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] | None:
@@ -1092,7 +1117,9 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
         changes = _changes(books.state, rt.store, found, today, lang, since_day, causality, partial, reconciled,
                            record.entries if record is not None else None)
-        receivables = _receivables(books.state, rt.store, today, lang, partial, reconciled)
+        breach_alert = _breach(found)  # no committed plan covers the shortfall: the router found none to price a receipt against
+        receivables = _receivables(books.state, rt.store, today, lang, partial, reconciled,
+                                   no_plan=breach_alert is not None and not breach_alert.committed_cure)
         in_transit = _in_transit(books.state, today, lang)
         funding_lots = _funding_lots(books.state, today, lang)
         agreements = {c.id: party_name(state, c.counterparty_id) for c in rt.store.commitments()}
