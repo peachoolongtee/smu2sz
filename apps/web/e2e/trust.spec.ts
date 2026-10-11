@@ -15,7 +15,7 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await story(page, "tl-mock-approval-story", "agreement");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
   await expect(card.getByTestId("approval-buyer")).toHaveText("Foshan Home Retail Co.");
   const terms = card.getByTestId("approval-terms");
   await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co.");

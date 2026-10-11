@@ -180,14 +180,16 @@ test("the approval card shows what was quoted, and once decided what happened an
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   const card = page.locator("#approval-APR-000001");
   const quote = card.getByTestId("approval-quote");
-  await expect(quote).toContainText("Quoted when requested (today)");
+  // What was quoted waits behind one fold on a waiting approval too.
+  await expect(card.getByTestId("approval-quoted-APR-000001").locator("> summary")).toContainText("Quoted when requested (today)");
+  await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   await expect(quote).toContainText("Invoice financing is billed in whole 30-day periods until the invoice is paid.");
   // The after-state and what declining leaves are the quote's.
   await expect(card.getByTestId("approval-after")).toContainText("Cash stays above your minimum cash reserve for the next 120 days.");
   await expect(card.getByTestId("approval-if-decline")).toContainText("below your minimum cash reserve");
   await expect(card.getByTestId("approval-quote-actual")).toHaveCount(0);
 
-  await card.getByRole("button", { name: "Approve" }).click();
+  await card.getByRole("button", { name: /^Approve/ }).click();
   // Decided: what was quoted is history, behind its own fold.
   await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   const decided = card.getByTestId("approval-quote");
@@ -225,7 +227,7 @@ test("Home: after the cure is approved, 'Waiting on' lists what is open and link
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator("#approval-APR-000001").getByRole("button", { name: "Approve" }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
   // The hero says what is on its way, so "Waiting on" does not list the same funding again.

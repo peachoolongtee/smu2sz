@@ -127,6 +127,12 @@ export interface CashPictureProps {
   viewLabel?: string;
   /** The id of the element naming the section, when the header has one. */
   labelledBy?: string;
+  /** A window of exactly this many days (the page's 30 / 60 / 120-day switch) instead of the one chosen from the data; still bounded by the server's horizon. */
+  windowDays?: number;
+  /** When this changes (another alternative was chosen), the view returns to the alternative. */
+  resetKey?: string;
+  /** Sentences set under the chart (the server's two "if you decline / after" sentences on an approval). */
+  captions?: ReactNode;
 }
 
 /** True when the alternative is a line of its own: some day closes at another figure than the baseline. */
@@ -134,7 +140,7 @@ export function linesDiffer(baseline: HomeSeriesPoint[], alternative: HomeSeries
   return Boolean(alternative?.length && alternative.some((p) => baseline.find((s) => s.day === p.day)?.closing_fen !== p.closing_fen));
 }
 
-export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy }: CashPictureProps) {
+export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions }: CashPictureProps) {
   const { t } = useI18n();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
@@ -148,6 +154,12 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const [view, setView] = useState<"nothing" | "plan">(hasPlan ? "plan" : "nothing");
   const [focus, setFocus] = useState<number | null>(null);
   const showPlan = hasPlan && view === "plan";
+  // Another alternative was chosen by the page: show it.
+  const [seenKey, setSeenKey] = useState(resetKey);
+  if (seenKey !== resetKey) {
+    setSeenKey(resetKey);
+    setView("plan");
+  }
 
   const base = baseline.filter((p) => p.day >= today);
   if (!base.length) return null;
@@ -158,7 +170,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const recovered = breach !== null ? base.find((p) => p.day > lowestDay && p.closing_fen >= floor)?.day : undefined;
   const landings = (planPoints ?? []).flatMap((p) => (p.events.some((e) => e.kind === "DRAW" || e.kind === "ADVANCE") ? [p.day] : []));
   const lastInteresting = Math.max(today, breach ?? today, lowestDay, recovered ?? today, ...(hasPlan ? landings : [today]));
-  const span = Math.min(Math.max(MIN_WINDOW, lastInteresting - today + TAIL), MAX_WINDOW, horizonDays || MAX_WINDOW);
+  const span = windowDays ? Math.min(windowDays, horizonDays || windowDays) : Math.min(Math.max(MIN_WINDOW, lastInteresting - today + TAIL), MAX_WINDOW, horizonDays || MAX_WINDOW);
   const end = Math.min(today + span, base[base.length - 1].day);
   const last = Math.max(end - today, 1);
 
@@ -459,6 +471,8 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
           </svg>
         ) : null}
       </div>
+
+      {captions}
 
       {/* The same picture as a table, for a screen reader and anyone who prefers numbers: the labelled days, in the server's figures. */}
       <div className="sr-only">
