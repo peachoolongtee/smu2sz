@@ -113,7 +113,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_day": breach[0] if breach else None,
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None},
         "replies": replies,
-        "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor),
+        "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, 60),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }
 

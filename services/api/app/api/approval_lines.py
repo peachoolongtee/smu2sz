@@ -42,7 +42,7 @@ def approval_lines(state: FinancialState, obs: list[Any], mandate: Mandate, op_j
     return {
         "series_if_declined": if_declined,
         "series_if_approved": if_approved,
-        "series_axis": series_axis([if_declined, if_approved], mandate.min_cash_fen),
+        "series_axis": series_axis([if_declined, if_approved], mandate.min_cash_fen, 60),
         "lowest_if_declined_fen": low_d, "lowest_if_declined_short": fmt_short(low_d), "lowest_if_declined_when": _distance(day_d, today, lang),
         "lowest_if_approved_fen": low_a, "lowest_if_approved_short": fmt_short(low_a), "lowest_if_approved_when": _distance(day_a, today, lang),
     }
