@@ -2,8 +2,8 @@
   "width_name": "phone",
   "width": 412,
   "viewport_height": 915,
-  "head": "c7468ad1",
-  "captured_at": "2026-10-11T17:03:38.519Z",
+  "head": "4375aa8d",
+  "captured_at": "2026-10-11T17:13:03.317Z",
   "shots": [
     {
       "file": "01-home-day0.png",
@@ -24,7 +24,7 @@
         "bottom": 809,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "02-home-day34-no-receipt-before-cure.png",
@@ -45,7 +45,7 @@
         "bottom": 819,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "03-home-day34-no-receipt-residual.png",
@@ -66,7 +66,7 @@
         "bottom": 551,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "04-deals-evaluated-day0.png",
@@ -87,7 +87,7 @@
         "bottom": 852,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "05-deals-ask-flow-why-countering.png",
@@ -108,7 +108,7 @@
         "bottom": 899,
         "filled_actions_on_page": 2
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "06-deals-agreed.png",
@@ -124,7 +124,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "07-deals-day34-missed-no-receipt.png",
@@ -140,7 +140,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "08-cash-day0.png",
@@ -161,7 +161,7 @@
         "bottom": 813,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "09-cash-day34.png",
@@ -182,7 +182,7 @@
         "bottom": 791,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "10-receivables-day34-half-receipt-chase-dialog.png",
@@ -203,7 +203,7 @@
         "bottom": 807,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "11-receivables-day34-half-receipt-list.png",
@@ -219,7 +219,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "12-activity-day34-after-cure.png",
@@ -235,7 +235,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "13-approvals-pending-agreement-terms.png",
@@ -256,7 +256,7 @@
         "bottom": 762,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "14-approvals-pending-funding-cure.png",
@@ -277,7 +277,7 @@
         "bottom": 826,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "15-approvals-pending-funding-cure-full-receipt.png",
@@ -298,7 +298,7 @@
         "bottom": 826,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "16-approvals-decided-with-quote.png",
@@ -314,7 +314,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "17-approvals-refused-mandate-expired.png",
@@ -330,7 +330,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "18-decisions-deal-record-agreed.png",
@@ -346,7 +346,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "19-decisions-cure-record-settled.png",
@@ -362,7 +362,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "20-demo-scene2-flow-decides.png",
@@ -383,7 +383,7 @@
         "bottom": 907,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "21-demo-scene5-owner-approve-step.png",
@@ -404,7 +404,7 @@
         "bottom": 850,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "22-demo-story-page-scene5.png",
@@ -420,7 +420,7 @@
       "loading_skeleton_still_visible": false,
       "primary_action_y_is": "document",
       "primary_action": null,
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "23-home-day34-cure-pending-zh.png",
@@ -441,7 +441,7 @@
         "bottom": 743,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     },
     {
       "file": "24-approvals-pending-funding-cure-zh.png",
@@ -462,7 +462,7 @@
         "bottom": 786,
         "filled_actions_on_page": 1
       },
-      "head": "c7468ad1"
+      "head": "4375aa8d"
     }
   ]
 }
