@@ -253,7 +253,7 @@ def test_the_runtime_lock_is_free_while_the_file_is_read_and_while_the_reading_r
     not hold it."""
     import threading
 
-    import app.api.documents as documents
+    from app.api import documents
     from app.api.runtime import get_runtime
 
     rt = get_runtime()
@@ -293,7 +293,7 @@ def test_the_runtime_lock_is_free_while_the_file_is_read_and_while_the_reading_r
 def test_another_route_is_answered_while_a_document_is_being_read(client, monkeypatch):
     import threading
 
-    import app.api.documents as documents
+    from app.api import documents
 
     started, release = threading.Event(), threading.Event()
     extract = documents.extract_text
