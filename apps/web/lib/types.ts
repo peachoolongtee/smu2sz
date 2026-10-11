@@ -885,6 +885,8 @@ export interface NegotiationRound {
 
 export interface OperationView extends Displayed<OperationResult> {
   day: Day;
+  /** The day as a distance from today in the server's words ("3 days ago"); absent from an older server. */
+  day_when?: string | null;
   /** Null when the log entry does not record who asked (for example an owner decision). */
   requested_by: Actor | null;
   summary: string;
@@ -1111,6 +1113,8 @@ export interface FundingView {
   menu: MenuRow[];
   marginal: MarginalCostView;
   comparison: ComparisonRow[];
+  /** The y axis shared by every row's `series`; absent from an older server. */
+  series_axis?: PictureAxis | null;
   /** The key of the row whose `role` is "recommended" (the plan the home's next-step card shows); absent from older answers. */
   recommended_key?: string | null;
   /** One sentence on how the rows are ordered ("The recommended plan first, then the other plans that can run now, cheapest first..."). */
@@ -1277,6 +1281,8 @@ export interface ApprovalPresentation {
   /** The cash line if the request is declined / approved and each line's lowest point (a pending funding request); null where a cash line means nothing. */
   series_if_declined?: HomeSeriesPoint[] | null;
   series_if_approved?: HomeSeriesPoint[] | null;
+  /** The y axis of both lines; absent from an older server. */
+  series_axis?: PictureAxis | null;
   lowest_if_declined_fen?: Fen | null;
   lowest_if_declined_short?: string | null;
   lowest_if_declined_when?: string | null;
@@ -2302,6 +2308,15 @@ export interface HomeCheaperOption {
   legs: string[];
 }
 
+/** The y axis of a cash picture, as the server drew it: the range to scale to and the labelled ticks (the labels are the server's words). */
+export interface PictureAxis {
+  min_fen: Fen;
+  max_fen: Fen;
+  ticks: { value_fen: Fen; label: string; value_display?: string }[];
+  min_display?: string;
+  max_display?: string;
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
@@ -2325,7 +2340,7 @@ export interface HomeNextAction {
   title: string;
   /** The business outcome ("Secure ¥405k of funding") and its components, in overview precision. */
   outcome_title: string;
-  components: { amount_short: string; what: string; lands_when: string | null; name_display?: string; cost_display?: string | null }[];
+  components: { amount_fen?: Fen; amount_short: string; what: string; lands_when: string | null; name_display?: string; cost_display?: string | null }[];
   /** The key of the comparison row (POST /router/plan) that is this plan: "router_optimum", or "recommended_plan" when the plan is the alert's cure. Null when the card is not a funding plan. Badge the row by its `role`, which is exact. */
   recommended_key?: string | null;
   receive_short: string | null;
@@ -2441,6 +2456,8 @@ export interface HomeReceivables {
   /** The page's answer in one sentence for every state (who owes, who is late, what to do), and a quiet caveat under it; absent until the server sends them. */
   headline?: string | null;
   headline_note?: string | null;
+  /** The headline's tone (ok / warn / bad); absent from an older server. */
+  headline_tone?: "ok" | "warn" | "bad" | null;
 }
 
 export interface HomeView {
@@ -2495,6 +2512,10 @@ export interface HomeView {
     /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
     series: HomeSeriesPoint[];
     plan_series: HomeSeriesPoint[] | null;
+    /** The picture's y axis (range and labelled ticks), how many days it shows and its title ("Your cash, next 36 days"); absent from an older server. */
+    axis?: PictureAxis | null;
+    picture_days?: number | null;
+    picture_title?: string | null;
     /** What the forecast counts, in one sentence, and the same as facts. */
     forecast_basis_text?: string;
     forecast_basis?: {
@@ -3047,4 +3068,6 @@ export interface OfferPictureView {
   floor_fen: Fen;
   floor_short: string;
   horizon_days: number;
+  /** The y axis of the lines; absent from an older server. */
+  axis?: PictureAxis | null;
 }

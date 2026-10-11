@@ -190,7 +190,8 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { 
 
   if (bar) {
     // The funding bar: each part is sized by its amount (fen place the mark only; every figure beside it is the server's string).
-    const sized = a.legs.length === a.components.length && a.legs.every((l) => l.amount_fen !== null && l.amount_fen > 0);
+    // The bar is sized from each component's own amount; an older server sends none and the parts are equal.
+    const sized = a.components.length > 0 && a.components.every((c) => typeof c.amount_fen === "number" && c.amount_fen > 0);
     return (
       <>
         <ActionBar aria-labelledby="home-action-title" data-testid="home-next-action" data-alert={a.alert_id}>
@@ -201,8 +202,8 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { 
             </h2>
             {a.components.length ? (
               <div aria-hidden className="flex h-2 max-w-sm gap-[3px]" data-testid="next-action-bar">
-                {a.components.map((_, i) => (
-                  <span key={i} className={`rounded-[3px] ${PART[i % PART.length]}`} style={{ flex: `${sized ? a.legs[i].amount_fen : 1} 1 0` }} />
+                {a.components.map((c, i) => (
+                  <span key={i} className={`rounded-[3px] ${PART[i % PART.length]}`} style={{ flex: `${sized ? c.amount_fen : 1} 1 0` }} />
                 ))}
               </div>
             ) : null}

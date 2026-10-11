@@ -54,6 +54,7 @@
       "approve_label": "Approve the agreement (0.50% early-payment discount, about ¥2,100.00)",
       "why_text": "This changes the terms with a buyer, which you keep for yourself.",
       "residual": null,
+      "series_axis": null,
       "series_if_declined": null,
       "series_if_approved": null,
       "lowest_if_declined_short": null,
@@ -135,6 +136,7 @@
       "approve_label": null,
       "why_text": "This changes the terms with a buyer, which you keep for yourself.",
       "residual": null,
+      "series_axis": null,
       "series_if_declined": null,
       "series_if_approved": null,
       "lowest_if_declined_short": null,
@@ -2631,6 +2633,28 @@
             "net_short": "¥0.00"
           }
         ],
+        "series_axis": {
+          "min_fen": 0,
+          "max_fen": 150000000,
+          "ticks": [
+            {
+              "value_fen": 0,
+              "label": "¥0.00"
+            },
+            {
+              "value_fen": 50000000,
+              "label": "¥500k"
+            },
+            {
+              "value_fen": 100000000,
+              "label": "¥1,000k"
+            },
+            {
+              "value_fen": 150000000,
+              "label": "¥1,500k"
+            }
+          ]
+        },
         "lowest_if_declined_fen": 10000000,
         "lowest_if_declined_short": "¥100k",
         "lowest_if_declined_when": "in 8 days",
@@ -2728,6 +2752,7 @@
         "if_decline": null,
         "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
         "residual": null,
+        "series_axis": null,
         "series_if_declined": null,
         "series_if_approved": null,
         "lowest_if_declined_short": null,

@@ -2475,6 +2475,41 @@
         "net_short": "−¥45k"
       }
     ],
+    "axis": {
+      "min_fen": -50000000,
+      "max_fen": 150000000,
+      "ticks": [
+        {
+          "value_fen": -50000000,
+          "label": "−¥500k",
+          "value_display": "−¥500,000.00"
+        },
+        {
+          "value_fen": 0,
+          "label": "¥0.00",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k",
+          "value_display": "¥500,000.00"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k",
+          "value_display": "¥1,000,000.00"
+        },
+        {
+          "value_fen": 150000000,
+          "label": "¥1,500k",
+          "value_display": "¥1,500,000.00"
+        }
+      ],
+      "min_display": "−¥500,000.00",
+      "max_display": "¥1,500,000.00"
+    },
+    "picture_days": 36,
+    "picture_title": "未来 36 天的现金",
     "forecast_basis_text": "按到期日预计的发票回款和已承诺的融资；已逾期未付的款项不计入；假定额度于32 天后还款。",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -2506,18 +2541,22 @@
     "outcome_title": "筹措 ¥405k 资金",
     "components": [
       {
+        "amount_fen": 15000000,
         "amount_short": "¥150k",
         "what": "Bank credit line",
         "lands_when": "今天",
         "name_display": "Bank credit line",
-        "cost_display": "¥841.64"
+        "cost_display": "¥841.64",
+        "amount_display": "¥150,000.00"
       },
       {
+        "amount_fen": 25500000,
         "amount_short": "¥255k",
         "what": "以Foshan Home Retail Co. 的 ¥420k 发票融资",
         "lands_when": "3 天后",
         "name_display": "Invoice financing (onboarded platform)",
-        "cost_display": "¥2,272.29"
+        "cost_display": "¥2,272.29",
+        "amount_display": "¥255,000.00"
       }
     ],
     "receive_short": "¥405k",
@@ -2643,7 +2682,10 @@
       "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票"
     },
     "promised": null,
-    "lapsed_promises": 0
+    "lapsed_promises": 0,
+    "headline": "没有逾期。下一笔：来自Foshan Home Retail Co.的 ¥420,000.00，32 天后到期。",
+    "headline_tone": "ok",
+    "headline_note": null
   },
   "warnings": [
     {

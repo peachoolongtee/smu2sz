@@ -1283,6 +1283,36 @@
       }
     ],
     "plan_series": null,
+    "axis": {
+      "min_fen": 0,
+      "max_fen": 150000000,
+      "ticks": [
+        {
+          "value_fen": 0,
+          "label": "¥0.00",
+          "value_display": "¥0.00"
+        },
+        {
+          "value_fen": 50000000,
+          "label": "¥500k",
+          "value_display": "¥500,000.00"
+        },
+        {
+          "value_fen": 100000000,
+          "label": "¥1,000k",
+          "value_display": "¥1,000,000.00"
+        },
+        {
+          "value_fen": 150000000,
+          "label": "¥1,500k",
+          "value_display": "¥1,500,000.00"
+        }
+      ],
+      "min_display": "¥0.00",
+      "max_display": "¥1,500,000.00"
+    },
+    "picture_days": 43,
+    "picture_title": "Your cash, next 43 days",
     "forecast_basis_text": "Expected invoice payments at their due dates and committed funding; overdue payments are excluded.",
     "forecast_basis": {
       "scheduled_receipts_counted": true,
@@ -1485,7 +1515,10 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co."
     },
     "promised": null,
-    "lapsed_promises": 1
+    "lapsed_promises": 1,
+    "headline": "¥420,000.00 from Foshan Home Retail Co. is 6 days late.",
+    "headline_tone": "bad",
+    "headline_note": "No committed funding plan covers the shortfall, so nothing is priced: ranked by how late each invoice is, then by amount."
   },
   "warnings": [
     {

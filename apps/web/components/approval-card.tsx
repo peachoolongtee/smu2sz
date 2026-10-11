@@ -489,6 +489,7 @@ function ApprovalPicture({ a, cash, after, decline }: { a: ApprovalView; cash: A
         alternativeLowestLabel: approveLowest,
       }}
       horizonDays={cash.horizon_days}
+      axis={p.series_axis}
       chips={false}
       ariaLabel={[t("biz.appr.pic.decline"), decline, t("biz.appr.pic.approve"), after].filter(Boolean).join(" ")}
       testIdPrefix="approval"

@@ -40,6 +40,7 @@
     "if_decline": null,
     "protects": "Cash stays above your minimum cash reserve for the next 120 days.",
     "residual": null,
+    "series_axis": null,
     "series_if_declined": null,
     "series_if_approved": null,
     "lowest_if_declined_short": null,

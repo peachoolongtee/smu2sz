@@ -40,6 +40,7 @@
     "if_decline": null,
     "protects": "未来 120 天现金都保持在您的最低现金储备以上。",
     "residual": null,
+    "series_axis": null,
     "series_if_declined": null,
     "series_if_approved": null,
     "lowest_if_declined_short": null,

@@ -31,6 +31,8 @@ export function CashPicture({ h }: { h: HomeView }) {
         alternativeLowestLabel: h.next_action?.after_lowest_short ? t("biz.picture.lowest", { amount: h.next_action.after_lowest_short }) : null,
       }}
       horizonDays={cash.horizon_days}
+      windowDays={cash.picture_days || undefined}
+      axis={cash.axis}
       ariaLabel={[h.headline, h.note, h.next_action?.after].filter(Boolean).join(" ")}
       testIdPrefix="home"
       viewLabel={t("biz.picture.view")}
@@ -38,7 +40,7 @@ export function CashPicture({ h }: { h: HomeView }) {
       header={
         <>
           <h2 id="home-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
-            {t("biz.picture.title")}
+            {cash.picture_title || t("biz.picture.title")}
           </h2>
           <dl className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1">
             <div className="flex items-baseline gap-2">

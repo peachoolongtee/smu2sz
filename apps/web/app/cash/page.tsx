@@ -124,7 +124,7 @@ export default function CashPage() {
   const chosenRow = rows.find((r) => rowKey(r) === picked) ?? recommendedRow;
   const chosen: ChosenLine | null =
     chosenRow && plan.data
-      ? { key: rowKey(chosenRow), label: optionName(chosenRow, plan.data.menu, t), series: chosenRow.series ?? null, lowestShort: recommendedRow && rowKey(recommendedRow) === rowKey(chosenRow) ? h?.next_action?.after_lowest_short : null }
+      ? { key: rowKey(chosenRow), label: optionName(chosenRow, plan.data.menu, t), series: chosenRow.series ?? null, axis: plan.data.series_axis, lowestShort: recommendedRow && rowKey(recommendedRow) === rowKey(chosenRow) ? h?.next_action?.after_lowest_short : null }
       : null;
 
   const options = plan.error ? (
@@ -196,7 +196,7 @@ export default function CashPage() {
                 </p>
               ) : null}
             </div>
-            <h1 className="max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem]" data-testid="cash-headline">
+            <h1 className="max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl" data-testid="cash-headline">
               {h.headline}
             </h1>
             <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="cash-note">

@@ -174,7 +174,7 @@ function DemoDocuments({
           <LoadingBlock rows={2} />
         </div>
       ) : (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 divide-y divide-line border-y border-line">
           {fixtures.data.map((f) => {
             const made = existing.filter((d) => d.source === `fixture:${f.id}` && d.status !== "REJECTED");
             const last = made.length ? made[made.length - 1] : null;
@@ -187,7 +187,7 @@ function DemoDocuments({
                   e.dataTransfer.setData(FIXTURE_MIME, JSON.stringify({ fixture_id: f.id, format }));
                   e.dataTransfer.effectAllowed = "copy";
                 }}
-                className="flex cursor-grab flex-wrap items-center justify-between gap-2 rounded-tile border border-line bg-surface px-3 py-2.5 hover:border-brand-100 hover:shadow-lift active:cursor-grabbing"
+                className="flex cursor-grab flex-wrap items-center justify-between gap-2 py-2.5 active:cursor-grabbing"
                 data-testid={`fixture-${f.id}`}
               >
                 <div className="min-w-0">
