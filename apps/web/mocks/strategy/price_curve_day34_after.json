@@ -17,6 +17,7 @@
     }
   ],
   "flat": true,
+  "no_plan": false,
   "source_state_version": 8,
   "hypothetical": true,
   "sentence": "Earlier cash saves you nothing today.",

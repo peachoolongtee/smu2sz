@@ -24,6 +24,8 @@ depends on the books alone, so two runs on the same books list the same sha256. 
   --role-play auto     instead: record `followed` for every answer, owner_did "role-play: followed FLOW's answer"
   --journal-file PATH  also keep the journal on a JSON-lines file (see pilot_runtime.py); it must not hold entries yet
   --allow-repo-path    as for pilot_runtime.py
+  --zone               also read each buyer's zone table (`?zone=1`, a few seconds more each) after its envelope and keep it in
+                       `envelope-<buyer>-zone.json`; without it the envelope is read as the web reads it, without the table
 
 With neither --decisions nor --role-play the weeks are exported and the open decisions printed, and nothing is recorded.
 
@@ -276,6 +278,7 @@ class WeekResult:
     receipts: list[ReceiptResult] = field(default_factory=list)
     seconds: float = 0.0
     items: list[Item] = field(default_factory=list)
+    zones: list[Item] = field(default_factory=list)  # the zone tables, read and kept only with --zone (answer "zone")
     worth_rows: list[str] = field(default_factory=list)
     choices: list[str] = field(default_factory=list)
     receipts_posted: int = 0  # receipts the executor answered this week (landed or refused)
@@ -340,10 +343,14 @@ def _buyers_with_a_lever(rt: Runtime) -> list[str]:
     return [c.id for c in state.counterparties if c.role == "BUYER" and c.id in with_lever]
 
 
-def _export_week(rt: Runtime, client: Any, week_dir: Path, result: WeekResult) -> None:
-    """Read the three answers and write their files; fills `result.items`, `worth_rows` and `errors`."""
+def _export_week(rt: Runtime, client: Any, week_dir: Path, result: WeekResult, *, zone: bool = False) -> None:
+    """Read the three answers and write their files; fills `result.items`, `worth_rows` and `errors`. The envelope is read
+    without its zone table (`zone=0`, as the web reads it: the table is a detail opened on demand, and the read is a
+    few seconds shorter); with `zone` each buyer's table is read as well, after the envelope, and written to `envelope-<buyer>-zone.json`
+    (the same answer with the table in it) and listed in `result.zones`, which is no answer a decision is recorded against."""
 
-    def read(answer: str, file: str, path: str, params: dict[str, Any], buyer: str | None = None) -> tuple[Item | None, Any]:
+    def read(answer: str, file: str, path: str, params: dict[str, Any], buyer: str | None = None,
+             keep: list[Item] | None = None) -> tuple[Item | None, Any]:
         label = answer if buyer is None else f"{answer} {buyer}"
         started = time.perf_counter()
         try:
@@ -369,7 +376,7 @@ def _export_week(rt: Runtime, client: Any, week_dir: Path, result: WeekResult) -
         if seconds > SLOW_SECONDS:
             result.notes.append(f"{label}: took {seconds:.1f} s (over {SLOW_SECONDS:.0f} s)")
         item = Item(answer, file, digest, sentence, refused, seconds, buyer)
-        result.items.append(item)
+        (result.items if keep is None else keep).append(item)
         return item, body
 
     read("curve", CURVE_FILE, "/cash/price-curve", {"lang": "en"})
@@ -377,7 +384,10 @@ def _export_week(rt: Runtime, client: Any, week_dir: Path, result: WeekResult) -
     if isinstance(worth, dict) and isinstance(worth.get("rows"), list):
         result.worth_rows = [f"{r['receivable_id']} ({r['buyer_name']}): {r['worth_text']}. {r['action_sentence']}" for r in worth["rows"]]
     for buyer in _buyers_with_a_lever(rt):
-        read("envelope", f"envelope-{buyer}.json", f"/buyers/{buyer}/envelope", {"zone": 1, "lang": "en"}, buyer)
+        read("envelope", f"envelope-{buyer}.json", f"/buyers/{buyer}/envelope", {"zone": 0, "lang": "en"}, buyer)
+        if zone:
+            read("zone", f"envelope-{buyer}-zone.json", f"/buyers/{buyer}/envelope", {"zone": 1, "lang": "en"}, buyer,
+                 keep=result.zones)
 
 
 def _find(items: list[Item], decision: Decision) -> Item | str:
@@ -467,7 +477,7 @@ def _advance_week(
 def run_dry(
     rt: Runtime, *, label: str, weeks: int, out: Path, decisions: dict[int, list[Decision]] | None, role_play: bool,
     today: str | None = None, owner_token: str = "demo-owner-token", say: Callable[[str], None] = print,
-    receipts: dict[int, list[Receipt]] | None = None,
+    receipts: dict[int, list[Receipt]] | None = None, zone: bool = False,
 ) -> DryRunResult:
     """Run the weeks on `rt` (installed as the app's runtime for the duration). Posts no operation of its own: the only
     entries it adds to the operations log are the clock's and the `receipts` it was given (already validated against the
@@ -499,7 +509,7 @@ def run_dry(
                 break
             week_dir = out / f"week-{week:02d}"
             week_dir.mkdir(parents=True, exist_ok=True)
-            _export_week(rt, client, week_dir, res)
+            _export_week(rt, client, week_dir, res, zone=zone)
             planned = [Decision(i.answer, ROLE_PLAY_DID, "followed", i.buyer) for i in res.items] if role_play else list(
                 (decisions or {}).get(week, []))
             decided: set[int] = set()
@@ -555,6 +565,8 @@ def _sentence_lines(res: WeekResult) -> list[str]:
         if item.answer == "worth":
             lines += ["", *[f"- {row}" for row in res.worth_rows]]
         lines += ["", f"`{item.file}` sha256 `{item.sha256}`", ""]
+    for item in res.zones:
+        lines += [f"### Zone table (envelope, {item.buyer})", "", f"`{item.file}` sha256 `{item.sha256}`, read in {item.seconds:.1f} s", ""]
     return lines
 
 
@@ -563,7 +575,7 @@ def _write_sentences(week_dir: Path, label: str, res: WeekResult) -> None:
     if res.receipts:
         head += ["### Receipts posted before the reads", "", *[f"- {r.text}" for r in res.receipts], ""]
     (week_dir / "sentences.md").write_text("\n".join([*head, *_sentence_lines(res)]), encoding="utf-8")
-    (week_dir / "sha256.txt").write_text("".join(f"{i.sha256}  {i.file}\n" for i in res.items), encoding="utf-8")
+    (week_dir / "sha256.txt").write_text("".join(f"{i.sha256}  {i.file}\n" for i in [*res.items, *res.zones]), encoding="utf-8")
 
 
 def _say_week(say: Callable[[str], None], label: str, res: WeekResult) -> None:
@@ -593,6 +605,7 @@ def render_summary(result: DryRunResult) -> str:
             lines.append(f"- {_name(item)} ({item.seconds:.1f} s): {item.sentence}")
             if item.answer == "worth":
                 lines += [f"  - {row}" for row in res.worth_rows]
+        lines += [f"- Zone table, {z.buyer} ({z.seconds:.1f} s): `{z.file}`" for z in res.zones]
         lines.append("- Choices: " + ("; ".join(res.choices) or "none recorded"))
         if res.open_decisions:
             lines.append("- Open: " + ", ".join(res.open_decisions))
@@ -651,6 +664,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--role-play", choices=["auto"], default=None)
     ap.add_argument("--journal-file", type=Path, default=None)
     ap.add_argument("--allow-repo-path", action="store_true")
+    ap.add_argument("--zone", action="store_true")
     args = ap.parse_args(argv)
     token = configure_environment()
     try:
@@ -676,7 +690,7 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     result = run_dry(rt, label=args.label, weeks=args.weeks, out=args.out, decisions=decisions,
-                     role_play=args.role_play == "auto", owner_token=token, receipts=receipts)
+                     role_play=args.role_play == "auto", owner_token=token, receipts=receipts, zone=args.zone)
     return 0 if result.ok else 1
 
 
