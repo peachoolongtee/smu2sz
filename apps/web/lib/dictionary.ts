@@ -2173,6 +2173,17 @@ export const en = {
   "dealstage.agreed": "Agreed",
   "biz.nav.count.deals": "Deals, {n} {n|needs|need} you",
   "biz.nav.count.receivables": "Receivables, {n} {n|is|are} late",
+  // ---- pages A1 (part 1): Receivables
+  "biz.recv.pic.title": "Who pays when",
+  "biz.recv.pic.axis": "Invoices by due day: late to the left of today, later to the right",
+  "biz.recv.pic.late": "Late",
+  "biz.recv.pic.soon": "Due soon",
+  "biz.recv.pic.later": "Later",
+  "biz.recv.pic.promised": "Promised early payment",
+  "biz.recv.pic.table": "The invoices and promised payments in the picture, by day",
+  "biz.recv.pic.press": "Show this invoice in the list",
+  "biz.recv.facts": "The state of what you are owed",
+  "biz.recv.bar.overdue": "Overdue",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4344,4 +4355,15 @@ export const zh: Record<DictKey, string> = {
   "dealstage.agreed": "已达成",
   "biz.nav.count.deals": "交易，{n} 项需要您处理",
   "biz.nav.count.receivables": "应收款，{n} 笔已逾期",
+  // ---- pages A1 (part 1): Receivables
+  "biz.recv.pic.title": "谁何时付款",
+  "biz.recv.pic.axis": "按到期日排列的发票：逾期在今天左侧，之后的在右侧",
+  "biz.recv.pic.late": "已逾期",
+  "biz.recv.pic.soon": "即将到期",
+  "biz.recv.pic.later": "较晚",
+  "biz.recv.pic.promised": "承诺的提前付款",
+  "biz.recv.pic.table": "图中的发票和承诺付款，按日期排列",
+  "biz.recv.pic.press": "在列表中查看这张发票",
+  "biz.recv.facts": "您应收款项的概况",
+  "biz.recv.bar.overdue": "逾期",
 };

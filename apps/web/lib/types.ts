@@ -2438,6 +2438,9 @@ export interface HomeReceivables {
   next_receipt: HomeReceivable | null;
   promised: { receivable_id: string; buyer_name: string; expected_display: string; promised_day: Day | null; when: string | null } | null;
   lapsed_promises: number;
+  /** The page's answer in one sentence for every state (who owes, who is late, what to do), and a quiet caveat under it; absent until the server sends them. */
+  headline?: string | null;
+  headline_note?: string | null;
 }
 
 export interface HomeView {

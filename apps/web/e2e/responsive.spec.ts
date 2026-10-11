@@ -388,7 +388,7 @@ test("at tablet width (820) the open invoices are a list, so the Buyer column is
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto("/receivables");
   await expect(page.getByTestId("recv-open-list")).toBeVisible();
-  await expect(page.locator("table")).toBeHidden();
+  await expect(page.locator("#recv-open table")).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 
