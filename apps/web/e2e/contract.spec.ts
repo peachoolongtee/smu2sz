@@ -211,8 +211,9 @@ test("document and deal adapters: the demo opens on three confirmed documents; a
   expect(deal).toMatchObject({ has_contract: true, contract: { record_id: view.id, reference: "FHR-2026-07" }, pending_documents: [] });
   expect(deal?.stages?.map((s) => s.key)).toEqual(["read", "negotiated", "early_payment", "collecting", "fulfilled"]);
 
-  // A decision is made once: the same call again is refused, and the ledger holds four confirmations.
+  // A decision is made once: the same call again answers with the first decision (its op_id and ledger row) and appends
+  // nothing, so the ledger still holds four confirmations.
   const again = await live.decideDocument(view.id, "confirm", view.doc_hash, null);
-  expect(again.result.status).toBe("REFUSED");
+  expect(again.result).toMatchObject({ status: "EXECUTED", op_id: decided.result.op_id, seq: decided.result.seq });
   expect((await live.getLedger()).operations.filter((o) => o.kind === "CONFIRM_DOCUMENT" && o.status === "EXECUTED")).toHaveLength(4);
 });
