@@ -608,7 +608,8 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
             what = t(lang, f"repay {leg['facility_name']}", f"偿还{leg['facility_name']}")
         else:
             what = leg["label"]
-        components.append({"amount_short": fmt_short(leg["amount_fen"] or 0), "what": what, "lands_when": leg.get("lands_when"),
+        components.append({"amount_fen": leg["amount_fen"] or 0, "amount_short": fmt_short(leg["amount_fen"] or 0),
+                           "what": what, "lands_when": leg.get("lands_when"),
                            "name_display": leg["name_display"], "cost_display": leg["cost_display"]})
     repay = sum(leg["amount_fen"] or 0 for leg in legs if leg["operation_kind"] == "REPAY_FACILITY")
     if alert.kind == AlertKind.RESERVE_BREACH_AHEAD and receive:

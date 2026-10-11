@@ -37,10 +37,12 @@ def test_day_zero_answers_safe_do_cost(client):
                           "Foshan Home Retail Co. on Invoice financing (onboarded platform)")
     assert a["receive_display"] == "¥405,000.00" and a["needs_owner"] is False and a["cheaper_option"] is None
     assert a["outcome_title"] == "Secure ¥405k of funding" and a["after_lowest_short"] == "¥300k"
-    assert a["components"] == [{"amount_short": "¥150k", "what": "Bank credit line", "lands_when": "today",
-                                "name_display": "Bank credit line", "cost_display": "¥841.64"},
-                               {"amount_short": "¥255k", "what": "against the ¥420k invoice to Foshan Home Retail Co.", "lands_when": "in 3 days",
-                                "name_display": "Invoice financing (onboarded platform)", "cost_display": "¥2,272.29"}]
+    assert a["components"] == [{"amount_fen": 15_000_000, "amount_short": "¥150k", "what": "Bank credit line", "lands_when": "today",
+                                "name_display": "Bank credit line", "cost_display": "¥841.64", "amount_display": "¥150,000.00"},
+                               {"amount_fen": 25_500_000, "amount_short": "¥255k", "what": "against the ¥420k invoice to Foshan Home Retail Co.", "lands_when": "in 3 days",
+                                "name_display": "Invoice financing (onboarded platform)", "cost_display": "¥2,272.29", "amount_display": "¥255,000.00"}]
+    # each component carries its leg's own amount, so the funding bar is sized from the component
+    assert [c["amount_fen"] for c in a["components"]] == [leg["amount_fen"] for leg in a["legs"]]
     # all-in: every leg priced on the router's own convention, the basis said in words, nothing left to a footnote
     assert a["cost_total_display"] == "¥3,113.93" and a["cost_display"] == "¥3,113.93" and a["cost_note"] is None
     assert [(c["label"], c["display"]) for c in a["cost_breakdown"]] == [
