@@ -167,7 +167,7 @@ export default function CashPage() {
     </>
   );
 
-  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
+  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
   const picture = h ? (
     <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} className="motion-reveal min-w-0 space-y-2">
       <CashForecast h={h} chosen={chosen} />

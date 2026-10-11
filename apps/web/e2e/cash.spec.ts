@@ -304,11 +304,25 @@ test("your funding sources: a utilisation bar per facility with the server's lim
   await expect.poll(async () => Math.max(...(await page.getByTestId("cash-facility-bar").evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-pct"))))))).toBeGreaterThan(0);
 });
 
-test("the plan bar is sticky at 1280 px and in flow, right after the headline, at 390 px", async ({ page }) => {
+test("the plan bar is in flow at every width (under the picture at 1280 px, covering none of its plot; right after the headline at 390 px)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/cash");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
-  expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
+  expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
+  // Nothing covers the picture's plot: at the top of the page, the element on top at each corner and the middle of the svg is the svg itself.
+  const covered = await page.evaluate(() => {
+    const svg = document.querySelector('[data-testid="cash-picture"] svg[role=img]')!;
+    const r = svg.getBoundingClientRect();
+    const pts = [[0.1, 0.1], [0.9, 0.1], [0.5, 0.5], [0.1, 0.85], [0.9, 0.85]];
+    return pts.filter(([fx, fy]) => {
+      const el = document.elementFromPoint(r.left + r.width * fx, r.top + r.height * fy);
+      return !el || !svg.contains(el);
+    }).length;
+  });
+  expect(covered).toBe(0);
+  // In flow, below the picture: the bar starts under the plot's foot.
+  const below = await page.evaluate(() => document.querySelector('[data-testid="cash-picture"] svg[role=img]')!.getBoundingClientRect().bottom <= document.querySelector('[data-testid="home-next-action"]')!.getBoundingClientRect().top + 1);
+  expect(below).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");

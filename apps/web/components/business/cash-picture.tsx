@@ -289,8 +289,8 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   for (const p of [breachPt, lowestPt, planLow]) if (p) obstacles.push({ x0: p.x - 7, x1: p.x + 7, y0: p.y - 7, y1: p.y + 7 });
 
   // Priority 1: the lowest points of each drawn line. They may sit below, above or to either side of their point, and may use the room left under the plot (the x labels start below it).
-  if (lowestPt && !lowestIsReserve && markers.lowestLabel) place("lowest", markers.lowestLabel, nothingTone, true, around(lowestPt.x, lowestPt.y), false, pb + 20);
-  if (planLow && markers.alternativeLowestLabel) place("plan-lowest", markers.alternativeLowestLabel, "ok", true, around(planLow.x, planLow.y), false, pb + 20);
+  if (lowestPt && !lowestIsReserve && markers.lowestLabel) place("lowest", markers.lowestLabel, nothingTone, true, around(lowestPt.x, lowestPt.y), false, pb + 24);
+  if (planLow && markers.alternativeLowestLabel) place("plan-lowest", markers.alternativeLowestLabel, "ok", true, around(planLow.x, planLow.y), false, pb + 24);
 
   // Priority 2: the reserve, named on its line.
   const reserveY = yOf(floor);
