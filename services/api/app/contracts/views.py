@@ -30,6 +30,7 @@ from app.domain.models import (
     PriceUnit,
 )
 from app.domain.money import Ratio, bp, fmt_pct, fmt_yuan
+from app.domain.ports import ContractGuardRow
 
 F = ContractField
 AI_LABEL = "AI-generated, for reference"
@@ -310,14 +311,14 @@ def reading_status_text(status: str, lang: Lang) -> str:
     return t(lang, "The agent could not read this document.", "代理无法读取此文件。")
 
 
-def replacement_words(record: ContractRecord, records: Sequence[ContractRecord], lang: Lang,
+def replacement_words(record: ContractRecord | ContractGuardRow, records: Sequence[ContractRecord | ContractGuardRow], lang: Lang,
                       today: int | None) -> dict[str, Any]:
     """What a later confirmed buyer contract means for this one, in the owner's words: `replaces` is the earlier contract this
     one superseded, `superseded_by` the later one that superseded this. The ids stay in their fields; the sentences say when."""
     replaced = next((r for r in records if r.superseded_by == record.id), None)
     later = next((r for r in records if r.id == record.superseded_by), None) if record.superseded_by else None
 
-    def when(r: ContractRecord | None) -> str:
+    def when(r: ContractRecord | ContractGuardRow | None) -> str:
         said = when_text(r.decided_day, today, lang) if r is not None and today is not None and r.decided_day is not None else ""
         return said or t(lang, "earlier", "之前")
 
@@ -332,7 +333,7 @@ def replacement_words(record: ContractRecord, records: Sequence[ContractRecord],
 
 
 def record_summary(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
-                   today: int | None = None, records: Sequence[ContractRecord] = ()) -> dict[str, Any]:
+                   today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
     if record.kind == DocumentKind.BUYER_CONTRACT and record.contract is not None:
         n_blank = len(blanks(record))
         summary = t(lang, f"{len(record.contract.terms)} terms read, {n_blank} left blank",
@@ -358,7 +359,7 @@ def record_summary(record: ContractRecord, state: FinancialState | None, lang: L
 
 
 def record_view(record: ContractRecord, state: FinancialState | None, lang: Lang = "en",
-                today: int | None = None, records: Sequence[ContractRecord] = ()) -> dict[str, Any]:
+                today: int | None = None, records: Sequence[ContractRecord | ContractGuardRow] = ()) -> dict[str, Any]:
     anchor = state.as_of if state is not None else None
     view = record_summary(record, state, lang, today, records)
     view.update({

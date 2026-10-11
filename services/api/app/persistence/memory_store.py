@@ -23,7 +23,7 @@ from app.domain.models import (
     SecurityEvent,
     Verdict,
 )
-from app.domain.ports import OperationRecord
+from app.domain.ports import ContractGuardRow, OperationRecord, guard_row
 from app.persistence.chain import (
     approval_id,
     build_evidence,
@@ -306,6 +306,10 @@ class InMemoryLedgerStore:
     def contract_records(self) -> list[ContractRecord]:
         with self._lock:
             return list(self._contract_records.values())
+
+    def contract_guard_rows(self) -> list[ContractGuardRow]:
+        with self._lock:
+            return [guard_row(r) for r in self._contract_records.values()]
 
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         with self._lock:

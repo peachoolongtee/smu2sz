@@ -28,6 +28,7 @@ organisation's books, enforced by the database, not by a process-local lock:
 
 from __future__ import annotations
 
+import json
 import threading
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
@@ -55,14 +56,16 @@ from app.domain.models import (
     Commitment,
     CompiledOffer,
     ContractRecord,
+    ContractTerm,
     DocumentKind,
     DocumentStatus,
+    Facility,
     FinancialState,
     Mandate,
     SecurityEvent,
     Verdict,
 )
-from app.domain.ports import OperationRecord
+from app.domain.ports import ContractGuardRow, OperationRecord
 from app.persistence import guards
 from app.persistence import tables as t
 from app.persistence.canonical import canonical_json
@@ -691,6 +694,24 @@ class SqlLedgerStore:
     def contract_records(self) -> list[ContractRecord]:
         cr = t.contract_records
         return [ContractRecord.model_validate_json(r.payload_json) for r in self._read_all(cr, cr.c.row_id)]
+
+    def contract_guard_rows(self) -> list[ContractGuardRow]:
+        """The slim projection: the stored JSON is read as plain data and only the typed readings the guard protects are
+        validated; the document text, its spans and its hash check are not."""
+        cr = t.contract_records
+        out = []
+        for r in self._read_all(cr, cr.c.row_id):
+            d = json.loads(r.payload_json)
+            ts = d.get("term_sheet")
+            facility = (ts or {}).get("proposed_facility")
+            out.append(ContractGuardRow(
+                id=r.id, kind=r.kind, counterparty_id=r.counterparty_id, status=r.status, doc_hash=r.doc_hash,
+                superseded_by=d.get("superseded_by"), decided_day=r.decided_day,
+                decided_seq=d.get("decided_seq"),
+                terms=tuple(ContractTerm.model_validate_json(json.dumps(x)) for x in (d.get("contract") or {}).get("terms", [])),
+                facility=Facility.model_validate_json(json.dumps(facility)) if facility else None,
+                clause_quotes=tuple(c["span"]["text"] for c in (ts or {}).get("clauses", []))))
+        return out
 
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         cr = t.contract_records

@@ -11,6 +11,11 @@ the counterparty the record is with, so a reply to that counterparty may state t
 else may not, and the owner sees all. The supplier's own name in a contract is the sender's identity in every message and is not
 protected.
 
+Records are read as slim `ContractGuardRow`s (`store.contract_guard_rows()`): the guard needs the typed readings and their quotes,
+not the document text, so the text is neither loaded nor re-validated for every outbound message. The values are derived from
+the typed readings on each build rather than stored at write time: a build is cheap, and a stored copy could drift from the
+record.
+
 `protected_for(store)` is the protected set every outbound text to a counterparty is scanned against: the books, the
 mandate, the canaries and these contract values. Depends on `app.domain` only.
 """
@@ -22,6 +27,7 @@ from datetime import date
 from typing import Any
 
 from app.domain.models import ContractField, ContractRecord, Counterparty, FinancialState
+from app.domain.ports import ContractGuardRow, guard_row
 from app.egress.protected import ProtectedSet, counterparty_aliases
 from app.egress.values import Category, PrivateValue
 
@@ -47,10 +53,13 @@ def month_forms(months: int) -> tuple[str, tuple[str, ...]]:
     return f"{months} months", (f"{months}-month", f"{months} month", f"{months}个月")
 
 
-def contract_private_values(records: Sequence[ContractRecord], state: FinancialState) -> list[PrivateValue]:
+def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow],
+                            state: FinancialState) -> list[PrivateValue]:
+    """The protected values of the records, full or slim: the same set either way (the slim row keeps every typed reading)."""
     known = {c.id: c for c in state.counterparties}
     out: list[PrivateValue] = []
-    for r in records:
+    for rec in records:
+        r = rec if isinstance(rec, ContractGuardRow) else guard_row(rec)
         owner = r.counterparty_id
         cp = known.get(owner) or Counterparty(id=owner, name=owner, role="BUYER")
         names, extra = counterparty_aliases(cp)
@@ -65,7 +74,7 @@ def contract_private_values(records: Sequence[ContractRecord], state: FinancialS
             if len(text.strip()) >= minimum:
                 out.append(PrivateValue.text(label, text, owner=owner, aliases=aliases, category=T))
 
-        for i, t in enumerate(r.contract.terms if r.contract else []):
+        for i, t in enumerate(r.terms):
             label = f"{p}.{t.field.value.lower()}.{i}"
             if t.amount_fen and t.amount_fen > 0:
                 out.append(PrivateValue.money(f"{label}.amount", t.amount_fen, owner=owner, category=T))
@@ -90,10 +99,9 @@ def contract_private_values(records: Sequence[ContractRecord], state: FinancialS
             elif t.text and t.field not in (ContractField.PARTY_SUPPLIER,):
                 words(f"{label}.clause_text", t.text, minimum=_MIN_CLAUSE_CHARS)
             words(f"{label}.quote", t.span.text, minimum=_MIN_CLAUSE_CHARS)
-        f = r.term_sheet.proposed_facility if r.term_sheet else None
-        if r.term_sheet is not None:
-            for i, cl in enumerate(r.term_sheet.clauses):
-                words(f"{p}.clause.{i}.quote", cl.span.text, minimum=_MIN_CLAUSE_CHARS)
+        f = r.facility
+        for i, quote in enumerate(r.clause_quotes):
+            words(f"{p}.clause.{i}.quote", quote, minimum=_MIN_CLAUSE_CHARS)
         if f is not None:
             for name, v in (("limit", f.limit_fen),):
                 if v > 0:
@@ -108,8 +116,8 @@ def contract_private_values(records: Sequence[ContractRecord], state: FinancialS
 def protected_for(store: Any, *, extra_private: Sequence[PrivateValue] = ()) -> ProtectedSet:
     """The protected set for outbound text, built from the store's books, mandate and contract records."""
     state = store.get_state()
-    records = getattr(store, "contract_records", None)
-    contract_values = contract_private_values(records() if callable(records) else [], state)
+    rows = getattr(store, "contract_guard_rows", None) or getattr(store, "contract_records", None)
+    contract_values = contract_private_values(rows() if callable(rows) else [], state)
     return ProtectedSet.build(state, store.get_mandate(), extra_private=[*contract_values, *extra_private])
 
 

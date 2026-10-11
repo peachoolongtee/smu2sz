@@ -119,9 +119,10 @@ def _join(parts: list[str], lang: Lang = "en") -> str:
 
 def _contract(store: LedgerStore, counterparty_id: str) -> ContractRecord | None:
     """The buyer's contract the owner confirmed last (a later confirmation supersedes an earlier one)."""
-    recs = [r for r in store.contract_records() if r.kind == DocumentKind.BUYER_CONTRACT
-            and r.counterparty_id == counterparty_id and r.status == DocumentStatus.CONFIRMED and r.superseded_by is None]
-    return max(recs, key=lambda r: r.decided_seq or 0) if recs else None
+    recs = [r for r in store.contract_guard_rows() if r.kind == DocumentKind.BUYER_CONTRACT.value
+            and r.counterparty_id == counterparty_id and r.status == DocumentStatus.CONFIRMED.value and r.superseded_by is None]
+    # the full record (the document and the reading) is read only for the one the card shows
+    return store.get_contract_record(max(recs, key=lambda r: r.decided_seq or 0).id) if recs else None
 
 
 def _basis_unknown(days: int | None, lang: Lang) -> str:
@@ -532,8 +533,8 @@ def deal_summary(store: LedgerStore, counterparty_id: str, day: int, lang: Lang 
     cp = next((c for c in state.counterparties if c.id == counterparty_id), None)
     name = cp.name if cp else counterparty_id
     record = _contract(store, counterparty_id)
-    pending_docs = [r.id for r in store.contract_records() if r.kind == DocumentKind.BUYER_CONTRACT
-                    and r.counterparty_id == counterparty_id and r.status == DocumentStatus.PROPOSED]
+    pending_docs = [r.id for r in store.contract_guard_rows() if r.kind == DocumentKind.BUYER_CONTRACT.value
+                    and r.counterparty_id == counterparty_id and r.status == DocumentStatus.PROPOSED.value]
     base: dict[str, Any] = {"counterparty_id": counterparty_id, "counterparty_name": name, "day": day,
                             "has_contract": record is not None, "pending_documents": pending_docs}
     if record is None:
@@ -576,7 +577,7 @@ def deal_summary(store: LedgerStore, counterparty_id: str, day: int, lang: Lang 
             "end_day": implied.end_day, "confirmed_day": record.decided_day,
             "end_when": when_text(implied.end_day, day, lang) if implied.end_day is not None else None,
             "confirmed_when": when_text(record.decided_day, day, lang) if record.decided_day is not None else None,
-            **{k: v for k, v in replacement_words(record, store.contract_records(), lang, day).items()
+            **{k: v for k, v in replacement_words(record, store.contract_guard_rows(), lang, day).items()
                if k.startswith("replaces")},
         },
         "pills": pills or [{"label": say(lang, "On track", "进展正常"), "tone": "ok"}],

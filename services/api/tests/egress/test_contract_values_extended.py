@@ -85,3 +85,23 @@ def test_a_common_value_in_the_buyers_own_offer_does_not_block_a_reply_to_that_b
     assert [lk for lk in scan(own, pset, recipient_id="BUYER-1") if lk.label.startswith("contract.")] == []
     other = "Dongguan Office Supplies would pay 30 days from the invoice date."
     assert [lk for lk in scan(other, pset, recipient_id="BUYER-2") if lk.label.startswith("contract.")] == []
+
+
+def test_the_slim_rows_protect_exactly_the_values_the_full_records_do_on_the_demo_documents():
+    """Task 5: the guard reads `contract_guard_rows` (no document text); its protected set is identical to the full records'."""
+    from app.egress import contract_private_values
+    from app.persistence import SqlLedgerStore
+
+    state, mandate = load_scenario()
+    for make in (InMemoryLedgerStore, lambda: SqlLedgerStore("sqlite://")):
+        store = make()
+        store.put_state(state)
+        store.put_mandate(mandate)
+        for fid in load_contract_fixtures():
+            store.add_contract_record(_record(fid, edit=_retention if fid == "FHR_SUPPLY_AGREEMENT" else None))
+        full = contract_private_values(store.contract_records(), state)
+        slim = contract_private_values(store.contract_guard_rows(), state)
+        assert len(full) > 50 and full == slim
+        assert [(r.id, r.kind, r.counterparty_id, r.status, r.doc_hash, r.superseded_by) for r in store.contract_guard_rows()] == [
+            (r.id, r.kind.value, r.counterparty_id, r.status.value, r.doc_hash, r.superseded_by)
+            for r in store.contract_records()]

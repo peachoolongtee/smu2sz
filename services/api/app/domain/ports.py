@@ -12,6 +12,7 @@ Dependency direction (no cycles):
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from app.domain.models import (
@@ -20,6 +21,7 @@ from app.domain.models import (
     CompiledTermSheet,
     ConcessionValue,
     ContractRecord,
+    ContractTerm,
     CounterProposal,
     Facility,
     FinancialState,
@@ -38,6 +40,37 @@ from app.domain.models import (
     Violation,
 )
 from app.domain.money import Ratio
+
+
+@dataclass(frozen=True, slots=True)
+class ContractGuardRow:
+    """A contract record without its document text: who it is with, where it stands, and the typed readings the outbound
+    guard protects (the terms with their quotes, the proposed facility, the clauses' quotes). It is what every caller that does
+    not show the document reads (`LedgerStore.contract_guard_rows`); the text, its spans and its hash check are not loaded."""
+
+    id: str
+    kind: str  # DocumentKind value
+    counterparty_id: str
+    status: str  # DocumentStatus value
+    doc_hash: str
+    superseded_by: str | None
+    decided_day: int | None
+    decided_seq: int | None = None
+    terms: tuple[ContractTerm, ...] = ()
+    facility: Facility | None = None
+    clause_quotes: tuple[str, ...] = ()
+
+
+def guard_row(record: ContractRecord) -> ContractGuardRow:
+    """The slim projection of a full record (the in-memory store's, and the reference the SQL store is tested against)."""
+    ts = record.term_sheet
+    return ContractGuardRow(
+        id=record.id, kind=record.kind.value, counterparty_id=record.counterparty_id, status=record.status.value,
+        doc_hash=record.doc_hash, superseded_by=record.superseded_by, decided_day=record.decided_day,
+        decided_seq=record.decided_seq,
+        terms=tuple(record.contract.terms) if record.contract else (),
+        facility=ts.proposed_facility if ts else None,
+        clause_quotes=tuple(c.span.text for c in ts.clauses) if ts else ())
 
 
 class TrajectoryEngine(Protocol):
@@ -231,6 +264,10 @@ class LedgerStore(Protocol):
         ...
     def get_contract_record(self, record_id: str) -> ContractRecord | None: ...
     def contract_records(self) -> list[ContractRecord]: ...  # in upload order
+    def contract_guard_rows(self) -> list[ContractGuardRow]:
+        """Every record in upload order without its document text (see `ContractGuardRow`): for the outbound guard and for
+        reads that need only the status. The full record is `get_contract_record`."""
+        ...
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         """Replace a PROPOSED record by its decided version. Compare-and-swap on the status: a record already decided
         raises `DocumentAlreadyDecided`, an unknown one `NotFound`, and a decision that changes anything but the

@@ -129,7 +129,7 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
         for f in stored.flags:
             if f.blocking:
                 _event(SecurityEventKind.INJECTION, rt.day, cp, f"{rid}: {f.note}", [f.span])
-        return {"document": record_view(stored, rt.store.get_state(), lang, rt.day, rt.store.contract_records())}
+        return {"document": record_view(stored, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
 
 
 @router.get("/documents")
@@ -146,7 +146,7 @@ def get_document(document_id: str, lang: Lang = "en") -> dict:
         rec = rt.store.get_contract_record(document_id)
         if rec is None:
             raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
-        return {"document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_records()), "lang": lang}
+        return {"document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows()), "lang": lang}
 
 
 def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> dict:
@@ -168,7 +168,7 @@ def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> di
     rec = rt.store.get_contract_record(document_id)
     assert rec is not None
     return {"result": result.model_dump(mode="json"),
-            "document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_records())}
+            "document": record_view(rec, rt.store.get_state(), lang, rt.day, rt.store.contract_guard_rows())}
 
 
 @router.post("/documents/{document_id}/confirm")
