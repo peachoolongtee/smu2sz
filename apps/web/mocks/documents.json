@@ -3,13 +3,18 @@
     "seeded": {
       "id": "DOC-000001",
       "kind": "BUYER_CONTRACT",
+      "kind_text": "Buyer contract",
       "title": "Supply agreement FHR-2026-07",
       "counterparty_id": "BUYER-1",
       "counterparty_name": "Foshan Home Retail Co.",
       "status": "CONFIRMED",
+      "status_text": "Confirmed by you today",
+      "status_tone": "ok",
       "uploaded_day": 0,
       "decided_day": 0,
       "decided_seq": 1,
+      "uploaded_when": "today",
+      "decided_when": "today",
       "linked_facility_id": null,
       "summary": "18 terms read, 3 left blank",
       "blocked": false,
@@ -25,6 +30,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": false,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "contract-v1",
       "chunks": 1,
@@ -57,7 +63,7 @@
         {
           "field": "SIGNED_DATE",
           "label": "Signed",
-          "value_display": "1 Sep 2026 (day -30)",
+          "value_display": "1 Sep 2026 (30 days ago)",
           "clause": null,
           "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
           "span": {
@@ -157,7 +163,7 @@
         {
           "field": "END_DATE",
           "label": "Ends",
-          "value_display": "31 Aug 2027 (day 334)",
+          "value_display": "31 Aug 2027 (in 334 days)",
           "clause": "2.1",
           "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
           "span": {
@@ -182,7 +188,7 @@
         {
           "field": "START_DATE",
           "label": "Starts",
-          "value_display": "1 Sep 2026 (day -30)",
+          "value_display": "1 Sep 2026 (30 days ago)",
           "clause": "2.1",
           "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
           "span": {
@@ -232,7 +238,7 @@
         {
           "field": "INVOICING",
           "label": "Invoicing",
-          "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (in 2 days)",
           "clause": "4.1",
           "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
           "span": {
@@ -457,7 +463,7 @@
         {
           "field": "SCHEDULED_INVOICE",
           "label": "Scheduled invoice",
-          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
           "clause": "Schedule 1, 1",
           "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
           "span": {
@@ -485,25 +491,29 @@
           "field": "MILESTONE",
           "label": "Milestone payment",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": true
         },
         {
           "field": "RETENTION",
           "label": "Retention",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         },
         {
           "field": "LATE_INTEREST",
           "label": "Late-payment interest",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         }
       ],
       "notes": [
         {
           "field": "INVOICING",
-          "reason": "stated more than once with the same value: read once"
+          "reason": "stated more than once with the same value: read once",
+          "reason_raw": "stated more than once with the same value: read once"
         }
       ]
     },
@@ -523,13 +533,18 @@
     "reread": {
       "id": "DOC-000004",
       "kind": "BUYER_CONTRACT",
+      "kind_text": "Buyer contract",
       "title": "Supply agreement FHR-2026-07",
       "counterparty_id": "BUYER-1",
       "counterparty_name": "Foshan Home Retail Co.",
       "status": "PROPOSED",
+      "status_text": "Waiting for your decision",
+      "status_tone": "warn",
       "uploaded_day": 0,
       "decided_day": null,
       "decided_seq": null,
+      "uploaded_when": "today",
+      "decided_when": null,
       "linked_facility_id": null,
       "summary": "18 terms read, 3 left blank",
       "blocked": false,
@@ -545,6 +560,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": true,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "contract-v1",
       "chunks": 1,
@@ -577,7 +593,7 @@
         {
           "field": "SIGNED_DATE",
           "label": "Signed",
-          "value_display": "1 Sep 2026 (day -30)",
+          "value_display": "1 Sep 2026 (30 days ago)",
           "clause": null,
           "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
           "span": {
@@ -677,7 +693,7 @@
         {
           "field": "END_DATE",
           "label": "Ends",
-          "value_display": "31 Aug 2027 (day 334)",
+          "value_display": "31 Aug 2027 (in 334 days)",
           "clause": "2.1",
           "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
           "span": {
@@ -702,7 +718,7 @@
         {
           "field": "START_DATE",
           "label": "Starts",
-          "value_display": "1 Sep 2026 (day -30)",
+          "value_display": "1 Sep 2026 (30 days ago)",
           "clause": "2.1",
           "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
           "span": {
@@ -752,7 +768,7 @@
         {
           "field": "INVOICING",
           "label": "Invoicing",
-          "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (in 2 days)",
           "clause": "4.1",
           "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
           "span": {
@@ -977,7 +993,7 @@
         {
           "field": "SCHEDULED_INVOICE",
           "label": "Scheduled invoice",
-          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
           "clause": "Schedule 1, 1",
           "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
           "span": {
@@ -1005,25 +1021,29 @@
           "field": "MILESTONE",
           "label": "Milestone payment",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": true
         },
         {
           "field": "RETENTION",
           "label": "Retention",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         },
         {
           "field": "LATE_INTEREST",
           "label": "Late-payment interest",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         }
       ],
       "notes": [
         {
           "field": "INVOICING",
-          "reason": "stated more than once with the same value: read once"
+          "reason": "stated more than once with the same value: read once",
+          "reason_raw": "stated more than once with the same value: read once"
         }
       ]
     },
@@ -1044,13 +1064,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "BUYER_CONTRACT",
+        "kind_text": "Buyer contract",
         "title": "Supply agreement FHR-2026-07",
         "counterparty_id": "BUYER-1",
         "counterparty_name": "Foshan Home Retail Co.",
         "status": "CONFIRMED",
+        "status_text": "Confirmed by you today",
+        "status_tone": "ok",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": null,
         "summary": "18 terms read, 3 left blank",
         "blocked": false,
@@ -1066,6 +1091,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "contract-v1",
         "chunks": 1,
@@ -1098,7 +1124,7 @@
           {
             "field": "SIGNED_DATE",
             "label": "Signed",
-            "value_display": "1 Sep 2026 (day -30)",
+            "value_display": "1 Sep 2026 (30 days ago)",
             "clause": null,
             "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
             "span": {
@@ -1198,7 +1224,7 @@
           {
             "field": "END_DATE",
             "label": "Ends",
-            "value_display": "31 Aug 2027 (day 334)",
+            "value_display": "31 Aug 2027 (in 334 days)",
             "clause": "2.1",
             "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
             "span": {
@@ -1223,7 +1249,7 @@
           {
             "field": "START_DATE",
             "label": "Starts",
-            "value_display": "1 Sep 2026 (day -30)",
+            "value_display": "1 Sep 2026 (30 days ago)",
             "clause": "2.1",
             "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
             "span": {
@@ -1273,7 +1299,7 @@
           {
             "field": "INVOICING",
             "label": "Invoicing",
-            "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+            "value_display": "Every 30 days, the first on 3 Oct 2026 (in 2 days)",
             "clause": "4.1",
             "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
             "span": {
@@ -1498,7 +1524,7 @@
           {
             "field": "SCHEDULED_INVOICE",
             "label": "Scheduled invoice",
-            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
             "clause": "Schedule 1, 1",
             "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
             "span": {
@@ -1526,25 +1552,29 @@
             "field": "MILESTONE",
             "label": "Milestone payment",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": true
           },
           {
             "field": "RETENTION",
             "label": "Retention",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": false
           },
           {
             "field": "LATE_INTEREST",
             "label": "Late-payment interest",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": false
           }
         ],
         "notes": [
           {
             "field": "INVOICING",
-            "reason": "stated more than once with the same value: read once"
+            "reason": "stated more than once with the same value: read once",
+            "reason_raw": "stated more than once with the same value: read once"
           }
         ]
       }
@@ -1566,13 +1596,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "BUYER_CONTRACT",
+        "kind_text": "Buyer contract",
         "title": "Supply agreement FHR-2026-07",
         "counterparty_id": "BUYER-1",
         "counterparty_name": "Foshan Home Retail Co.",
         "status": "REJECTED",
+        "status_text": "Rejected by you today",
+        "status_tone": "mute",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": null,
         "summary": "18 terms read, 3 left blank",
         "blocked": false,
@@ -1588,6 +1623,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "contract-v1",
         "chunks": 1,
@@ -1620,7 +1656,7 @@
           {
             "field": "SIGNED_DATE",
             "label": "Signed",
-            "value_display": "1 Sep 2026 (day -30)",
+            "value_display": "1 Sep 2026 (30 days ago)",
             "clause": null,
             "quote": "This Supply Agreement (the \"Agreement\") is made on 1 September 2026 between:",
             "span": {
@@ -1720,7 +1756,7 @@
           {
             "field": "END_DATE",
             "label": "Ends",
-            "value_display": "31 Aug 2027 (day 334)",
+            "value_display": "31 Aug 2027 (in 334 days)",
             "clause": "2.1",
             "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
             "span": {
@@ -1745,7 +1781,7 @@
           {
             "field": "START_DATE",
             "label": "Starts",
-            "value_display": "1 Sep 2026 (day -30)",
+            "value_display": "1 Sep 2026 (30 days ago)",
             "clause": "2.1",
             "quote": "This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 31 August 2027",
             "span": {
@@ -1795,7 +1831,7 @@
           {
             "field": "INVOICING",
             "label": "Invoicing",
-            "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+            "value_display": "Every 30 days, the first on 3 Oct 2026 (in 2 days)",
             "clause": "4.1",
             "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
             "span": {
@@ -2020,7 +2056,7 @@
           {
             "field": "SCHEDULED_INVOICE",
             "label": "Scheduled invoice",
-            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+            "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (13 days ago)",
             "clause": "Schedule 1, 1",
             "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
             "span": {
@@ -2048,25 +2084,29 @@
             "field": "MILESTONE",
             "label": "Milestone payment",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": true
           },
           {
             "field": "RETENTION",
             "label": "Retention",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": false
           },
           {
             "field": "LATE_INTEREST",
             "label": "Late-payment interest",
             "reason": "The agent found no clause for this and left it blank.",
+            "reason_raw": "The agent found no clause for this and left it blank.",
             "multi": false
           }
         ],
         "notes": [
           {
             "field": "INVOICING",
-            "reason": "stated more than once with the same value: read once"
+            "reason": "stated more than once with the same value: read once",
+            "reason_raw": "stated more than once with the same value: read once"
           }
         ]
       }
@@ -2076,13 +2116,18 @@
     "seeded": {
       "id": "DOC-000002",
       "kind": "LENDER_AGREEMENT",
+      "kind_text": "Lender agreement",
       "title": "Credit line agreement MB-CL-2026-031",
       "counterparty_id": "BANK-1",
       "counterparty_name": "Main bank",
       "status": "CONFIRMED",
+      "status_text": "Confirmed by you today",
+      "status_tone": "ok",
       "uploaded_day": 0,
       "decided_day": 0,
       "decided_seq": 2,
+      "uploaded_when": "today",
+      "decided_when": "today",
       "linked_facility_id": "FAC-LINE",
       "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
       "blocked": false,
@@ -2098,6 +2143,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": false,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "termsheet-v3",
       "clauses": [
@@ -2173,6 +2219,7 @@
         "tier3": []
       },
       "suggested_facility_id": "FAC-LINE",
+      "suggested_facility_name": "Bank credit line",
       "compared_with": "FAC-LINE",
       "comparison": [
         {
@@ -2233,7 +2280,8 @@
       "notes": [
         {
           "field": "tenor",
-          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+          "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
         }
       ]
     },
@@ -2253,13 +2301,18 @@
     "reread": {
       "id": "DOC-000004",
       "kind": "LENDER_AGREEMENT",
+      "kind_text": "Lender agreement",
       "title": "Credit line agreement MB-CL-2026-031",
       "counterparty_id": "BANK-1",
       "counterparty_name": "Main bank",
       "status": "PROPOSED",
+      "status_text": "Waiting for your decision",
+      "status_tone": "warn",
       "uploaded_day": 0,
       "decided_day": null,
       "decided_seq": null,
+      "uploaded_when": "today",
+      "decided_when": null,
       "linked_facility_id": null,
       "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
       "blocked": false,
@@ -2275,6 +2328,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": true,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "termsheet-v3",
       "clauses": [
@@ -2350,6 +2404,7 @@
         "tier3": []
       },
       "suggested_facility_id": "FAC-LINE",
+      "suggested_facility_name": "Bank credit line",
       "compared_with": "FAC-LINE",
       "comparison": [
         {
@@ -2410,7 +2465,8 @@
       "notes": [
         {
           "field": "tenor",
-          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+          "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
         }
       ]
     },
@@ -2431,13 +2487,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "LENDER_AGREEMENT",
+        "kind_text": "Lender agreement",
         "title": "Credit line agreement MB-CL-2026-031",
         "counterparty_id": "BANK-1",
         "counterparty_name": "Main bank",
         "status": "CONFIRMED",
+        "status_text": "Confirmed by you today",
+        "status_tone": "ok",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": "FAC-LINE",
         "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
         "blocked": false,
@@ -2453,6 +2514,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "termsheet-v3",
         "clauses": [
@@ -2528,6 +2590,7 @@
           "tier3": []
         },
         "suggested_facility_id": "FAC-LINE",
+        "suggested_facility_name": "Bank credit line",
         "compared_with": "FAC-LINE",
         "comparison": [
           {
@@ -2588,7 +2651,8 @@
         "notes": [
           {
             "field": "tenor",
-            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+            "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
       }
@@ -2610,13 +2674,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "LENDER_AGREEMENT",
+        "kind_text": "Lender agreement",
         "title": "Credit line agreement MB-CL-2026-031",
         "counterparty_id": "BANK-1",
         "counterparty_name": "Main bank",
         "status": "REJECTED",
+        "status_text": "Rejected by you today",
+        "status_tone": "mute",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": null,
         "summary": "¥150,000.00 at 6.40% · same-day funding · line at zero 30 days a year",
         "blocked": false,
@@ -2632,6 +2701,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "termsheet-v3",
         "clauses": [
@@ -2707,6 +2777,7 @@
           "tier3": []
         },
         "suggested_facility_id": "FAC-LINE",
+        "suggested_facility_name": "Bank credit line",
         "compared_with": "FAC-LINE",
         "comparison": [
           {
@@ -2767,7 +2838,8 @@
         "notes": [
           {
             "field": "tenor",
-            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+            "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
       }
@@ -2777,13 +2849,18 @@
     "seeded": {
       "id": "DOC-000003",
       "kind": "LENDER_AGREEMENT",
+      "kind_text": "Lender agreement",
       "title": "Invoice financing agreement GBR-IF-2026-118",
       "counterparty_id": "PLATFORM-1",
       "counterparty_name": "Invoice financing platform",
       "status": "CONFIRMED",
+      "status_text": "Confirmed by you today",
+      "status_tone": "ok",
       "uploaded_day": 0,
       "decided_day": 0,
       "decided_seq": 3,
+      "uploaded_when": "today",
+      "decided_when": "today",
       "linked_facility_id": "FAC-IF",
       "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
       "blocked": false,
@@ -2799,6 +2876,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": false,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "termsheet-v3",
       "clauses": [
@@ -2856,6 +2934,7 @@
         "tier3": []
       },
       "suggested_facility_id": "FAC-IF",
+      "suggested_facility_name": "Invoice financing (onboarded platform)",
       "compared_with": "FAC-IF",
       "comparison": [
         {
@@ -2916,7 +2995,8 @@
       "notes": [
         {
           "field": "tenor",
-          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+          "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
         }
       ]
     },
@@ -2936,13 +3016,18 @@
     "reread": {
       "id": "DOC-000004",
       "kind": "LENDER_AGREEMENT",
+      "kind_text": "Lender agreement",
       "title": "Invoice financing agreement GBR-IF-2026-118",
       "counterparty_id": "PLATFORM-1",
       "counterparty_name": "Invoice financing platform",
       "status": "PROPOSED",
+      "status_text": "Waiting for your decision",
+      "status_tone": "warn",
       "uploaded_day": 0,
       "decided_day": null,
       "decided_seq": null,
+      "uploaded_when": "today",
+      "decided_when": null,
       "linked_facility_id": null,
       "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
       "blocked": false,
@@ -2958,6 +3043,7 @@
       "ai_label_zh": "由 AI 生成，仅供参考",
       "can_confirm": true,
       "reading_status": "COMPILED",
+      "reading_text": "read",
       "compiler": "fixture-cache",
       "prompt_version": "termsheet-v3",
       "clauses": [
@@ -3015,6 +3101,7 @@
         "tier3": []
       },
       "suggested_facility_id": "FAC-IF",
+      "suggested_facility_name": "Invoice financing (onboarded platform)",
       "compared_with": "FAC-IF",
       "comparison": [
         {
@@ -3075,7 +3162,8 @@
       "notes": [
         {
           "field": "tenor",
-          "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+          "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+          "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
         }
       ]
     },
@@ -3096,13 +3184,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "LENDER_AGREEMENT",
+        "kind_text": "Lender agreement",
         "title": "Invoice financing agreement GBR-IF-2026-118",
         "counterparty_id": "PLATFORM-1",
         "counterparty_name": "Invoice financing platform",
         "status": "CONFIRMED",
+        "status_text": "Confirmed by you today",
+        "status_tone": "ok",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": "FAC-IF",
         "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
         "blocked": false,
@@ -3118,6 +3211,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "termsheet-v3",
         "clauses": [
@@ -3175,6 +3269,7 @@
           "tier3": []
         },
         "suggested_facility_id": "FAC-IF",
+        "suggested_facility_name": "Invoice financing (onboarded platform)",
         "compared_with": "FAC-IF",
         "comparison": [
           {
@@ -3235,7 +3330,8 @@
         "notes": [
           {
             "field": "tenor",
-            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+            "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
       }
@@ -3257,13 +3353,18 @@
       "document": {
         "id": "DOC-000004",
         "kind": "LENDER_AGREEMENT",
+        "kind_text": "Lender agreement",
         "title": "Invoice financing agreement GBR-IF-2026-118",
         "counterparty_id": "PLATFORM-1",
         "counterparty_name": "Invoice financing platform",
         "status": "REJECTED",
+        "status_text": "Rejected by you today",
+        "status_tone": "mute",
         "uploaded_day": 0,
         "decided_day": 0,
         "decided_seq": 4,
+        "uploaded_when": "today",
+        "decided_when": "today",
         "linked_facility_id": null,
         "summary": "¥350,000.00 at 7.80% · 80.00% advance · 0.25% per 30 days · 3-day lead time",
         "blocked": false,
@@ -3279,6 +3380,7 @@
         "ai_label_zh": "由 AI 生成，仅供参考",
         "can_confirm": false,
         "reading_status": "COMPILED",
+        "reading_text": "read",
         "compiler": "fixture-cache",
         "prompt_version": "termsheet-v3",
         "clauses": [
@@ -3336,6 +3438,7 @@
           "tier3": []
         },
         "suggested_facility_id": "FAC-IF",
+        "suggested_facility_name": "Invoice financing (onboarded platform)",
         "compared_with": "FAC-IF",
         "comparison": [
           {
@@ -3396,7 +3499,8 @@
         "notes": [
           {
             "field": "tenor",
-            "reason": "tenor not stated: all-in rate computed on a 12-month basis"
+            "reason": "tenor not stated: all-in rate computed on a 12-month basis",
+            "reason_raw": "tenor not stated: all-in rate computed on a 12-month basis"
           }
         ]
       }

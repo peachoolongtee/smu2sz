@@ -1,5 +1,6 @@
 {
   "day": 34,
+  "lang": "en",
   "deals": [
     {
       "counterparty_id": "BUYER-1",
@@ -14,10 +15,13 @@
         "reference": "FHR-2026-07",
         "signed_display": "1 Sep 2026",
         "signed_day": -30,
+        "signed_when": "64 days ago",
         "term_display": "12 months",
         "cadence_display": "an invoice every 30 days",
         "end_day": 334,
-        "confirmed_day": 0
+        "confirmed_day": 0,
+        "end_when": "in 300 days",
+        "confirmed_when": "34 days ago"
       },
       "pills": [
         {
@@ -30,21 +34,21 @@
           "key": "read",
           "label": "Contract read",
           "state": "done",
-          "note": "day 0",
+          "note": "34 days ago",
           "tone": null
         },
         {
           "key": "negotiated",
           "label": "Terms negotiated",
           "state": "done",
-          "note": "day 0",
+          "note": "34 days ago",
           "tone": null
         },
         {
           "key": "early_payment",
           "label": "Early payment in",
           "state": "done",
-          "note": "day 2",
+          "note": "32 days ago",
           "tone": null
         },
         {
@@ -58,7 +62,7 @@
           "key": "fulfilled",
           "label": "Fulfilled",
           "state": "todo",
-          "note": "day 334",
+          "note": "in 300 days",
           "tone": null
         }
       ],
@@ -91,7 +95,7 @@
         {
           "field": "INVOICING",
           "label": "Invoicing",
-          "value_display": "Every 30 days, the first on 3 Oct 2026 (day 2)",
+          "value_display": "Every 30 days, the first on 3 Oct 2026 (32 days ago)",
           "clause": "4.1",
           "quote": "Batches are delivered every thirty (30) days, the first regular Batch on 3 October 2026, as set out in Schedule 1",
           "span": {
@@ -166,7 +170,7 @@
         {
           "field": "SCHEDULED_INVOICE",
           "label": "Scheduled invoice",
-          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (day -13)",
+          "value_display": "RCV-A: ¥420,000.00 issued 18 Sep 2026 (47 days ago)",
           "clause": "Schedule 1, 1",
           "quote": "Opening Batch: delivered and invoiced on 18 September 2026 under invoice RCV-A for RMB 420,000",
           "span": {
@@ -194,48 +198,56 @@
           "field": "MILESTONE",
           "label": "Milestone payment",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": true
         },
         {
           "field": "RETENTION",
           "label": "Retention",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         },
         {
           "field": "LATE_INTEREST",
           "label": "Late-payment interest",
           "reason": "The agent found no clause for this and left it blank.",
+          "reason_raw": "The agent found no clause for this and left it blank.",
           "multi": false
         }
       ],
       "changes": [
         {
           "day": 0,
+          "when": "34 days ago",
           "actor": "OWNER",
           "label": "You confirmed",
           "text": "Supply agreement FHR-2026-07, as the agent read it"
         },
         {
           "day": 0,
+          "when": "34 days ago",
           "actor": "BUYER",
           "label": "Buyer asked",
           "text": "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate"
         },
         {
           "day": 0,
+          "when": "34 days ago",
           "actor": "AGENT",
           "label": "Agent replied",
-          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of RCV-A at 0.85%, paid by day 2; Option B: payment terms to 55 days and a price change of 0.30%"
+          "text": "Rejected. Offered Option A: early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; Option B: payment terms to 55 days and a price change of 0.30%"
         },
         {
           "day": 0,
+          "when": "34 days ago",
           "actor": "BUYER",
           "label": "Buyer accepted",
-          "text": "early settlement of ¥257,200.00 of RCV-A at 0.85%, paid by day 2; booked by the agent (Tier 1)"
+          "text": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago; booked by the agent within your limits"
         },
         {
           "day": 2,
+          "when": "32 days ago",
           "actor": "BANK",
           "label": "Bank feed",
           "text": "¥255,013.80 received on RCV-A (the agreed early payment)"
@@ -247,28 +259,36 @@
           "label": "Payment terms",
           "value_display": "45 days",
           "vs_contract": "SAME",
-          "contract_display": "45 days from the invoice date"
+          "vs_contract_text": "Same as the contract",
+          "contract_display": "45 days from the invoice date",
+          "vs_contract_note": null
         },
         {
           "key": "price",
           "label": "Price per invoice",
           "value_display": "¥420,000.00",
           "vs_contract": "SAME",
-          "contract_display": "¥420,000.00 per delivery batch"
+          "vs_contract_text": "Same as the contract",
+          "contract_display": "¥420,000.00 per delivery batch",
+          "vs_contract_note": null
         },
         {
           "key": "early_payment",
           "label": "Early payment",
-          "value_display": "early settlement of ¥257,200.00 of RCV-A at 0.85%, paid by day 2",
+          "value_display": "early settlement of ¥257,200.00 of RCV-A at 0.85%, payment due 32 days ago",
           "vs_contract": "DIFFERENT",
-          "contract_display": "The buyer may settle early at 1.20% off, within 2 days"
+          "vs_contract_text": "Differs from the contract",
+          "contract_display": "The buyer may settle early at 1.20% off, within 2 days",
+          "vs_contract_note": null
         },
         {
           "key": "rebate",
           "label": "Rebates and concessions",
           "value_display": "None",
           "vs_contract": "NONE",
-          "contract_display": null
+          "vs_contract_text": "Nothing to compare",
+          "contract_display": null,
+          "vs_contract_note": null
         }
       ],
       "invoices": [
@@ -277,6 +297,8 @@
           "label": "RCV-A",
           "issue_day": -13,
           "due_day": 32,
+          "issue_when": "47 days ago",
+          "due_when": "2 days ago",
           "amount_fen": 42000000,
           "amount_display": "¥420,000.00",
           "outstanding_fen": 16280000,
@@ -285,14 +307,16 @@
           "status_text": "2 days late",
           "tone": "bad",
           "notes": [
-            "¥257,200.00 settled early on day 2"
+            "¥257,200.00 settled early 32 days ago"
           ]
         },
         {
           "id": "RI:BUYER-1:2",
-          "label": "Invoice of day 2",
+          "label": "Invoice issued 32 days ago",
           "issue_day": 2,
           "due_day": 47,
+          "issue_when": "32 days ago",
+          "due_when": "in 13 days",
           "amount_fen": 42000000,
           "amount_display": "¥420,000.00",
           "outstanding_fen": 42000000,
@@ -306,9 +330,11 @@
         },
         {
           "id": "RI:BUYER-1:32",
-          "label": "Invoice of day 32",
+          "label": "Invoice issued 2 days ago",
           "issue_day": 32,
           "due_day": 77,
+          "issue_when": "2 days ago",
+          "due_when": "in 43 days",
           "amount_fen": 42000000,
           "amount_display": "¥420,000.00",
           "outstanding_fen": 42000000,
@@ -321,6 +347,7 @@
       ],
       "next_invoice": {
         "day": 62,
+        "when": "in 28 days",
         "amount_display": "¥420,000.00"
       },
       "owed_by_us": {
@@ -370,7 +397,7 @@
         },
         {
           "status": "ok",
-          "text": "RCV-A matches the contract's schedule (¥420,000.00, issued day -13)."
+          "text": "RCV-A matches the contract's schedule (¥420,000.00, issued 47 days ago)."
         },
         {
           "status": "ok",
