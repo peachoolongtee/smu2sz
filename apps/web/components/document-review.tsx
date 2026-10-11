@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { DealPicture } from "@/components/deal-picture";
 import { TierBadge } from "@/components/badges";
@@ -39,6 +39,24 @@ function itemsOf(d: DocumentView, te: I18n["te"]): { read: Item[]; flags: Item[]
   return { read, flags };
 }
 
+/** The item a clause link points at: the term with that exact span (`at=start-end`), else the first term with that clause number. */
+function focusTarget(d: DocumentView, te: I18n["te"], focus: { at: string | null; clause: string | null }): string | null {
+  const { read } = itemsOf(d, te);
+  const m = focus.at ? /^(\d+)-(\d+)$/.exec(focus.at) : null;
+  const bySpan = m ? read.find((it) => it.span.start === Number(m[1]) && it.span.end === Number(m[2])) : undefined;
+  const byClause = focus.clause ? read.find((it) => it.clause === focus.clause) : undefined;
+  return (bySpan ?? byClause)?.id ?? null;
+}
+
+/** A linked clause lands in the upper third of the document pane (not at its edge), without moving the page. */
+function revealInPane(id: string): void {
+  const mark = document.querySelector(`mark[data-annotation~="${id}"]`);
+  const pane = mark?.closest(".overflow-y-auto");
+  if (!mark || !pane) return;
+  const delta = mark.getBoundingClientRect().top - pane.getBoundingClientRect().top - pane.clientHeight / 3;
+  pane.scrollTo({ top: pane.scrollTop + delta, behavior: "smooth" });
+}
+
 /** Brings the highlighted clause into view inside the document pane (keyboard focus on a term). */
 function reveal(id: string): void {
   if (typeof document === "undefined") return;
@@ -51,7 +69,7 @@ function reveal(id: string): void {
  * Until the owner confirms it, the reading is labelled "AI-generated, for reference". Confirming is logged in the hash chain
  * and bound to the hash of this exact text; it never changes the books.
  */
-export function DocumentReview({ id }: { id: string }) {
+export function DocumentReview({ id, focus }: { id: string; focus?: { at: string | null; clause: string | null } }) {
   const { t, te } = useI18n();
   const doc = useAsync(() => getDocument(id), [id]);
   const [active, setActive] = useState<string | null>(null);
@@ -59,6 +77,26 @@ export function DocumentReview({ id }: { id: string }) {
   const [busy, setBusy] = useState<"confirm" | "reject" | null>(null);
   const [decision, setDecision] = useState<DocumentDecision | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Arriving from a clause link (the deal summary's "§4.2"): that term stays lit while nothing else is hovered, and its words are
+  // brought into view once per arrival.
+  const loaded = doc.data;
+  const pinned = loaded && focus && (focus.at || focus.clause) ? focusTarget(loaded, te, focus) : null;
+  const scrolled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pinned || !loaded) return;
+    const key = `${loaded.id}|${pinned}`;
+    if (scrolled.current === key) return;
+    scrolled.current = key;
+    // The deal picture above loads its charts after this and pushes the text down: scroll again once the layout has settled.
+    const go = (behavior: ScrollBehavior) => {
+      document.getElementById("doc-text")?.scrollIntoView({ behavior, block: "start" });
+      revealInPane(pinned);
+    };
+    window.setTimeout(() => go("smooth"), 150);
+    window.setTimeout(() => go("auto"), 1200);
+  }, [pinned, loaded]);
+  const lit = active ?? pinned;
 
   if (doc.error) return <ErrorState error={doc.error} onRetry={doc.reload} />;
   if (!doc.data) return <LoadingBlock rows={3} />;
@@ -94,7 +132,7 @@ export function DocumentReview({ id }: { id: string }) {
         reveal(it.id);
       }}
       onBlur={() => setActive(null)}
-      className={`rounded-md border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${active === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
+      className={`rounded-md border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${lit === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
     >
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="inline-block rounded bg-ink px-1 text-[0.65rem] font-bold leading-4 text-white">{it.n}</span>
@@ -141,13 +179,13 @@ export function DocumentReview({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {/* The text stays in view on a wide screen while the owner walks down the terms beside it. */}
-        <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="lg:sticky lg:top-28 lg:self-start">
+        <Card id="doc-text" title={t("docs.text")} subtitle={t("docs.review.sub")} className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
           <div className="max-h-[60vh] overflow-y-auto">
             <AnnotatedText
               ariaLabel={t("docs.annotated")}
               text={d.document.text}
               annotations={all.map((it) => ({ id: it.id, kind: it.kind, start: it.span.start, end: it.span.end, n: it.n, label: it.label }))}
-              activeId={active}
+              activeId={lit}
               onActivate={setActive}
             />
           </div>

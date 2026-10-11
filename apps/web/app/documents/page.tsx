@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useId, useRef, useState, type DragEvent } from "react";
+import { Suspense, useId, useMemo, useRef, useState, type DragEvent } from "react";
 import { DocumentReview } from "@/components/document-review";
 import { contractsOff, DocStatusBadge } from "@/components/documents";
 import { Button, Callout, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
@@ -35,7 +35,12 @@ export default function DocumentsPage() {
 function Documents() {
   const { t } = useI18n();
   const router = useRouter();
-  const selected = useSearchParams().get("id");
+  const params = useSearchParams();
+  const selected = params.get("id");
+  // A clause link (the deal summary): `at` is the term's span in the text, `clause` its number; the review lights it up.
+  const at = params.get("at");
+  const clause = params.get("clause");
+  const focus = useMemo(() => (at || clause ? { at, clause } : undefined), [at, clause]);
   const list = useAsync(getDocuments, []);
   const state = useAsync(getState, []);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +88,7 @@ function Documents() {
           ) : null}
         </Card>
 
-        {selected ? <DocumentReview key={selected} id={selected} /> : <EmptyState title={t("docs.select")} />}
+        {selected ? <DocumentReview key={selected} id={selected} focus={focus} /> : <EmptyState title={t("docs.select")} />}
 
         <Card id="docs-list" title={t("docs.list")}>
           {list.error ? (
