@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
+import { StageTrack } from "@/components/deals/stage-track";
 import { DealHeading } from "@/components/documents";
 import { Callout, Chip, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { DealTone, DealView, StageState } from "@/lib/types";
+import type { DealTone, DealView } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /** Agreed by both parties: a confirmed contract and the "Terms negotiated" stage done (the server's accepted commitment). */
@@ -16,15 +17,6 @@ export function isAgreed(d: DealView): boolean {
 /** The server names a tone from its own five (`mute` for a quiet one); the app's pills and callouts call that `neutral`. */
 const toneOf = (tone: DealTone): Tone => (tone === "mute" ? "neutral" : tone);
 
-const DOT: Record<StageState, string> = {
-  done: "border-brand-600 bg-brand-600",
-  now: "border-brand-600 bg-brand-50 ring-3 ring-brand-50",
-  todo: "border-line-strong bg-surface",
-  skipped: "border-dashed border-line-strong bg-subtle",
-  pending: "border-warn-fg bg-warn-bg",
-  missed: "border-bad-fg bg-bad-bg",
-};
-const NOW_BAD = "border-bad-fg bg-bad-bg ring-3 ring-bad-bg";
 /** A mark that goes with each check's tone, so a check is never colour alone. */
 const TICK: Record<"ok" | "warn" | "info" | "todo", { cls: string; glyph: string }> = {
   ok: { cls: "bg-ok-bg text-ok-fg", glyph: "✓" },
@@ -173,32 +165,7 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
 
       <Disclosure className="mt-2" summary={t("deal.fold")} testId={`deal-details-${deal.counterparty_id}`}>
         <div className="space-y-5 text-sm">
-          {stages.length ? (
-            <ol className="grid grid-cols-5" aria-label={t("deal.stages")} data-testid="deal-stages">
-              {stages.map((s) => {
-                const reached = s.state === "done" || s.state === "now";
-                const late = s.state === "now" && s.tone === "bad";
-                return (
-                  <li
-                    key={s.key}
-                    data-state={s.state}
-                    aria-current={s.state === "now" ? "step" : undefined}
-                    className={`relative grid justify-items-center gap-1 text-center text-xs before:absolute before:-left-1/2 before:top-1.75 before:h-0.5 before:w-full first:before:hidden ${
-                      reached ? "before:bg-brand-600" : "before:bg-line-strong"
-                    } ${late ? "font-semibold text-bad-fg" : s.state === "now" ? "font-semibold text-ink" : "text-ink-3"}`}
-                  >
-                    <span aria-hidden className={`relative z-10 size-4 rounded-pill border-2 ${late ? NOW_BAD : DOT[s.state]}`} />
-                    <span>{te("dealstage", s.key) || s.label}</span>
-                    {/* The state in words as well as in the dot's colour. */}
-                    <span className="font-normal" data-testid="deal-stage-state">
-                      {te("dealstate", s.state)}
-                    </span>
-                    <small className="hidden text-xs font-normal text-ink-3 sm:block">{s.note}</small>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : null}
+          <StageTrack stages={stages} />
 
           {/* What the contract says: each term's value, and its clause as a link into the document. */}
           <section className="min-w-0" data-testid="deal-contract">

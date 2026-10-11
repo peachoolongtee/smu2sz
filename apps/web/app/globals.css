@@ -21,25 +21,12 @@
    chart marks, a white icon on a chip: 3:1), the -bright tokens for pills and figures on the deep block. The sec-* tokens
    say where you are (a page's icon chip, a tab, a shortcut, an avatar) and never how things are going.
    `static` so a chart can read a token with var() from a plain string. See docs/research/colour-direction-2026-10-08.md. */
-/* Figures in the serif headlines. The fallback serif (Georgia) sets old-style numerals ("400" reads "4oo") and has no lining alternate, so the
-   digits and the yen sign of the display stack come from a sans face the machine already has: a local() source only, nothing is fetched. Where
-   none of these is installed the digits stay in the serif. Used by `--font-display` below, ahead of the serif. */
-@font-face {
-  font-family: "Flow Figures";
-  src:
-    local("Inter"),
-    local("Helvetica Neue"),
-    local("Arial"),
-    local("Segoe UI"),
-    local("Roboto");
-  unicode-range: U+0030-0039, U+00A5;
-}
-
 @theme static {
   --font-sans: "Lato", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  /* Display headings: a serif. Neither named face is shipped (no runtime font host is reachable from every place the Demo runs): a machine that has Libre Caslon Text uses it, any other falls to Georgia or Songti. */
-  --font-display: "Flow Figures", "Libre Caslon Text", Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+  /* Display headings: the sans stack led by Plus Jakarta Sans, weight 800. The face is bundled with the app (the @fontsource-variable package imported in app/layout.tsx; its files are served by the app itself, never by a font host, and only the subsets a page uses are fetched); where it does not load, a machine that has it uses it and any other falls to the body sans. */
+  --font-display: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Lato", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
   --color-canvas: #f5f7fb;
@@ -55,6 +42,7 @@
 
   --color-brand-50: #e6f1ff;
   --color-brand-100: #d0e5ff;
+  --color-brand-300: #8fb6ff; /* the lighter second part of the plan bar's funding bar: decorative, every part is named in its legend */
   --color-brand-600: #0368e9; /* white on it: 5.0:1 */
   --color-brand-700: #0048a5;
   --color-brand-900: #24324a; /* the deep block: the Home hero, the Demo strip */
@@ -499,6 +487,42 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   .biz-disc-cash {
     display: none;
   }
+}
+
+/* The cash picture's one draw (components/home/cash-picture.tsx): the do-nothing line draws first, the plan after it, each about 900 ms, then the
+   shortfall and the labels fade in. A deliberate exception to "transform and opacity only" (stroke-dashoffset); once, on mount. The reduced-motion
+   block below leaves every part in its final state at once. */
+@keyframes picture-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes picture-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.picture-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: picture-draw 900ms var(--ease-out) forwards;
+}
+.picture-draw-second {
+  animation-delay: 900ms;
+}
+.picture-fade {
+  opacity: 0;
+  animation: picture-fade 400ms var(--ease-out) forwards;
+}
+/* The first breach's one pulse, on an SVG circle (the HTML dot uses .motion-pulse). */
+.picture-pulse {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dot-pulse 900ms var(--ease-out) 1200ms 1 forwards;
 }
 
 /* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal

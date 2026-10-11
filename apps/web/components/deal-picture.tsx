@@ -70,7 +70,7 @@ export function DealPicture({ doc }: { doc: DocumentView }) {
     <section aria-labelledby="deal-picture-title" className="motion-reveal space-y-4" data-testid="deal-picture">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 id="deal-picture-title" className="scroll-mt-24 font-display text-xl text-ink sm:text-2xl">
+          <h2 id="deal-picture-title" className="scroll-mt-24 font-display text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-2xl">
             {t("pic.title")}
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-ink-2">{t(lender ? "pic.sub.lender" : "pic.sub.buyer", { name: doc.counterparty_name })}</p>

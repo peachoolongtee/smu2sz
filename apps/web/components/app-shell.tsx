@@ -316,7 +316,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <Tour />
       <Backdrop />
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+      <header className="sticky top-0 z-30 bg-canvas/70 backdrop-blur-md backdrop-saturate-150">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
@@ -334,7 +334,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
       <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-surface px-3 pb-20 pt-5 lg:flex">
+        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-canvas px-3 pb-20 pt-5 lg:flex">
           <nav aria-label={t("nav.label")} data-testid="nav-pills">
             <ul className="space-y-1">
               {BUSINESS_NAV.map((n) => {
@@ -347,10 +347,9 @@ function BusinessShell({ children }: { children: ReactNode }) {
                       href={n.href}
                       aria-current={active ? "page" : undefined}
                       className={`motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
-                        active ? "bg-brand-50 font-bold text-brand-700" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
+                        active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
                       }`}
                     >
-                      {active ? <span aria-hidden className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-brand-600" /> : null}
                       <Icon width={20} height={20} className={active ? "text-brand-600" : "text-ink-3"} />
                       {t(n.key)}
                     </Link>
