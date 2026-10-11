@@ -20,7 +20,7 @@ from typing import Any
 
 from app.alerts import AlertKind, PromiseStatus, alerts, reconcile
 from app.api.engine_zh import translate
-from app.api.presentation import Lang, when_text
+from app.api.presentation import Lang, invoice_words, when_text
 from app.api.presentation import t as say
 from app.contracts import buyer_terms, record_summary, term_display, term_view
 from app.contracts.derive import BuyerContractTerms, date_display, day_of
@@ -76,15 +76,17 @@ def _said(text: str, lang: Lang) -> str:
     return zh if zh is not None else text
 
 
-def _obligation_text(o: Obligation, lang: Lang = "en", today: int | None = None) -> str:
-    """One plain phrase for an obligation, from its typed fields only."""
+def _obligation_text(o: Obligation, lang: Lang = "en", today: int | None = None,
+                     state: FinancialState | None = None) -> str:
+    """One plain phrase for an obligation, from its typed fields only. An invoice is said in words (`invoice_words`, as the
+    Receivables read says it), never by its id."""
     kind = o.type
     base = fmt_yuan(o.base.amount_fen) if o.base.amount_fen is not None else None
-    rid = o.base.receivable_id
+    rid = invoice_words(state, o.base.receivable_id, lang) if state is not None and o.base.receivable_id else None
     if kind == ObligationType.IMMEDIATE_DISCOUNT:
         due = when_text(o.effective_day, today, lang) if o.effective_day is not None and today is not None else ""
         if lang == "zh":
-            what = f"{rid} 的 {base}" if base and rid else (rid or base or "一张发票")
+            what = f"{rid}中的 {base}" if base and rid else (rid or base or "一张发票")
             return f"提前结算 {what}，折扣 {_pct(o.rate_bp)}" + (f"，应于{due}付款" if due else "")
         what = f"{base} of {rid}" if base and rid else (rid or base or "an invoice")
         return f"early settlement of {what} at {_pct(o.rate_bp)}" + (f", payment due {due}" if due else "")
@@ -176,7 +178,7 @@ def _changes(store: LedgerStore, state: FinancialState, cp: str, record: Contrac
                 "label": say(lang, *label), "text": text}
 
     for offer, v in seen_offers.values():
-        asked = [_obligation_text(o, lang, today) for o in offer.obligations
+        asked = [_obligation_text(o, lang, today, state) for o in offer.obligations
                  if o.type != ObligationType.CLAIMED_PRIOR_CONCESSION]
         if asked:
             events.append((offer.received_day, 0, event(offer.received_day, "BUYER", ("Buyer asked", "买方提出"),
@@ -191,7 +193,7 @@ def _changes(store: LedgerStore, state: FinancialState, cp: str, record: Contrac
             head = {"REJECT": ("Rejected", "已拒绝"), "COUNTER": ("Countered", "已还价"),
                     "NO_DEAL": ("No deal", "不成交")}.get(v.outcome.value, (v.outcome.value, v.outcome.value))
             offers = [f"{_said(c.label, lang)}{say(lang, ': ', '：')}"
-                      f"{_join([_obligation_text(o, lang, today) for o in c.obligations], lang)}" for c in v.counters]
+                      f"{_join([_obligation_text(o, lang, today, state) for o in c.obligations], lang)}" for c in v.counters]
             reply = say(lang, *head) + ((say(lang, ". Offered ", "。已提出：") + say(lang, "; ", "；").join(offers))
                                         if offers else "")
         events.append((offer.received_day, 1, event(offer.received_day, "AGENT", ("Agent replied", "代理答复"), reply)))
@@ -205,12 +207,13 @@ def _changes(store: LedgerStore, state: FinancialState, cp: str, record: Contrac
             how = (say(lang, "booked by the agent within your limits", "由代理在您设定的限额内入账")
                    if e.result.tier.value == "TIER_1" else say(lang, "approved by you", "经您批准"))
             events.append((e.day or 0, 2, event(e.day, "BUYER", ("Buyer accepted", "买方接受"),
-                                                f"{_join([_obligation_text(o, lang, today) for o in c.obligations], lang)}"
+                                                f"{_join([_obligation_text(o, lang, today, state) for o in c.obligations], lang)}"
                                                 f"{say(lang, '; ', '；')}{how}")))
         elif e.kind == REVOKE_COMMITMENT_KIND and any(payload.get("commitment_id") == c.id for c in commitments):
+            revoked = next(c for c in commitments if c.id == payload.get("commitment_id"))
             events.append((e.day or 0, 2, event(e.day, "OWNER", ("You revoked", "您已撤销"),
-                                                say(lang, f"agreement {payload['commitment_id']}",
-                                                    f"协议 {payload['commitment_id']}"))))
+                                                _join([_obligation_text(o, lang, today, state) for o in revoked.obligations],
+                                                      lang))))
         elif e.kind == CONFIRM_DOCUMENT_KIND and payload.get("document_id") == record.id:
             # the contract is the baseline: on the day it was confirmed, it comes before that day's negotiation
             events.append((e.day or 0, -1, event(e.day, "OWNER", ("You confirmed", "您已确认"),
@@ -218,9 +221,10 @@ def _changes(store: LedgerStore, state: FinancialState, cp: str, record: Contrac
                                                      "买方合同，按代理读取的内容"))))
     for m in receipts:
         early = m.agreed_discount_fen and m.status.value == "MATCHED" and "early payment" in m.detail
-        text = say(lang, f"{fmt_yuan(m.received_fen)} received on {m.receivable_id}" + (" (the agreed early payment)"
-                                                                                     if early else ""),
-                   f"{m.receivable_id} 收到 {fmt_yuan(m.received_fen)}" + ("（约定的提前付款）" if early else ""))
+        what = invoice_words(state, m.receivable_id, lang)
+        text = say(lang, f"{fmt_yuan(m.received_fen)} received on {what}" + (" (the agreed early payment)"
+                                                                          if early else ""),
+                   f"{what}收到 {fmt_yuan(m.received_fen)}" + ("（约定的提前付款）" if early else ""))
         events.append((m.day or 0, 3, event(m.day, "BANK", ("Bank feed", "银行流水"), text)))
     return [ev for _, _, ev in sorted(events, key=lambda x: (x[0] if x[0] is not None else 0, x[1]))]
 
@@ -259,7 +263,7 @@ def _in_force(state: FinancialState, cp: str, record: ContractRecord, implied: B
              if o.type == ObligationType.IMMEDIATE_DISCOUNT]
     clause = _one(record, F.EARLY_PAYMENT)
     if early or clause is not None:
-        agreed = (_join([_obligation_text(o, lang, today) for o in early], lang) if early
+        agreed = (_join([_obligation_text(o, lang, today, state) for o in early], lang) if early
                   else say(lang, "none agreed", "尚无约定"))
         differs = any(o.rate_bp != (clause.rate_bp if clause else None) for o in early)
         row("early_payment", ("Early payment", "提前付款"), agreed,
@@ -270,6 +274,13 @@ def _in_force(state: FinancialState, cp: str, record: ContractRecord, implied: B
         _join([f"{_said(fc.label, lang)} ({fmt_yuan(fc.value_fen)})" for fc in concessions], lang)
         if concessions else say(lang, "None", "无"), "NONE" if not concessions else "NOT_IN_CONTRACT", None)
     return rows
+
+
+def _invoice_label(state: FinancialState, r: Any, day: int, lang: Lang) -> str:
+    """An invoice said as the Receivables read says it (`invoice_words`), with when it is due."""
+    due = when_text(r.due_day, day, lang)
+    words = invoice_words(state, r.id, lang)
+    return say(lang, f"{words} due {due}", f"{words}（{due}到期）")
 
 
 def _invoices(store: LedgerStore, state: FinancialState, cp: str, day: int, receipts: list[Any],
@@ -294,8 +305,8 @@ def _invoices(store: LedgerStore, state: FinancialState, cp: str, day: int, rece
             notes.append(say(lang, f"financed: {fmt_yuan(r.advance_fen)} advance outstanding",
                              f"已融资：垫款 {fmt_yuan(r.advance_fen)} 未还"))
         for aid, adv in pending.get(r.id, []):
-            notes.append(say(lang, f"{fmt_yuan(adv)} advance waiting for your approval ({aid})",
-                             f"垫款 {fmt_yuan(adv)} 等待您批准（{aid}）"))
+            notes.append(say(lang, f"{fmt_yuan(adv)} advance waiting for your approval",
+                             f"垫款 {fmt_yuan(adv)} 等待您批准"))
         if r.status == "SETTLED" or r.outstanding_fen <= 0:
             status, tone, status_text = "PAID", "ok", say(lang, "Paid", "已收讫")
         elif r.due_day < day:
@@ -313,7 +324,8 @@ def _invoices(store: LedgerStore, state: FinancialState, cp: str, day: int, rece
         issued = when_text(r.issue_day, day, lang)
         rows.append({
             "id": r.id,
-            "label": r.id if not r.id.startswith("RI:") else say(lang, f"Invoice issued {issued}", f"{issued}开具的发票"),
+            "label": _invoice_label(state, r, day, lang) if not r.id.startswith("RI:")
+            else say(lang, f"Invoice issued {issued}", f"{issued}开具的发票"),
             "issue_day": r.issue_day, "due_day": r.due_day, "issue_when": issued, "due_when": when_text(r.due_day, day, lang),
             "amount_fen": r.face_fen, "amount_display": fmt_yuan(r.face_fen),
             "outstanding_fen": r.outstanding_fen, "outstanding_display": fmt_yuan(r.outstanding_fen),
@@ -371,12 +383,12 @@ def _checks(state: FinancialState, cp: str, record: ContractRecord, implied: Buy
         base_face = r.base_face_fen if r.base_face_fen is not None else r.face_fen
         booked, agreed = when_text(r.issue_day, today, lang), when_text(s.issue_day, today, lang)
         if base_face == s.face_fen and r.issue_day == s.issue_day:
-            check("ok", f"{r.id} matches the contract's schedule ({fmt_yuan(base_face)}, issued {booked}).",
-                  f"{r.id} 与合同的约定一致（{fmt_yuan(base_face)}，{booked}开具）。")
+            check("ok", f"An invoice in the books matches the contract's schedule ({fmt_yuan(base_face)}, issued {booked}).",
+                  f"账面中的一张发票与合同的约定一致（{fmt_yuan(base_face)}，{booked}开具）。")
         else:
-            check("warn", f"{r.id} in the books ({fmt_yuan(base_face)}, issued {booked}) differs from the contract's "
+            check("warn", f"An invoice in the books ({fmt_yuan(base_face)}, issued {booked}) differs from the contract's "
                           f"schedule ({fmt_yuan(s.face_fen or 0)}, issued {agreed}).",
-                  f"账面中的 {r.id}（{fmt_yuan(base_face)}，{booked}开具）与合同的约定"
+                  f"账面中的一张发票（{fmt_yuan(base_face)}，{booked}开具）与合同的约定"
                   f"（{fmt_yuan(s.face_fen or 0)}，{agreed}开具）不一致。")
     days = terms_in_force(state, cp)
     if pay is not None and days is not None and pay.days != days:
@@ -447,13 +459,18 @@ def _stages(record: ContractRecord, invoices: list[dict[str, Any]], promised: li
         {"key": "early_payment", "label": say(lang, "Early payment in", "提前付款到账"), "state": early_state,
          "note": early_note, "tone": "bad" if early_state == "missed" else None},
         {"key": "collecting", "label": say(lang, "Collecting", "催收中"), "state": "done" if fulfilled else "now",
-         "note": (say(lang, f"{late[0]['id']} late", f"{late[0]['id']} 已逾期") if late
+         "note": (late[0]["status_text"] if late
                   else say(lang, f"{len(open_inv)} open", f"{len(open_inv)} 笔未结") if open_inv
                   else say(lang, "nothing outstanding", "无未收款项")),
          "tone": "bad" if late else None},
         {"key": "fulfilled", "label": say(lang, "Fulfilled", "已履行完毕"), "state": "done" if fulfilled else "todo",
          "note": when_text(implied.end_day, day, lang) if implied.end_day is not None else "", "tone": None},
     ]
+
+
+def _the(label: str, lang: Lang) -> str:
+    """An invoice label inside a sentence: "the invoice issued 32 days ago" (the others already read "the ... invoice ...")."""
+    return f"the {label[0].lower()}{label[1:]}" if lang != "zh" and label.startswith("Invoice issued") else label
 
 
 def _next_action(invoices: list[dict[str, Any]], store: LedgerStore, state: FinancialState, day: int,
@@ -470,8 +487,8 @@ def _next_action(invoices: list[dict[str, Any]], store: LedgerStore, state: Fina
     breach = next((a for a in found if a.kind == AlertKind.RESERVE_BREACH_AHEAD), None)
     late = [i for i in invoices if i["status"] == "LATE"]
     for i in late[:1]:
-        parts.append(say(lang, f"Chase the {i['outstanding_display']} on {i['id']} ({i['status_text']}).",
-                         f"催收 {i['id']} 的 {i['outstanding_display']}（{i['status_text']}）。"))
+        parts.append(say(lang, f"Chase the {i['outstanding_display']} still owed on {_the(i['label'], lang)}.",
+                         f"催收 {i['label']}中未收的 {i['outstanding_display']}。"))
         items.append({"kind": "CHASE", "receivable_id": i["id"], "amount_display": i["outstanding_display"],
                       "late_days": day - i["due_day"]})
         actions.append({"key": "reconcile", "label": say(lang, "Reconcile receipts", "核对到账"),
@@ -483,13 +500,11 @@ def _next_action(invoices: list[dict[str, Any]], store: LedgerStore, state: Fina
             continue
         floor_day = breach.day if breach is not None else None
         floor_when = when_text(floor_day, day, lang) if floor_day is not None else ""
-        what = by_id[op.receivable_id]["label"]
-        if lang != "zh":
-            what = f"the {what[0].lower()}{what[1:]}" if what.startswith("Invoice issued") else what
+        what = _the(by_id[op.receivable_id]["label"], lang)
         amount = fmt_yuan(op.advance_fen)
-        parts.append(say(lang, f"Review {a.id}: a {amount} advance on {what}"
+        parts.append(say(lang, f"Review the {amount} advance on {what}"
                                + (f" to stay above your floor {floor_when}" if floor_when else "") + ".",
-                         f"审批 {a.id}：针对{what}，垫款 {amount}"
+                         f"审批：针对{what}，垫款 {amount}"
                          + (f"，以保证{floor_when}的现金不低于您的底线" if floor_when else "") + "。"))
         items.append({"kind": "APPROVAL", "approval_id": a.id, "amount_display": amount,
                       "receivable_id": op.receivable_id, "issue_day": by_id[op.receivable_id]["issue_day"],

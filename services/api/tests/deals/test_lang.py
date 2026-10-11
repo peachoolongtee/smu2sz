@@ -83,12 +83,14 @@ def test_the_chinese_deal_card_says_the_same_things_in_chinese(day34):
     assert deal["label"] == "由代理读取，经您确认"
     assert [p["label"] for p in deal["pills"]] == ["款项逾期", "1 项待您批准"]
     assert [(s["label"], s["note"]) for s in deal["stages"]] == [
-        ("合同已读取", "34 天前"), ("条款已谈判", "34 天前"), ("提前付款到账", "32 天前"), ("催收中", "RCV-A 已逾期"),
+        ("合同已读取", "34 天前"), ("条款已谈判", "34 天前"), ("提前付款到账", "32 天前"), ("催收中", "已逾期 2 天"),
         ("已履行完毕", "300 天后")]
-    assert deal["changes"][3]["text"].startswith("提前结算 RCV-A 的 ¥257,200.00，折扣 0.85%")
+    assert deal["changes"][3]["text"].startswith("提前结算 Foshan Home Retail Co. 的 ¥420,000.00 发票中的 ¥257,200.00，折扣 0.85%")
     assert "应于32 天前付款" in deal["changes"][3]["text"] and deal["changes"][3]["text"].endswith("由代理在您设定的限额内入账")
-    assert deal["next_action"]["text"] == ("催收 RCV-A 的 ¥162,800.00（已逾期 2 天）。审批 APR-000001：针对32 天前开具的发票，"
-                                           "垫款 ¥200,000.00，以保证8 天后的现金不低于您的底线。")
+    assert deal["next_action"]["text"] == (
+        "催收 Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）中未收的 ¥162,800.00。审批：针对32 天前开具的发票，"
+        "垫款 ¥200,000.00，以保证8 天后的现金不低于您的底线。")
+    assert deal["invoices"][0]["label"] == "Foshan Home Retail Co. 的 ¥420,000.00 发票（2 天前到期）"
     assert deal["invoices"][1]["label"] == "32 天前开具的发票"
     assert deal["contract"]["signed_display"] == "2026年9月1日" and deal["contract"]["term_display"] == "12 个月"
     rows = {r["key"]: r for r in deal["in_force"]}
@@ -217,3 +219,25 @@ def test_a_lender_agreement_names_the_facility_it_appears_to_describe(client):
     assert "suggested_facility_name" not in buyer
     rejected = client.post(f"/documents/{buyer['id']}/reject", json={"doc_hash": buyer["doc_hash"]}).json()["document"]
     assert (rejected["status_text"], rejected["status_tone"]) == ("Rejected by you today", "mute")
+
+
+# An id belongs in a field of its own: the keys below hold ids, hrefs and the list of document ids; every other string of the
+# read is a sentence (except the contract's own words, `RAW`), and a sentence never carries an invoice, approval, commitment, document or recurring-invoice id.
+ID_KEYS = ("id", "href", "pending_documents")
+ID_IN_A_SENTENCE = re.compile(r"RCV-|APR-|RI:|COM-|DOC-")
+
+
+def _is_an_id_field(path: str) -> bool:
+    key = path.rsplit(".", 1)[-1].removesuffix("[]")
+    return key in ID_KEYS or key.endswith(("_id", "_ids"))
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_no_sentence_of_the_deals_read_carries_an_invoice_approval_or_document_id(day34, lang):
+    for path in ("/deals", "/deals/BUYER-1"):
+        data = day34.get(path, params={"lang": lang}).json()
+        said = [(p, s) for p, s in _walk(data) if not _is_an_id_field(p) and not any(r.fullmatch(p) for r in RAW_RE) and ID_IN_A_SENTENCE.search(s)]
+        assert said == [], (path, lang, said)
+    deal = day34.get("/deals/BUYER-1", params={"lang": lang}).json()["deal"]
+    assert deal["invoices"][0]["id"] == "RCV-A" and deal["next_action"]["items"][0]["receivable_id"] == "RCV-A"
+    assert deal["next_action"]["items"][1]["approval_id"].startswith("APR-")  # the ids stay in their own fields

@@ -90,9 +90,9 @@ def term_display(term: ContractTerm, anchor: str | None = None, lang: Lang = "en
         return head + (f", the first on {_date(term.date, anchor, lang, today)}" if term.date else "")
     if f == F.SCHEDULED_INVOICE:
         amount = f"{fmt_yuan(term.amount_fen)} " if term.amount_fen is not None else ""
-        if lang == "zh":
-            return f"{term.reference or '一张发票'}：{amount}于 {_date(term.date, anchor, lang, today)} 开具"
-        return f"{term.reference or 'An invoice'}: {amount}issued {_date(term.date, anchor, lang, today)}"
+        if lang == "zh":  # the contract's name for the invoice stays in `reference`, never in the sentence
+            return f"一张发票：{amount}于 {_date(term.date, anchor, lang, today)} 开具"
+        return f"An invoice: {amount}issued {_date(term.date, anchor, lang, today)}"
     if f == F.PAYMENT_TERMS and term.days is not None:
         if lang == "zh":
             basis = BASIS_TEXT_ZH[term.basis] if term.basis else "合同未注明的日期"
