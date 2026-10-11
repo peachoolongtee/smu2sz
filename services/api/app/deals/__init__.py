@@ -25,6 +25,7 @@ from app.api.presentation import t as say
 from app.contracts import buyer_terms, record_summary, term_display, term_view
 from app.contracts.derive import BuyerContractTerms, date_display, day_of
 from app.contracts.views import blanks as contract_blanks
+from app.contracts.views import replacement_words
 from app.domain.models import (
     Commitment,
     CommitmentStatus,
@@ -117,7 +118,7 @@ def _join(parts: list[str], lang: Lang = "en") -> str:
 def _contract(store: LedgerStore, counterparty_id: str) -> ContractRecord | None:
     """The buyer's contract the owner confirmed last (a later confirmation supersedes an earlier one)."""
     recs = [r for r in store.contract_records() if r.kind == DocumentKind.BUYER_CONTRACT
-            and r.counterparty_id == counterparty_id and r.status == DocumentStatus.CONFIRMED]
+            and r.counterparty_id == counterparty_id and r.status == DocumentStatus.CONFIRMED and r.superseded_by is None]
     return max(recs, key=lambda r: r.decided_seq or 0) if recs else None
 
 
@@ -560,6 +561,8 @@ def deal_summary(store: LedgerStore, counterparty_id: str, day: int, lang: Lang 
             "end_day": implied.end_day, "confirmed_day": record.decided_day,
             "end_when": when_text(implied.end_day, day, lang) if implied.end_day is not None else None,
             "confirmed_when": when_text(record.decided_day, day, lang) if record.decided_day is not None else None,
+            **{k: v for k, v in replacement_words(record, store.contract_records(), lang, day).items()
+               if k.startswith("replaces")},
         },
         "pills": pills or [{"label": say(lang, "On track", "进展正常"), "tone": "ok"}],
         "stages": _stages(record, invoices, promised, receipts, implied, day, accepted_day, lang),
@@ -599,7 +602,8 @@ def deals(store: LedgerStore, day: int, lang: Lang = "en") -> list[dict[str, Any
 
 def documents_for(store: LedgerStore, lang: Lang = "en", today: int | None = None) -> list[dict[str, Any]]:
     state = store.get_state()
-    return [record_summary(r, state, lang, today) for r in store.contract_records()]
+    records = store.contract_records()
+    return [record_summary(r, state, lang, today, records) for r in records]
 
 
 _BASIS_ZH = {"INVOICE": "发票日", "DELIVERY": "交货", "ACCEPTANCE": "验收", "MONTH_END": "开票当月月末"}

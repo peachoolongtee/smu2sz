@@ -234,7 +234,8 @@ class LedgerStore(Protocol):
     def decide_contract_record(self, record: ContractRecord) -> ContractRecord:
         """Replace a PROPOSED record by its decided version. Compare-and-swap on the status: a record already decided
         raises `DocumentAlreadyDecided`, an unknown one `NotFound`, and a decision that changes anything but the
-        decision fields (status, day, log seq, linked facility) raises `ValueError`."""
+        decision fields (status, day, log seq, linked facility) raises `ValueError`. Confirming a buyer contract sets
+        `superseded_by` on the buyer's earlier confirmed contract, in the same unit of work."""
         ...
 
     # evidence

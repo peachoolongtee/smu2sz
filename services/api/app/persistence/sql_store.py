@@ -55,6 +55,7 @@ from app.domain.models import (
     Commitment,
     CompiledOffer,
     ContractRecord,
+    DocumentKind,
     DocumentStatus,
     FinancialState,
     Mandate,
@@ -672,7 +673,8 @@ class SqlLedgerStore:
             n = conn.execute(select(func.count()).select_from(t.contract_records)).scalar_one()
             rid = document_id(int(n) + 1)
             rec = record.model_copy(update={"id": rid, "status": DocumentStatus.PROPOSED, "decided_day": None,
-                                            "decided_seq": None, "linked_facility_id": None})
+                                            "decided_seq": None, "linked_facility_id": None,
+                                            "superseded_by": None})
             conn.execute(insert(t.contract_records).values(
                 id=rid, kind=rec.kind.value, counterparty_id=rec.counterparty_id, status=rec.status.value,
                 doc_hash=rec.doc_hash, uploaded_day=rec.uploaded_day, decided_day=None,
@@ -707,6 +709,14 @@ class SqlLedgerStore:
                 .values(status=record.status.value, decided_day=record.decided_day, payload_json=canonical_json(record)))
             if res.rowcount == 0:  # another writer decided it between the read and the update
                 raise DocumentAlreadyDecided(f"document {record.id} was decided concurrently")
+            if record.status == DocumentStatus.CONFIRMED and record.kind == DocumentKind.BUYER_CONTRACT:
+                for other in conn.execute(select(cr).where(
+                        cr.c.counterparty_id == record.counterparty_id, cr.c.kind == DocumentKind.BUYER_CONTRACT.value,
+                        cr.c.status == DocumentStatus.CONFIRMED.value, cr.c.id != record.id)):
+                    earlier = ContractRecord.model_validate_json(other.payload_json)
+                    if earlier.superseded_by is None:  # a later confirmed contract replaces the earlier
+                        conn.execute(update(cr).where(cr.c.id == earlier.id).values(
+                            payload_json=canonical_json(earlier.model_copy(update={"superseded_by": record.id}))))
         return record
 
     # ------------------------------------------------------------ telemetry
