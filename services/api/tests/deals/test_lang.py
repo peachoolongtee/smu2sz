@@ -134,10 +134,10 @@ def test_a_document_says_where_it_stands_in_the_owners_words(day34):
 def test_the_review_screen_says_the_reading_status_and_the_flags_in_words(client):
     d = client.post("/documents", json={"fixture_id": "FHR_SUPPLY_AGREEMENT"}).json()["document"]
     assert (d["reading_status"], d["reading_text"], d["status_text"], d["status_tone"]) == (
-        "COMPILED", "read", "Waiting for your decision", "warn")
+        "COMPILED", "The agent read this document.", "Waiting for your review", "warn")
     zh = client.get(f"/documents/{d['id']}", params={"lang": "zh"}).json()["document"]
     assert (zh["reading_status"], zh["reading_text"], zh["status_text"], zh["label"]) == (
-        "COMPILED", "已读取", "等待您决定", "由 AI 生成，仅供参考")
+        "COMPILED", "代理已读取此文件。", "等待您审核", "由 AI 生成，仅供参考")
     assert [b["label"] for b in zh["blanks"]] == ["阶段付款", "质保金", "逾期利息"]
     assert {b["reason"] for b in zh["blanks"]} == {"代理没有找到相关条款，已留空。"}
     assert [b["reason_raw"] for b in d["blanks"]] == ["The agent found no clause for this and left it blank."] * 3
@@ -241,3 +241,14 @@ def test_no_sentence_of_the_deals_read_carries_an_invoice_approval_or_document_i
     deal = day34.get("/deals/BUYER-1", params={"lang": lang}).json()["deal"]
     assert deal["invoices"][0]["id"] == "RCV-A" and deal["next_action"]["items"][0]["receivable_id"] == "RCV-A"
     assert deal["next_action"]["items"][1]["approval_id"].startswith("APR-")  # the ids stay in their own fields
+
+
+def test_the_reading_status_is_a_whole_sentence_in_both_languages_for_every_status():
+    from app.contracts.views import reading_status_text
+
+    said = {(st, lang): reading_status_text(st, lang) for st in ("COMPILED", "ABSTAINED", "CONFLICTING_SOURCES")
+            for lang in ("en", "zh")}
+    assert said[("ABSTAINED", "en")] == "The agent could not read this document."
+    assert said[("CONFLICTING_SOURCES", "zh")] == "代理发现条款相互矛盾。"
+    assert len(set(said.values())) == 6 and all(v.endswith((".", "。")) for v in said.values())
+    assert not [v for (_, lang), v in said.items() if lang == "zh" and re.search(r"[A-Za-z]{2,}", v)]

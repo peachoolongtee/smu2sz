@@ -290,7 +290,7 @@ def _status_text(record: ContractRecord, lang: Lang, today: int | None) -> str:
         return t(lang, f"Rejected by you {when}".strip(), f"{when}被您拒绝".strip())
     if record.blocked:
         return t(lang, "Cannot be confirmed: it carries text addressed to the agent", "无法确认：其中含有写给代理的文字")
-    return t(lang, "Waiting for your decision", "等待您决定")
+    return t(lang, "Waiting for your review", "等待您审核")
 
 
 def _status_tone(record: ContractRecord) -> str:
@@ -302,9 +302,12 @@ def _status_tone(record: ContractRecord) -> str:
 
 
 def reading_status_text(status: str, lang: Lang) -> str:
-    """The reading's status in words: it was read, or the agent could not read it."""
-    return t(lang, "read" if status == "COMPILED" else "could not read",
-             "已读取" if status == "COMPILED" else "无法读取")
+    """The reading's status as a sentence the page shows as it is: the agent read it, could not, or found terms that disagree."""
+    if status == "COMPILED":
+        return t(lang, "The agent read this document.", "代理已读取此文件。")
+    if status == "CONFLICTING_SOURCES":
+        return t(lang, "The agent found terms that contradict each other.", "代理发现条款相互矛盾。")
+    return t(lang, "The agent could not read this document.", "代理无法读取此文件。")
 
 
 def replacement_words(record: ContractRecord, records: Sequence[ContractRecord], lang: Lang,
