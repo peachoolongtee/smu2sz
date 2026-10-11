@@ -308,19 +308,19 @@ export async function getEvidence(): Promise<string> {
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 // Owner only, every route. A reading is a proposal: nothing counts until the owner confirms it, and confirming writes no books.
 
-/** GET /deals: one card per buyer, from the confirmed contract and the current books. */
-export async function getDeals(): Promise<DealsView> {
-  return isMock ? (await mock()).getDeals() : (await live()).getDeals();
+/** GET /deals?lang=: one card per buyer, from the confirmed contract and the current books; the server's sentences in the owner's language, the figures identical. */
+export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+  return isMock ? (await mock()).getDeals(lang) : (await live()).getDeals(lang);
 }
 
-/** GET /documents: every document the agent has read, newest last. */
-export async function getDocuments(): Promise<DocumentsList> {
-  return isMock ? (await mock()).getDocuments() : (await live()).getDocuments();
+/** GET /documents?lang=: every document the agent has read, newest last. */
+export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
+  return isMock ? (await mock()).getDocuments(lang) : (await live()).getDocuments(lang);
 }
 
-/** GET /documents/{id}: the reading beside the document text, for review. */
-export async function getDocument(id: string): Promise<DocumentView> {
-  return isMock ? (await mock()).getDocument(id) : (await live()).getDocument(id);
+/** GET /documents/{id}?lang=: the reading beside the document text, for review. */
+export async function getDocument(id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  return isMock ? (await mock()).getDocument(id, lang) : (await live()).getDocument(id, lang);
 }
 
 /** POST /documents: a demo document, an uploaded file (base64) or pasted text. The agent reads it; nothing is confirmed. */

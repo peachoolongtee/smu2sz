@@ -1,9 +1,11 @@
 "use client";
 
-import { Badge, Card, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
+import Link from "next/link";
+import { DealSummary } from "@/components/deals/deal-summary";
+import { Badge, Card, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
 import { dealRecordId, getLedger } from "@/lib/api";
 import { useI18n, type I18n } from "@/lib/i18n";
-import type { Commitment, CommitmentStatus, Displayed, Obligation } from "@/lib/types";
+import type { Commitment, CommitmentStatus, DealView, Displayed, Obligation } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { whenText } from "@/lib/when";
@@ -14,6 +16,9 @@ import { whenText } from "@/lib/when";
  * deal's decision record (`deal:{offer_id}`, GET /decisions), in the server's words, with the commitment's own status as the fallback.
  * Every amount is a server display string (the commitment's `forward_value_display` is the future give-aways booked) and a day is said
  * as a distance from today; the card counts and arranges nothing (INVARIANT 13).
+ *
+ * The deal summary (the confirmed contract beside the books, `deal-summary.tsx`) is part of this section, not a card of its own: each
+ * buyer's summary sits inside the agreement it describes, so the page says it once.
  */
 
 const LIVE: CommitmentStatus[] = ["PROPOSED", "ACCEPTED", "ACTIVE"];
@@ -82,7 +87,7 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
   }
 }
 
-function CommitmentItem({ c, buyer, today, recordState }: { c: Displayed<Commitment>; buyer: string; today: number; recordState: string | null }) {
+function CommitmentItem({ c, buyer, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
   const { t, te } = useI18n();
   return (
     <li className="rounded-tile border border-line px-4 py-3" data-testid={`commitment-${c.id}`} data-status={c.status}>
@@ -113,12 +118,33 @@ function CommitmentItem({ c, buyer, today, recordState }: { c: Displayed<Commitm
           <dd className="font-medium text-ink">{whenText(c.expires_day, today, t)}</dd>
         </div>
       </dl>
+      {summary}
     </li>
   );
 }
 
-/** The ledger's commitments, newest first with the ones in force (proposed, accepted or active) ahead of the ones that ended. */
-export function ActiveCommitments({ today, buyerName, hideEmpty = false }: { today: number; buyerName: (id: string) => string; hideEmpty?: boolean }) {
+/**
+ * The ledger's commitments, newest first with the ones in force (proposed, accepted or active) ahead of the ones that ended. `agreed` is
+ * GET /deals for the buyers whose deal both parties agreed: each one's summary opens inside that buyer's newest agreement in force. A failed
+ * read of the summaries says so in the standard error state (`dealsError`); a server with contract reading off sends none.
+ */
+export function ActiveCommitments({
+  today,
+  buyerName,
+  hideEmpty = false,
+  agreed = [],
+  dealsDay = null,
+  dealsError,
+  onRetryDeals,
+}: {
+  today: number;
+  buyerName: (id: string) => string;
+  hideEmpty?: boolean;
+  agreed?: DealView[];
+  dealsDay?: number | null;
+  dealsError?: Error;
+  onRetryDeals?: () => void;
+}) {
   const { t, lang } = useI18n();
   const ledger = useAsync(() => getLedger(lang), [lang]);
   // A failed record read only costs the server's wording of the status: the commitment's own status is then shown.
@@ -126,21 +152,51 @@ export function ActiveCommitments({ today, buyerName, hideEmpty = false }: { tod
   const stateText = new Map((records.data?.decisions ?? []).map((d) => [d.id, d.state_text]));
   const all = ledger.data ? [...ledger.data.commitments].reverse() : [];
   const live = [...all.filter((c) => LIVE.includes(c.status)), ...all.filter((c) => !LIVE.includes(c.status))];
-  // An empty section is noise on the deal page: with `hideEmpty` the card appears only once a deal is on the books.
-  if (hideEmpty && ledger.data && !ledger.error && !live.length) return null;
+  // An empty section is noise on the deal page: with `hideEmpty` the card appears only once a deal is on the books (or the summaries could not be read).
+  if (hideEmpty && ledger.data && !ledger.error && !live.length && !agreed.length && !dealsError) return null;
+  // A buyer's summary opens inside its first agreement in the list; a summary with no agreement on the ledger gets an entry of its own.
+  const placed = new Set<string>();
+  const summaryFor = (buyerId: string) => {
+    const deal = agreed.find((d) => d.counterparty_id === buyerId);
+    if (!deal || placed.has(buyerId)) return undefined;
+    placed.add(buyerId);
+    return <DealSummary deal={deal} today={dealsDay ?? today} />;
+  };
+  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} summary={summaryFor(c.counterparty_id)} />);
+  const loose = agreed.filter((d) => !placed.has(d.counterparty_id) && ledger.data);
   return (
-    <Card id="commitments" title={t("biz.deals.commitments")} subtitle={t("biz.deals.commitments.sub")}>
+    <Card
+      id="commitments"
+      title={t("biz.deals.commitments")}
+      subtitle={t("biz.deals.commitments.sub")}
+      actions={
+        agreed.length ? (
+          <Link href="/documents" className={textLinkClass} data-testid="deal-documents-link">
+            {t("deals.summary.documents")}
+          </Link>
+        ) : undefined
+      }
+    >
+      {dealsError ? (
+        <div className="mb-3" data-testid="deals-error">
+          <ErrorState error={dealsError} onRetry={onRetryDeals} />
+        </div>
+      ) : null}
       {ledger.error ? (
         <ErrorState error={ledger.error} onRetry={ledger.reload} />
       ) : !ledger.data ? (
         <LoadingBlock rows={2} />
-      ) : live.length ? (
+      ) : items.length || loose.length ? (
         <ul className="space-y-3" data-testid="commitments-live">
-          {live.map((c) => (
-            <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} />
+          {items}
+          {loose.map((d) => (
+            <li key={d.counterparty_id} className="rounded-tile border border-line px-4 py-3">
+              <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer: d.counterparty_name })}</p>
+              <DealSummary deal={d} today={dealsDay ?? today} />
+            </li>
           ))}
         </ul>
-      ) : (
+      ) : dealsError ? null : (
         <p className="text-sm text-ink-3">{t("biz.deals.commitments.empty")}</p>
       )}
     </Card>

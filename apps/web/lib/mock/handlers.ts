@@ -917,17 +917,21 @@ export async function demoReset(scenario?: string): Promise<void> {
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
-export async function getDeals(): Promise<DealsView> {
+// The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
+export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+  void lang;
   await delay();
   return documents.mockDeals();
 }
 
-export async function getDocuments(): Promise<DocumentsList> {
+export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {
+  void lang;
   await delay();
   return documents.mockDocuments();
 }
 
-export async function getDocument(id: string): Promise<DocumentView> {
+export async function getDocument(id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> {
+  void lang;
   await delay();
   return documents.mockDocument(id);
 }

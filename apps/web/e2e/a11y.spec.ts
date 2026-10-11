@@ -80,8 +80,11 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await scan(page, "/deals the send step");
   await response.getByTestId("deal-send-confirm-box").getByLabel("Open to a counter").check();
   await response.getByTestId("deal-send-confirm").click();
-  await expect(page.locator("#deal-summary")).toBeVisible();
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
   await scan(page, "/deals the deal summary");
+  await page.getByTestId("deal-details-BUYER-1").locator("summary").click();
+  await expect(page.getByTestId("deal-stages")).toBeVisible();
+  await scan(page, "/deals the deal summary, unfolded");
   await page.goto("/capex");
   await page.getByRole("button", { name: "Evaluate the ¥600k machine" }).click();
   await page.getByTestId("capex-file").click();

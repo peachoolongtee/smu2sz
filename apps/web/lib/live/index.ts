@@ -192,9 +192,10 @@ export const live = {
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 
   // contract ingestion (brief 03): every route needs the owner token; the responses already have the page's shape
-  getDeals: () => http<DealsView>("GET", "/deals"),
-  getDocuments: () => http<DocumentsList>("GET", "/documents"),
-  getDocument: async (id: string): Promise<DocumentView> => (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}`)).document,
+  getDeals: (lang: "en" | "zh" = "en") => http<DealsView>("GET", `/deals${lang === "zh" ? "?lang=zh" : ""}`),
+  getDocuments: (lang: "en" | "zh" = "en") => http<DocumentsList>("GET", `/documents${lang === "zh" ? "?lang=zh" : ""}`),
+  getDocument: async (id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> =>
+    (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).document,
   submitDocument: async (req: SubmitDocumentRequest): Promise<DocumentView> =>
     (await http<{ document: DocumentView }>("POST", "/documents", { body: req })).document,
   decideDocument: (id: string, decision: "confirm" | "reject", docHash: string, linkFacilityId: string | null) =>
