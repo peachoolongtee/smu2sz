@@ -24,7 +24,7 @@ const PART = ["bg-brand-600", "bg-brand-300", "bg-chart-teal", "bg-chart-purple"
  * above the owner's limit the server only queues it. The answer is rendered by the page: the block leaves once the fix
  * has run, its answer must not.
  */
-export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { a: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert>; variant?: "card" | "bar" }) {
+export function NextActionBlock({ a, stateVersion, fixer, variant = "card", sticky = true }: { a: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert>; variant?: "card" | "bar"; /** The bar variant stays at the foot of the window from `lg` (Home); false keeps it in flow (Cash, whose picture it would cover). */ sticky?: boolean }) {
   const { t } = useI18n();
   const pathname = usePathname();
   // The alerts route takes the alert as shown; the home's next action carries the same suggestions and version.
@@ -194,7 +194,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card" }: { 
     const sized = a.components.length > 0 && a.components.every((c) => typeof c.amount_fen === "number" && c.amount_fen > 0);
     return (
       <>
-        <ActionBar aria-labelledby="home-action-title" data-testid="home-next-action" data-alert={a.alert_id}>
+        <ActionBar flow={!sticky} aria-labelledby="home-action-title" data-testid="home-next-action" data-alert={a.alert_id}>
           <div className="flex min-w-0 flex-[2_1_20rem] flex-col gap-1.5">
             <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
             <h2 id="home-action-title" className="text-balance font-display text-xl font-extrabold leading-snug tracking-[-0.01em] text-ink sm:text-[1.375rem]" data-testid="next-action-title">
