@@ -27,6 +27,7 @@ from app.ingest import DocumentTooLarge, IngestError, extract_text
 
 router = APIRouter(dependencies=[Depends(require_owner), Depends(require_feature("contracts"))])
 
+Lang = Literal["en", "zh"]
 _ROLE = {DocumentKind.BUYER_CONTRACT: "BUYER", DocumentKind.LENDER_AGREEMENT: "LENDER"}
 
 
@@ -68,7 +69,7 @@ def _refusal(code: str, message: str, message_zh: str | None) -> dict[str, str]:
 
 
 @router.post("/documents")
-def post_document(body: DocumentIn) -> dict:
+def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     title = body.title
     if body.fixture_id is not None:
@@ -128,29 +129,30 @@ def post_document(body: DocumentIn) -> dict:
         for f in stored.flags:
             if f.blocking:
                 _event(SecurityEventKind.INJECTION, rt.day, cp, f"{rid}: {f.note}", [f.span])
-        return {"document": record_view(stored, rt.store.get_state())}
+        return {"document": record_view(stored, rt.store.get_state(), lang, rt.day)}
 
 
 @router.get("/documents")
-def list_documents() -> dict:
+def list_documents(lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:
-        return {"documents": documents_for(rt.store), "day": rt.day}
+        return {"documents": documents_for(rt.store, lang, rt.day), "day": rt.day, "lang": lang}
 
 
 @router.get("/documents/{document_id}")
-def get_document(document_id: str) -> dict:
+def get_document(document_id: str, lang: Lang = "en") -> dict:
     rt = get_runtime()
     with rt.lock:
         rec = rt.store.get_contract_record(document_id)
         if rec is None:
             raise HTTPException(404, {"code": "UNKNOWN_DOCUMENT", "message": f"no document {document_id}"})
-        return {"document": record_view(rec, rt.store.get_state())}
+        return {"document": record_view(rec, rt.store.get_state(), lang, rt.day), "lang": lang}
 
 
-def _decide(document_id: str, body: DecisionIn, confirm: bool) -> dict:
+def _decide(document_id: str, body: DecisionIn, confirm: bool, lang: Lang) -> dict:
     """The owner's decision. The same decision sent again is answered with the first (same op_id and log position, nothing
-    appended); the other decision on a decided document is refused and answered 409 `ALREADY_DECIDED`."""
+    appended); the other decision on a decided document is refused and answered 409 `ALREADY_DECIDED`; a hash that is not the
+    stored text's is refused and answered 409 `TERMS_CHANGED`. Any other refusal is a 200 whose result says REFUSED."""
     rt = get_runtime()
     before = rt.store.get_contract_record(document_id)
     if before is None:
@@ -160,19 +162,23 @@ def _decide(document_id: str, body: DecisionIn, confirm: bool) -> dict:
     if result.status.value == "REFUSED" and before.status != DocumentStatus.PROPOSED:
         raise HTTPException(409, {"code": ALREADY_DECIDED_CODE, "message": result.message,
                                   "status": before.status.value, "result": result.model_dump(mode="json")})
+    if result.violations and result.violations[0].code.value == "TERMS_CHANGED":  # the text shown is not the stored text
+        raise HTTPException(409, {"code": "TERMS_CHANGED", "message": result.message,
+                                  "result": result.model_dump(mode="json")})
     rec = rt.store.get_contract_record(document_id)
     assert rec is not None
-    return {"result": result.model_dump(mode="json"), "document": record_view(rec, rt.store.get_state())}
+    return {"result": result.model_dump(mode="json"),
+            "document": record_view(rec, rt.store.get_state(), lang, rt.day)}
 
 
 @router.post("/documents/{document_id}/confirm")
-def confirm_document(document_id: str, body: DecisionIn) -> dict:
-    return _decide(document_id, body, confirm=True)
+def confirm_document(document_id: str, body: DecisionIn, lang: Lang = "en") -> dict:
+    return _decide(document_id, body, confirm=True, lang=lang)
 
 
 @router.post("/documents/{document_id}/reject")
-def reject_document(document_id: str, body: DecisionIn) -> dict:
-    return _decide(document_id, body, confirm=False)
+def reject_document(document_id: str, body: DecisionIn, lang: Lang = "en") -> dict:
+    return _decide(document_id, body, confirm=False, lang=lang)
 
 
 def confirm_demo_documents(rt: Runtime) -> None:

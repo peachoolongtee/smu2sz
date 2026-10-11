@@ -27,9 +27,9 @@ def day_of(iso: str, anchor_iso: str) -> int:
     return (date.fromisoformat(iso) - date.fromisoformat(anchor_iso)).days
 
 
-def date_display(iso: str) -> str:
+def date_display(iso: str, lang: str = "en") -> str:
     d = date.fromisoformat(iso)
-    return f"{d.day} {d.strftime('%b')} {d.year}"
+    return f"{d.year}年{d.month}月{d.day}日" if lang == "zh" else f"{d.day} {d.strftime('%b')} {d.year}"
 
 
 @dataclass(frozen=True)

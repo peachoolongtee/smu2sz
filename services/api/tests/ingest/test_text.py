@@ -133,8 +133,8 @@ def test_a_page_number_alone_does_not_count_as_a_text_layer():
 
 
 def test_a_text_pdf_is_read():
-    pdf = _pdf([b"BT /F1 10 Tf 14 TL 56 786 Td (4.2 Each invoice is payable forty-five \\(45\\) days after the "
-                b"Invoice Date.) Tj ET"])
+    pdf = _pdf([(b"BT /F1 10 Tf 14 TL 56 786 Td (4.2 Each invoice is payable forty-five \\(45\\) days after the "
+                 b"Invoice Date.) Tj ET")])
     assert extract_text("t.pdf", pdf) == "4.2 Each invoice is payable forty-five (45) days after the Invoice Date."
 
 
@@ -231,8 +231,8 @@ def test_unwrap_joins_a_year_or_amount_at_the_start_of_a_wrapped_line():
             "A short line.")
     out = unwrap(page)
     assert out.split("\n\n") == [
-        "2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 2026 "
-        "ends, and the Bank makes available a revolving working-capital credit line with a facility limit of RMB 150,000.",
+        ("2.1 This Agreement takes effect on 1 September 2026 and continues for a term of twelve (12) months, until 2026 "
+         "ends, and the Bank makes available a revolving working-capital credit line with a facility limit of RMB 150,000."),
         "A short line.",
     ]
 

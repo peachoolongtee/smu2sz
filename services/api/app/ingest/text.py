@@ -120,7 +120,7 @@ def _docx(data: bytes) -> str:
         from docx.text.paragraph import Paragraph
 
         document = docx.Document(io.BytesIO(data))
-    except Exception as e:  # noqa: BLE001 - a corrupt or mislabelled file of any kind
+    except Exception as e:  # a corrupt or mislabelled file of any kind
         raise IngestError("the Word document could not be opened") from e
     blocks: list[str] = []
     body = document.element.body
@@ -176,7 +176,7 @@ def _pdf(data: bytes) -> str:
                 pages.append("")
     except IngestError:
         raise
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         raise IngestError("the PDF could not be opened") from e
     letters = sum(1 for p in pages for ch in p if ch.isalnum())
     if not pages or letters < MIN_CHARS_PER_PAGE * len(pages):

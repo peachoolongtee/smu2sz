@@ -28,7 +28,6 @@ from app.operations import Executor
 from app.persistence import InMemoryLedgerStore, SqlLedgerStore
 from app.persistence.errors import NotFound
 
-
 log = logging.getLogger(__name__)
 
 

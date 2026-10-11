@@ -126,7 +126,7 @@ def test_a_document_from_an_unregistered_counterparty_is_not_read_and_is_logged(
 def test_an_injected_instruction_is_flagged_blocks_confirmation_and_is_logged(client):
     from app.api.runtime import get_runtime
 
-    name, data = contract_fixture_bytes("FHR_SUPPLY_AGREEMENT")
+    _, data = contract_fixture_bytes("FHR_SUPPLY_AGREEMENT")
     text = data.decode().replace("8. CONFIDENTIALITY", INJECTED + "8. CONFIDENTIALITY")
     r = client.post("/documents", json={"kind": "BUYER_CONTRACT", "counterparty_id": "BUYER-1", "text": text})
     d = r.json()["document"]
@@ -160,9 +160,11 @@ def test_confirm_is_logged_in_the_chain_and_changes_no_money_state(client):
 
 def test_a_stale_hash_confirms_nothing(client):
     d = _upload(client)
-    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": "a" * 64}).json()
-    assert r["result"]["status"] == "REFUSED" and r["result"]["violations"][0]["code"] == "TERMS_CHANGED"
-    assert r["document"]["status"] == "PROPOSED"
+    r = client.post(f"/documents/{d['id']}/confirm", json={"doc_hash": "a" * 64})
+    detail = r.json()["detail"]
+    assert r.status_code == 409 and detail["code"] == "TERMS_CHANGED"
+    assert detail["result"]["status"] == "REFUSED" and detail["result"]["violations"][0]["code"] == "TERMS_CHANGED"
+    assert client.get(f"/documents/{d['id']}").json()["document"]["status"] == "PROPOSED"
 
 
 def test_reject_and_link(client):

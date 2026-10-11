@@ -103,7 +103,7 @@ def cold_start(request, tmp_path, monkeypatch):  # type: ignore[no-untyped-def]
 
 def _fails_on(monkeypatch, nth: int):  # type: ignore[no-untyped-def]
     """Make the nth reading of a demo document fail, as a missing or changed fixture would."""
-    import app.api.documents as documents
+    from app.api import documents
 
     real, calls = documents.read_document, []
 
