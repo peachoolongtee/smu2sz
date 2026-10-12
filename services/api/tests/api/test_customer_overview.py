@@ -33,7 +33,7 @@ NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "D
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 RAW_ID = re.compile(r"\b(?:RCV|BUYER|FAC|LOT|CMT|OFF|CTR|VER|OP|APR|DOC)-[A-Za-z0-9]|RI:|\bday -?\d")
 HREFS = r".*href"  # the routes a page links to carry ids and the same text in both languages
-ID_KEYS = ("key", "customer_id", "lang")
+ID_KEYS = ("key", "customer_id", "lang", "customer", "deal", "scenario")  # the last three are `context` echoes of the URL selections: ids, not sentences
 
 
 @pytest.fixture
@@ -456,6 +456,45 @@ def test_a_path_is_not_echoed_unless_it_is_a_plain_key(api, rt):
 def test_another_buyers_deal_is_not_a_way_back(api, rt):
     offer_id = _before(api, rt)
     assert _get(api, "BUYER-2", decision=f"deal:{offer_id}")["context"]["back"]["href"] == "/deals"
+
+
+# ---------------------------------------------------------------- the selections echoed (Home V2: customer, deal, scenario)
+
+
+def test_the_context_echoes_the_customer_and_nothing_else_without_a_query(api, rt):
+    _before(api, rt)
+    ctx = _get(api)["context"]
+    assert (ctx["customer"], ctx["deal"], ctx["scenario"]) == ("BUYER-1", None, None)
+    assert ctx["back"] == {"label": "Back to Deals", "href": "/deals"}
+
+
+def test_the_context_echoes_the_deal_and_the_scenario_it_was_opened_on(api, rt):
+    offer_id = _before(api, rt)
+    ctx = _get(api, decision=f"deal:{offer_id}", scenario="asked")["context"]
+    assert (ctx["customer"], ctx["deal"], ctx["scenario"]) == ("BUYER-1", f"deal:{offer_id}", "asked")
+    assert _get(api, "BUYER-1", "zh", decision=f"deal:{offer_id}", scenario="counter:1")["context"]["scenario"] == "counter:1"
+    assert _get(api, decision=f"deal:{offer_id}", scenario="counter:2")["context"]["scenario"] is None  # the verdict has two counters
+    assert _get(api, decision=f"deal:{offer_id}", scenario="counter:999")["context"]["scenario"] is None
+    assert _get(api, decision=f"deal:{offer_id}")["context"]["scenario"] is None  # no scenario asked for: none echoed
+
+
+@pytest.mark.parametrize("query", [{"decision": "deal:OFF-nothing", "scenario": "asked"}, {"scenario": "asked"},
+                                   {"decision": "deal:<script>x</script>", "scenario": "asked"}])
+def test_a_deal_that_is_not_this_buyers_or_a_scenario_without_a_deal_is_never_echoed(api, rt, query):
+    _before(api, rt)
+    ctx = _get(api, **query)["context"]
+    assert (ctx["deal"], ctx["scenario"]) == (None, None)
+
+
+def test_another_buyers_deal_is_not_echoed_as_this_buyers(api, rt):
+    offer_id = _before(api, rt)
+    ctx = _get(api, "BUYER-2", decision=f"deal:{offer_id}", scenario="asked")["context"]
+    assert (ctx["customer"], ctx["deal"], ctx["scenario"]) == ("BUYER-2", None, None)
+
+
+def test_a_scenario_that_is_not_a_plain_key_is_not_echoed(api, rt):
+    offer_id = _before(api, rt)
+    assert _get(api, decision=f"deal:{offer_id}", scenario="<b>x</b>")["context"]["scenario"] is None
 
 
 # ---------------------------------------------------------------- the route

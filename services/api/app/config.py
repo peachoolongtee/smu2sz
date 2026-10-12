@@ -3,7 +3,8 @@
 The three strategy flags (envelope, price_curve, collections_worth) are the read-only MVP of map #47 and default off;
 pilot_journal (map #58) is the shadow pilot's owner-recorded journal, also default off; exposure (map #88, Phase 1) is
 buyer exposure on the deal and the customer-inputs routes, default off; customer_economics (map #88, Phase 2) lets the
-customer-inputs routes take the six economics fields (sales, margins, classification, VAT), default off."""
+customer-inputs routes take the six economics fields (sales, margins, classification, VAT), default off; home_v2 (the Home V2 wave 1 reads:
+`GET /worklist`, `GET /customers` and the `home_v2` fields of `GET /home`) is default off."""
 
 from __future__ import annotations
 
@@ -65,6 +66,7 @@ class Features:
     customer_economics: bool = field(default_factory=lambda: _flag("FEATURE_CUSTOMER_ECONOMICS", default=False))  # map #88 Phase 2
     contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
     pilot_journal: bool = field(default_factory=lambda: _flag("FEATURE_PILOT_JOURNAL", default=False))  # map #58, default off
+    home_v2: bool = field(default_factory=lambda: _flag("FEATURE_HOME_V2", default=False))  # Home V2 wave 1 (server), default off
 
 
 @dataclass(frozen=True)
