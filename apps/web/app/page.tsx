@@ -8,15 +8,14 @@ import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-d
 import { CashPicture } from "@/components/home/cash-picture";
 import { AttentionCard } from "@/components/home/attention";
 import { ChangesCard, DealsCard, ReceivablesCard } from "@/components/home/cards";
-import { EventPicture } from "@/components/home/event-picture";
+import { EventPicture, eventPictureReady } from "@/components/home/event-picture";
 import { HomePosition } from "@/components/home/position";
 import { Disclosure } from "@/components/business/kit";
-import { HomeDeals } from "@/components/home/deals";
-import { contractsOff } from "@/components/documents";
+import { HomeDealsRead } from "@/components/home/deals";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
-import { getDeals, getHome, getReceivablesWorth } from "@/lib/api";
+import { getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { withoutSuperseded } from "@/lib/home-changes";
@@ -49,8 +48,6 @@ export default function HomePage() {
   // or when the read fails, so the home is then exactly what it was; never read with the flag off.
   const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
   const worth = worthRead.data;
-  // The owner's deals, read beside the home: a failed read is one quiet line with Retry and never blanks the page (a server with contract reading off has none to show).
-  const dealsRead = useAsync(() => getDeals(lang), [lang]);
   // Remember this visit once the home has loaded, so the next visit asks "since then".
   useEffect(() => {
     if (!view.data) return;
@@ -68,8 +65,12 @@ export default function HomePage() {
   // The decisions still open, minus the two the page already says in its own block: an approval waiting for the owner (the decisions block below
   // has its question) and the one holding the remaining task.
   // Said once: the hero already says what is on its way, so the funding that is still landing is not listed again.
+  // With the attention queue the approval and the landing are its items, so "Waiting on" does not list them again.
   const waitingOn = (h?.open_decisions ?? []).filter(
-    (d) => !(d.waiting_for.code === "OWNER_APPROVAL" && (h?.pending_count ?? 0) > 0) && d.id !== h?.remaining_task_decision_id && !(d.waiting_for.code === "FUNDING_SETTLEMENT" && h?.cash.in_transit),
+    (d) =>
+      !(d.waiting_for.code === "OWNER_APPROVAL" && ((h?.pending_count ?? 0) > 0 || h?.attention)) &&
+      d.id !== h?.remaining_task_decision_id &&
+      !(d.waiting_for.code === "FUNDING_SETTLEMENT" && (h?.cash.in_transit || h?.attention)),
   );
   // The next step's card holds the question when its plan waits for approval; the decision card below would say it again.
   const cardHoldsApproval = Boolean(h?.next_action?.pending_approval_id) && (h?.approvals ?? []).every((a) => a.id === h?.next_action?.pending_approval_id);
@@ -84,7 +85,7 @@ export default function HomePage() {
   // While an approval is open the waiting row would say it a third time.
   const shownChanges = withoutSuperseded(h?.changes ?? []).filter((c) => !(c.kind === "WAITING" && (h?.pending_count ?? 0) > 0));
   const sinceWhen = h && h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null;
-  const changes = h && shownChanges.length && !h.changes_card ? <ChangesBlock key="changes" changes={shownChanges} sinceWhen={sinceWhen} /> : null;
+  const changes = h && !hasCards && shownChanges.length ? <ChangesBlock key="changes" changes={shownChanges} sinceWhen={sinceWhen} /> : null;
   // Under the cards, "What changed" is a closed fold with the full list.
   const changesFold =
     h && hasCards && shownChanges.length ? (
@@ -118,16 +119,16 @@ export default function HomePage() {
   );
 
   const action = h?.attention ? (
-    <AttentionCard key="attention" attention={h.attention} funding={h.funding_line} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} />
+    <AttentionCard key="attention" attention={h.attention} funding={h.funding_line} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} heading={h.cash.headline_conditional || h.headline} unread={h.partial?.text} />
   ) : h?.next_action ? (
     <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
   ) : null;
-  const picture = h ? h.cash.events_rail?.length ? <EventPicture key="picture" h={h} /> : <CashPicture key="picture" h={h} /> : null;
+  const picture = h ? eventPictureReady(h) ? <EventPicture key="picture" h={h} /> : <CashPicture key="picture" h={h} /> : null;
   const cards = hasCards && h ? (
-    <div key="cards" className="grid gap-x-6 gap-y-5 md:grid-cols-3" data-testid="home-cards">
+    <div key="cards" className="-mx-3 grid gap-x-3 gap-y-3 md:grid-cols-3" data-testid="home-cards">
       {h.deals_card ? <DealsCard card={h.deals_card} /> : null}
       {h.receivables_card ? <ReceivablesCard card={h.receivables_card} /> : null}
-      {h.changes_card ? <ChangesCard card={{ ...h.changes_card, rows: h.changes_card.rows.filter((r) => !(r.kind === "WAITING" && h.pending_count > 0)) }} /> : null}
+      {h.changes_card ? <ChangesCard card={{ ...h.changes_card, rows: (h.changes_card.rows ?? []).filter((r) => !(r.kind === "WAITING" && h.pending_count > 0)) }} /> : null}
     </div>
   ) : null;
 
@@ -146,7 +147,7 @@ export default function HomePage() {
           {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. The attention card always comes before the chart. */}
           {narrow || hasAttention ? action : picture}
           {narrow || hasAttention ? picture : action}
-          {h.deals_card ? null : <HomeDeals deals={dealsRead.data?.deals} loading={dealsRead.loading} failed={Boolean(dealsRead.error) && !contractsOff(dealsRead.error)} onRetry={dealsRead.reload} />}
+          {h.deals_card ? null : <HomeDealsRead />}
           {cards}
           {narrow ? (
             <>

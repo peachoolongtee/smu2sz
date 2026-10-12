@@ -166,6 +166,7 @@ test.describe("desktop", () => {
     await advanceTo34(page, request);
     await page.goto("/");
     await expect(page.getByTestId("home-card-overdue")).toHaveText("¥163k"); // the late invoice, on the receivables card
+    await expect(page.getByTestId("home-attention-queue")).toContainText("Foshan is 2 days late"); // and the late buyer, by name, in the queue
     const line = page.getByTestId("home-top-action");
     await expect(line).toHaveCount(1);
     // Anything late leads: the overdue sentence first, the savings sentence under it.

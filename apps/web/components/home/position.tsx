@@ -5,7 +5,7 @@ import { Stat, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeTone, HomeView } from "@/lib/types";
 
-/** The dot beside the status word, and the figure's colour: amber at zero room, red below, nothing at all when the server calls it fine (status colour is for status). */
+/** The dot beside the status word (green when the server calls it fine, amber, red) and the figure's colour: amber at zero room, red below, nothing at all when fine (status colour is for status). */
 const DOT: Record<HomeTone, string> = { ok: "bg-ok-solid", warn: "bg-warn-solid", bad: "bg-bad-solid", neutral: "bg-ink-3" };
 const FIGURE: Record<HomeTone, Tone> = { ok: "neutral", warn: "warn", bad: "bad", neutral: "neutral" };
 
@@ -23,9 +23,11 @@ export function HomePosition({ h }: { h: HomeView }) {
   const assumptions = cash.assumptions ?? [];
   return (
     <header aria-labelledby="home-status-title" className="motion-reveal flex flex-col items-start gap-2 sm:gap-2.5 short:gap-2" data-testid="home-status" data-status={h.status}>
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-ink-2" data-testid="home-status-word">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-ink-2">
         <span aria-hidden className={`size-2 shrink-0 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
-        <span className="text-ink">{cash.status_word}</span>
+        <span className="text-ink" data-testid="home-status-word">
+          {cash.status_word}
+        </span>
         {cash.last_read_when ? (
           <span className="font-normal text-ink-3" data-testid="home-read-when">
             {t("home.hy.read", { when: cash.last_read_when })}

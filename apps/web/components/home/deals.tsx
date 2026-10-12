@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { StageTrack } from "@/components/deals/stage-track";
+import { contractsOff } from "@/components/documents";
 import { ButtonLink, ErrorState, LoadingBlock, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { getDeals } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import type { DealTone, DealView } from "@/lib/types";
 
 const toneOf = (tone: DealTone): Tone => (tone === "mute" ? "neutral" : tone);
@@ -166,4 +169,14 @@ export function HomeDeals({ deals, loading, failed, onRetry }: { deals: DealView
       )}
     </section>
   );
+}
+
+/**
+ * The older Home's deals, with their own read (GET /deals): a failed read is one quiet line with Retry and never blanks the page (a server with contract
+ * reading off has none to show). Only mounted when the home read has no `deals_card`, so the hybrid Home never makes this read.
+ */
+export function HomeDealsRead() {
+  const { lang } = useI18n();
+  const read = useAsync(() => getDeals(lang), [lang]);
+  return <HomeDeals deals={read.data?.deals} loading={read.loading} failed={Boolean(read.error) && !contractsOff(read.error)} onRetry={read.reload} />;
 }

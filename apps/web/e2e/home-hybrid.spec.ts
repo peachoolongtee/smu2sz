@@ -10,11 +10,12 @@ import afterFund from "../mocks/home_summary_after_fund.json";
  * The Home hybrid (board "Home E"): the position, the attention card, the picture with the event rail, the three cards.
  *
  * Every sentence below is read from the recorded home reads (mocks/home_summary_*.json, GET /home written by the API), so the words are the server's.
- * One thing is not in any recording: the late-payment stress sits behind the API's exposure flag. The scenario switch is therefore exercised with a
- * stress laid over the recorded read through the mock's session key `tl-mock-home-stress` (a test seam like `tl-mock-worth-fail`); without the key the
- * recorded read says `stress_available: false` and the switch must be absent.
+ * What no recording has is laid over the recorded read through the mock's session key `tl-mock-home-patch` (a test seam like `tl-mock-worth-fail`, see
+ * lib/mock/handlers.ts `withHomePatch`): the late-payment stress (behind the API's exposure flag), an unreadable decision record (`attention.incomplete`), a
+ * populated or multi-row deals card, a rail longer than the picture, and an older server with none of the hybrid's fields (set to null). Without the key the
+ * read is exactly the recording, whose `stress_available` is false.
  */
-const STRESS_KEY = "tl-mock-home-stress";
+const PATCH_KEY = "tl-mock-home-patch";
 
 type Rec = typeof day0;
 const rail = (r: Rec) => r.cash.events_rail;
@@ -24,15 +25,15 @@ async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-/** The recorded opening books (day 0): the plan waits to be run. `lang` is chosen before the page loads. */
-async function open(page: Page, { lang = "en", stress = false }: { lang?: "en" | "zh"; stress?: boolean } = {}) {
+/** The late-payment stress as the API would send it (the plan line with the Foshan receipt 30 days later), built from the recorded plan line. */
+function stressOf(lang: "en" | "zh") {
   const plan = day0.cash.plan_series as { day: number; closing_fen: number; closing_display: string; events: unknown[] }[];
   const late = plan.map((p) => {
     const fen = p.day >= 32 && p.day < 62 ? p.closing_fen - 42_000_000 : p.closing_fen;
     return { ...p, closing_fen: fen, closing_display: `¥${Math.round(fen / 100000)}k`, events: [] };
   });
   const lateLow = Math.min(...late.map((p) => p.closing_fen));
-  const seam = {
+  return {
     delay_days: 30,
     buyer: lang === "zh" ? "佛山" : "Foshan",
     series: late,
@@ -44,16 +45,35 @@ async function open(page: Page, { lang = "en", stress = false }: { lang?: "en" |
     assumption_text: lang === "zh" ? "假设佛山晚付 30 天，其余款项都按期到账。" : "Assumes Foshan pays 30 days after the due date, and every other payment arrives as scheduled.",
     window_days_needed: 62,
   };
+}
+
+/** Every field the hybrid added, set to null: what an older server sends. */
+const OLDER_SERVER = {
+  attention: null,
+  funding_line: null,
+  deals_card: null,
+  receivables_card: null,
+  changes_card: null,
+  cash: { status_word: null, status_tone: null, headline_conditional: null, headline_note: null, assumptions: null, facts: null, events_rail: null, events_rail_days: null, counterfactual_series: null, counterfactual_label: null, stress_available: false, stress: null },
+};
+
+type Patch = Record<string, unknown> & { cash?: Record<string, unknown> };
+
+/** The recorded opening books (day 0): the plan waits to be run. The language and the patch are set before the page loads. */
+async function open(page: Page, { lang = "en", stress = false, patch = {} }: { lang?: "en" | "zh"; stress?: boolean; patch?: Patch } = {}) {
+  const laid: Patch = { ...patch, cash: { ...(stress ? { stress_available: true, stress: stressOf(lang) } : {}), ...(patch.cash ?? {}) } };
   await page.context().addInitScript(
-    ([key, value, l, withStress]) => {
-      if (withStress) sessionStorage.setItem(key as string, JSON.stringify(value));
+    ([key, value, l]) => {
+      if (Object.keys(value as object).length) sessionStorage.setItem(key as string, JSON.stringify(value));
       localStorage.setItem("tl-lang", JSON.stringify({ lang: l }));
     },
-    [STRESS_KEY, seam, lang, stress] as const,
+    [PATCH_KEY, laid, lang] as const,
   );
   await page.goto("/");
+  await expect(page.getByTestId("home-status")).toBeVisible();
+  // The hybrid picture is measured after layout: wait for it to draw (unless the patch took its fields away).
+  if (laid.cash && laid.cash.events_rail === null) return;
   await expect(page.getByTestId("home-event-picture")).toBeVisible();
-  // The chart is measured after layout: wait for it to draw.
   await expect(page.getByTestId("rail-mark-0")).toBeAttached();
 }
 
@@ -67,9 +87,8 @@ test("section 1: the status word, one h1 with the conditional heading, the note,
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(c.headline_conditional);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
-  await expect(page.getByTestId("home-status-word")).toContainText("Action needed");
-  await expect(page.getByTestId("home-status-word")).toContainText("· read today");
-  await expect(page.getByTestId("home-status-word")).not.toContainText("ACTION NEEDED");
+  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
+  await expect(page.getByTestId("home-read-when")).toHaveText("· read today");
   await expect(page.getByTestId("home-note")).toHaveText(c.headline_note);
   await expect(page.getByTestId("home-assumptions")).not.toHaveAttribute("open", "");
   await page.getByTestId("home-assumptions").locator("> summary").click();
@@ -98,11 +117,15 @@ test("section 2: the plan is the one raised card and the page's only filled prim
   await expect(card).toHaveAttribute("data-alert", "ALERT-RESERVE-12");
   await expect(card.getByTestId("home-attention-eyebrow")).toHaveText(a.eyebrow);
   await expect(card.getByTestId("home-attention-eyebrow")).toHaveClass(/text-warn-fg/);
-  await expect(card.getByTestId("home-attention-title")).toHaveText(a.title);
-  for (const f of a.facts) {
-    await expect(card.getByTestId("home-attention-facts")).toContainText(f.label);
-    await expect(card.getByTestId("home-attention-facts")).toContainText(f.value);
-  }
+  // The title is the recommendation: the h1 above already says the first sentence, so it is not said twice.
+  const heading = day0.cash.headline_conditional;
+  expect(a.title.startsWith(heading)).toBe(true);
+  await expect(card.getByTestId("home-attention-title")).toHaveText(a.title.slice(heading.length).trim());
+  // The facts the funding line already says (the cost, who decides) are not repeated; when the funds arrive is the server's own text, on the card.
+  const facts = card.getByTestId("home-attention-facts");
+  await expect(facts).not.toContainText(a.facts[0].label); // "Estimated cost"
+  await expect(facts).not.toContainText(a.facts[2].value); // "within your signed limits"
+  await expect(card.getByTestId("next-action-lands")).toHaveText("in 3 days");
   expect(await filledBrand(page)).toBe(1);
   const run = card.getByTestId("fix-open-ALERT-RESERVE-12");
   await expect(run).toHaveText("Run funding plan");
@@ -111,11 +134,12 @@ test("section 2: the plan is the one raised card and the page's only filled prim
   await expect(card.getByTestId("next-action-alternatives")).toHaveText(a.primary.label);
   await expect(card.getByTestId("next-action-alternatives")).toHaveAttribute("href", "/cash#cash-options");
   await expect(card.getByTestId("next-action-alternatives")).not.toHaveCSS("background-color", "rgb(3, 104, 233)");
-  // The funding line beneath: its sentence, the two costs each with its label, who decides.
+  await expect(card.getByTestId("home-attention-why")).toHaveText(a.secondary.label); // "Why this?" stays on the funding item
+  await expect(card.getByTestId("home-attention-why")).toHaveAttribute("href", a.secondary.href);
+  // The funding line beneath: its sentence, the two costs (amount first, "Cost" leads, each with its words), who decides.
   const f = day0.funding_line;
   await expect(card.getByTestId("home-funding-text")).toHaveText(f.text);
-  await expect(card.getByTestId("home-funding-costs")).toContainText(`${f.cost_leg_label} ${f.cost_leg_display}`);
-  await expect(card.getByTestId("home-funding-costs")).toContainText(`${f.cost_total_label} ${f.cost_total_display}`);
+  await expect(card.getByTestId("home-funding-costs")).toHaveText(`Cost ${f.cost_leg_display} for ${f.cost_leg_label}; ${f.cost_total_display} for ${f.cost_total_label}`);
   await expect(card.getByTestId("home-funding-authority")).toHaveText(f.authority_text);
   await expect(page.getByTestId("home-attention-queue")).toHaveCount(0);
   // The first press asks, with what is received and what it costs; Cancel sends nothing.
@@ -137,20 +161,28 @@ test("section 2: the plan is the one raised card and the page's only filled prim
   await expect(page.getByTestId("fix-result")).toContainText("2 executed");
 });
 
-test("section 2: once the plan has run the card is the landing, a link primary, and the funding line says arranged", async ({ page }) => {
+test("section 2: once the plan has run the funding on its way is said once, quietly: no raised card, no filled button, no amber", async ({ page }) => {
   await open(page);
   await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   const a = afterFund.attention.items[0];
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
+  await expect(page.getByTestId("home-attention-card")).toHaveCount(0);
+  await expect(page.getByTestId("home-attention")).toHaveAttribute("data-state", "info");
   await expect(page.getByTestId("home-attention-eyebrow")).toHaveText(a.eyebrow);
-  await expect(page.getByTestId("home-attention-title")).toHaveText(a.title);
-  await expect(page.getByTestId("home-attention-primary")).toHaveText(a.primary.label);
-  expect(await filledBrand(page)).toBe(1);
-  await expect(page.getByTestId("home-funding-text")).toHaveText(afterFund.funding_line.text);
+  await expect(page.getByTestId("home-attention-eyebrow")).not.toHaveClass(/text-warn-fg/);
+  await expect(page.getByTestId("home-attention-link")).toHaveText(a.primary.label);
+  await expect(page.getByTestId("home-attention-link")).not.toHaveCSS("background-color", "rgb(3, 104, 233)");
+  expect(await filledBrand(page)).toBe(0);
+  // Said once on the card (the facts row); the "Arriving next" tile and the rail keep it, the title and the plan's sentence do not repeat it.
+  await expect(page.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(page.getByTestId("home-attention-title")).toHaveCount(0);
+  await expect(page.getByTestId("home-funding-text")).toHaveCount(0);
   await expect(page.getByTestId("home-funding-costs")).toContainText(afterFund.funding_line.cost_total_display);
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("in 3 days");
+  await expect(page.getByTestId("rail-row-0")).toContainText("in 3 days");
   await expect(page.getByTestId("home-headline")).toHaveText(afterFund.cash.headline_conditional);
-  await expect(page.getByTestId("home-status-word")).toContainText("Covered, but tight");
+  await expect(page.getByTestId("home-status-word")).toHaveText("Covered, but tight");
 });
 
 test("section 2: with nothing waiting the card shrinks to the funding line under one quiet line, and nothing is filled", async ({ page }) => {
@@ -229,7 +261,12 @@ test("section 3: pointing at or focusing a row previews it, leaving restores the
   await open(page);
   const events = rail(day0);
   await page.getByTestId(`rail-row-${LOWEST}`).click();
+  const announced = await page.getByTestId("rail-announce").textContent();
   await page.getByTestId("rail-row-2").hover();
+  // A preview is not an announcement: the live region still holds the chosen event's title, and the chosen row keeps its bar (not only its colour).
+  await expect(page.getByTestId("rail-announce")).toHaveText(announced!);
+  await expect(page.getByTestId(`rail-chosen-${LOWEST}`)).toBeVisible();
+  await expect(page.getByTestId("rail-chosen-2")).toHaveCount(0);
   await expect(page.getByTestId("rail-mark-2")).toHaveAttribute("data-filled", "true");
   await expect(page.getByTestId("rail-explain")).toHaveText(events[2].explain);
   await expect(page.getByTestId("home-cursor")).toHaveAttribute("data-day", String(events[2].day));
@@ -264,6 +301,8 @@ test("section 3: over the plot the dotted cursor follows the pointer with the li
   await expect(tooltip).toContainText("With FLOW's plan");
   await expect(tooltip).toContainText(day0.cash.counterfactual_label);
   await expect(tooltip).toContainText(/¥[\d,.]+/);
+  // No day word is made in the browser: a day with no event of its own shows the figures only.
+  await expect(tooltip).not.toContainText(/\bin \d+ days?\b/);
   const day = Number(await page.getByTestId("home-cursor").getAttribute("data-day"));
   expect(day).not.toBe(events[LOWEST].day);
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
@@ -477,15 +516,14 @@ test("Chinese: the same sections, every label and word in Chinese, the server's 
   await open(page, { lang: "zh", stress: true });
   const c = day0Zh.cash;
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(c.headline_conditional);
-  await expect(page.getByTestId("home-status-word")).toContainText(c.status_word);
-  await expect(page.getByTestId("home-status-word")).toContainText("· 今天读取");
+  await expect(page.getByTestId("home-status-word")).toHaveText(c.status_word);
+  await expect(page.getByTestId("home-read-when")).toHaveText("· 今天读取");
   await expect(page.getByTestId("home-assumptions").locator("> summary")).toHaveText("预测所依据的假设");
   await expect(page.getByTestId("home-facts").locator("> div")).toHaveCount(3);
   await expect(page.getByTestId("home-attention-eyebrow")).toHaveText(day0Zh.attention.items[0].eyebrow);
   await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toBeVisible();
   const f = day0Zh.funding_line;
-  await expect(page.getByTestId("home-funding-costs")).toContainText(`${f.cost_leg_label} ${f.cost_leg_display}`);
-  await expect(page.getByTestId("home-funding-costs")).toContainText("；");
+  await expect(page.getByTestId("home-funding-costs")).toHaveText(`成本 ${f.cost_leg_display}，对应${f.cost_leg_label}；${f.cost_total_display}，对应${f.cost_total_label}`);
   expect(await filledBrand(page)).toBe(1);
   await expect(page.locator('[data-testid^="rail-row-"]')).toHaveCount(c.events_rail.length);
   await page.getByTestId(`rail-row-${LOWEST}`).click();
@@ -505,6 +543,117 @@ test("Chinese: the same sections, every label and word in Chinese, the server's 
   // No English UI labels leak in.
   const text = (await page.locator("main").innerText()).replace(/FLOW|¥[\w,.]+|Foshan/g, "");
   for (const word of ["Forecast assumptions", "Also waiting", "Expected payments", "Key events", "Recent changes", "Your deals", "Receivables", "Run funding plan"]) expect(text).not.toContain(word);
+});
+
+test("an incomplete queue never says nothing is urgent: the server's sentence about what was not read, or nothing", async ({ page }) => {
+  await open(page, { patch: { attention: { items: [], primary_key: null, none_text: null, incomplete: true }, partial: { missing: ["decisions"], text: "The decisions could not be read just now." } } });
+  await expect(page.getByTestId("home-attention-none")).toHaveCount(0);
+  await expect(page.getByTestId("home-attention-unread")).toHaveText("The decisions could not be read just now.");
+  await expect(page.locator("main")).not.toContainText("No urgent action required.");
+});
+
+test("an incomplete queue with no sentence from the server says nothing at all about urgency", async ({ page }) => {
+  await open(page, { patch: { attention: { items: [], primary_key: null, none_text: null, incomplete: true } } });
+  await expect(page.getByTestId("home-attention")).toBeVisible();
+  await expect(page.getByTestId("home-attention-none")).toHaveCount(0);
+  await expect(page.getByTestId("home-attention-unread")).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText("No urgent action required.");
+});
+
+test("section 3: a rail longer than the picture widens the window with its own one-line note", async ({ page }) => {
+  await open(page, { patch: { cash: { events_rail_days: 62 } } });
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "62");
+  await expect(page.getByTestId("home-widened")).toHaveText("Showing 62 days so every key event appears.");
+  // The owner's own choices stay what they are: the first window is still the one pressed.
+  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("section 3: reduced motion carries no transition on the cursor; with motion allowed it eases", async ({ page }) => {
+  await open(page); // the project asks for reduced motion
+  await expect(page.getByTestId("home-cursor").locator("> g")).not.toHaveClass(/transition-transform/);
+  await expect(page.getByTestId("home-dot").first()).not.toHaveClass(/transition-transform/);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.getByTestId("home-cursor").locator("> g")).toHaveClass(/transition-transform/);
+});
+
+test("section 3: the switch hides and the picture returns to expected when the server stops offering the stress", async ({ page }) => {
+  await open(page, { stress: true });
+  await page.getByTestId("home-scenario-late").click();
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  // The books move (the plan runs): the new read has no stress, so the scenario is expected again and the switch is gone.
+  await page.evaluate(() => sessionStorage.setItem("tl-mock-home-patch", JSON.stringify({ cash: { stress_available: false, stress: null } })));
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("home-scenario-late")).toHaveCount(0);
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "expected");
+});
+
+test("section 4: a deals card with several rows is one line each, the card leads to Deals", async ({ page }) => {
+  const rows = [
+    { buyer: "Foshan Home Retail Co.", buyer_id: "BUYER-1", status_text: "Your response needed", request_text: "60-day terms + 1% rebate", recommendation_text: "Counter with Option A, estimated cost ¥3,027.77", href: "/deals?buyer=BUYER-1" },
+    { buyer: "Dongguan Office Supplies Ltd.", buyer_id: "BUYER-2", status_text: "Awaiting the buyer", request_text: "30-day terms", recommendation_text: "", href: "/deals?buyer=BUYER-2" },
+  ];
+  await open(page, { patch: { deals_card: { rows, empty_text: "No deals are open.", href: "/deals" } } });
+  const card = page.getByTestId("home-card-deals");
+  await expect(card.getByTestId("home-card-deal")).toHaveCount(2);
+  await expect(card.getByTestId("home-card-deal").first()).toContainText("Your response needed");
+  await expect(card.getByTestId("home-card-deal").nth(1)).toContainText("Dongguan Office Supplies Ltd.");
+  await expect(card.getByTestId("home-card-deal").nth(1)).toContainText("Awaiting the buyer");
+  await expect(card.getByTestId("home-card-deals-none")).toHaveCount(0);
+  await expect(card.getByTestId("home-card-deals-link")).toHaveAttribute("href", "/deals");
+  await expect(card.locator("button, img")).toHaveCount(0);
+});
+
+test("the older Home renders exactly when the server sends none of the hybrid's fields, and nothing of the hybrid does", async ({ page }) => {
+  await open(page, { patch: OLDER_SERVER });
+  // The older pieces: the uppercase status pill, the next-step bar, the chips picture with its two lines and toggle, the deals rows read on their own, the section of changes.
+  await expect(page.getByTestId("home-status-word")).toHaveClass(/uppercase/);
+  await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
+  await expect(page.getByTestId("home-headline")).toHaveText(day0.headline);
+  await expect(page.getByTestId("home-note")).toHaveText(day0.note);
+  await expect(page.getByTestId("home-next-action").getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
+  await expect(page.getByTestId("home-picture")).toBeVisible();
+  await expect(page.getByTestId("picture-chips")).toContainText("Payroll");
+  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
+  await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
+  await expect(page.getByTestId("home-deals")).toBeVisible();
+  await expect(page.getByTestId("home-deal-BUYER-1").locator("ol > li")).toHaveCount(5);
+  await expect(page.locator("#home-receivables")).toBeVisible();
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("fix-result")).toContainText("2 executed");
+  await expect(page.getByTestId("home-changes-list")).toContainText("drawn on the Bank credit line");
+  await expect(page.locator("#home-changes")).toBeVisible();
+  expect(await filledBrand(page)).toBeLessThanOrEqual(1);
+  // Nothing of the hybrid.
+  for (const id of ["home-attention", "home-event-picture", "home-facts", "home-assumptions", "home-cards", "home-card-deals", "home-card-receivables", "home-card-changes", "home-changes-fold", "home-rail", "home-legend", "home-funding"]) {
+    await expect(page.getByTestId(id), id).toHaveCount(0);
+  }
+  expect(await page.getByTestId("home-radar").evaluate((el) => el.tagName)).toBe("SECTION");
+});
+
+test("a phone (390 x 844): the primary is in the first screen after the plan has run and in Chinese too", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, { lang: "zh" });
+  const zhRun = (await page.getByTestId("fix-open-ALERT-RESERVE-12").boundingBox())!;
+  expect(zhRun.y + zhRun.height).toBeLessThanOrEqual(844 - 72);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId("fix-open-ALERT-RESERVE-12")).toBeInViewport();
+  // Run it: what is next in the card (the landing, said quietly) is also in the first screen, and nothing scrolls sideways.
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("home-attention")).toHaveAttribute("data-state", "info");
+  await expect(page.getByTestId("home-attention-link")).toBeInViewport();
+  const link = (await page.getByTestId("home-attention-link").boundingBox())!;
+  expect(link.y + link.height).toBeLessThanOrEqual(844 - 72);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+});
+
+test("a phone (390 x 844), English, after the plan has run: the landing line is in the first screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("home-attention-link")).toBeInViewport();
+  const link = (await page.getByTestId("home-attention-link").boundingBox())!;
+  expect(link.y + link.height).toBeLessThanOrEqual(844 - 72);
 });
 
 test("axe: no serious or critical finding on the hybrid Home, in both scenarios, at 1440 and at 390", async ({ page }) => {
