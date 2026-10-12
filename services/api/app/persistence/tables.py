@@ -10,6 +10,7 @@ from __future__ import annotations
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Column,
     Integer,
     MetaData,
@@ -301,15 +302,53 @@ decision_facts = Table(
     UniqueConstraint("decision_id", "fact", "fact_key", name="uq_decision_facts_decision_id_fact_fact_key"),
 )
 
+# What the owner (or an import) told FLOW about a buyer or the firm (map #88, brief H.4): the customer profile, kept apart from
+# `FinancialState` and `Counterparty`. Its own table, written only by the inputs routes, never part of the state, the
+# operations or the hash chain. Append-only: the latest row per (counterparty, field) is the one in force and the history
+# stays. A null `counterparty_id` is a firm row. Ledger data: `reset()` clears it.
+INPUT_FIELDS = (
+    "annual_sales_fen", "margin_bp", "margin_basis", "classification", "typical_delay_days", "aggregate", "vat_rate_bp",
+    "company_gross_margin_bp",
+)
+INPUT_PROVENANCES = (
+    "ACCOUNTING_HISTORY", "INVOICE_HISTORY", "OWNER_ENTERED", "ERP", "DERIVED", "ESTIMATED", "PROJECTED",
+)
+
+
+def _in(column: str, values: tuple[str, ...]) -> str:
+    return f"{column} IN ({', '.join(repr(v) for v in values)})"
+
+
+customer_inputs = Table(
+    "customer_inputs",
+    metadata,
+    _row_id(),
+    Column("org_id", ID, nullable=False, index=True),
+    Column("counterparty_id", ID, nullable=True, index=True),
+    Column("field", String(32), nullable=False),
+    Column("value_json", Text, nullable=False),
+    Column("provenance", String(24), nullable=False),
+    Column("source_ref", String(256), nullable=False),
+    Column("entered_by", String(64), nullable=False),
+    Column("entered_day", Integer, nullable=False),
+    Column("state_version", Integer, nullable=False),
+    Column("recorded_at", String(40), nullable=False),
+    CheckConstraint(_in("field", INPUT_FIELDS), name="ck_customer_inputs_field"),
+    CheckConstraint(_in("provenance", INPUT_PROVENANCES), name="ck_customer_inputs_provenance"),
+)
+
 # Tables that `reset()` keeps: telemetry and the pilot's journal, not ledger state.
 TELEMETRY_TABLES = (llm_calls, evaluation_runs, pilot_journal)
 
 __all__ = [
+    "INPUT_FIELDS",
+    "INPUT_PROVENANCES",
     "TELEMETRY_TABLES",
     "approvals",
     "commitments",
     "contract_records",
     "counterparties",
+    "customer_inputs",
     "decision_facts",
     "evaluation_runs",
     "evidence_exports",

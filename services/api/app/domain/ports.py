@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from app.domain.models import (
     Commitment,
@@ -40,6 +40,9 @@ from app.domain.models import (
     Violation,
 )
 from app.domain.money import Ratio
+
+if TYPE_CHECKING:  # the record is persistence's; a runtime import would close a cycle (persistence implements this port)
+    from app.persistence.records import CustomerInputRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,6 +276,19 @@ class LedgerStore(Protocol):
         raises `DocumentAlreadyDecided`, an unknown one `NotFound`, and a decision that changes anything but the
         decision fields (status, day, log seq, linked facility) raises `ValueError`. Confirming a buyer contract sets
         `superseded_by` on the buyer's earlier confirmed contract, in the same unit of work."""
+        ...
+
+    # customer inputs: what the owner told FLOW about a buyer or the firm (map #88, brief H.4). Append-only context, never
+    # part of the state, the operations or the hash chain; `reset()` clears it.
+    def add_customer_input(self, record: CustomerInputRecord) -> CustomerInputRecord:
+        """Append one row and return the stored one (the store assigns `seq` and `recorded_at`). Nothing is updated or deleted."""
+        ...
+    def customer_inputs(self, counterparty_id: str | None) -> list[CustomerInputRecord]:
+        """The history of one buyer's rows, oldest first; `None` is the firm's rows."""
+        ...
+    def all_customer_inputs(self) -> list[CustomerInputRecord]: ...  # every row, oldest first
+    def latest_customer_inputs(self) -> dict[tuple[str | None, str], CustomerInputRecord]:
+        """The row in force for each (counterparty id or None for the firm, field): the latest stored wins."""
         ...
 
     # evidence

@@ -1,0 +1,558 @@
+"""The buyer-exposure routes (map #88 Phase 1): owner only, behind FEATURE_EXPOSURE, the whole block for EX01 on the golden books
+(the concentration, the payment behaviour, the 30-day stress with its line, the capacity before and after each path and the spare
+room, the Demo's pins), the two ids resolving to the same buyer, one answer per key in the cache with `spare=0` skipping the search,
+the Chinese read with the same figures as the English one (the helper of map #65 Wave 7), and P8: the verdict is byte-identical
+with the flag on and off."""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Iterator
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.api import strategy_exposure as route
+from app.api.runtime import Runtime, set_runtime
+from app.config import get_settings
+from app.domain.models import Commitment, CommitmentStatus
+from app.mandate.fixture import demo_owner_public_key_hex
+from app.persistence import InMemoryLedgerStore
+from app.strategy import exposure as assembly
+from tests.api.conftest import english_leaks, figures, unchanged_words
+
+OWNER = {"X-Owner-Token": "demo-owner-token"}
+AGENT = {"X-Agent-Key": "demo-agent-key"}
+NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Bank credit line",
+         "Invoice financing (onboarded platform)", "Buyer early-payment offer"]  # the buyers and the facilities the books name
+EX01 = {"fixture_id": "EX01_PACKAGE"}
+
+
+@pytest.fixture
+def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
+    monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    runtime.reset()
+    set_runtime(runtime)
+    route.clear_cache()
+    yield runtime
+    set_runtime(None)
+    route.clear_cache()
+
+
+@pytest.fixture
+def api(rt: Runtime) -> TestClient:
+    from app.main import app
+
+    return TestClient(app, headers=OWNER)
+
+
+@pytest.fixture
+def offer_id(api: TestClient) -> str:
+    return str(api.post("/offers", json=EX01).json()["offer"]["offer_id"])
+
+
+# ---------------------------------------------------------------- the gate
+
+
+def test_both_routes_are_403_with_the_flag_off(api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FEATURE_EXPOSURE", raising=False)
+    for url in (f"/offers/{offer_id}/exposure", f"/decisions/deal:{offer_id}/exposure", "/offers/NOPE/exposure"):
+        r = api.get(url)
+        assert r.status_code == 403 and r.json()["detail"]["code"] == "FEATURE_DISABLED"
+        assert r.json()["detail"]["feature"] == "exposure"
+
+
+def test_the_flag_is_off_by_default_and_listed_on_health(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FEATURE_EXPOSURE", raising=False)
+    assert get_settings().features.exposure is False
+    from app.main import app
+
+    assert TestClient(app).get("/health").json()["features"]["exposure"] is False
+    monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    assert get_settings().features.exposure is True
+
+
+def test_the_owner_alone_may_read(api: TestClient, offer_id: str) -> None:
+    from app.main import app
+
+    bare = TestClient(app)  # no default credentials
+    for headers in ({}, AGENT, {"X-Owner-Token": "wrong"}):
+        assert bare.get(f"/offers/{offer_id}/exposure", headers=headers).status_code == 401
+        assert bare.get(f"/decisions/deal:{offer_id}/exposure", headers=headers).status_code == 401
+    assert bare.get(f"/offers/{offer_id}/exposure", headers=OWNER).status_code == 200
+
+
+def test_an_unknown_offer_or_decision_is_a_404(api: TestClient, offer_id: str) -> None:
+    r = api.get("/offers/OFF-nope/exposure")
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "OFFER_NOT_FOUND"
+    for decision in ("deal:OFF-nope", "alert:ALERT-RESERVE-12:v1", "nonsense"):  # no such deal, and a funding decision has no buyer
+        r = api.get(f"/decisions/{decision}/exposure")
+        assert r.status_code == 404 and r.json()["detail"]["code"] == "DECISION_NOT_FOUND", decision
+
+
+def test_the_response_is_asked_or_a_counter_that_exists(api: TestClient, offer_id: str) -> None:
+    assert api.get(f"/offers/{offer_id}/exposure?response=asked").status_code == 200
+    for bad in ("counter", "counter:", "counter:-1", "counter:x", "ASKED", "other"):
+        assert api.get(f"/offers/{offer_id}/exposure", params={"response": bad}).status_code == 422, bad
+    assert api.get(f"/offers/{offer_id}/exposure?response=counter:0").status_code == 404  # not evaluated yet: no counters
+    verdict = api.post(f"/offers/{offer_id}/evaluate", json=EX01).json()
+    assert verdict["counters"], "EX01 has counter-offers on the golden books"
+    ok = api.get(f"/offers/{offer_id}/exposure?response=counter:0")
+    assert ok.status_code == 200 and ok.json()["response"] == "counter:0"
+    missing = api.get(f"/offers/{offer_id}/exposure?response=counter:{len(verdict['counters'])}")
+    assert missing.status_code == 404 and missing.json()["detail"]["code"] == "COUNTER_NOT_FOUND"
+    assert api.get(f"/offers/{offer_id}/exposure?lang=fr").status_code == 422
+
+
+# ---------------------------------------------------------------- the block
+
+
+def test_a_read_before_the_offer_is_evaluated_has_one_path_and_no_package(api: TestClient, offer_id: str) -> None:
+    body = api.get(f"/offers/{offer_id}/exposure").json()
+    assert body["offer_id"] == offer_id and body["buyer_id"] == "BUYER-1" and body["buyer_name"] == "Foshan Home Retail Co."
+    assert body["buyer"] == {"id": "BUYER-1", "name": "Foshan Home Retail Co."}
+    assert body["response"] == "asked" and body["day"] == 0 and body["partial"] is False and body["state_version"] == 1
+    assert [p["key"] for p in body["paths"]] == ["asked"] and body["lead"] == "asked"
+    assert body["capacity"]["asked"]["after"] is None  # nothing to bind yet: the asked path is the books as they stand
+    assert body["capacity"]["asked"]["spare"]["x_star_fen"] == 8_100_000
+    c, p = body["concentration"], body["payments"]
+    assert c["sentence"] == ("Foshan is 100% of what you are owed today (¥420,000). "
+                             "No customer receipts are due in the next 30 days.")
+    assert c["ar_share_bp"] == 10_000 and c["ar_buyer_display"] == "¥420,000.00" and c["receipts_share_bp"] is None
+    assert p["insufficient"] is True and p["completed"] == 0 and p["median_days_late"] is None
+    assert p["insufficient_text"].startswith("FLOW has no completed payments from Foshan in the last 12 months")
+
+
+def _by_label(body: dict[str, Any]) -> dict[str, str]:
+    """The path key of each column: the Deals page's own ("asked" and the counters' ids)."""
+    return {p["label"]: p["key"] for p in body["paths"]}
+
+
+def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id: str) -> None:
+    verdict = api.post(f"/offers/{offer_id}/evaluate", json=EX01).json()
+    body = api.get(f"/offers/{offer_id}/exposure?response=counter:0").json()
+    keys = _by_label(body)
+    assert list(keys) == ["As they asked", "Option A", "Option B"]
+    assert keys["As they asked"] == "asked" and [keys["Option A"], keys["Option B"]] == [c["id"] for c in verdict["counters"]]
+    a, b = keys["Option A"], keys["Option B"]
+    assert body["partial"] is False and body["economics"] is None and body["loss"] is None and body["spare_read"] is True
+    assert body["lead"] == a and set(body["capacity"]) == set(body["stress"]["paths"]) == set(keys.values())
+
+    # concentration: Foshan is all of what is owed
+    assert body["concentration"]["ar_share_bp"] == 10_000 and body["band"]["concentration"] == body["concentration"]["sentence"]
+    assert body["flag"]["material"] is True and body["flag"]["text"] == "Foshan is 100% of what you are owed"
+
+    # the stress on the books as they stand: -¥250,000 on day 60, 65 days below the minimum, ¥550,000, no admissible plan
+    now = body["stress"]["now"]
+    assert body["stress"]["delay_days"] == 30
+    assert (now["lowest_fen"], now["lowest_day"], now["breach_days"], now["need_fen"]) == (-25_000_000, 60, 65, 55_000_000)
+    assert now["plan_admissible"] is False and now["plan_cost_fen"] is None
+    assert (now["lowest_display"], now["lowest_short"], now["lowest_when"]) == ("−¥250,000.00", "−¥250k", "in 60 days")
+    assert now["text"] == ("Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; "
+                           "no committed facility covers the ¥550,000.")
+    assert now["assumption"].startswith("If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast).")
+    assert now["history_text"].startswith("FLOW has no completed payments from Foshan")  # below the minimums: no "typical"
+    # every stressed line is the server's series, from today, and its lowest point is the moment the row names
+    for row in (now, *body["stress"]["paths"].values()):
+        series = row["series"]
+        assert series[0]["day"] == 0 and set(series[0]) == {"day", "closing_fen", "closing_display"}
+        assert min(series, key=lambda r: (r["closing_fen"], r["day"]))["day"] == row["lowest_day"]
+        assert min(r["closing_fen"] for r in series) == row["lowest_fen"]
+        assert all(r["closing_display"] == f"{'−' if r['closing_fen'] < 0 else ''}¥{abs(r['closing_fen']) / 100:,.2f}" for r in series)
+    option_a = body["stress"]["paths"][a]
+    assert (option_a["lowest_fen"], option_a["breach_days"]) == (-25_000_000, 65)
+    assert body["stress"]["paths"]["asked"]["breach_days"] > option_a["breach_days"]  # the package changes the stressed line, not just a label
+
+    # the spare room: ¥81,000 today, ¥14,000 as asked, ¥0 under Option A, ¥62,000 under Option B
+    spare = {k: body["capacity"][k]["spare"] for k in keys.values()}
+    assert {k: v["today_fen"] for k, v in spare.items()} == dict.fromkeys(keys.values(), 8_100_000)
+    assert [spare[k]["x_star_fen"] for k in ("asked", a, b)] == [1_400_000, 0, 6_200_000]
+    assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥0", "¥62k"]
+    assert spare[a]["today_short"] == "¥81k" and spare[a]["refused_text"] is None
+    assert spare[a]["shape_text"].startswith("Counted as a one-off payment of X today") and spare[a]["binding_text"]
+    assert body["band"]["capacity"] == ("Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.")
+    assert body["band"]["by_path"]["asked"]["capacity"] == "Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000."
+    assert body["band"]["by_path"][b]["capacity"] == "Option B leaves ¥62,000 of room for another payment; today ¥81,000."
+    assert body["band"]["stress"] == body["band"]["by_path"][a]["stress"] == option_a["text"]
+
+    # capacity before and after: the line has ¥13.80 left through day 31 under Option A
+    cap = body["capacity"][a]
+    for path in body["capacity"].values():  # a window never has an empty recovery: either a day or the horizon, in words
+        for snap in (path["before"], path["after"]):
+            assert all(w["recovers_when"] for w in snap["windows"])
+    assert any(w["recovers_when"] == "not within the 120-day horizon" for w in cap["after"]["windows"])
+    assumed = [w for w in cap["after"]["windows"] if w["recovery_assumed"]]
+    assert assumed and all(w["recovery_assumed_text"].endswith("(an assumption, not a record).") for w in assumed)
+    line = next(w for w in cap["after"]["windows"] if w["dimension"] == "credit_line")
+    assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (1_380, "¥13.80", "in 31 days", "in 32 days")
+    assert line["after_short"] == "¥150k" and line["facility_name"] == "Bank credit line" and line["over_by"] is False
+    before = next(w for w in cap["before"]["windows"] if w["dimension"] == "credit_line")
+    assert before["today_fen"] == 0 and before["label"] == "Credit line room"
+    buffer = next(w for w in cap["after"]["windows"] if w["dimension"] == "cash_buffer")
+    assert buffer["over_by"] is True and buffer["today_text"] == "¥100,000.00"
+    assert {w["dimension"] for w in cap["before"]["windows"]} >= {"cash_buffer", "credit_line", "invoice_finance", "concession", "dscr_room"}
+    iff = next(w for w in cap["after"]["windows"] if w["dimension"] == "invoice_finance" and w["reading"] == "TODAY")
+    assert iff["reason_text"].startswith("no invoice can be financed")  # a reason in words, never a code
+    assert body["capacity"]["asked"]["after"]["windows"][0]["dimension"] == "cash_buffer"
+
+
+def test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds_and_the_light_read_is_far_cheaper(
+    api: TestClient, offer_id: str
+) -> None:
+    """The documented cost of `spare=1` on the Demo: four router searches (the books as they stand and three paths), cold.
+    The public SME costs about 30 s per search; that benchmark lives in `test_spare_capacity.py` and is skipped under
+    SKIP_PERF_BENCH."""
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    route.clear_cache()
+    full = api.get(f"/offers/{offer_id}/exposure").json()
+    assert full["spare_read"] is True and full["computed_in_seconds"] < 3, full["computed_in_seconds"]
+    route.clear_cache()
+    light = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert light["spare_read"] is False and light["computed_in_seconds"] < full["computed_in_seconds"]
+    route.clear_cache()
+    assert api.get(f"/decisions/deal:{offer_id}/exposure").json()["spare_read"] is False  # the decision read defaults to the light one
+
+
+def test_counters_that_change_between_the_check_and_the_read_are_a_404_with_a_sentence(
+    api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    real = route.latest_verdict_for
+    reads: list[int] = []
+
+    def changing(rt: Runtime, oid: str) -> Any:
+        reads.append(1)
+        verdict = real(rt, oid)
+        return verdict if len(reads) == 1 else verdict.model_copy(update={"counters": []})  # the second read finds none
+
+    monkeypatch.setattr(route, "latest_verdict_for", changing)
+    r = api.get(f"/offers/{offer_id}/exposure?response=counter:0")
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "COUNTER_NOT_FOUND"
+    assert "counter-offers changed" in r.json()["detail"]["message"] and "counter:0" in r.json()["detail"]["message"]
+    assert len(reads) == 2
+
+
+def test_the_response_leads_the_band_and_nothing_else_changes(api: TestClient, offer_id: str) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    first = api.get(f"/offers/{offer_id}/exposure?response=asked").json()
+    second = api.get(f"/offers/{offer_id}/exposure?response=counter:1").json()
+    assert first["lead"] == "asked" and second["lead"] == second["paths"][2]["key"]
+    assert first["band"]["capacity"].startswith("Accepting as asked") and second["band"]["capacity"].startswith("Option B")
+    drop = {"response", "lead", "band", "computed_in_seconds"}
+    assert {k: v for k, v in first.items() if k not in drop} == {k: v for k, v in second.items() if k not in drop}
+    assert first["band"]["by_path"] == second["band"]["by_path"]
+
+
+def test_a_buyer_with_nothing_to_pay_late_has_no_stress_and_still_has_capacity(api: TestClient, rt: Runtime, offer_id: str) -> None:
+    stored = rt.store.get_offer(offer_id)
+    assert stored is not None
+    rt.store.put_offer(stored.model_copy(update={"offer_id": "OFF-dongguan", "counterparty_id": "BUYER-2"}))
+    body = api.get("/offers/OFF-dongguan/exposure?spare=0").json()
+    assert body["stress"]["now"]["available"] is False and body["stress"]["now"]["unavailable_text"].startswith("No late-payment test for Dongguan")
+    assert body["band"]["stress"] is None and body["flag"] == {"material": False, "text": None, "min_share_bp": 5000,
+                                                                 "min_share_display": "50.00%"}
+    assert body["capacity"]["asked"]["before"]["windows"]
+
+
+def test_the_read_writes_nothing(api: TestClient, rt: Runtime, offer_id: str) -> None:
+    state, chain = rt.store.get_state().model_dump_json(), [e.entry_hash for e in rt.store.operations()]
+    facts, inputs = len(rt.store.decision_facts()), len(rt.store.all_customer_inputs())  # type: ignore[attr-defined]
+    for url in (f"/offers/{offer_id}/exposure", f"/decisions/deal:{offer_id}/exposure?lang=zh"):
+        assert api.get(url).status_code == 200
+    assert rt.store.get_state().model_dump_json() == state and [e.entry_hash for e in rt.store.operations()] == chain
+    assert (len(rt.store.decision_facts()), len(rt.store.all_customer_inputs())) == (facts, inputs)  # type: ignore[attr-defined]
+
+
+def test_the_offer_and_its_deal_decision_resolve_to_the_same_buyer_and_the_same_block(api: TestClient, offer_id: str) -> None:
+    by_offer = api.get(f"/offers/{offer_id}/exposure").json()
+    by_decision = api.get(f"/decisions/deal:{offer_id}/exposure?spare=1").json()
+    assert by_decision["decision_id"] == f"deal:{offer_id}" and by_decision["offer_id"] == offer_id
+    drop = {"decision_id", "computed_in_seconds"}
+    assert {k: v for k, v in by_decision.items() if k not in drop} == {k: v for k, v in by_offer.items() if k not in drop}
+    assert by_decision["buyer_id"] == by_offer["buyer_id"] == "BUYER-1"
+
+
+def test_an_offer_from_the_other_buyer_shows_that_buyer(api: TestClient, rt: Runtime, offer_id: str) -> None:
+    stored = rt.store.get_offer(offer_id)
+    assert stored is not None
+    rt.store.put_offer(stored.model_copy(update={"offer_id": "OFF-dongguan", "counterparty_id": "BUYER-2"}))
+    body = api.get("/offers/OFF-dongguan/exposure").json()
+    assert body["buyer_id"] == "BUYER-2" and body["concentration"]["ar_text"] == "Dongguan owes you nothing today."
+
+
+def test_the_owners_inputs_reach_the_block(api: TestClient, offer_id: str) -> None:
+    before = api.get(f"/offers/{offer_id}/exposure").json()
+    assert before["payments"]["delay_basis"] == "NONE" and before["concentration"]["is_aggregate"] is False
+    delay = {"field": "typical_delay_days", "value": 15, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=delay).status_code == 200
+    after = api.get(f"/offers/{offer_id}/exposure").json()  # the new row is part of the key: not the cached block
+    assert after["payments"]["typical_delay_days"] == 15 and after["payments"]["delay_basis"] == "OWNER_ENTERED"
+    assert after["payments_note"] is None
+    aggregate = {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=aggregate).status_code == 200
+    last = api.get(f"/offers/{offer_id}/exposure").json()
+    assert last["concentration"]["is_aggregate"] is True and last["concentration"]["ar_share_bp"] is None
+
+
+def test_an_aggregate_buyer_gets_no_payment_statistics_and_a_note_says_why(api: TestClient, offer_id: str) -> None:
+    delay = {"field": "typical_delay_days", "value": 45, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    aggregate = {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    for body in (delay, aggregate):
+        assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+    en = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert en["payments"] is None
+    assert en["payments_note"] == "Foshan stands for many small customers, so how it pays is not shown as one customer's history."
+    assert en["stress"]["also"] == [] and en["stress"]["now"]["history_text"] is None  # no estimate to test, no history to quote
+    assert en["concentration"]["is_aggregate"] is True
+    zh = api.get(f"/offers/{offer_id}/exposure?spare=0&lang=zh").json()
+    assert zh["payments"] is None and "代表许多小客户" in zh["payments_note"]
+    assert english_leaks([zh["payments_note"]], NAMES) == []
+
+
+def test_a_refusal_names_the_package_when_the_package_causes_it() -> None:
+    from app.strategy.exposure import _Path, _refused_text
+    from app.strategy.types import SpareCapacity
+
+    def spare(x: int | None) -> SpareCapacity:
+        return SpareCapacity(shape="S1", criterion="R-TODAY", step_fen=100_000, x_star_fen=x, plan_at_x=None, plan_next=None,
+                             binding_reason="", shape_text="", refused_text=None, ceiling_fen=0, evaluations=0, scanned=False, seconds=0)
+
+    asked = _Path("asked", "asked", "As they asked", "Accepting as asked", "按对方要求接受后", None)
+    reply = _Path("C1", "reply", "Option A", "Option A", "采用Option A 后", None)
+    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting as asked would leave the books needing you or a new facility"
+    assert _refused_text(reply, spare(8_100_000), "en") == "none: Option A would leave the books needing you or a new facility"
+    assert _refused_text(reply, spare(8_100_000), "zh") == "无：采用Option A 后，账面将需要您出面或新增融资额度"
+    assert _refused_text(reply, spare(None), "en") == "none: today's books already need the owner or a new facility"  # not the package's doing
+
+
+def test_a_reset_does_not_leave_a_stale_answer_for_the_same_offer_and_a_new_input(api: TestClient, offer_id: str) -> None:
+    """`seq` restarts after the reset, so the key must carry what the rows say; and the reset itself drops the cache."""
+    delay = {"field": "typical_delay_days", "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json={**delay, "value": 45}).status_code == 200
+    first = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert first["payments"]["typical_delay_days"] == 45
+    assert api.post("/demo/reset").status_code == 200
+    assert api.post("/offers", json=EX01).json()["offer"]["offer_id"] == offer_id  # the same offer, read again
+    assert api.post("/buyers/BUYER-1/inputs", json={**delay, "value": 15}).status_code == 200
+    second = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert second["payments"]["typical_delay_days"] == 15 and second["payments"]["owner_delay_days"] == 15
+
+
+def test_the_reset_clears_the_exposure_cache_by_itself(api: TestClient, rt: Runtime, offer_id: str) -> None:
+    api.get(f"/offers/{offer_id}/exposure?spare=0")
+    assert len(assembly._BASE) == 1
+    rt.reset()
+    assert len(assembly._BASE) == 0
+
+
+def test_the_owners_estimate_adds_a_second_stress_row_labelled_as_hers(api: TestClient, offer_id: str) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    plain = api.get(f"/offers/{offer_id}/exposure?spare=0").json()["stress"]
+    assert plain["also"] == [] and plain["delay_days"] == 30
+    body = {"field": "typical_delay_days", "value": 45, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+    got = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    [extra] = got["stress"]["also"]
+    assert (extra["delay_days"], extra["basis"], extra["label"]) == (45, "OWNER_ESTIMATE", "Your estimate")
+    assert extra["now"]["text"].startswith("Paid 45 days late: ") and set(extra["paths"]) == set(got["stress"]["paths"])
+    assert extra["now"]["lowest_fen"] <= got["stress"]["now"]["lowest_fen"]  # later receipts, a lower low
+    assert got["stress"]["now"] == plain["now"]  # the standing 30-day row is untouched
+    zh = api.get(f"/offers/{offer_id}/exposure?spare=0&lang=zh").json()["stress"]["also"][0]
+    assert zh["label"] == "您的估计" and zh["now"]["text"].startswith("晚付 45 天：")
+
+
+# ---------------------------------------------------------------- the cache
+
+
+def _count(monkeypatch: pytest.MonkeyPatch, name: str) -> list[str]:
+    calls: list[str] = []
+    real = getattr(assembly, name)
+
+    def counted(*a: Any, **k: Any) -> Any:
+        calls.append(name)
+        return real(*a, **k)
+
+    monkeypatch.setattr(assembly, name, counted)
+    return calls
+
+
+def test_one_computation_serves_every_repeat_every_response_and_both_ids(api: TestClient, offer_id: str,
+                                                                          monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = _count(monkeypatch, "concentration")
+    for url in (f"/offers/{offer_id}/exposure", f"/offers/{offer_id}/exposure", f"/decisions/deal:{offer_id}/exposure"):
+        assert api.get(url).status_code == 200
+    assert calls == ["concentration"]
+    api.get(f"/offers/{offer_id}/exposure?lang=zh")  # the language is part of the key ...
+    assert len(calls) == 2
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)  # ... and so is the verdict (the paths depend on it) ...
+    api.get(f"/offers/{offer_id}/exposure?response=counter:0")
+    assert len(calls) == 3
+    for response in ("counter:0", "counter:1", "asked"):  # ... but the picked column is not: switching it needs no new computation
+        api.get(f"/offers/{offer_id}/exposure?response={response}")
+    assert len(calls) == 3
+
+
+def test_spare_zero_skips_the_search_and_a_later_read_pays_only_for_it(api: TestClient, offer_id: str,
+                                                                      monkeypatch: pytest.MonkeyPatch) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    searches = _count(monkeypatch, "spare_capacity")
+    light = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert searches == [] and light["spare_read"] is False and light["band"]["capacity"] is None
+    assert all(v["spare"] is None for v in light["capacity"].values()) and light["stress"]["now"]["lowest_fen"] == -25_000_000
+    assert all(v["after"] is not None for v in light["capacity"].values())  # the windows do not need the search
+    full = api.get(f"/offers/{offer_id}/exposure").json()  # spare defaults to 1
+    assert len(searches) == 4 and full["spare_read"] is True  # the books as they stand, then each of the three paths
+    api.get(f"/offers/{offer_id}/exposure")
+    api.get(f"/decisions/deal:{offer_id}/exposure?spare=1")  # the decision read can ask for it too, and finds it searched
+    assert len(searches) == 12  # asked for each time, answered by the capacity cache (the next test counts the real runs)
+    api.get(f"/decisions/deal:{offer_id}/exposure")  # but by default it does not
+    assert len(searches) == 12
+    assert api.get(f"/offers/{offer_id}/exposure?spare=2").status_code == 422
+
+
+def test_the_search_itself_runs_once_per_package(api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.strategy import capacity
+
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    runs: list[int] = []
+    real = capacity._search
+
+    def counted(*a: Any, **k: Any) -> Any:
+        runs.append(1)
+        return real(*a, **k)
+
+    monkeypatch.setattr(capacity, "_search", counted)
+    for _ in range(3):
+        assert api.get(f"/offers/{offer_id}/exposure").status_code == 200
+    assert len(runs) == 4
+
+
+def test_the_key_follows_the_books_the_day_and_the_commitments(api: TestClient, rt: Runtime, offer_id: str,
+                                                              monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = _count(monkeypatch, "concentration")
+    url = f"/offers/{offer_id}/exposure?spare=0"
+    api.get(url)
+    api.get(url)
+    assert len(calls) == 1  # nothing changed: the second read is the first one's answer
+    state = rt.store.get_state()  # the books: the same day and commitments, a different cash balance
+    rt.store.put_state(state.model_copy(update={"cash_fen": state.cash_fen + 100}))
+    api.get(url)
+    assert len(calls) == 2
+    rt.store.put_commitment(Commitment(  # the commitments: another offer's, live
+        id="CMT-OTHER", offer_id="OFF-OTHER", offer_version=1, counterparty_id="BUYER-2", verdict_id="V-OTHER", terms_hash="h",
+        obligations=[], status=CommitmentStatus.ACTIVE, nonce="n", expires_day=7, mandate_version=1, forward_value_fen=0))
+    api.get(url)
+    assert len(calls) == 3
+    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200  # the day
+    body = api.get(url).json()
+    assert body["day"] == 3 and len(calls) == 4
+
+
+def test_a_failed_computation_is_not_cached(api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.financial import EngineError
+
+    real = assembly.concentration
+
+    def boom(*a: Any, **k: Any) -> Any:
+        raise EngineError("cannot")
+
+    monkeypatch.setattr(assembly, "concentration", boom)
+    r = api.get(f"/offers/{offer_id}/exposure?spare=0")
+    assert r.status_code == 422 and "cannot project" in r.json()["detail"]
+    monkeypatch.setattr(assembly, "concentration", real)
+    assert api.get(f"/offers/{offer_id}/exposure?spare=0").status_code == 200
+
+
+# ---------------------------------------------------------------- language
+
+
+def test_the_chinese_read_has_the_same_figures_and_no_english_sentence_left(api: TestClient, offer_id: str) -> None:
+    en = api.get(f"/offers/{offer_id}/exposure?lang=en").json()
+    zh = api.get(f"/offers/{offer_id}/exposure?lang=zh").json()
+    assert zh["lang"] == "zh"
+    assert figures({k: v for k, v in en.items() if k not in ("computed_in_seconds", "lang")}) == figures(
+        {k: v for k, v in zh.items() if k not in ("computed_in_seconds", "lang")})
+    assert english_leaks(zh, NAMES) == []
+    assert unchanged_words(en, zh, NAMES) == []
+    assert zh["concentration"]["sentence"] == "Foshan占您目前全部应收款的 100%（¥420,000）。未来 30 天内没有客户回款到期。"
+    assert zh["payments"]["insufficient_text"].startswith("FLOW 在过去 12 个月内没有Foshan的已完成付款")
+
+
+def test_the_chinese_read_of_the_whole_block_has_the_same_figures_and_no_english_sentence_left(api: TestClient, offer_id: str) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    en = api.get(f"/offers/{offer_id}/exposure?lang=en&response=counter:0").json()
+    zh = api.get(f"/offers/{offer_id}/exposure?lang=zh&response=counter:0").json()
+    drop = ("computed_in_seconds", "lang")
+    assert figures({k: v for k, v in en.items() if k not in drop}) == figures({k: v for k, v in zh.items() if k not in drop})
+    assert english_leaks(zh, NAMES) == []
+    assert unchanged_words(en, zh, NAMES) == []
+    assert zh["band"]["capacity"] == "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。"
+    assert zh["band"]["stress"] == "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。"
+    assert zh["band"]["by_path"]["asked"]["capacity"] == "按对方要求接受后，再支付一笔款项的余量为 ¥14,000；目前为 ¥81,000。"
+    assert zh["flag"]["text"] == "Foshan占您应收款的 100%"
+    line = next(w for w in zh["capacity"][zh["lead"]]["after"]["windows"] if w["dimension"] == "credit_line")
+    assert (line["label"], line["through_when"], line["facility_name"]) == ("授信额度余量", "31 天后", "Bank credit line")
+
+
+# ---------------------------------------------------------------- P8: customer context never touches a verdict
+
+
+def _evaluated(monkeypatch: pytest.MonkeyPatch, flag: bool, inputs: list[dict[str, Any]], read: bool) -> str:
+    """EX01 evaluated on a fresh golden runtime with the flag on or off (and, on, the owner's inputs written and the exposure read
+    before and after): the verdict as the owner sees it, serialised."""
+    if flag:
+        monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    else:
+        monkeypatch.delenv("FEATURE_EXPOSURE", raising=False)
+    from app.main import app
+
+    runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    runtime.reset()
+    set_runtime(runtime)
+    route.clear_cache()
+    client = TestClient(app, headers=OWNER)
+    oid = str(client.post("/offers", json=EX01).json()["offer"]["offer_id"])
+    if flag:
+        for body in inputs:
+            assert client.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+        if read:
+            assert client.get(f"/offers/{oid}/exposure").status_code == 200
+    view = client.post(f"/offers/{oid}/evaluate", json=EX01).json()
+    if flag and read:
+        assert client.get(f"/offers/{oid}/exposure").status_code == 200
+        assert client.get(f"/decisions/deal:{oid}/exposure?lang=zh").status_code == 200
+        view = client.post(f"/offers/{oid}/evaluate", json=EX01).json()
+    keep = ("outcome", "required_tier", "violations", "bound_obligations", "concession_values", "forward_concession_total_fen",
+            "counters", "plan", "summary", "business_action")
+    return json.dumps({k: view.get(k) for k in keep}, sort_keys=True, ensure_ascii=False)
+
+
+INPUTS = [
+    [],
+    [{"field": "typical_delay_days", "value": 45, "provenance": "OWNER_ENTERED", "source_ref": ""}],
+    [{"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}],
+]
+
+
+@pytest.mark.parametrize("inputs", INPUTS, ids=["none", "typical-delay", "aggregate"])
+def test_p8_the_verdict_tier_counters_and_plan_are_byte_identical_with_the_flag_on_and_off(
+        monkeypatch: pytest.MonkeyPatch, inputs: list[dict[str, Any]]) -> None:
+    try:
+        off = _evaluated(monkeypatch, False, [], False)
+        on = _evaluated(monkeypatch, True, inputs, True)
+        on_unread = _evaluated(monkeypatch, True, inputs, False)
+    finally:
+        set_runtime(None)
+        route.clear_cache()
+    assert json.loads(off)["counters"], "EX01 has counters on the golden books"
+    assert on == off == on_unread
+
+
+def test_the_chinese_read_of_a_buyer_with_owner_input_and_an_aggregate_is_in_chinese(api: TestClient, offer_id: str) -> None:
+    api.post("/buyers/BUYER-1/inputs", json={"field": "typical_delay_days", "value": 15, "provenance": "ESTIMATED",
+                                              "source_ref": "Demo assumption"})
+    zh = api.get(f"/decisions/deal:{offer_id}/exposure?lang=zh").json()
+    assert english_leaks(zh, NAMES) == []
+    assert zh["payments"]["owner_delay_text"] == "通常的延迟：15 天，估计值，不是记录（FLOW 的收款记录太少，无法衡量）。"
