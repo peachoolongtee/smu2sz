@@ -146,6 +146,9 @@ class _Read:
     def input(self, f: InputField) -> CustomerInputRecord | None:
         return self.inputs.latest.get((self.buyer_id, f.value))
 
+    def firm_input(self, f: InputField) -> CustomerInputRecord | None:
+        return self.inputs.latest.get((None, f.value))
+
 
 # ---------------------------------------------------------------- economics (the owner's inputs and the two products of them)
 
@@ -164,6 +167,7 @@ class _Basis(Protocol):
     @property
     def buyer_id(self) -> str: ...
     def input(self, f: InputField) -> CustomerInputRecord | None: ...
+    def firm_input(self, f: InputField) -> CustomerInputRecord | None: ...
 
 
 @dataclass(frozen=True)
@@ -177,6 +181,9 @@ class Held:
 
     def input(self, f: InputField) -> CustomerInputRecord | None:
         return self.inputs.latest.get((self.buyer_id, f.value))
+
+    def firm_input(self, f: InputField) -> CustomerInputRecord | None:
+        return self.inputs.latest.get((None, f.value))
 
 
 def _projected_sales_fen(r: _Basis) -> int | None:
@@ -199,6 +206,7 @@ def _sales(r: _Basis) -> tuple[int, CustomerInputRecord | None] | None:
 
 
 DEMO_PROVENANCE = "DEMO"  # the provenance of the default margin: never stored, never passed as the owner's
+COMPANY_PROVENANCE = "COMPANY"  # the firm's company-wide gross margin standing in for the buyer's own (brief C.2: ESTIMATED, "company average")
 
 
 @dataclass(frozen=True)
@@ -215,14 +223,60 @@ class Margin:
     def assumed(self) -> bool:
         return self.provenance == DEMO_PROVENANCE
 
+    @property
+    def company(self) -> bool:
+        """The firm's company-wide margin stands in for the buyer's own: an estimate, said so ("company average, estimated")."""
+        return self.provenance == COMPANY_PROVENANCE
+
 
 def _margin(r: _Basis) -> Margin:
-    """The one place the margin is read, for the overview, its economics rows and the exposure routes' customer context: the row in
-    force when there is one, else the Demo's default margin (`config.DEMO_GROSS_MARGIN_BP`) whatever the books are called."""
+    """The one place the margin is read, for the overview, its economics rows, the exposure routes' customer context and the Inputs sheet:
+    the buyer's row in force when there is one, else the firm's company gross margin (an estimate, brief C.2), else the Demo's default
+    margin (`config.DEMO_GROSS_MARGIN_BP`) whatever the books are called. A row the Demo itself entered is the Demo's either way."""
     rec = r.input(InputField.MARGIN_BP)
     if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
         return Margin(v, rec, DEMO_PROVENANCE if rec.entered_by == DEMO_ENTERED_BY else rec.provenance)
+    firm = r.firm_input(InputField.COMPANY_GROSS_MARGIN_BP)
+    if firm is not None and isinstance(v := value_of(firm), int) and not isinstance(v, bool):
+        return Margin(v, firm, DEMO_PROVENANCE if firm.entered_by == DEMO_ENTERED_BY else COMPANY_PROVENANCE)
     return Margin(DEMO_GROSS_MARGIN_BP, None, DEMO_PROVENANCE)
+
+
+def _company_words(lang: Lang) -> str:
+    return t(lang, "company average, estimated", "公司平均，估算")
+
+
+def margin_held(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int) -> Margin:
+    """The margin `_margin` holds for the buyer, for a reader outside this page (the Inputs sheet): the same function, never a second."""
+    return _margin(Held(state, today, buyer_id, inputs))
+
+
+def sales_held(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int) -> tuple[int, CustomerInputRecord | None] | None:
+    """(annual sales, the owner's row when it is theirs) as `_sales` holds them, for the Inputs sheet."""
+    return _sales(Held(state, today, buyer_id, inputs))
+
+
+def projected_sales_fen(state: FinancialState, buyer_id: str, today: int) -> int | None:
+    """The books' own projection of the buyer's sales over the next 12 months (`_projected_sales_fen`), whatever the owner entered."""
+    return _projected_sales_fen(Held(state, today, buyer_id, CustomerInputs()))
+
+
+def projection_text(state: FinancialState, buyer_id: str, today: int, lang: Lang) -> str | None:
+    """Where the projection comes from, in the books' own terms: "From your books: ¥420,000 every 30 days, 13 invoices in the next 12
+    months", each recurring schedule counted by `recurring_issue_days` as `_projected_sales_fen` counts it. None with no schedule."""
+    lo, hi = today, today + PROJECTION_DAYS
+    parts_en: list[str] = []
+    parts_zh: list[str] = []
+    for ri in state.recurring_invoices:
+        if ri.counterparty_id != buyer_id:
+            continue
+        n = len(recurring_issue_days(ri, lo, hi))
+        if n:
+            parts_en.append(f"{whole_yuan(ri.face_fen)} every {ri.every_days} days, {n} {'invoice' if n == 1 else 'invoices'} in the next 12 months")
+            parts_zh.append(f"每 {ri.every_days} 天 {whole_yuan(ri.face_fen)}，未来 12 个月 {n} 张发票")
+    if not parts_en:
+        return None
+    return t(lang, "From your books: " + "; ".join(parts_en), "来自您的账目：" + "；".join(parts_zh))
 
 
 def _demo_words(lang: Lang) -> str:
@@ -247,6 +301,8 @@ def _source(rec: CustomerInputRecord, lang: Lang) -> tuple[str, str]:
     """(the words for where a fact came from, their tone): the Demo's own assumption is said so and is never passed as the owner's."""
     if rec.entered_by == DEMO_ENTERED_BY:
         return _demo_words(lang), "warn"
+    if rec.provenance == "OWNER_ENTERED":  # the owner's own figure, in the Inputs sheet's word for it (ticket #97)
+        return t(lang, "you entered", "由您填写"), "neutral"
     return provenance_words(rec.provenance, lang), "neutral"
 
 
@@ -286,7 +342,8 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
         put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(sales[0]), t(lang, "projected from your books", "根据您的账目推算"))
     else:
         put("annual_sales", t(lang, "Annual sales", "年销售额"), missing, None, entered=False)
-    note, tone = (_demo_words(lang), "warn") if margin.assumed or margin.record is None else _source(margin.record, lang)
+    note, tone = ((_demo_words(lang), "warn") if margin.assumed or margin.record is None
+                  else (_company_words(lang), "warn") if margin.company else _source(margin.record, lang))
     put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(margin.bp), note, tone)
     contribution = _contribution_fen(r)
     ask = _ask(r)
@@ -792,7 +849,7 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
         "economics": econ_rows, "economics_note": econ_note,
         # the inputs sheet is Phase 2 (FEATURE_CUSTOMER_ECONOMICS): until it is on there is nowhere to send the owner, and the label stays
         "edit_label": t(lang, "Edit these facts", "修改这些信息"),
-        "edit_href": f"/inputs?customer={_quoted(buyer_id)}" if _economics_on() else None,
+        "edit_href": f"/customers/{_quoted(buyer_id)}/inputs" if _economics_on() else None,
         "exposure": _exposure(r),
         "note": _exposure_note(lang, exposure_block, shares is not None),
         "history": _history(r),
