@@ -47,8 +47,10 @@ The tasks are a simulation: the buyer, the lenders and the bank feed are simulat
 4. **Safety under attack.** Injection, fake-lender, fake-concession and data-extraction messages execute nothing, book nothing and disclose nothing. Each leaves security events with the offending span.
 5. **Replay safety.** Re-sending the same request executes once; the retries are logged as DUPLICATE.
 6. **Integrity.** Each task's log is a SHA-256 hash chain, and every chain verifies with a standard-library script: the chain is internally checkable. It is not anchored outside the system, so a full rewrite of a log would also verify. Wall-clock time sits outside the hash (ADR-0004). Head hashes do **not** reproduce from run to run any more: since 3 Oct each chat session carries a random token in its idempotency keys, and commitment nonces are random, so a replay of the same task gives valid chains with different heads (checked on S01: the committed run, a fresh in-process run and an HTTP run gave three different heads, each VALID).
+7. **The late-payment loop and the owner's decisions (the guided Demo, run 12 Oct 2026).** The Demo's six scenes (the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof) walk the same API calls the Business pages use: the buyer's counter is sent bound to the verdict it was priced on; the agreed early payment of ¥255,013.80 arrives as one synthetic bank event; the other ¥162,800.00 does not arrive; FLOW queues a ¥200,000.00 advance costing ¥1,782.19 (32.5% a year for the 10 days it is held, above the 15% yearly limit the owner signed), and it runs only when the owner clicks Approve on the card (`docs/DEMO_FLOW.md`; `apps/web/e2e/demo.spec.ts`). The demo run in process exits 0 (`scripts/demo_run.py`, gate of 12 Oct 2026, handoff 09 section 3) and the Demo's end-to-end spec is part of the 211 mock and 96 live browser tests (README). **This walk is not in the committed JSONL chains below**, which are the 49 scripted `/nl` tasks; the Demo's own run writes its chain to the running API's log, from which `GET /evidence` exports it.
+8. **Contract confirmation on the chain.** A document the agent read becomes a record; the owner's confirmation is an owner-only operation (CONFIRM_DOCUMENT or REJECT_DOCUMENT), bound to the hash of the text shown, logged as a chain entry, and it changes no books (ADR-0012). The Demo opens on three demo documents already confirmed, so a fresh chain starts with three such entries (`tests/api/test_demo_documents.py`; section 03 below). **No reading-accuracy claim is made for contracts:** the held-out set is pending (`services/api/evals/contracts_heldout_report.md`).
 
-The attack-suite results (255 attacks: 122 through the API and 133 through chat, 0 with any harm, ¥0 moved, no documented finding outstanding) are reported separately in the Security Self-Assessment and in `services/api/evals/security/latest_report.md`, which lists every chat attack id (including the consent attacks `NL-CS01` to `NL-CS41` and each buyer attack with and without the buyer's key).
+The attack-suite results (259 attacks: 126 through the API and 133 through chat, 0 with any harm, ¥0 moved, no documented finding outstanding; `python -m app.security.attacks --report`, 5 Oct 2026, README) are reported separately in the Security Self-Assessment and in `services/api/evals/security/latest_report.md`, which lists every chat attack id (including the consent attacks `NL-CS01` to `NL-CS41` and each buyer attack with and without the buyer's key).
 
 ## 02 Logs or Transactions
 
@@ -65,6 +67,8 @@ The attack-suite results (255 attacks: 122 through the API and 133 through chat,
 | `transcripts/<task>/turn-<n>.html` | A readable card per `/nl` turn, linked from each operation line |
 
 We do not submit on-chain transaction hashes, because Topic E is not an on-chain topic. Each simulated operation instead carries a SHA-256 `entry_hash` that chains it to the one before.
+
+**What this run is, and what has changed since.** The 49 chains were recorded on 3 Oct 2026 at `db097e0`, before contract ingestion and the UI overhaul. Handoff 09 records that no engine figure moved since, so the evidence under `services/api/evals` was not regenerated; for this document the 49 per-task files were verified again on 12 Oct 2026 with `scripts/verify_evidence.py` (49 VALID). A fresh run today would differ in head hashes (they differ from run to run, ADR-0004) and would start with the demo reset's three document confirmations.
 
 **Run header** (from the `run` records):
 
@@ -325,15 +329,15 @@ Running all 49 tasks over HTTP gives `44/44 passed, 5 skipped` (checked on 3 Oct
 
 **Reference values from our own check** (3 Oct 2026, branch `docs/gate-checkpoint`; the application code is that of `dev` at `db097e0`):
 
-- all 49 per-task files in `evals/e2e/latest/evidence/` verify (49 VALID);
+- all 49 per-task files in `evals/e2e/latest/evidence/` verify (49 VALID), checked again on 12 Oct 2026 on `dev` at 86123a3c (the files are those of 3 Oct);
 - run C against a live server gave S01 a VALID chain of 4 operations with its own head, and a fresh in-process run gave another VALID chain with a different head (heads are not reproducible, see ADR-0004); this was checked on 3 Oct at `1bc96ba` and not repeated at `db097e0`, where only the in-process run was made;
 - changing one amount in S01's payload makes the verifier print `INVALID … entry_hash mismatch` and exit 1.
 
 **D. Other checks** (optional):
 
 ```
-cd services/api && uv run pytest                       # the full API test suite: 5,446 passed, 33 skipped at `db097e0` (Windows, `SKIP_PERF_BENCH=1`, two sequential chunks; see the Technical Document, section 05)
-cd services/api && uv run python -m app.security.attacks   # the 122-attack catalogue plus the 133 chat attacks; prints the zero-harm metrics
+cd services/api && uv run pytest                       # the full API test suite: 6,895 passed, 37 skipped on 12 Oct 2026 (dev after the UI overhaul and the Deals page; Windows, `SKIP_PERF_BENCH=1`, about 25 minutes; README)
+cd services/api && uv run python -m app.security.attacks   # the 126-attack catalogue plus the 133 chat attacks (259); prints the zero-harm metrics
 ```
 
-For the second command, expect every zero-harm metric at 0, a detection rate of 0.9836 and a security-event rate of 0.7213 (for the 122 API attacks, `LLM_MODE=cache`), and 0 with harm among the 133 chat attacks. It exits 0, and 1 if any attack causes harm that is not a documented finding. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`.
+For the second command, expect every zero-harm metric at 0, a detection rate of 98.4% (124 of 126) and a security-event rate of 73.0% (for the 126 API attacks, `LLM_MODE=cache`; `services/api/evals/security/latest_report.md`), and 0 with harm among the 133 chat attacks. It exits 0, and 1 if any attack causes harm that is not a documented finding. `--report` also rewrites `services/api/evals/security/latest_report.{json,md}`.
