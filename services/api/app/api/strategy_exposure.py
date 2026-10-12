@@ -26,7 +26,9 @@ store's change marker and the flag). With the flag off it answers 404 with a sen
 
 The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
 `limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
-contribution function) and, when the query carries `customer` or `invoice`, `context.back` to the customer's page.
+contribution function), all worked out once with the cached block (`deal_words`), and, when the query carries `customer` or `invoice`,
+`context.back` to the customer's page. `limit_word` is null (with `limit_text`) for a reply the picture cannot draw or price and for
+`do_nothing`. `do_nothing` carries words only: its entries in `stress.paths`, `capacity` and `band.by_path` are explicit nulls.
 
 Read-only and hypothetical: nothing is written, logged or stored; concentration, payment behaviour, stress and capacity are context,
 never a mandate, and change no verdict. The books are those without this offer's own commitments (the offer as asked, as the picture
@@ -46,8 +48,9 @@ from fastapi import APIRouter, HTTPException, Query
 from app.api.customer_overview import customer_context
 from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
-from app.api.exposure_words import customer_back, net_later, path_words, with_path_words
-from app.api.features import require_feature
+from app.api.exposure_words import customer_back, net_later
+from app.api.features import _MESSAGES, require_feature
+from app.api.presentation import t
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.config import get_settings
@@ -113,13 +116,10 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
         raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer.offer_id} has no {response} any more: its counter-offers changed "
                                               "while you were reading. Read it again.") from None
     try:
-        core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare)
+        core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare,
+                                 deal_words=True)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
-    with rt.lock:  # the offer picture and the books' projections the words read
-        words = path_words(rt, offer, verdict, books, mandate, day, lang, core["concentration"])
-    core = {**core, "paths": with_path_words(core["paths"], words, lang),
-            "customer_context": customer_context(state, inputs, offer.counterparty_id, max(day, state.as_of_day), core["concentration"], lang)}
     return {"buyer_id": offer.counterparty_id, "buyer_name": core["buyer"]["name"], "response": response, "lang": lang, **core,
             "state_version": state.state_version, "day": day}
 
@@ -184,9 +184,8 @@ def _buyer_block(rt: Runtime, buyer_id: str, lang: Literal["en", "zh"], spare: b
     core = assembly.buyer_exposure(rt, books, mandate, day, buyer_id, "", None, lang, held, inputs, spare=spare)
     today = max(day, state.as_of_day)
     stress = core["stress"]
-    later = net_later(books.state, buyer_id, today, stress["delay_days"], lang)
-    if later is not None and stress["now"]["available"]:
-        stress = {**stress, "now": {**stress["now"], **later}}
+    later = net_later(books.state, buyer_id, today, stress["delay_days"], lang) or {"net_later_fen": None, "net_later_text": None}
+    stress = {**stress, "now": {**stress["now"], **later}}  # null when the buyer has no open invoice
     view = core["capacity"][assembly.ASKED]
     capacity = {"available": view["available"], "unavailable_text": view["unavailable_text"], "before": view.get("before"), "spare": view["spare"]}
     return {"buyer_id": buyer_id, "buyer_name": core["buyer"]["name"], "lang": lang, "buyer": core["buyer"],
@@ -200,13 +199,14 @@ def _buyer_block(rt: Runtime, buyer_id: str, lang: Literal["en", "zh"], spare: b
 @router.get("/buyers/{buyer_id}/exposure")
 def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(1, ge=0, le=1)) -> dict[str, Any]:
     if not get_settings().features.exposure:  # this route answers 404 with a sentence, so a page without the feature reads "no exposure"
-        raise _not_found("FEATURE_DISABLED", "Buyer exposure is switched off (FEATURE_EXPOSURE).")
+        raise HTTPException(404, detail={"code": "FEATURE_DISABLED", "feature": "exposure",
+                                         "message": t(lang, _MESSAGES["exposure"], "买家风险敞口功能尚未开启（FEATURE_EXPOSURE）。")})
     started = time.perf_counter()
     rt = get_runtime()
     with rt.lock:
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
         if not any(c.id == buyer_id and c.role == "BUYER" for c in state.counterparties):
-            raise _not_found("BUYER_NOT_FOUND", f"There is no buyer {buyer_id} on the books.")
+            raise _not_found("BUYER_NOT_FOUND", t(lang, "There is no such customer on your books.", "您的账目中没有这位客户。"))
         key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "buyer-exposure", buyer_id, lang, spare,
                         inputs_from_store(rt.store).digest(), rt.store.change_marker())
     try:
