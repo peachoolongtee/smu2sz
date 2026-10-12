@@ -85,15 +85,22 @@ test("day 0, before the plan runs: the header and the three KPI strings are the 
   for (const [id, k] of [["cash", v2.kpis.cash_available], ["lowest", v2.kpis.lowest_ahead], ["funding", v2.kpis.funding]] as const) {
     await expect(page.getByTestId(`home-kpi-${id}-eyebrow`)).toHaveText(k.eyebrow);
     await expect(page.getByTestId(`home-kpi-${id}-value`)).toHaveText(k.value_display);
-    await expect(page.getByTestId(`home-kpi-${id}-note`)).toHaveText(k.note);
+    // The cash cell's words are on its scale once the server sends the headroom; until then they are its one note line.
+    if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) {
+      await expect(page.getByTestId("home-buffer-headroom")).toHaveText(v2.kpis.cash_available.buffer.headroom_text);
+      await expect(page.getByTestId("home-kpi-cash-note")).toHaveCount(0);
+    } else await expect(page.getByTestId(`home-kpi-${id}-note`)).toHaveText(k.note);
   }
+  // The plan's effect is a figure of its own once the server sends it structured (else its sentence is the cell's hidden second line).
+  const withPlan = v2.kpis.lowest_ahead.with_plan;
+  if (withPlan) await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveText(`${withPlan.label} ${withPlan.value_text}`);
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
   await expect(page.getByTestId("home-kpi-lowest-note")).toContainText("current books, no new funding");
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveClass(/text-bad-fg/);
   await expect(page.getByTestId("home-kpi-funding-eyebrow")).toHaveText("PLANNED FUNDING");
   await expect(page.getByTestId("home-kpi-funding-value")).toHaveText("¥405,000");
   // Each cell is its eyebrow, its figure and one note line: the second sentence is not on the page until it is asked for (hover or focus; a tap on a phone).
-  for (const [id, text] of [["lowest", v2.kpis.lowest_ahead.with_plan_hint], ["funding", v2.kpis.funding.hint]] as const) {
+  for (const [id, text] of [...(withPlan ? [] : [["lowest", v2.kpis.lowest_ahead.with_plan_hint] as const]), ["funding", v2.kpis.funding.hint] as const]) {
     const cell = page.getByTestId(`home-kpi-${id}`);
     const hint = page.getByTestId(`home-kpi-${id}-hint`);
     await expect(hint).toHaveText(text);

@@ -2785,6 +2785,8 @@ export interface HomeV2Chart {
   scope_title: string;
   /** `proposed` is the server's word for the plan that is ready and has not run (drawn like `planned`). */
   legend: { label: string; kind: "current" | "planned" | "proposed" | "hypothetical" }[];
+  /** What takes cash to its lowest point, in the server's words ("a loan repayment goes out"); null or absent while the server has none (the page then uses the rail's lowest event). */
+  lowest?: { cause: string | null } | null;
   lowest_inspector: {
     day_text: string;
     projected_display: string;

@@ -220,6 +220,8 @@ export function EventPicture({ h, lateRead, compact, overlay }: { h: HomeView; l
   const lowestDay = cash.lowest_day;
   const lowest = v2 && lowestDay >= today && lowestDay <= end ? { x: dayX(lowestDay), y: yOf(valueAt(mainSegs, lowestDay)) } : null;
   const lowestEvent = v2 ? (rail.find((e) => e.kind === "lowest" && e.day === lowestDay) ?? null) : null;
+  // The cause is the server's own (`chart.lowest.cause`); until it sends one, the rail's lowest event names it.
+  const lowestCause = v2?.lowest?.cause ?? lowestEvent?.label ?? null;
   const lowestTone = h.home_v2?.kpis.lowest_ahead.tone ?? cash.lowest_tone ?? "warn";
   const closeInspector = () => {
     setInspecting(false);
@@ -512,13 +514,13 @@ export function EventPicture({ h, lateRead, compact, overlay }: { h: HomeView; l
                 className="absolute z-10 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill"
                 style={{ left: lowest.x, top: lowest.y }}
               />
-              {lowestEvent ? (
+              {lowestCause ? (
                 <p
                   className="pointer-events-none absolute z-0 max-w-[60%] text-supporting font-bold leading-snug text-ink first-letter:uppercase"
                   data-testid="home-lowest-cause"
                   style={{ top: 0, ...(lowest.x > W * 0.55 ? { right: Math.max(W - lowest.x - 12, 0), textAlign: "right" as const } : { left: Math.max(lowest.x - 12, 0) }) }}
                 >
-                  {t("hv2.chart.cause", { label: lowestEvent.label, when: lowestEvent.when })}
+                  {lowestEvent ? t("hv2.chart.cause", { label: lowestCause, when: lowestEvent.when }) : lowestCause}
                 </p>
               ) : null}
             </>

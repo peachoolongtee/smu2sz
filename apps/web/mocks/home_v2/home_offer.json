@@ -6242,6 +6242,7 @@
             "min_fen": 30000000,
             "cash_fen": 40000000,
             "min_display": "¥300k",
+            "headroom_text": "+¥100k",
             "cash_display": "¥400,000.00"
           }
         },
@@ -6250,7 +6251,11 @@
           "value_display": "−¥105,000",
           "note": "¥405k below your minimum in 30 days · current books, no new funding",
           "tone": "bad",
-          "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned."
+          "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
+          "with_plan": {
+            "label": "with plan",
+            "value_text": "¥300,000"
+          }
         },
         "funding": {
           "state": "PROPOSED",
@@ -6286,7 +6291,7 @@
           },
           {
             "label": "If FLOW's plan runs (planned)",
-            "kind": "proposed"
+            "kind": "planned"
           }
         ],
         "lowest_inspector": {
@@ -6296,6 +6301,9 @@
           "third_label": "Shortfall",
           "third_display": "¥405,000",
           "note": "With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned."
+        },
+        "lowest": {
+          "cause": "a loan repayment goes out"
         },
         "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
       },
@@ -12794,6 +12802,7 @@
             "min_fen": 30000000,
             "cash_fen": 40000000,
             "min_display": "¥300k",
+            "headroom_text": "+¥100k",
             "cash_display": "¥400,000.00"
           }
         },
@@ -12802,7 +12811,11 @@
           "value_display": "−¥105,000",
           "note": "比您的最低现金低 ¥405k（30 天后） · 当前账目，未新增融资",
           "tone": "bad",
-          "with_plan_hint": "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。"
+          "with_plan_hint": "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。",
+          "with_plan": {
+            "label": "采用方案后",
+            "value_text": "¥300,000"
+          }
         },
         "funding": {
           "state": "PROPOSED",
@@ -12838,7 +12851,7 @@
           },
           {
             "label": "如果 FLOW 的方案执行（计划中）",
-            "kind": "proposed"
+            "kind": "planned"
           }
         ],
         "lowest_inspector": {
@@ -12848,6 +12861,9 @@
           "third_label": "缺口",
           "third_display": "¥405,000",
           "note": "采用 FLOW 的方案（计划中）：¥300,000，前提是方案执行且资金按计划到账。"
+        },
+        "lowest": {
+          "cause": "一笔贷款还款支出"
         },
         "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
       },

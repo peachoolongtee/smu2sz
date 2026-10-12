@@ -3715,6 +3715,7 @@
             "min_fen": 30000000,
             "cash_fen": 55000000,
             "min_display": "¥300k",
+            "headroom_text": "+¥250k",
             "cash_display": "¥550,000.00"
           }
         },
@@ -3723,7 +3724,8 @@
           "value_display": "¥300,000",
           "note": "reaches your minimum in 30 days · current books, the plan ran",
           "tone": "warn",
-          "with_plan_hint": "No hypothetical applied."
+          "with_plan_hint": "No hypothetical applied.",
+          "with_plan": null
         },
         "funding": {
           "state": "ARRANGED",
@@ -3759,6 +3761,9 @@
           "third_label": "Above your minimum",
           "third_display": "¥0",
           "note": "At your minimum; nothing below it in the window."
+        },
+        "lowest": {
+          "cause": "a loan repayment goes out"
         },
         "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
       },
@@ -7659,6 +7664,7 @@
             "min_fen": 30000000,
             "cash_fen": 55000000,
             "min_display": "¥300k",
+            "headroom_text": "+¥250k",
             "cash_display": "¥550,000.00"
           }
         },
@@ -7667,7 +7673,8 @@
           "value_display": "¥300,000",
           "note": "30 天后达到您的最低现金 · 当前账目，方案已执行",
           "tone": "warn",
-          "with_plan_hint": "未应用任何假设。"
+          "with_plan_hint": "未应用任何假设。",
+          "with_plan": null
         },
         "funding": {
           "state": "ARRANGED",
@@ -7703,6 +7710,9 @@
           "third_label": "高于您的最低现金",
           "third_display": "¥0",
           "note": "正好在您的最低现金上；预测期内没有低于它的时候。"
+        },
+        "lowest": {
+          "cause": "一笔贷款还款支出"
         },
         "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
       },
