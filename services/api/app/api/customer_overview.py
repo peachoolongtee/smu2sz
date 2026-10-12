@@ -43,9 +43,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.auth import require_owner
 from app.api.deal_offers import open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
-from app.api.exposure_words import deal_back_label
 from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
-from app.api.presentation import Lang, agreement_words, event_words, party_name, t, when_text
+from app.api.presentation import Lang, agreement_words, deal_back_label, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
 from app.api.workspace import _months
@@ -205,7 +204,8 @@ DEMO_PROVENANCE = "DEMO"  # the provenance of the default margin: never stored, 
 @dataclass(frozen=True)
 class Margin:
     """The gross margin held for a buyer. `record` is the row in force (the owner's or the Demo seed's); None means no row exists and the
-    Demo's default stands, with provenance DEMO."""
+    Demo's default stands. The one predicate for "assumed for the Demo" is `assumed`: no row, or a row the Demo itself entered
+    (provenance DEMO either way); every surface that shows the margin or a figure worked out from it says so by it."""
 
     bp: int
     record: CustomerInputRecord | None
@@ -213,7 +213,7 @@ class Margin:
 
     @property
     def assumed(self) -> bool:
-        return self.record is None
+        return self.provenance == DEMO_PROVENANCE
 
 
 def _margin(r: _Basis) -> Margin:
@@ -221,7 +221,7 @@ def _margin(r: _Basis) -> Margin:
     force when there is one, else the Demo's default margin (`config.DEMO_GROSS_MARGIN_BP`) whatever the books are called."""
     rec = r.input(InputField.MARGIN_BP)
     if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
-        return Margin(v, rec, rec.provenance)
+        return Margin(v, rec, DEMO_PROVENANCE if rec.entered_by == DEMO_ENTERED_BY else rec.provenance)
     return Margin(DEMO_GROSS_MARGIN_BP, None, DEMO_PROVENANCE)
 
 
@@ -286,7 +286,7 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
         put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(sales[0]), t(lang, "projected from your books", "根据您的账目推算"))
     else:
         put("annual_sales", t(lang, "Annual sales", "年销售额"), missing, None, entered=False)
-    note, tone = (_demo_words(lang), "warn") if margin.record is None else _source(margin.record, lang)
+    note, tone = (_demo_words(lang), "warn") if margin.assumed or margin.record is None else _source(margin.record, lang)
     put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(margin.bp), note, tone)
     contribution = _contribution_fen(r)
     ask = _ask(r)
@@ -395,12 +395,16 @@ def _share(r: _Read) -> dict[str, Any]:
 
 
 def _value_figure(r: _Read, contribution: int | None) -> dict[str, Any]:
+    """The relationship value, with the Demo-margin qualifier while the margin behind it is the Demo's (as `customer_context` says it)."""
     lang = r.lang
     label = t(lang, "Relationship value", "客户关系价值")
     if contribution is None:
         return _figure("value", label, t(lang, "Not known yet", "暂不清楚"),
                        t(lang, "enter annual sales and gross margin to estimate it", "填写年销售额和毛利率后即可估算"))
-    return _figure("value", label, _about_big(contribution, lang), t(lang, "a year, estimated contribution", "每年，估算的贡献"))
+    note = t(lang, "a year, estimated contribution", "每年，估算的贡献")
+    if _margin(r).assumed:
+        note += t(lang, f"; margin {_demo_words(lang)}", f"；毛利率{_demo_words(lang)}")
+    return _figure("value", label, _about_big(contribution, lang), note)
 
 
 def customer_context(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int, conc: dict[str, Any] | None,

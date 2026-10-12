@@ -123,7 +123,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert b["summary_text"] == "What this relationship is worth, and what it puts at risk."
     assert [f["key"] for f in b["figures"]] == ["value", "outstanding", "financing", "share"]
     value, owed, financing, share = b["figures"]
-    assert (value["label"], value["value_display"], value["note"]) == ("Relationship value", "about ¥1.09m", "a year, estimated contribution")
+    assert (value["label"], value["value_display"], value["note"]) == ("Relationship value", "about ¥1.09m", "a year, estimated contribution; margin assumed for the Demo, not confirmed by you")
     assert (owed["value_display"], owed["note"], owed["tone"]) == ("¥420,000", "due in 32 days, nothing overdue", "neutral")
     assert (financing["label"], financing["value_display"], financing["note"]) == (
         "Financing linked", "None", "nothing is financed against Foshan's invoices")
