@@ -44,8 +44,15 @@ test("the exposure recording holds both languages, every path's sentences and no
   for (const lang of ["en", "zh"]) {
     const v = rec[lang];
     assert.equal(v.lang, lang);
-    for (const p of v.paths) assert.ok(v.band.by_path[p.key]?.stress, `${lang} ${p.key} has a stress sentence`);
+    for (const p of v.paths.filter((x) => x.kind !== "do_nothing")) assert.ok(v.band.by_path[p.key]?.stress, `${lang} ${p.key} has a stress sentence`);
     assert.equal(v.computed_in_seconds, 0);
+    // The appended do-nothing path is words only (no band, stress or room entry); every path carries its table words; the aside has the customer's words.
+    assert.equal(v.paths.at(-1).kind, "do_nothing");
+    for (const p of v.paths) assert.ok(p.lowest_display && p.share_after_text, `${lang} ${p.key} has its table words`);
+    assert.equal(v.band.by_path.do_nothing, undefined);
+    assert.equal(v.stress.paths.do_nothing, undefined);
+    assert.equal(v.capacity.do_nothing, undefined);
+    assert.ok(v.customer_context.owes_display && v.customer_context.profile_href);
     assert.ok(v.capacity.asked.spare.x_star_display);
   }
 });

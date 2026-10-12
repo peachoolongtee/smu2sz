@@ -2941,6 +2941,8 @@ export interface DealView {
 /** A buyer's open offer on the deals read (GET /deals): what it asks, FLOW's read, the cost against the owner's limit and the five-step track. */
 export interface OpenOffer {
   offer_id: string;
+  /** Where the page was opened from (when it was opened with `customer` or `invoice`): the label and the href, the server's. */
+  context?: { back?: { label: string; href: string } };
   verdict_id: string | null;
   received_when: string;
   asks_text: string;
@@ -2958,6 +2960,13 @@ export interface OpenOffer {
   replies_ready: number;
   stages: { key: "received" | "analysed" | "reply_ready" | "sent" | "agreed"; label: string; state: StageState }[];
   tone: DealTone;
+}
+
+/** What the Deals page was opened with (`customer`, `invoice`, `path`): the server answers with `open_offer.context.back` for the buyer it names. */
+export interface DealsContext {
+  customer?: string | null;
+  invoice?: string | null;
+  path?: string | null;
 }
 
 export interface DealsView {
@@ -3377,6 +3386,28 @@ export interface ExposureCapacity {
   spare: ExposureSpare | null;
 }
 
+/** One path's words on the exposure read (the comparison table's cells). */
+export interface ExposurePathWords {
+  key: string;
+  kind: "asked" | "reply" | "do_nothing";
+  label: string;
+  lowest_display?: string | null;
+  lowest_when?: string | null;
+  lowest_when_text?: string | null;
+  limit_word?: string | null;
+  limit_text?: string | null;
+  share_after_text?: string | null;
+}
+
+/** What the aside says about the customer: the server's words (the contribution needs the economics inputs, so it can be absent). */
+export interface CustomerContextWords {
+  contribution_display?: string | null;
+  contribution_note?: string | null;
+  owes_display: string;
+  share_text: string;
+  profile_href: string;
+}
+
 /** GET /offers/{offer_id}/exposure?lang=: what the deal does to the exposure to one buyer, for every path of the offer at once. Read-only context, never a verdict. */
 export interface ExposureView {
   offer_id: string;
@@ -3385,8 +3416,11 @@ export interface ExposureView {
   response: string;
   lang: "en" | "zh";
   buyer: { id: string; name: string };
-  /** The offer's paths in the server's order; `key` is "asked" or a counter's id (the keys of the offer picture's paths). */
-  paths: { key: string; kind: "asked" | "reply"; label: string }[];
+  /**
+   * The offer's paths in the server's order; `key` is "asked" or a counter's id (the keys of the offer picture's paths), then "do_nothing" last: words only, with no band, stress or
+   * capacity entry and no line on the chart. Each carries the server's words for the comparison table; a null `limit_word` means the picture gives the path no class.
+   */
+  paths: ExposurePathWords[];
   concentration: {
     buyer_name: string;
     ar_buyer_display: string;
@@ -3402,6 +3436,7 @@ export interface ExposureView {
   capacity: Record<string, ExposureCapacity>;
   /** Contribution, set only with the economics flag (phase 2); absent or null otherwise. */
   economics?: { annual_text?: string | null; contribution_display?: string | null; estimated?: boolean; sentence?: string | null; context_text?: string | null } | null;
+  customer_context?: CustomerContextWords | null;
   flag: { material: boolean; text: string };
   /** The band's sentences: the concentration, then the stress and the capacity for the leading path and for every path. */
   band: { concentration: string; stress: string; capacity: string | null; by_path: Record<string, { stress: string; capacity: string | null }> };

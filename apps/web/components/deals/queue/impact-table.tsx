@@ -1,9 +1,9 @@
 "use client";
 
-import { authorityText, authorityTone } from "@/components/deals/path-columns";
+import { authorityText } from "@/components/deals/path-columns";
 import { TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { CounterProposal, Displayed, ExposureView, PicturePath, VerdictView } from "@/lib/types";
+import type { CounterProposal, Displayed, ExposurePathWords, ExposureView, PicturePath, VerdictView } from "@/lib/types";
 
 interface Cell {
   text: string | null;
@@ -23,14 +23,22 @@ export function ImpactTable({ asked, reply, exposure, verdict, buyer }: { asked:
   const none = t("dq.none");
   const counter = verdict.counters.find((c) => c.id === reply.key) as Displayed<CounterProposal> | undefined;
   const terms = verdict.workspace?.financial_impact.lines.find((l) => l.type === "TERMS_EXTENSION");
-  const lowest = (p: PicturePath): Cell => ({
-    text: p.lowest_short && p.lowest_when ? t("biz.deals.paths.lowestAt", { amount: p.lowest_short, when: p.lowest_when }) : null,
-    note: p.kind === "asked" && p.first_breach_when ? p.band_text : null,
-    tone: p.kind === "asked" && p.first_breach_when ? "bad" : null,
+  const words = (key: string) => exposure.paths.find((w) => w.key === key) ?? null;
+  // The words of each column are the exposure read's own (the do-nothing column has words only: no band, no stress, no room entry).
+  const nothing = exposure.paths.find((w) => w.kind === "do_nothing") ?? null;
+  const lowest = (w: ExposurePathWords | null, p: PicturePath | null): Cell => ({
+    text: w?.lowest_display ? (w.lowest_when ? t("biz.deals.paths.lowestAt", { amount: w.lowest_display, when: w.lowest_when }) : t("dq.lowest.amount", { amount: w.lowest_display })) : null,
+    note: w?.lowest_when_text ?? null,
+    tone: p && p.kind === "asked" && p.first_breach_when ? "bad" : null,
   });
-  const authority = (p: PicturePath): Cell => ({ text: authorityText(p), tone: ({ ok: "ok", warn: "warn", bad: "bad", neutral: null, info: null, brand: null } as const)[authorityTone(p)] });
+  // The limit: the server's word for the path, in its tone; no word means the picture gives the path no class, so the cell is a dash with the authority text beneath, never a word of ours.
+  const LIMIT_TONE: Record<string, Cell["tone"]> = { EXCEEDED: "bad", WITHIN: "ok" };
+  const limit = (w: ExposurePathWords | null, p: PicturePath | null): Cell =>
+    w?.limit_word ? { text: w.limit_text ?? null, tone: LIMIT_TONE[w.limit_word] ?? null } : { text: null, note: p ? authorityText(p) : null };
   const spare = (key: string) => exposure.capacity[key]?.spare?.x_star_display ?? null;
-  const share = exposure.concentration.ar_share_display;
+  const share = (w: ExposurePathWords | null) => w?.share_after_text ?? exposure.concentration.ar_share_display;
+  const askedWords = words(asked.key);
+  const replyWords = words(reply.key);
   const rows: { key: string; label: string; cells: [Cell, Cell, Cell] }[] = [
     { key: "once", label: t("dq.row.once"), cells: [{ text: none }, { text: asked.cost_once_display ?? none }, { text: reply.cost_once_display ?? none }] },
     {
@@ -39,10 +47,10 @@ export function ImpactTable({ asked, reply, exposure, verdict, buyer }: { asked:
       cells: [{ text: none }, { text: asked.cost_forward_display ?? none, tone: asked.authority === "over_limit" ? "bad" : null }, { text: reply.cost_forward_display ?? (reply.cost_components?.length ? reply.cost_total_display : null) ?? none }],
     },
     { key: "financing", label: t("dq.row.financing"), cells: [{ text: none }, { text: terms?.amount_display ?? null }, { text: counter?.economics?.funding_cost_display ?? null }] },
-    { key: "lowest", label: t("dq.row.lowest"), cells: [{ text: null }, lowest(asked), lowest(reply)] },
+    { key: "lowest", label: t("dq.row.lowest"), cells: [lowest(nothing, null), lowest(askedWords, asked), lowest(replyWords, reply)] },
     { key: "spare", label: t("dq.row.spare"), cells: [{ text: exposure.capacity[asked.key]?.spare?.today_display ?? null }, { text: spare(asked.key) }, { text: spare(reply.key) }] },
-    { key: "limit", label: t("dq.row.limit"), cells: [{ text: null }, authority(asked), authority(reply)] },
-    { key: "share", label: t("dq.row.share", { buyer }), cells: [{ text: share }, { text: share }, { text: share }] },
+    { key: "limit", label: t("dq.row.limit"), cells: [limit(nothing, null), limit(askedWords, asked), limit(replyWords, reply)] },
+    { key: "share", label: t("dq.row.share", { buyer }), cells: [{ text: share(nothing) }, { text: share(askedWords) }, { text: share(replyWords) }] },
   ];
   return (
     <TableWrap label={t("dq.compare")}>

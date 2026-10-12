@@ -50,6 +50,7 @@ import type {
   OfferPictureView,
   OfferView,
   PlanRequest,
+  DealsContext,
   EnvelopeView,
   ExposureView,
   PilotJournalView,
@@ -320,8 +321,8 @@ export async function getEvidence(): Promise<string> {
 // Owner only, every route. A reading is a proposal: nothing counts until the owner confirms it, and confirming writes no books.
 
 /** GET /deals?lang=: one card per buyer, from the confirmed contract and the current books; the server's sentences in the owner's language, the figures identical. */
-export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
-  return isMock ? (await mock()).getDeals(lang) : (await live()).getDeals(lang);
+export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
+  return isMock ? (await mock()).getDeals(lang, ctx) : (await live()).getDeals(lang, ctx);
 }
 
 /** GET /documents?lang=: every document the agent has read, newest last. */

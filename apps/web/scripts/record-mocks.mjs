@@ -48,7 +48,7 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
-// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
+// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
 // FLOW has read it, on the opening books. One read carries every path (the sentences of every path are in `band.by_path`), so there is no per-response file. The API needs
 // FEATURE_EXPOSURE=1 (and FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 as above):
 //   node scripts/record-mocks.mjs --api http://localhost:8193 --exposure
@@ -296,6 +296,10 @@ if (EXPOSURE) {
     return out;
   };
   files["offer_exposure_ex01.json"] = { en: stamp(en), zh: stamp(zh) };
+  // The deals read opened with a customer (`GET /deals?customer=BUYER-1&path=<the recommended counter>`): the open offer then carries `context.back`.
+  const pic = await live.getOfferPicture(id, "en");
+  const recommended = pic.paths?.find((p) => p.recommended)?.key;
+  files["deals_day0_evaluated_back.json"] = await live.getDeals("en", { customer: "BUYER-1", path: recommended });
   await live.demoReset();
   for (const name of Object.keys(files)) write(name, files[name]);
   console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);

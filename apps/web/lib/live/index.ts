@@ -21,6 +21,7 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  DealsContext,
   EnvelopeView,
   ExposureView,
   ContractFixture,
@@ -198,7 +199,12 @@ export const live = {
   getEvidence: () => http<string>("GET", "/evidence", { as: "text" }),
 
   // contract ingestion (brief 03): every route needs the owner token; the responses already have the page's shape
-  getDeals: (lang: "en" | "zh" = "en") => http<DealsView>("GET", `/deals${lang === "zh" ? "?lang=zh" : ""}`),
+  getDeals: (lang: "en" | "zh" = "en", ctx: DealsContext = {}) => {
+    const q = new URLSearchParams();
+    if (lang === "zh") q.set("lang", "zh");
+    for (const k of ["customer", "invoice", "path"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
+    return http<DealsView>("GET", `/deals${q.size ? `?${q}` : ""}`);
+  },
   getDocuments: (lang: "en" | "zh" = "en") => http<DocumentsList>("GET", `/documents${lang === "zh" ? "?lang=zh" : ""}`),
   getDocument: async (id: string, lang: "en" | "zh" = "en"): Promise<DocumentView> =>
     (await http<{ document: DocumentView }>("GET", `/documents/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).document,

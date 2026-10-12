@@ -2318,7 +2318,6 @@ export const en = {
   "dq.link.calcs": "Calculations",
   "dq.aside.title": "Why {buyer} matters",
   "dq.aside.contribution": "Contribution a year",
-  "dq.aside.estimated": "· estimated",
   "dq.aside.owes": "Owes you now",
   "dq.aside.share": "Share of what you are owed",
   "dq.aside.profile": "View the customer profile",
@@ -2337,6 +2336,7 @@ export const en = {
   "dq.band.todayAfter": "{today} today, {after} after",
   "dq.band.recovers": "Recovers: {when}",
   "dq.rec.plain": "FLOW recommends",
+  "dq.lowest.amount": "Lowest {amount}",
   // ---- Home, the hybrid (position, attention, picture with the event rail, cards)
   "home.hy.read": "· read {when}",
   "home.hy.assumptions": "Forecast assumptions",
@@ -4682,7 +4682,6 @@ export const zh: Record<DictKey, string> = {
   "dq.link.calcs": "计算过程",
   "dq.aside.title": "{buyer}为何重要",
   "dq.aside.contribution": "全年贡献",
-  "dq.aside.estimated": "· 估计值",
   "dq.aside.owes": "目前欠您",
   "dq.aside.share": "占您应收款的比例",
   "dq.aside.profile": "查看客户档案",
@@ -4701,6 +4700,7 @@ export const zh: Record<DictKey, string> = {
   "dq.band.todayAfter": "目前 {today}，之后 {after}",
   "dq.band.recovers": "恢复时间：{when}",
   "dq.rec.plain": "FLOW 建议",
+  "dq.lowest.amount": "最低 {amount}",
   // ---- Home, the hybrid (position, attention, picture with the event rail, cards)
   "home.hy.read": "· {when}读取",
   "home.hy.assumptions": "预测所依据的假设",

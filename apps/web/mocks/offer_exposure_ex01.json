@@ -13,17 +13,46 @@
       {
         "key": "asked",
         "kind": "asked",
-        "label": "As they asked"
+        "label": "As they asked",
+        "lowest_display": "¥165k",
+        "lowest_when": "in 60 days",
+        "lowest_when_text": "below it for 15 days",
+        "limit_word": "EXCEEDED",
+        "limit_text": "exceeded",
+        "share_after_text": "100%, for 15 days longer"
       },
       {
         "key": "CTR-193394b6ba8b",
         "kind": "reply",
-        "label": "Option A"
+        "label": "Option A",
+        "lowest_display": "¥300k",
+        "lowest_when": "in 30 days",
+        "lowest_when_text": "at your minimum",
+        "limit_word": "WITHIN",
+        "limit_text": "within",
+        "share_after_text": "100%, paid 2 days after the offer"
       },
       {
         "key": "CTR-6b07cbf70441",
         "kind": "reply",
-        "label": "Option B"
+        "label": "Option B",
+        "lowest_display": "¥300k",
+        "lowest_when": "in 30 days",
+        "lowest_when_text": "at your minimum",
+        "limit_word": "WITHIN",
+        "limit_text": "within",
+        "share_after_text": "100%, for 10 days longer"
+      },
+      {
+        "key": "do_nothing",
+        "kind": "do_nothing",
+        "label": "Do nothing",
+        "lowest_display": "−¥105k",
+        "lowest_when": "in 30 days",
+        "lowest_when_text": "below it for 20 days",
+        "limit_word": "WITHIN",
+        "limit_text": "within",
+        "share_after_text": "100%"
       }
     ],
     "concentration": {
@@ -4071,6 +4100,13 @@
         }
       }
     },
+    "customer_context": {
+      "contribution_display": "about ¥1.09m",
+      "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
+      "owes_display": "¥420,000",
+      "share_text": "100%",
+      "profile_href": "/customers/BUYER-1"
+    },
     "state_version": 1,
     "day": 0,
     "computed_in_seconds": 0
@@ -4089,17 +4125,46 @@
       {
         "key": "asked",
         "kind": "asked",
-        "label": "按对方要求"
+        "label": "按对方要求",
+        "lowest_display": "¥165k",
+        "lowest_when": "60 天后",
+        "lowest_when_text": "低于最低现金 15 天",
+        "limit_word": "EXCEEDED",
+        "limit_text": "超出授权",
+        "share_after_text": "100%，多持续 15 天"
       },
       {
         "key": "CTR-193394b6ba8b",
         "kind": "reply",
-        "label": "方案 A"
+        "label": "方案 A",
+        "lowest_display": "¥300k",
+        "lowest_when": "30 天后",
+        "lowest_when_text": "恰为您的最低现金",
+        "limit_word": "WITHIN",
+        "limit_text": "在授权内",
+        "share_after_text": "100%，报价后 2 天付款"
       },
       {
         "key": "CTR-6b07cbf70441",
         "kind": "reply",
-        "label": "方案 B"
+        "label": "方案 B",
+        "lowest_display": "¥300k",
+        "lowest_when": "30 天后",
+        "lowest_when_text": "恰为您的最低现金",
+        "limit_word": "WITHIN",
+        "limit_text": "在授权内",
+        "share_after_text": "100%，多持续 10 天"
+      },
+      {
+        "key": "do_nothing",
+        "kind": "do_nothing",
+        "label": "不采取行动",
+        "lowest_display": "−¥105k",
+        "lowest_when": "30 天后",
+        "lowest_when_text": "低于最低现金 20 天",
+        "limit_word": "WITHIN",
+        "limit_text": "在授权内",
+        "share_after_text": "100%"
       }
     ],
     "concentration": {
@@ -7158,7 +7223,7 @@
           "evaluations": 11,
           "seconds": 0,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
-          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）预支 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
+          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）融资 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
           "refused_text": null,
           "x_star_display": "¥14,000.00",
           "today_display": "¥81,000.00",
@@ -7633,7 +7698,7 @@
           "evaluations": 10,
           "seconds": 0,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
-          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（47 天后到期）预支 ¥1,000.00：年化成本 15.49% 高于您签署的无需批准融资上限 15.00%（¥1,000.00 计息 42 天（从5 天后到47 天后），年化 15.49%）",
+          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（47 天后到期）融资 ¥1,000.00：年化成本 15.49% 高于您签署的无需批准融资上限 15.00%（¥1,000.00 计息 42 天（从5 天后到47 天后），年化 15.49%）",
           "refused_text": null,
           "x_star_display": "¥0.00",
           "today_display": "¥81,000.00",
@@ -8108,7 +8173,7 @@
           "evaluations": 11,
           "seconds": 0,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
-          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）预支 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
+          "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）融资 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
           "refused_text": null,
           "x_star_display": "¥62,000.00",
           "today_display": "¥81,000.00",
@@ -8146,6 +8211,13 @@
           "capacity": "采用方案 B 后，再支付一笔款项的余量为 ¥62,000；目前为 ¥81,000。"
         }
       }
+    },
+    "customer_context": {
+      "contribution_display": "约 ¥109万",
+      "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
+      "owes_display": "¥420,000",
+      "share_text": "100%",
+      "profile_href": "/customers/BUYER-1"
     },
     "state_version": 1,
     "day": 0,

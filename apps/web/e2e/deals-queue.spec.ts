@@ -20,6 +20,8 @@ const open = deals.deals.find((d: { open_offer: unknown }) => d.open_offer).open
 const exposureEn = rec("offer_exposure_ex01.json").en;
 const exposureZh = rec("offer_exposure_ex01.json").zh;
 const pictureEn = rec("offer_picture_ex01.json").en;
+const recheck = rec("verdict_ex01.json").workspace.priced_response.recheck_text as string;
+const words = (key: string) => exposureEn.paths.find((p: { key: string }) => p.key === key);
 const reply = pictureEn.paths.find((p: { recommended: boolean }) => p.recommended);
 const asked = pictureEn.paths.find((p: { kind: string }) => p.kind === "asked");
 
@@ -75,7 +77,8 @@ test("four tabs filter the list: the owner's reply first, the others by what the
 test("selecting a deal replaces the detail in place and keeps ?decision=; the heading is the server's; one filled primary", async ({ page }) => {
   await openQueue(page);
   await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
-  await expect(page).toHaveURL(/customer=BUYER-1/);
+  // The address carries the deal and the path, not the customer: a customer in it would say the page was opened from that customer's page.
+  await expect(page).not.toHaveURL(/customer=/);
   await page.getByTestId("queue-select").click();
   await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
   await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
@@ -89,6 +92,8 @@ test("selecting a deal replaces the detail in place and keeps ?decision=; the he
   await expect(page.getByTestId("queue-cost")).toHaveText(`Estimated one-off cost ${reply.cost_once_display}, if Foshan accepts.`);
   await expect(page.getByTestId("queue-authority")).toContainText(reply.authority_text);
   await expect(page.getByTestId("queue-review-open")).toHaveText("Review and send the counter");
+  // The server's sentence on what the send re-checks stands beside the button.
+  if (recheck) await expect(page.getByTestId("queue-recommends")).toContainText(recheck); // (present once the verdict recording carries `recheck_text`)
   expect(await filledBrand(page)).toBe(1);
   // Opening the review replaces the button with the existing send: still one filled primary, the bound option and the server's lines.
   await page.getByTestId("queue-review-open").click();
@@ -139,11 +144,19 @@ test("the comparison is closed by default; open it for seven rows with the serve
   await expect(page.getByTestId("queue-impact-once")).toContainText(asked.cost_once_display);
   await expect(page.getByTestId("queue-impact-once")).toContainText(reply.cost_once_display);
   await expect(page.getByTestId("queue-impact-forward")).toContainText(asked.cost_forward_display);
-  await expect(page.getByTestId("queue-impact-lowest")).toContainText(asked.lowest_short);
+  // Every cell of the cash, limit and share rows is the exposure read's words for that column; the first column is the do-nothing path (words only).
+  const nothing = words("do_nothing");
+  for (const [w, i] of [[nothing, 1], [words("asked"), 2], [words(reply.key), 3]] as const) {
+    await expect(page.getByTestId("queue-impact-lowest").locator("td").nth(i - 1)).toContainText(w.lowest_display);
+    await expect(page.getByTestId("queue-impact-lowest").locator("td").nth(i - 1)).toContainText(w.lowest_when_text);
+    await expect(page.getByTestId("queue-impact-limit").locator("td").nth(i - 1)).toHaveText(w.limit_text);
+    await expect(page.getByTestId("queue-impact-share").locator("td").nth(i - 1)).toHaveText(w.share_after_text);
+  }
   await expect(page.getByTestId("queue-impact-spare")).toContainText(exposureEn.capacity.asked.spare.today_display);
   await expect(page.getByTestId("queue-impact-spare")).toContainText(exposureEn.capacity[reply.key].spare.x_star_display);
-  await expect(page.getByTestId("queue-impact-limit")).toContainText(asked.authority_text);
-  await expect(page.getByTestId("queue-impact-share")).toContainText(exposureEn.concentration.ar_share_display);
+  // The do-nothing path is words only: it is not a line on the chart, a tile of the band or a column of the picture.
+  await expect(page.locator('[data-testid^="path-col-"][data-selected]')).toHaveCount(3);
+  await expect(page.locator('[data-testid^="path-line-"]')).toHaveCount(3);
   await expect(table.locator("thead")).toContainText("Do nothing");
   await expect(table.locator("thead")).toContainText("If Foshan accepts Option A");
 });
@@ -163,9 +176,13 @@ test("the customer links carry customer, decision and path; the stress link carr
   expect(stress.searchParams.get("stress")).toBe("BUYER-1:30");
   expect(stress.searchParams.get("invoice")).toBe("RCV-A");
   const aside = page.getByTestId("queue-aside");
-  await expect(aside.locator("dt")).toHaveCount(2); // the contribution waits on the economics read; owes now and the share are the exposure read's
-  await expect(page.getByTestId("aside-owes")).toHaveText(exposureEn.concentration.ar_buyer_display);
-  await expect(page.getByTestId("aside-share")).toHaveText(exposureEn.concentration.ar_share_display);
+  await expect(aside.locator("dt")).toHaveCount(3); // the contribution (with its note), what they owe now, their share: the read's `customer_context`
+  const cc = exposureEn.customer_context;
+  await expect(page.getByTestId("aside-contribution")).toContainText(cc.contribution_display);
+  await expect(page.getByTestId("aside-contribution-note")).toHaveText(cc.contribution_note);
+  await expect(page.getByTestId("aside-owes")).toHaveText(cc.owes_display);
+  await expect(page.getByTestId("aside-share")).toHaveText(cc.share_text);
+  expect(new URL((await page.getByTestId("aside-profile").getAttribute("href"))!, "http://x").pathname).toBe(cc.profile_href);
   await expect(aside).toContainText("Context, not a promise");
   // The picked path travels with the links.
   await page.getByTestId("path-col-0").getByRole("radio").click();
@@ -207,7 +224,7 @@ test("Chinese: the same page in the owner's voice, with the same figures", async
   await expect(page.getByTestId("queue-why")).toContainText("为什么还价？");
   await expect(page.getByTestId("exposure-band")).toContainText(exposureZh.band.concentration);
   await expect(page.getByTestId("queue-review-open")).toHaveText("查看并发送还价");
-  await expect(page.getByTestId("aside-owes")).toHaveText(exposureZh.concentration.ar_buyer_display);
+  await expect(page.getByTestId("aside-owes")).toHaveText(exposureZh.customer_context.owes_display);
   expect(await page.locator("main").innerText()).not.toMatch(/\bday \d/i);
 });
 
@@ -254,4 +271,30 @@ test("with the exposure read stripped the current Deals page renders exactly: no
   for (const id of ["queue-tabs", "queue-list", "queue-detail", "queue-aside", "exposure-band", "stress-toggle", "queue-compare"]) await expect(page.getByTestId(id)).toHaveCount(0);
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.locator("h1")).toHaveText(open.headline_short);
+});
+
+test("opened from the list there is no back link", async ({ page }) => {
+  await openQueue(page);
+  await expect(page.getByTestId("queue-back")).toHaveCount(0);
+});
+
+test("opened from a customer or an invoice, the server's back link stands above the queue", async ({ page }) => {
+  const back = rec("deals_day0_evaluated_back.json").deals[0].open_offer.context.back as { label: string; href: string };
+  await page.goto("/deals?customer=BUYER-1");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("queue-heading")).toBeVisible();
+  const link = page.getByTestId("queue-back");
+  await expect(link).toHaveText(`‹ ${back.label}`);
+  await expect(link).toHaveAttribute("href", back.href);
+});
+
+test("returning from the Customer page: the address's decision and path select the deal and the path, and a pick is written back to it", async ({ page }) => {
+  await openQueue(page);
+  await page.goto(`/deals?decision=${encodeURIComponent(`deal:${open.offer_id}`)}&path=asked`);
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page.getByTestId("paths-picture")).toHaveAttribute("data-pick", "asked");
+  await expect(page.getByTestId("path-col-pick-0")).toHaveAttribute("aria-checked", "true");
+  await page.getByTestId("path-col-pick-2").click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("path")).toMatch(/^CTR-/);
+  expect(new URL(page.url()).searchParams.get("decision")).toBe(`deal:${open.offer_id}`);
 });

@@ -26,7 +26,7 @@ import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
-import type { ExposureView, OfferPictureView, VerdictView } from "@/lib/types";
+import type { DealsContext, ExposureView, OfferPictureView, VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useNarrow, useShort } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
@@ -76,7 +76,9 @@ function Deals() {
   const clock = useAsync(getClock, []);
   // The deal summaries (contract ingestion): read again whenever a negotiation is recorded (the store's version moves) and when the language changes, since the
   // server writes their sentences. A failed read is shown, not hidden; only a server with contract reading switched off has none to show.
-  const dealsView = useAsync(() => getDeals(lang), [lang]);
+  // What the page was opened with (a link from a customer or an invoice names them): the deals read then says where the owner came from (`open_offer.context.back`).
+  const [opened] = useState<DealsContext>(() => ({ customer: params.get("customer"), invoice: params.get("invoice"), path: params.get("path") }));
+  const dealsView = useAsync(() => getDeals(lang, opened), [lang, opened.customer, opened.invoice, opened.path]);
   const dealsError = contractsOff(dealsView.error) ? undefined : dealsView.error;
   // The simulated clock: every day on this page is said as a distance from it.
   const today = clock.data?.day ?? books.data?.day ?? 0;
@@ -258,15 +260,14 @@ function Deals() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- follows the address (a back link), not the store
   }, [decisionParam]);
-  const customerNow = offer?.offer.counterparty_id ?? null;
   const decisionNow = offer && open ? dealRecordId(offer.offer.offer_id) : null;
   const pickNow = pathsState.picked?.key ?? null;
   const offerNow = offer?.offer.offer_id ?? null;
   useEffect(() => {
     const changedByOwner = lastOffer.current !== null && offerNow !== null && offerNow !== lastOffer.current && fromAddress.current !== offerNow;
     if (offerNow) lastOffer.current = offerNow;
-    if (queueOn && decisionNow) setQuery({ customer: customerNow, decision: decisionNow, ...(changedByOwner ? { path: null } : {}) });
-  }, [queueOn, customerNow, decisionNow, offerNow]);
+    if (queueOn && decisionNow) setQuery({ decision: decisionNow, ...(changedByOwner ? { path: null } : {}) });
+  }, [queueOn, decisionNow, offerNow]);
   useEffect(() => {
     if (queueOn && !pathParam && pickNow) setQuery({ path: pickNow });
   }, [queueOn, pathParam, pickNow]);
@@ -449,6 +450,8 @@ function Deals() {
     const pick = pathsState.picked?.key ?? null;
     const ctx = offer ? contextQuery({ customer: offer.offer.counterparty_id, decision: selectedId ? dealRecordId(selectedId) : null, path: pick }) : "";
     const customerHref = offer ? `/customers/${encodeURIComponent(offer.offer.counterparty_id)}?${ctx}` : "#";
+    // Where the owner came from, when the page was opened from a customer or an invoice: the server's words and address.
+    const backLink = (open?.context?.back ?? (dealsView.data?.deals ?? []).find((d) => d.open_offer?.context?.back)?.open_offer?.context?.back) ?? null;
     const onTab = (k: QueueTab) => {
       const q = new URLSearchParams(window.location.search);
       q.set("tab", k);
@@ -470,6 +473,11 @@ function Deals() {
       <>
         <PageHeader section="deals" title={t("nav.deals")} subtitle={(narrow || short) && offer ? undefined : rows.some((r) => r.tab === "needs") ? t("dq.sub.needs") : t("dq.sub.none")} />
         <div className="space-y-4">
+          {backLink ? (
+            <Link href={backLink.href} className="inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
+              ‹ {backLink.label}
+            </Link>
+          ) : null}
           {!offer || !(narrow || short) ? inbox : null}
           {errorNode}
           {dealsError ? <ErrorState error={dealsError} onRetry={dealsView.reload} /> : null}
@@ -509,7 +517,7 @@ function Deals() {
                   after={STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
                 />
               }
-              aside={<QueueAside exposure={exposure} customerHref={customerHref} stressHref={stressHref(exposure.buyer_id, exposure.stress.delay_days, dealRow ? firstOpenInvoice(dealRow) : null, ctx)} pathLabel={pathsState.picked?.label ?? ""} />}
+              aside={<QueueAside exposure={exposure} customerHref={exposure.customer_context?.profile_href ? `${exposure.customer_context.profile_href}?${ctx}` : customerHref} stressHref={stressHref(exposure.buyer_id, exposure.stress.delay_days, dealRow ? firstOpenInvoice(dealRow) : null, ctx)} pathLabel={pathsState.picked?.label ?? ""} />}
             />
           ) : outcome ? (
             <div className="space-y-6">{outcome}</div>

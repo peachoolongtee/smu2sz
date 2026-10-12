@@ -13,29 +13,32 @@ import { eyebrowCls } from "./queue-list";
 export function QueueAside({ exposure, customerHref, stressHref, pathLabel }: { exposure: ExposureView; customerHref: string; stressHref: string; pathLabel: string }) {
   const { t } = useI18n();
   const buyer = exposure.concentration.buyer_name;
-  const c = exposure.concentration;
-  const contribution = exposure.economics?.contribution_display ?? null;
+  // The aside's words are the read's `customer_context`; a server that has not sent it gives the concentration's own figures.
+  const cc = exposure.customer_context ?? null;
+  const owes = cc?.owes_display ?? exposure.concentration.ar_buyer_display;
+  const share = cc?.share_text ?? exposure.concentration.ar_share_display;
   return (
     <aside aria-labelledby="dq-aside-title" className="flex min-w-0 flex-col gap-3 lg:border-l lg:border-line lg:pl-6" data-testid="queue-aside">
       <h3 id="dq-aside-title" className={`${eyebrowCls} text-ink-3`}>
         {t("dq.aside.title", { buyer })}
       </h3>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2.5 text-sm">
-        {contribution ? (
+        {cc?.contribution_display ? (
           <>
             <dt className="text-ink-3">{t("dq.aside.contribution")}</dt>
-            <dd className="m-0 font-display text-base font-extrabold tabular-nums text-ink" data-testid="aside-contribution">
-              {contribution} {exposure.economics?.estimated ? <span className="font-sans text-[0.8125rem] font-semibold text-warn-fg">{t("dq.aside.estimated")}</span> : null}
+            <dd className="m-0" data-testid="aside-contribution">
+              <span className="font-display text-base font-extrabold tabular-nums text-ink">{cc.contribution_display}</span>
+              {cc.contribution_note ? <span className="block text-[0.8125rem] font-semibold text-warn-fg" data-testid="aside-contribution-note">{cc.contribution_note}</span> : null}
             </dd>
           </>
         ) : null}
         <dt className="text-ink-3">{t("dq.aside.owes")}</dt>
         <dd className="m-0 font-display text-base font-extrabold tabular-nums text-ink" data-testid="aside-owes">
-          {c.ar_buyer_display}
+          {owes}
         </dd>
         <dt className="text-ink-3">{t("dq.aside.share")}</dt>
         <dd className={`m-0 font-display text-base font-extrabold tabular-nums ${exposure.flag.material ? "text-warn-fg" : "text-ink"}`} data-testid="aside-share">
-          {c.ar_share_display}
+          {share}
         </dd>
       </dl>
       <Link href={customerHref} className="text-sm font-bold text-brand-700 hover:underline focus-visible:underline" data-testid="aside-profile">

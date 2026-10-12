@@ -49,6 +49,7 @@ import type {
   PlanRequest,
   PilotJournalView,
   PriceCurveView,
+  DealsContext,
   EnvelopeView,
   ExposureView,
   ReceivablesWorthView,
@@ -960,10 +961,19 @@ export async function demoReset(scenario?: string): Promise<void> {
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
-export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   void lang;
   await delay();
-  return documents.mockDeals(openOfferStage());
+  const view = documents.mockDeals(openOfferStage());
+  // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
+  if (ctx.customer || ctx.invoice) {
+    const back = cast<DealsView>((await import("../../mocks/deals_day0_evaluated_back.json")).default);
+    for (const row of view.deals) {
+      const lent = back.deals.find((d) => d.counterparty_id === row.counterparty_id)?.open_offer?.context;
+      if (row.open_offer && lent) row.open_offer.context = clone(lent);
+    }
+  }
+  return view;
 }
 
 /**

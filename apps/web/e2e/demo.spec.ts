@@ -4,6 +4,8 @@ import { STORY_STEPS, stripOf, verdictHeading, walkStory } from "./helpers";
 
 /** Since Wave 3 the Inbox folds to one row once a deal is selected: open it before reading which message is current. */
 async function expectSelectedMessage(page: Page, id: string): Promise<void> {
+  // (the page waits for the deal's exposure read before it shows the queue; the inbox is folded or open once it has)
+  await expect(page.getByTestId("inbox-collapsed").or(page.getByTestId(`inbox-msg-${id}`))).toBeVisible();
   if (await page.getByTestId("inbox-collapsed").isVisible().catch(() => false)) await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId(`inbox-msg-${id}`)).toHaveAttribute("aria-current", "true");
 }

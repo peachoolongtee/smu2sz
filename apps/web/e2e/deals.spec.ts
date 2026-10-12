@@ -114,7 +114,7 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("queue-impact-once")).toContainText("¥5,040.00");
   await expect(page.getByTestId("queue-impact-forward")).toContainText("¥28,326.92");
   await expect(page.getByTestId("queue-impact-financing")).toContainText("¥24,326.92");
-  await expect(page.getByTestId("queue-impact-limit")).toContainText("Over a limit you signed");
+  await expect(page.getByTestId("queue-impact-limit")).toContainText("exceeded");
   await expect(compare).toContainText("separate rows, never added");
   // The cash facts of the offer as asked, in the table and on the picture: the lowest point and the first breach are two named days.
   await expect(page.getByTestId("queue-impact-lowest")).toContainText("Lowest ¥165k, in 60 days");
