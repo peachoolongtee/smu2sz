@@ -120,14 +120,31 @@
   --radius-tile: 10px;
   --radius-control: 8px;
 
-  /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur-fast: 120ms;
-  --dur: 200ms;
-  --dur-slow: 280ms;
+  /* Motion tokens: six durations and two easings, and nothing else moves the app. Every transition and animation names one of them
+     (a delay is a multiple of --dur-instant or a stagger of 30 ms). Transform and opacity only (a disclosure's height and the cash
+     picture's stroke draw are the two deliberate exceptions). Under prefers-reduced-motion only opacity transitions remain
+     (the block at the end of this file; components read the same signal through lib/use-reduced-motion.ts).
+       instant   80 ms   a press, a toggle's mark
+       fast     140 ms   a hover, a colour, the segmented pill sliding
+       dur      220 ms   a switch, a sheet, a disclosure, a detail replacing in place
+       expanded 280 ms   a card or row arriving, a panel sliding in, a chart cursor
+       scenario 350 ms   a scenario or window switch: the figures that change update together
+       narrative 500 ms  the one story the Home picture tells (the line draws, the first breach pulses)
+     --ease-ui is the one ease-out; --ease-select a damped spring (one small overshoot, no bounce) for a choice settling into place. */
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --ease-select: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-expanded: 280ms;
+  --dur-scenario: 350ms;
+  --dur-narrative: 500ms;
   /* Tailwind's own transition-colors / -opacity / -transform take the kit's timing, not its 150 ms default. */
   --default-transition-duration: var(--dur);
-  --default-transition-timing-function: var(--ease-out);
+  --default-transition-timing-function: var(--ease-ui);
+  /* The two loading indicators (a skeleton's breathing, a spinner's turn) take their periods from the scale too. */
+  --animate-pulse: pulse calc(var(--dur-narrative) * 4) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin: spin calc(var(--dur-narrative) * 2) linear infinite;
 
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
   --color-new: #7c4ddb;
@@ -254,16 +271,6 @@ input[type="radio"] {
   }
 }
 
-/* The soft background's slow drift. */
-@keyframes biz-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3rem, 2rem, 0) scale(1.08);
-  }
-}
-
 /* The status dot's one pulse: a ring that grows out of the dot and fades. */
 @keyframes dot-pulse {
   from {
@@ -279,12 +286,12 @@ input[type="radio"] {
 @layer components {
   /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
   .motion-reveal {
-    animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
+    animation: biz-reveal var(--dur-expanded) var(--ease-ui) backwards;
   }
 
   /* The Deals queue: a selected deal replaces the detail with one quick fade (--dur, 150 to 200 ms); what is inside it does not reveal again on top of it. */
   .motion-select {
-    animation: biz-reveal var(--dur) var(--ease-out) backwards;
+    animation: biz-reveal var(--dur) var(--ease-ui) backwards;
   }
   .motion-select .motion-reveal,
   .motion-select .motion-rise > * {
@@ -293,12 +300,12 @@ input[type="radio"] {
 
   /* One thing replacing another in place (the chosen invoice's detail): the same arrival at the base duration, 200 ms. */
   .motion-swap {
-    animation: biz-reveal var(--dur) var(--ease-out) backwards;
+    animation: biz-reveal var(--dur) var(--ease-ui) backwards;
   }
 
   /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
   .motion-rise > * {
-    animation: biz-rise var(--dur-slow) var(--ease-out) backwards;
+    animation: biz-rise var(--dur-expanded) var(--ease-ui) backwards;
   }
   .motion-rise > :nth-child(2) { animation-delay: 30ms; }
   .motion-rise > :nth-child(3) { animation-delay: 60ms; }
@@ -312,9 +319,9 @@ input[type="radio"] {
   /* Rows, tiles and option rows that lead somewhere lift 1 px and take the next shadow step, on devices that really hover. */
   .motion-lift {
     transition:
-      transform var(--dur) var(--ease-out),
-      box-shadow var(--dur) var(--ease-out),
-      background-color var(--dur) var(--ease-out);
+      transform var(--dur) var(--ease-ui),
+      box-shadow var(--dur) var(--ease-ui),
+      background-color var(--dur) var(--ease-ui);
   }
   @media (hover: hover) and (pointer: fine) {
     .motion-lift:hover {
@@ -326,12 +333,12 @@ input[type="radio"] {
   /* Pill buttons answer the press, and ease their colour. */
   .motion-press {
     transition:
-      transform var(--dur-fast) var(--ease-out),
-      background-color var(--dur) var(--ease-out),
-      border-color var(--dur) var(--ease-out),
-      color var(--dur) var(--ease-out),
-      box-shadow var(--dur) var(--ease-out),
-      opacity var(--dur) var(--ease-out);
+      transform var(--dur-fast) var(--ease-ui),
+      background-color var(--dur) var(--ease-ui),
+      border-color var(--dur) var(--ease-ui),
+      color var(--dur) var(--ease-ui),
+      box-shadow var(--dur) var(--ease-ui),
+      opacity var(--dur) var(--ease-ui);
   }
   .motion-press:not(:disabled):active {
     transform: scale(0.98);
@@ -339,18 +346,18 @@ input[type="radio"] {
 
   /* A dialog card arriving (the walkthrough): opacity and scale only, so its own placement is left alone. */
   .motion-pop {
-    animation: tour-in var(--dur) var(--ease-out) backwards;
+    animation: tour-in var(--dur) var(--ease-ui) backwards;
   }
 
   /* The chat slide-over and any panel that enters from the right edge. */
   .motion-panel[open] {
-    animation: tl-slide-in var(--dur-slow) var(--ease-out) backwards;
+    animation: tl-slide-in var(--dur-expanded) var(--ease-ui) backwards;
   }
 
   /* The sheet under the account button, and any menu that drops from a button. */
   .motion-sheet {
     transform-origin: top right;
-    animation: sheet-in var(--dur) var(--ease-out) backwards;
+    animation: sheet-in var(--dur) var(--ease-ui) backwards;
   }
 
   /* The status dot's single pulse (ACTION_NEEDED and CRITICAL only; the class is not set for the others). */
@@ -360,12 +367,12 @@ input[type="radio"] {
     inset: 0;
     border-radius: var(--radius-pill);
     background: currentColor;
-    animation: dot-pulse 900ms var(--ease-out) 400ms 1 backwards;
+    animation: dot-pulse var(--dur-narrative) var(--ease-ui) var(--dur-scenario) 1 backwards;
   }
 
   /* A sliding thumb or indicator: it moves by transform only. */
   .motion-slide {
-    transition: transform var(--dur) var(--ease-out);
+    transition: transform var(--dur) var(--ease-ui);
   }
 
   /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the
@@ -435,8 +442,8 @@ input[type="radio"] {
   display: grid;
   grid-template-rows: 0fr;
   transition:
-    grid-template-rows var(--dur) var(--ease-out),
-    opacity var(--dur) var(--ease-out);
+    grid-template-rows var(--dur) var(--ease-ui),
+    opacity var(--dur) var(--ease-ui);
   opacity: 0;
 }
 /* A fold's chevron turns with its own <details> only, never with an open fold around it (components/business/kit.tsx). */
@@ -466,7 +473,7 @@ details:not(.menu, :has(> .disclosure-body))::details-content {
   block-size: 0;
   overflow: clip;
   transition:
-    block-size var(--dur) var(--ease-out),
+    block-size var(--dur) var(--ease-ui),
     content-visibility var(--dur) allow-discrete;
 }
 details[open]:not(.menu, :has(> .disclosure-body))::details-content {
@@ -474,15 +481,13 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 }
 
 /* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
-   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They drift
-   very slowly: one 40 s drift, then they rest where they are (a 64 px blur that animates forever is paint work for the life of the
-   tab). The Cash disc is left out on a phone, where the tab bar covers it anyway. Cards stay solid on top. */
+   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They are still
+   (a 64 px blur that animates is paint work for the life of the tab, and no motion token covers a 40 s drift). The Cash disc is left out on a phone, where the tab bar covers it anyway. Cards stay solid on top. */
 .biz-disc {
   position: absolute;
   border-radius: var(--radius-pill);
   filter: blur(64px);
   opacity: 0.35;
-  animation: biz-drift 40s ease-in-out 1 forwards;
 }
 .biz-disc-home {
   top: -8rem;
@@ -497,7 +502,6 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   width: 40rem;
   height: 30rem;
   background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
-  animation-delay: -20s;
 }
 @media (max-width: 39.999rem) {
   .biz-disc-cash {
@@ -524,21 +528,21 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 .picture-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: picture-draw 900ms var(--ease-out) forwards;
+  animation: picture-draw var(--dur-narrative) var(--ease-ui) forwards;
 }
 .picture-draw-second {
-  animation-delay: 900ms;
+  animation-delay: var(--dur-narrative);
 }
 .picture-fade {
   opacity: 0;
-  animation: picture-fade 400ms var(--ease-out) forwards;
+  animation: picture-fade var(--dur-scenario) var(--ease-ui) forwards;
 }
 /* The first breach's one pulse, on an SVG circle (the HTML dot uses .motion-pulse). */
 .picture-pulse {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: dot-pulse 900ms var(--ease-out) 1200ms 1 forwards;
+  animation: dot-pulse var(--dur-narrative) var(--ease-ui) calc(var(--dur-narrative) * 2) 1 forwards;
 }
 
 /* A plotted bar (Deals: what each ask costs) grows from its left edge once, by transform; reduced motion leaves it full at once. */
@@ -552,7 +556,7 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 }
 .motion-grow {
   transform-origin: left center;
-  animation: bar-grow var(--dur-slow) var(--ease-out) 200ms backwards;
+  animation: bar-grow var(--dur-expanded) var(--ease-ui) var(--dur-fast) backwards;
 }
 
 /* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal
@@ -561,7 +565,9 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   display: none;
 }
 
-/* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
+/* Reduced motion: no transforms, no waiting, no looping. Animations end at once (0.001 ms) so a finished state is the only state; of the
+   transitions only opacity remains, at the duration its own token gave it (a colour, a transform, a height and a grid track change
+   at once). Components that choose in script (the chart cursors, the segmented pill) read the same signal through use-reduced-motion.ts. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -569,16 +575,13 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     animation-duration: 0.001ms !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-property: opacity !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
   .motion-lift:hover,
   .motion-press:not(:disabled):active {
     transform: none !important;
-  }
-  .biz-disc {
-    animation: none !important;
   }
   /* A frozen arc is no feedback: the busy state is an ellipsis instead. */
   .spinner {

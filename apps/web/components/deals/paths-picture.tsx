@@ -268,7 +268,7 @@ export function PathsPicture({
 
             {cursorX !== null ? (
               <g data-testid="path-cursor" data-day={cursorDay ?? undefined} data-preview={pday !== null ? "true" : "false"} className="pointer-events-none">
-                <g className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                <g className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
                   <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" data-testid="path-moment-band" />
                   <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                 </g>
@@ -295,7 +295,7 @@ export function PathsPicture({
                   strokeDasharray={hue.dash}
                   strokeWidth={hue.width + (on ? 1.5 : 0)}
                   opacity={on ? 1 : dimmed ? 0.4 : 0.85}
-                  className={`${hue.stroke} ${reduced ? "" : "transition-[opacity,stroke-width] duration-(--dur) ease-out"}`}
+                  className={`${hue.stroke} ${reduced ? "" : "transition-[opacity,stroke-width] duration-(--dur) ease-ui"}`}
                 />
               );
             })}
@@ -312,7 +312,7 @@ export function PathsPicture({
                   const fen = pday !== null ? pointAt(p, pday)?.closing_fen : moment.values.find((x) => x.key === p.key)?.closing_fen;
                   if (fen === undefined) return null;
                   return (
-                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(fen)}px)` }}>
+                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translate(${cursorX}px, ${yOf(fen)}px)` }}>
                       <Marker hue={hueOf(p)} />
                     </g>
                   );

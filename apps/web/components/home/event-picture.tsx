@@ -360,7 +360,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
 
                 {cursorX !== null ? (
                   <g data-testid="home-cursor" data-day={cursorDay ?? undefined} className="pointer-events-none">
-                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
                       <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" />
                       <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                     </g>
@@ -383,7 +383,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                 {cursorX !== null ? (
                   <g className="pointer-events-none">
                     {dots.map((d) => (
-                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-slow) ease-out"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
+                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-expanded) ease-ui"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
                     ))}
                   </g>
                 ) : null}

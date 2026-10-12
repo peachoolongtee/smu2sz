@@ -18,7 +18,7 @@ import { ChevronRightIcon } from "@/components/icons";
 export function FoldChevron({ deep = false, open, className = "" }: { deep?: boolean; open?: boolean; className?: string }) {
   return (
     <ChevronRightIcon
-      className={`shrink-0 transition-transform duration-(--dur) ease-out ${open === undefined ? "fold-chev" : open ? "rotate-90" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"} ${className}`}
+      className={`shrink-0 transition-transform duration-(--dur) ease-ui ${open === undefined ? "fold-chev" : open ? "rotate-90" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"} ${className}`}
     />
   );
 }

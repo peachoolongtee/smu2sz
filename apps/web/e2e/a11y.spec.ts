@@ -13,6 +13,8 @@ import { openStoryFold, STORY_STEPS } from "./helpers";
  */
 
 async function scan(page: Page, label: string) {
+  // Under reduced motion only opacity transitions remain (a fold opening fades in): axe must read the settled colours, not a frame of the fade.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const result = await new AxeBuilder({ page }).analyze();
   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);

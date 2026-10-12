@@ -35,11 +35,11 @@ export function FinancingSteps({ state, testId }: { state: FinancingState | unde
             aria-current={current ? "step" : undefined}
             data-step={step}
             data-on={current ? "true" : undefined}
-            className={`inline-flex items-center gap-1.5 text-sm transition-colors duration-200 ${current ? (done ? "font-bold text-ok-fg" : "font-bold text-brand-700") : done ? "text-ok-fg" : "text-ink-3"}`}
+            className={`inline-flex items-center gap-1.5 text-sm transition-colors duration-(--dur) ${current ? (done ? "font-bold text-ok-fg" : "font-bold text-brand-700") : done ? "text-ok-fg" : "text-ink-3"}`}
           >
             <span
               aria-hidden
-              className={`grid size-4 shrink-0 place-items-center rounded-full transition-colors duration-200 ${
+              className={`grid size-4 shrink-0 place-items-center rounded-full transition-colors duration-(--dur) ${
                 done ? "bg-ok-solid text-white" : current ? "bg-brand-600 ring-2 ring-brand-600 ring-offset-2 ring-offset-surface" : "border border-line-ui bg-surface"
               }`}
             >

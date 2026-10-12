@@ -88,7 +88,7 @@ export function InvoiceList({
                   data-testid={`recv-${r.receivable_id}`}
                   data-selected={selected ? "true" : undefined}
                   data-state={r.collection_state}
-                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 border-l-[3px] px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:bg-subtle"} transition-colors duration-200`}
+                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 border-l-[3px] px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:bg-subtle"} transition-colors duration-(--dur)`}
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
