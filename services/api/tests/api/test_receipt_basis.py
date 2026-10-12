@@ -231,7 +231,10 @@ def test_the_agreed_and_scheduled_words():
     assert words.basis_text("en", "AGREED", today=10, agreement_day=7) == "under the agreement made 3 days ago"
     assert words.basis_text("zh", "AGREED", today=10, agreement_day=7) == "按3 天前达成的协议"
     assert words.basis_text("en", "AGREED", today=0) == "under the agreement"
-    assert words.basis_text("en", "AGREED", today=0, buyer_name="Foshan Home Retail Co.") == "under the agreement with Foshan Home Retail Co."
+    assert words.basis_text("en", "AGREED", today=0, buyer_name="Foshan Home Retail Co.") == "under the agreement with Foshan"
+    assert words.basis_text("zh", "AGREED", today=0, buyer_name="Foshan Home Retail Co.") == "按与 Foshan 达成的协议"
+    assert words.basis_text("zh", "AGREED", today=0, buyer_name="佛山家居") == "按与佛山家居达成的协议"  # a Chinese name needs no spaces
+    assert words.pending_label("zh", "Foshan Home Retail Co.", "方案 A") == "如果 Foshan 接受方案 A"
 
 
 def test_an_agreement_that_writes_terms_on_the_recurring_billing_makes_those_receipts_agreed():
@@ -270,16 +273,16 @@ def _said(cash: dict[str, Any]) -> dict[str, list[str]]:
 
 
 def test_the_chinese_words_at_each_stage_have_no_english_and_no_ids(client):
-    names = ["Foshan Home Retail Co."]
+    names = ["Foshan Home Retail Co.", "Foshan"]
     cash = _home(client, "zh")["cash"]
     assert _by_day(cash["series"]) == {32: ("OWED", "应收：13 天前开票，32 天后到期"), 47: ("SCHEDULED", "按计划：尚未开票"),
                                        77: ("SCHEDULED", "按计划：尚未开票"), 107: ("SCHEDULED", "按计划：尚未开票")}
     assert english_leaks(_said(cash), names) == []
     oid = _offer(client)
     cash = _home(client, "zh")["cash"]
-    assert cash["pending"]["label"] == "如果Foshan Home Retail Co.接受方案 A"
-    assert cash["receipts_legend_text"] == "实线：按现行条款已应收或已按计划的款项。虚线：如果Foshan Home Retail Co.接受方案 A。"
-    assert cash["pending"]["receipt_rows"][0]["basis_text"] == "如果Foshan Home Retail Co.接受方案 A：报价后 2 天收到 ¥257,200"
+    assert cash["pending"]["label"] == "如果 Foshan 接受方案 A"
+    assert cash["receipts_legend_text"] == "实线：按现行条款已应收或已按计划的款项。虚线：如果 Foshan 接受方案 A。"
+    assert cash["pending"]["receipt_rows"][0]["basis_text"] == "如果 Foshan 接受方案 A：报价后 2 天收到 ¥257,200"
     assert english_leaks(_said(cash), names) == []
     client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
     cash = _home(client, "zh")["cash"]

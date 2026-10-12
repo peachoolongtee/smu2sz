@@ -134,6 +134,13 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
 OWED, SCHEDULED, AGREED, PENDING = "OWED", "SCHEDULED", "AGREED", "PENDING"
 
 
+def _who(lang: Lang, buyer_name: str) -> str:
+    """The buyer as a sentence says it: the house short name in both languages ("Foshan"); in Chinese a Latin name stands apart
+    from the characters around it ("如果 Foshan 接受方案 A")."""
+    short = buyer_short(buyer_name)
+    return f" {short} " if lang == "zh" and short.isascii() else short
+
+
 def _days(n: int, lang: Lang) -> str:
     return t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
 
@@ -148,8 +155,8 @@ def basis_text(lang: Lang, basis: str, *, today: int, issue_day: int | None = No
         return t(lang, "scheduled: not yet invoiced", "按计划：尚未开票")
     if basis == AGREED:
         if agreement_day is None:
-            return t(lang, f"under the agreement with {buyer_name}" if buyer_name else "under the agreement",
-                     f"按与{buyer_name}达成的协议" if buyer_name else "按已达成的协议")
+            return t(lang, f"under the agreement with {_who(lang, buyer_name)}" if buyer_name else "under the agreement",
+                     f"按与{_who(lang, buyer_name)}达成的协议" if buyer_name else "按已达成的协议")
         made = when_text(agreement_day, today, "en")
         return t(lang, f"under the agreement made {made}", f"按{when_text(agreement_day, today, 'zh')}达成的协议")
     # OWED
@@ -165,13 +172,13 @@ def basis_text(lang: Lang, basis: str, *, today: int, issue_day: int | None = No
 
 def pending_label(lang: Lang, buyer_name: str, option: str) -> str:
     """The pending line's name: "If Foshan accepts Option A"."""
-    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    who = _who(lang, buyer_name)
     return t(lang, f"If {who} accepts {option}", f"如果{who}接受{option}")
 
 
 def pending_text(lang: Lang, buyer_name: str, option: str, *, amount_fen: int, days_after: int, discount: bool = False) -> str:
     """One receipt that moves if the buyer accepts the reply: "if Foshan accepts Option A: ¥257,200 paid 2 days after the offer"."""
-    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    who = _who(lang, buyer_name)
     amount = whole_yuan(abs(amount_fen))
     if days_after <= 0:
         en_when, zh_when = "the same day", "当天"
@@ -185,7 +192,7 @@ def pending_text(lang: Lang, buyer_name: str, option: str, *, amount_fen: int, d
 
 def receipts_legend(lang: Lang, buyer_name: str, option: str) -> str:
     """The picture's legend sentence, present only while a reply is pending."""
-    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    who = _who(lang, buyer_name)
     return t(lang, f"Solid: money owed or scheduled under today's terms. Dashed: if {who} accepts {option}.",
              f"实线：按现行条款已应收或已按计划的款项。虚线：如果{who}接受{option}。")
 

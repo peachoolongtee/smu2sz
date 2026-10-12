@@ -624,7 +624,8 @@ NEW = ["status_word", "status_tone", "headline_conditional", "headline_note", "a
 def _names() -> list[str]:
     state = get_runtime().store.get_state()
     flows = [part for x in state.flows for part in (x.label, x.label.split(",")[0], x.label.split(" (")[0])]
-    return [*(c.name for c in state.counterparties), *(f.name for f in state.facilities), *flows]
+    shorts = [c.name.replace(",", " ").split()[0] for c in state.counterparties]  # the name an owner says aloud
+    return [*(c.name for c in state.counterparties), *shorts, *(f.name for f in state.facilities), *flows]
 
 
 @pytest.mark.parametrize("plan", [False, True])
