@@ -94,14 +94,14 @@ def read_rows(rt: Any, lang: Lang) -> tuple[Any, int, dict[str, Any], Partial]:
     return state, today, body, partial
 
 
-def _financing_links(rt: Any, rows: list[dict[str, Any]], partial: Partial) -> None:
+def _financing_links(rt: Any, rows: list[dict[str, Any]], partial: Partial) -> Any:
     """`financing_href` on each row: the decision record of the executed financing request for its invoice (the page the Activity and the
     Customer overview link to), else None (no financing, or no record the owner can open). Call under `rt.lock`."""
     for row in rows:
         row["financing_href"] = None
     wanted = {row["receivable_id"]: row for row in rows if row["financing_state"] != "NONE"}
     if not wanted:
-        return
+        return None
     from app.api.decisions import load_context
     from app.decisions.identity import decision_id_for
     from app.domain.models import OperationStatus
@@ -116,20 +116,28 @@ def _financing_links(rt: Any, rows: list[dict[str, Any]], partial: Partial) -> N
             did = decision_id_for(e.payload, e.idempotency_key, ctx.commitments, approval_id=e.result.approval_id)
             if did is not None and did in known:
                 wanted[rid]["financing_href"] = f"/decisions/{quote(did, safe='')}"
+        return ctx.entries
     except Exception:
         logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the financing links")
         partial.add("decision_record")
+        return None
 
 
-def _say_basis(body: dict[str, Any], books: Any, commitments: list[Any], store: Any, today: int, lang: str, partial: Partial) -> None:
+def _say_basis(rt: Any, body: dict[str, Any], today: int, lang: str, entries: Any, partial: Partial) -> None:
     """What each row rests on (the Cash picture's words, so the two pages agree) and the note on billings not yet invoiced, which are not
-    receivables and so are not rows. A supporting read: the rows stand without it, and `partial` says so."""
+    receivables and so are not rows. A supporting read, built whole inside its guard from the books and the log the request already read:
+    the rows stand without it, and `partial` says so. Call under `rt.lock`."""
     try:
-        reader = BasisReader(books, today, lang, agreement_days(read_entries(store.operations())[0], commitments))
+        store = rt.store
+        commitments = store.commitments()
+        books = current_books(store.get_state(), commitments)
+        if entries is None:
+            entries = read_entries(store.operations())[0]
+        reader = BasisReader(books, today, lang, agreement_days(entries, commitments))
         for row in body["rows"]:
             b = reader.of_receivable(row["receivable_id"])
             row["basis"], row["basis_text"] = (b.code, reader.text(b)) if b is not None else (None, None)
-        billing = scheduled_billing(books.state)
+        billing = scheduled_billing(books.state, store.get_mandate().horizon_days)
         body["summary"]["scheduled_note"] = (words.scheduled_note(lang, billing[0], max(billing[1] - today, 0), today)
                                              if billing is not None else None)
     except Exception:
@@ -142,7 +150,7 @@ def get_receivables(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state, today, body, partial = read_rows(rt, lang)
-        _say_basis(body, current_books(state, rt.store.commitments()), rt.store.commitments(), rt.store, today, lang, partial)
-        _financing_links(rt, body["rows"], partial)
+        entries = _financing_links(rt, body["rows"], partial)
+        _say_basis(rt, body, today, lang, entries, partial)
     return displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, "partial": partial.view(lang),
                       **last_read(today, lang)})

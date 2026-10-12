@@ -8,15 +8,16 @@ Receivables rows say the same words as the cash picture."""
 from __future__ import annotations
 
 import logging
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
 from app.api.receipt_basis import Basis, BasisReader, agreement_days, scheduled_billing
 from app.api.runtime import get_runtime
-from app.books import Books
+from app.books import Books, current_books
 from app.domain.fixtures import load_scenario
-from app.domain.models import InvoiceAdjustment, LedgerEvent, LedgerEventKind
+from app.domain.models import InvoiceAdjustment, LedgerEvent, LedgerEventKind, OperationStatus
 from app.strategy import words
 from tests.api.conftest import english_leaks
 
@@ -229,7 +230,7 @@ def test_the_agreed_and_scheduled_words():
     assert words.basis_text("en", "SCHEDULED", today=0) == "scheduled: not yet invoiced"
     assert words.basis_text("zh", "SCHEDULED", today=0) == "按计划：尚未开票"
     assert words.basis_text("en", "AGREED", today=10, agreement_day=7) == "under the agreement made 3 days ago"
-    assert words.basis_text("zh", "AGREED", today=10, agreement_day=7) == "按3 天前达成的协议"
+    assert words.basis_text("zh", "AGREED", today=10, agreement_day=7) == "按 3 天前达成的协议"
     assert words.basis_text("en", "AGREED", today=0) == "under the agreement"
     assert words.basis_text("en", "AGREED", today=0, buyer_name="Foshan Home Retail Co.") == "under the agreement with Foshan"
     assert words.basis_text("zh", "AGREED", today=0, buyer_name="Foshan Home Retail Co.") == "按与 Foshan 达成的协议"
@@ -250,8 +251,8 @@ def test_an_agreement_that_writes_terms_on_the_recurring_billing_makes_those_rec
 
 def test_the_scheduled_billing_is_the_earliest_not_yet_invoiced():
     state, _ = load_scenario()
-    assert scheduled_billing(state) == (42_000_000, 2)
-    assert scheduled_billing(state.model_copy(update={"recurring_invoices": []})) is None
+    assert scheduled_billing(state, 120) == (42_000_000, 2)
+    assert scheduled_billing(state.model_copy(update={"recurring_invoices": []}), 120) is None
 
 
 def test_a_log_that_names_no_agreement_gives_no_day():
@@ -290,7 +291,7 @@ def test_the_chinese_words_at_each_stage_have_no_english_and_no_ids(client):
     assert english_leaks(_said(cash), names) == []
     r = client.get("/receivables", params={"lang": "zh"}).json()
     assert english_leaks({"rows": [x["basis_text"] for x in r["rows"]], "note": r["summary"]["scheduled_note"]}, names) == []
-    assert r["summary"]["scheduled_note"] == "另有 ¥420,000 计划于2 天后开票；目前尚未应收"
+    assert r["summary"]["scheduled_note"] == "另有 ¥420,000 计划于 2 天后开票；目前尚未应收"
 
 
 def test_the_english_and_chinese_reads_have_the_same_figures_and_codes(client):
@@ -320,3 +321,151 @@ def test_a_basis_that_cannot_be_read_is_a_partial_home_never_a_broken_one(client
     assert [e["basis"] for e in h["cash"]["events_rail"]] == [None] * len(h["cash"]["events_rail"])
     r = client.get("/receivables").json()
     assert r["partial"]["missing"] == ["receipt_basis"] and r["rows"]
+
+
+# ---------------------------------------------------------------- review: what is and is not an agreement
+
+
+def _event(kind: LedgerEventKind, day: int, amount: int, label: str, ref: str | None) -> LedgerEvent:
+    return LedgerEvent(day=day, kind=kind, amount_fen=amount, label=label, ref=ref)
+
+
+def test_a_plans_early_pay_leg_and_a_discounted_bill_are_not_an_agreement(client):
+    oid = _offer(client)
+    rt = get_runtime()
+    plain = BasisReader(current_books(rt.store.get_state(), rt.store.commitments()), 0, "en")
+    leg = _event(LedgerEventKind.EARLY_RECEIPT, 3, 10_000_000, "Early payment on RCV-A", "RCV-A")
+    bill = _event(LedgerEventKind.EARLY_RECEIPT, 3, 10_000_000, "Bill discounted, Bank acceptance bill", "FAC-BILL")
+    discount = _event(LedgerEventKind.DISCOUNT, 3, -50_000, "Early-payment discount on RCV-A", "FAC-EARLY")
+    assert [plain.of(x) for x in (leg, bill, discount)] == [None, None, None]  # no agreement is recorded: nothing to rest on
+    assert plain.fields(leg) == {}
+    # with the agreement recorded, the obligation's own early settlement is AGREED and the plan's leg on another day still is not
+    client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
+    agreed = BasisReader(current_books(rt.store.get_state(), rt.store.commitments()), 0, "en")
+    settlement = _event(LedgerEventKind.EARLY_RECEIPT, 2, 25_720_000, "Early settlement of RCV-A (x)", "RCV-A")
+    assert agreed.of(settlement) is not None and agreed.of(settlement).code == "AGREED"  # type: ignore[union-attr]
+    assert agreed.of(_event(LedgerEventKind.EARLY_RECEIPT, 3, 10_000_000, "Early payment on RCV-A", "RCV-A")) is None
+    assert agreed.of(bill) is None and agreed.of(discount) is None
+
+
+def test_the_reply_plans_own_funding_legs_are_not_pending(client, monkeypatch):
+    from app.api import offer_picture
+
+    _offer(client)
+    real = offer_picture.cached_picture
+
+    def with_a_funding_leg(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
+        pic = real(rt, offer_id, lang)
+        pic = {**pic, "paths": [dict(p) for p in pic["paths"]]}
+        path = next(p for p in pic["paths"] if p["recommended"])
+        path["series"] = [{**r, "events": list(r["events"])} for r in path["series"]]
+        row = next(r for r in path["series"] if r["day"] == 3)
+        row["events"].append({"kind": "EARLY_RECEIPT", "label": "Early payment", "label_short": "Early payment", "amount_fen": 10_000_000,
+                              "amount_display": "", "amount_short": "¥100k"})
+        return pic
+
+    monkeypatch.setattr(offer_picture, "cached_picture", with_a_funding_leg)
+    pending = _home(client)["cash"]["pending"]
+    assert [(r["day"], r["kind"]) for r in pending["receipt_rows"]] == [(2, "EARLY_RECEIPT"), (2, "DISCOUNT"), (32, "RECEIPT")]
+    leg = next(e for r in pending["series"] if r["day"] == 3 for e in r["events"] if e["kind"] == "EARLY_RECEIPT")
+    assert "basis" not in leg  # FLOW runs it whatever the buyer says: it is not what the buyer's acceptance moves
+
+
+def test_the_agreement_is_matched_by_the_payload_never_by_a_word_of_the_message():
+    mine = SimpleNamespace(id="CMT-1", offer_id="OFF-1", offer_version=1, nonce="n-1")
+    other = SimpleNamespace(id="CMT-2", offer_id="OFF-2", offer_version=1, nonce="n-2")
+    ok = SimpleNamespace(status=OperationStatus.EXECUTED, message="Agreement CMT-2 recorded")  # names the other one in words
+    accept = SimpleNamespace(kind="ACCEPT_OFFER", day=7, result=ok, payload={"offer_id": "OFF-1", "offer_version": 1, "nonce": "n-1"})
+    record = SimpleNamespace(kind="RECORD_COMMITMENT", day=9, result=ok, payload={"commitment_id": "CMT-2"})
+    refused = SimpleNamespace(kind="ACCEPT_OFFER", day=1, result=SimpleNamespace(status=OperationStatus.REFUSED, message="CMT-1"),
+                              payload={"offer_id": "OFF-1", "offer_version": 1, "nonce": "n-1"})
+    assert agreement_days([refused, accept, record], [mine, other]) == {"CMT-1": 7, "CMT-2": 9}  # type: ignore[arg-type]
+
+
+def test_a_billing_beyond_the_horizon_is_not_scheduled():
+    state, _ = load_scenario()
+    assert scheduled_billing(state, 1) is None  # the next invoice is in 2 days
+    assert scheduled_billing(state, 2) == (42_000_000, 2)
+
+
+# ---------------------------------------------------------------- review: one stress sentence, the home's faults, the books once
+
+
+@pytest.fixture
+def exposed(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.api import strategy_exposure
+    from app.api.runtime import Runtime, set_runtime
+    from app.config import get_settings
+    from app.mandate.fixture import demo_owner_public_key_hex
+    from app.persistence import InMemoryLedgerStore
+
+    monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    rt = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
+    rt.reset()
+    set_runtime(rt)
+    strategy_exposure.clear_cache()
+    from app.main import app
+
+    yield TestClient(app, headers={"X-Owner-Token": "demo-owner-token"})
+    set_runtime(None)
+    strategy_exposure.clear_cache()
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_homes_stress_sentences_are_the_buyer_routes(exposed, lang):
+    _offer(exposed)
+    home = exposed.get("/home", params={"lang": lang}).json()["cash"]["stress"]
+    now = exposed.get("/buyers/BUYER-1/exposure", params={"lang": lang, "spare": 0}).json()["stress"]["now"]
+    assert home["text"] == now["text"] and home["net_later_text"] == now["net_later_text"]
+    assert home["net_later_text"] == words.net_later_text(lang, now["net_later_fen"], 30)  # one function says it
+    assert home["funding_text"] == now["funding_text"]
+
+
+def test_the_net_later_covers_every_open_invoice_of_the_buyer(exposed):
+    state = get_runtime().store.get_state()
+    two = state.model_copy(update={"receivables": [*state.receivables, state.receivables[0].model_copy(update={"id": "RCV-Z"})]})
+    get_runtime().store.put_state(two)
+    home = exposed.get("/home").json()["cash"]["stress"]
+    assert home["net_later_text"] == "about ¥840k, a month later"
+
+
+def test_a_fault_in_the_pending_line_or_the_grey_line_is_a_receipt_basis_partial_not_a_summary_one(client, monkeypatch):
+    from app.api import home_hybrid
+
+    _offer(client)
+
+    def boom(*_a: Any, **_k: Any) -> None:
+        raise RuntimeError("no pending")
+
+    monkeypatch.setattr(home_hybrid, "_pending", boom)
+    h = client.get("/home").json()
+    assert h["partial"]["missing"] == ["receipt_basis"] and "pending" not in h["cash"] and h["attention"]["items"]
+    monkeypatch.undo()
+    monkeypatch.setattr(home_hybrid, "annotate", boom)
+    h = client.get("/home").json()
+    assert h["partial"]["missing"] == ["receipt_basis"] and h["cash"]["counterfactual_series"] and h["attention"]["items"]
+
+
+def test_the_basis_reads_the_books_inside_its_guard_and_once(client, monkeypatch):
+    from app.api import receivables
+
+    real, calls = receivables.current_books, []
+
+    def second_fails(*a: Any, **k: Any) -> Any:
+        calls.append(1)
+        if len(calls) > 1:
+            raise RuntimeError("no books")
+        return real(*a, **k)
+
+    monkeypatch.setattr(receivables, "current_books", second_fails)
+    r = client.get("/receivables").json()
+    assert r["rows"] and r["partial"]["missing"] == ["receipt_basis"] and len(calls) == 2
+
+
+def test_the_home_and_the_hybrid_say_the_buyer_by_one_short_name():
+    from app.api import home_hybrid
+
+    assert home_hybrid.buyer_short("Foshan Home Retail Co.", "zh") == home_hybrid.buyer_short("Foshan Home Retail Co.", "en") == "Foshan"
+    assert words.buyer_short("Foshan Home Retail Co.") == "Foshan"

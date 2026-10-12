@@ -15,12 +15,11 @@ a discounted bill) is left without a basis rather than given a wrong one.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from app.api.presentation import buyer_of_receivable, party_name
+from app.api.presentation import buyer_of_receivable, find_agreement, party_name
 from app.books import Books
 from app.domain.models import (
     Commitment,
@@ -37,7 +36,6 @@ from app.strategy import words
 
 RECEIPT_KINDS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT, LedgerEventKind.DISCOUNT)
 _AGREEMENT_KINDS = ("ACCEPT_OFFER", "RECORD_COMMITMENT")
-_TRAILING_ID = re.compile(r"\(([^()]+)\)\s*$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,15 +48,17 @@ class Basis:
 
 
 def agreement_days(entries: Iterable[Any], commitments: Sequence[Commitment]) -> dict[str, int]:
-    """The day each commitment was recorded: the day of the executed accept / record entry of the log that names it."""
+    """The day each commitment was recorded: the day of the executed accept / record entry of the log that names it, matched as the
+    Activity rows match a queued agreement (`find_agreement`: the commitment id of a record, the offer, version and nonce of an accept),
+    never by a word of the result's message."""
     out: dict[str, int] = {}
+    held = list(commitments)
     for e in entries:
         if e.kind not in _AGREEMENT_KINDS or e.result.status != OperationStatus.EXECUTED or e.day is None:
             continue
-        message = e.result.message or ""
-        for c in commitments:
-            if c.id in message:
-                out.setdefault(c.id, e.day)
+        c = find_agreement({"kind": e.kind, **(e.payload or {})}, held)
+        if c is not None:
+            out.setdefault(c.id, e.day)
     return out
 
 
@@ -103,6 +103,16 @@ class BasisReader:
         hit = next((a for a in self.state.invoice_adjustments if not a.contingent_gain and covers(a, ref)), None)
         return (True, hit.commitment_id or None) if hit is not None else (False, None)
 
+    def _early_settlement(self, e: LedgerEvent) -> Obligation | None:
+        """The recorded immediate-discount obligation this early receipt settles, or None. The engine's posting for an obligation carries
+        no obligation id of its own (its DISCOUNT posting does: that is matched by `ref`), so the receipt is matched by what the
+        obligation fixes: its receivable, and its settlement day when the obligation names one. A plan's early-pay funding leg (its ref
+        is the invoice too) and a discounted bill (its ref is the facility) match no obligation unless one is recorded for the same
+        invoice on the same day; they are never read as an agreement by name or by label."""
+        return next((o for o in self.books.obligations
+                     if o.type == ObligationType.IMMEDIATE_DISCOUNT and e.ref is not None and o.base.receivable_id == e.ref
+                     and (o.effective_day is None or o.effective_day == e.day)), None)
+
     def of(self, e: LedgerEvent) -> Basis | None:
         """The basis of one trajectory event, or None when it is not a receipt or the books do not explain it."""
         if e.kind not in RECEIPT_KINDS:
@@ -112,9 +122,7 @@ class BasisReader:
             return Basis(words.AGREED, ob.base.receivable_id, self._owner(ob)) if ob is not None else None
         rid = e.ref
         if e.kind == LedgerEventKind.EARLY_RECEIPT:
-            named = _TRAILING_ID.search(e.label)
-            ob = self._obligations.get(named.group(1)) if named else None
-            ob = ob or self._early_pay(rid)
+            ob = self._early_settlement(e)
             return Basis(words.AGREED, rid, self._owner(ob)) if ob is not None else None
         if rid is None:
             return None
@@ -165,9 +173,9 @@ def annotate(rows: list[dict[str, Any]] | None, traj: Any, reader: BasisReader) 
             shown.update(reader.fields(raw))
 
 
-def scheduled_billing(state: FinancialState) -> tuple[int, int] | None:
-    """(the total, the day it is invoiced) of the earliest recurring billing not yet invoiced, or None. The face is the one the
-    clock will write on the invoice (`issue_terms`); a billing the books do not run (every 0 days) is not scheduled."""
+def scheduled_billing(state: FinancialState, horizon_days: int) -> tuple[int, int] | None:
+    """(the total, the day it is invoiced) of the earliest recurring billing not yet invoiced inside the forecast horizon, or None. The
+    face is the one the clock will write on the invoice (`issue_terms`); a billing the books do not run (every 0 days) is not scheduled."""
     from app.financial.invoices import issue_terms, recurring_receivable_id
 
     soonest: dict[int, int] = {}
@@ -175,6 +183,8 @@ def scheduled_billing(state: FinancialState) -> tuple[int, int] | None:
         if ri.every_days <= 0:
             continue
         day = ri.next_issue_day
+        if day > state.as_of_day + horizon_days:  # the forecast does not reach it
+            continue
         face = issue_terms(state, InvoiceRef(recurring_receivable_id(ri.counterparty_id, day), ri.counterparty_id, day),
                            ri.face_fen, ri.terms_days)["face_fen"]
         soonest[day] = soonest.get(day, 0) + (face if isinstance(face, int) else ri.face_fen)

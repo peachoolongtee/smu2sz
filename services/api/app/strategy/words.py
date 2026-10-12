@@ -144,6 +144,11 @@ def _who(lang: Lang, buyer_name: str) -> str:
     return f" {short} " if lang == "zh" and short.isascii() else short
 
 
+def _gap(text: str) -> str:
+    """A space after a Chinese word when a number follows, as the house writes it ("按 3 天前", "于 2 天后")."""
+    return f" {text}" if text[:1].isdigit() else text
+
+
 def _days(n: int, lang: Lang) -> str:
     return t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
 
@@ -161,7 +166,7 @@ def basis_text(lang: Lang, basis: str, *, today: int, issue_day: int | None = No
             return t(lang, f"under the agreement with {_who(lang, buyer_name)}" if buyer_name else "under the agreement",
                      f"按与{_who(lang, buyer_name)}达成的协议" if buyer_name else "按已达成的协议")
         made = when_text(agreement_day, today, "en")
-        return t(lang, f"under the agreement made {made}", f"按{when_text(agreement_day, today, 'zh')}达成的协议")
+        return t(lang, f"under the agreement made {made}", f"按{_gap(when_text(agreement_day, today, 'zh'))}达成的协议")
     # OWED
     if issue_day is None or due_day is None:
         return t(lang, "owed", "应收")
@@ -205,9 +210,16 @@ def scheduled_note(lang: Lang, amount_fen: int, in_days: int, today: int) -> str
     owed yet"."""
     when = when_text(today + in_days, today, lang)
     amount = whole_yuan(amount_fen)
-    return t(lang, f"{amount} more is scheduled to be invoiced {when}; it is not owed yet", f"另有 {amount} 计划于{when}开票；目前尚未应收")
+    return t(lang, f"{amount} more is scheduled to be invoiced {when}; it is not owed yet", f"另有 {amount} 计划于{_gap(when)}开票；目前尚未应收")
+
+
+def net_later_text(lang: Lang, net_fen: int, delay_days: int) -> str:
+    """What a buyer's open invoices leave the owner when each is paid `delay_days` after the day its net is priced on: "about ¥160k, a
+    month later". One sentence for the Home's stress row and the buyer's pages (`net_fen` is the sum of the nets)."""
+    when = t(lang, "a month later", "一个月后") if delay_days == 30 else t(lang, f"{delay_days} days later", f"{delay_days} 天后")
+    return t(lang, f"about {fmt_yuan_about(net_fen)}, {when}", f"约 {fmt_yuan_about(net_fen)}，{when}")
 
 
 __all__ = ["AGREED", "BP_FULL", "OWED", "PENDING", "SCHEDULED", "basis_text", "buyer_short", "financing_state_words", "invoice_label",
-           "invoice_labels", "net_words", "pending_label", "pending_text", "receipts_legend", "scheduled_note", "share_bp",
+           "invoice_labels", "net_later_text", "net_words", "pending_label", "pending_text", "receipts_legend", "scheduled_note", "share_bp",
            "share_text", "whole_yuan"]

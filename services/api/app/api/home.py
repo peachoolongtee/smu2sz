@@ -1185,7 +1185,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                 rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
                 action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
                 low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
-                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader))
+                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial))
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the home summary could not be built")
             partial.add("summary")
