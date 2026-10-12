@@ -7590,7 +7590,7 @@
         "kinds": [
           "lowest"
         ],
-        "word": "Lowest point",
+        "word": "Lowest, Option A and Option B",
         "text": "On every path: Debt service −¥45k.",
         "values": [
           {
@@ -7714,7 +7714,7 @@
         "kinds": [
           "lowest"
         ],
-        "word": "Lowest point",
+        "word": "Lowest, as asked",
         "text": "On every path: Debt service −¥45k. As asked, cash is below your minimum.",
         "values": [
           {
@@ -15505,7 +15505,7 @@
         "kinds": [
           "lowest"
         ],
-        "word": "最低点",
+        "word": "最低点，方案 A、方案 B",
         "text": "每条路径都有：债务还款 −¥45k。",
         "values": [
           {
@@ -15629,7 +15629,7 @@
         "kinds": [
           "lowest"
         ],
-        "word": "最低点",
+        "word": "最低点，按对方要求",
         "text": "每条路径都有：债务还款 −¥45k。 按对方要求的现金低于您的最低现金储备。",
         "values": [
           {
