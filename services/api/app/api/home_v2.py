@@ -12,7 +12,7 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here.
-    chart                 the scope the chart states, its legend (current / proposed / hypothetical) and the lowest point's inspector
+    chart                 the scope the chart states, its legend (current / planned / hypothetical) and the lowest point's inspector
     links                 where the rest of the company's picture lives
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
@@ -258,7 +258,7 @@ def _chart(c: HomeRead) -> dict[str, Any]:
     legend = [{"label": (t(lang, "Current books · the plan ran", "当前账目 · 方案已执行") if _plan_has_run(c.state)
                          else t(lang, "Current books · no new funding", "当前账目 · 未新增融资")), "kind": "current"}]
     if c.plan_traj is not None:
-        legend.append({"label": t(lang, f"If FLOW's plan runs ({_planned(lang)})", f"如果 FLOW 的方案执行（{_planned(lang)}）"), "kind": "proposed"})
+        legend.append({"label": t(lang, f"If FLOW's plan runs ({_planned(lang)})", f"如果 FLOW 的方案执行（{_planned(lang)}）"), "kind": "planned"})
     low_fen, low_day = c.low
     gap = low_fen - floor
     if gap < 0:

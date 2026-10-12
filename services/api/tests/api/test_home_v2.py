@@ -117,7 +117,7 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
-                               {"label": "If FLOW's plan runs (planned)", "kind": "proposed"}]
+                               {"label": "If FLOW's plan runs (planned)", "kind": "planned"}]
     assert chart["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "−¥105,000", "minimum_display": "¥300,000",
         "third_label": "Shortfall", "third_display": "¥405,000",
@@ -195,7 +195,7 @@ def test_the_planned_word_is_the_financing_vocabularys_own(api: TestClient) -> N
         word = state_word(lang, state_of(None, planned=True))
         v2 = _v2(api, lang)
         assert word in v2["kpis"]["funding"]["eyebrow"].lower() and word in v2["chart"]["legend"][1]["label"] and word in v2["action"]["text"]
-        assert word in v2["chart"]["lowest_inspector"]["note"] and "propos" not in str(v2).lower().replace('"kind": "proposed"', "").replace("'proposed'", "")
+        assert word in v2["chart"]["lowest_inspector"]["note"] and "propos" not in str(v2).lower().replace("'proposed'", "")
     assert (state_word("en", "PLANNED"), state_word("zh", "PLANNED")) == ("planned", "计划中")
 
 
