@@ -274,7 +274,7 @@ const ADVANCED_TITLE: Record<AdvancedKey, "biz.deals.parsed" | "biz.deals.origin
  * read the message, the message itself, every check, the formulas, the engine's verdict and the audit evidence. The page folds the verdict's
  * existing fields; it copies none of them.
  */
-export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[] }) {
+export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[]; /** Only these sections, each its own fold, without the "Advanced details" fold around them (the decision queue's evidence: the buyer's message and the calculations). */ only?: AdvancedKey[] }) {
   const { t, te, lang } = useI18n();
   const [active, setActive] = useState<string | null>(null);
   const keys = Object.keys(ws.advanced.keys) as AdvancedKey[];
@@ -364,6 +364,20 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
       </div>
     ),
   };
+  if (only) {
+    const title: Partial<Record<AdvancedKey, string>> = { source_text: t("dq.link.message"), formula: t("dq.link.calcs") };
+    return (
+      <div className="space-y-2" data-testid="queue-evidence">
+        {keys
+          .filter((k) => only.includes(k) && k in body && body[k] !== null)
+          .map((k) => (
+            <Disclosure key={k} testId={`deal-adv-${k}`} summary={title[k] ?? t(ADVANCED_TITLE[k])}>
+              <div className="pt-1">{body[k]}</div>
+            </Disclosure>
+          ))}
+      </div>
+    );
+  }
   return (
     <Disclosure className="border-t border-line pt-1" testId="deal-advanced" summary={t("biz.deals.advanced")}>
       <div className="space-y-2">

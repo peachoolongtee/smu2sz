@@ -26,6 +26,7 @@
 //     server's chain includes that commitment id, so it differs on every run. They are re-derived (sha256 over the op's
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
+//   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
 //
 // The decision record (Wave 2, ADR-0011) is recorded as snapshots in decisions.json, { name: { en, zh } }, each one GET /decisions/{id} read at
@@ -48,6 +49,11 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
 // home_summary_day0_counter[_zh].json is GET /home on the opening books with the package offer read and no reply sent (cash.pending and its legend; ticket #116).
+//
+// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
+// FLOW has read it, on the opening books. One read carries every path (the sentences of every path are in `band.by_path`), so there is no per-response file. The API needs
+// FEATURE_EXPOSURE=1 (and FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 as above):
+//   node scripts/record-mocks.mjs --api http://localhost:8193 --exposure
 //
 // receivables/<point>[_zh].json   GET /receivables (the Receivables page's rows and summary) at each point of the home's story: day0, quiet,
 // day2, after_fund, day34 (and its noreceipt / half / residual books), pending, after, settled, in both languages; receivables/offer[_zh].json is
@@ -85,12 +91,13 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
+const EXPOSURE = process.argv.includes("--exposure");
 const OVERVIEW = process.argv.includes("--overview");
 const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
@@ -323,6 +330,31 @@ if (STRATEGY) {
   await live.demoReset();
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} strategy files into ${join(OUT, "strategy")} from ${API}`);
+  process.exit(0);
+}
+
+// --exposure: the one exposure recording and nothing else (see the header).
+if (EXPOSURE) {
+  await reset();
+  const id = await submitSample("EX01");
+  await evaluate(id);
+  const [en, zh] = [await live.getOfferExposure(id, "en"), await live.getOfferExposure(id, "zh")];
+  if (!en || !zh) throw new Error("the exposure route is off: start the API with FEATURE_EXPOSURE=1");
+  // The seconds the call and each spare-capacity search took are timings, not answers.
+  const stamp = (v) => {
+    const out = JSON.parse(JSON.stringify(v));
+    out.computed_in_seconds = 0;
+    for (const c of Object.values(out.capacity ?? {})) if (c?.spare) c.spare.seconds = 0;
+    return out;
+  };
+  files["offer_exposure_ex01.json"] = { en: stamp(en), zh: stamp(zh) };
+  // The deals read opened with a customer (`GET /deals?customer=BUYER-1&path=<the recommended counter>`): the open offer then carries `context.back`.
+  const pic = await live.getOfferPicture(id, "en");
+  const recommended = pic.paths?.find((p) => p.recommended)?.key;
+  files["deals_day0_evaluated_back.json"] = await live.getDeals("en", { customer: "BUYER-1", path: recommended });
+  await live.demoReset();
+  for (const name of Object.keys(files)) write(name, files[name]);
+  console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);
   process.exit(0);
 }
 

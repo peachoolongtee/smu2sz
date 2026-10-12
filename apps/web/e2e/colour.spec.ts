@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { filledBrand } from "./helpers";
+import { filledBrand, openReview } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -80,6 +80,8 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   await page.goto("/deals");
   await page.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  // (the queue's card carries the one filled button, "Review and send the counter"; opened, the send takes its place)
+  await openReview(page);
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   // The channel chip is neutral, not the "fine" green (the inbox is one row until it is asked for).

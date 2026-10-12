@@ -282,6 +282,15 @@ input[type="radio"] {
     animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
   }
 
+  /* The Deals queue: a selected deal replaces the detail with one quick fade (--dur, 150 to 200 ms); what is inside it does not reveal again on top of it. */
+  .motion-select {
+    animation: biz-reveal var(--dur) var(--ease-out) backwards;
+  }
+  .motion-select .motion-reveal,
+  .motion-select .motion-rise > * {
+    animation: none;
+  }
+
   /* One thing replacing another in place (the chosen invoice's detail): the same arrival at the base duration, 200 ms. */
   .motion-swap {
     animation: biz-reveal var(--dur) var(--ease-out) backwards;

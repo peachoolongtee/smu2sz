@@ -93,3 +93,19 @@ export async function openStoryFold(page: Page, card: "story-more" | "story-toda
   await expect(fold).toBeAttached();
   if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
 }
+
+/** The open deal's verdict heading: the decision queue's `h2`, or (a server without the exposure read) the page's own. */
+export const verdictHeading = (page: Page): Locator => page.getByTestId("queue-heading").or(page.getByTestId("deal-recommendation"));
+
+/** The queue's "Review and send the counter" opens the send in place; a page without the queue has the send already. Waits for whichever comes first, then opens the review if there is one. */
+export async function openReview(page: Page): Promise<void> {
+  const review = page.getByTestId("queue-review-open");
+  await review.or(page.getByTestId("deal-send")).first().waitFor();
+  if (await review.count()) await review.click();
+}
+
+/** The queue holds the advanced details (the buyer's message, the calculations) inside its comparison fold: open that fold when there is one. */
+export async function openCompare(page: Page): Promise<void> {
+  const fold = page.getByTestId("queue-compare");
+  if ((await fold.count()) && !(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
+}

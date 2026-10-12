@@ -26,6 +26,8 @@ export interface PathsState {
   onHover: (key: string | null) => void;
   picked: PicturePath | null;
   recommended: PicturePath | null;
+  /** A send is in flight (the decision queue holds the picks until it ends). */
+  locked?: boolean;
   /** What the reply bar now shows, said politely after a pick (the bar sits far above the columns); empty until the owner picks. */
   said: string;
 }
@@ -118,20 +120,45 @@ export function PathsReply({ picture, state, ...props }: ReplyProps & { state: P
  * The picture of the three paths with its moments, then one column per path (a path per line: the offer as asked, then each reply FLOW has ready). Nothing
  * is drawn while there is nothing to compare (no paths, an outcome already, or the picture still on its way).
  */
-export function PathsBody({ picture, state, v, negotiation }: { picture: OfferPictureView | null | undefined; state: PathsState; v: VerdictView; negotiation: NegotiationView | null }) {
+export function PathsBody({
+  picture,
+  state,
+  v,
+  negotiation,
+  title,
+  above,
+  below,
+  stress,
+  flat = true,
+}: {
+  picture: OfferPictureView | null | undefined;
+  state: PathsState;
+  v: VerdictView;
+  negotiation: NegotiationView | null;
+  /** Another heading than the page's own ("Cash on each path" on the decision queue). */
+  title?: string;
+  /** Above the picture (the paid-late toggle) and under the columns (the exposure band). */
+  above?: React.ReactNode;
+  below?: React.ReactNode;
+  /** The picked path's late-payment line, when the owner asked to see it. */
+  stress?: { series: { day: number; closing_fen: number }[]; label: string } | null;
+  flat?: boolean;
+}) {
   const { t } = useI18n();
   if (!pathsUsable(picture, negotiation, v)) return null;
   const full = picture as OfferPictureView & { paths: PicturePath[]; moments: PictureMoment[] };
   const economics = (p: PicturePath): CounterEconomics | null => v.counters.find((c) => c.id === p.key || (c.label_when ?? c.label) === p.label)?.economics ?? null;
   return (
     <section aria-labelledby="deal-paths-title" id="deal-paths" className="motion-reveal min-w-0" data-testid="deal-paths">
-      <Card flat id="deal-paths-head" title={t("biz.deals.paths.title")}>
+      <Card flat={flat} id="deal-paths-head" title={title ?? t("biz.deals.paths.title")}>
         <div className="space-y-3 pt-1">
+          {above}
           <p role="status" className="sr-only" data-testid="path-pick-status">
             {state.said}
           </p>
-          <PathsPicture picture={full} pick={state.pick} hoverKey={state.hoverKey} onHover={state.onHover} stop={state.stop} onStop={state.onStop} />
-          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} />
+          <PathsPicture picture={full} pick={state.pick} hoverKey={state.hoverKey} onHover={state.onHover} stop={state.stop} onStop={state.onStop} stress={stress} />
+          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} locked={state.locked} />
+          {below}
         </div>
       </Card>
     </section>

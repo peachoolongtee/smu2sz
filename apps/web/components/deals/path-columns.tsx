@@ -36,6 +36,7 @@ export function PathColumns({
   onHover,
   economics,
   windowMonths,
+  locked = false,
 }: {
   paths: PicturePath[];
   pick: string;
@@ -45,6 +46,8 @@ export function PathColumns({
   economics: (p: PicturePath) => CounterEconomics | null;
   /** The server's valuation window in months (the verdict's `financial_impact.window_months`), for the words of the ongoing figure. */
   windowMonths?: number | null;
+  /** A send is in flight: the picks are held, so the reply that is being sent cannot change under it. */
+  locked?: boolean;
 }) {
   const { t } = useI18n();
   const group = useRef<HTMLDivElement>(null);
@@ -155,6 +158,7 @@ export function PathColumns({
                 type="button"
                 role="radio"
                 aria-checked={on}
+                disabled={locked}
                 tabIndex={on ? 0 : -1}
                 data-testid={`path-col-pick-${i}`}
                 onClick={() => onPick(p.key)}

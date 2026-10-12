@@ -56,7 +56,7 @@ export default defineConfig({
           },
           {
             name: "phone",
-            testMatch: /(responsive|screenshots|strategy|a11y)\.spec\.ts/,
+            testMatch: /(responsive|screenshots|strategy|a11y|deals-queue)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]
@@ -103,7 +103,8 @@ export default defineConfig({
                   timeout: 120_000,
                   // A server already on :8000 could hold state from a previous run or point at a real database.
                   reuseExistingServer: false,
-                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, ...strategyApi },
+                  // FEATURE_EXPOSURE: the Deals page is the decision queue once the open offer has its exposure read.
+                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
                 },
               ]),
           {
