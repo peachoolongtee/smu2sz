@@ -26,6 +26,8 @@ export interface PathsState {
   onHover: (key: string | null) => void;
   picked: PicturePath | null;
   recommended: PicturePath | null;
+  /** What the reply bar now shows, said politely after a pick (the bar sits far above the columns); empty until the owner picks. */
+  said: string;
 }
 
 /**
@@ -63,15 +65,19 @@ export function usePathsState(picture: OfferPictureView | null | undefined, rese
     if (compareOpen && other) setPick(other.key);
   }
 
+  const { t } = useI18n();
+  const [said, setSaid] = useState("");
   const onPick = useCallback(
     (key: string) => {
       setPick(key);
+      const named = paths.find((x) => x.key === key);
+      if (named) setSaid(t("biz.deals.reply.shows", { label: named.label }));
       const p = paths.find((x) => x.key === key);
       onCompareChange?.(Boolean(p && p.kind === "reply" && !p.recommended));
     },
-    [paths, onCompareChange],
+    [paths, onCompareChange, t],
   );
-  return { paths, moments, pick, onPick, stop, onStop: setStop, hoverKey, onHover: setHoverKey, picked, recommended };
+  return { paths, moments, pick, onPick, stop, onStop: setStop, hoverKey, onHover: setHoverKey, picked, recommended, said };
 }
 
 type ReplyProps = { v: VerdictView; offerId: string; today: number; mode: Mode; negotiation: NegotiationView | null; compareOpen?: boolean; onCompareChange?: (open: boolean) => void };
@@ -121,6 +127,9 @@ export function PathsBody({ picture, state, v, negotiation }: { picture: OfferPi
     <section aria-labelledby="deal-paths-title" id="deal-paths" className="motion-reveal min-w-0" data-testid="deal-paths">
       <Card flat id="deal-paths-head" title={t("biz.deals.paths.title")}>
         <div className="space-y-3 pt-1">
+          <p role="status" className="sr-only" data-testid="path-pick-status">
+            {state.said}
+          </p>
           <PathsPicture picture={full} pick={state.pick} hoverKey={state.hoverKey} onHover={state.onHover} stop={state.stop} onStop={state.onStop} />
           <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} />
         </div>

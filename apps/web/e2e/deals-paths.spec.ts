@@ -103,6 +103,40 @@ test("picking a column moves the emphasis and the reply bar; the asked path cann
   await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
 });
 
+test("picking a path is said politely (the bar is far above the columns), and a tap that focuses a column leaves no line dimmed", async ({ page }) => {
+  await checked(page);
+  const status = page.getByTestId("path-pick-status");
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveText("");
+  await page.getByTestId("path-col-pick-2").click();
+  await expect(status).toHaveText("Reply bar now shows Option B");
+  await page.getByTestId("path-col-pick-0").click();
+  await expect(status).toHaveText("Reply bar now shows As they asked");
+  // The click focused the button without a keyboard: once the pointer leaves, nothing is pointed at, so no line is dimmed.
+  await page.mouse.move(1, 1);
+  for (const i of [0, 1, 2]) expect(await page.getByTestId(`path-line-${i}`).evaluate((el) => Number(el.getAttribute("opacity")))).toBeGreaterThan(0.4);
+});
+
+test("the lines are told apart without colour: the asked path has a square marker, the recommended reply a round one, a further reply a diamond; the swatches repeat them", async ({ page }) => {
+  await checked(page);
+  await expect(page.getByTestId("path-dot")).toHaveCount(3);
+  expect(await page.getByTestId("path-dot").evaluateAll((els) => els.map((el) => el.querySelector("[data-marker]")?.getAttribute("data-marker")))).toEqual(["square", "circle", "diamond"]);
+  for (const [i, shape] of ["square", "circle", "diamond"].entries()) await expect(page.getByTestId(`path-tile-${i}`).getByTestId("path-swatch")).toHaveAttribute("data-marker", shape);
+});
+
+test("nothing below the moment sentence shifts as the cursor steps: its room and the events slot are kept", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await checked(page);
+  const tops: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    await page.getByTestId(`path-stop-${i}`).click();
+    tops.push(Math.round((await page.getByTestId("path-columns").boundingBox())!.y + (await page.evaluate(() => scrollY))));
+  }
+  expect(new Set(tops).size).toBe(1);
+  // The slot is there whether or not something moved.
+  await expect(page.getByTestId("path-events-slot")).toHaveCount(1);
+});
+
 test("a confirmation box never carries over from one column to another", async ({ page }) => {
   await checked(page);
   const bar = page.getByTestId("path-reply");
@@ -139,9 +173,9 @@ test("the chips are the moments, in the server's order and words, the decisive o
   await expect(page.getByTestId("path-tile-1")).toHaveAttribute("data-tone", "neutral");
   // The gap against as asked: the server's signed string in its tone; the asked tile shows none.
   await expect(page.getByTestId("path-tile-vs-0")).toHaveCount(0);
-  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥422k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥422k vs the ask");
   await expect(page.getByTestId("path-tile-vs-1")).toHaveClass(/text-ok-fg/);
-  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥92k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥92k vs the ask");
   await expect(page.getByTestId("path-tile-assumption-1")).toHaveText("If the buyer accepts this reply");
   await expect(page.getByTestId("path-tile-assumption-2")).toHaveText("If the buyer accepts this reply");
   await expect(page.getByTestId("path-tile-assumption-0")).toHaveCount(0);
@@ -153,11 +187,11 @@ test("the chips are the moments, in the server's order and words, the decisive o
   await expect(page.getByTestId("path-moment")).toHaveText("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. Who decides: Option A: FLOW can send it; Option B: needs your approval.");
   await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥400k");
   await expect(page.getByTestId("path-tile-0")).not.toContainText("Below your minimum");
-  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥150k vs as asked");
-  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥90k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥150k vs the ask");
+  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥90k vs the ask");
   // A reply that gives up cash to stay above the reserve is in the bad tone against as asked (day 30).
   await page.getByTestId("path-stop-1").click();
-  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("−¥10k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("−¥10k vs the ask");
   await expect(page.getByTestId("path-tile-vs-1")).toHaveClass(/text-bad-fg/);
   // Previous and next move between moments.
   await page.getByTestId("path-stop-0").click();
@@ -189,25 +223,30 @@ test("Play never starts by itself, steps one moment every two seconds, ends on t
   await checked(page);
   const play = page.getByTestId("path-play");
   await expect(play).toHaveAttribute("aria-pressed", "false");
+  await expect(play).toHaveText("Play the moments");
   // Never auto-starts: left alone for longer than a step, the cursor stays where it was.
   await page.waitForTimeout(2600);
   await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-count")).toHaveText("3 of 6");
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "true");
+  await expect(play).toHaveText("Pause");
   await expect(page.getByTestId("path-stop-0")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true", { timeout: 6000 });
   await expect(page.getByTestId("path-announce")).toHaveText("Lowest point. On every path: Debt service −¥45k.");
-  // Stop halts it where it is.
+  // Pause halts it where it is.
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "false");
+  await expect(play).toHaveText("Resume");
   await page.waitForTimeout(2600);
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true");
-  // Play again runs to the last moment and stops there.
+  // Resume continues from the current moment (it does not go back to the first) and runs to the last moment, where it stops.
   await play.click();
+  await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-5")).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
   await expect(play).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("path-count")).toHaveText("6 of 6");
+  await expect(play).toHaveText("Play the moments");
   await page.waitForTimeout(2600);
   await expect(page.getByTestId("path-stop-5")).toHaveAttribute("aria-pressed", "true");
   // The announcement is its own polite region (a preview or a tick of the pointer never speaks).
@@ -222,10 +261,13 @@ test("hovering the picture while it plays pauses it, leaving resumes it", async 
   await page.getByTestId("paths-chart").hover();
   await page.waitForTimeout(500);
   const where = await page.getByTestId("path-count").innerText();
+  // While it waits the page says so.
+  await expect(page.getByTestId("path-paused")).toHaveText("Paused while you look");
   await page.waitForTimeout(4500);
   await expect(page.getByTestId("path-count")).toHaveText(where);
   await expect(page.getByTestId("path-play")).toHaveAttribute("aria-pressed", "true");
   await page.mouse.move(1, 1);
+  await expect(page.getByTestId("path-paused")).toHaveCount(0);
   await expect(page.getByTestId("path-count")).not.toHaveText(where, { timeout: 6000 });
 });
 
@@ -307,11 +349,15 @@ test("pointing at a column or a tile lights its line and dims the other two to 4
   await page.mouse.move(2, 2);
   await expect(page.getByTestId("path-line-1")).toHaveAttribute("data-active", "true");
   expect(await opacity(0)).toBeGreaterThan(0.4);
-  // Keyboard focus on a column does the same.
-  await page.getByTestId("path-col-pick-0").focus();
-  await expect(page.getByTestId("path-line-0")).toHaveAttribute("data-active", "true");
-  await page.getByTestId("path-col-pick-0").blur();
-  await expect(page.getByTestId("path-line-1")).toHaveAttribute("data-active", "true");
+  // Keyboard focus on a column does the same (an arrow key moves the pick and the focus together; a keyboard focus is a visible one).
+  await page.getByTestId("path-col-pick-1").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("path-col-pick-2")).toBeFocused();
+  await expect(page.getByTestId("path-line-2")).toHaveAttribute("data-active", "true");
+  expect(await opacity(0)).toBe(0.4);
+  await page.getByTestId("path-col-pick-2").blur();
+  await expect(page.getByTestId("path-line-2")).toHaveAttribute("data-active", "true");
+  expect(await opacity(0)).toBeGreaterThan(0.4);
 });
 
 test("hovering or focusing a moment chip previews it without changing the selected moment; a click keeps it", async ({ page }) => {

@@ -372,8 +372,8 @@ export function RecommendedResponse({
     const counter = withdrawn ? undefined : counters.find((c) => c.id === path.key) ?? counters.find((c) => (c.label_when ?? c.label) === path.label);
     const canSend = path.sendable && counter && mode === "business";
     const eyebrow = !path.sendable ? t("biz.deals.reply.cannot") : path.needs_owner ? t("biz.deals.reply.approveFirst", { label: path.label }) : t("biz.deals.reply.eyebrow", { label: path.label });
-    // Who decides: the server's class and words (else the earlier sentence), in the class's tone; a path that cannot be sent says it is over a limit.
-    const tone = path.authority || path.sendable ? authorityTone(path) : "bad";
+    // Who decides: the server's class and words (else the earlier sentence), in the class's tone: the same tone as the path's column.
+    const tone = authorityTone(path);
     const decides = authorityText(path);
     return (
       <ActionBar id="counters" aria-labelledby="path-reply-title" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
@@ -383,7 +383,7 @@ export function RecommendedResponse({
           </div>
         ) : null}
         <div className="min-w-0 flex-[2_1_20rem]">
-          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-brand-700"}`}>{eyebrow}</p>
+          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
           <h2 id="path-reply-title" className="mt-1 text-pretty text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="path-reply-text">
             {path.sendable ? (path.reply_text ?? decides) : decides}
           </h2>

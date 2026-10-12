@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Disclosure } from "@/components/business/kit";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
-import { HUE, hueOf, Swatch } from "@/components/deals/path-hue";
+import { HUE, hueOf, Marker, Swatch } from "@/components/deals/path-hue";
 import { buttonClass, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { MomentValue, OfferPictureView, PictureMoment, PicturePath } from "@/lib/types";
@@ -64,6 +64,8 @@ export function PathsPicture({
   // A chip pointed at or focused previews its moment; leaving returns to the selected one. Play and the selection never depend on a preview.
   const [preview, setPreview] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+  // Stopped by hand part-way through a run: Play then continues from the current moment instead of starting again at the first.
+  const [paused, setPaused] = useState(false);
   // The pointer is over the picture (a mouse; a finger has no "over"): Play waits. The tooltip's anchor, in pixels inside the frame, while it is shown.
   const [over, setOver] = useState(false);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
@@ -81,11 +83,15 @@ export function PathsPicture({
       const next = at.current + 1;
       if (next >= n) {
         setPlaying(false);
+        setPaused(false);
         return;
       }
       at.current = next;
       onStop(next);
-      if (next >= n - 1) setPlaying(false);
+      if (next >= n - 1) {
+        setPlaying(false);
+        setPaused(false);
+      }
     }, STEP_MS);
     return () => window.clearInterval(id);
   }, [playing, over, n, onStop]);
@@ -93,17 +99,22 @@ export function PathsPicture({
   /** A step made by hand (a chip, an arrow, a tap) halts Play. */
   const choose = (i: number) => {
     setPlaying(false);
+    setPaused(false);
     setPreview(null);
     onStop(Math.min(Math.max(i, 0), n - 1));
   };
   const togglePlay = () => {
     if (playing) {
       setPlaying(false);
+      setPaused(true);
       return;
     }
     setPreview(null);
-    at.current = 0;
-    onStop(0);
+    if (!(paused && stop < n - 1)) {
+      at.current = 0;
+      onStop(0);
+    }
+    setPaused(false);
     setPlaying(true);
   };
 
@@ -118,7 +129,7 @@ export function PathsPicture({
   const hi = Math.max(...levels);
   const yLo = axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = axis ? Math.max(axis.max_fen, hi) : hi + Math.max((hi - lo) * 0.08, 1);
-  const H = W < 520 ? 216 : 208;
+  const H = W < 520 ? 216 : 196;
   const gutter = axis ? Math.ceil(Math.max(...axis.ticks.map((k) => textWidth(k.label, false)))) + 8 : 0;
   const pl = PAD.l + gutter;
   const pr = W - PAD.r;
@@ -223,7 +234,7 @@ export function PathsPicture({
           {t("biz.deals.paths.keys")}
         </p>
         {W > 0 ? (
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="picture-fade block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
+          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden className="picture-fade block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
             {yTicks.map((k) => (
               <g key={`y${k.key}`} data-testid="picture-ytick">
                 <line x1={pl} x2={pr} y1={k.y} y2={k.y} className="stroke-line" strokeWidth={1} opacity={0.7} />
@@ -278,7 +289,7 @@ export function PathsPicture({
                   if (!v) return null;
                   return (
                     <g key={`c${p.key}`} data-testid="path-dot" className={reduced ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
-                      <circle r={5.5} className={`${HUE[hueOf(p)].fill} stroke-surface`} strokeWidth={2} />
+                      <Marker hue={hueOf(p)} />
                     </g>
                   );
                 })}
@@ -375,20 +386,26 @@ export function PathsPicture({
                   {arrow(1)}
                 </svg>
               </button>
-              <button type="button" aria-pressed={playing} data-testid="path-play" onClick={togglePlay} className={toggleClass(playing, "md", "ml-1")}>
+              <button type="button" aria-pressed={playing} data-testid="path-play" data-state={playing ? "playing" : paused ? "paused" : "idle"} onClick={togglePlay} className={toggleClass(playing, "md", "ml-1")}>
                 <svg viewBox="0 0 24 24" aria-hidden className="size-3.5 fill-current">
                   {playing ? <path d="M6 5h4v14H6zM14 5h4v14h-4z" /> : <path d="M7 4l13 8-13 8z" />}
                 </svg>
-                {t("biz.deals.paths.play")}
+                {playing ? t("biz.deals.paths.pause") : paused ? t("biz.deals.paths.resume") : t("biz.deals.paths.play")}
               </button>
               <span className="text-sm font-semibold tabular-nums text-ink-3" data-testid="path-count">
                 {t("biz.deals.paths.count", { n: stop + 1, total: n })}
               </span>
+              {/* While the pointer is over the picture Play waits: said, so a held cursor is not mistaken for a stuck one. */}
+              {playing && over ? (
+                <span className="text-sm font-semibold text-ink-3" data-testid="path-paused">
+                  {t("biz.deals.paths.waiting")}
+                </span>
+              ) : null}
             </div>
           </div>
 
           {/* The sentence is the moment under the cursor (or the chip being previewed); it is announced once per step by the live region below, never on a preview. */}
-          <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="path-moment" data-day={moment?.day}>
+          <p className="min-h-16 text-pretty text-[0.9375rem] font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={moment?.day}>
             {moment?.text}
           </p>
           <div aria-live="polite" className="sr-only" data-testid="path-announce">
@@ -450,8 +467,10 @@ export function PathsPicture({
                 ))}
               </div>
             </Disclosure>
-          ) : null}
-
+          ) : (
+            // The slot stays (empty) on a moment where nothing moved, so what is below does not shift while Play steps.
+            <div aria-hidden className="min-h-10" data-testid="path-events-slot" />
+          )}
         </>
       ) : null}
     </div>

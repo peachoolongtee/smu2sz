@@ -73,7 +73,8 @@ export function PathColumns({
             data-selected={on ? "true" : "false"}
             onPointerEnter={(e) => e.pointerType === "mouse" && onHover(p.key)}
             onPointerLeave={() => onHover(null)}
-            onFocus={() => onHover(p.key)}
+            // Keyboard focus lights the line too; a tap that happens to focus the button does not (it would leave the other lines dimmed).
+            onFocus={(e) => e.target.matches(":focus-visible") && onHover(p.key)}
             onBlur={() => onHover(null)}
             className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-card border-2 bg-surface p-3.5 transition-[border-color,box-shadow] duration-(--dur) ease-out ${on ? `${hue.border} shadow-card` : "border-line"}`}
           >

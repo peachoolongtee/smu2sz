@@ -31,10 +31,11 @@ import { whenText } from "@/lib/when";
 import { Disclosure } from "@/components/business/kit";
 
 /**
- * Deals in the A1 pattern, one workspace for the selected buyer: the verdict is the heading (FLOW's read of the offer, under the status pill),
- * then who and where (the buyer, the five stages), the one Action while the offer is unchecked, what they ask with what each costs you, why it
- * matters, the priced response with its bound send, the agreements and, folded, the advanced details. The inbox folds to one row once a deal is
- * selected. Buyer terms appear once. Every figure and sentence is the server's; days are distances from today; the page decides nothing.
+ * Deals in the A1 pattern, one workspace for the selected buyer, in the remediation's order at every width: the verdict is the heading (FLOW's read of the
+ * offer, under the status pill), the one Action while the offer is unchecked, the priced response (the reply bar with its bound send) directly under the
+ * heading, the picture of the three paths with its moments and columns, who and where (the buyer, the five stages), then what they ask with what each costs
+ * you and why it matters (both behind closed folds), the agreements and, folded, the advanced details. The inbox folds to one row once a deal is selected.
+ * Buyer terms appear once. Every figure and sentence is the server's; days are distances from today; the page decides nothing.
  */
 export default function DealsPage() {
   const { t, te, lang } = useI18n();
