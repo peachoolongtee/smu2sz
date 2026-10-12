@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { BasisLine, BasisRows, type BasisRow } from "@/components/home/receipt-basis";
@@ -7,7 +8,7 @@ import { CheckIcon, ClockIcon } from "@/components/icons";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
-import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
+import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeV2Chart, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 /**
@@ -23,6 +24,10 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
  * A receipt says what it rests on (`basis_text`) in its rail row and in the tooltip; a scheduled one is a grey mark and a quieter word.
  *
  * Every word and figure is a string the server sent; `*_fen` and `day` numbers only place a mark (INVARIANT 13).
+ *
+ * `compact` (Home V2, the server's `home_v2.chart`) is the same picture without the rail, the numbered marks, the panel and the scenario switch: the current books as the
+ * solid line, the plan that is ready and has not run as the grey dashed comparator (the legend is the server's, and so is the scope title), the minimum, the window word,
+ * and the lowest point as one mark you can press. Pressing it opens the server's inspector (the lowest point's rows) under the chart; Escape closes it. Nothing else is drawn.
  */
 type Mark = "amber" | "green" | "grey" | "red";
 
@@ -73,7 +78,7 @@ export interface LateRead {
   startLate?: boolean;
 }
 
-export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead }) {
+export function EventPicture({ h, lateRead, compact }: { h: HomeView; lateRead?: LateRead; compact?: HomeV2Chart }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const hintId = useId();
@@ -92,10 +97,14 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
   const [focused, setFocused] = useState(false);
+  const v2 = compact ?? null;
+  const [inspecting, setInspecting] = useState(false);
+  const lowestButton = useRef<HTMLButtonElement>(null);
+  const inspectorId = useId();
 
   const n = rail.length;
   // The switch needs the server's stress, its series and the delay it is about; without any of them there is no scenario to offer.
-  const own = lateRead ? lateRead.stress : cash.stress_available ? cash.stress : null;
+  const own = v2 ? null : lateRead ? lateRead.stress : cash.stress_available ? cash.stress : null;
   const stress = own?.series?.length && own.delay_days ? own : null;
   if (scenario === "late" && stress === null) setScenario("expected");
   const late = scenario === "late" && stress !== null;
@@ -107,13 +116,16 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   // The plan line is the home's plan while one is waiting to run, else the projection itself. The grey line is the server's comparison
   // (the books without the whole plan, or without any action) and exists only with its label: no series, no legend entry.
   const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
-  const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
-  const planName = cash.plan_line_label || (cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected"));
+  // Home V2: the solid line is the current books (`series`), the dashed grey one the plan that is ready and has not run, each named by the server's legend.
+  const v2Current = v2?.legend.find((l) => l.kind === "current") ?? null;
+  const v2Planned = v2?.legend.find((l) => l.kind === "planned" || l.kind === "proposed") ?? null;
+  const counterSeries = v2 ? (v2Planned && cash.plan_series?.length ? cash.plan_series : null) : cash.counterfactual_series?.length ? cash.counterfactual_series : null;
+  const planName = v2 ? (v2Current?.label ?? "") : cash.plan_line_label || (cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected"));
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
-  const mainSeries = late && stress ? stress.series : planSeries;
-  const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
+  const mainSeries = v2 ? cash.series : late && stress ? stress.series : planSeries;
+  const counterName = v2 ? (v2Planned?.label ?? "") : cash.counterfactual_label || t("biz.forecast.nothing");
   // The buyer's reply as an alternative: drawn only with its series and its label, and never in the late scenario (that line is the stressed plan).
-  const pending = !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
+  const pending = !v2 && !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
   const pendingSeries = pending?.series ?? null;
 
   // ---- the window: the server's picture window, 60 and 120 days; the late scenario widens it to the days the server says it needs
@@ -178,7 +190,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
 
   // ---- the numbered marks on the plan line: above the line (the lowest point below it); a neighbour that would touch moves a step further out
   const placed: { i: number; x: number; y: number; ly: number; mark: Mark }[] = [];
-  if (!late) {
+  if (!late && !v2) {
     rail
       .map((e, i) => ({ e, i }))
       .filter(({ e }) => e.day >= today && e.day <= end)
@@ -196,8 +208,18 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
       });
   }
 
+  // ---- Home V2: the lowest point of the current books, the one mark that can be pressed, and the server's cause for it (only when the rail names the same day)
+  const lowestDay = cash.lowest_day;
+  const lowest = v2 && lowestDay >= today && lowestDay <= end ? { x: dayX(lowestDay), y: yOf(valueAt(mainSegs, lowestDay)) } : null;
+  const lowestEvent = v2 ? (rail.find((e) => e.kind === "lowest" && e.day === lowestDay) ?? null) : null;
+  const lowestTone = h.home_v2?.kpis.lowest_ahead.tone ?? cash.lowest_tone ?? "warn";
+  const closeInspector = () => {
+    setInspecting(false);
+    lowestButton.current?.focus();
+  };
+
   // ---- the cursor: follows the pointer over the plot, else sits on the previewed or chosen event
-  const cursorDay = tip ? tip.day : !late && event ? Math.min(Math.max(event.day, today), end) : null;
+  const cursorDay = tip ? tip.day : !v2 && !late && event ? Math.min(Math.max(event.day, today), end) : null;
   const cursorX = cursorDay !== null ? xOf(cursorDay) : null;
   const dots = cursorDay === null ? [] : [
     { key: "main", y: yOf(valueAt(mainSegs, cursorDay)), cls: late ? "fill-bad-solid" : "fill-brand-600" },
@@ -262,7 +284,258 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
     rows?.[(i + by + n) % n]?.focus();
   };
 
+  const svg =
+    W > 0 ? (
+
+              <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden className="picture-fade block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
+                {yTicks.map((k) => (
+                  <g key={`y${k.key}`} data-testid="picture-ytick">
+                    <line x1={pl} x2={pr} y1={k.y} y2={k.y} className="stroke-line" strokeWidth={1} opacity={0.7} />
+                    <text x={pl - 6} y={k.y + 4} textAnchor="end" className="fill-ink-3">
+                      {k.label}
+                    </text>
+                  </g>
+                ))}
+                {shortfall.map((pts, i) => (
+                  <polygon key={`s${i}`} points={pts} className="fill-bad-solid/10" />
+                ))}
+                {yLo < 0 ? <line x1={pl} x2={pr} y1={yOf(0)} y2={yOf(0)} className="stroke-line-ui" strokeWidth={1} /> : null}
+                <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className="stroke-warn-solid" strokeWidth={1.5} strokeDasharray="6 5" data-testid="home-reserve" />
+                <text x={pl + 4} y={v2 && yOf(floor) > pb - 24 ? yOf(floor) - 6 : yOf(floor) + 17} className="fill-warn-fg stroke-canvas" fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+                  {reserveText}
+                </text>
+
+                {cursorX !== null ? (
+                  <g data-testid="home-cursor" data-day={cursorDay ?? undefined} className="pointer-events-none">
+                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
+                      <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" />
+                      <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
+                    </g>
+                  </g>
+                ) : null}
+
+                {counterSegs ? <path data-testid="home-line-counter" d={pathOf(counterSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={2} className="stroke-ink-3" opacity={0.9} /> : null}
+                {pendingSegs ? <path data-testid="home-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} /> : null}
+                <path
+                  data-testid={late ? "home-line-late" : "home-line-plan"}
+                  d={pathOf(mainSegs)}
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap={late ? "butt" : "round"}
+                  strokeDasharray={late ? "8 5" : undefined}
+                  strokeWidth={3.5}
+                  className={late ? "stroke-bad-solid" : "stroke-brand-600"}
+                />
+
+                {cursorX !== null ? (
+                  <g className="pointer-events-none">
+                    {dots.map((d) => (
+                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-expanded) ease-ui"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
+                    ))}
+                  </g>
+                ) : null}
+
+                {lowest ? (
+                  <g className="pointer-events-none" data-testid="home-lowest-mark">
+                    <circle cx={lowest.x} cy={lowest.y} r={7} strokeWidth={2.5} className={`fill-surface ${lowestTone === "bad" ? "stroke-bad-solid" : lowestTone === "ok" ? "stroke-ok-solid" : "stroke-warn-solid"}`} />
+                  </g>
+                ) : null}
+
+                <g className="pointer-events-none">
+                  {placed.map((m) => {
+                    const on = m.i === shown;
+                    const c = MARK[m.mark];
+                    return (
+                      <g key={rail[m.i].key} data-testid={`rail-mark-${m.i}`} data-filled={on ? "true" : "false"} data-mark={m.mark}>
+                        <line x1={m.x} x2={m.x} y1={m.ly} y2={m.y} className="stroke-line-ui" strokeWidth={1} />
+                        <circle cx={m.x} cy={m.ly} r={3} className={`${c.solid} stroke-surface`} strokeWidth={1.5} />
+                        <circle cx={m.x} cy={m.y} r={R} strokeWidth={2} className={on ? c.solid : `fill-surface ${c.line}`} />
+                        <text x={m.x} y={m.y + 4} textAnchor="middle" fontSize={11} fontWeight={800} className={on ? "fill-surface" : c.ink}>
+                          {m.i + 1}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </g>
+
+                {ticks.map((d, i) => (
+                  <text key={d} x={xOf(d)} y={H - 8} textAnchor={i === 0 ? "start" : d === end ? "end" : "middle"} className="fill-ink-3">
+                    {d === today ? t("biz.picture.today") : t("biz.when.inDays", { n: d - today })}
+                  </text>
+                ))}
+              </svg>
+            
+    ) : null;
+  const tooltip =
+    tipAt && W > 0 ? (
+
+              <div
+                aria-hidden
+                data-testid="home-tooltip"
+                className={`pointer-events-none absolute z-10 ${v2 ? "w-64" : "w-48"} rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop`}
+                style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
+              >
+                {/* The day's words are the server's (the rail's `when`); a day with no event of its own has no day word, only the figures. */}
+                {tipEvent ? (
+                  <p className="font-bold text-ink">
+                    <span className="first-letter:uppercase">{tipEvent.label}</span>, {tipEvent.when}
+                  </p>
+                ) : null}
+                {tipEvent?.basis_text ? (
+                  <p className="mt-0.5 text-supporting leading-snug text-ink-2" data-testid="home-tooltip-basis">
+                    {tipEvent.basis_text}
+                  </p>
+                ) : null}
+                {lines.map((l) => (
+                  <p key={l.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
+                    <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
+                      <svg width="14" height="6" aria-hidden className="shrink-0">
+                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} opacity={l.opacity} className={l.swatch} />
+                      </svg>
+                      <span className="truncate">{l.name}</span>
+                    </span>
+                    <span className="shrink-0 font-bold text-ink">{at(l.series, tipAt.day)?.closing_display ?? "—"}</span>
+                  </p>
+                ))}
+              </div>
+            
+    ) : null;
+  const srTable = (
+          <div className="sr-only">
+            <table data-testid="home-picture-table">
+              <caption>{t("biz.picture.table")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t("biz.forecast.col.when")}</th>
+                  {lines.map((l) => (
+                    <th key={l.key} scope="col">
+                      {l.name}
+                    </th>
+                  ))}
+                  <th scope="col">{t("biz.forecast.col.events")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rail.map((e) => (
+                  <tr key={e.key}>
+                    <th scope="row">{e.when}</th>
+                    {lines.map((l) => (
+                      <td key={l.key}>{at(l.series, e.day)?.closing_display ?? ""}</td>
+                    ))}
+                    <td>{`${e.label} ${e.amount_short}`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+  );
+
   const panelTitle = late ? lateName : event ? `${event.label}, ${event.when}` : "";
+
+  if (v2) {
+    const insp = v2.lowest_inspector;
+    return (
+      <div className="space-y-3" data-testid="home-event-picture" data-compact="true" data-window={windowDays} onKeyDown={(e) => inspecting && e.key === "Escape" && closeInspector()}>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+          <h2 id="home-picture-title" className="text-meta font-extrabold tracking-[0.08em] text-ink-3" data-testid="home-chart-scope">
+            {v2.scope_title}
+          </h2>
+          {windows.length > 1 ? (
+            <SegmentedTabs
+              label={t("hv2.chart.window")}
+              value={wanted}
+              onChange={setChosenWindow}
+              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
+            />
+          ) : null}
+        </div>
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-supporting font-semibold text-ink-2" data-testid="home-legend">
+          {v2.legend.map((l) => {
+            const kind = l.kind === "proposed" ? "planned" : l.kind;
+            return (
+              <li key={`${kind}-${l.label}`} className="flex items-center gap-2" data-testid={`home-legend-${kind}`}>
+                <svg width="22" height="8" aria-hidden className="shrink-0">
+                  <line x1="1" x2="21" y1="4" y2="4" strokeWidth={kind === "current" ? 3 : 2} strokeLinecap={kind === "current" ? "round" : "butt"} strokeDasharray={kind === "current" ? undefined : "4 3"} opacity={kind === "hypothetical" ? 0.6 : 1} className={kind === "planned" ? "stroke-ink-3" : "stroke-brand-600"} />
+                </svg>
+                {l.label}
+              </li>
+            );
+          })}
+        </ul>
+        <div
+          ref={frame}
+          role="group"
+          aria-label={t("hv2.chart.alt")}
+          data-testid="home-chart"
+          className="relative w-full touch-pan-y rounded-tile"
+          style={{ minHeight: H }}
+          onPointerLeave={() => setTip(null)}
+          onPointerMove={(e) => {
+            if (e.pointerType !== "mouse") return;
+            const { x, y } = localPoint(e);
+            setTip({ x, y, day: dayAt(x) });
+          }}
+        >
+          {svg}
+          {lowest ? (
+            <>
+              <button
+                ref={lowestButton}
+                type="button"
+                aria-expanded={inspecting}
+                aria-controls={inspecting ? inspectorId : undefined}
+                aria-label={insp.day_text}
+                data-testid="home-lowest-point"
+                onClick={() => setInspecting((open) => !open)}
+                className="absolute z-10 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill"
+                style={{ left: lowest.x, top: lowest.y }}
+              />
+              {lowestEvent ? (
+                <p
+                  className="pointer-events-none absolute z-0 max-w-[60%] text-supporting font-bold leading-snug text-ink first-letter:uppercase"
+                  data-testid="home-lowest-cause"
+                  style={{ top: 0, ...(lowest.x > W * 0.55 ? { right: Math.max(W - lowest.x - 12, 0), textAlign: "right" as const } : { left: Math.max(lowest.x - 12, 0) }) }}
+                >
+                  {t("hv2.chart.cause", { label: lowestEvent.label, when: lowestEvent.when })}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          {tooltip}
+        </div>
+        {inspecting ? (
+          <div id={inspectorId} role="region" aria-label={t("hv2.chart.inspector")} className="motion-reveal rounded-tile border border-line bg-subtle px-3.5 py-3" data-testid="home-inspector">
+            <h3 className="text-meta font-extrabold tracking-[0.08em] text-ink-3" data-testid="home-inspector-title">
+              {insp.day_text}
+            </h3>
+            <ul className="mt-2 max-w-md space-y-1 text-sm tabular-nums">
+              {[
+                { key: "projected", label: t("hv2.chart.lowest"), value: insp.projected_display },
+                { key: "minimum", label: t("hv2.chart.minimum"), value: insp.minimum_display },
+                { key: "third", label: insp.third_label, value: insp.third_display },
+              ].map((r) => (
+                <li key={r.key} className="flex items-baseline justify-between gap-6 border-b border-line pb-1" data-testid="home-inspector-row" data-row={r.key}>
+                  <span className="text-ink-2">{r.label}</span>
+                  <span className="font-bold text-ink">{r.value}</span>
+                </li>
+              ))}
+              <li className="pt-0.5 text-supporting text-ink-2" data-testid="home-inspector-row" data-row="note">
+                {insp.note}
+              </li>
+            </ul>
+            <p className="sr-only">{t("hv2.chart.esc")}</p>
+          </div>
+        ) : null}
+        {srTable}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-supporting text-ink-3">
+          <p data-testid="home-chart-note">{v2.note}</p>
+          <Link href="/cash" className="font-bold text-brand-700 underline underline-offset-2" data-testid="home-chart-full">
+            {t("hv2.chart.full")} <span aria-hidden>›</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section aria-labelledby="home-picture-title" className="space-y-3" data-testid="home-event-picture" data-scenario={late ? "late" : "expected"} data-window={windowDays}>
@@ -326,7 +599,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
               setTip({ x, y, day: dayAt(x) });
             }}
             onClick={(e) => {
-              if (n && !late) choose(nearest(localPoint(e).x));
+              if (n && !late && !v2) choose(nearest(localPoint(e).x));
             }}
             onFocus={(e) => setFocused(e.currentTarget.matches(":focus-visible"))}
             onBlur={() => setFocused(false)}
@@ -341,110 +614,8 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
             <p id={hintId} className="sr-only">
               {t("home.hy.keys")}
             </p>
-            {W > 0 ? (
-              <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden className="picture-fade block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
-                {yTicks.map((k) => (
-                  <g key={`y${k.key}`} data-testid="picture-ytick">
-                    <line x1={pl} x2={pr} y1={k.y} y2={k.y} className="stroke-line" strokeWidth={1} opacity={0.7} />
-                    <text x={pl - 6} y={k.y + 4} textAnchor="end" className="fill-ink-3">
-                      {k.label}
-                    </text>
-                  </g>
-                ))}
-                {shortfall.map((pts, i) => (
-                  <polygon key={`s${i}`} points={pts} className="fill-bad-solid/10" />
-                ))}
-                {yLo < 0 ? <line x1={pl} x2={pr} y1={yOf(0)} y2={yOf(0)} className="stroke-line-ui" strokeWidth={1} /> : null}
-                <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className="stroke-warn-solid" strokeWidth={1.5} strokeDasharray="6 5" data-testid="home-reserve" />
-                <text x={pl + 4} y={yOf(floor) + 17} className="fill-warn-fg stroke-canvas" fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
-                  {reserveText}
-                </text>
-
-                {cursorX !== null ? (
-                  <g data-testid="home-cursor" data-day={cursorDay ?? undefined} className="pointer-events-none">
-                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
-                      <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" />
-                      <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
-                    </g>
-                  </g>
-                ) : null}
-
-                {counterSegs ? <path data-testid="home-line-counter" d={pathOf(counterSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={2} className="stroke-ink-3" opacity={0.9} /> : null}
-                {pendingSegs ? <path data-testid="home-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} /> : null}
-                <path
-                  data-testid={late ? "home-line-late" : "home-line-plan"}
-                  d={pathOf(mainSegs)}
-                  fill="none"
-                  strokeLinejoin="round"
-                  strokeLinecap={late ? "butt" : "round"}
-                  strokeDasharray={late ? "8 5" : undefined}
-                  strokeWidth={3.5}
-                  className={late ? "stroke-bad-solid" : "stroke-brand-600"}
-                />
-
-                {cursorX !== null ? (
-                  <g className="pointer-events-none">
-                    {dots.map((d) => (
-                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-expanded) ease-ui"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
-                    ))}
-                  </g>
-                ) : null}
-
-                <g className="pointer-events-none">
-                  {placed.map((m) => {
-                    const on = m.i === shown;
-                    const c = MARK[m.mark];
-                    return (
-                      <g key={rail[m.i].key} data-testid={`rail-mark-${m.i}`} data-filled={on ? "true" : "false"} data-mark={m.mark}>
-                        <line x1={m.x} x2={m.x} y1={m.ly} y2={m.y} className="stroke-line-ui" strokeWidth={1} />
-                        <circle cx={m.x} cy={m.ly} r={3} className={`${c.solid} stroke-surface`} strokeWidth={1.5} />
-                        <circle cx={m.x} cy={m.y} r={R} strokeWidth={2} className={on ? c.solid : `fill-surface ${c.line}`} />
-                        <text x={m.x} y={m.y + 4} textAnchor="middle" fontSize={11} fontWeight={800} className={on ? "fill-surface" : c.ink}>
-                          {m.i + 1}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </g>
-
-                {ticks.map((d, i) => (
-                  <text key={d} x={xOf(d)} y={H - 8} textAnchor={i === 0 ? "start" : d === end ? "end" : "middle"} className="fill-ink-3">
-                    {d === today ? t("biz.picture.today") : t("biz.when.inDays", { n: d - today })}
-                  </text>
-                ))}
-              </svg>
-            ) : null}
-            {tipAt && W > 0 ? (
-              <div
-                aria-hidden
-                data-testid="home-tooltip"
-                className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop"
-                style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
-              >
-                {/* The day's words are the server's (the rail's `when`); a day with no event of its own has no day word, only the figures. */}
-                {tipEvent ? (
-                  <p className="font-bold text-ink">
-                    <span className="first-letter:uppercase">{tipEvent.label}</span>, {tipEvent.when}
-                  </p>
-                ) : null}
-                {tipEvent?.basis_text ? (
-                  <p className="mt-0.5 text-supporting leading-snug text-ink-2" data-testid="home-tooltip-basis">
-                    {tipEvent.basis_text}
-                  </p>
-                ) : null}
-                {lines.map((l) => (
-                  <p key={l.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
-                    <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
-                      <svg width="14" height="6" aria-hidden className="shrink-0">
-                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} opacity={l.opacity} className={l.swatch} />
-                      </svg>
-                      <span className="truncate">{l.name}</span>
-                    </span>
-                    <span className="shrink-0 font-bold text-ink">{at(l.series, tipAt.day)?.closing_display ?? "—"}</span>
-                  </p>
-                ))}
-              </div>
-            ) : null}
+            {svg}
+            {tooltip}
           </div>
 
           {/* What solid and dashed mean, in the server's sentence, and the receipts the dashed line would move. Present only while a reply waits for the buyer. */}
@@ -455,34 +626,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
           ) : null}
           {pending ? <BasisRows rows={pendingRows} label={pending.label ?? ""} pending testId="home-pending-rows" /> : null}
 
-          {/* The same picture as a table, for a screen reader and anyone who prefers numbers: each key event and the lines' cash that day. */}
-          <div className="sr-only">
-            <table data-testid="home-picture-table">
-              <caption>{t("biz.picture.table")}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t("biz.forecast.col.when")}</th>
-                  {lines.map((l) => (
-                    <th key={l.key} scope="col">
-                      {l.name}
-                    </th>
-                  ))}
-                  <th scope="col">{t("biz.forecast.col.events")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rail.map((e) => (
-                  <tr key={e.key}>
-                    <th scope="row">{e.when}</th>
-                    {lines.map((l) => (
-                      <td key={l.key}>{at(l.series, e.day)?.closing_display ?? ""}</td>
-                    ))}
-                    <td>{`${e.label} ${e.amount_short}`}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {srTable}
 
           {/* The panel under the picture: the event being previewed or chosen, in the server's sentence; in the late scenario the server's assumption and the stress sentence. */}
           <div className="min-h-28 rounded-tile border border-line bg-subtle px-3.5 py-3" role="region" aria-label={t("home.hy.panel")} data-testid="rail-panel" data-mode={late ? "late" : "expected"} data-index={late ? undefined : shown}>
