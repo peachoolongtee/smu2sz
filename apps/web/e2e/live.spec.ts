@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { runPlan, walkStory, sendCounter } from "./helpers";
+import { openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -537,6 +537,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   await checkedDeal(page);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toContainText("Counter recommended");
+  await openReview(page);
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
   await sendCounter(page);
   await expect.poll(() => sends.length).toBe(1);
@@ -573,6 +574,7 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
     if (/\/offers\/[^/]+\/picture/.test(r.url())) pictures.push(r.url());
   });
   await checkedDeal(page);
+  await openReview(page);
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await page.waitForTimeout(1000);
@@ -599,6 +601,7 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
   await checkedDeal(page);
   // The books move behind the page's back (the clock), so the version the page holds is stale.
   await post("/clock/advance", { to_day: 1 });
+  await openReview(page);
   await sendCounter(page);
   const changed = page.getByTestId("deal-counter-changed");
   await expect(changed).toContainText("The books moved since this was shown");
@@ -653,22 +656,18 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
   const post = ownerPost(request);
   await post("/demo/reset", {});
   await page.goto("/deals?buyer=BUYER-1");
-  await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
+  await expect(page.getByTestId("queue-detail-customer")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  // Every sentence below is the server's: the asks, the lines, the reasons.
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("The buyer may pay early and take 1.20% off the ¥420,000.00 invoice");
-  await expect(page.getByTestId("deal-impact-immediate").getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
-  await expect(page.getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
-  await expect(page.getByTestId("deal-impact-forward")).not.toContainText("¥5,040.00");
-  await expect(page.getByTestId("deal-why-reasons")).toContainText("Accepted as asked, cash would fall below your minimum");
-  await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
-  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
+  await expect(page.getByTestId("queue-heading")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  // Every sentence below is the server's: the ask, the reasons, the costs (the legacy page's asks fold, "Evaluated today" line and impact lines have the table and the why as counterparts).
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("queue-why")).toContainText("Accepted as asked, cash would fall below your minimum");
+  const tops = await page.evaluate(() => ["queue-heading", "queue-ask", "queue-why", "queue-recommends"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
-  // (the asks sit behind a closed fold; opened, the buyer's term is said once)
-  await page.getByTestId("deal-ask-fold").locator("> summary").click();
-  expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
+  await page.getByTestId("queue-compare").locator("> summary").click();
+  await expect(page.getByTestId("queue-impact-once")).toContainText("¥5,040.00");
+  await expect(page.getByTestId("queue-impact-forward")).toContainText("¥28,326.92");
   await post("/demo/reset", {});
 });
 

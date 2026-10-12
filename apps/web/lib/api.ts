@@ -53,7 +53,9 @@ import type {
   OfferPictureView,
   OfferView,
   PlanRequest,
+  DealsContext,
   EnvelopeView,
+  ExposureView,
   PilotJournalView,
   PriceCurveView,
   ReceivablesRead,
@@ -259,6 +261,14 @@ export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = fal
 }
 
 /**
+ * GET /offers/{offer_id}/exposure (flag `exposure`): what the open deal does to the exposure to its buyer, for every path at once. Null when
+ * the server has the feature off or lacks the offer, so the Deals page keeps its current form. Call it only behind STRATEGY_MVP.
+ */
+export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
+  return isMock ? (await mock()).getOfferExposure(offerId, lang) : (await live()).getOfferExposure(offerId, lang);
+}
+
+/**
  * GET /pilot/journal (flag `pilot_journal`): the shadow pilot's entries, newest first, read-only. Null when the server has the
  * feature off (403 FEATURE_DISABLED) or lacks the route, so the Activity section hides; null in mock mode, which has no recording.
  * Call it only behind STRATEGY_MVP and live mode.
@@ -350,8 +360,8 @@ export async function getEvidence(): Promise<string> {
 // Owner only, every route. A reading is a proposal: nothing counts until the owner confirms it, and confirming writes no books.
 
 /** GET /deals?lang=: one card per buyer, from the confirmed contract and the current books; the server's sentences in the owner's language, the figures identical. */
-export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
-  return isMock ? (await mock()).getDeals(lang) : (await live()).getDeals(lang);
+export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
+  return isMock ? (await mock()).getDeals(lang, ctx) : (await live()).getDeals(lang, ctx);
 }
 
 /** GET /documents?lang=: every document the agent has read, newest last. */

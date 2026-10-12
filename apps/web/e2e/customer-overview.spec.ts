@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, verdictHeading } from "./helpers";
 
 /**
  * The customer overview, /customers/{id} (map #88, ticket #108), in mock mode on the recorded API answers (scripts/record-mocks.mjs --overview):
@@ -22,7 +22,7 @@ async function checkedDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(AFTER_CHECK);
+  await expect(verdictHeading(page)).toContainText(AFTER_CHECK);
 }
 
 /** The decision's own query (`decision`, `path`), taken from the primary link the page shows. */
@@ -145,9 +145,10 @@ test("the customer links on Receivables and Deals carry the context of the URL t
   await expect(page.getByTestId("recv-RCV-A").getByRole("link", { name: "Foshan Home Retail Co." })).toHaveAttribute("href", "/customers/BUYER-1");
   // Deals: the buyer of the selected deal.
   await page.goto(`/deals?${ctx}`);
-  await expect(page.getByTestId("deal-selected-customer")).toHaveAttribute("href", `/customers/BUYER-1?${ctx}`);
-  await page.getByTestId("deal-selected-customer").click();
-  await expect(page).toHaveURL(/\/customers\/BUYER-1\?decision=/);
+  // (the queue's detail names the customer with the same context and the `customer` the queue's links all carry)
+  await expect(page.getByTestId("queue-detail-customer")).toHaveAttribute("href", `/customers/BUYER-1?customer=BUYER-1&${ctx}`);
+  await page.getByTestId("queue-detail-customer").click();
+  await expect(page).toHaveURL(/\/customers\/BUYER-1\?(customer=BUYER-1&)?decision=/);
   await expect(page.getByTestId("customer-back")).toHaveText("Back to the Foshan deal");
 });
 

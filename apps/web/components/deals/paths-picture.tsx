@@ -42,6 +42,7 @@ export function PathsPicture({
   onHover,
   stop,
   onStop,
+  stress = null,
 }: {
   picture: OfferPictureView & { paths: PicturePath[]; moments: PictureMoment[] };
   pick: string;
@@ -50,6 +51,8 @@ export function PathsPicture({
   onHover: (key: string | null) => void;
   stop: number;
   onStop: (i: number) => void;
+  /** The picked path's cash if the buyer paid late (the exposure read's own series), drawn as one dashed grey line while the owner asks to see it; its name is the server-written caption of the toggle. */
+  stress?: { series: { day: number; closing_fen: number }[]; label: string } | null;
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
@@ -129,8 +132,9 @@ export function PathsPicture({
   const end = Math.min(today + (picture.picture_days ?? 60), lastData);
   const last = Math.max(end - today, 1);
   const segs: (Seg[] | null)[] = paths.map((p) => (p.series?.length ? segments(p.series.filter((q) => q.day >= today), end) : null));
+  const stressSegs: Seg[] | null = stress?.series.length ? segments(stress.series.filter((q) => q.day >= today) as HomeSeriesPoint[], end) : null;
   const axis = picture.axis && picture.axis.ticks.length && picture.axis.max_fen > picture.axis.min_fen ? picture.axis : null;
-  const levels = [floor, ...segs.flatMap((s) => (s ?? []).map((q) => q.v))];
+  const levels = [floor, ...segs.flatMap((s) => (s ?? []).map((q) => q.v)), ...(stressSegs ?? []).map((q) => q.v)];
   const lo = Math.min(...levels, ...(axis ? [] : [0]));
   const hi = Math.max(...levels);
   const yLo = axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
@@ -295,6 +299,12 @@ export function PathsPicture({
                 />
               );
             })}
+
+            {stressSegs ? (
+              <path data-testid="stress-line" d={pathOf(stressSegs)} fill="none" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="1 6" strokeWidth={2.5} className="stroke-ink-3" opacity={0.9}>
+                <title>{stress?.label}</title>
+              </path>
+            ) : null}
 
             {cursorX !== null && moment ? (
               <g className="pointer-events-none">

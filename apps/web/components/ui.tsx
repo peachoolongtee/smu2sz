@@ -90,10 +90,10 @@ const toneGlyph: Record<Tone, string> = { ok: "✓", warn: "▲", bad: "■", in
  * A state as the server names it: the words, a glyph for the tone (never colour alone) and the tone the SERVER chose (`state_tone` /
  * `result_tone`; the browser never colours a state itself). 12 px, the same pill as `Badge`, with a mark of its own instead of the dot.
  */
-export function StatePill({ tone, children, testId, wrap = true }: { tone: Tone; children: ReactNode; testId?: string; wrap?: boolean }) {
+export function StatePill({ tone, children, testId, wrap = true, className = "" }: { tone: Tone; children: ReactNode; testId?: string; wrap?: boolean; className?: string }) {
   return (
     <span data-testid={testId} data-tone={tone}>
-      <Badge tone={tone} dot={false} wrap={wrap}>
+      <Badge tone={tone} dot={false} wrap={wrap} className={className}>
         <span aria-hidden className="text-xs leading-none">
           {toneGlyph[tone]}
         </span>

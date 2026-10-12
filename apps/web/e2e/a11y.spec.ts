@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { resetBooks, runPlan, sendCounter } from "./helpers";
+import { openCompare, openReview, resetBooks, runPlan, sendCounter, verdictHeading } from "./helpers";
 import { openStoryFold, STORY_STEPS } from "./helpers";
 
 /**
@@ -24,7 +24,7 @@ async function checkedDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
 }
 
 async function advanceTo(page: Page, day: number) {
@@ -55,12 +55,12 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await scan(page, "/deals inbox");
   await checkedDeal(page);
   await scan(page, "/deals checked");
-  // Everything the page folds, opened: the audit level is read too.
-  const advanced = page.getByTestId("deal-advanced");
-  await advanced.locator("summary").first().click();
-  await page.getByTestId("deal-adv-audit_evidence").locator("summary").click();
-  await scan(page, "/deals advanced open");
-  await page.getByTestId("deal-audit-evidence").getByRole("link").first().click();
+  // Everything the page folds, opened: the buyer's message and the calculations (the queue's evidence), then the decision page the record lives on.
+  await openCompare(page);
+  for (const key of ["source_text", "formula"]) await page.getByTestId(`deal-adv-${key}`).locator("summary").first().click();
+  await scan(page, "/deals evidence open");
+  const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
+  await page.goto(`/decisions/${encodeURIComponent(`deal:${offerId}`)}`);
   await expect(page).toHaveURL(/\/decisions\//);
   await expect(page.locator("h1").first()).toBeVisible();
   await scan(page, "decision page");
@@ -74,6 +74,7 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "PROPOSED");
   await scan(page, "/documents review");
   await checkedDeal(page);
+  await openReview(page);
   const response = page.locator("#counters");
   await response.getByTestId("deal-send").click();
   await response.getByTestId("deal-send-confirm-box").getByLabel("Holds firm").check();
@@ -94,6 +95,7 @@ test("contract ingestion and the send step: the documents and a review, the buye
 
 test("an approval waiting, the chase dialog and the remaining task at day 34", async ({ page }) => {
   await checkedDeal(page);
+  await openReview(page);
   await sendCounter(page.locator("#counters"));
   await advanceTo(page, 34);
   await page.goto("/");
