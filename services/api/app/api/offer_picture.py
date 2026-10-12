@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import re
 import threading
-from collections import OrderedDict
+from bisect import bisect_right
+from collections import Counter, OrderedDict
+from functools import reduce
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -281,6 +283,118 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
     return paths
 
 
+# ---------------------------------------------------------------- the moments: the days where looking is worth it, with every path's cash
+
+_MAX_MOMENTS = 6
+_ARRIVALS = ("RECEIPT", "EARLY_RECEIPT", "ADVANCE", "DRAW")  # the events that bring cash in
+
+
+def _chip(n: int, lang: str) -> str:
+    """A day as the chip says it: "Today", "Tomorrow", "In 47 days"."""
+    if n == 0:
+        return say(lang, "Today", "今天")
+    if n == 1:
+        return say(lang, "Tomorrow", "明天")
+    return say(lang, f"In {n} days", f"{n} 天后")
+
+
+def _names(lang: str, items: list[str]) -> str:
+    if len(items) == 1:
+        return items[0]
+    return say(lang, ", ".join(items[:-1]) + " and " + items[-1], "、".join(items))
+
+
+def _moment_text(lang: str, events: dict[str, list[str]], below: list[str], names: dict[str, str], everyone: bool) -> str:
+    """What happens on one day, from the paths' own events: what every path has said once, then what each path adds, then which paths are
+    below the minimum."""
+    keys = list(events)
+    sep = say(lang, "; ", "；")
+    common: list[str] = []
+    if len(keys) > 1:
+        shared = reduce(lambda a, b: a & b, (Counter(events[k]) for k in keys))
+        common = list(shared.elements())
+        for e in common:
+            for k in keys:
+                events[k].remove(e)
+    parts: list[str] = []
+    if common:
+        parts.append(say(lang, f"On every path: {sep.join(common)}.", f"每条路径都有：{sep.join(common)}。"))
+    for k in keys:
+        if events[k]:
+            parts.append(say(lang, f"{names[k]}: {sep.join(events[k])}.", f"{names[k]}：{sep.join(events[k])}。"))
+    if below:
+        if everyone and len(below) > 1:
+            parts.append(say(lang, "On every path, cash is below your minimum.", "每条路径的现金都低于您的最低现金储备。"))
+        else:
+            who = _names(lang, [names[k] for k in below])
+            parts.append(say(lang, f"{who}, cash is below your minimum.", f"{who}的现金低于您的最低现金储备。"))
+    return " ".join(parts) if parts else say(lang, "No cash moves on any path.", "各路径都没有现金变动。")
+
+
+def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: int, lang: str) -> list[dict[str, Any]]:
+    """At most six days, ascending, where looking is worth it, each with every path's cash that day; exactly one is decisive. A day is
+    chosen in this order until six are held: today; the first day any path is below the minimum (or, when none is, the day the paths differ
+    most); the asked path's lowest day; the first day after today cash arrives on any path; the recommended reply's lowest day; the first
+    day after the asked path's breach on which it is back at or above the minimum; then the days the paths differ most."""
+    live = [p for p in paths if p["series"]]
+    if not live:
+        return []
+    last = today + min(90, horizon_days)  # the picture never shows past 90 days
+    rows = {p["key"]: {r["day"]: r for r in p["series"] if r["day"] <= last} for p in live}
+    days = sorted({d for r in rows.values() for d in r})
+    if not days:
+        return []
+    order = {p["key"]: sorted(rows[p["key"]]) for p in live}
+
+    def closing(key: str, day: int) -> int:
+        have = order[key]
+        i = bisect_right(have, day) - 1
+        return rows[key][have[max(i, 0)]]["closing_fen"]
+
+    def spread(day: int) -> int:
+        values = [closing(p["key"], day) for p in live]
+        return max(values) - min(values)
+
+    def lowest_day(p: dict[str, Any]) -> int:
+        return min(((r["closing_fen"], d) for d, r in rows[p["key"]].items()))[1]
+
+    event_days = sorted({d for r in rows.values() for d, row in r.items() if row["events"]} | {days[0]})
+    below_days = [d for d in days if any(closing(p["key"], d) < floor for p in live)]
+    asked = next((p for p in live if p["key"] == "asked"), live[0])
+    differs = sorted(event_days, key=lambda d: (-spread(d), d))
+    decisive = below_days[0] if below_days else (differs[0] if spread(differs[0]) else lowest_day(asked))
+
+    wanted: list[int | None] = [days[0], decisive, lowest_day(asked)]
+    wanted.append(next((d for d in event_days if d > today and any(
+        e["kind"] in _ARRIVALS and e["amount_fen"] > 0 for p in live for e in rows[p["key"]].get(d, {"events": []})["events"])), None))
+    recommended = next((p for p in live if p["recommended"] and p["kind"] == "reply"), None)
+    wanted.append(lowest_day(recommended) if recommended is not None else None)
+    asked_breach = next((d for d in sorted(rows[asked["key"]]) if rows[asked["key"]][d]["closing_fen"] < floor), None)
+    wanted.append(next((d for d in sorted(rows[asked["key"]])
+                        if asked_breach is not None and d > asked_breach and rows[asked["key"]][d]["closing_fen"] >= floor), None))
+    wanted.extend(differs)
+    chosen: list[int] = []
+    for d in wanted:
+        if d is not None and d not in chosen and len(chosen) < _MAX_MOMENTS:
+            chosen.append(d)
+    names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+
+    out = []
+    for d in sorted(chosen):
+        values = []
+        for p in live:
+            c = closing(p["key"], d)
+            values.append({"key": p["key"], "closing_fen": c, "closing_display": fmt_yuan(c), "below_floor": c < floor,
+                           "note": say(lang, "Below your minimum", "低于您的最低现金储备") if c < floor else None})
+        discount = say(lang, "Early-payment discount", "提前付款折扣")  # the row's own label is a whole sentence about one invoice
+        events = {p["key"]: [f"{discount if e['kind'] == 'DISCOUNT' else e['label_short']} {e['amount_short']}"
+                             for e in rows[p["key"]].get(d, {"events": []})["events"]] for p in live}
+        below = [v["key"] for v in values if v["below_floor"]]
+        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "decisive": d == decisive,
+                    "text": _moment_text(lang, events, below, names, len(below) == len(live)), "values": values})
+    return out
+
+
 def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     offer = rt.store.get_offer(offer_id)
     if offer is None:
@@ -325,12 +439,18 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   **_lowest(books.state, asked, today, lang),
                   "first_breach_day": breach[0] if breach else None,
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs)
+    moments = _moments(paths, today, floor, mandate.horizon_days, lang)
+    # the window the picture shows: past the last stop by four days, a month at least, three months at most, never past the horizon
+    picture_days = min(max((moments[-1]["day"] - today if moments else 0) + 4, 30), 90, mandate.horizon_days)
     return {
         "offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today,
         "asked": asked_view,
         "replies": replies,
-        "paths": _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs),
-        "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, 60),
+        "paths": paths,
+        "moments": moments,
+        "picture_days": picture_days,
+        "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, picture_days),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }
 
