@@ -213,7 +213,7 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
   // One order at every width (the DOM order is the visual order): the folded inbox row, the verdict (the heading), the reply bar, the picture with its columns,
@@ -279,7 +279,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   const rec = (await topOf(page, "deal-recommendation-card"))!;
   const send = await page.getByTestId("deal-send").boundingBox();
   const inbox = (await topOf(page, "inbox-collapsed"))!;
@@ -326,7 +326,7 @@ test("on a desktop the Deals workspace keeps the server's order and the inbox ro
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   const inbox = (await topOf(page, "inbox-collapsed"))!;
   const selected = (await topOf(page, "deal-selected"))!;
   expect(inbox.top).toBeLessThan(selected.top);

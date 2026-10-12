@@ -368,6 +368,8 @@
         "received_when": "today",
         "asks_text": "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate",
         "read_text": "Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.",
+        "headline_short": "Counter instead of accepting as asked",
+        "headline_note": "As asked costs ¥28,326.92 over 12 months, above your ¥5,000.00 limit. Two replies are ready to send.",
         "action_text": "Two replies are ready to send.",
         "cost_display": "¥28,326.92",
         "cost_window_text": "over 12 months",

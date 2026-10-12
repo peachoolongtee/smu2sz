@@ -387,6 +387,49 @@ test("hovering or focusing a moment chip previews it without changing the select
   await expect(page.getByTestId("path-announce")).toHaveText(`${MOMENTS[1].word}. ${MOMENTS[1].text}`);
 });
 
+test("hovering the chart at mid-chart moves the cursor and the tiles to that day; leaving restores the selected moment; the chips and the announcement do not change", async ({ page }) => {
+  await checked(page);
+  const chart = page.getByTestId("paths-chart");
+  await chart.scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, 150));
+  const width = (await chart.boundingBox())!.width;
+  const pressed = () => page.locator('[data-testid^="path-stop-"]').evaluateAll((els) => els.map((el) => el.getAttribute("aria-pressed")));
+  const before = await pressed();
+  const announce = await page.getByTestId("path-announce").innerText();
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "47");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
+  await chart.hover({ position: { x: width * 0.4, y: 90 } });
+  // The cursor follows the pointer's day (a day that is not the selected moment), and the tiles show that day's figures: the same strings the tooltip shows.
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-preview", "true");
+  expect(await page.getByTestId("path-cursor").getAttribute("data-day")).not.toBe("47");
+  const tip = page.getByTestId("path-tooltip");
+  await expect(tip).toBeVisible();
+  for (const i of [0, 1, 2]) {
+    const figure = (await page.getByTestId(`path-tile-figure-${i}`).innerText()).trim();
+    expect(figure).toMatch(/^¥/);
+    await expect(tip).toContainText(figure);
+  }
+  await expect(page.getByTestId("path-tile-0")).toHaveAttribute("data-preview", "true");
+  // The dotted line is where the pointer is.
+  const x = (await page.getByTestId("path-cursor").locator("> g").first().evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41)) + (await chart.boundingBox())!.x;
+  const box = (await chart.boundingBox())!;
+  expect(Math.abs(x - (box.x + width * 0.4))).toBeLessThan(width / 60 + 2);
+  // A preview selects nothing and says nothing.
+  expect(await pressed()).toEqual(before);
+  await expect(page.getByTestId("path-announce")).toHaveText(announce);
+  await expect(page.getByTestId("path-count")).toHaveText("3 of 6");
+  await page.mouse.move(1, 1);
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "47");
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-preview", "false");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
+  await expect(page.getByTestId("path-tile-0")).not.toHaveAttribute("data-preview", "true");
+  expect(await pressed()).toEqual(before);
+  // A click still commits the nearest moment, and the cursor rests on it.
+  await chart.click({ position: { x: width * 0.4, y: 90 } });
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-preview", "false");
+  expect(["0", "30", "47", "60", "62", "66"]).toContain(await page.getByTestId("path-cursor").getAttribute("data-day"));
+});
+
 test("keyboard: the arrow keys move between the chips, Enter keeps one, and Space plays or stops from the focused picture", async ({ page }) => {
   test.setTimeout(60_000);
   await checked(page);

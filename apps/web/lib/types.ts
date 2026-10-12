@@ -2801,6 +2801,10 @@ export interface OpenOffer {
   asks_text: string;
   /** FLOW's read; null until the offer is analysed. */
   read_text: string | null;
+  /** The verdict in at most eight words, no figures ("Counter instead of accepting as asked"): the heading. Absent from an older server (`read_text` is then the heading). */
+  headline_short?: string | null;
+  /** One sentence with the figures, the quiet line under the heading. Absent from an older server (`action_text` is then the line). */
+  headline_note?: string | null;
   action_text: string;
   cost_display: string | null;
   cost_window_text: string | null;

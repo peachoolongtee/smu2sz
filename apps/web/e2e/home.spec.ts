@@ -459,11 +459,11 @@ test("an offer waiting: the deal row leads with it, FLOW's read follows the chec
   // After FLOW's check: the read, the cost in the bad tone (it is over the owner's limit), the replies ready.
   await page.goto("/deals");
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await page.goto("/");
   await expect(track.locator("li").nth(1)).toHaveAttribute("data-state", "done");
   await expect(track.locator("li").nth(2)).toHaveAttribute("data-state", "now");
-  await expect(row.getByTestId("home-deal-read")).toContainText("Don't accept as asked");
+  await expect(row.getByTestId("home-deal-read")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await expect(row.getByTestId("home-deal-cost")).toHaveText("¥28,326.92");
   await expect(row.getByTestId("home-deal-cost")).toHaveCSS("color", "rgb(163, 36, 26)");
   await expect(row.getByTestId("home-deal-action")).toHaveText("Two replies are ready to send.");

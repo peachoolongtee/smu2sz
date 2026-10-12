@@ -24,7 +24,7 @@ async function checked(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
 }
 
 async function advanceTo(page: Page, day: number) {

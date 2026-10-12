@@ -18,14 +18,14 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const H1 = "max-w-4xl text-balance font-display text-xl font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl";
+const H1 = "max-w-4xl text-balance font-display text-xl font-extrabold leading-[1.15] tracking-[-0.02em] text-ink lg:text-2xl";
 
 const toneOf = (tone: DealTone | undefined): Tone => (!tone || tone === "mute" ? "warn" : tone);
 
 /**
  * The page's heading when a deal is selected, straight on the canvas (the A1 pattern): the status pill (the server's `needs_you_text`), the one
  * `h1`, one quiet line beneath. Evaluated and still open, the `h1` is FLOW's read of the offer (`open_offer.read_text`, else the workspace's
- * recommendation) and the line says what is ready; once the deal has an outcome (sent, agreed, lapsed, closed) the `h1` is the record's own words
+ * recommendation) and the line says what is ready (the server's `headline_short` is the `h1` and `headline_note` the line when it sends them, else the whole read is the `h1`); once the deal has an outcome (sent, agreed, lapsed, closed) the `h1` is the record's own words
  * ("Agreed", "No deal: the buyer did not accept") with the money and what is left beneath. Received and not yet checked, the `h1` is the server's
  * sentence about it. The sentences are the server's; nothing is composed here.
  */
@@ -52,9 +52,12 @@ export function DealHeading({
   // A record that has gone past "response ready" has an outcome; before that the recommendation is the headline.
   const outcome = v && record && progress?.reached ? record.state : null;
   const action = v ? businessAction(v) : null;
-  const headline = !v ? (open?.action_text ?? title) : outcome && record ? record.state_text : (open?.read_text ?? text ?? (action ? t(ACTION_KEY[action]) : title));
+  // Open and evaluated: the server's short verdict is the heading and its note (the figures) the quiet line; an older server sends the whole sentence as the
+  // heading and "Two replies are ready to send." as the line.
+  const short = v && !outcome ? (open?.headline_short ?? null) : null;
+  const headline = !v ? (open?.action_text ?? title) : outcome && record ? record.state_text : (short ?? open?.read_text ?? text ?? (action ? t(ACTION_KEY[action]) : title));
   const pill = !outcome ? pillText : null;
-  const quiet = v && !outcome ? (open?.read_text ? open.action_text : null) : null;
+  const quiet = v && !outcome ? (short ? (open?.headline_note ?? open?.action_text ?? null) : open?.read_text ? open.action_text : null) : null;
   return (
     <header id="deal-recommendation-card" className="motion-reveal flex flex-col items-start gap-2.5 short:gap-2" data-testid="deal-heading">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -74,13 +77,13 @@ export function DealHeading({
         {headline}
       </h1>
       {quiet ? (
-        <p className="max-w-3xl text-pretty text-base text-ink-2 max-sm:hidden sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-action">
+        <p className={`max-w-3xl text-pretty text-sm text-ink-2 ${short ? "short:max-sm:hidden" : "max-sm:hidden"}`} data-testid="deal-action">
           {quiet}
         </p>
       ) : null}
       {/* The first reason rides under the recommendation when the server sent no read of its own, so the answer and its cause are one glance. */}
       {v && reason && !outcome && !open?.read_text ? (
-        <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-recommendation-reason">
+        <p className="max-w-3xl text-pretty text-sm text-ink-2" data-testid="deal-recommendation-reason">
           {reason}
         </p>
       ) : null}

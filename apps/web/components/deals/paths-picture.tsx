@@ -6,7 +6,7 @@ import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/compon
 import { HUE, hueOf, Marker, Swatch } from "@/components/deals/path-hue";
 import { buttonClass, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { MomentValue, OfferPictureView, PictureMoment, PicturePath } from "@/lib/types";
+import type { HomeSeriesPoint, MomentValue, OfferPictureView, PictureMoment, PicturePath } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { whenText } from "@/lib/when";
 
@@ -69,9 +69,14 @@ export function PathsPicture({
   // The pointer is over the picture (a mouse; a finger has no "over"): Play waits. The tooltip's anchor, in pixels inside the frame, while it is shown.
   const [over, setOver] = useState(false);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
+  // A click commits the nearest moment and the cursor snaps to it; the next move of the mouse previews again.
+  const [snapped, setSnapped] = useState(false);
   const [focused, setFocused] = useState(false);
   const shown = Math.min(preview ?? stop, Math.max(n - 1, 0));
   const moment = moments[shown] ?? null;
+  // A mouse over a day previews it: the cursor, its dots and the tiles follow the pointer's day (the series' own figures) and return to the selected moment on leave.
+  const pday = tip && !snapped ? tip.day : null;
+  const onDay = pday !== null ? (moments.find((m) => m.day === pday) ?? null) : null;
 
   const at = useRef(stop);
   useEffect(() => {
@@ -101,6 +106,7 @@ export function PathsPicture({
     setPlaying(false);
     setPaused(false);
     setPreview(null);
+    setSnapped(true);
     onStop(Math.min(Math.max(i, 0), n - 1));
   };
   const togglePlay = () => {
@@ -143,7 +149,14 @@ export function PathsPicture({
   const active = hoverKey ?? pick;
   const dimmed = hoverKey !== null;
   const order = Array.from({ length: paths.length }, (_, i) => i).sort((a, b) => Number(paths[a].key === active) - Number(paths[b].key === active));
-  const cursorX = moment ? xOf(Math.min(Math.max(moment.day, today), end)) : null;
+  const cursorDay = pday ?? (moment ? Math.min(Math.max(moment.day, today), end) : null);
+  const cursorX = cursorDay !== null ? xOf(cursorDay) : null;
+  /** A path's point on a day: the last point at or before it (cash holds between points), from the series' own strings. */
+  const pointAt = (p: PicturePath, day: number) => {
+    let hit: HomeSeriesPoint | undefined;
+    for (const q of p.series ?? []) if (q.day <= day) hit = q;
+    return hit;
+  };
 
   // ---- the server's y ticks and the foot's day ticks
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -212,6 +225,7 @@ export function PathsPicture({
         onPointerMove={(e) => {
           if (e.pointerType !== "mouse") return;
           const { x, y } = localX(e);
+          setSnapped(false);
           setTip({ x, y, day: dayAt(x) });
         }}
         onClick={(e) => {
@@ -249,8 +263,8 @@ export function PathsPicture({
             </text>
 
             {cursorX !== null ? (
-              <g data-testid="path-cursor" data-day={moment?.day} className="pointer-events-none">
-                <g className={reduced ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+              <g data-testid="path-cursor" data-day={cursorDay ?? undefined} data-preview={pday !== null ? "true" : "false"} className="pointer-events-none">
+                <g className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
                   <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" data-testid="path-moment-band" />
                   <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                 </g>
@@ -285,10 +299,10 @@ export function PathsPicture({
             {cursorX !== null && moment ? (
               <g className="pointer-events-none">
                 {paths.map((p) => {
-                  const v = moment.values.find((x) => x.key === p.key);
-                  if (!v) return null;
+                  const fen = pday !== null ? pointAt(p, pday)?.closing_fen : moment.values.find((x) => x.key === p.key)?.closing_fen;
+                  if (fen === undefined) return null;
                   return (
-                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
+                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(fen)}px)` }}>
                       <Marker hue={hueOf(p)} />
                     </g>
                   );
@@ -312,7 +326,7 @@ export function PathsPicture({
           >
             <p className="font-bold text-ink">{tipWord}</p>
             {paths.map((p) => {
-              const q = p.series?.find((x) => x.day === tipAt.day);
+              const q = pointAt(p, tipAt.day);
               return (
                 <p key={p.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
                   <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
@@ -405,8 +419,8 @@ export function PathsPicture({
           </div>
 
           {/* The sentence is the moment under the cursor (or the chip being previewed); it is announced once per step by the live region below, never on a preview. */}
-          <p className="min-h-16 text-pretty text-[0.9375rem] font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={moment?.day}>
-            {moment?.text}
+          <p className="min-h-16 text-pretty text-[0.9375rem] font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={cursorDay ?? undefined}>
+            {pday !== null ? (onDay?.text ?? tipWord) : moment?.text}
           </p>
           <div aria-live="polite" className="sr-only" data-testid="path-announce">
             {moments[stop] ? `${chipLabel(moments[stop])}. ${moments[stop].text}` : null}
@@ -414,7 +428,10 @@ export function PathsPicture({
 
           <div className="grid grid-cols-3 gap-2 sm:gap-3" data-testid="path-tiles">
             {paths.map((p, i) => {
-              const v = moment?.values.find((x) => x.key === p.key);
+              // Under a pointer preview the figure is the series' own display string for that day; the tone, the gap and the note belong to a moment, so they show
+              // only when the pointer is on one.
+              const point = onDay ? undefined : pday !== null ? pointAt(p, pday) : undefined;
+              const v = onDay ? onDay.values.find((x) => x.key === p.key) : pday !== null ? undefined : moment?.values.find((x) => x.key === p.key);
               const tone = toneOf(v);
               return (
                 <div
@@ -422,6 +439,7 @@ export function PathsPicture({
                   data-testid={`path-tile-${i}`}
                   data-tone={tone}
                   data-below={v?.below_floor ? "true" : "false"}
+                  data-preview={pday !== null ? "true" : undefined}
                   onPointerEnter={(e) => e.pointerType === "mouse" && onHover(p.key)}
                   onPointerLeave={() => onHover(null)}
                   className={`min-w-0 rounded-tile border px-2.5 py-2 sm:px-3 ${tone === "bad" ? "border-bad-line bg-bad-bg" : "border-line bg-subtle"}`}
@@ -431,8 +449,9 @@ export function PathsPicture({
                     <span className="min-w-0 break-words">{p.label}</span>
                   </p>
                   <p className={`mt-1 break-words text-base font-extrabold tabular-nums sm:text-lg ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-tile-figure-${i}`}>
-                    {v ? (v.closing_short ?? v.closing_display) : "—"}
+                    {pday !== null && !onDay ? (point?.closing_display ?? "—") : v ? (v.closing_short ?? v.closing_display) : "—"}
                   </p>
+                  {pday !== null && !onDay && p.kind !== "asked" ? <p aria-hidden className="invisible text-xs font-semibold">&nbsp;</p> : null}
                   {p.kind !== "asked" && v?.vs_asked_short ? (
                     <p className={`text-xs font-semibold ${TONE_INK[v.vs_asked_tone ?? "neutral"]}`} data-testid={`path-tile-vs-${i}`}>
                       {t("biz.deals.paths.vsAsked", { amount: v.vs_asked_short })}
