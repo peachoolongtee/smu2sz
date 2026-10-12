@@ -19,7 +19,8 @@
       "lowest_when_text": "低于最低现金 15 天",
       "limit_word": "EXCEEDED",
       "limit_text": "超出授权",
-      "share_after_text": "100%，多持续 15 天"
+      "share_after_text": "100%，多持续 15 天",
+      "scenario_assumption_text": "假设买方接受此报价，且 FLOW 不新增融资。"
     },
     {
       "key": "CTR-193394b6ba8b",
@@ -30,7 +31,8 @@
       "lowest_when_text": "恰为您的最低现金",
       "limit_word": "WITHIN",
       "limit_text": "在授权内",
-      "share_after_text": "100%，报价后 2 天付款"
+      "share_after_text": "100%，报价后 2 天付款",
+      "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。"
     },
     {
       "key": "CTR-6b07cbf70441",
@@ -41,7 +43,8 @@
       "lowest_when_text": "恰为您的最低现金",
       "limit_word": "WITHIN",
       "limit_text": "在授权内",
-      "share_after_text": "100%，多持续 10 天"
+      "share_after_text": "100%，多持续 10 天",
+      "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后））；没有该方案，现金会更低。"
     },
     {
       "key": "do_nothing",
@@ -52,7 +55,8 @@
       "lowest_when_text": "低于最低现金 20 天",
       "limit_word": null,
       "limit_text": null,
-      "share_after_text": "100%，直到到期日"
+      "share_after_text": "100%，直到到期日",
+      "scenario_assumption_text": "当前账目，未新增融资。"
     }
   ],
   "concentration": {
@@ -746,6 +750,7 @@
       "first_breach_when": "12 天后",
       "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
       "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+      "breach_days_text": "低于您的最低现金 65 天",
       "lowest_display": "−¥250,000.00",
       "need_display": "¥550,000.00"
     },
@@ -1377,6 +1382,7 @@
         "first_breach_when": "12 天后",
         "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
         "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+        "breach_days_text": "低于您的最低现金 80 天",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -2007,6 +2013,7 @@
         "first_breach_when": "12 天后",
         "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
         "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+        "breach_days_text": "低于您的最低现金 65 天",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -2637,6 +2644,7 @@
         "first_breach_when": "12 天后",
         "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
         "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+        "breach_days_text": "低于您的最低现金 75 天",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
