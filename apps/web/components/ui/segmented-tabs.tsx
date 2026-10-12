@@ -4,11 +4,13 @@ import { useEffect, useRef, type ComponentType, type KeyboardEvent, type ReactNo
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { BADGE_CLASS, badgeShown, nextTabIndex, tabAttrs, type BadgeTone } from "./segmented-tabs-model";
 
+export type TabIcon = ComponentType<{ className?: string }>;
+
 export interface SegmentedTabOption<T extends string | number> {
   value: T;
   label: ReactNode;
   /** A glyph from components/icons.tsx, before the label. */
-  icon?: ComponentType<{ className?: string }>;
+  icon?: TabIcon;
   /** A count (or a short word) in a small filled circle after the label; hidden when null. */
   badge?: string | number | null;
   /** Red only for a count that needs the owner; neutral for any other. */

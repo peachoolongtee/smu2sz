@@ -2,11 +2,16 @@
 
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { CustomerName } from "@/components/customer-link";
-import { Badge, toggleClass } from "@/components/ui";
+import { AlertIcon, CheckIcon, ClockIcon, ListIcon } from "@/components/icons";
+import { Badge } from "@/components/ui";
+import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import type { ReceivableRow } from "@/lib/types";
 import { FinancingSteps } from "./financing-steps";
 import { inFilter, stateTone, type RecvFilter } from "./state";
+
+/** One glyph per filter (the segmented control draws an icon and a label on each pill). */
+const FILTER_ICON: Record<RecvFilter, TabIcon> = { all: ListIcon, soon: ClockIcon, overdue: AlertIcon, promises: CheckIcon };
 
 const COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)]";
 
@@ -40,25 +45,14 @@ export function InvoiceList({
 
   return (
     <section aria-label={t("recv3.list.label")} className="space-y-3" data-testid="recv3-list">
-      <div role="group" aria-label={t("biz.recv.filter.label")} className="flex flex-wrap gap-1.5" data-testid="recv-filters">
-        {pills.map((p) => {
-          // A pill with nothing behind it is disabled (not counted for the owner: the page shows no number the server did not write).
-          const empty = p.id !== "all" && !rows.some((r) => inFilter(r, p.id));
-          return (
-            <button
-              key={p.id}
-              type="button"
-              aria-pressed={filter === p.id}
-              disabled={empty}
-              onClick={() => onFilter(p.id)}
-              className={toggleClass(filter === p.id, "md")}
-              data-testid={`recv-filter-${p.id}`}
-            >
-              {p.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* A filter with nothing behind it is disabled (not counted for the owner: the page shows no number the server did not write). */}
+      <SegmentedTabs
+        label={t("biz.recv.filter.label")}
+        value={filter}
+        onChange={onFilter}
+        testId="recv-filters"
+        tabs={pills.map((p) => ({ value: p.id, label: p.label, icon: FILTER_ICON[p.id], disabled: p.id !== "all" && !rows.some((r) => inFilter(r, p.id)), testId: `recv-filter-${p.id}` }))}
+      />
 
       {shown.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-2" data-testid="recv-filter-none">

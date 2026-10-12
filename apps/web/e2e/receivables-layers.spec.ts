@@ -181,19 +181,34 @@ test("day 34: the pills filter by the server's collection state, an empty pill i
   await expect(page.getByTestId("recv3-count")).toHaveText(sm(day34).count_text);
   const late = day34.rows.filter((r) => r.collection_state === "OVERDUE").length;
   const soon = day34.rows.filter((r) => r.collection_state === "DUE_SOON").length;
-  await expect(page.getByTestId("recv-filter-all")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("recv-filter-all")).toHaveAttribute("aria-selected", "true");
   // The pills carry no number of the browser's own.
   await expect(page.getByTestId("recv-filter-overdue")).toHaveText("Overdue");
   if (soon === 0) await expect(page.getByTestId("recv-filter-soon")).toBeDisabled();
   await expect(page.getByTestId("recv-filter-promises")).toBeDisabled();
   await page.getByTestId("recv-filter-overdue").click();
-  await expect(page.getByTestId("recv-filter-overdue")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("recv-filter-overdue")).toHaveAttribute("aria-selected", "true");
   await expect(page.locator('[data-testid^="recv-state-"]')).toHaveCount(late);
   await expect(page.locator('[data-testid^="recv-state-"]').first()).toHaveText(day34.rows.find((r) => r.collection_state === "OVERDUE")!.collection_state_text);
   await page.getByTestId("recv-filter-all").click();
   await expect(page.locator('[data-testid^="recv-state-"]')).toHaveCount(ids.length);
   // The late invoice is first in the server's order and is the one shown.
   await expect(page.getByTestId("recv3-detail")).toHaveAttribute("data-receivable", day34.rows[0].receivable_id);
+
+  // The filter is a SegmentedTabs tablist (#112): one tab stop, 44 px tabs, the arrows move the choice and skip a pill with nothing behind it, and wrap.
+  await expect(page.getByRole("tablist", { name: "Show invoices" })).toBeVisible();
+  await expect(page.getByRole("tab")).toHaveCount(4);
+  await expect(page.locator('[data-testid^="recv-filter-"][tabindex="0"]')).toHaveCount(1);
+  for (const id of ["all", "overdue"]) expect((await page.getByTestId(`recv-filter-${id}`).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByTestId("recv-filter-all").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId(soon === 0 ? "recv-filter-overdue" : "recv-filter-soon")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId(soon === 0 ? "recv-filter-overdue" : "recv-filter-soon")).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(page.getByTestId("recv-filter-overdue")).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("recv-filter-all")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("recv-filter-all")).toBeFocused();
 });
 
 test("the filter moves the selection: when the chosen invoice leaves the visible set, the first visible one is chosen", async ({ page }) => {
