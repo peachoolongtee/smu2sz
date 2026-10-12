@@ -498,7 +498,11 @@ def test_the_read_writes_nothing(api, rt):
 def _built(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     calls: list[str] = []
     real = overview._build
-    monkeypatch.setattr(overview, "_build", lambda *a, **k: (calls.append("built"), real(*a, **k))[1])
+    def counted(*a: object, **k: object) -> object:
+        calls.append("built")
+        return real(*a, **k)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(overview, "_build", counted)
     return calls
 
 
