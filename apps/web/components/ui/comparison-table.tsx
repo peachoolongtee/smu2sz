@@ -37,7 +37,7 @@ export function ComparisonTable({ caption, columns, rows, testId }: { caption: s
           </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-10 bg-surface border-b border-line-strong py-2.5 pr-3.5 text-left align-bottom">
+              <th scope="col" className="sticky left-0 z-10 bg-canvas border-b border-line-strong py-2.5 pr-3.5 text-left align-bottom">
                 <span className="sr-only">{caption}</span>
               </th>
               {columns.map((c) => (
@@ -57,7 +57,7 @@ export function ComparisonTable({ caption, columns, rows, testId }: { caption: s
           <tbody>
             {rows.map((r, ri) => (
               <tr key={r.key} data-testid={`${testId}-row-${r.key}`}>
-                <th scope="row" className="sticky left-0 z-10 bg-surface border-b border-line py-2.5 pr-3.5 text-left align-top text-supporting font-bold text-ink-3">
+                <th scope="row" className="sticky left-0 z-10 bg-canvas border-b border-line py-2.5 pr-3.5 text-left align-top text-supporting font-bold text-ink-3">
                   {r.label}
                 </th>
                 {r.cells.map((cell, ci) => (

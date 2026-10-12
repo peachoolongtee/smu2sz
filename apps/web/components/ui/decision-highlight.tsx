@@ -22,7 +22,7 @@ export function DecisionHighlight({
   labelId?: string;
 }) {
   return (
-    <section aria-labelledby={labelId} data-testid={testId} className="motion-reveal min-w-0 rounded-decision bg-canvas px-5 py-5 sm:px-7 sm:py-6">
+    <section aria-labelledby={labelId} data-testid={testId} className="motion-reveal min-w-0 rounded-decision bg-surface px-4 py-4 sm:px-7 sm:py-6">
       <p className="text-supporting font-bold text-brand-700" data-testid="home-action-eyebrow">
         {eyebrow}
       </p>
@@ -35,16 +35,16 @@ export function DecisionHighlight({
         </p>
       ) : null}
       {facts?.length ? (
-        <dl className="mt-4 grid gap-x-0 gap-y-3 border-t border-line-strong pt-3 sm:grid-cols-[auto_minmax(0,1.6fr)_auto]" data-testid="hv2-action-facts">
+        <dl className="mt-3 grid grid-cols-2 gap-x-0 gap-y-2.5 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1.6fr)_auto] sm:gap-y-3 sm:pt-3" data-testid="hv2-action-facts">
           {facts.map((f, i) => (
-            <div key={f.label} className={`min-w-0 sm:pr-6 ${i > 0 ? "sm:border-l sm:border-line-strong sm:pl-6" : ""}`}>
+            <div key={f.label} className={`min-w-0 sm:pr-6 ${i > 0 ? "sm:border-l sm:border-line-strong sm:pl-6" : ""} ${i === 1 ? "max-sm:order-last max-sm:col-span-2" : i === 2 ? "max-sm:border-l max-sm:border-line-strong max-sm:pl-4" : ""}`}>
               <dt className="text-supporting text-ink-3">{f.label}</dt>
               <dd className="mt-0.5 text-sm font-bold text-ink sm:text-[15px] tabular-nums">{f.value}</dd>
             </div>
           ))}
         </dl>
       ) : null}
-      {children ? <div className="mt-4">{children}</div> : null}
+      {children ? <div className="mt-3 sm:mt-4">{children}</div> : null}
     </section>
   );
 }
@@ -55,7 +55,7 @@ export function DecisionHighlight({
  */
 export function HealthBand({ label, sentence, fact, children, testId }: { label: string; sentence: string; fact?: { label: string; value: string } | null; children?: ReactNode; testId?: string }) {
   return (
-    <section aria-label={label} data-testid={testId} className="motion-reveal flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-card bg-canvas py-3 pl-4 pr-3">
+    <section aria-label={label} data-testid={testId} className="motion-reveal flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-card bg-surface py-3 pl-4 pr-3">
       <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-ink-2">
         <span aria-hidden className="size-2 shrink-0 translate-y-[-1px] rounded-pill bg-bad-solid" />
         <b className="font-bold text-ink">{label}</b>

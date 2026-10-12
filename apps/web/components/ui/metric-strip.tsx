@@ -90,6 +90,7 @@ export function Metric({
           </button>
         ) : null}
       </div>
+      <div className="group-first:flex group-first:flex-wrap group-first:items-baseline group-first:gap-x-3 md:group-first:block">
       <p className={`mt-1 whitespace-nowrap font-display text-[22px] font-bold leading-tight tabular-nums tracking-[-0.02em] group-first:text-[28px] md:mt-2 md:text-[32px] md:group-first:text-[32px] ${VALUE_TONE[tone]}`} data-testid={`home-kpi-${id}-value`}>
         {value}
       </p>
@@ -98,6 +99,7 @@ export function Metric({
           {note}
         </p>
       ) : null}
+      </div>
       {children}
       {info ? (
         <div

@@ -32,9 +32,27 @@ export function readSelection(params: { get(name: string): string | null } | nul
   return { customer: get("customer"), decision: get("decision"), scenario: get("scenario") };
 }
 
-/** The Home address for a selection: `/` with none, else `/?customer=…&decision=…&scenario=…` for the ones that are set. */
-export function selectionHref(sel: Partial<HomeSelection>): string {
+/** The deal's view of the page, also in the address: which investigation is open (`compare=1`, `chart=1`) and the payment-timing assumption (`timing=late`). */
+export interface HomeDealView {
+  compare: boolean;
+  chart: boolean;
+  timing: "late" | null;
+}
+
+export const NO_DEAL_VIEW: HomeDealView = { compare: false, chart: false, timing: null };
+
+export function readDealView(params: { get(name: string): string | null } | null | undefined): HomeDealView {
+  return { compare: params?.get("compare") === "1", chart: params?.get("chart") === "1", timing: params?.get("timing") === "late" ? "late" : null };
+}
+
+/** The Home address for a selection: `/` with none, else `/?customer=…&decision=…&scenario=…` for the ones that are set, then the deal's view (`compare=1&chart=1&timing=late`) when one is given. */
+export function selectionHref(sel: Partial<HomeSelection>, view: Partial<HomeDealView> = {}): string {
   const q = (["customer", "decision", "scenario"] as const).filter((k) => sel[k]).map((k) => `${k}=${encodeURIComponent(sel[k] as string)}`);
+  if (sel.decision) {
+    if (view.compare) q.push("compare=1");
+    if (view.chart) q.push("chart=1");
+    if (view.timing) q.push(`timing=${view.timing}`);
+  }
   return q.length ? `/?${q.join("&")}` : "/";
 }
 

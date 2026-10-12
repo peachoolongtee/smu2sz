@@ -169,7 +169,7 @@ export function WorklistRow({
         scroll={false}
         aria-current={selected ? "true" : undefined}
         onClick={onClick}
-        className={`motion-press relative -mx-3.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 rounded-tile px-3.5 py-3 outline-offset-0 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-brand-600 ${selected ? "bg-brand-50 hover:bg-brand-50 before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-pill before:bg-brand-600" : ""}`}
+        className={`motion-press relative -mx-3.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 rounded-tile px-3.5 py-3 outline-offset-0 hover:bg-surface focus-visible:outline-2 focus-visible:outline-brand-600 ${selected ? "bg-brand-50 hover:bg-brand-50 before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-pill before:bg-brand-600" : ""}`}
       >
         <span className="min-w-0 text-[15px] font-bold leading-snug text-ink">
           {subject}

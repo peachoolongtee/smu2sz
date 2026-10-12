@@ -3696,6 +3696,7 @@ export interface ExposureStress {
   available: boolean;
   unavailable_text: string | null;
   lowest_short?: string | null;
+  lowest_display?: string | null;
   lowest_when?: string | null;
   first_breach_when?: string | null;
   /** How long cash is below the minimum, in words ("below it for 65 days"); absent until the server sends it (`text` is the whole sentence). */
