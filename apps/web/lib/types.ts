@@ -3066,7 +3066,8 @@ export interface OfferPictureView {
   verdict_id: string | null;
   lang: "en" | "zh";
   day: Day;
-  asked: OfferPictureLine & { first_breach_day: Day | null; first_breach_when: string | null };
+  /** Null when the offer can no longer be drawn (`available` false). */
+  asked: (OfferPictureLine & { first_breach_day: Day | null; first_breach_when: string | null }) | null;
   replies: (OfferPictureLine & { counter_id: string; note?: string })[];
   floor_fen: Fen;
   floor_short: string;

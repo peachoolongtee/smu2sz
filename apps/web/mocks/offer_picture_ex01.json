@@ -4,6 +4,8 @@
     "verdict_id": "VER-a899ca66120c",
     "lang": "en",
     "day": 0,
+    "available": true,
+    "unavailable_text": null,
     "asked": {
       "label": "As asked",
       "series": [
@@ -7707,6 +7709,8 @@
     "verdict_id": "VER-a899ca66120c",
     "lang": "zh",
     "day": 0,
+    "available": true,
+    "unavailable_text": null,
     "asked": {
       "label": "按对方要求",
       "series": [
