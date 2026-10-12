@@ -70,7 +70,7 @@ export function InvoiceDetail({
               <Line
                 less
                 label={t("recv3.bd.repays")}
-                note={row.repays_note ?? net.financing_state_text ? <span data-testid="recv3-bd-state">{row.repays_note ?? net.financing_state_text}</span> : undefined}
+                note={(net.repays_note ?? net.financing_state_text) ? <span data-testid="recv3-bd-state" className="first-letter:uppercase">{net.repays_note ?? net.financing_state_text}</span> : undefined}
                 value={net.advance_display}
                 testId="recv3-bd-advance"
               />

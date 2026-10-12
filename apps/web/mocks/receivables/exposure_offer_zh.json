@@ -19,7 +19,7 @@
       "lowest_when_text": "低于最低现金 15 天",
       "limit_word": "EXCEEDED",
       "limit_text": "超出授权",
-      "share_after_text": "100%，多持续 15 天"
+      "share_after_text": "0%，多持续 15 天"
     },
     {
       "key": "CTR-193394b6ba8b",
@@ -30,7 +30,7 @@
       "lowest_when_text": "恰为您的最低现金",
       "limit_word": "WITHIN",
       "limit_text": "在授权内",
-      "share_after_text": "100%，报价后 2 天付款"
+      "share_after_text": "0%，报价后 2 天付款"
     },
     {
       "key": "CTR-6b07cbf70441",
@@ -41,7 +41,7 @@
       "lowest_when_text": "恰为您的最低现金",
       "limit_word": "WITHIN",
       "limit_text": "在授权内",
-      "share_after_text": "100%，多持续 10 天"
+      "share_after_text": "0%，多持续 10 天"
     },
     {
       "key": "do_nothing",
@@ -50,8 +50,8 @@
       "lowest_display": "−¥105k",
       "lowest_when": "30 天后",
       "lowest_when_text": "低于最低现金 20 天",
-      "limit_word": "WITHIN",
-      "limit_text": "在授权内",
+      "limit_word": null,
+      "limit_text": null,
       "share_after_text": "100%"
     }
   ],
@@ -2639,7 +2639,8 @@
         "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
-      }
+      },
+      "do_nothing": null
     },
     "also": []
   },
@@ -4014,7 +4015,8 @@
         "no_borrowing_text": null
       },
       "spare": null
-    }
+    },
+    "do_nothing": null
   },
   "economics": null,
   "loss": null,
@@ -4024,6 +4026,13 @@
     "text": "Foshan占您应收款的 100%",
     "min_share_bp": 5000,
     "min_share_display": "50.00%"
+  },
+  "customer_context": {
+    "contribution_display": "约 ¥109万",
+    "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
+    "owes_display": "¥420,000",
+    "share_text": "100%",
+    "profile_href": "/customers/BUYER-1"
   },
   "spare_read": false,
   "lead": "asked",
@@ -4043,15 +4052,9 @@
       "CTR-6b07cbf70441": {
         "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
         "capacity": null
-      }
+      },
+      "do_nothing": null
     }
-  },
-  "customer_context": {
-    "contribution_display": "约 ¥109万",
-    "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
-    "owes_display": "¥420,000",
-    "share_text": "100%",
-    "profile_href": "/customers/BUYER-1"
   },
   "state_version": 1,
   "day": 0,

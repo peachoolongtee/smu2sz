@@ -1901,6 +1901,8 @@ export interface ReceivableNet {
   condition_text?: string;
   /** "¥257,186.08 repays the financing received 29 days earlier, with its charges"; null without financing. */
   repays_text?: string | null;
+  /** The financing's state and day for the breakdown's repayment line ("arranged, expected in 3 days"). */
+  repays_note?: string | null;
   /** "about ¥1,870 more for every 30 days late"; null when a late day adds nothing. */
   per_period_text?: string | null;
   /** What the receipt leaves owed by the owner when it falls short; null otherwise. */
@@ -1925,8 +1927,6 @@ export interface ReceivableRow {
   recourse_text?: string;
   /** The record of the executed financing request for this invoice; null when there is none to open. */
   financing_href?: string | null;
-  /** The repayment line of the breakdown with the financing's state and day ("Repays the financing, arranged today, expected in 3 days"). */
-  repays_note?: string | null;
   buyer_id?: string;
   buyer_name?: string;
   /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
@@ -1963,10 +1963,9 @@ export interface ReceivablesRead {
     overdue_count?: number;
     financed_count?: number;
     count_text?: string;
-    /** The h1's second line, when the server writes it ("About ¥163k becomes available at collection, after the financing is repaid."). */
-    repays_line?: string | null;
-    /** The h1's first line while something is overdue, when the server writes it. */
-    h1_overdue?: string | null;
+    /** The page's two heading lines, chosen and written by the server ("¥420k expected from Foshan." and "About ¥163k becomes available at collection, after the financing is repaid."); the second is null when there is nothing to add. */
+    headline?: string | null;
+    headline_second?: string | null;
     net_total_display?: string;
     /** "if every invoice is paid on its due day" */
     net_total_text?: string;
