@@ -208,7 +208,7 @@ export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView |
 
 /**
  * GET /receivables?lang=: the receivable rows with the net each invoice leaves, who governs it and what to do next, and the summary
- * (owner only, no flag). Resolves to null on a server without the route.
+ * (owner only, no flag). Resolves to null on a server without the route, so the Receivables page keeps its old reads.
  */
 export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
   return isMock ? (await mock()).getReceivables(lang) : (await live()).getReceivables(lang);
@@ -222,6 +222,14 @@ export interface ExposureContext {
   path?: string | null;
   /** The page that sent the owner (`deal`, `invoice` or `customer`); the server's back link follows it when the other parts support it. */
   from?: "deal" | "invoice" | "customer" | null;
+}
+
+/**
+ * GET /decisions/{id}/exposure (flag `exposure`): what a deal does to the exposure to its buyer, of which the Receivables aside reads the
+ * 30-day late-payment test, the concentration and the payment history. Null when the feature is off or the decision names no buyer.
+ */
+export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  return isMock ? (await mock()).getDecisionExposure(decisionId, lang) : (await live()).getDecisionExposure(decisionId, lang);
 }
 
 /**

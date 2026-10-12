@@ -88,6 +88,13 @@ async function nullWhenRouteAbsent<T>(read: () => Promise<T>): Promise<T | null>
   }
 }
 
+/** The query of the buyer exposure read: the language, the light read, and the page context (customer, invoice, decision, path, from) that asks for `context.back`. */
+export function buyerExposureQuery(lang: "en" | "zh", context: ExposureContext = {}): string {
+  const q = new URLSearchParams({ lang, spare: "0" });
+  for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (context[k]) q.set(k, context[k]);
+  return q.toString();
+}
+
 /** /negotiate returns the executor's raw results; the ledger view adds who asked and a one-line summary. */
 function asOperationView(o: Record<string, unknown>): OperationView {
   return {
@@ -162,14 +169,14 @@ export const live = {
 
   /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
   getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
-  /** GET /receivables (owner only, no flag): the rows with what each invoice nets, who governs it and what to do next. Null on a server without the route (404). */
+  /** GET /receivables (owner only, no flag): the rows with what each invoice nets, who governs it and what to do next. Null on a server without the route (404), so the old page stands. */
   getReceivables: (lang: "en" | "zh") => nullWhenRouteAbsent(() => http<ReceivablesRead>("GET", `/receivables?lang=${lang}`)),
-  /** GET /buyers/{id}/exposure (flag `exposure`). Null when the feature is off (404) or the buyer is unknown. The context (customer, invoice, decision, path) asks for `context.back`. */
-  getBuyerExposure: (buyerId: string, lang: "en" | "zh", context: ExposureContext = {}) => {
-    const q = new URLSearchParams({ lang, spare: "0" });
-    for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (context[k]) q.set(k, context[k]);
-    return nullWhenOff(() => http<BuyerExposureView>("GET", `/buyers/${enc(buyerId)}/exposure?${q.toString()}`));
-  },
+  /** GET /decisions/{id}/exposure (flag `exposure`): the buyer's late-payment test for a deal decision. Null when the feature is off or the decision names no buyer. */
+  getDecisionExposure: (decisionId: string, lang: "en" | "zh") =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/decisions/${enc(decisionId)}/exposure?lang=${lang}&spare=0`)),
+  /** GET /buyers/{id}/exposure (flag `exposure`). Null when the feature is off (404) or the buyer is unknown. The context (customer, invoice, decision, path, from) asks for `context.back`. */
+  getBuyerExposure: (buyerId: string, lang: "en" | "zh", context: ExposureContext = {}) =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/buyers/${enc(buyerId)}/exposure?${buyerExposureQuery(lang, context)}`)),
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
   getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
 

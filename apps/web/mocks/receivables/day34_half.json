@@ -1,0 +1,256 @@
+{
+  "day": 34,
+  "lang": "en",
+  "state_version": 7,
+  "rows": [
+    {
+      "receivable_id": "RCV-A",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "outstanding_fen": 29140000,
+      "amount_short": "¥291k",
+      "status": "OPEN",
+      "due_day": 32,
+      "due_when": "2 days ago",
+      "past_due": true,
+      "days_late": 2,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 29140000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 29140000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 34,
+        "financing_unrecorded": false,
+        "net_display": "¥291,400.00",
+        "net_short": "about ¥291k",
+        "condition_text": "if Foshan pays today (it is already late)",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "unrecorded_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥291,400.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "net_short": "about ¥291k",
+      "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_label": "Payment terms",
+        "terms_text": "Agreement FHR-2026-07: payment is due 45 days from the invoice date",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "none agreed on this invoice"
+      },
+      "pending_counter": null,
+      "collection_state": "OVERDUE",
+      "collection_state_text": "Overdue",
+      "collection_action": {
+        "primary": "CHASE",
+        "label": "Chase payment",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "Prepare reminder"
+          },
+          {
+            "action": "VIEW_TERMS",
+            "label": "View terms"
+          }
+        ]
+      },
+      "financing_href": null,
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥291,400.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:2",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "amount_short": "¥420k",
+      "status": "OPEN",
+      "due_day": 47,
+      "due_when": "in 13 days",
+      "past_due": false,
+      "days_late": 0,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 42000000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 47,
+        "financing_unrecorded": false,
+        "net_display": "¥420,000.00",
+        "net_short": "about ¥420k",
+        "condition_text": "if Foshan pays on the due day",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "unrecorded_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "net_short": "about ¥420k",
+      "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_label": "Payment terms",
+        "terms_text": "Agreement FHR-2026-07: payment is due 45 days from the invoice date",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "none agreed on this invoice"
+      },
+      "pending_counter": null,
+      "collection_state": "CURRENT",
+      "collection_state_text": "Not due yet",
+      "collection_action": {
+        "primary": "VIEW_TERMS",
+        "label": "View terms",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "Prepare reminder"
+          }
+        ]
+      },
+      "financing_href": null,
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:32",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "amount_short": "¥420k",
+      "status": "OPEN",
+      "due_day": 77,
+      "due_when": "in 43 days",
+      "past_due": false,
+      "days_late": 0,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 42000000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 77,
+        "financing_unrecorded": false,
+        "net_display": "¥420,000.00",
+        "net_short": "about ¥420k",
+        "condition_text": "if Foshan pays on the due day",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "unrecorded_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "net_short": "about ¥420k",
+      "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_label": "Payment terms",
+        "terms_text": "Agreement FHR-2026-07: payment is due 45 days from the invoice date",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "none agreed on this invoice"
+      },
+      "pending_counter": null,
+      "collection_state": "CURRENT",
+      "collection_state_text": "Not due yet",
+      "collection_action": {
+        "primary": "VIEW_TERMS",
+        "label": "View terms",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "Prepare reminder"
+          }
+        ]
+      },
+      "financing_href": null,
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    }
+  ],
+  "summary": {
+    "outstanding_total_fen": 113140000,
+    "outstanding_total_display": "¥1,131,400.00",
+    "next_expected": {
+      "when_text": "in 13 days",
+      "due_day": 47,
+      "amount_fen": 42000000,
+      "amount_display": "¥420,000.00",
+      "buyer_name": "Foshan Home Retail Co."
+    },
+    "financing_total_fen": 0,
+    "financing_total_display": "¥0.00",
+    "net_total_fen": 113140000,
+    "net_total_display": "¥1,131,400.00",
+    "net_total_text": "if every invoice is paid on its due day, or today for one already late"
+  },
+  "partial": null,
+  "last_read_when": "today",
+  "last_read_day": 34,
+  "computed_in_seconds": 0
+}

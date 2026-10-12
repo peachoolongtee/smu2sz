@@ -1,0 +1,1604 @@
+{
+  "buyer_id": "BUYER-1",
+  "buyer_name": "Foshan Home Retail Co.",
+  "lang": "en",
+  "buyer": {
+    "id": "BUYER-1",
+    "name": "Foshan Home Retail Co."
+  },
+  "concentration": {
+    "buyer_id": "BUYER-1",
+    "buyer_name": "Foshan",
+    "day": 34,
+    "lang": "en",
+    "is_aggregate": false,
+    "excluded_aggregates": [],
+    "aggregate_note": null,
+    "ar_buyer_fen": 100280000,
+    "ar_total_fen": 100280000,
+    "ar_all_fen": 100280000,
+    "ar_share_bp": 10000,
+    "ar_text": "Foshan is 100% of what you are owed today (¥1,002,800).",
+    "receipts_from_day": 34,
+    "receipts_to_day": 64,
+    "receipts_buyer_fen": 42000000,
+    "receipts_total_fen": 42000000,
+    "receipts_share_bp": 10000,
+    "receipts_text": "Foshan is 100% of the receipts due in the next 30 days (¥420,000).",
+    "annual_sales_share_bp": null,
+    "annual_sales_reason": "Annual sales are not known for every customer, so Foshan's share of sales is not shown.",
+    "contribution_share_bp": null,
+    "contribution_reason": "Foshan's share of gross profit is not shown: it needs a margin for every customer.",
+    "sentence": "Foshan is 100% of what you are owed today (¥1,002,800). Foshan is 100% of the receipts due in the next 30 days (¥420,000).",
+    "ar_buyer_display": "¥1,002,800.00",
+    "ar_total_display": "¥1,002,800.00",
+    "ar_all_display": "¥1,002,800.00",
+    "ar_share_display": "100.00%",
+    "receipts_buyer_display": "¥420,000.00",
+    "receipts_total_display": "¥420,000.00",
+    "receipts_share_display": "100.00%"
+  },
+  "payments": {
+    "buyer_id": "BUYER-1",
+    "buyer_name": "Foshan",
+    "day": 34,
+    "lang": "en",
+    "window_days": 365,
+    "completed": 0,
+    "invoices": [],
+    "average_days_late": null,
+    "median_days_late": null,
+    "p75_days_late": null,
+    "p90_days_late": null,
+    "on_time_count": null,
+    "on_time_share_bp": null,
+    "on_time_face_bp": null,
+    "max_recent_delay_days": null,
+    "trend": null,
+    "early_agreed_count": 1,
+    "early_agreed_missed": 0,
+    "open_overdue": [
+      {
+        "receivable_id": "RCV-A",
+        "due_day": 32,
+        "days_overdue": 2,
+        "outstanding_fen": 16280000,
+        "outstanding_display": "¥162,800.00"
+      }
+    ],
+    "survivorship": false,
+    "survivorship_text": null,
+    "typical_delay_days": null,
+    "delay_basis": "NONE",
+    "owner_delay_days": null,
+    "owner_delay_text": null,
+    "insufficient": true,
+    "insufficient_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+    "sentence": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay. 1 agreed early payment arrived on time."
+  },
+  "payments_note": null,
+  "stress": {
+    "delay_days": 30,
+    "now": {
+      "delay_days": 30,
+      "lowest_fen": -4500000,
+      "lowest_day": 60,
+      "breach_days": 35,
+      "need_fen": 34500000,
+      "plan_admissible": false,
+      "plan_cost_fen": null,
+      "needs_owner": false,
+      "executable_now": true,
+      "first_breach_day": 42,
+      "assumption": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). The ¥420,000.00 invoice to Foshan Home Retail Co. (due 2 days ago) is already past due and stays as the books count it. Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥420,000.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,344,000.00.",
+      "funding_text": "Cash is below your minimum on 35 days. No committed plan covers the ¥345,000.00 shortfall: FLOW finds no admissible way to fund it without you.",
+      "available": true,
+      "unavailable_text": null,
+      "series": [
+        {
+          "day": 34,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 35,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 36,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 37,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 38,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 39,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 40,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 41,
+          "closing_fen": 30000000,
+          "closing_display": "¥300,000.00"
+        },
+        {
+          "day": 42,
+          "closing_fen": 10000000,
+          "closing_display": "¥100,000.00"
+        },
+        {
+          "day": 43,
+          "closing_fen": 10000000,
+          "closing_display": "¥100,000.00"
+        },
+        {
+          "day": 44,
+          "closing_fen": 10000000,
+          "closing_display": "¥100,000.00"
+        },
+        {
+          "day": 45,
+          "closing_fen": 10000000,
+          "closing_display": "¥100,000.00"
+        },
+        {
+          "day": 46,
+          "closing_fen": 10000000,
+          "closing_display": "¥100,000.00"
+        },
+        {
+          "day": 47,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 48,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 49,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 50,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 51,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 52,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 53,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 54,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 55,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 56,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 57,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 58,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 59,
+          "closing_fen": 0,
+          "closing_display": "¥0.00"
+        },
+        {
+          "day": 60,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 61,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 62,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 63,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 64,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 65,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 66,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 67,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 68,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 69,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 70,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 71,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 72,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 73,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 74,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 75,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 76,
+          "closing_fen": -4500000,
+          "closing_display": "−¥45,000.00"
+        },
+        {
+          "day": 77,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 78,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 79,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 80,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 81,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 82,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 83,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 84,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 85,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 86,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 87,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 88,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 89,
+          "closing_fen": 37500000,
+          "closing_display": "¥375,000.00"
+        },
+        {
+          "day": 90,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 91,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 92,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 93,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 94,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 95,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 96,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 97,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 98,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 99,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 100,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 101,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 102,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 103,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 104,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 105,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 106,
+          "closing_fen": 33000000,
+          "closing_display": "¥330,000.00"
+        },
+        {
+          "day": 107,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 108,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 109,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 110,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 111,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 112,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 113,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 114,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 115,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 116,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 117,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 118,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 119,
+          "closing_fen": 75000000,
+          "closing_display": "¥750,000.00"
+        },
+        {
+          "day": 120,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 121,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 122,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 123,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 124,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 125,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 126,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 127,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 128,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 129,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 130,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 131,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 132,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 133,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 134,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 135,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 136,
+          "closing_fen": 70500000,
+          "closing_display": "¥705,000.00"
+        },
+        {
+          "day": 137,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 138,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 139,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 140,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 141,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 142,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 143,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 144,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 145,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 146,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 147,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 148,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 149,
+          "closing_fen": 112500000,
+          "closing_display": "¥1,125,000.00"
+        },
+        {
+          "day": 150,
+          "closing_fen": 108000000,
+          "closing_display": "¥1,080,000.00"
+        },
+        {
+          "day": 151,
+          "closing_fen": 108000000,
+          "closing_display": "¥1,080,000.00"
+        },
+        {
+          "day": 152,
+          "closing_fen": 108000000,
+          "closing_display": "¥1,080,000.00"
+        },
+        {
+          "day": 153,
+          "closing_fen": 108000000,
+          "closing_display": "¥1,080,000.00"
+        },
+        {
+          "day": 154,
+          "closing_fen": 92596376,
+          "closing_display": "¥925,963.76"
+        }
+      ],
+      "lowest_short": "−¥45k",
+      "lowest_when": "in 26 days",
+      "first_breach_when": "in 8 days",
+      "text": "Paid 30 days late: cash falls to −¥45,000 in 26 days, 35 days below your minimum; no committed facility covers the ¥345,000.",
+      "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+      "lowest_display": "−¥45,000.00",
+      "need_display": "¥345,000.00",
+      "net_later_fen": 100280000,
+      "net_later_text": "about ¥1,003k, a month later",
+      "net_later_display": "¥1,002,800.00"
+    },
+    "paths": {
+      "asked": {
+        "delay_days": 30,
+        "lowest_fen": -4500000,
+        "lowest_day": 60,
+        "breach_days": 35,
+        "need_fen": 34500000,
+        "plan_admissible": false,
+        "plan_cost_fen": null,
+        "needs_owner": false,
+        "executable_now": true,
+        "first_breach_day": 42,
+        "assumption": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). The ¥420,000.00 invoice to Foshan Home Retail Co. (due 2 days ago) is already past due and stays as the books count it. Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥420,000.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,344,000.00.",
+        "funding_text": "Cash is below your minimum on 35 days. No committed plan covers the ¥345,000.00 shortfall: FLOW finds no admissible way to fund it without you.",
+        "available": true,
+        "unavailable_text": null,
+        "series": [
+          {
+            "day": 34,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 35,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 36,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 37,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 38,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 39,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 40,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 41,
+            "closing_fen": 30000000,
+            "closing_display": "¥300,000.00"
+          },
+          {
+            "day": 42,
+            "closing_fen": 10000000,
+            "closing_display": "¥100,000.00"
+          },
+          {
+            "day": 43,
+            "closing_fen": 10000000,
+            "closing_display": "¥100,000.00"
+          },
+          {
+            "day": 44,
+            "closing_fen": 10000000,
+            "closing_display": "¥100,000.00"
+          },
+          {
+            "day": 45,
+            "closing_fen": 10000000,
+            "closing_display": "¥100,000.00"
+          },
+          {
+            "day": 46,
+            "closing_fen": 10000000,
+            "closing_display": "¥100,000.00"
+          },
+          {
+            "day": 47,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 48,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 49,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 50,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 51,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 52,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 53,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 54,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 55,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 56,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 57,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 58,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 59,
+            "closing_fen": 0,
+            "closing_display": "¥0.00"
+          },
+          {
+            "day": 60,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 61,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 62,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 63,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 64,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 65,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 66,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 67,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 68,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 69,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 70,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 71,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 72,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 73,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 74,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 75,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 76,
+            "closing_fen": -4500000,
+            "closing_display": "−¥45,000.00"
+          },
+          {
+            "day": 77,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 78,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 79,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 80,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 81,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 82,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 83,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 84,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 85,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 86,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 87,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 88,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 89,
+            "closing_fen": 37500000,
+            "closing_display": "¥375,000.00"
+          },
+          {
+            "day": 90,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 91,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 92,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 93,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 94,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 95,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 96,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 97,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 98,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 99,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 100,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 101,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 102,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 103,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 104,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 105,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 106,
+            "closing_fen": 33000000,
+            "closing_display": "¥330,000.00"
+          },
+          {
+            "day": 107,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 108,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 109,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 110,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 111,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 112,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 113,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 114,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 115,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 116,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 117,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 118,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 119,
+            "closing_fen": 75000000,
+            "closing_display": "¥750,000.00"
+          },
+          {
+            "day": 120,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 121,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 122,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 123,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 124,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 125,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 126,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 127,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 128,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 129,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 130,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 131,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 132,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 133,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 134,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 135,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 136,
+            "closing_fen": 70500000,
+            "closing_display": "¥705,000.00"
+          },
+          {
+            "day": 137,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 138,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 139,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 140,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 141,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 142,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 143,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 144,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 145,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 146,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 147,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 148,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 149,
+            "closing_fen": 112500000,
+            "closing_display": "¥1,125,000.00"
+          },
+          {
+            "day": 150,
+            "closing_fen": 108000000,
+            "closing_display": "¥1,080,000.00"
+          },
+          {
+            "day": 151,
+            "closing_fen": 108000000,
+            "closing_display": "¥1,080,000.00"
+          },
+          {
+            "day": 152,
+            "closing_fen": 108000000,
+            "closing_display": "¥1,080,000.00"
+          },
+          {
+            "day": 153,
+            "closing_fen": 108000000,
+            "closing_display": "¥1,080,000.00"
+          },
+          {
+            "day": 154,
+            "closing_fen": 92596376,
+            "closing_display": "¥925,963.76"
+          }
+        ],
+        "lowest_short": "−¥45k",
+        "lowest_when": "in 26 days",
+        "first_breach_when": "in 8 days",
+        "text": "Paid 30 days late: cash falls to −¥45,000 in 26 days, 35 days below your minimum; no committed facility covers the ¥345,000.",
+        "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "lowest_display": "−¥45,000.00",
+        "need_display": "¥345,000.00"
+      }
+    },
+    "also": []
+  },
+  "capacity": {
+    "available": true,
+    "unavailable_text": null,
+    "before": {
+      "windows": [
+        {
+          "dimension": "cash_buffer",
+          "facility_id": null,
+          "today_fen": 0,
+          "after_fen": 12000000,
+          "lowest_fen": -20000000,
+          "lowest_day": 42,
+          "recovers_day": 47,
+          "through_day": 46,
+          "over_by": true,
+          "reason": null,
+          "buyer_id": null,
+          "reading": null,
+          "month": null,
+          "recovery_assumed": false,
+          "today_display": "¥0.00",
+          "after_display": "¥120,000.00",
+          "lowest_display": "−¥200,000.00",
+          "lowest_when": "in 8 days",
+          "through_when": "in 12 days",
+          "recovers_when": "in 13 days",
+          "recovery_assumed_text": null,
+          "today_text": "¥0.00",
+          "lowest_text": "over by ¥200,000.00",
+          "after_text": "¥120,000.00",
+          "label": "Cash above your minimum",
+          "reason_text": null,
+          "today_short": "¥0",
+          "after_short": "¥120k",
+          "facility_name": null,
+          "reading_text": null
+        },
+        {
+          "dimension": "credit_line",
+          "facility_id": "FAC-LINE",
+          "today_fen": 1380,
+          "after_fen": 15000000,
+          "lowest_fen": 1380,
+          "lowest_day": 34,
+          "recovers_day": 47,
+          "through_day": 46,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": null,
+          "month": null,
+          "recovery_assumed": true,
+          "today_display": "¥13.80",
+          "after_display": "¥150,000.00",
+          "lowest_display": "¥13.80",
+          "lowest_when": "today",
+          "through_when": "in 12 days",
+          "recovers_when": "in 13 days",
+          "recovery_assumed_text": "Back in 13 days only if the repayment is made on the planned day (an assumption, not a record).",
+          "today_text": "¥13.80",
+          "lowest_text": "¥13.80",
+          "after_text": "¥150,000.00",
+          "label": "Credit line room",
+          "reason_text": null,
+          "today_short": "¥13.80",
+          "after_short": "¥150k",
+          "facility_name": "Bank credit line",
+          "reading_text": null
+        },
+        {
+          "dimension": "invoice_finance",
+          "facility_id": "FAC-IF",
+          "today_fen": 15000000,
+          "after_fen": null,
+          "lowest_fen": 15000000,
+          "lowest_day": 34,
+          "recovers_day": null,
+          "through_day": 46,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": "TODAY",
+          "month": null,
+          "recovery_assumed": false,
+          "today_display": "¥150,000.00",
+          "lowest_display": "¥150,000.00",
+          "lowest_when": "today",
+          "through_when": "in 12 days",
+          "recovers_when": "not within the 120-day horizon",
+          "recovery_assumed_text": null,
+          "today_text": "¥150,000.00",
+          "lowest_text": "¥150,000.00",
+          "after_text": null,
+          "label": "Invoice-finance room",
+          "reason_text": null,
+          "today_short": "¥150k",
+          "after_short": null,
+          "facility_name": "Invoice financing (onboarded platform)",
+          "reading_text": "issued invoices"
+        },
+        {
+          "dimension": "invoice_finance",
+          "facility_id": "FAC-IF",
+          "today_fen": 15000000,
+          "after_fen": 25600000,
+          "lowest_fen": 15000000,
+          "lowest_day": 34,
+          "recovers_day": 47,
+          "through_day": 46,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": "AS_ISSUED",
+          "month": null,
+          "recovery_assumed": false,
+          "today_display": "¥150,000.00",
+          "after_display": "¥256,000.00",
+          "lowest_display": "¥150,000.00",
+          "lowest_when": "today",
+          "through_when": "in 12 days",
+          "recovers_when": "in 13 days",
+          "recovery_assumed_text": null,
+          "today_text": "¥150,000.00",
+          "lowest_text": "¥150,000.00",
+          "after_text": "¥256,000.00",
+          "label": "Invoice-finance room",
+          "reason_text": null,
+          "today_short": "¥150k",
+          "after_short": "¥256k",
+          "facility_name": "Invoice financing (onboarded platform)",
+          "reading_text": "invoices as scheduled (an assumption)"
+        },
+        {
+          "dimension": "concession",
+          "facility_id": null,
+          "today_fen": 500000,
+          "after_fen": null,
+          "lowest_fen": 500000,
+          "lowest_day": 34,
+          "recovers_day": null,
+          "through_day": 398,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": null,
+          "month": null,
+          "recovery_assumed": false,
+          "today_display": "¥5,000.00",
+          "lowest_display": "¥5,000.00",
+          "lowest_when": "today",
+          "through_when": "in 364 days",
+          "recovers_when": "not within the 120-day horizon",
+          "recovery_assumed_text": null,
+          "today_text": "¥5,000.00",
+          "lowest_text": "¥5,000.00",
+          "after_text": null,
+          "label": "Concession budget left",
+          "reason_text": null,
+          "today_short": "¥5k",
+          "after_short": null,
+          "facility_name": null,
+          "reading_text": null
+        },
+        {
+          "dimension": "dscr_room",
+          "facility_id": null,
+          "today_fen": 2469463,
+          "after_fen": null,
+          "lowest_fen": 2469463,
+          "lowest_day": 60,
+          "recovers_day": null,
+          "through_day": 60,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": null,
+          "month": 2,
+          "recovery_assumed": false,
+          "today_display": "¥24,694.63",
+          "lowest_display": "¥24,694.63",
+          "lowest_when": "in 26 days",
+          "through_when": "in 26 days",
+          "recovers_when": "not within the 120-day horizon",
+          "recovery_assumed_text": null,
+          "today_text": "¥24,694.63",
+          "lowest_text": "¥24,694.63",
+          "after_text": null,
+          "label": "Debt service room (DSCR)",
+          "reason_text": null,
+          "today_short": "¥25k",
+          "after_short": null,
+          "facility_name": null,
+          "reading_text": null
+        },
+        {
+          "dimension": "leverage_room",
+          "facility_id": null,
+          "today_fen": 121000000,
+          "after_fen": null,
+          "lowest_fen": 121000000,
+          "lowest_day": 60,
+          "recovers_day": null,
+          "through_day": 60,
+          "over_by": false,
+          "reason": null,
+          "buyer_id": null,
+          "reading": null,
+          "month": 2,
+          "recovery_assumed": false,
+          "today_display": "¥1,210,000.00",
+          "lowest_display": "¥1,210,000.00",
+          "lowest_when": "in 26 days",
+          "through_when": "in 26 days",
+          "recovers_when": "not within the 120-day horizon",
+          "recovery_assumed_text": null,
+          "today_text": "¥1,210,000.00",
+          "lowest_text": "¥1,210,000.00",
+          "after_text": null,
+          "label": "Debt room (leverage)",
+          "reason_text": null,
+          "today_short": "¥1,210k",
+          "after_short": null,
+          "facility_name": null,
+          "reading_text": null
+        }
+      ],
+      "plan_admissible": true,
+      "no_borrowing_text": null
+    },
+    "spare": null
+  },
+  "band": {
+    "concentration": "Foshan is 100% of what you are owed today (¥1,002,800). Foshan is 100% of the receipts due in the next 30 days (¥420,000).",
+    "stress": "Paid 30 days late: cash falls to −¥45,000 in 26 days, 35 days below your minimum; no committed facility covers the ¥345,000.",
+    "capacity": null
+  },
+  "flag": {
+    "material": true,
+    "text": "Foshan is 100% of what you are owed",
+    "min_share_bp": 5000,
+    "min_share_display": "50.00%"
+  },
+  "spare_read": false,
+  "partial": false,
+  "economics": null,
+  "customer_context": {
+    "contribution_display": "about ¥1.01m",
+    "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
+    "owes_display": "¥1,002,800",
+    "share_text": "100%",
+    "profile_href": "/customers/BUYER-1"
+  },
+  "state_version": 7,
+  "day": 34,
+  "computed_in_seconds": 0
+}

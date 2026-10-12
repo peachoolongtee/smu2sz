@@ -51,9 +51,9 @@ import type {
   PilotJournalView,
   PriceCurveView,
   EnvelopeView,
-  ReceivablesWorthView,
   BuyerExposureView,
   ReceivablesRead,
+  ReceivablesWorthView,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -69,8 +69,8 @@ import type {
 
 import * as documents from "./documents";
 import * as decisions from "./decisions";
-import * as cashStress from "./cash-stress";
 import * as home from "./home";
+import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -751,6 +751,34 @@ function withHomePatch(view: HomeView): HomeView {
   }
 }
 
+/** GET /receivables: the recording for this point of the story (lib/mock/receivables.ts). Owner only, as live. */
+export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return receivablesMock.mockReceivables(dealt, lang);
+}
+
+/** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
+  await delay();
+  return receivablesMock.mockBuyerExposure(buyerId, lang, home.mockClock().day >= home.NEWS_DAY, context);
+}
+
+/** GET /decisions/{id}/exposure: the recorded exposure of the open offer's decision; any other decision answers 404 (null: no result in the aside). */
+export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  await delay();
+  try {
+    return await receivablesMock.mockDecisionExposure(decisionId, lang);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 export async function getClock(): Promise<ClockView> {
   await delay();
   return home.mockClock();
@@ -797,18 +825,6 @@ const priceCurveRecordings = () =>
 const worthRecordings = () => Promise.all([import("../../mocks/strategy/worth_day0.json"), import("../../mocks/strategy/worth_day34.json"), import("../../mocks/strategy/worth_day34_after.json")]);
 const envelopeRecordings = () =>
   Promise.all([import("../../mocks/strategy/envelope_day0.json"), import("../../mocks/strategy/envelope_day34.json"), import("../../mocks/strategy/envelope_day34_after.json")]);
-
-/** GET /receivables: the opening books' recording (lib/mock/cash-stress.ts). */
-export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
-  await delay();
-  return cashStress.mockReceivables(lang);
-}
-
-/** GET /buyers/{id}/exposure: the recording for BUYER-1; any other buyer is unknown (null, as the server's 404 reads). */
-export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
-  await delay();
-  return cashStress.mockBuyerExposure(buyerId, lang, context);
-}
 
 /** GET /cash/price-curve. */
 export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView | null> {
@@ -876,6 +892,7 @@ export async function getChase(receivableId: string, lang: "en" | "zh"): Promise
 
 export async function getReconciliation(): Promise<ReconciliationView> {
   await delay();
+  if (receivablesMock.hook(receivablesMock.RECONCILIATION_FAIL_KEY)) throw new ApiError(503, "The reconciliation is unavailable");
   return clone(cast<ReconciliationView>(home.mockReconciliation() ?? reconciliationJson));
 }
 
