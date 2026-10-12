@@ -3349,6 +3349,8 @@ export interface OverviewAction {
 
 /** The one commercial decision waiting for the owner; `primary` opens it on Deals with the recommended path selected. */
 export interface OverviewDecision {
+  /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read). */
+  kind?: "counter" | "request" | "offer_received";
   eyebrow: string;
   text: string;
   headline_short?: string | null;
@@ -3360,8 +3362,9 @@ export interface OverviewDecision {
 export interface OverviewHistoryRow {
   when_text: string;
   text: string;
-  /** Where the row opens (the deal, its record, the documents), or null for a row that is only said. */
+  /** Where the row opens (the deal, its record, the documents), or null for a row that is only said; `link_label` says where. */
   href: string | null;
+  link_label?: string | null;
 }
 
 /** GET /customers/{id}/overview?lang&decision&path&invoice. Each section is rendered only when its field is present. */
@@ -3386,6 +3389,8 @@ export interface CustomerOverviewView {
   /** The exposure panel; null while the exposure read is off, and then `note` says why. */
   exposure?: { rows: OverviewRow[]; same_figures_note?: string | null } | null;
   note?: string | null;
+  /** Present when a supporting read failed and the page is not whole (never cached by the server). */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   history?: OverviewHistoryRow[];
   /** `back` is built by the server from the query the page was opened with. */
   context?: { back: { label: string; href: string } };

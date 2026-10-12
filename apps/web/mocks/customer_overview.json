@@ -12,8 +12,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.09m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -56,15 +56,22 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,092,000",
+            "note": "under today's terms",
             "tone": "neutral"
           },
           {
@@ -77,7 +84,7 @@
         ],
         "economics_note": "None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -116,9 +123,11 @@
           {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -150,8 +159,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥109万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -194,15 +203,22 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,092,000",
+            "note": "按现行条款",
             "tone": "neutral"
           },
           {
@@ -215,7 +231,7 @@
         ],
         "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -254,9 +270,11 @@
           {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",
@@ -290,8 +308,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.09m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -316,8 +334,30 @@
             "tone": "warn"
           }
         ],
-        "decision": null,
-        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "decision": {
+          "kind": "offer_received",
+          "eyebrow": "One offer waits to be read",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW has not read it yet.",
+          "headline_short": null,
+          "authority_text": null,
+          "primary": {
+            "label": "Read the offer",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          },
+          "secondary": [
+            {
+              "key": "invoices",
+              "label": "View the invoices",
+              "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+            },
+            {
+              "key": "stress",
+              "label": "Stress-test payment",
+              "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+            }
+          ]
+        },
+        "none_text": null,
         "actions": [
           {
             "key": "invoices",
@@ -334,15 +374,22 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,092,000",
+            "note": "under today's terms",
             "tone": "neutral"
           },
           {
@@ -355,7 +402,7 @@
         ],
         "economics_note": "None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -382,8 +429,8 @@
             {
               "key": "capacity",
               "label": "Spare capacity",
-              "value_display": "¥81,000 today",
-              "note": null,
+              "value_display": "¥81,000 today; ¥81,000 if you accept as asked",
+              "note": "Accepting as asked leaves ¥81,000 of room for another payment; today ¥81,000.",
               "tone": "neutral"
             }
           ],
@@ -392,11 +439,19 @@
         "note": null,
         "history": [
           {
+            "when_text": "Today",
+            "text": "Asked for early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW has not read it yet.",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21",
+            "link_label": "The deal"
+          },
+          {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -405,6 +460,15 @@
         }
       },
       "backs": [
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21"
+          },
+          "back": {
+            "label": "Back to the Foshan deal",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          }
+        },
         {
           "query": {
             "invoice": "RCV-A"
@@ -428,8 +492,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥109万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -454,8 +518,30 @@
             "tone": "warn"
           }
         ],
-        "decision": null,
-        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "decision": {
+          "kind": "offer_received",
+          "eyebrow": "有一份报价等待阅读",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 尚未读取。",
+          "headline_short": null,
+          "authority_text": null,
+          "primary": {
+            "label": "阅读报价",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          },
+          "secondary": [
+            {
+              "key": "invoices",
+              "label": "查看发票",
+              "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+            },
+            {
+              "key": "stress",
+              "label": "测试晚付的影响",
+              "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+            }
+          ]
+        },
+        "none_text": null,
         "actions": [
           {
             "key": "invoices",
@@ -472,15 +558,22 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,092,000",
+            "note": "按现行条款",
             "tone": "neutral"
           },
           {
@@ -493,7 +586,7 @@
         ],
         "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -520,8 +613,8 @@
             {
               "key": "capacity",
               "label": "可用余量",
-              "value_display": "今天 ¥81,000",
-              "note": null,
+              "value_display": "今天 ¥81,000；如果您按对方要求接受，¥81,000",
+              "note": "按对方要求接受后，再支付一笔款项的余量为 ¥81,000；目前为 ¥81,000。",
               "tone": "neutral"
             }
           ],
@@ -530,11 +623,19 @@
         "note": null,
         "history": [
           {
+            "when_text": "今天",
+            "text": "对方提出：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 尚未读取。",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21",
+            "link_label": "该交易"
+          },
+          {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",
@@ -543,6 +644,15 @@
         }
       },
       "backs": [
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21"
+          },
+          "back": {
+            "label": "返回与Foshan的交易",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          }
+        },
         {
           "query": {
             "invoice": "RCV-A"
@@ -568,8 +678,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.09m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -595,6 +705,7 @@
           }
         ],
         "decision": {
+          "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
           "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
           "headline_short": "Counter instead of accepting as asked",
@@ -633,15 +744,29 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,092,000",
+            "note": "under today's terms",
+            "tone": "neutral"
+          },
+          {
+            "key": "open_request",
+            "label": "The open request",
+            "value_display": "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once",
+            "note": "the cost of keeping the same sales on softer terms, not profit gained",
             "tone": "neutral"
           },
           {
@@ -652,9 +777,9 @@
             "tone": "neutral"
           }
         ],
-        "economics_note": "None of this changes what FLOW may do on its own.",
+        "economics_note": "A customer worth ¥1.09m a year does not by itself justify a ¥28,330 concession over 12 months; the question is how much of that is at risk if you counter. None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -693,14 +818,17 @@
           {
             "when_text": "Today",
             "text": "Asked for early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. Two replies are ready to send.",
-            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21",
+            "link_label": "The deal"
           },
           {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -751,8 +879,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥109万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -778,6 +906,7 @@
           }
         ],
         "decision": {
+          "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
           "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
           "headline_short": "还价，不按对方要求接受",
@@ -816,15 +945,29 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,092,000",
+            "note": "按现行条款",
+            "tone": "neutral"
+          },
+          {
+            "key": "open_request",
+            "label": "当前的请求",
+            "value_display": "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00",
+            "note": "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润",
             "tone": "neutral"
           },
           {
@@ -835,9 +978,9 @@
             "tone": "neutral"
           }
         ],
-        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "economics_note": "一位每年价值¥109万的客户，本身并不足以说明值得做12 个月内 ¥28,330 的让步；关键是如果您还价，其中有多少会面临风险。这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -876,14 +1019,17 @@
           {
             "when_text": "今天",
             "text": "对方提出：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。两份回复已可发送。",
-            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21",
+            "link_label": "该交易"
           },
           {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",
@@ -936,8 +1082,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.09m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -980,15 +1126,22 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,092,000",
+            "note": "under today's terms",
             "tone": "neutral"
           },
           {
@@ -1001,7 +1154,7 @@
         ],
         "economics_note": "None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1046,15 +1199,18 @@
         "history": [
           {
             "when_text": "Today",
-            "text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days. Financed through Invoice financing (onboarded platform).",
-            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan"
+            "text": "Invoice financing of ¥255,000 against the ¥420,000 invoice: arranged, expected in 3 days.",
+            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
+            "link_label": "The record"
           },
           {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -1086,8 +1242,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥109万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -1130,15 +1286,22 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,460,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,092,000",
+            "note": "按现行条款",
             "tone": "neutral"
           },
           {
@@ -1151,7 +1314,7 @@
         ],
         "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1196,15 +1359,18 @@
         "history": [
           {
             "when_text": "今天",
-            "text": "已以Foshan Home Retail Co.的发票融资 ¥255,000.00。资金将于3 天后到账。通过Invoice financing (onboarded platform)融资。",
-            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan"
+            "text": "以 ¥420,000 的发票做 ¥255,000 的融资：已安排，预计3 天后到账。",
+            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
+            "link_label": "记录"
           },
           {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",
@@ -1238,8 +1404,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.01m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -1282,15 +1448,22 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,040,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,008,000",
+            "note": "under today's terms",
             "tone": "neutral"
           },
           {
@@ -1303,7 +1476,7 @@
         ],
         "economics_note": "None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1341,15 +1514,24 @@
         "history": [
           {
             "when_text": "32 days ago",
-            "text": "Received ¥255,013.80 from Foshan Home Retail Co. Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
-            "href": null
+            "text": "The receipt of ¥255,013.80 against the ¥420,000 invoice came in.",
+            "href": null,
+            "link_label": null
+          },
+          {
+            "when_text": "34 days ago",
+            "text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "The agreement"
           },
           {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -1381,8 +1563,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥101万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -1425,15 +1607,22 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,040,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,008,000",
+            "note": "按现行条款",
             "tone": "neutral"
           },
           {
@@ -1446,7 +1635,7 @@
         ],
         "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1484,15 +1673,24 @@
         "history": [
           {
             "when_text": "32 天前",
-            "text": "已收到Foshan Home Retail Co.的 ¥255,013.80。按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
-            "href": null
+            "text": "已收到 ¥255,013.80，对应 ¥420,000 的发票。",
+            "href": null,
+            "link_label": null
+          },
+          {
+            "when_text": "34 天前",
+            "text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "协议"
           },
           {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",
@@ -1526,8 +1724,8 @@
           {
             "key": "value",
             "label": "Relationship value",
-            "value_display": "Not known yet",
-            "note": "enter annual sales and gross margin to estimate it",
+            "value_display": "about ¥1.01m",
+            "note": "a year, estimated contribution",
             "tone": "neutral"
           },
           {
@@ -1570,15 +1768,22 @@
           {
             "key": "annual_sales",
             "label": "Annual sales",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "¥5,040,000",
+            "note": "projected from your books",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "Gross margin",
-            "value_display": "not entered yet",
-            "note": null,
+            "value_display": "20%",
+            "note": "assumed for the Demo, not confirmed by you",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "Contribution a year",
+            "value_display": "about ¥1,008,000",
+            "note": "under today's terms",
             "tone": "neutral"
           },
           {
@@ -1591,7 +1796,7 @@
         ],
         "economics_note": "None of this changes what FLOW may do on its own.",
         "edit_label": "Edit these facts",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1636,20 +1841,30 @@
         "history": [
           {
             "when_text": "Today",
-            "text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
-            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7"
+            "text": "Invoice financing of ¥200,000 against the ¥420,000 invoice: arranged, expected in 3 days.",
+            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7",
+            "link_label": "The record"
           },
           {
             "when_text": "32 days ago",
-            "text": "Received ¥255,013.80 from Foshan Home Retail Co. Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
-            "href": null
+            "text": "The receipt of ¥255,013.80 against the ¥420,000 invoice came in.",
+            "href": null,
+            "link_label": null
+          },
+          {
+            "when_text": "34 days ago",
+            "text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "The agreement"
           },
           {
             "when_text": "In force",
             "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "The terms"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "Back to Deals",
@@ -1681,8 +1896,8 @@
           {
             "key": "value",
             "label": "客户关系价值",
-            "value_display": "暂不清楚",
-            "note": "填写年销售额和毛利率后即可估算",
+            "value_display": "约 ¥101万",
+            "note": "每年，估算的贡献",
             "tone": "neutral"
           },
           {
@@ -1725,15 +1940,22 @@
           {
             "key": "annual_sales",
             "label": "年销售额",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "¥5,040,000",
+            "note": "根据您的账目推算",
             "tone": "neutral"
           },
           {
             "key": "gross_margin",
             "label": "毛利率",
-            "value_display": "尚未填写",
-            "note": null,
+            "value_display": "20%",
+            "note": "为演示而假设，尚未经您确认",
+            "tone": "warn"
+          },
+          {
+            "key": "contribution",
+            "label": "每年贡献",
+            "value_display": "约 ¥1,008,000",
+            "note": "按现行条款",
             "tone": "neutral"
           },
           {
@@ -1746,7 +1968,7 @@
         ],
         "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
         "edit_label": "修改这些信息",
-        "edit_href": "/inputs?customer=BUYER-1",
+        "edit_href": null,
         "exposure": {
           "rows": [
             {
@@ -1791,20 +2013,30 @@
         "history": [
           {
             "when_text": "今天",
-            "text": "您已批准¥200,000.00 的发票融资。资金将于3 天后到账。",
-            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7"
+            "text": "以 ¥420,000 的发票做 ¥200,000 的融资：已安排，预计3 天后到账。",
+            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7",
+            "link_label": "记录"
           },
           {
             "when_text": "32 天前",
-            "text": "已收到Foshan Home Retail Co.的 ¥255,013.80。按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
-            "href": null
+            "text": "已收到 ¥255,013.80，对应 ¥420,000 的发票。",
+            "href": null,
+            "link_label": null
+          },
+          {
+            "when_text": "34 天前",
+            "text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
+            "href": "/decisions/deal%3AOFF-f806f79b6c21",
+            "link_label": "协议"
           },
           {
             "when_text": "现行",
             "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-            "href": "/documents"
+            "href": "/documents",
+            "link_label": "条款"
           }
         ],
+        "partial": null,
         "context": {
           "back": {
             "label": "返回交易",

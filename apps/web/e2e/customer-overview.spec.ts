@@ -50,8 +50,9 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(page.getByTestId("customer-figure-outstanding-note")).toHaveText("due in 32 days, nothing overdue");
   await expect(page.getByTestId("customer-figure-share-value")).toHaveText("100%");
   await expect(page.getByTestId("customer-figure-share-note")).toHaveText("one open invoice; not its share of your sales");
-  // Nothing is entered yet, so the relationship value says so; the browser makes no estimate of its own.
-  await expect(page.getByTestId("customer-figure-value-value")).toHaveText("Not known yet");
+  // The Demo's sales and margin give the server's estimate; the browser makes none of its own.
+  await expect(page.getByTestId("customer-figure-value-value")).toHaveText("about ¥1.09m");
+  await expect(page.getByTestId("customer-figure-value-note")).toHaveText("a year, estimated contribution");
   // No decision waits: the server's line, the two links that remain, and no filled primary on the page.
   const none = page.getByTestId("customer-decision-none");
   await expect(none).toContainText("No commercial decision is waiting for you with Foshan.");
@@ -60,9 +61,12 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(none.getByRole("link", { name: "View the invoices" })).toHaveAttribute("href", "/receivables?customer=BUYER-1&invoice=RCV-A");
   await expect(none.getByRole("link", { name: "Stress-test payment" })).toHaveAttribute("href", "/cash?stress=BUYER-1:30&invoice=RCV-A");
   // The economics and the exposure panels, each in the server's rows.
-  await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("not entered yet");
+  await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("¥5,460,000");
+  await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("projected from your books");
+  await expect(page.getByTestId("customer-economics-rows-gross_margin")).toContainText("assumed for the Demo, not confirmed by you");
   await expect(page.getByTestId("customer-economics-note")).toContainText("None of this changes what FLOW may do on its own.");
-  await expect(page.getByTestId("customer-edit")).toHaveText("Edit these facts");
+  // The facts are editable only where the server gives the place (`edit_href` is null until the economics flag is on).
+  await expect(page.getByTestId("customer-edit")).toHaveCount(0);
   await expect(page.getByTestId("customer-exposure-rows-stress")).toContainText("Paid 30 days late");
   await expect(page.getByTestId("customer-exposure-rows-stress")).toContainText("¥550,000 uncovered");
   await expect(page.getByTestId("customer-exposure-note")).toContainText("The same figures as on the deal, on Receivables and on Cash");
@@ -100,6 +104,17 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
   await expect(page.getByTestId("customer-back")).toHaveText("Back to the invoices");
   await expect(page.getByTestId("customer-back")).toHaveAttribute("href", "/receivables?customer=BUYER-1&invoice=RCV-A");
   await scan(page, "/customers/BUYER-1 decision waiting");
+});
+
+test("an offer not yet read: the decision says so and its primary is Read the offer", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" })).toBeVisible();
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByTestId("customer-decision")).toContainText("One offer waits to be read");
+  await expect(page.getByTestId("customer-decision-primary")).toHaveText("Read the offer");
+  await expect(page.getByTestId("customer-decision-primary")).toHaveAttribute("href", /^\/deals\?decision=/);
+  await expect(page.getByTestId("customer-decision-authority")).toHaveCount(0);
 });
 
 test("after the day-0 plan the financing is linked, in the server's words", async ({ page }) => {

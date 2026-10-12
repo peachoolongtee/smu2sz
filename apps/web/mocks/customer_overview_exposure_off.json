@@ -10,8 +10,8 @@
       {
         "key": "value",
         "label": "Relationship value",
-        "value_display": "Not known yet",
-        "note": "enter annual sales and gross margin to estimate it",
+        "value_display": "about ¥1.09m",
+        "note": "a year, estimated contribution",
         "tone": "neutral"
       },
       {
@@ -49,15 +49,22 @@
       {
         "key": "annual_sales",
         "label": "Annual sales",
-        "value_display": "not entered yet",
-        "note": null,
+        "value_display": "¥5,460,000",
+        "note": "projected from your books",
         "tone": "neutral"
       },
       {
         "key": "gross_margin",
         "label": "Gross margin",
-        "value_display": "not entered yet",
-        "note": null,
+        "value_display": "20%",
+        "note": "assumed for the Demo, not confirmed by you",
+        "tone": "warn"
+      },
+      {
+        "key": "contribution",
+        "label": "Contribution a year",
+        "value_display": "about ¥1,092,000",
+        "note": "under today's terms",
         "tone": "neutral"
       },
       {
@@ -70,16 +77,18 @@
     ],
     "economics_note": "None of this changes what FLOW may do on its own.",
     "edit_label": "Edit these facts",
-    "edit_href": "/inputs?customer=BUYER-1",
+    "edit_href": null,
     "exposure": null,
     "note": "Financial exposure is not switched on for this account, so payment behaviour, the late-payment test and spare capacity are not shown.",
     "history": [
       {
         "when_text": "In force",
         "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
-        "href": "/documents"
+        "href": "/documents",
+        "link_label": "The terms"
       }
     ],
+    "partial": null,
     "context": {
       "back": {
         "label": "Back to Deals",
@@ -98,8 +107,8 @@
       {
         "key": "value",
         "label": "客户关系价值",
-        "value_display": "暂不清楚",
-        "note": "填写年销售额和毛利率后即可估算",
+        "value_display": "约 ¥109万",
+        "note": "每年，估算的贡献",
         "tone": "neutral"
       },
       {
@@ -137,15 +146,22 @@
       {
         "key": "annual_sales",
         "label": "年销售额",
-        "value_display": "尚未填写",
-        "note": null,
+        "value_display": "¥5,460,000",
+        "note": "根据您的账目推算",
         "tone": "neutral"
       },
       {
         "key": "gross_margin",
         "label": "毛利率",
-        "value_display": "尚未填写",
-        "note": null,
+        "value_display": "20%",
+        "note": "为演示而假设，尚未经您确认",
+        "tone": "warn"
+      },
+      {
+        "key": "contribution",
+        "label": "每年贡献",
+        "value_display": "约 ¥1,092,000",
+        "note": "按现行条款",
         "tone": "neutral"
       },
       {
@@ -158,16 +174,18 @@
     ],
     "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
     "edit_label": "修改这些信息",
-    "edit_href": "/inputs?customer=BUYER-1",
+    "edit_href": null,
     "exposure": null,
     "note": "此账户未开启财务风险敞口功能，因此不显示付款表现、晚付测试和可用余量。",
     "history": [
       {
         "when_text": "现行",
         "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
-        "href": "/documents"
+        "href": "/documents",
+        "link_label": "条款"
       }
     ],
+    "partial": null,
     "context": {
       "back": {
         "label": "返回交易",

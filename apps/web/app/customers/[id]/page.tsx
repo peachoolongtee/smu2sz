@@ -56,5 +56,5 @@ function Customer() {
   if (read.error) return <ErrorState error={read.error} onRetry={read.reload} />;
   // Another customer's overview (the previous read, kept while this one is on its way) is never shown under this name.
   if (!read.data || read.data.customer_id !== id) return <LoadingBlock rows={4} label={t("customer.loading")} />;
-  return <CustomerOverview view={read.data} />;
+  return <CustomerOverview view={read.data} onRetry={read.reload} />;
 }

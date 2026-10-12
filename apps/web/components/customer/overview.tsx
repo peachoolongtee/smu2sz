@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
+import { PartialRead } from "@/components/business/freshness";
 import { Card, ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
@@ -54,6 +55,11 @@ function Decision({ view }: { view: CustomerOverviewView }) {
           <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="customer-decision-text">
             {decision.text}
           </p>
+          {decision.authority_text ? (
+            <p className="mt-2 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="customer-decision-authority">
+              {decision.authority_text}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <ButtonLink href={decision.primary.href} variant="primary" data-testid="customer-decision-primary">
@@ -143,7 +149,7 @@ function History({ rows }: { rows: OverviewHistoryRow[] }) {
             <span className="min-w-0 break-words text-ink">{h.text}</span>
             {h.href ? (
               <Link href={h.href} className={`${textLinkClass} -ml-2 justify-self-start text-sm sm:ml-0 sm:justify-self-end`}>
-                {t("customer.history.open")}
+                {h.link_label ?? t("customer.history.open")}
               </Link>
             ) : null}
           </li>
@@ -158,7 +164,7 @@ function History({ rows }: { rows: OverviewHistoryRow[] }) {
  * commercial decision (or the line that none waits, with the two other links), the economics and the exposure side by side, and the history. Each
  * section is drawn only when the server sent it. Every word, figure and link is the server's; the page decides nothing.
  */
-export function CustomerOverview({ view }: { view: CustomerOverviewView }) {
+export function CustomerOverview({ view, onRetry }: { view: CustomerOverviewView; onRetry: () => void }) {
   const { t } = useI18n();
   const back = view.context?.back;
   return (
@@ -175,6 +181,7 @@ export function CustomerOverview({ view }: { view: CustomerOverviewView }) {
         </div>
         <PageHeader title={view.name} subtitle={view.summary_text} />
       </div>
+      <PartialRead partial={view.partial} onRetry={onRetry} />
       {view.figures?.length ? (
         <section aria-label={t("customer.figures")} data-testid="customer-figures">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-4 border-y border-line py-4 lg:grid-cols-4 lg:gap-x-0">
