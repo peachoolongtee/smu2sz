@@ -402,3 +402,26 @@ def test_the_headroom_is_negative_below_the_minimum_and_zero_on_it() -> None:
         return home_v2._cash_available(c)["buffer"]  # type: ignore[arg-type,no-any-return]
 
     assert kpi(26_000_000)["headroom_text"] == "−¥40k" and kpi(30_000_000)["headroom_text"] == "¥0" and kpi(40_000_000)["headroom_text"] == "+¥100k"
+
+
+# ---------------------------------------------------------------- the series points carry their words
+
+
+def test_every_point_of_the_longest_window_has_when_and_display_and_the_lowest_is_the_kpi(api: TestClient) -> None:
+    _offer(api)
+    for moment in ("before", "after"):
+        if moment == "after":
+            _run_plan(api)
+        for lang in ("en", "zh"):
+            h = _home(api, lang)
+            cash = h["cash"]
+            lines = [cash["series"], cash["plan_series"], cash.get("counterfactual_series")]
+            assert [p["day"] for p in cash["series"]] == list(range(0, 121))  # the longest window: 120 days from today
+            for series in (s for s in lines if s):
+                assert all(p["when"] and p["display"] for p in series)  # no point past day 32 (or any day) is left without its words
+            by_day = {p["day"]: p for p in cash["series"]}
+            assert by_day[0]["when"] == ("today" if lang == "en" else "今天") and by_day[120]["when"] == ("in 120 days" if lang == "en" else "120 天后")
+            assert by_day[100]["when"] == ("in 100 days" if lang == "en" else "100 天后")
+            lowest = min(cash["series"], key=lambda p: p["closing_fen"])
+            assert lowest["display"] == h["home_v2"]["kpis"]["lowest_ahead"]["value_display"]
+            assert by_day[0]["display"] == h["home_v2"]["kpis"]["cash_available"]["value_display"]  # the KPI's form, no cents on a round sum

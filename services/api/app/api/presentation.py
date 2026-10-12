@@ -299,6 +299,20 @@ def first_breach_ahead(traj: Any, today: int, floor: int) -> tuple[int, int] | N
     return (max(hit.day, today), hit.closing_fen) if hit is not None else None
 
 
+def whole(fen: int) -> str:
+    """¥5,000 for a whole number of yuan, ¥3,027.77 otherwise (the limit the owner set): the KPIs' form, without the cents of a round sum."""
+    return fmt_yuan(fen).removesuffix(".00")
+
+
+def point_words(rows: list[dict[str, Any]] | None, today: int, lang: Lang) -> None:
+    """The words of every point of a cash series drawn from `today` (the Home read's chart): `when`, the day as a distance from today
+    ("in 30 days"), and `display`, the closing cash in the KPIs' form (`whole`). Every point has both, whatever its day: the words are
+    made from the point's own day and closing cash, not looked up among the rail's events."""
+    for row in rows or []:
+        row["when"] = when_text(row["day"], today, lang)
+        row["display"] = whole(row["closing_fen"])
+
+
 def when_text(day: int | None, today: int, lang: Lang) -> str:
     """A simulated day as a distance from today ("in 12 days", "today", "3 days ago"): Business mode never says
     "day N"; the Demo views keep the day numbers."""

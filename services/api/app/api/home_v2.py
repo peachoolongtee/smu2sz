@@ -40,9 +40,8 @@ from app.api.home_hybrid import (
     _signed,
     _sp,
     _tone,
-    whole,
 )
-from app.api.presentation import t, when_text
+from app.api.presentation import t, when_text, whole
 from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
 from app.strategy import words as basis_words

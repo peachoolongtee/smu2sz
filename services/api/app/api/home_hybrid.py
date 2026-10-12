@@ -41,8 +41,10 @@ from app.api.presentation import (
     in_language,
     in_words,
     party_name,
+    point_words,
     t,
     when_text,
+    whole,
 )
 from app.api.presentation import tick_label as _short
 from app.api.receipt_basis import RECEIPT_KINDS, BasisReader, annotate
@@ -112,11 +114,6 @@ class HomeRead:
 
 
 # ---------------------------------------------------------------- small words
-
-
-def whole(fen: int) -> str:
-    """¥5,000 for a whole number of yuan, ¥3,027.77 otherwise (the limit the owner set)."""
-    return fmt_yuan(fen).removesuffix(".00")
 
 
 def _sp(lang: str) -> str:
@@ -754,6 +751,7 @@ def cash_block(c: HomeRead, stress_buyer: str | None, deals: list[_Deal] | None 
     }
     if grey is not None:  # the grey line and its words go together: no series, no label
         out["counterfactual_series"] = _series(c.state, grey, c.lang, c.today)
+        point_words(out["counterfactual_series"], c.today, c.lang)
         if c.basis is not None:
             _guarded(c, lambda: annotate(out["counterfactual_series"], grey, c.basis))
         out["counterfactual_label"] = {
