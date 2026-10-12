@@ -7,6 +7,7 @@
 import { sha256 } from "js-sha256";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
+import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
   ActRequest,
@@ -28,6 +29,7 @@ import type {
   CapexRequest,
   CapexView,
   ContractFixture,
+  CustomerOverviewView,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -49,7 +51,11 @@ import type {
   PlanRequest,
   PilotJournalView,
   PriceCurveView,
+  DealsContext,
   EnvelopeView,
+  ExposureView,
+  BuyerExposureView,
+  ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -64,9 +70,11 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import type { CustomerContext } from "../customer-href";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
+import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -566,8 +574,17 @@ function counterChangedStory(): "replaced" | "moved" | null {
   }
 }
 
+/** Test hook: milliseconds in this sessionStorage key hold a send in flight, so a spec can press things while it is on its way. */
+export const NEGOTIATE_SLOW_KEY = "tl-mock-negotiate-slow";
+
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   await delay();
+  try {
+    const slow = typeof window === "undefined" ? 0 : Number(window.sessionStorage.getItem(NEGOTIATE_SLOW_KEY));
+    if (slow > 0) await new Promise<void>((r) => setTimeout(r, slow));
+  } catch {
+    /* storage unavailable */
+  }
   const s = load();
   if (req.verdict_id) {
     const story = counterChangedStory();
@@ -725,7 +742,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return withHomePatch(home.mockHome(dealt, lang));
+  return withHomePatch(home.mockHome(dealt, lang, openOfferStage() === "evaluated"));
 }
 
 /**
@@ -744,6 +761,34 @@ function withHomePatch(view: HomeView): HomeView {
     return { ...view, ...patch, cash: { ...view.cash, ...(patch.cash ?? {}) } };
   } catch {
     return view;
+  }
+}
+
+/** GET /receivables: the recording for this point of the story (lib/mock/receivables.ts). Owner only, as live. */
+export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return receivablesMock.mockReceivables(dealt, lang);
+}
+
+/** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
+  await delay();
+  return receivablesMock.mockBuyerExposure(buyerId, lang, home.mockClock().day >= home.NEWS_DAY, context);
+}
+
+/** GET /decisions/{id}/exposure: the recorded exposure of the open offer's decision; any other decision answers 404 (null: no result in the aside). */
+export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  await delay();
+  try {
+    return await receivablesMock.mockDecisionExposure(decisionId, lang);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
   }
 }
 
@@ -831,6 +876,20 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   return zone ? view : { ...view, zone: [] };
 }
 
+/** GET /offers/{id}/exposure: recorded for the package offer, in both languages; any other offer has none (null, as a server with the feature off). */
+export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
+  await delay();
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(EXPOSURE_OFF_KEY) === "1") return null;
+  } catch {
+    /* storage unavailable */
+  }
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
+  const rec = cast<Record<"en" | "zh", ExposureView>>((await import("../../mocks/offer_exposure_ex01.json")).default);
+  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+}
+
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
 export async function getPilotJournal(): Promise<PilotJournalView | null> {
   return null;
@@ -860,6 +919,7 @@ export async function getChase(receivableId: string, lang: "en" | "zh"): Promise
 
 export async function getReconciliation(): Promise<ReconciliationView> {
   await delay();
+  if (receivablesMock.hook(receivablesMock.RECONCILIATION_FAIL_KEY)) throw new ApiError(503, "The reconciliation is unavailable");
   return clone(cast<ReconciliationView>(home.mockReconciliation() ?? reconciliationJson));
 }
 
@@ -942,10 +1002,19 @@ export async function demoReset(scenario?: string): Promise<void> {
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
 
 // The recordings are English: the mock takes `lang` as the live client does and answers the same recording (re-recorded, not translated by hand).
-export async function getDeals(lang: "en" | "zh" = "en"): Promise<DealsView> {
+export async function getDeals(lang: "en" | "zh" = "en", ctx: DealsContext = {}): Promise<DealsView> {
   void lang;
   await delay();
-  return documents.mockDeals(openOfferStage());
+  const view = documents.mockDeals(openOfferStage());
+  // Opened with `customer` or `invoice`, the server adds `open_offer.context.back`: the recording of that read (deals_day0_evaluated_back.json) lends its words to the open offer.
+  if (ctx.customer || ctx.invoice) {
+    const back = cast<DealsView>((await import("../../mocks/deals_day0_evaluated_back.json")).default);
+    for (const row of view.deals) {
+      const lent = back.deals.find((d) => d.counterparty_id === row.counterparty_id)?.open_offer?.context;
+      if (row.open_offer && lent) row.open_offer.context = clone(lent);
+    }
+  }
+  return view;
 }
 
 /**
@@ -987,6 +1056,7 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 
 /** GET /offers/{id}/picture: recorded for the package offer, in both languages; any other offer has no picture. */
 export const PICTURE_SLOW_KEY = "tl-mock-picture-slow";
+export const PICTURE_OFF_KEY = "tl-mock-picture-off";
 
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
   await delay();
@@ -1001,7 +1071,80 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
-  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+  const view = { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+  // A spec can make the offer undrawable, as the server answers one it can no longer draw (200, no paths, no moments, a sentence): the owner must still be able to send.
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(PICTURE_OFF_KEY) === "1") return { ...view, available: false, asked: null, replies: [], paths: [], moments: [], unavailable_text: "This offer can no longer be drawn on today's books." };
+  } catch {
+    /* storage unavailable */
+  }
+  return view;
+}
+
+/** Which recorded moment of the story the customer overview is read at: before the news day the opening books, with the package offer received or read, or after the day-0 plan ran; from the news day on, day 34, and day 34 once the cure is approved. */
+type OverviewMoment = "quiet" | "offer_received" | "offer_evaluated" | "after_fund" | "day34" | "day34_after";
+type RecordedOverview = { view: CustomerOverviewView; backs: { query: CustomerContext; back: { label: string; href: string } }[] };
+
+/** Test hook, like WORTH_FAIL_KEY: set this sessionStorage key to "1" and the exposure reads answer as a server with FEATURE_EXPOSURE off: the customer overview is the recording taken with it off, and GET /offers/{id}/exposure is absent (the Deals page is then the page it was). */
+export const EXPOSURE_OFF_KEY = "tl-mock-exposure-off";
+
+/** The server's own answer for a customer it does not hold: a 404 with the code the page reads. */
+function missingCustomer(id: string): ApiError {
+  return new ApiError(404, `There is no customer ${id} on the books.`, { code: "CUSTOMER_NOT_FOUND", message: `There is no customer ${id} on the books.` });
+}
+
+/**
+ * Test hook, an in-spec patch of the recorded read (the specs that need a field the recording does not carry, such as `partial` or a non-null `edit_href`,
+ * say so): set this sessionStorage key to a JSON object and its fields replace the recording's, as a shallow merge. Absent, the recording is served as recorded.
+ */
+export const OVERVIEW_PATCH_KEY = "tl-mock-overview-patch";
+
+function overviewPatch(): Partial<CustomerOverviewView> {
+  try {
+    const raw = typeof window === "undefined" ? null : window.sessionStorage.getItem(OVERVIEW_PATCH_KEY);
+    return raw ? (JSON.parse(raw) as Partial<CustomerOverviewView>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function exposureOff(): boolean {
+  try {
+    return typeof window !== "undefined" && window.sessionStorage.getItem(EXPOSURE_OFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function overviewMoment(): OverviewMoment {
+  if (home.mockClock().day >= home.NEWS_DAY) return home.cureStage() === "approved" ? "day34_after" : "day34";
+  if (home.isFunded()) return "after_fund";
+  const stage = openOfferStage();
+  return stage === "evaluated" ? "offer_evaluated" : stage === "received" ? "offer_received" : "quiet";
+}
+
+/**
+ * GET /customers/{id}/overview: recorded for the demo's first buyer in both languages at each moment of the story. The server builds the back
+ * link from the query, so the recording holds the back link of each query the specs open it with (a deal, a deal and its path, an invoice); any
+ * other query gets the plain "Back to Deals" the server gives. Any other customer is unknown (404), as the server answers.
+ */
+export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
+  await delay();
+  if (exposureOff()) {
+    // The recording of the server with the exposure read switched off (it answers `exposure: null` and says why in `note`).
+    const off = cast<Record<"en" | "zh", CustomerOverviewView>>((await import("../../mocks/customer_overview_exposure_off.json")).default);
+    const view = clone(off[lang === "zh" ? "zh" : "en"]);
+    if (id !== view.customer_id) throw missingCustomer(id);
+    return view;
+  }
+  const all = cast<Record<OverviewMoment, Record<"en" | "zh", RecordedOverview>>>((await import("../../mocks/customer_overview.json")).default);
+  const rec = all[overviewMoment()][lang === "zh" ? "zh" : "en"];
+  if (id !== rec.view.customer_id) throw missingCustomer(id);
+  const same = (a: CustomerContext, b: CustomerContext) => (a.decision ?? null) === (b.decision ?? null) && (a.path ?? null) === (b.path ?? null) && (a.invoice ?? null) === (b.invoice ?? null);
+  const asked = rec.backs.find((b) => same(b.query, ctx));
+  const view = clone(rec.view);
+  const shown = asked && view.context ? { ...view, context: { ...view.context, back: asked.back } } : view;
+  return { ...shown, ...overviewPatch() };
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

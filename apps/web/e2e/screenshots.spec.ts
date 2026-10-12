@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openStoryFold, runPlan, STORY_STEPS, walkStory } from "./helpers";
+import { openStoryFold, runPlan, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
 
 /**
  * The screenshot walk of the brief's section 44: every Business page in every state the recorded demo path reaches, and the
@@ -53,10 +53,10 @@ test("Business pages on the opening books, after the deal is read and checked, a
   await page.goto("/deals");
   await shoot(page, "02-deals-inbox", p);
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toBeVisible();
+  await expect(page.getByTestId("queue-ask").or(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT"))).toBeVisible();
   await shoot(page, "03-deals-read", p);
   await page.getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toBeVisible();
+  await expect(verdictHeading(page)).toBeVisible();
   await shoot(page, "04-deals-evaluated", p);
   await page.goto("/cash");
   await expect(page.getByTestId("cash-options-list")).toBeVisible();

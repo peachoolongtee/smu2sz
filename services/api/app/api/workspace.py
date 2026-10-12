@@ -178,6 +178,8 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
             "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
             "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
             "send_scope_lines": send_scope_lines(state, buyer_name, send_plan, today, lang, chosen),
+            "recheck_text": t(lang, "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+                              "按这些数字原样发送此方案；如果账目已有变动，FLOW 会先向您展示新的数字。"),
             "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
             "verdict_id": verdict.id, "state_version": view["state_version"],
         } if chosen is not None else None),

@@ -21,6 +21,8 @@ import summaryAfterFundZh from "../../mocks/home_summary_after_fund_zh.json";
 import trajAfterFund from "../../mocks/trajectory_conservative_after_fund.json";
 import summaryDay0 from "../../mocks/home_summary_day0.json";
 import summaryDay0Zh from "../../mocks/home_summary_day0_zh.json";
+import summaryDay0Counter from "../../mocks/home_summary_day0_counter.json";
+import summaryDay0CounterZh from "../../mocks/home_summary_day0_counter_zh.json";
 import trajDay0 from "../../mocks/trajectory_conservative_day0.json";
 import summaryDay34 from "../../mocks/home_summary_day34.json";
 import summaryDay34Zh from "../../mocks/home_summary_day34_zh.json";
@@ -309,6 +311,19 @@ export function readPoint(): ReadPoint {
   return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
 }
 
+/**
+ * Which recording of GET /receivables the mock serves: the same point of the story the home is read at, and at day 34 the books the test hook
+ * selected (no receipt, half a receipt, the cure that left the reserve short). The recordings are `mocks/receivables/<point>[_zh].json`.
+ */
+export type ReceivablesPoint = StoryPoint | "day34_noreceipt" | "day34_half" | "day34_residual";
+
+export function receivablesPoint(dealt: boolean): ReceivablesPoint {
+  const point = storyPoint(dealt);
+  if (point !== "day34") return point;
+  const v = receiptVariant();
+  return v === "none" ? "day34_noreceipt" : v === "half" ? "day34_half" : v === "residual" ? "day34_residual" : "day34";
+}
+
 function day34Summary(zh: boolean): unknown {
   const variant = receiptVariant();
   if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;
@@ -317,13 +332,16 @@ function day34Summary(zh: boolean): unknown {
   return zh ? summaryDay34Zh : summaryDay34;
 }
 
-export function mockHome(dealt: boolean, lang: "en" | "zh" = "en"): HomeView {
+export function mockHome(dealt: boolean, lang: "en" | "zh" = "en", counter = false): HomeView {
   const s = load();
   // Each point of the story was recorded in both languages (GET /home?lang=zh writes the sentences in Chinese).
   const zh = lang === "zh";
-  const point = storyPoint(dealt);
+  // The package offer is read and no reply is sent (the counter is ready): the opening books with the pending alternative on the picture.
+  const sp = storyPoint(dealt);
+  const point = sp === "day0" && counter ? "counter" : sp;
   const recorded = {
     day0: zh ? summaryDay0Zh : summaryDay0,
+    counter: zh ? summaryDay0CounterZh : summaryDay0Counter,
     quiet: zh ? summaryQuietZh : summaryQuiet,
     day2: zh ? summaryDay2Zh : summaryDay2,
     after_fund: zh ? summaryAfterFundZh : summaryAfterFund,

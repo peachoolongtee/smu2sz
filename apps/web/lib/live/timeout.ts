@@ -17,7 +17,7 @@ export type RequestKind = "read" | "write" | "reply";
 export function timeoutFor(path: string, override?: number): number {
   if (override && override > 0) return override;
   const p = path.split("?")[0];
-  if (p === "/nl" || p === "/nl/opener" || /^\/offers\/[^/]+\/evaluate$/.test(p) || p === "/cash/price-curve" || p === "/receivables/worth" || /^\/buyers\/[^/]+\/envelope$/.test(p)) {
+  if (p === "/nl" || p === "/nl/opener" || /^\/offers\/[^/]+\/evaluate$/.test(p) || p === "/cash/price-curve" || p === "/receivables/worth" || /^\/buyers\/[^/]+\/envelope$/.test(p) || /^\/decisions\/[^/]+\/exposure$/.test(p) || /^\/buyers\/[^/]+\/exposure$/.test(p)) {
     return LONG_TIMEOUT_MS;
   }
   return DEFAULT_TIMEOUT_MS;

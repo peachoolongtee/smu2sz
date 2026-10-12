@@ -136,6 +136,8 @@ export interface CashPictureProps {
   captions?: ReactNode;
   /** A shorter name for the alternative on the toggle when its name on the line is long (a plan named by its sources). */
   toggleAlternativeLabel?: string;
+  /** The buyer's reply as an alternative (ticket #116): its own path, drawn dashed in the brand colour at 60% under its label, never as the plan line. */
+  pending?: { series: HomeSeriesPoint[]; label: string } | null;
   /** The server's y axis: its range is the scale (widened only if a line would leave it) and its labelled ticks are drawn in a gutter at the left. Without it the picture scales to its data and draws no ticks. */
   axis?: PictureAxis | null;
 }
@@ -145,7 +147,7 @@ export function linesDiffer(baseline: HomeSeriesPoint[], alternative: HomeSeries
   return Boolean(alternative?.length && alternative.some((p) => baseline.find((s) => s.day === p.day)?.closing_fen !== p.closing_fen));
 }
 
-export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel, axis }: CashPictureProps) {
+export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel, axis, pending }: CashPictureProps) {
   const { t } = useI18n();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
@@ -181,11 +183,12 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
 
   const baseSegs = segments(base, end);
   const planSegs = hasPlan && planPoints ? segments(planPoints.filter((p) => p.day >= today), end) : [];
+  const pendingSegs = pending?.series.length ? segments(pending.series.filter((p) => p.day >= today), end) : [];
 
   // Scale from the data: both lines in the window, zero and the reserve always inside, 8% of padding.
   // With the server's axis the domain is exactly its range, widened only for what is drawn (a line or the reserve), never for zero.
   const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
-  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
+  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v), ...pendingSegs.map((s) => s.v)];
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
@@ -240,6 +243,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   };
   addLine(baseSegs);
   if (showPlan) addLine(planSegs);
+  addLine(pendingSegs);
   obstacles.push({ x0: pl, x1: pr, y0: yOf(floor) - 2, y1: yOf(floor) + 2 });
   if (yLo < 0) obstacles.push({ x0: pl, x1: pr, y0: yOf(0) - 2, y1: yOf(0) + 2 });
   const placed: Label[] = [];
@@ -448,6 +452,17 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
         </ul>
       ) : null}
 
+      {pendingSegs.length && pending ? (
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold text-ink-2" data-testid="picture-pending-legend">
+          <li className="flex items-center gap-2">
+            <svg width="22" height="8" aria-hidden className="shrink-0">
+              <line x1="1" x2="21" y1="4" y2="4" strokeWidth="3" strokeDasharray="6 3" className="stroke-brand-600" opacity={0.6} />
+            </svg>
+            {pending.label}
+          </li>
+        </ul>
+      ) : null}
+
       <div ref={frame} className="w-full" style={{ minHeight: H }}>
         {W > 0 ? (
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
@@ -481,6 +496,9 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
               strokeWidth={showPlan ? 2.5 : 3.5}
               opacity={showPlan ? 0.6 : 1}
             />
+            {pendingSegs.length ? (
+              <path data-testid="picture-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} />
+            ) : null}
             {showPlan ? (
               <path data-testid="picture-line-plan" d={pathOf(planSegs)} pathLength={1} fill="none" strokeLinejoin="round" className={`stroke-ok-solid ${intro ? "picture-draw picture-draw-second" : ""}`} strokeWidth={3.5} />
             ) : null}

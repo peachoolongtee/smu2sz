@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
+import { CustomerName } from "@/components/customer-link";
 import { decisionHref } from "@/components/business/open-decisions";
 import { DealStage } from "@/components/deals/deal-steps";
 import { ParsedTerms } from "@/components/deals/asks";
@@ -29,12 +30,15 @@ import { whenText } from "@/lib/when";
  */
 export function SelectedBuyer({
   buyer,
+  buyerId,
   received,
   evaluatedWhen,
   state = null,
   open = null,
 }: {
   buyer: string;
+  /** The buyer's id, so the name is the link to their overview. */
+  buyerId?: string;
   received: string;
   evaluatedWhen: string | null;
   state?: { code: string; text: string; tone: Tone } | null;
@@ -45,7 +49,15 @@ export function SelectedBuyer({
     <section id="deal-selected" aria-label={buyer} className="motion-reveal min-w-0 space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="min-w-0 text-sm text-ink-3" data-testid="deal-selected-meta">
-          <strong className="font-extrabold text-ink">{buyer}</strong>
+          <strong className="font-extrabold text-ink">
+            {buyerId ? (
+              <CustomerName id={buyerId} testId="deal-selected-customer">
+                {buyer}
+              </CustomerName>
+            ) : (
+              buyer
+            )}
+          </strong>
           {" · "}
           {received}
           {evaluatedWhen ? (
@@ -262,7 +274,7 @@ const ADVANCED_TITLE: Record<AdvancedKey, "biz.deals.parsed" | "biz.deals.origin
  * read the message, the message itself, every check, the formulas, the engine's verdict and the audit evidence. The page folds the verdict's
  * existing fields; it copies none of them.
  */
-export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[] }) {
+export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[]; /** Only these sections, each its own fold, without the "Advanced details" fold around them (the decision queue's evidence: the buyer's message and the calculations). */ only?: AdvancedKey[] }) {
   const { t, te, lang } = useI18n();
   const [active, setActive] = useState<string | null>(null);
   const keys = Object.keys(ws.advanced.keys) as AdvancedKey[];
@@ -352,6 +364,20 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
       </div>
     ),
   };
+  if (only) {
+    const title: Partial<Record<AdvancedKey, string>> = { source_text: t("dq.link.message"), formula: t("dq.link.calcs") };
+    return (
+      <div className="space-y-2" data-testid="queue-evidence">
+        {keys
+          .filter((k) => only.includes(k) && k in body && body[k] !== null)
+          .map((k) => (
+            <Disclosure key={k} testId={`deal-adv-${k}`} summary={title[k] ?? t(ADVANCED_TITLE[k])}>
+              <div className="pt-1">{body[k]}</div>
+            </Disclosure>
+          ))}
+      </div>
+    );
+  }
   return (
     <Disclosure className="border-t border-line pt-1" testId="deal-advanced" summary={t("biz.deals.advanced")}>
       <div className="space-y-2">

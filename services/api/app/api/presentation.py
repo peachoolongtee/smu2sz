@@ -2094,3 +2094,8 @@ def document_decision_words(state: FinancialState | None, *, confirmed: bool, ti
     return {"event_text": t(lang, f"You confirmed {name}, as FLOW read it. Nothing in the books changed.",
                             f"您已确认{name}，按 FLOW 读取的内容。账本未作任何更改。"),
             "event_detail": detail}
+
+
+def deal_back_label(lang: Lang, who: str) -> str:
+    """The words of a link back to a deal: one place, used by the Customer overview's back link and by the Cash page's."""
+    return t(lang, f"Back to the {who} deal", f"返回与{who}的交易")

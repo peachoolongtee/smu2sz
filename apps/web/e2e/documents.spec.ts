@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, proseOf, test } from "./fixtures";
-import { resetBooks, runPlan, sendCounter } from "./helpers";
+import { openReview, resetBooks, runPlan, sendCounter } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -37,6 +37,7 @@ async function agreeFoshanDeal(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await openReview(page);
   const response = page.locator("#counters");
   await sendCounter(response);
   await expect(response.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");

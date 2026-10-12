@@ -140,7 +140,8 @@ def test_the_owner_layer_terms_replace_the_engines_in_every_business_sentence(cl
 def _names() -> list[str]:
     state = get_runtime().store.get_state()
     flows = [part for x in state.flows for part in (x.label, x.label.split(",")[0], x.label.split(" (")[0])]  # the owner's own names
-    return [*(c.name for c in state.counterparties), *(f.name for f in state.facilities), *flows]
+    shorts = [c.name.replace(",", " ").split()[0] for c in state.counterparties]  # the name an owner says aloud (the house buyer_short)
+    return [*(c.name for c in state.counterparties), *shorts, *(f.name for f in state.facilities), *flows]
 
 
 # The audit-level fields that stay the engine's own English by design (stability mode), as index-free dotted paths. Everything else a
