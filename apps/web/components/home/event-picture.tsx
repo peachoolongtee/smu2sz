@@ -88,7 +88,7 @@ export function EventPicture({ h }: { h: HomeView }) {
   // (the books without the whole plan, or without any action) and exists only with its label: no series, no legend entry.
   const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
   const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
-  const planName = cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected");
+  const planName = cash.plan_line_label || (cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected"));
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
@@ -461,6 +461,20 @@ export function EventPicture({ h }: { h: HomeView }) {
                   <span className="tabular-nums">{shown + 1}.</span>
                   <span className="first-letter:uppercase">{panelTitle}</span>
                 </h3>
+                {event.effect_rows?.length ? (
+                  <table className="w-full max-w-sm text-sm tabular-nums" data-testid="rail-effect">
+                    <tbody>
+                      {event.effect_rows.map((r) => (
+                        <tr key={r.label} className="border-b border-line last:border-b-0" data-testid="rail-effect-row">
+                          <th scope="row" className="py-1 pr-4 text-left font-normal text-ink-2">
+                            {r.label}
+                          </th>
+                          <td className="py-1 text-right font-bold text-ink">{r.display}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
                 <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="rail-explain">
                   {event.explain}
                 </p>
@@ -503,14 +517,22 @@ export function EventPicture({ h }: { h: HomeView }) {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="min-w-0 break-words text-sm font-semibold text-ink first-letter:uppercase">{e.label}</span>
-                        <span className="shrink-0 text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
-                          {e.amount_short}
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
+                            {e.amount_short}
+                          </span>
+                          {/* A landing that only the plan would bring: the financing state word, quietly (a word, never a badge). */}
+                          {e.planned ? (
+                            <span className="block text-xs font-medium text-ink-3" data-testid={`rail-planned-${i}`}>
+                              {t("home.hy.planned")}
+                            </span>
+                          ) : null}
                         </span>
                       </span>
                       <span className="block text-xs text-ink-3">{e.when}</span>
-                      {lowest && e.room_after_short ? (
+                      {lowest && (e.note || e.room_after_short) ? (
                         <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
-                          {e.room_after_short}
+                          {e.note || e.room_after_short}
                         </span>
                       ) : null}
                     </span>

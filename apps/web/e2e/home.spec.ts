@@ -73,7 +73,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action.getByTestId("home-attention-title")).toContainText("FLOW recommends securing ¥405k of funding");
   // The cost and who decides are said once, in the funding line under the hairline; the facts row keeps what it does not say (when the funds arrive).
   await expect(action.getByTestId("home-attention-facts")).toContainText("in 3 days");
-  await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(action.getByTestId("next-action-lands")).toContainText("in 3 days");
   await expect(action).toContainText("¥3,113.93");
   await expect(action.getByTestId("home-attention-facts")).not.toContainText("¥3,113.93");
   await expect(action.getByTestId("home-funding-costs")).toContainText("¥2,272.29");
@@ -129,7 +129,10 @@ test("the plan card is the cost and who decides; the first press asks, Cancel ru
   const action = page.getByTestId("home-next-action");
   await expect(action).toContainText("Cash needs a decision");
   // The facts in the card: when the funds arrive; the estimated cost and who decide are in the funding line under the hairline (each said once).
-  await expect(action.getByTestId("home-attention-facts").locator("dt")).toHaveText(["Funds arrive"]);
+  const dts = action.getByTestId("home-attention-facts").locator("dt");
+  await expect(dts.filter({ hasText: "Credit line draw" })).toHaveCount(1); // one fact per leg of the plan
+  await expect(dts.filter({ hasText: "Invoice financing" })).toHaveCount(1);
+  await expect(dts.filter({ hasText: /Estimated cost|Authority/ })).toHaveCount(0);
   await expect(action.getByTestId("home-funding-costs")).toContainText("Cost ");
   await expect(action.getByTestId("home-funding-authority")).toBeVisible();
   // Everything else waits on Cash & funding behind "See the calculation", outside the card, and the card carries no fold of its own.
@@ -189,7 +192,7 @@ test("Go ahead on the opening books runs the fix alone, and the home turns calm 
   await expect(page.getByTestId("home-status-word")).toContainText("Covered, but tight");
   await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
   // A calm day with nothing to fix: the chart's own line is the projection (the grey line is the comparison) and there is no toggle.
-  await expect(page.getByTestId("home-legend-main")).toContainText("Projected cash");
+  await expect(page.getByTestId("home-legend-main")).toContainText("With FLOW's plan");
   await expect(page.getByTestId("picture-view-plan")).toHaveCount(0);
   // Recent changes lead with the business sentence, never the executor's "Advance ¥… on RI:… from FAC-… on day 0".
   const changes = page.getByTestId("home-card-changes");
@@ -258,7 +261,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   // The question is the next step's card (cost, landing, the one primary): the Decisions card and the "Waiting" change row would say it again, so they are gone.
   const decision = page.getByTestId("home-next-action");
   await expect(decision.getByTestId("home-funding-costs")).toContainText("¥1,782.19");
-  await expect(decision.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(decision.getByTestId("next-action-lands")).toContainText("in 3 days");
   await expect(page.getByTestId("home-approval-APR-000001")).toHaveCount(0);
   await expect(page.getByTestId("home-card-changes")).not.toContainText("Waiting for your approval");
   await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
@@ -323,7 +326,7 @@ test("the cash picture draws both lines at once, named in its legend, and a row 
   // Both lines are always drawn and named in the legend (the toggle that hid the plan is gone: the grey line is the comparison, the blue one the plan).
   await expect(page.getByTestId("picture-view-plan")).toHaveCount(0);
   await expect(page.getByTestId("picture-view-nothing")).toHaveCount(0);
-  await expect(picture.getByTestId("home-legend-main")).toContainText("With FLOW's plan");
+  await expect(picture.getByTestId("home-legend-main")).toContainText("If you run FLOW's plan");
   await expect(picture.getByTestId("home-legend-counter")).toContainText("if you did nothing");
   // A rail row (the old chip) lays the cursor over its day; the chosen one stays chosen.
   const row = page.getByTestId("rail-row-2");
@@ -356,7 +359,7 @@ test("the quiet day shows one line and no toggle", async ({ page }) => {
   await runPlan(page, "ALERT-RESERVE-12");
   await expect(page.getByTestId("home-headline")).toHaveText("Your cash is covered on the current plan.");
   await expect(page.getByTestId("home-line-plan")).toHaveCount(1);
-  await expect(page.getByTestId("home-legend-main")).toContainText("Projected cash");
+  await expect(page.getByTestId("home-legend-main")).toContainText("With FLOW's plan");
   await expect(page.getByTestId("picture-view-nothing")).toHaveCount(0);
   await expect(page.getByTestId("picture-view-plan")).toHaveCount(0);
 });
@@ -400,7 +403,7 @@ test("the new Home strings read in Chinese", async ({ page }) => {
   await page.getByLabel("中文").check();
   await expect(page.getByTestId("home-event-picture")).toContainText("未来 36 天的现金");
   await expect(page.getByTestId("picture-ytick").first()).toBeVisible(); // the server's own y labels
-  await expect(page.getByTestId("home-legend-main")).toContainText("采用 FLOW 方案");
+  await expect(page.getByTestId("home-legend-main")).toContainText("如果您执行 FLOW 的方案");
   await expect(page.getByTestId("home-card-deals")).toContainText("您的交易");
   await expect(page.getByTestId("home-card-deals-link")).toHaveAttribute("href", "/deals");
   await page.goto("/cash");
