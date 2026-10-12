@@ -8,10 +8,13 @@ is written here for `lang` through `t(lang, en, zh)`. The browser computes nothi
     buyer          {id, name}
     paths          [{key, kind, label}]: asked first, then the verdict's counters in order
     concentration  the four shares and their sentence (`app.strategy.concentration`, unchanged)
-    payments       how the buyer has paid (`app.strategy.payments`, unchanged)
+    payments       how the buyer has paid (`app.strategy.payments`, unchanged); null, with `payments_note` saying why, for an
+                   aggregate buyer (a name that stands for many small customers has no payment statistics of its own)
     stress         the buyer paying every invoice 30 days late (a test): `now` on the books as they stand and, per path, on the
                    copy with that path's package in force; each row carries the server series of the stressed line for the picture
-                   and its lowest point as a moment (`lowest_day`, `lowest_short`, `lowest_when`)
+                   and its lowest point as a moment (`lowest_day`, `lowest_short`, `lowest_when`). `also` holds the same set at the
+                   delays the buyer's own history asks for: the owner's typical delay when it is the only estimate (below 3
+                   completed invoices; labelled "your estimate") and the observed P90 once 10 invoices exist and it exceeds 30
     capacity       per path: the capacity windows before and after the package, and `spare`, the largest further one-off payment
                    FLOW could still cover alone (None when the read did not ask for it)
     economics      None (Phase 2)           loss  None (Phase 3)
@@ -54,12 +57,23 @@ from app.strategy.capacity import (
 )
 from app.strategy.concentration import concentration
 from app.strategy.impact import scenario_paid_late, stress
-from app.strategy.inputs import CustomerInputs
-from app.strategy.payments import payment_behaviour
-from app.strategy.types import CapacityBeforeAfter, CapacityWindow, Concentration, SpareCapacity, StressRow
+from app.strategy.inputs import CustomerInputs, TypicalDelay
+from app.strategy.payments import (
+    OBSERVED_STRESS_MIN_INVOICES,
+    STRESS_DELAY_DAYS,
+    owner_source,
+    payment_behaviour,
+)
+from app.strategy.types import (
+    CapacityBeforeAfter,
+    CapacityWindow,
+    Concentration,
+    PaymentBehaviour,
+    SpareCapacity,
+    StressRow,
+)
 from app.strategy.words import buyer_short, share_text, whole_yuan
 
-STRESS_DELAY_DAYS = 30
 MATERIAL_SHARE_BP = 5_000  # a buyer that is at least half of what the supplier is owed is named on Home's open-offer row
 ASKED = "asked"
 CACHE_SIZE = 32
@@ -143,10 +157,10 @@ def stress_sentence(row: StressRow, name: str, today: int, floor_fen: int, lang:
                            f"；FLOW 已承诺的方案能以 {whole_yuan(row.plan_cost_fen or 0)} 覆盖 {whole_yuan(row.need_fen)} 的缺口{extra_zh}。")
 
 
-def _stress_line(side: Books, mandate: Mandate, buyer_id: str, day: int, lang: str) -> list[dict[str, Any]]:
+def _stress_line(side: Books, mandate: Mandate, buyer_id: str, day: int, delay: int, lang: str) -> list[dict[str, Any]]:
     """The stressed line of the picture: the unfunded CONSERVATIVE closing cash of the copy in which the buyer pays every invoice
-    late, from today, shaped as the offer picture's series are."""
-    sc = scenario_paid_late(side, buyer_id, STRESS_DELAY_DAYS, day, horizon_days=mandate.horizon_days, lang=lang)
+    `delay` days late, from today, shaped as the offer picture's series are."""
+    sc = scenario_paid_late(side, buyer_id, delay, day, horizon_days=mandate.horizon_days, lang=lang)
     live = [o for o in side.obligations if binds(sc.state, o)]
     traj = project(sc.state, live, [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     return [{"day": d.day, "closing_fen": d.closing_fen, "closing_display": fmt_yuan(d.closing_fen)}
@@ -154,12 +168,12 @@ def _stress_line(side: Books, mandate: Mandate, buyer_id: str, day: int, lang: s
 
 
 def _stress_row(books: Books, mandate: Mandate, buyer_id: str, day: int, commitments: Sequence[Commitment],
-                bound: BoundPackage | None, name: str, history: str | None, lang: str) -> dict[str, Any]:
-    row = stress(books, mandate, buyer_id, (STRESS_DELAY_DAYS,), day, commitments, lang=lang, package=bound)[0]
+                bound: BoundPackage | None, name: str, history: str | None, delay: int, lang: str) -> dict[str, Any]:
+    row = stress(books, mandate, buyer_id, (delay,), day, commitments, lang=lang, package=bound)[0]
     side = books_with(books, bound) if bound is not None else books
     today = max(day, books.state.as_of_day)
     out = row.model_dump(mode="json")
-    out.update(available=True, unavailable_text=None, series=_stress_line(side, mandate, buyer_id, day, lang),
+    out.update(available=True, unavailable_text=None, series=_stress_line(side, mandate, buyer_id, day, delay, lang),
                lowest_short=fmt_short(row.lowest_fen), lowest_when=when_text(row.lowest_day, today, lang),
                first_breach_when=when_text(row.first_breach_day, today, lang) if row.first_breach_day is not None else None,
                text=stress_sentence(row, name, today, mandate.min_cash_fen, lang), history_text=history)
@@ -170,13 +184,53 @@ def _unavailable(text: str) -> dict[str, Any]:
     return {"available": False, "unavailable_text": text}
 
 
+def extra_delays(paid: PaymentBehaviour, owner: TypicalDelay | None, lang: str) -> list[tuple[int, str, str]]:
+    """The delays besides the standing 30 days that the buyer's own history asks to test, as (days, basis, label): the owner's
+    typical delay when it is the only estimate (below 3 completed invoices) and the observed P90 once 10 invoices exist and it
+    is later than the standing delay. A delay equal to the standing one adds nothing."""
+    out: list[tuple[int, str, str]] = []
+    if paid.delay_basis == "OWNER_ENTERED" and owner is not None and owner.days != STRESS_DELAY_DAYS:
+        source = owner_source(owner, lang)  # "your estimate" for what the owner typed; the row's own words otherwise
+        out.append((owner.days, "OWNER_ESTIMATE", source[:1].upper() + source[1:]))
+    p90 = paid.p90_days_late
+    if paid.completed >= OBSERVED_STRESS_MIN_INVOICES and p90 is not None and p90 > STRESS_DELAY_DAYS:
+        out.append((p90, "OBSERVED_P90", t(lang, "Its slowest tenth of payments (observed)", "最慢的十分之一付款（实际记录）")))
+    return out
+
+
+def _stress_set(books: Books, mandate: Mandate, buyer_id: str, day: int, commitments: Sequence[Commitment],
+                paths: list[_Path], bound: dict[str, BoundPackage | None], failed: dict[str, str], name: str,
+                history: str | None, delay: int, lang: str) -> dict[str, Any]:
+    """The stress at one delay: `now` on the books as they stand and, per path, the copy with that path's package in force.
+    `now` is unavailable (with the sentence why) when nothing is open or scheduled to pay late."""
+    try:
+        now = _stress_row(books, mandate, buyer_id, day, commitments, None, name, history, delay, lang)
+    except ValueError:  # nothing open or scheduled to pay late: there is nothing to test
+        none = t(lang, f"No late-payment test for {buyer_short(name)}: no open invoice is left to pay late.",
+                 f"无法对{buyer_short(name)}做晚付测试：没有可晚付的未收发票。")
+        now = _unavailable(none)
+    by_path: dict[str, dict[str, Any]] = {}
+    for p in paths:
+        if p.key in failed:
+            by_path[p.key] = _unavailable(failed[p.key])
+        elif not now["available"] or p.package is None:
+            by_path[p.key] = now
+        else:
+            try:
+                by_path[p.key] = _stress_row(books, mandate, buyer_id, day, commitments, bound[p.key], name, history, delay, lang)
+            except (ValueError, EngineError):
+                by_path[p.key] = _unavailable(t(lang, f"FLOW cannot run the late-payment test for {p.label}.",
+                                                f"FLOW 无法对{p.label}做晚付测试。"))
+    return {"delay_days": delay, "now": now, "paths": by_path}
+
+
 # ---------------------------------------------------------------- capacity
 
 
-def window_row(w: CapacityWindow, books: Books, today: int, lang: str) -> dict[str, Any]:
+def window_row(w: CapacityWindow, books: Books, today: int, lang: str, horizon_days: int) -> dict[str, Any]:
     """One window for the API (`capacity.window_view`) with the short figures the band and the fold read, the facility named and the
     reading of an invoice-finance window in words."""
-    out = cap.window_view(w, today, lang)
+    out = cap.window_view(w, today, lang, horizon_days)
     out["today_short"] = short(w.today_fen)
     out["after_short"] = short(w.after_fen) if w.after_fen is not None else None
     out["facility_name"] = facility_name(books.state, w.facility_id) if w.facility_id else None
@@ -186,14 +240,14 @@ def window_row(w: CapacityWindow, books: Books, today: int, lang: str) -> dict[s
     return out
 
 
-def _snapshot_view(snap: Any, books: Books, today: int, lang: str) -> dict[str, Any]:
-    return {"windows": [window_row(w, books, today, lang) for w in snap.windows], "plan_admissible": snap.plan_admissible,
+def _snapshot_view(snap: Any, books: Books, today: int, lang: str, horizon_days: int) -> dict[str, Any]:
+    return {"windows": [window_row(w, books, today, lang, horizon_days) for w in snap.windows], "plan_admissible": snap.plan_admissible,
             "no_borrowing_text": cap.reason_text(snap.no_borrowing_reason, lang)}
 
 
-def _capacity_view(books: Books, ba: CapacityBeforeAfter, today: int, lang: str) -> dict[str, Any]:
-    return {"available": True, "unavailable_text": None, "before": _snapshot_view(ba.before, books, today, lang),
-            "after": _snapshot_view(ba.after, books, today, lang) if ba.after is not None else None, "spare": None}
+def _capacity_view(books: Books, ba: CapacityBeforeAfter, today: int, lang: str, horizon_days: int) -> dict[str, Any]:
+    return {"available": True, "unavailable_text": None, "before": _snapshot_view(ba.before, books, today, lang, horizon_days),
+            "after": _snapshot_view(ba.after, books, today, lang, horizon_days) if ba.after is not None else None, "spare": None}
 
 
 def _until(ba: CapacityBeforeAfter | None, today: int) -> int | None:
@@ -222,7 +276,17 @@ def capacity_sentence(p: _Path, spare_fen: int | None, today_fen: int | None, un
              f"{p.who_zh}，再支付一笔款项的余量为 {fig}{wait_zh}；目前为 {now}。")
 
 
-def _spare_view(s: SpareCapacity, today_s: SpareCapacity, books: Books, day: int, lang: str) -> dict[str, Any]:
+def _refused_text(p: _Path, today_s: SpareCapacity, lang: str) -> str:
+    """Why there is no further room. When today's books still have some and this path takes it away, the package is named as the
+    cause; when the books already need the owner or a new facility, the general sentence stands."""
+    if today_s.x_star_fen is None:
+        return cap.refused_sentence(lang)
+    subject = "accepting as asked" if p.kind == "asked" else p.who_en
+    return t(lang, f"none: {subject} would leave the books needing you or a new facility",
+             f"无：{p.who_zh}，账面将需要您出面或新增融资额度")
+
+
+def _spare_view(p: _Path, s: SpareCapacity, today_s: SpareCapacity, books: Books, day: int, lang: str) -> dict[str, Any]:
     from app.api.presentation import business_text
 
     return {
@@ -232,11 +296,20 @@ def _spare_view(s: SpareCapacity, today_s: SpareCapacity, books: Books, day: int
         "evaluations": s.evaluations, "seconds": s.seconds,
         "shape_text": cap.shape_text(s.shape, s.criterion, lang),
         "binding_text": business_text(books.state, s.binding_reason, day, lang) if s.binding_reason else None,
-        "refused_text": cap.refused_sentence(lang) if s.x_star_fen is None else None,
+        "refused_text": _refused_text(p, today_s, lang) if s.x_star_fen is None else None,
     }
 
 
 # ---------------------------------------------------------------- the pieces of the block
+
+
+def _payments_note(paid: PaymentBehaviour | None, name: str, lang: str) -> str | None:
+    """Why `payments` is null: an aggregate buyer stands for many small customers, so no one customer's payment statistics exist."""
+    if paid is not None:
+        return None
+    short_name = buyer_short(name)
+    return t(lang, f"{short_name} stands for many small customers, so how it pays is not shown as one customer's history.",
+             f"{short_name}代表许多小客户，因此不把它的付款情况当作单一客户的记录来显示。")
 
 
 def _flag(conc: Concentration, lang: str) -> dict[str, Any]:
@@ -259,8 +332,9 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
     name = party_name(state, buyer_id)
     with rt.lock:  # the log is replayed against the books just read
         shares = concentration(books, buyer_id, day, inputs, lang=lang)
-        paid = payment_behaviour(rt.store, books, buyer_id, day, inputs, lang=lang)
-    history = paid.insufficient_text if paid.insufficient else None
+        # a name that stands for many small customers has no payment history of its own to state
+        paid = None if shares.is_aggregate else payment_behaviour(rt.store, books, buyer_id, day, inputs, lang=lang)
+    history = paid.insufficient_text if paid is not None and paid.insufficient else None
     paths = _paths(verdict, lang)
 
     bound: dict[str, BoundPackage | None] = {}
@@ -276,38 +350,27 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
             failed[p.key] = t(lang, f"FLOW cannot read this reply against your books today ({p.label}).",
                               f"FLOW 今天无法按您的账目核算此回复（{p.label}）。")
 
-    try:
-        now = _stress_row(books, mandate, buyer_id, day, commitments, None, name, history, lang)
-    except ValueError:  # nothing open or scheduled to pay late: there is nothing to test
-        none = t(lang, f"No late-payment test for {buyer_short(name)}: no open invoice is left to pay late.",
-                 f"无法对{buyer_short(name)}做晚付测试：没有可晚付的未收发票。")
-        now = _unavailable(none)
-    stress_paths: dict[str, dict[str, Any]] = {}
+    standing = _stress_set(books, mandate, buyer_id, day, commitments, paths, bound, failed, name, history, STRESS_DELAY_DAYS, lang)
+    also = ([{**_stress_set(books, mandate, buyer_id, day, commitments, paths, bound, failed, name, history, delay, lang),
+              "basis": basis, "label": label} for delay, basis, label in extra_delays(paid, inputs.typical_delay(buyer_id), lang)]
+            if standing["now"]["available"] and paid is not None else [])
     capacity_paths: dict[str, dict[str, Any]] = {}
     afters: dict[str, CapacityBeforeAfter | None] = {}
     for p in paths:
         if p.key in failed:
-            stress_paths[p.key] = _unavailable(failed[p.key])
             capacity_paths[p.key] = _unavailable(failed[p.key])
             afters[p.key] = None
             continue
-        if not now["available"] or p.package is None:
-            stress_paths[p.key] = now
-        else:
-            try:
-                stress_paths[p.key] = _stress_row(books, mandate, buyer_id, day, commitments, bound[p.key], name, history, lang)
-            except (ValueError, EngineError):
-                stress_paths[p.key] = _unavailable(failed.get(p.key) or t(
-                    lang, f"FLOW cannot run the late-payment test for {p.label}.", f"FLOW 无法对{p.label}做晚付测试。"))
         ba = capacity_before_after(books, mandate, bound[p.key], day, commitments, trusted_owner_key_hex=rt.owner_key_hex)
         afters[p.key] = ba
-        capacity_paths[p.key] = _capacity_view(books, ba, today, lang)
+        capacity_paths[p.key] = _capacity_view(books, ba, today, lang, mandate.horizon_days)
 
     return {
         "buyer": {"id": buyer_id, "name": name},
         "paths": [{"key": p.key, "kind": p.kind, "label": p.label} for p in paths],
-        "concentration": shares.model_dump(mode="json"), "payments": paid.model_dump(mode="json"),
-        "stress": {"delay_days": STRESS_DELAY_DAYS, "now": now, "paths": stress_paths},
+        "concentration": shares.model_dump(mode="json"),
+        "payments": paid.model_dump(mode="json") if paid is not None else None, "payments_note": _payments_note(paid, name, lang),
+        "stress": {**standing, "also": also},
         "capacity": capacity_paths, "economics": None, "loss": None, "partial": False, "flag": _flag(shares, lang),
         "_afters": afters, "_bound": bound,
     }
@@ -353,7 +416,7 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
         view_spare: dict[str, Any] | None = None
         if spare and view["available"]:
             s = spare_capacity(books, mandate, day, commitments, base["_bound"][p.key], trusted_owner_key_hex=rt.owner_key_hex)
-            view_spare = _spare_view(s, today_s, books, day, lang)
+            view_spare = _spare_view(p, s, today_s, books, day, lang)
             view["spare"] = view_spare
         sentences[p.key] = _path_sentences(p, base, view_spare, _until(base["_afters"][p.key], today)
                                            if view_spare is not None and view_spare["x_star_fen"] == 0 else None, lang)
@@ -369,4 +432,4 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
 
 
 __all__ = ["ASKED", "MATERIAL_SHARE_BP", "STRESS_DELAY_DAYS", "Source", "capacity_sentence", "clear_cache", "concentration", "exposure",
-           "lead_key", "payment_behaviour", "stress_sentence", "window_row"]
+           "extra_delays", "lead_key", "payment_behaviour", "stress_sentence", "window_row"]

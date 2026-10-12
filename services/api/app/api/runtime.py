@@ -147,9 +147,11 @@ class Runtime:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
+            from app.api.strategy_exposure import clear_cache as clear_exposure_cache
             from app.nl import reset_sessions
 
             reset_sessions()
+            clear_exposure_cache()  # the answers were computed on the books that were just replaced
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the

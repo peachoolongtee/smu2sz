@@ -4,6 +4,10 @@
     POST /firm/inputs                the same for a firm-level field (VAT rate, company gross margin)
     GET  /buyers/{buyer_id}/inputs   the row in force for each field, with provenance in words
 
+Phase 1 takes two fields, `aggregate` and `typical_delay_days`. The six economics fields (annual sales, margin, margin basis,
+classification, VAT rate, company gross margin) belong to a later phase: they are refused with a 422 naming it until
+FEATURE_CUSTOMER_ECONOMICS is on (default off).
+
 Owner only (mounted through `app/api/strategy.py`). Append-only: a write stores a new row and the older ones stay; the latest
 row per (counterparty, field) is the one in force. The row is context, not books: nothing here writes `FinancialState`, a
 verdict, an approval, an execution or the hash chain, and nothing a row says changes what the mandate allows. A field this
@@ -21,11 +25,13 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, Strict
 from app.api.features import require_feature
 from app.api.presentation import Lang, t
 from app.api.runtime import get_runtime
+from app.config import get_settings
 from app.persistence.records import CustomerInputRecord, InputField, InputProvenance
 from app.strategy.inputs import InputRejected, field_label, input_view, is_firm_field, parse_value, value_json
 
 router = APIRouter()
 ENTERED_BY = "OWNER"
+PHASE_1_FIELDS = frozenset({InputField.AGGREGATE, InputField.TYPICAL_DELAY_DAYS})  # the rest wait for FEATURE_CUSTOMER_ECONOMICS
 
 
 class InputBody(BaseModel):
@@ -39,14 +45,21 @@ class InputBody(BaseModel):
     source_ref: str = Field(default="", max_length=256)
 
 
-def _refused(f: InputField, why: str, lang: Lang) -> HTTPException:
+def _refused(f: InputField, why: str, lang: Lang, why_zh: str | None = None) -> HTTPException:
     label = field_label(f.value, lang)
     return HTTPException(422, detail={
         "code": "INPUT_REJECTED", "field": f.value, "reason": why,
-        "message": t(lang, f"{label} was not saved: {why}.", f"“{label}”未保存：该值不符合要求（{why}）。")})
+        "message": t(lang, f"{label} was not saved: {why}.", f"“{label}”未保存：该值不符合要求（{why_zh or why}）。")})
+
+
+def _later_phase(f: InputField, lang: Lang) -> HTTPException:
+    return _refused(f, "it belongs to a later phase (customer economics), which is switched off (FEATURE_CUSTOMER_ECONOMICS)", lang,
+                    "它属于后续阶段（客户盈利分析），目前未开启（FEATURE_CUSTOMER_ECONOMICS）")
 
 
 def _write(counterparty_id: str | None, body: InputBody, lang: Lang) -> dict[str, Any]:
+    if body.field not in PHASE_1_FIELDS and not get_settings().features.customer_economics:
+        raise _later_phase(body.field, lang)
     if is_firm_field(body.field) != (counterparty_id is None):
         which = "firm" if is_firm_field(body.field) else "buyer"
         route = "/firm/inputs" if is_firm_field(body.field) else "/buyers/{buyer_id}/inputs"

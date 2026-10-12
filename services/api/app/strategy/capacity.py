@@ -496,12 +496,23 @@ def headroom_text(fen: int, lang: str = "en") -> str:
     return fmt_yuan(fen)
 
 
-def window_view(w: CapacityWindow, today: int, lang: str = "en") -> dict[str, Any]:
+def window_view(w: CapacityWindow, today: int, lang: str = "en", horizon_days: int | None = None) -> dict[str, Any]:
     """A window for the API: the contract's fields with a `*_display` for every money field (`displayed`), the relative-day
-    words for every day (`*_when`), the headline texts ("over by" when negative) and the reason in words."""
+    words for every day (`*_when`), the headline texts ("over by" when negative) and the reason in words.
+
+    A window that does not recover inside the horizon says so in `recovers_when` ("not within the 120-day horizon"; the
+    horizon is the mandate's, `horizon_days`), never an empty string; a recovery that rests on a repayment day FLOW assumes
+    (`recovery_assumed`) carries `recovery_assumed_text`, which says it is an assumption (None otherwise)."""
     out: dict[str, Any] = displayed(w.model_dump())
     for name in ("lowest_day", "through_day", "recovers_day"):
         out[name.replace("_day", "_when")] = when_text(getattr(w, name), today, lang)
+    if w.recovers_day is None:
+        out["recovers_when"] = (t(lang, f"not within the {horizon_days}-day horizon", f"{horizon_days} 天预测期内不会恢复")
+                                if horizon_days is not None else t(lang, "not within the forecast horizon", "预测期内不会恢复"))
+    out["recovery_assumed_text"] = (
+        t(lang, f"Back {out['recovers_when']} only if the repayment is made on the planned day (an assumption, not a record).",
+          f"{out['recovers_when']}恢复，前提是按计划的还款日还款（这是假设，不是记录）。")
+        if w.recovery_assumed and w.recovers_day is not None else None)
     out["today_text"] = headroom_text(w.today_fen, lang)
     out["lowest_text"] = headroom_text(w.lowest_fen, lang)
     out["after_text"] = headroom_text(w.after_fen, lang) if w.after_fen is not None else None

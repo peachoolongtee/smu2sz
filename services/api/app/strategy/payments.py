@@ -43,9 +43,9 @@ from app.domain.models import ReceivePayment
 from app.domain.money import round_half_up
 from app.domain.ports import LedgerStore
 from app.persistence.records import InputProvenance
-from app.strategy.inputs import CustomerInputs, inputs_from_store, provenance_words
+from app.strategy.inputs import CustomerInputs, TypicalDelay, inputs_from_store, provenance_words
 from app.strategy.types import PaymentBehaviour, PaymentInvoice, PaymentOpen
-from app.strategy.words import buyer_short, share_bp
+from app.strategy.words import buyer_short, invoice_label, share_bp
 
 WINDOW_DAYS = 365
 RECENT_DAYS = 90
@@ -56,7 +56,8 @@ MIN_TREND = 12
 TREND_WINDOW = 6
 TREND_GAP_DAYS = 5
 OWNER_GAP_DAYS = 5
-STRESS_DELAY_DAYS = 30  # the stress test's delay when FLOW cannot say how the buyer usually pays
+STRESS_DELAY_DAYS = 30  # the stress test's standing delay, and the one it uses when FLOW cannot say how the buyer usually pays
+OBSERVED_STRESS_MIN_INVOICES = MIN_P90  # from this many completed invoices the observed P90 may feed a second stress row
 
 # `reconcile` words the formula of a receipt that paid a portion of face early under an agreement this way; it is how this
 # module tells such a receipt from a plain one without a second matcher (a test pins it against a real agreed receipt).
@@ -167,9 +168,9 @@ def payment_behaviour(store: LedgerStore, books: Books, buyer_id: str, day: int,
     survivorship_text = None
     if survivorship and worst is not None:
         survivorship_text = t(
-            lang_, f"These figures may understate how late {name} pays: {worst.receivable_id} is already "
-                   f"{worst.days_overdue} days overdue.",
-            f"这些数字可能低估了{name}的实际迟付程度：{worst.receivable_id} 已逾期 {worst.days_overdue} 天。")
+            lang_, f"These figures may understate how late {name} pays: {invoice_label(books.state, worst.receivable_id, day, lang_)} "
+                   f"is still unpaid.",
+            f"这些数字可能低估了{name}的实际迟付程度：{invoice_label(books.state, worst.receivable_id, day, lang_)}，仍未付款。")
 
     # observed outranks owner-entered
     median_days = None if median is None else _whole(median)
@@ -179,13 +180,13 @@ def payment_behaviour(store: LedgerStore, books: Books, buyer_id: str, day: int,
     if median_days is not None:
         typical, basis = median_days, "OBSERVED"
         if owner is not None and abs(owner.days - median_days) >= OWNER_GAP_DAYS:
-            owner_text = t(lang_, f"You estimated {owner.days} days late; {name}'s last {n} payments were a median "
-                                  f"{median_days} days late.",
-                           f"您估计{name}通常晚付 {owner.days} 天；{name}最近 {n} 笔付款的中位数为晚付 {median_days} 天。")
+            owner_text = t(lang_, f"Typical delay on file: {owner.days} days, {owner_source(owner, lang_)}; {name}'s last {n} "
+                                  f"payments were a median {median_days} days late.",
+                           f"记录中的通常延迟：{owner.days} 天，{owner_source(owner, lang_)}；{name}最近 {n} 笔付款的中位数为晚付 "
+                           f"{median_days} 天。")
     elif owner is not None:
         typical, basis = owner.days, "OWNER_ENTERED"
-        source = (t(lang_, "your estimate", "您的估计") if owner.provenance == InputProvenance.OWNER_ENTERED
-                  else provenance_words(owner.provenance.value, lang_))
+        source = owner_source(owner, lang_)
         owner_text = t(lang_, f"Typical delay: {owner.days} days, {source} (FLOW has too few receipts to measure it).",
                        f"通常的延迟：{owner.days} 天，{source}（FLOW 的收款记录太少，无法衡量）。")
 
@@ -208,6 +209,14 @@ def payment_behaviour(store: LedgerStore, books: Books, buyer_id: str, day: int,
         open_overdue=overdue, survivorship=survivorship, survivorship_text=survivorship_text, typical_delay_days=typical,
         delay_basis=basis, owner_delay_days=None if owner is None else owner.days, owner_delay_text=owner_text,
         insufficient=insufficient, insufficient_text=insufficient_text, sentence=sentence)
+
+
+def owner_source(owner: TypicalDelay, lang: Lang) -> str:
+    """Where the owner's figure came from, in words: what the owner typed is "your estimate"; any other row says what it is
+    (an estimate, not a record; from your ERP system), so an assumption is never worded as the owner's own or as observed."""
+    if owner.provenance == InputProvenance.OWNER_ENTERED:
+        return t(lang, "your estimate", "您的估计")
+    return provenance_words(owner.provenance.value, lang)
 
 
 def _insufficient(name: str, n: int, lang: Lang) -> str:

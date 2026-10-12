@@ -12,6 +12,7 @@ _MESSAGES = {
     "price_curve": "The cash price curve is switched off (FEATURE_PRICE_CURVE).",
     "collections_worth": "Collections worth is switched off (FEATURE_COLLECTIONS_WORTH).",
     "exposure": "Buyer exposure is switched off (FEATURE_EXPOSURE).",
+    "customer_economics": "Customer economics is switched off (FEATURE_CUSTOMER_ECONOMICS).",
     "pilot_journal": "The pilot journal is switched off (FEATURE_PILOT_JOURNAL).",
 }
 

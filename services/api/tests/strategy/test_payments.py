@@ -288,10 +288,12 @@ def test_a_survivorship_warning_when_an_open_invoice_is_later_than_p75() -> None
     log.receivables.append(Receivable(id="R-OPEN", counterparty_id=BUYER, face_fen=1_000_000, issue_day=300, terms_days=30))
     p = behaviour(log, day=400)  # due 330: 70 days overdue
     assert p.p75_days_late == 6 and p.survivorship
-    assert p.survivorship_text == ("These figures may understate how late Foshan pays: R-OPEN is already 70 days overdue.")
+    assert p.survivorship_text == ("These figures may understate how late Foshan pays: the ¥10,000.00 invoice to "
+                                   "Foshan Home Retail Co. (due 70 days ago) is still unpaid.")
+    assert "R-OPEN" not in p.survivorship_text  # an invoice is named by its amount and due words, never by its id
     assert behaviour(log, day=334).survivorship is False  # 4 days overdue, not later than 6
     zh = behaviour(log, day=400, lang="zh")
-    assert zh.survivorship_text == "这些数字可能低估了Foshan的实际迟付程度：R-OPEN 已逾期 70 天。"
+    assert zh.survivorship_text == ("这些数字可能低估了Foshan的实际迟付程度：Foshan Home Retail Co. 的 ¥10,000.00 发票（70 天前到期），仍未付款。")
 
 
 def test_below_four_invoices_the_median_is_the_bar_and_below_three_there_is_none() -> None:
@@ -324,7 +326,12 @@ def test_an_assumed_figure_is_not_worded_as_the_owners_or_as_observed() -> None:
 def test_from_three_invoices_the_observed_median_replaces_the_owners_figure() -> None:
     p = behaviour(paid(3, 3, 3), inputs=owner_delay(15))
     assert (p.typical_delay_days, p.delay_basis, p.median_days_late) == (3, "OBSERVED", 3)
-    assert p.owner_delay_text == "You estimated 15 days late; Foshan's last 3 payments were a median 3 days late."
+    assert p.owner_delay_text == "Typical delay on file: 15 days, your estimate; Foshan's last 3 payments were a median 3 days late."
+    assumed = behaviour(paid(3, 3, 3), inputs=owner_delay(15, "ESTIMATED"))  # worded from the row's provenance, as below 3 invoices
+    assert assumed.owner_delay_text == ("Typical delay on file: 15 days, an estimate, not a record; "
+                                        "Foshan's last 3 payments were a median 3 days late.")
+    erp = behaviour(paid(3, 3, 3), inputs=owner_delay(15, "ERP"))
+    assert "from your ERP system" in (erp.owner_delay_text or "") and "your estimate" not in (erp.owner_delay_text or "")
 
 
 def test_the_owners_figure_appears_beside_the_median_only_when_they_differ_by_five_days_or_more() -> None:
@@ -346,6 +353,43 @@ def test_the_store_supplies_the_owners_figure_when_none_is_passed() -> None:
     assert (p.typical_delay_days, p.delay_basis) == (21, "OWNER_ENTERED")
 
 
+# ---------------------------------------------------------------- the delays the stress also tests (one standing delay, defined once)
+
+
+def _also(log: Log, inputs: CustomerInputs | None = None, lang: str = "en") -> list[tuple[int, str, str]]:
+    from app.strategy.exposure import extra_delays
+
+    p = behaviour(log, inputs=inputs, lang=lang)
+    return extra_delays(p, (inputs or CustomerInputs()).typical_delay(BUYER), lang)
+
+
+def test_the_standing_stress_delay_is_defined_once() -> None:
+    from app.strategy import exposure
+
+    assert exposure.STRESS_DELAY_DAYS is module.STRESS_DELAY_DAYS == 30
+    assert "STRESS_DELAY_DAYS =" not in Path(exposure.__file__).read_text(encoding="utf-8")
+
+
+def test_the_owners_estimate_alone_feeds_a_second_stress_row_labelled_as_hers() -> None:
+    assert _also(paid(2, 4), owner_delay(45)) == [(45, "OWNER_ESTIMATE", "Your estimate")]
+    assert _also(Log(), owner_delay(45), "zh") == [(45, "OWNER_ESTIMATE", "您的估计")]
+    assert _also(paid(2, 4), owner_delay(15, "ESTIMATED"))[0][2] == "An estimate, not a record"  # worded from its provenance
+    assert _also(paid(2, 4), owner_delay(30)) == []  # the standing row already tests it
+    assert _also(paid(2, 4)) == []  # no estimate, nothing to add
+    assert _also(paid(3, 3, 3), owner_delay(45)) == []  # from 3 invoices the observed median replaces it
+
+
+def test_the_observed_p90_feeds_a_row_from_ten_invoices_when_it_exceeds_the_standing_delay() -> None:
+    late = paid(*([5] * 8 + [40, 50]))  # 10 invoices: P90 is the 9th smallest, 40
+    assert behaviour(late).p90_days_late == 40
+    assert _also(late) == [(40, "OBSERVED_P90", "Its slowest tenth of payments (observed)")]
+    assert _also(paid(*([5] * 8 + [40, 50])), lang="zh")[0][2] == "最慢的十分之一付款（实际记录）"
+    assert _also(paid(*([5] * 9 + [50]))) == []  # P90 is 5: not later than the standing 30 days
+    assert _also(paid(*([5] * 8 + [40, 50])[1:])) == []  # 9 invoices: no P90 exists
+    both = _also(paid(*([5] * 8 + [40, 50])), owner_delay(45))
+    assert [b for _, b, _ in both] == ["OBSERVED_P90"]  # 10 invoices: the owner's figure is replaced by the median
+
+
 # ---------------------------------------------------------------- language and the rule
 
 
@@ -355,7 +399,7 @@ def test_the_chinese_twin_has_the_same_figures_and_no_english_left_over() -> Non
     texts = {"sentence", "owner_delay_text", "survivorship_text", "insufficient_text", "lang"}
     assert en.model_dump(exclude=texts) == zh.model_dump(exclude=texts)
     assert zh.sentence == ("Foshan最近 9 张发票的付款中位数晚付 11 天（依据您的收款记录）；2/9 按期；最近 90 天内最长的延迟为 19 天。"
-                           "您估计Foshan通常晚付 30 天；Foshan最近 9 笔付款的中位数为晚付 11 天。")
+                           "记录中的通常延迟：30 天，您的估计；Foshan最近 9 笔付款的中位数为晚付 11 天。")
     short = behaviour(paid(1), lang="zh")
     assert short.insufficient_text == ("FLOW 在过去 12 个月内只有 1 笔Foshan的已完成付款，不足以判断Foshan通常如何付款。"
                                        "压力测试采用合同约定日期，并假设延迟 30 天。")

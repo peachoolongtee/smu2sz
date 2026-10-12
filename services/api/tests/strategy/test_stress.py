@@ -219,7 +219,9 @@ def test_on_day_34_rcv_a_is_two_days_overdue_and_is_not_moved_by_any_stress(book
         assert any(r.id == "RCV-A" and r.outstanding_fen == 16_280_000 and r.terms_days == rcv_a.terms_days
                    for r in sc.state.receivables)  # still there, as it was
         assert "LATE:RCV-A" not in {f.id for f in _flows(sc.state)}  # and never re-added as a receipt
-        assert "RCV-A is already past due and stays as the books count it." in sc.assumption
+        assert ("The ¥420,000.00 invoice to Foshan Home Retail Co. (due 2 days ago) is already past due and stays as the books count it."
+                in sc.assumption)
+        assert "RCV-A" not in sc.assumption
     assert stress(books_day34, mandate, FOSHAN, (0,), 34, rt_day34.store.commitments())[0].lowest_fen == (
         project(state, books_day34.with_([]), [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen).min_cash_fen)
 
@@ -236,7 +238,8 @@ def test_a_financed_invoice_is_not_moved_and_is_named():
         "facilities": [f.model_copy(update={"drawn_fen": 25_500_000}) if f.id == "FAC-IF" else f for f in state.facilities],
         "lots": [lot]})
     sc = scenario_paid_late(Books(state=financed, obligations=()), FOSHAN, 30, 0)
-    assert "RCV-A is financed; its delay is not modelled." in sc.assumption
+    assert "The ¥420,000.00 invoice to Foshan Home Retail Co. (due in 32 days) is financed; its delay is not modelled." in sc.assumption
+    assert "RCV-A" not in sc.assumption
     assert [r.id for r in sc.state.receivables] == ["RCV-A"] and sc.state.receivables[0].status == "FINANCED"
     assert "LATE:RCV-A" not in {f.id for f in _flows(sc.state)} and "LATE:RI:BUYER-1:2" in {f.id for f in _flows(sc.state)}
 
