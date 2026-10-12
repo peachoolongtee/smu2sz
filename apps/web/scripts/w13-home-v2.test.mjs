@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { rowHref } from "../lib/home-v2-href.ts";
+import { NO_SELECTION, offerOfDecision, readSelection, rowHref, rowSelection, selectionHref } from "../lib/home-v2-href.ts";
 import { en, zh } from "../lib/dictionary.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -18,6 +18,21 @@ test("a decision row opens its deal; any other row of the Home's own URL opens t
   assert.equal(rowHref({ kind: "CUSTOMER", href: "/?customer=BUYER-2" }), "/customers/BUYER-2");
   assert.equal(rowHref({ kind: "APPROVAL", href: "/approvals#approval-APR-1" }), "/approvals#approval-APR-1");
   assert.equal(rowHref({ kind: "SETTLEMENT", href: "/cash" }), "/cash");
+});
+
+test("the three selections live in the address: read, written, and opened in place from a row", () => {
+  const p = new URLSearchParams("customer=BUYER-1&decision=deal%3AOFF-1&scenario=counter%3A0");
+  assert.deepEqual(readSelection(p), { customer: "BUYER-1", decision: "deal:OFF-1", scenario: "counter:0" });
+  assert.deepEqual(readSelection(new URLSearchParams("")), NO_SELECTION);
+  assert.equal(selectionHref({}), "/");
+  assert.equal(selectionHref({ customer: "BUYER-1" }), "/?customer=BUYER-1");
+  assert.equal(selectionHref({ customer: "BUYER-1", decision: "deal:OFF-1", scenario: "counter:0" }), "/?customer=BUYER-1&decision=deal%3AOFF-1&scenario=counter%3A0");
+  assert.deepEqual(selectionHref(readSelection(p)), "/?customer=BUYER-1&decision=deal%3AOFF-1&scenario=counter%3A0");
+  assert.deepEqual(rowSelection({ key: "deal:OFF-1", href: "/?customer=BUYER-1&deal=deal%3AOFF-1" }), { customer: "BUYER-1", decision: "deal:OFF-1" });
+  assert.deepEqual(rowSelection({ key: "buyer-reply:OFF-2", customer_id: "BUYER-1", href: "/?customer=BUYER-1" }), { customer: "BUYER-1", decision: "deal:OFF-2" });
+  assert.deepEqual(rowSelection({ key: "collection:BUYER-2", href: "/?customer=BUYER-2" }), { customer: "BUYER-2", decision: null });
+  assert.equal(rowSelection({ key: "settlement:x", href: "/cash" }), null);
+  assert.equal(offerOfDecision("deal:OFF-1"), "OFF-1");
 });
 
 test("every recorded Home V2 read is in both languages and carries the block the page draws", () => {

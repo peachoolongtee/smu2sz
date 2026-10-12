@@ -774,6 +774,23 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
   return homeV2.mockWorklist(homeV2Point(), lang);
 }
 
+/** GET /customers/{id}/overview for Home V2's focus: the recording for this point of the story, with the selections it was read with echoed in `context`; an unknown customer is a 404 as the server answers. */
+export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null }): Promise<CustomerOverviewView> {
+  await delay();
+  const view = await homeV2.mockFocus(homeV2Point(), lang, id, sel);
+  if (!view) throw missingCustomer(id);
+  return view;
+}
+
+/** GET /offers/{id}/exposure for Home V2's deal focus: the recording of the package offer's exposure while that offer is open on the books, else absent (null). */
+export async function getDealExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
+  await delay();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
+  const view = await homeV2.mockDealExposure(homeV2Point(), lang);
+  return view ? { ...view, offer_id: offerId } : null;
+}
+
 /** GET /customers (Home V2): as the worklist. */
 export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | null> {
   await delay();

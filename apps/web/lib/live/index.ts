@@ -167,6 +167,12 @@ export const live = {
   /** GET /worklist (flag `home_v2`): Home V2's right panel, in the language asked for. Null when the flag is off (403) or the route is absent (404): the older Home stands. */
   getWorklist: (lang: "en" | "zh", sinceDay: number | null = null) =>
     nullWhenOff(() => http<WorklistView>("GET", `/worklist?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`)),
+  /** GET /customers/{id}/overview with Home V2's selections: `decision` and `scenario` come back validated in `context.deal` and `context.scenario` (null when they do not name this buyer's deal). */
+  getCustomerFocus: (id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null } = {}) =>
+    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${sel.decision ? `&decision=${enc(sel.decision)}` : ""}${sel.scenario ? `&scenario=${enc(sel.scenario)}` : ""}`),
+  /** GET /offers/{offer_id}/exposure for a Home V2 deal focus: the customer in the query asks for the echoed selections. Null when the feature is off or the offer is unknown. */
+  getDealExposure: (offerId: string, lang: "en" | "zh", customer: string) =>
+    nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}&customer=${enc(customer)}`)),
   /** GET /customers (flag `home_v2`): the same customers with the terms a page filters them by. Null when the flag is off or the route is absent. */
   getCustomers: (lang: "en" | "zh") => nullWhenOff(() => http<CustomersView>("GET", `/customers?lang=${lang}`)),
   getReconciliation: async (): Promise<ReconciliationView> => {

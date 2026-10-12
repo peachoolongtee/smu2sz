@@ -3771,6 +3771,9 @@ export interface OverviewFigure {
   value_display: string;
   note: string;
   tone: OverviewTone;
+  /** The one state vocabulary's key (lower case: planned, arranged, received, repaid, current, due_soon, overdue, promise_missed) and its word; `none` and "" when the figure has no state. */
+  state?: string;
+  state_text?: string;
 }
 
 /** A labelled row of the economics or the exposure panel. `note` is the quiet sentence after the value (where it came from, what it means), when there is one. */
@@ -3834,6 +3837,6 @@ export interface CustomerOverviewView {
   /** Present when a supporting read failed and the page is not whole (never cached by the server). */
   partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   history?: OverviewHistoryRow[];
-  /** `back` is built by the server from the query the page was opened with. */
-  context?: { back: { label: string; href: string } };
+  /** `back` is built by the server from the query the page was opened with; `customer`, `deal` and `scenario` echo Home V2's selections when they name this buyer's (`deal` the decision id, `scenario` validated against the deal's counters), else null. */
+  context?: { back: { label: string; href: string }; customer?: string | null; deal?: string | null; scenario?: string | null };
 }

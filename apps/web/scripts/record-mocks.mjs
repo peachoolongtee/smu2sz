@@ -81,6 +81,8 @@
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
+// and, for the focus panels (slice 2), focus_<point>.json = { en, zh } of { customers: { <id>: GET /customers/<id>/overview }, deals: { none | asked | counter:0:
+// the same read with the open decision and that scenario, so `context` echoes them } } (deals only at `offer`), and exposure_offer.json = { en, zh } of GET /offers/<EX01>/exposure?customer=.
 // The API needs FEATURE_HOME_V2=1 and the flags above:
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_HOME_V2=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
 //   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
@@ -441,10 +443,24 @@ if (HOME_V2) {
     const worklist = await both((lang) => live.getWorklist(lang));
     const customers = await both((lang) => live.getCustomers(lang));
     if (!worklist.en || !customers.en) throw new Error("GET /worklist or /customers is off: start the API with FEATURE_HOME_V2=1");
-    return { home, worklist, customers };
+    // The focus panels' reads: every customer's overview, and at the point where an offer is open its deal under each scenario and its exposure.
+    const decisionRow = worklist.en.needs_you.find((r) => r.kind === "DECISION");
+    const focusOf = async (lang) => {
+      const customers = {};
+      for (const c of worklist[lang].customers) customers[c.customer_id] = await live.getCustomerFocus(c.customer_id, lang);
+      const deals = {};
+      if (decisionRow) for (const scenario of [null, "asked", "counter:0"]) deals[scenario ?? "none"] = await live.getCustomerFocus(decisionRow.customer_id, lang, { decision: decisionRow.key, scenario });
+      return { customers, deals };
+    };
+    const focus = { en: await focusOf("en"), zh: await focusOf("zh") };
+    const exposure = decisionRow
+      ? { en: await live.getDealExposure(decisionRow.key.slice("deal:".length), "en", decisionRow.customer_id), zh: await live.getDealExposure(decisionRow.key.slice("deal:".length), "zh", decisionRow.customer_id) }
+      : null;
+    return { home, worklist, customers, focus, exposure };
   };
   const keep = (point, got) => {
-    for (const kind of ["home", "worklist", "customers"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
+    for (const kind of ["home", "worklist", "customers", "focus"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
+    if (got.exposure) write("home_v2/exposure_offer.json", got.exposure);
   };
   await reset();
   keep("day0", await reads());

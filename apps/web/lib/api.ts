@@ -314,6 +314,16 @@ export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | n
   return isMock ? (await mock()).getCustomers(lang) : (await live()).getCustomers(lang);
 }
 
+/** GET /customers/{id}/overview for Home V2's customer and deal focus: the selections ride in the query and come back validated in `context` (`deal`, `scenario`). Owner only. */
+export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null } = {}): Promise<CustomerOverviewView> {
+  return isMock ? (await mock()).getCustomerFocus(id, lang, sel) : (await live()).getCustomerFocus(id, lang, sel);
+}
+
+/** GET /offers/{id}/exposure for Home V2's deal focus (every path's words in one read). Null when the server has the exposure read off or does not know the offer. */
+export async function getDealExposure(offerId: string, lang: "en" | "zh", customer: string): Promise<ExposureView | null> {
+  return isMock ? (await mock()).getDealExposure(offerId, lang) : (await live()).getDealExposure(offerId, lang, customer);
+}
+
 /** GET /clock: the simulated day. */
 export async function getClock(): Promise<ClockView> {
   return isMock ? (await mock()).getClock() : (await live()).clock();

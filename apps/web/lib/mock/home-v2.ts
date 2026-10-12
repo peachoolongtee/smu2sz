@@ -8,7 +8,7 @@
  * plan ran. At any other point of the story (a deal made, day 2, day 34 and later) there is no V2 recording, and the Home is the older one.
  */
 
-import type { CustomersView, FeaturesView, HomeView, WorklistView } from "../types";
+import type { CustomerOverviewView, CustomersView, ExposureView, FeaturesView, HomeView, WorklistView } from "../types";
 import { isFunded, isReceipted, mockClock, NEWS_DAY } from "./home";
 
 export const HOME_V2_KEY = "tl-mock-home-v2";
@@ -69,3 +69,28 @@ export async function mockHomeV2(point: Point | null, lang: "en" | "zh", base: P
 
 export const mockWorklist = (point: Point | null, lang: "en" | "zh") => pick<WorklistView>(WORKLIST, point, lang);
 export const mockCustomers = (point: Point | null, lang: "en" | "zh") => pick<CustomersView>(CUSTOMERS, point, lang);
+
+// The focus reads: GET /customers/{id}/overview for each customer at each point, and (with the package offer read) for its deal with each scenario, each carrying the
+// context echoes; and the deal's exposure read.
+const FOCUS: Record<Point, Loader> = {
+  day0: () => import("../../mocks/home_v2/focus_day0.json"),
+  offer: () => import("../../mocks/home_v2/focus_offer.json"),
+  after_fund: () => import("../../mocks/home_v2/focus_after_fund.json"),
+};
+type FocusRec = { customers: Record<string, CustomerOverviewView>; deals: Record<string, CustomerOverviewView> };
+
+/** The overview a customer (or its deal, with the scenario) was recorded with; null for a customer the books do not have (the caller answers 404 as the server does). A deal or scenario that was not recorded answers the customer's own read, whose echoes then say it names nothing. */
+export async function mockFocus(point: Point | null, lang: "en" | "zh", id: string, sel: { decision?: string | null; scenario?: string | null }): Promise<CustomerOverviewView | null> {
+  if (!homeV2On() || point === null) return null;
+  const rec = ((await FOCUS[point]()).default as { en: FocusRec; zh: FocusRec })[lang === "zh" ? "zh" : "en"];
+  const base = rec.customers[id];
+  if (!base) return null;
+  const deal = sel.decision ? (rec.deals[sel.scenario ?? "none"] ?? null) : null;
+  return clone<CustomerOverviewView>(deal && deal.customer_id === id && deal.context?.deal === sel.decision ? deal : base);
+}
+
+export async function mockDealExposure(point: Point | null, lang: "en" | "zh"): Promise<ExposureView | null> {
+  if (!homeV2On() || point !== "offer") return null;
+  const both = (await import("../../mocks/home_v2/exposure_offer.json")).default as unknown as { en: ExposureView; zh: ExposureView };
+  return clone<ExposureView>(lang === "zh" ? both.zh : both.en);
+}
