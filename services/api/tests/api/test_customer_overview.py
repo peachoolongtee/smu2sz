@@ -127,7 +127,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert (owed["value_display"], owed["note"], owed["tone"]) == ("¥420,000", "due in 32 days, nothing overdue", "neutral")
     assert (financing["label"], financing["value_display"], financing["note"]) == (
         "Financing linked", "¥255,000", "if you run the plan · not counted as cash")  # the plan's advance, planned and not counted
-    assert (financing["state"], financing["state_text"]) == ("planned", "planned")
+    assert (financing["state"], financing["state_text"]) == ("planned", "Planned")
     assert (share["value_display"], share["note"], share["tone"]) == (
         "100%", "one open invoice; not its share of your sales", "warn")
     d = b["decision"]
@@ -163,7 +163,7 @@ def test_before_the_plan_the_exposure_rows_are_the_exposure_layers_own(api, rt):
     assert [r["key"] for r in rows] == ["payments", "financing", "stress", "capacity"]  # no financing, so no "financing then"
     assert (rows[0]["value_display"], rows[0]["tone"]) == ("not enough history yet", "neutral")
     assert rows[1]["value_display"] == "¥255,000 against the ¥420,000 invoice" and rows[1]["note"] == "if you run the plan · not counted as cash"
-    assert (rows[1]["state"], rows[1]["state_text"]) == ("planned", "planned")
+    assert (rows[1]["state"], rows[1]["state_text"]) == ("planned", "Planned")
     assert (rows[2]["label"], rows[2]["value_display"], rows[2]["tone"]) == (
         "Paid 30 days late", "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered", "bad")
     assert (rows[3]["value_display"], rows[3]["note"]) == (
@@ -831,12 +831,14 @@ def _land(api: TestClient, rt: Runtime, *, arrival_day: int = -2) -> None:
 
 
 @pytest.mark.parametrize(("lang", "planned", "arranged", "received", "current"), [
-    ("en", "planned", "Arranged", "Received", "Not due yet"),
+    ("en", "Planned", "Arranged", "Received", "Not due yet"),
     ("zh", "计划中", "已安排", "已到账", "未到期"),
 ])
 def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabulary(api, rt, lang, planned, arranged, received, current):
     _before(api, rt)
+    seen: list[str] = []
     b = _get(api, lang=lang)
+    seen.append(_fig(b, "financing")["state_text"])
     assert _states(b["figures"]) == {"value": ("none", ""), "outstanding": ("current", current), "financing": ("planned", planned),
                                      "share": ("none", "")}
     assert _states(b["exposure"]["rows"])["financing"] == ("planned", planned)  # the plan is ready and has not run: nothing is financed yet
@@ -844,12 +846,16 @@ def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabul
     assert _fig(b, "financing")["note"] == ("if you run the plan · not counted as cash" if lang == "en" else "执行方案后才会到账 · 不计入现金")
     _run_plan(api)
     b = _get(api, lang=lang)
+    seen.append(_fig(b, "financing")["state_text"])
     assert _states(b["figures"])["financing"] == ("arranged", arranged)
     assert _states(b["exposure"]["rows"])["financing"] == ("arranged", arranged)
     _land(api, rt)
     b = _get(api, lang=lang)
+    seen.append(_fig(b, "financing")["state_text"])
     assert _states(b["figures"])["financing"] == ("received", received)
     assert _states(b["exposure"]["rows"])["financing"] == ("received", received)
+    if lang == "en":  # one function says the three words, so they share their casing
+        assert [w[:1].isupper() for w in seen] == [True, True, True] and seen == [planned, arranged, received]
 
 
 def test_the_state_words_are_the_receivable_rows_own(api, rt):

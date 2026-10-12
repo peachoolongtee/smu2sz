@@ -383,8 +383,7 @@ def _financing_state(r: _Read) -> dict[str, str]:
     if any(x["net"].get("unrecorded_text") for x in r.rows):
         return NO_STATE
     if _planned_rows(r):
-        word = state_word(r.lang, state_of(None, planned=True))
-        return {"state": "planned", "state_text": word}
+        return _financing_word(r.lang, state_of(None, planned=True))
     return NO_STATE
 
 
