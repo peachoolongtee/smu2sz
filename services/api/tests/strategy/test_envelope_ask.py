@@ -209,8 +209,10 @@ def test_route_answers_the_ask_and_caches_it_apart(api, monkeypatch):
     assert en["ask"]["sentence"] == NO_PRICE_EN and zh["ask"]["sentence"] == NO_PRICE_ZH
     assert en["ask"]["early_face_display"] == "¥240,200.00" and en["ask"]["with_early_payment"]["package"]["price_bp"] == 40
     assert en["evaluations"] == plain["evaluations"] + en["ask"]["evaluations"]
-    assert {k: v for k, v in en.items() if k not in ("ask", "evaluations", "computed_in_seconds")} == {
-        k: v for k, v in plain.items() if k not in ("ask", "evaluations", "computed_in_seconds")}
+    # the ask's answer takes its place on the card (P6); every other field is the plain read's
+    assert en["packages"][2]["package"]["terms_days"] == 60 and en["packages"][:2] == plain["packages"][:2]
+    moved = ("ask", "evaluations", "computed_in_seconds", "packages", "more")
+    assert {k: v for k, v in en.items() if k not in moved} == {k: v for k, v in plain.items() if k not in moved}
 
 
 def test_route_rejects_an_ask_outside_the_query_range(api):
