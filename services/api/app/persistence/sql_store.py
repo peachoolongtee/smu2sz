@@ -32,6 +32,7 @@ import json
 import threading
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any, TypeVar
 
@@ -97,16 +98,19 @@ from app.persistence.errors import (
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    CustomerInputRecord,
     DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
     PilotJournalRecord,
+    latest_inputs,
 )
 
 _RESET_OPTION = "termsledger_reset"
-_PROTECTED = frozenset({t.operations.name, t.used_nonces.name, t.pilot_journal.name, t.decision_facts.name})
+_PROTECTED = frozenset({t.operations.name, t.used_nonces.name, t.pilot_journal.name, t.decision_facts.name,
+                        t.customer_inputs.name})
 _RETRIES = 5
 
 T = TypeVar("T")
@@ -930,6 +934,52 @@ class SqlLedgerStore:
         """Every fact, oldest first; of one decision when `decision_id` is given."""
         where = () if decision_id is None else (t.decision_facts.c.decision_id == decision_id,)
         return [self._decision_fact(r) for r in self._read_all(t.decision_facts, t.decision_facts.c.row_id, *where)]
+
+    # ------------------------------------------------------------ customer inputs (map #88, brief H.4)
+
+    @staticmethod
+    def _customer_input(row: Row[Any]) -> CustomerInputRecord:
+        return CustomerInputRecord(
+            org_id=row.org_id, counterparty_id=row.counterparty_id, field=row.field, value_json=row.value_json,
+            provenance=row.provenance, source_ref=row.source_ref, entered_by=row.entered_by,
+            entered_day=int(row.entered_day), state_version=int(row.state_version), recorded_at=row.recorded_at,
+            seq=int(row.row_id),
+        )
+
+    def add_customer_input(self, record: CustomerInputRecord) -> CustomerInputRecord:
+        """Append one row. The table is append-only (an engine hook refuses Core UPDATE and DELETE on it) and nothing here
+        touches the books, the operations log or the hash chain. `seq` and `recorded_at` are the store's; the returned row is
+        the stored one."""
+        recorded_at = datetime.now(UTC).isoformat()
+
+        def _add(conn: Connection) -> CustomerInputRecord:
+            seq = _inserted_id(
+                conn.execute(
+                    insert(t.customer_inputs).values(
+                        org_id=record.org_id, counterparty_id=record.counterparty_id, field=record.field,
+                        value_json=record.value_json, provenance=record.provenance, source_ref=record.source_ref,
+                        entered_by=record.entered_by, entered_day=record.entered_day, state_version=record.state_version,
+                        recorded_at=recorded_at,
+                    )
+                )
+            )
+            return replace(record, seq=seq, recorded_at=recorded_at)
+
+        return self._retry(_add)
+
+    def customer_inputs(self, counterparty_id: str | None) -> list[CustomerInputRecord]:
+        """The history of one buyer's rows, oldest first; `None` is the firm's rows."""
+        col = t.customer_inputs.c.counterparty_id
+        where = (col.is_(None),) if counterparty_id is None else (col == counterparty_id,)
+        return [self._customer_input(r) for r in self._read_all(t.customer_inputs, t.customer_inputs.c.row_id, *where)]
+
+    def all_customer_inputs(self) -> list[CustomerInputRecord]:
+        """Every row, oldest first."""
+        return [self._customer_input(r) for r in self._read_all(t.customer_inputs, t.customer_inputs.c.row_id)]
+
+    def latest_customer_inputs(self) -> dict[tuple[str | None, str], CustomerInputRecord]:
+        """The row in force for each (counterparty, field); the firm's rows have `None` as the counterparty."""
+        return latest_inputs(self.all_customer_inputs())
 
     # ------------------------------------------------------------ evidence
 

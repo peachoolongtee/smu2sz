@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import FrozenInstanceError, dataclass
 from enum import StrEnum
 
@@ -132,3 +133,62 @@ class DecisionFactRecord:
     body_json: str
     recorded_at: str = ""
     seq: int = 0
+
+
+class InputField(StrEnum):
+    """What a customer-input row says (map #88, brief H.4). One enum over one table: a later phase adds no migration. The
+    first two are the buyer's; the last two are the firm's (a row with no counterparty)."""
+
+    ANNUAL_SALES_FEN = "annual_sales_fen"
+    MARGIN_BP = "margin_bp"
+    MARGIN_BASIS = "margin_basis"
+    CLASSIFICATION = "classification"
+    TYPICAL_DELAY_DAYS = "typical_delay_days"
+    AGGREGATE = "aggregate"
+    VAT_RATE_BP = "vat_rate_bp"
+    COMPANY_GROSS_MARGIN_BP = "company_gross_margin_bp"
+
+
+FIRM_FIELDS = frozenset({InputField.VAT_RATE_BP, InputField.COMPANY_GROSS_MARGIN_BP})
+
+
+class InputProvenance(StrEnum):
+    """Where a figure came from. The wording a surface may use follows the weakest of these (brief C.3)."""
+
+    ACCOUNTING_HISTORY = "ACCOUNTING_HISTORY"
+    INVOICE_HISTORY = "INVOICE_HISTORY"
+    OWNER_ENTERED = "OWNER_ENTERED"
+    ERP = "ERP"
+    DERIVED = "DERIVED"
+    ESTIMATED = "ESTIMATED"
+    PROJECTED = "PROJECTED"
+
+
+@dataclass(frozen=True, slots=True)
+class CustomerInputRecord:
+    """One entry of the customer-inputs table (brief H.4): a fact the owner (or an import) gave about a buyer, or about the
+    firm when `counterparty_id` is None. Append-only: a newer row for the same (counterparty, field) supersedes the older one
+    and the older one stays. `value_json` is the canonical JSON of the value (a number, a boolean or a short string); the
+    field decides which. A caller leaves `seq` and `recorded_at` at their defaults: the store assigns them and returns the
+    stored row. Context, not books: nothing here is part of the state, the operations or the hash chain."""
+
+    org_id: str
+    counterparty_id: str | None
+    field: str  # an InputField value
+    value_json: str
+    provenance: str  # an InputProvenance value
+    source_ref: str
+    entered_by: str
+    entered_day: int
+    state_version: int
+    recorded_at: str = ""
+    seq: int = 0
+
+
+def latest_inputs(rows: Iterable[CustomerInputRecord]) -> dict[tuple[str | None, str], CustomerInputRecord]:
+    """The row in force for each (counterparty, field): the one stored last (highest `seq`). The one definition of
+    "latest wins", shared by both stores."""
+    out: dict[tuple[str | None, str], CustomerInputRecord] = {}
+    for row in sorted(rows, key=lambda r: r.seq):
+        out[(row.counterparty_id, row.field)] = row
+    return out

@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "about": "What /demo/reset writes to the customer-inputs table (map #88, brief H.4) for the golden books. Every row is seeded with provenance ESTIMATED and source_ref 'Demo assumption', entered_by DEMO, never read from fixtures/counterparties/buyers.yaml. The file is trusted: a row that fails validation stops the reset.",
+    "row": {
+      "counterparty_id": "a buyer id on the golden books, or null for a firm row",
+      "field": "one of annual_sales_fen, margin_bp, margin_basis, classification, typical_delay_days, aggregate, vat_rate_bp, company_gross_margin_bp",
+      "value": "an integer, a boolean or a string, whichever the field takes (see app/strategy/inputs.py)"
+    },
+    "phase_1": "Phase 1 reads only 'aggregate' and 'typical_delay_days'. The Demo seeds typical_delay_days for no buyer and marks no buyer an aggregate, so the list is empty."
+  },
+  "inputs": []
+}
