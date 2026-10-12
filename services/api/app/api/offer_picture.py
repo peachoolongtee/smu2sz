@@ -398,15 +398,25 @@ def _below_band(series: list[dict[str, Any]], floor: int, breach_day: int, lang:
             else say(lang, "Below your minimum to the end of the forecast", "到预测期结束前一直低于您的最低现金储备"))
 
 
+def _recommended_reason(lang: str, needs_owner: bool) -> str:
+    """Why this reply is the recommended one, by the rule `_paths` applies (the first reply FLOW could send, in the verdict's order: one
+    FLOW may send alone, else the first that needs the owner). Nothing about cost: cost is not what picks it."""
+    if needs_owner:
+        return say(lang, "Recommended because it is the first counter within your mandate; it needs your approval.",
+                   "推荐原因：它是您授权范围内的第一个还价；需要您批准。")
+    return say(lang, "Recommended because FLOW can send it within your mandate without your approval.",
+               "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。")
+
+
 def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable: bool, needs_owner: bool, tag: str | None,
                 cost_display: str, cost_note: str, cost: dict[str, Any], terms: list[dict[str, Any]], decides: str,
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
-                lang: str, reason: str | None = None) -> dict[str, Any]:
+                lang: str, reason: str | None = None, recommended_reason: str | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
-            "decides_text": decides, "authority_reason_text": reason, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
+            "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
             "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band}
 
 
@@ -506,7 +516,8 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
             reply_text=business_text(state, c.text, rt.day, lang),
             series=r["series"], low={k: r[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
             breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang,
-            reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate)))
+            reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate),
+            recommended_reason=_recommended_reason(lang, needs_owner) if recommended else None))
     return paths
 
 

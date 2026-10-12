@@ -389,3 +389,46 @@ def test_the_rule_it_crosses_follows_the_rule_the_mandate_applied():
     mandate = SimpleNamespace(tier2_single_commitment_fen=5_000_000)
     assert offer_picture._rule_text("en", "value", mandate) == "Your mandate lets FLOW agree on its own only to a commitment of up to ¥50,000.00."
     assert offer_picture._rule_text("zh", "plan", mandate) == "此回复所需的融资方案因其成本需要您批准。"
+
+
+# ---------------------------------------------------------------- why the recommended path is recommended
+
+
+def test_only_the_recommended_path_says_why_and_by_the_rule_the_engine_applies(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended"] is True
+    assert opt_a["recommended_reason_text"] == "Recommended because FLOW can send it within your mandate without your approval."
+    assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
+    z_asked, z_a, z_b = _paths(client, oid, "zh")
+    assert z_a["recommended_reason_text"] == "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。"
+    assert z_asked["recommended_reason_text"] is None and z_b["recommended_reason_text"] is None
+    assert "cost" not in opt_a["recommended_reason_text"] and "成本" not in z_a["recommended_reason_text"]
+
+
+def test_a_recommendation_that_needs_the_owner_says_so(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    real = offer_picture.plan
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"needs_owner_approval": True}))
+    offer_picture._cache.clear()
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended"] is True and opt_a["needs_owner"] is True
+    assert opt_a["recommended_reason_text"] == "Recommended because it is the first counter within your mandate; it needs your approval."
+    assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
+    assert _paths(client, oid, "zh")[1]["recommended_reason_text"] == "推荐原因：它是您授权范围内的第一个还价；需要您批准。"
+
+
+def test_the_recommendation_that_falls_to_the_next_reply_carries_the_reason(client, monkeypatch):
+    oid, view = _evaluated(client)
+    first = view["counters"][0]["id"]
+    real = offer_picture.counter_recheck
+
+    def recheck(*a, **k):
+        check = real(*a, **k)
+        return lambda c: check(c).model_copy(update={"outcome": Outcome.NO_VERDICT}) if c.id == first else check(c)
+
+    monkeypatch.setattr(offer_picture, "counter_recheck", recheck)
+    offer_picture._cache.clear()
+    _, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended_reason_text"] is None
+    assert opt_b["recommended_reason_text"] == "Recommended because it is the first counter within your mandate; it needs your approval."
