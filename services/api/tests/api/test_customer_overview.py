@@ -17,6 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api import customer_overview as overview
+from app.api import offer_picture
 from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.domain.models import FundingLot
@@ -43,10 +44,12 @@ def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
     set_runtime(runtime)
     assembly.clear_cache()
     overview.clear_cache()
+    offer_picture._cache.clear()  # keyed by the state version, which a test that replaces the state does not move
     yield runtime
     set_runtime(None)
     assembly.clear_cache()
     overview.clear_cache()
+    offer_picture._cache.clear()
 
 
 @pytest.fixture
@@ -207,8 +210,24 @@ def test_a_landed_advance_is_received_and_the_figure_keeps_its_one_state(api, rt
     lot = next(x for x in state.lots if x.receivable_id == "RCV-A")
     rt.store.put_state(state.model_copy(update={"lots": [FundingLot(**{**lot.model_dump(), "arrival_day": -2, "settled": True})]}))
     overview.clear_cache()
+    offer_picture._cache.clear()
     f = _fig(_get(api), "financing")
     assert f["note"] == "financing received 2 days ago" and "arranged" not in f["note"]
+
+
+def test_an_invoice_marked_financed_with_no_advance_on_record_is_said_so_not_counted(api, rt):
+    _before(api, rt)
+    state = rt.store.get_state()
+    rcv = next(r for r in state.receivables if r.id == "RCV-A")
+    rt.store.put_state(state.model_copy(update={"receivables": [rcv.model_copy(update={"status": "FINANCED"})]}))
+    offer_picture._cache.clear()
+    b = _get(api)
+    f = _fig(b, "financing")
+    row = api.get("/receivables").json()["rows"][0]["net"]
+    assert (f["value_display"], f["note"], f["tone"]) == ("Not on record", row["unrecorded_text"], "warn")
+    assert _row(b["exposure"]["rows"], "financing")["value_display"] == row["unrecorded_text"]
+    zh = _get(api, lang="zh")
+    assert _fig(zh, "financing")["value_display"] == "无记录" and english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
 
 
 # ---------------------------------------------------------------- golden day 0, Chinese

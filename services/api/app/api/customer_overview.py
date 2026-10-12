@@ -245,6 +245,9 @@ def _financing(r: _Read) -> dict[str, Any]:
     lang = r.lang
     label = t(lang, "Financing linked", "已关联的融资")
     financed = [x for x in r.rows if x["financing_state"] in ("ARRANGED", "RECEIVED")]
+    unrecorded = next((x["net"]["unrecorded_text"] for x in r.rows if x["net"].get("unrecorded_text")), None)
+    if not financed and unrecorded:  # marked financed, no advance on record: said so, never counted
+        return _figure("financing", label, t(lang, "Not on record", "无记录"), unrecorded, "warn")
     if not financed:
         return _figure("financing", label, t(lang, "None", "无"),
                        t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"))
@@ -368,6 +371,9 @@ def _financing_row(r: _Read) -> dict[str, Any]:
     lang = r.lang
     financed = [x for x in r.rows if x["financing_state"] in ("ARRANGED", "RECEIVED")]
     label = t(lang, "Financing", "融资")
+    unrecorded = next((x["net"]["unrecorded_text"] for x in r.rows if x["net"].get("unrecorded_text")), None)
+    if not financed and unrecorded:
+        return _row("financing", label, unrecorded, None, "warn")
     if not financed:
         return _row("financing", label, t(lang, "none against this customer's invoices", "没有以该客户发票做的融资"))
     advance = sum(x["net"]["advance_fen"] for x in financed)
@@ -528,7 +534,7 @@ def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: 
 
 
 def _build(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
-    state, today, body = read_rows(rt, lang)
+    state, today, body, _ = read_rows(rt, lang)
     name = party_name(state, buyer_id)
     rows = [x for x in body["rows"] if x["buyer_id"] == buyer_id]
     inputs = inputs_from_store(rt.store)
