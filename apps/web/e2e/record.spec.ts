@@ -24,7 +24,7 @@ async function checked(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
 }
 
 async function advanceTo(page: Page, day: number) {
@@ -41,18 +41,17 @@ test("the steps follow the record: Response ready names the recommendation, a se
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "RECEIVED");
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
-  // The header's stage line says it in five chips, one strong, none a link: Received · Analysed · Response ready · Sent · Agreed.
+  // While the offer is open the stages are the server's own five (the shared track: a dot, the name and its state in words), none a link; once it is sent they are the record's chips.
   const stage = page.getByTestId("deal-stage");
-  await expect(stage.locator("li")).toHaveText(["Received", "Analysed", "Response ready", "Sent", "Agreed"]);
-  await expect(stage.locator("li[aria-current=step]")).toHaveText("Received");
+  await expect(stage.locator("li")).toHaveText([/^Received/, /^Analysed/, /^Reply ready/, /^Sent/, /^Agreed/]);
+  await expect(stage.locator("li[aria-current=step]")).toContainText("Received");
   await expect(stage.locator("a, button")).toHaveCount(0);
-  expect((await stage.boundingBox())?.height ?? 99).toBeLessThanOrEqual(36);
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(steps).toHaveAttribute("data-state", "RESPONSE_READY");
   await expect(steps).toContainText("Counter recommended");
   await expect(steps).not.toContainText("Agreed");
-  await expect(stage.locator("li[aria-current=step]")).toHaveText("Response ready");
-  await expect(stage.locator('li[data-status="done"]')).toHaveText(["Received", "Analysed"]);
+  await expect(stage.locator("li[aria-current=step]")).toContainText("Reply ready");
+  await expect(stage.locator('li[data-state="done"]')).toHaveText([/^Received/, /^Analysed/]);
   // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
   await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01")).toContainText("Showing below");

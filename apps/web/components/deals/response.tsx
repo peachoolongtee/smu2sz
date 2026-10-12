@@ -98,7 +98,7 @@ function NegotiationOutcome({ negotiation }: { negotiation: NegotiationView }) {
   const ran = negotiation.operations.filter((o) => o.status === "EXECUTED");
   const words = negotiation.rounds.filter((r) => r.buyer_text);
   return (
-    <Card id="counters" title={t("biz.deals.answerTitle")} tone={deal ? "ok" : undefined}>
+    <Card flat id="counters" title={t("biz.deals.answerTitle")}>
       {deal ? (
         <>
           <p className="text-base font-semibold text-ink" data-testid="deal-negotiation">

@@ -179,7 +179,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
 
   if (envelope.error) {
     return (
-      <Card id="deal-envelope" title={eyebrow}>
+      <Card flat id="deal-envelope" title={eyebrow}>
         <div className="flex flex-wrap items-center justify-between gap-3" data-testid="envelope-error">
           <p role="alert" className="text-sm text-ink-2">
             {t("biz.strategy.envelope.error")}
@@ -194,7 +194,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
   if (envelope.loading && !e) {
     // The skeleton is about the height of the answer, so the response card below does not jump when it lands.
     return (
-      <Card id="deal-envelope" title={eyebrow}>
+      <Card flat id="deal-envelope" title={eyebrow}>
         <div data-testid="envelope-loading" aria-busy="true">
           <p aria-hidden className="mb-3 text-sm text-ink-2">
             {t("biz.strategy.envelope.loading")}
@@ -208,7 +208,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
 
   if (e.refused) {
     return (
-      <Card id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
+      <Card flat id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
         <p className="text-sm text-ink-2" data-testid="envelope-refused">
           {e.refused}
         </p>
@@ -217,7 +217,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
   }
 
   return (
-    <Card id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
+    <Card flat id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
       <Ceilings levers={e.levers} />
       {/* The three tiles carry the figures, so the server's `primary` sentence (the same three, said again) is not drawn. */}
       <p className="mt-3 text-xs text-ink-3" data-testid="envelope-caption">

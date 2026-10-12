@@ -637,7 +637,7 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
   await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   // Every sentence below is the server's: the asks, the lines, the reasons.
   await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("The buyer may pay early and take 1.20% off the ¥420,000.00 invoice");
   await expect(page.getByTestId("deal-impact-immediate").getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
@@ -645,7 +645,7 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
   await expect(page.getByTestId("deal-impact-forward")).not.toContainText("¥5,040.00");
   await expect(page.getByTestId("deal-why-reasons")).toContainText("Accepted as asked, cash would fall below your minimum");
   await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
-  const tops = await page.evaluate(() => ["deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
+  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
   await post("/demo/reset", {});

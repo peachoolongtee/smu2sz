@@ -169,8 +169,8 @@ export function InboxList({
 
   if (collapsed && !(business && known === null)) {
     return (
-      <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-card border border-line bg-surface px-4 py-2 shadow-card" data-testid="inbox-collapsed">
-        <h2 className="text-sm font-semibold text-ink">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
+      <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line pb-2" data-testid="inbox-collapsed">
+        <h2 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
         <Button size="sm" onClick={onExpand} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
           {t("biz.deals.backToInbox")}
         </Button>

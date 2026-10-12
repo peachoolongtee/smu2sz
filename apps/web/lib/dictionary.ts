@@ -2224,6 +2224,8 @@ export const en = {
   "biz.activity.filter.documents": "Documents",
   "biz.activity.filter.none": "Nothing in this view.",
   "biz.activity.rail": "What happened, newest first",
+  // ---- Deals A1
+  "biz.deals.askCost": "What they ask, and what each costs you",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4446,4 +4448,6 @@ export const zh: Record<DictKey, string> = {
   "biz.activity.filter.documents": "文件",
   "biz.activity.filter.none": "此视图中没有记录。",
   "biz.activity.rail": "发生的事，最新在前",
+  // ---- Deals A1
+  "biz.deals.askCost": "对方的要求，以及每一项让你付出什么",
 };

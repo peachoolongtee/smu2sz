@@ -85,13 +85,16 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   const next = page.getByTestId("next-step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
 
-  // The workspace in the server's order: the buyer, what FLOW recommends (with its reason), the priced response, what the buyer asks, what it costs and why it matters.
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
-  await expect(page.getByTestId("deal-recommendation-reason")).not.toBeEmpty();
-  const tops = await page.evaluate(() => ["deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
+  // The workspace in the page's order: the verdict (the heading), who and where, what they ask with what each costs, why it matters, the priced response.
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-action")).toHaveText("Two replies are ready to send.");
+  await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
+  // The verdict is the page's one heading.
+  await expect(page.locator("h1")).toHaveCount(1);
+  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact", "deal-why", "counters", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
   // (no agreement yet, so there is no commitments card)
   const present = tops.filter((y) => y >= 0);
-  expect(present.length).toBe(6);
+  expect(present.length).toBe(7);
   expect(present).toEqual([...present].sort((a, b) => a - b));
   // The header: the buyer, when it came and when it was checked, and one chip for where the deal stands. No ask line: the asks card says it once.
   await expect(page.locator("#deal-selected")).not.toContainText("Immediate discount · Terms extension · Contingent rebate");
@@ -104,7 +107,7 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("deal-parsed-terms")).toHaveCount(0);
   // What it costs: the immediate discount on its own line, the forward lines and their total kept apart, never added together.
   const immediate = page.getByTestId("deal-impact-immediate");
-  await expect(immediate).toContainText("Immediate discount");
+  await expect(immediate).toContainText("1.20%");
   await expect(immediate.getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
   await expect(immediate).toContainText("is not part of the forward figure");
   const forward = page.getByTestId("deal-impact-forward");
@@ -285,7 +288,7 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   const inbox = page.getByTestId("inbox-list");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   // The demo's negotiation panel runs a buyer who refuses (Demo views; the Business page only sends to a buyer who accepts).
   await page.goto("/verdict");
   await page.getByLabel("Buyer refuses every counter").check();
