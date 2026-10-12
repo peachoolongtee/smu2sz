@@ -583,3 +583,30 @@ def test_the_read_is_built_once_per_state_and_the_key_moves_on_a_new_offer_and_a
     assert any(i["key"] == f"approval:{queued['row']['id']}" for i in after["needs_you"]) and len(built) == 4
     api.post(f"/approvals/{queued['row']['id']}", json={"decision": "APPROVE"})  # a decided approval: it moves again
     assert not any(i["kind"] == "APPROVAL" for i in _get(api)["needs_you"]) and len(built) == 5
+
+
+def _queue_draw(api: TestClient) -> str:
+    """A standalone credit-line draw that needs the owner (the mandate's cost ceiling is tightened first): an approval of no alert."""
+    from app.api.runtime import get_runtime
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+
+    store = get_runtime().store
+    store.put_mandate(sign(store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    r = api.post("/operations", headers={"X-Owner-Token": "", "X-Agent-Key": "demo-agent-key"}, json={
+        "kind": "DRAW_FACILITY", "op_id": "draw-1", "idempotency_key": "draw-1", "mandate_version": store.get_mandate().version,
+        "requested_by": "AGENT", "facility_id": "FAC-LINE", "amount_fen": 15_000_000})
+    assert r.status_code == 200 and r.json()["result"]["status"] == "PENDING_APPROVAL", r.text
+    return str(r.json()["result"]["approval_id"])
+
+
+def test_a_facility_approval_row_is_a_chinese_sentence_around_the_facilitys_name(api: TestClient) -> None:
+    _queue_draw(api)
+    [item] = [i for i in _get(api)["needs_you"] if i["kind"] == "APPROVAL"]
+    assert item["subject_text"] == "Draw ¥150,000.00 on Bank credit line" and item["customer_id"] is None
+    zh = _get(api, "zh")
+    [item] = [i for i in zh["needs_you"] if i["kind"] == "APPROVAL"]
+    # the books name the facility in English only: the sentence around it is Chinese, the name stays and is set off as a name
+    assert item["subject_text"] == "从“Bank credit line”提款 ¥150,000.00"
+    assert item["status_text"] == "已提交批准申请 · 需要您批准"
+    assert not english_leaks(zh, [*NAMES, "Bank credit line"], raw_fields=[HREFS])
