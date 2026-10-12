@@ -79,10 +79,18 @@ test("four tabs filter the list: the owner's reply first, the others by what the
   await expect(page.getByTestId("queue-readonly")).toHaveAttribute("data-tab", "setup");
   await expect(page.getByRole("link", { name: "Add the contract" })).toHaveAttribute("href", "/documents");
 
-  // The keyboard moves between the tiles.
+  // The tabs are a SegmentedTabs tablist (#112): the tab is a tab with its panel, one tab stop, 44 px tall, the count in a badge (red only where the owner must reply).
+  await expect(page.getByRole("tablist", { name: "Deals by status" })).toBeVisible();
+  await expect(page.getByTestId("queue-tab-setup")).toHaveAttribute("aria-controls", "dq-list");
+  await expect(page.locator('[data-testid^="queue-tab-"][tabindex="0"]')).toHaveCount(1);
+  expect((await page.getByTestId("queue-tab-setup").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByTestId("queue-count-needs")).toHaveAttribute("data-tone", "alert");
+  await expect(page.getByTestId("queue-count-wait")).toHaveAttribute("data-tone", "neutral");
+  // The keyboard moves between the tabs.
   await page.getByTestId("queue-tab-setup").focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("queue-tab-needs")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("queue-tab-needs")).toBeFocused();
   // Back on the first tab the open deal's detail is back with its line: the selection was kept.
   await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
   await expect(page.getByTestId("queue-readonly")).toHaveCount(0);
@@ -223,13 +231,14 @@ test("the address restores the selection: a back link with customer, decision an
   await expect(page).toHaveURL(/path=asked/);
 });
 
-test("reduced motion: nothing transitions in the queue", async ({ page }) => {
+test("reduced motion: nothing but opacity transitions in the queue", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openQueue(page);
   const moving = await page.evaluate(() =>
     [...document.querySelectorAll("[data-testid=queue-body], [data-testid=queue-body] *, [data-testid=queue-tabs] *, [data-testid=queue-row]")].filter((el) => {
       const s = getComputedStyle(el);
-      return s.transitionDuration.split(",").some((d) => parseFloat(d) > 0.001) && s.transitionProperty !== "none" && s.transitionProperty !== "";
+      // Under reduced motion only opacity transitions remain (#112): no colour, transform or height eases.
+      return s.transitionDuration.split(",").some((d) => parseFloat(d) > 0.001) && s.transitionProperty.split(",").some((p) => !["opacity", "none", ""].includes(p.trim()));
     }).length,
   );
   expect(moving).toBe(0);
@@ -273,6 +282,8 @@ test("axe finds nothing serious or critical on the queue, with the comparison an
   await openQueue(page);
   await page.getByTestId("queue-compare").locator("> summary").click();
   await page.getByTestId("queue-review-open").click();
+  // Under reduced motion a fold's opacity still eases (#112): read the settled colours.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const result = await new AxeBuilder({ page }).analyze();
   const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(result.passes.length).toBeGreaterThan(10);

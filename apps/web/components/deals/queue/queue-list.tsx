@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { AlertIcon, CheckIcon, ClockIcon, UserIcon } from "@/components/icons";
 import { StatePill, type Tone } from "@/components/ui";
+import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { QUEUE_TABS, type QueueTab } from "./model";
@@ -27,53 +28,36 @@ export interface ListItem {
   selected: boolean;
 }
 
+/** One glyph per tab: the owner's reply, a reply out with a buyer, an agreement in force, a customer to set up. */
+const TAB_ICON: Record<QueueTab, TabIcon> = { needs: AlertIcon, wait: ClockIcon, agreed: CheckIcon, setup: UserIcon };
+
 /**
- * The four count tiles as the queue's tabs (a tablist: arrow keys move between them, the selected one is `aria-selected`, with a bar under it as well as a weight and a tint)
- * and the list they filter. The tiles are a horizontal scroll of pills on a phone (the open one scrolled into view) and a row of four from `sm`; the list keeps its five
- * columns from `lg`, and below it a line is its customer and status, the request, then the cost and what FLOW recommends.
+ * The four tabs of the queue, a SegmentedTabs tablist (arrow keys move between them, the selected one is `aria-selected`): an icon, the label and the count
+ * in a badge, red only on the tab that needs the owner's reply and only while it holds one. It fills the width from `sm` and scrolls sideways on a phone (the open tab
+ * scrolled into view). The list they filter keeps its five columns from `lg`, and below it a line is its customer and status, the request, then the cost and what FLOW
+ * recommends.
  */
 export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, number>; tab: QueueTab; onTab: (t: QueueTab) => void }) {
   const { t } = useI18n();
-  const group = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    group.current?.querySelector<HTMLElement>("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [tab]);
-  const move = (from: number, by: number) => {
-    const next = QUEUE_TABS[(from + by + QUEUE_TABS.length) % QUEUE_TABS.length];
-    onTab(next);
-    group.current?.querySelectorAll<HTMLButtonElement>("[role=tab]")[QUEUE_TABS.indexOf(next)]?.focus();
-  };
   return (
-    <div ref={group} role="tablist" aria-label={t("dq.tabs")} className="-mx-4 -my-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 sm:mx-0 sm:my-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0" data-testid="queue-tabs">
-      {QUEUE_TABS.map((k, i) => {
-        const on = k === tab;
-        return (
-          <button
-            key={k}
-            type="button"
-            role="tab"
-            id={`dq-tab-${k}`}
-            aria-selected={on}
-            aria-controls="dq-list"
-            tabIndex={on ? 0 : -1}
-            data-testid={`queue-tab-${k}`}
-            onClick={() => onTab(k)}
-            onKeyDown={(e) => {
-              const by = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-              if (!by) return;
-              e.preventDefault();
-              move(i, by);
-            }}
-            className={`motion-press flex min-h-14 shrink-0 flex-col items-start justify-center rounded-card border px-4 py-2 text-left transition-colors duration-(--dur) max-sm:min-h-11 max-sm:flex-row max-sm:items-center max-sm:gap-2.5 max-sm:rounded-pill max-sm:px-3.5 max-sm:py-1 short:min-h-11 short:flex-row short:items-center short:gap-2.5 short:py-1 touch:min-h-11 sm:touch:min-h-14 ${on ? "border-brand-600 border-b-[3px] bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
-          >
-            <span className={`${eyebrowCls} ${k === "needs" ? "text-warn-fg" : "text-ink-3"} ${on ? "text-ink" : ""}`}>{t(`dq.tab.${k}` as DictKey)}</span>
-            <span className={`font-display text-xl tabular-nums text-ink max-sm:text-base short:text-base ${on ? "font-black" : "font-extrabold"}`} data-testid={`queue-count-${k}`}>
-              {counts[k]}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedTabs
+      label={t("dq.tabs")}
+      value={tab}
+      onChange={onTab}
+      stretch
+      testId="queue-tabs"
+      tabs={QUEUE_TABS.map((k) => ({
+        value: k,
+        label: t(`dq.tab.${k}` as DictKey),
+        icon: TAB_ICON[k],
+        badge: counts[k],
+        badgeTone: k === "needs" && counts[k] > 0 ? "alert" : "neutral",
+        id: `dq-tab-${k}`,
+        controls: "dq-list",
+        testId: `queue-tab-${k}`,
+        badgeTestId: `queue-count-${k}`,
+      }))}
+    />
   );
 }
 

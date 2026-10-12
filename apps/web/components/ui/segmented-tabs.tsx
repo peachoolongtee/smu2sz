@@ -76,12 +76,12 @@ export function SegmentedTabs<T extends string | number>({
       <div
         role="tablist"
         aria-label={label}
-        className={`relative grid auto-cols-fr grid-flow-col rounded-pill bg-track p-1 ${stretch ? "min-w-max" : "w-max"}`}
+        className={`relative grid auto-cols-fr grid-flow-col rounded-pill bg-track p-0.5 ${stretch ? "min-w-max" : "w-max"}`}
         style={{ ["--n" as string]: tabs.length }}
       >
         <span
           aria-hidden
-          className={`pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/var(--n))] rounded-pill border border-line bg-surface shadow-pill ${reduced ? "" : "transition-transform duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
+          className={`pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill border border-line bg-surface shadow-pill ${reduced ? "" : "transition-transform duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
           style={{ transform: `translateX(${Math.max(selected, 0) * 100}%)` }}
         />
         {tabs.map((o, i) => {
@@ -97,7 +97,7 @@ export function SegmentedTabs<T extends string | number>({
               onKeyDown={(e) => onKeyDown(e, i)}
               className={`relative z-10 flex min-h-11 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-pill px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "text-ink" : "text-ink-2 enabled:hover:text-ink"}`}
             >
-              {Icon ? <Icon className="shrink-0" /> : null}
+              {Icon ? <Icon className="size-4 shrink-0" /> : null}
               <span>{o.label}</span>
               {badgeShown(o.badge) ? (
                 <span
