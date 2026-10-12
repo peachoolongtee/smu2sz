@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
+import { CustomerName } from "@/components/customer-link";
 import { ActionChip, ActionText, RankingNote, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, toggleClass } from "@/components/ui";
 import { focusInvoice } from "@/lib/chat-context";
@@ -135,7 +136,7 @@ export function ReceivablesTable({
                   <span className="min-w-0 flex-1">
                     <span className="block break-words font-medium text-ink">
                       {worth && n !== undefined ? <span className="mr-1.5 tabular-nums text-ink-3">{n + 1}</span> : null}
-                      {buyer}
+                      <CustomerName id={o.counterparty_id}>{buyer}</CustomerName>
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
                       <span>
@@ -216,7 +217,9 @@ export function ReceivablesTable({
                       <td className={`${tdCls} min-w-52 font-medium`}>
                         <span className="flex items-center gap-3">
                           <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                          <span className="min-w-0 break-words">{buyer}</span>
+                          <span className="min-w-0 break-words">
+                            <CustomerName id={o.counterparty_id}>{buyer}</CustomerName>
+                          </span>
                         </span>
                       </td>
                       <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{o.face_display}</td>
