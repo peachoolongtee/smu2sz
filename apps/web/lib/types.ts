@@ -3116,7 +3116,27 @@ export interface PicturePath {
   first_breach_when: string | null;
   /** What the path does against the asked one (or, for the asked one, against the minimum), as the band's label; null when there is nothing to say. */
   band_text: string | null;
+  /**
+   * Who decides, as the verifier's class (its tier OR-ed with the plan's `needs_owner_approval`): FLOW may send it, the owner approves first, or it is over a limit
+   * the owner signed. Null (or absent from an older server) when the path has no class. The page maps the class to a tone; it never derives it.
+   */
+  authority?: PathAuthority | null;
+  /** The server's words for `authority`; the page falls back to `decides_text` when absent. */
+  authority_text?: string | null;
+  /** The cost headline on one basis across the three paths, and the words that name that basis. Absent from an older server (`cost_display` / `cost_note` then). */
+  cost_total_display?: string | null;
+  cost_basis_text?: string | null;
+  /** The one-off part and the twelve-month forward part of the cost (null when nothing); the total and its basis already say both, so the page does not repeat them. */
+  cost_once_display?: string | null;
+  cost_forward_display?: string | null;
+  /** The parts of a cost that is a net (the funding cost and the offset), in the server's words; absent when the cost is a plain figure. */
+  cost_components?: { label: string; display: string }[] | null;
+  /** The assumption a reply's cash rests on (for example, the buyer accepting), as a short caption; null or absent for the asked path. */
+  assumption_text?: string | null;
 }
+
+/** Who decides, in the verifier's three classes. */
+export type PathAuthority = "flow_may" | "needs_owner" | "over_limit";
 
 /** Every path's closing cash on one moment's day. */
 export interface MomentValue {
@@ -3125,6 +3145,12 @@ export interface MomentValue {
   closing_display: string;
   below_floor: boolean;
   note: string | null;
+  /** The short figure for the tile ("¥550k"), the tone the server gives it, and the gap against the asked path as a signed string ("+¥90k", "−¥10k") with its tone. Absent from an older server. */
+  closing_short?: string | null;
+  tone?: "ok" | "warn" | "bad" | "neutral" | null;
+  vs_asked_fen?: Fen | null;
+  vs_asked_short?: string | null;
+  vs_asked_tone?: "ok" | "warn" | "bad" | "neutral" | null;
 }
 
 /** A day worth stopping on: `day` is absolute (like the series points' `day`), the words are the server's. */
@@ -3135,4 +3161,11 @@ export interface PictureMoment {
   decisive: boolean;
   text: string;
   values: MomentValue[];
+  /** What kind of moment it is ("today", "due", "parts", "lowest", "end", "crossing"), and its word ("Today", "Invoice due", "Paths part"): the chip's label. Absent from an older server (`label` then). */
+  kind?: string;
+  /** Every kind that applies to the moment, in precedence order (today, paths_part, reserve_cross, invoice_due, lowest, end): `kind` is only the first, so the parting moment is found here. */
+  kinds?: string[];
+  word?: string | null;
+  /** What moved cash that day, in words with their amounts, per path key, in the server's path order. Absent when the server has none. */
+  events_text?: Record<string, string[]> | null;
 }

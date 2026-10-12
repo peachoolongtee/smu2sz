@@ -73,11 +73,11 @@ export function SelectedBuyer({
 }
 
 /** A bar sized by `part` against `whole` (both the server's `*_fen`): plotting only, never a figure. `limit` marks a second value on the same scale. */
-function Bar({ part, whole, tone = "bad", limit }: { part: number | null; whole: number; tone?: "bad" | "soft"; limit?: number }) {
+function Bar({ part, whole, tone = "brand", limit }: { part: number | null; whole: number; /** `brand` is the ask's own colour, `soft` its lighter step (a one-off line), `bad` only while the ongoing total is over the signed limit. */ tone?: "brand" | "soft" | "bad"; limit?: number }) {
   const w = part !== null && whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0;
   return (
     <div aria-hidden className="relative h-2.5 w-full rounded-pill bg-subtle">
-      <div className={`motion-grow h-full rounded-pill ${tone === "bad" ? "bg-bad-solid" : "bg-bad-solid/45"}`} style={{ width: `${w}%` }} />
+      <div className={`motion-grow h-full rounded-pill ${tone === "bad" ? "bg-bad-solid" : tone === "soft" ? "bg-brand-300" : "bg-brand-600"}`} style={{ width: `${w}%` }} />
       {limit !== undefined && whole > 0 ? <span className="absolute -bottom-1 -top-1 w-0.5 bg-ink" style={{ left: `${Math.min(100, (limit / whole) * 100)}%` }} /> : null}
     </div>
   );
@@ -88,7 +88,7 @@ function Bar({ part, whole, tone = "bad", limit }: { part: number | null; whole:
  * line, its display amount and its window words; the ongoing lines then carry their total against the signed limit as one bar with the limit
  * marked, and the server's note that the immediate discount and the ongoing total are not added.
  */
-export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: VerdictView | null; children?: React.ReactNode }) {
+export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: DealWorkspace; v: VerdictView | null; children?: React.ReactNode; /** Behind a fold, closed: the paths' columns already say what each path costs, so the asks are the detail beneath them. */ folded?: boolean }) {
   const { t } = useI18n();
   const fi = ws.financial_impact;
   const lineOf = (id: string) => fi.lines.find((l) => l.obligation_id === id);
@@ -103,14 +103,19 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
   const scale = Math.max(totalFen, cap ?? 0);
   const row = ({ a, l }: (typeof rows)[number], shared: string | null = null) => (
     <li key={a.obligation_id} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-1" data-testid={l ? `deal-impact-${a.type}` : undefined} data-horizon={l?.horizon}>
-      <p className="min-w-0 flex-[2_1_18rem] text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
-        {a.text}
-      </p>
+      <div className="min-w-0 flex-[2_1_18rem]">
+        <p className="text-xs font-semibold text-ink-3" data-testid={`deal-ask-label-${a.type}`}>
+          {a.label}
+        </p>
+        <p className="text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
+          {a.text}
+        </p>
+      </div>
       {l ? (
         <div className="min-w-0 flex-[1_1_13rem]">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <Bar part={l.amount_fen} whole={largest} tone={l.horizon === "FORWARD" ? "bad" : "soft"} />
+              <Bar part={l.amount_fen} whole={largest} tone={l.horizon === "FORWARD" ? (fi.over_cap ? "bad" : "brand") : "soft"} />
             </div>
             <p className="shrink-0 text-base font-extrabold tabular-nums text-ink" data-testid="deal-impact-amount">
               {l.amount_display ?? "—"}
@@ -121,47 +126,60 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
       ) : null}
     </li>
   );
+  const body = (
+    <div data-testid="deal-asks">
+      {immediate.length ? (
+        <ul data-testid="deal-impact-immediate">
+          {immediate.map((r) => row(r))}
+        </ul>
+      ) : null}
+      {other.length ? <ul>{other.map((r) => row(r))}</ul> : null}
+      {forward.length ? (
+        <div id="deal-impact" data-testid="deal-impact-forward" className="border-b border-line">
+          {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
+          <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
+            {sharedWindow ? (
+              <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
+                {sharedWindow}
+              </p>
+            ) : null}
+            <ul>{forward.map((r) => row(r, sharedWindow))}</ul>
+          </div>
+          <div className="border-t border-line py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <span className="text-sm font-extrabold text-ink">{t("biz.deals.impact.forwardTotal", { n: fi.window_months })}</span>
+              <span className={`shrink-0 text-lg font-extrabold tabular-nums ${fi.over_cap ? "text-bad-fg" : "text-ink"}`} data-testid="deal-impact-total">
+                {fi.forward_total_display}
+              </span>
+            </div>
+            <div className="my-2">
+              <Bar part={totalFen} whole={scale} tone={fi.over_cap ? "bad" : "brand"} limit={cap} />
+            </div>
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
+              <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>
+              {fi.over_cap ? <Badge tone="bad">{t("biz.deals.impact.overCap")}</Badge> : null}
+            </p>
+            <p className="mt-1 text-xs text-ink-3" data-testid="deal-impact-note">
+              {fi.total_note}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+  if (folded) {
+    return (
+      <div id="deal-ask" className="border-t border-line pt-1">
+        <Disclosure testId="deal-ask-fold" summary={t("biz.deals.askCost")}>
+          <div className="pt-1">{body}</div>
+        </Disclosure>
+        {children}
+      </div>
+    );
+  }
   return (
     <Card flat id="deal-ask" title={t("biz.deals.askCost")}>
-      <div data-testid="deal-asks">
-        {immediate.length ? (
-          <ul data-testid="deal-impact-immediate">
-            {immediate.map((r) => row(r))}
-          </ul>
-        ) : null}
-        {other.length ? <ul>{other.map((r) => row(r))}</ul> : null}
-        {forward.length ? (
-          <div id="deal-impact" data-testid="deal-impact-forward" className="border-b border-line">
-            {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
-            <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
-              {sharedWindow ? (
-                <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
-                  {sharedWindow}
-                </p>
-              ) : null}
-              <ul>{forward.map((r) => row(r, sharedWindow))}</ul>
-            </div>
-            <div className="border-t border-line py-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="text-sm font-extrabold text-ink">{t("biz.deals.impact.forwardTotal", { n: fi.window_months })}</span>
-                <span className={`shrink-0 text-lg font-extrabold tabular-nums ${fi.over_cap ? "text-bad-fg" : "text-ink"}`} data-testid="deal-impact-total">
-                  {fi.forward_total_display}
-                </span>
-              </div>
-              <div className="my-2">
-                <Bar part={totalFen} whole={scale} tone="bad" limit={cap} />
-              </div>
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
-                <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>
-                {fi.over_cap ? <Badge tone="bad">{t("biz.deals.impact.overCap")}</Badge> : null}
-              </p>
-              <p className="mt-1 text-xs text-ink-3" data-testid="deal-impact-note">
-                {fi.total_note}
-              </p>
-            </div>
-          </div>
-        ) : null}
-      </div>
+      {body}
       {children}
     </Card>
   );
@@ -169,51 +187,63 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
 
 /**
  * Why it matters, unboxed: the server's reasons, then the two cash facts of the offer as asked (`settled`: the deal has an outcome, so the line
- * says "had accepted"). With the paths picture on the page the cash facts are the picture's, so `facts` is false and only the reasons remain.
+ * says "had accepted"). The page folds it (`folded`); the cash facts stay here as well as in the picture's columns, so the fact is never lost.
  */
-export function WorkspaceWhy({ ws, v, today, settled = false, facts = true }: { ws: DealWorkspace; v: VerdictView; today: number; settled?: boolean; facts?: boolean }) {
+export function WorkspaceWhy({ ws, v, today, settled = false, facts = true, folded = false }: { ws: DealWorkspace; v: VerdictView; today: number; settled?: boolean; facts?: boolean; /** Behind a fold, closed (the page's order puts the price and the picture first); the fold's name is the section's. */ folded?: boolean }) {
   const { t } = useI18n();
   const tr = v.trajectory ?? null;
   const breach = tr?.first_breach_day ?? null;
   const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
+  const body = (
+    <div data-testid="deal-why-matters">
+      <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-why-reasons">
+        {ws.why_it_matters.reasons.map((r) => (
+          <li key={r}>{r}</li>
+        ))}
+      </ul>
+      {/* The cash facts are about the offer as the buyer asked for it, not about a counter: the line says so. */}
+      {facts && tr && breach !== null ? (
+        <>
+          <p className="mt-3 text-sm text-ink-2" data-testid="deal-if-accept">
+            {settled ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
+          </p>
+          <dl className="mt-1 divide-y divide-line border-y border-line text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-cash">
+              <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
+              <dd className="text-right">
+                <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
+                {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
+              </dd>
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
+              <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
+              <dd className="text-right">
+                <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
+                <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
+              </dd>
+            </div>
+          </dl>
+        </>
+      ) : null}
+      {dearer ? (
+        <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">
+          {t("biz.deals.discountDearer", { rate: dearer.observed ?? "", limit: (dearer.limit ?? "").replace(/^<\s*/, "") })}
+        </p>
+      ) : null}
+    </div>
+  );
+  if (folded) {
+    return (
+      <div id="deal-why" className="border-t border-line pt-1">
+        <Disclosure testId="deal-why-fold" summary={t("biz.deals.why.title")}>
+          <div className="pt-1">{body}</div>
+        </Disclosure>
+      </div>
+    );
+  }
   return (
     <Card flat id="deal-why" title={t("biz.deals.why.title")}>
-      <div data-testid="deal-why-matters">
-        <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-why-reasons">
-          {ws.why_it_matters.reasons.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
-        {/* The cash facts are about the offer as the buyer asked for it, not about a counter: the line says so. */}
-        {facts && tr && breach !== null ? (
-          <>
-            <p className="mt-3 text-sm text-ink-2" data-testid="deal-if-accept">
-              {settled ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
-            </p>
-            <dl className="mt-1 divide-y divide-line border-y border-line text-sm">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-cash">
-                <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
-                <dd className="text-right">
-                  <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
-                  {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
-                </dd>
-              </div>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
-                <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
-                <dd className="text-right">
-                  <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
-                  <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
-                </dd>
-              </div>
-            </dl>
-          </>
-        ) : null}
-        {dearer ? (
-          <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">
-            {t("biz.deals.discountDearer", { rate: dearer.observed ?? "", limit: (dearer.limit ?? "").replace(/^<\s*/, "") })}
-          </p>
-        ) : null}
-      </div>
+      {body}
     </Card>
   );
 }
