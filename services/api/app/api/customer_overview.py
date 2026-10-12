@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any, Literal, Protocol
 from urllib.parse import quote
@@ -142,7 +142,7 @@ class _Read:
     picture: dict[str, Any] | None  # the offer picture, when it could be read
     conc: dict[str, Any] | None  # the concentration (strategy.types.Concentration as the exposure block carries it); None when unreadable
     exposure: dict[str, Any] | None  # the exposure block, when the flag is on and it could be read
-    planned: frozenset[str] = frozenset()  # the invoices the plan FLOW has ready (not run) would finance (`_planned_financing`)
+    planned: dict[str, int] = field(default_factory=dict)  # invoice -> the advance the plan FLOW has ready (not run) would take on it
 
     @property
     def recommended(self) -> dict[str, Any] | None:
@@ -382,9 +382,21 @@ def _financing_state(r: _Read) -> dict[str, str]:
         return _financing_word(r.lang, state_of(advance_lot(r.state, first)))
     if any(x["net"].get("unrecorded_text") for x in r.rows):
         return NO_STATE
-    if any(x["receivable_id"] in r.planned for x in r.rows):
-        return _financing_word(r.lang, state_of(None, planned=True))
+    if _planned_rows(r):
+        word = state_word(r.lang, state_of(None, planned=True))
+        return {"state": "planned", "state_text": word}
     return NO_STATE
+
+
+def _planned_rows(r: _Read) -> list[dict[str, Any]]:
+    """The buyer's open invoices the ready plan would finance, when none is financed yet and none is marked financed without a record."""
+    if _financed(r) or any(x["net"].get("unrecorded_text") for x in r.rows):
+        return []
+    return [x for x in r.rows if x["receivable_id"] in r.planned]
+
+
+def _if_plan_runs(lang: Lang) -> str:
+    return t(lang, "if you run the plan · not counted as cash", "执行方案后才会到账 · 不计入现金")
 
 
 # ---------------------------------------------------------------- the four figures
@@ -421,6 +433,9 @@ def _financing(r: _Read) -> dict[str, Any]:
     unrecorded = next((x["net"]["unrecorded_text"] for x in r.rows if x["net"].get("unrecorded_text")), None)
     if not financed and unrecorded:  # marked financed, no advance on record: said so, never counted
         return _figure("financing", label, t(lang, "Not on record", "无记录"), unrecorded, "warn", state)
+    planned = _planned_rows(r)
+    if planned:  # the plan is ready and has not run: its advance, said as planned and never counted
+        return _figure("financing", label, whole_yuan(sum(r.planned[x["receivable_id"]] for x in planned)), _if_plan_runs(lang), state=state)
     if not financed:
         return _figure("financing", label, t(lang, "None", "无"),
                        t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"), state=state)
@@ -607,6 +622,14 @@ def _financing_row(r: _Read) -> dict[str, Any]:
     state_words = _financing_state(r)
     if not financed and unrecorded:
         return _row("financing", label, unrecorded, None, "warn", state_words)
+    planned = _planned_rows(r)
+    if planned:
+        advance = sum(r.planned[x["receivable_id"]] for x in planned)
+        face = sum(x["outstanding_fen"] for x in planned)
+        value = (t(lang, f"{whole_yuan(advance)} against the {whole_yuan(face)} invoice", f"{whole_yuan(advance)}，以 {whole_yuan(face)} 的发票做融资")
+                 if len(planned) == 1 else
+                 t(lang, f"{whole_yuan(advance)} against {len(planned)} invoices", f"{whole_yuan(advance)}，以 {len(planned)} 张发票做融资"))
+        return _row("financing", label, value, _if_plan_runs(lang), state=state_words)
     if not financed:
         return _row("financing", label, t(lang, "none against this customer's invoices", "没有以该客户发票做的融资"), state=state_words)
     advance = sum(x["net"]["advance_fen"] for x in financed)
@@ -816,12 +839,12 @@ def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: 
         return None
 
 
-def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, Any]], today: int, lang: Lang) -> tuple[frozenset[str], bool]:
-    """(the buyer's invoices the ready plan would finance, whether it could be read): the invoice-financing legs of the plan the Home shows
+def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, Any]], today: int, lang: Lang) -> tuple[dict[str, int], bool]:
+    """(the buyer's invoices the ready plan would finance, each with its advance, whether it could be read): the invoice-financing legs of the plan the Home shows
     as its next action (`home.next_action`, the same reading), for the buyer's invoices still to collect that are not financed yet. A plan
     that has run is not a plan (its alert is gone and its lots are the books'). Nothing is read when no such invoice is open."""
     if not any(x["financing_state"] not in ("ARRANGED", "RECEIVED") for x in rows):
-        return frozenset(), True
+        return {}, True
     try:
         mandate = rt.store.get_mandate()
         found = alerts(state, mandate, rt.store, rt.day)
@@ -830,12 +853,16 @@ def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, 
                              use_router=rt.settings.features.debt_desk)
     except EngineError:
         log.exception("the plan could not be read for the customer overview")
-        return frozenset(), False
+        return {}, False
     if action is None or action["kind"] != "RESERVE_BREACH_AHEAD":
-        return frozenset(), True
+        return {}, True
     mine = {x["receivable_id"] for x in rows}
-    return frozenset(leg["receivable_id"] for leg in action["legs"]
-                     if leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and leg.get("receivable_id") in mine), True
+    out: dict[str, int] = {}
+    for leg in action["legs"]:
+        rid = leg.get("receivable_id")
+        if leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and rid in mine and isinstance(leg.get("amount_fen"), int):
+            out[rid] = out.get(rid, 0) + leg["amount_fen"]
+    return out, True
 
 
 def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool]:

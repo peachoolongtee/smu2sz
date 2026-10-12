@@ -126,7 +126,8 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert (value["label"], value["value_display"], value["note"]) == ("Relationship value", "about ¥1.09m", "a year, estimated contribution; margin assumed for the Demo, not confirmed by you")
     assert (owed["value_display"], owed["note"], owed["tone"]) == ("¥420,000", "due in 32 days, nothing overdue", "neutral")
     assert (financing["label"], financing["value_display"], financing["note"]) == (
-        "Financing linked", "None", "nothing is financed against Foshan's invoices")
+        "Financing linked", "¥255,000", "if you run the plan · not counted as cash")  # the plan's advance, planned and not counted
+    assert (financing["state"], financing["state_text"]) == ("planned", "planned")
     assert (share["value_display"], share["note"], share["tone"]) == (
         "100%", "one open invoice; not its share of your sales", "warn")
     d = b["decision"]
@@ -161,7 +162,8 @@ def test_before_the_plan_the_exposure_rows_are_the_exposure_layers_own(api, rt):
     rows = b["exposure"]["rows"]
     assert [r["key"] for r in rows] == ["payments", "financing", "stress", "capacity"]  # no financing, so no "financing then"
     assert (rows[0]["value_display"], rows[0]["tone"]) == ("not enough history yet", "neutral")
-    assert rows[1]["value_display"] == "none against this customer's invoices"
+    assert rows[1]["value_display"] == "¥255,000 against the ¥420,000 invoice" and rows[1]["note"] == "if you run the plan · not counted as cash"
+    assert (rows[1]["state"], rows[1]["state_text"]) == ("planned", "planned")
     assert (rows[2]["label"], rows[2]["value_display"], rows[2]["tone"]) == (
         "Paid 30 days late", "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered", "bad")
     assert (rows[3]["value_display"], rows[3]["note"]) == (
@@ -237,7 +239,8 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert figures(en) == figures(zh)
     assert english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
     assert unchanged_words(en, zh, NAMES, raw_fields=[HREFS]) == []
-    assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109万", "¥420,000", "无", "100%"]
+    assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109万", "¥420,000", "¥255,000", "100%"]
+    assert zh["figures"][2]["note"] == "执行方案后才会到账 · 不计入现金" and (zh["figures"][2]["state"], zh["figures"][2]["state_text"]) == ("planned", "计划中")
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "1 张未收发票；这不是其占您销售额的比例"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
@@ -316,13 +319,16 @@ def test_a_buyer_with_no_open_deal_has_no_decision_and_says_so(api, rt):
     assert english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
 
 
-def test_a_buyer_with_no_financing_says_none_and_never_a_state_word(api, rt):
-    _before(api, rt)
-    b = _get(api)
+def test_a_buyer_with_no_financing_and_no_plan_leg_says_none_and_never_a_state_word(api, rt):
+    _before(api, rt)  # the plan is ready, but none of its legs is on this buyer's invoices
+    b = _get(api, "BUYER-2")
     f = _fig(b, "financing")
-    assert (f["value_display"], f["note"]) == ("None", "nothing is financed against Foshan's invoices")
-    assert not any(w in json.dumps(b["exposure"]) for w in ("arranged", "received", "repaid"))
+    assert (f["value_display"], f["note"], f["state"], f["state_text"]) == (
+        "None", "nothing is financed against Dongguan's invoices", "none", "")
+    assert not any(w in json.dumps(b["exposure"]) for w in ("arranged", "received", "repaid", "planned"))
     assert _row(b["exposure"]["rows"], "financing")["value_display"] == "none against this customer's invoices"
+    zh = _fig(_get(api, "BUYER-2", lang="zh"), "financing")
+    assert (zh["value_display"], zh["state"], zh["state_text"]) == ("无", "none", "")
 
 
 def test_without_inputs_the_demo_buyer_is_projected_from_the_books_and_nothing_else_is_invented(api, rt):
@@ -825,7 +831,7 @@ def _land(api: TestClient, rt: Runtime, *, arrival_day: int = -2) -> None:
 
 
 @pytest.mark.parametrize(("lang", "planned", "arranged", "received", "current"), [
-    ("en", "Planned", "Arranged", "Received", "Not due yet"),
+    ("en", "planned", "Arranged", "Received", "Not due yet"),
     ("zh", "计划中", "已安排", "已到账", "未到期"),
 ])
 def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabulary(api, rt, lang, planned, arranged, received, current):
@@ -834,7 +840,8 @@ def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabul
     assert _states(b["figures"]) == {"value": ("none", ""), "outstanding": ("current", current), "financing": ("planned", planned),
                                      "share": ("none", "")}
     assert _states(b["exposure"]["rows"])["financing"] == ("planned", planned)  # the plan is ready and has not run: nothing is financed yet
-    assert _fig(b, "financing")["value_display"] == ("None" if lang == "en" else "无")  # additive: the words stand as they were
+    assert _fig(b, "financing")["value_display"] == "¥255,000"  # the plan's advance, not "None": it reads as planned and is not counted
+    assert _fig(b, "financing")["note"] == ("if you run the plan · not counted as cash" if lang == "en" else "执行方案后才会到账 · 不计入现金")
     _run_plan(api)
     b = _get(api, lang=lang)
     assert _states(b["figures"])["financing"] == ("arranged", arranged)
