@@ -60,7 +60,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await walkStory(page, 1, 1);
   await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   await expect(page.getByTestId("deal-impact-forward").getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
-  await expect(page.getByTestId("path-col-cash-0")).toContainText("¥209,960.00");
+  await expect(page.getByTestId("path-tile-0")).toContainText("¥209,960.00");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
 

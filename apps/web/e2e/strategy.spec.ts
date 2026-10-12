@@ -342,7 +342,7 @@ test.describe("phone", () => {
     await expect(dialog.getByTestId("chase-copy")).toBeVisible();
   });
 
-  test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Compare in reach and does not overflow", async ({ page }) => {
+  test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Option B's column in reach and does not overflow", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");
     await expect(card.getByTestId("envelope-ceiling-terms")).toContainText("55 days", { timeout: 30_000 });

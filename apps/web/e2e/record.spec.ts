@@ -73,7 +73,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   await expect(response.getByTestId("deal-send-scope")).toContainText("Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)");
   await expect(response.getByTestId("deal-send-scope-lines")).toContainText("Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)");
   // The send is described by its scope sentence for assistive tools.
-  await expect(send).toHaveAttribute("aria-describedby", /scope-/);
+  await expect(send).toHaveAttribute("aria-describedby", /scope-deal-option-Option-A/);
   // Option B is a path of its own: picking its column puts it in the bar, with its own send.
   await page.getByTestId("path-col-pick-2").click();
   const b = page.getByTestId("path-reply");
@@ -89,14 +89,18 @@ test("COUNTER_CHANGED, the verdict was replaced: the current proposal takes the 
   await checked(page);
   await hook(page, "tl-mock-counter-changed", "replaced");
   const response = page.locator("#counters");
+  await expect(response).toHaveAttribute("data-counters", "evaluated");
   await sendCounter(response);
   const changed = response.getByTestId("deal-counter-changed");
   await expect(changed).toBeVisible();
   await expect(changed).toHaveAttribute("role", "alert");
   await expect(changed).toContainText("The books moved since this was shown");
   await expect(changed).toContainText("Here is the current proposal. Nothing was sent.");
-  // The current counters are shown and can be sent; nothing was sent, so the record is where it was.
-  await expect(response.getByTestId("deal-send")).toBeVisible();
+  // The current counters took the old ones' place (the bar now sends from them, bound to the verdict the API named) and can be sent; nothing was sent, so the record
+  // is where it was, and the confirmation that was open is gone.
+  await expect(response).toHaveAttribute("data-counters", "current");
+  await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
+  await expect(response.getByTestId("deal-send-confirm-box")).toHaveCount(0);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
   await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
   await expect(changed.getByTestId("deal-check-again")).toHaveCount(0);

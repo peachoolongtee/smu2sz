@@ -216,12 +216,9 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // The order: the folded inbox row, the verdict (the heading), who and where, then on a phone the reply before what they ask and cost (the answer first),
-  // on a desktop what they ask and cost, why it matters, then the reply.
-  const phone = (page.viewportSize()?.width ?? 1440) < 1024;
-  const ids = phone
-    ? ["inbox-collapsed", "deal-recommendation-card", "counters", "deal-selected", "deal-ask", "deal-impact", "deal-why", "deal-advanced"]
-    : ["inbox-collapsed", "deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact", "deal-why", "counters", "deal-advanced"];
+  // One order at every width (the DOM order is the visual order): the folded inbox row, the verdict (the heading), the reply bar, the picture with its columns,
+  // who and where, what they ask and cost, why it matters (folded).
+  const ids = ["inbox-collapsed", "deal-recommendation-card", "counters", "deal-paths", "deal-selected", "deal-ask", "deal-why", "deal-advanced"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
