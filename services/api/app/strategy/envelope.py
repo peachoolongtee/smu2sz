@@ -1187,10 +1187,28 @@ def _lever_of(facts: EnvelopeFacts, key: str) -> Maximum | None:
     return next((m for m in facts.maxima if m.key == key), None)
 
 
+_TOP = (" (the most FLOW checks)", "（FLOW 检查的上限）")
+
+
+def _todays_price(facts: EnvelopeFacts, lang: str) -> str:
+    """The terms that pass at today's price, within the limits: "At today's price: up to 45 days within your limits."
+    Empty when the buyer has no terms lever, or no plan prices one."""
+    alone = _lever_of(facts, "terms_alone")
+    if alone is None or alone.value is None or alone.unavailable:
+        return ""
+    top = t(lang, *_TOP) if alone.wall is None and alone.beyond is None else ""
+    return t(lang, f"At today's price: up to {alone.value} days{top} within your limits.",
+             f"按现价：在您的底线内，账期最长 {alone.value} 天{top}。")
+
+
 def _primary(facts: EnvelopeFacts, lang: str) -> str:
+    """The headline: the terms at today's price, then the packages you can live with, each named whole (the terms
+    with the price rise that makes them pass, the early payment with its face), never maxima joined from separate
+    levers. A rebate is named only when its package is the one quoted (a buyer with nothing else to value)."""
     cur = facts.current_terms
     pieces: list[str] = []
     terms = _lever_of(facts, "terms_with_price")
+    alone = _lever_of(facts, "terms_alone")
     longest = terms.value if terms is not None and terms.value is not None else cur
     if terms is not None and terms.value is not None and longest > cur:
         # the counter FLOW would send: Option B's rule price when it passes, else the smallest price that does
@@ -1199,26 +1217,24 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
                 c.probe.setting == Setting(longest, price=terms.rule_price_bp) for c in facts.cells):
             price = terms.rule_price_bp
         # a maximum at the top of the range with no wall is not a ceiling the books set: say so
-        top = terms.wall is None and facts.next_terms is None
-        if price:
-            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''} if the price rises {fmt_pct(bp(price))}",
-                            f"账期最长 {longest} 天（{'FLOW 检查的上限；' if top else ''}价格上调 {fmt_pct(bp(price))}）"))
-        else:  # the longer terms pass on their own: no price rise to name
-            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''}",
-                            f"账期最长 {longest} 天{'（FLOW 检查的上限）' if top else ''}"))
+        top = t(lang, *_TOP) if terms.wall is None and facts.next_terms is None else ""
+        said_at_todays_price = alone is not None and alone.value == longest
+        if price or not said_at_todays_price:
+            pieces.append(_phrase(facts, Setting(longest, price=price), lang) + top)
     early = next((m for m in facts.maxima if m.key == "early_pay_counter" and m.value), None) or \
         next((m for m in facts.maxima if m.key == "early_pay_whole" and m.value), None)
     if early is not None and early.value:
-        pieces.append(t(lang, f"early payment at up to {fmt_pct(bp(early.value))} on {fmt_yuan(early.face_fen or 0)}",
-                        f"提前付款最高 {fmt_pct(bp(early.value))}（金额 {fmt_yuan(early.face_fen or 0)}）"))
+        rate, face = fmt_pct(bp(early.value)), fmt_yuan(early.face_fen or 0)
+        pieces.append(t(lang, f"early payment of {rate} on {face}", f"提前付款 {rate}（金额 {face}）"))
     first = t(lang, ", or ", "，或") .join(pieces)
     parts = [first] if first else []
     rebate = _lever_of(facts, "rebate")
     if facts.rebate_only and rebate is not None and rebate.value:
         parts = [t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))} on the expected order; no terms or early payment to value yet",
                    f"对预期订单的返利最高 {fmt_pct(bp(rebate.value))}；暂无可估值的账期或提前付款")]
-    elif rebate is not None and rebate.value:
-        parts.append(t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))}", f"返利最高 {fmt_pct(bp(rebate.value))}"))
+    elif not parts and rebate is not None and rebate.value and rebate.at_max is not None and rebate.at_max.approved:
+        # the rebate's own package is the one quoted: nothing else is named beside it
+        parts.append(t(lang, f"a {fmt_pct(bp(rebate.value))} rebate", f"返利 {fmt_pct(bp(rebate.value))}"))
     if facts.has_terms_lever and not facts.no_plan:
         if facts.next_terms is not None:
             n = facts.next_terms
@@ -1228,10 +1244,12 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
             parts.append(t(lang, "no longer payment terms", "不能延长账期"))
     if not parts and facts.no_plan:
         return t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD_NO_EARLY))
+    lead = _todays_price(facts, lang)
+    gap = t(lang, " ", "") if lead else ""
     if not parts:
-        return t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
+        return lead + gap + t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
     text = t(lang, "You can live with: ", "您能接受的范围：") + t(lang, "; ", "；").join(parts)
-    return text + t(lang, ".", "。")
+    return lead + gap + text + t(lang, ".", "。")
 
 
 def _past_due_clause(facts: EnvelopeFacts, lang: str) -> str | None:

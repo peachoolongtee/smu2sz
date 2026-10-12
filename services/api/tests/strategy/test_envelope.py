@@ -53,13 +53,14 @@ GOLDEN_BUYER = "BUYER-1"
 OPTION_A = (45, 0, 85, 25_720_000, 0)  # terms, price, early-pay bp, face, rebate
 OPTION_B = (55, 30, 0, None, 0)
 
-PRIMARY_EN = ("You can live with: up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; "
-              "a rebate up to 1.25%; not 60 days without an early payment.")
+PRIMARY_EN = ("At today's price: up to 45 days within your limits. You can live with: 55-day terms with a 0.30% price rise, "
+              "or early payment of 0.85% on ¥257,200.00; not 60 days without an early payment.")
 REASON_EN = ("60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
              "without a price rise.")
 MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal "
             "your current funding plan costs ¥3,113.93.")
-PRIMARY_ZH = "您能接受的范围：账期最长 55 天（价格上调 0.30%），或提前付款最高 0.85%（金额 ¥257,200.00）；返利最高 1.25%；不提前付款则不能做到 60 天。"
+PRIMARY_ZH = ("按现价：在您的底线内，账期最长 45 天。您能接受的范围：55 天账期并加价 0.30%，或提前付款 0.85%（金额 ¥257,200.00）；"
+              "不提前付款则不能做到 60 天。")
 REASON_ZH = "不提前付款的 60 天账期会在 47 天后出现无法补上的缺口；¥5,000.00 的预算无法在不加价的情况下延长账期。"
 MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,027.77；不做交易时，现行资金安排的成本为 ¥3,113.93。"
 
@@ -395,6 +396,15 @@ def test_the_primary_uses_the_rule_price_and_keeps_the_smallest_in_the_payload(a
     assert _by_lever(answer)[TERMS_WITH_PRICE].at_maximum.package.price_bp == 25  # type: ignore[union-attr]
 
 
+def test_the_primary_names_packages_not_maxima(answer):
+    """P3: the terms at today's price lead; each package named is one the verifier passed whole; the rebate maximum (1.25%) is
+    not joined to them, because neither quoted package carries it."""
+    assert answer.primary.startswith("At today's price: up to 45 days within your limits. ")
+    assert "1.25%" not in answer.primary and "rebate" not in answer.primary and "up to 0.85%" not in answer.primary
+    shown = {_setting(p) for p in [*answer.packages, *getattr(answer, "more", [])]}
+    assert OPTION_B in shown and OPTION_A in shown  # the two packages the sentence names
+
+
 # ---------------------------------------------------------------- a buyer with nothing to value
 
 
@@ -496,7 +506,8 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     assert by[TERMS_ALONE].next_step is not None and by[TERMS_ALONE].next_step.forward_budget_used_fen == 748_521
     # with a price rise the engine does pass them (the verifier judges the offer's own effect, not the standing breach)
     assert by[TERMS_WITH_PRICE].maximum == 80
-    assert a.primary.startswith("You can live with: up to 80-day terms if the price rises 0.95%")
+    assert a.primary.startswith("At today's price: up to 45 days within your limits. You can live with: 80-day terms with a "
+                                "0.95% price rise")
     # the early-pay face is the earliest invoice not yet past due, RI:BUYER-1:2 (¥420,000 due day 47), not the overdue RCV-A
     assert context(books_day34.state, 34, GOLDEN_BUYER).receivable.id == "RI:BUYER-1:2"
     assert context(books_day34.state, 34).receivable.id == "RCV-A"  # the default rule is untouched
@@ -506,7 +517,7 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     assert early.next_step.binding_codes == ["EARLY_PAY_DEARER_THAN_PLAN"]
     with_early = [p for p in a.packages if p.package.early_pay_bp == 40]
     assert with_early and all(p.approved and p.package.early_pay_face_fen is None for p in with_early)
-    assert "early payment at up to 0.40% on ¥420,000.00" in a.primary
+    assert "early payment of 0.40% on ¥420,000.00" in a.primary
     # the overdue invoice is why the standing position needs the owner, and the reason says so
     assert facts.past_due == ((16_280_000, 2),)
     assert a.reason.startswith("The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal "
@@ -666,7 +677,8 @@ def test_terms_in_force_off_the_five_day_grid_do_not_crash(golden):
     assert 32 in [z.terms_days for z in a.zone] and a.zone[0].terms_days == 30
     assert any(p.package.terms_days == 32 for p in a.packages)
     assert all(p.package.terms_days >= 32 for p in a.packages)
-    assert a.primary.startswith("You can live with: ") and envelope_answer(facts, "zh").primary.startswith("您能接受的范围：")
+    assert a.primary.startswith("At today's price: up to ") and "You can live with: " in a.primary
+    assert "您能接受的范围：" in envelope_answer(facts, "zh").primary
     json.loads(a.model_dump_json())
 
 
@@ -712,9 +724,10 @@ def test_a_buyer_on_90_day_terms_is_scanned_to_100_and_the_zone_has_the_rows(gol
     assert alone.next_step.package.terms_days == 95 and not alone.next_step.passes
     for name in (TERMS_BUDGET_IGNORED, TERMS_WITH_PRICE):  # liquidity and the price let both new steps through: the range's top
         assert levers[name].maximum == 100 and levers[name].wall is None and levers[name].next_step is None
-    assert "up to 100-day terms (the most FLOW checks) if the price rises 0.25%" in a.primary
+    assert "100-day terms with a 0.25% price rise (the most FLOW checks)" in a.primary
+    assert a.primary.startswith("At today's price: up to 90 days within your limits. ")
     assert "no longer payment terms" not in a.primary
-    assert "账期最长 100 天（FLOW 检查的上限；价格上调 0.25%）" in envelope_answer(facts, "zh").primary
+    assert "100 天账期并加价 0.25%（FLOW 检查的上限）" in envelope_answer(facts, "zh").primary
     assert any(p.package.terms_days in (95, 100) for p in a.packages)
     json.loads(a.model_dump_json())
 
