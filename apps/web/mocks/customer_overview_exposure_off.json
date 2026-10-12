@@ -1,0 +1,196 @@
+{
+  "en": {
+    "customer_id": "BUYER-1",
+    "name": "Foshan Home Retail Co.",
+    "lang": "en",
+    "day": 0,
+    "state_version": 1,
+    "summary_text": "What this relationship is worth, and what it puts at risk.",
+    "figures": [
+      {
+        "key": "value",
+        "label": "Relationship value",
+        "value_display": "about ¥1.09m",
+        "note": "a year, estimated contribution",
+        "tone": "neutral"
+      },
+      {
+        "key": "outstanding",
+        "label": "Outstanding",
+        "value_display": "¥420,000",
+        "note": "due in 32 days, nothing overdue",
+        "tone": "neutral"
+      },
+      {
+        "key": "financing",
+        "label": "Financing linked",
+        "value_display": "None",
+        "note": "nothing is financed against Foshan's invoices",
+        "tone": "neutral"
+      },
+      {
+        "key": "share",
+        "label": "Share of what you are owed",
+        "value_display": "100%",
+        "note": "one open invoice; not its share of your sales",
+        "tone": "warn"
+      }
+    ],
+    "decision": null,
+    "none_text": "No commercial decision is waiting for you with Foshan.",
+    "actions": [
+      {
+        "key": "invoices",
+        "label": "View the invoices",
+        "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+      }
+    ],
+    "economics": [
+      {
+        "key": "annual_sales",
+        "label": "Annual sales",
+        "value_display": "¥5,460,000",
+        "note": "projected from your books",
+        "tone": "neutral"
+      },
+      {
+        "key": "gross_margin",
+        "label": "Gross margin",
+        "value_display": "20%",
+        "note": "assumed for the Demo, not confirmed by you",
+        "tone": "warn"
+      },
+      {
+        "key": "contribution",
+        "label": "Contribution a year",
+        "value_display": "about ¥1,092,000",
+        "note": "under today's terms",
+        "tone": "neutral"
+      },
+      {
+        "key": "classification",
+        "label": "Classed as",
+        "value_display": "not entered yet",
+        "note": null,
+        "tone": "neutral"
+      }
+    ],
+    "economics_note": "None of this changes what FLOW may do on its own.",
+    "edit_label": "Edit these facts",
+    "edit_href": null,
+    "exposure": null,
+    "note": "Financial exposure is not switched on for this account, so payment behaviour, the late-payment test and spare capacity are not shown.",
+    "history": [
+      {
+        "when_text": "In force",
+        "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+        "href": "/documents",
+        "link_label": "The terms"
+      }
+    ],
+    "partial": null,
+    "context": {
+      "back": {
+        "label": "Back to Deals",
+        "href": "/deals"
+      }
+    }
+  },
+  "zh": {
+    "customer_id": "BUYER-1",
+    "name": "Foshan Home Retail Co.",
+    "lang": "zh",
+    "day": 0,
+    "state_version": 1,
+    "summary_text": "这段客户关系的价值，以及它带来的风险。",
+    "figures": [
+      {
+        "key": "value",
+        "label": "客户关系价值",
+        "value_display": "约 ¥109万",
+        "note": "每年，估算的贡献",
+        "tone": "neutral"
+      },
+      {
+        "key": "outstanding",
+        "label": "未收款",
+        "value_display": "¥420,000",
+        "note": "32 天后到期，没有逾期",
+        "tone": "neutral"
+      },
+      {
+        "key": "financing",
+        "label": "已关联的融资",
+        "value_display": "无",
+        "note": "没有以Foshan的发票做融资",
+        "tone": "neutral"
+      },
+      {
+        "key": "share",
+        "label": "占您应收款的比例",
+        "value_display": "100%",
+        "note": "1 张未收发票；这不是其占您销售额的比例",
+        "tone": "warn"
+      }
+    ],
+    "decision": null,
+    "none_text": "目前没有需要您对Foshan作出的商务决定。",
+    "actions": [
+      {
+        "key": "invoices",
+        "label": "查看发票",
+        "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+      }
+    ],
+    "economics": [
+      {
+        "key": "annual_sales",
+        "label": "年销售额",
+        "value_display": "¥5,460,000",
+        "note": "根据您的账目推算",
+        "tone": "neutral"
+      },
+      {
+        "key": "gross_margin",
+        "label": "毛利率",
+        "value_display": "20%",
+        "note": "为演示而假设，尚未经您确认",
+        "tone": "warn"
+      },
+      {
+        "key": "contribution",
+        "label": "每年贡献",
+        "value_display": "约 ¥1,092,000",
+        "note": "按现行条款",
+        "tone": "neutral"
+      },
+      {
+        "key": "classification",
+        "label": "客户分类",
+        "value_display": "尚未填写",
+        "note": null,
+        "tone": "neutral"
+      }
+    ],
+    "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+    "edit_label": "修改这些信息",
+    "edit_href": null,
+    "exposure": null,
+    "note": "此账户未开启财务风险敞口功能，因此不显示付款表现、晚付测试和可用余量。",
+    "history": [
+      {
+        "when_text": "现行",
+        "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+        "href": "/documents",
+        "link_label": "条款"
+      }
+    ],
+    "partial": null,
+    "context": {
+      "back": {
+        "label": "返回交易",
+        "href": "/deals"
+      }
+    }
+  }
+}

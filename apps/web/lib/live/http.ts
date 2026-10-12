@@ -80,7 +80,7 @@ function detailMessage(detail: unknown, fallback: string): string {
 const LANG_ROUTES = [
   /^\/home$/, /^\/alerts$/, /^\/alerts\/[^/]+\/act$/, /^\/reconciliation$/, /^\/approvals\/queue$/, /^\/approvals\/[^/]+$/, /^\/ledger$/, /^\/audit$/,
   /^\/offers\/[^/]+\/evaluate$/, /^\/negotiate\/[^/]+$/, /^\/router\/plan$/, /^\/decisions(\/.*)?$/, /^\/receivables\/[^/]+\/chase$/,
-  /^\/receivables\/worth$/, /^\/cash\/price-curve$/, /^\/buyers\/[^/]+\/envelope$/,
+  /^\/receivables$/, /^\/receivables\/worth$/, /^\/cash\/price-curve$/, /^\/buyers\/[^/]+\/envelope$/,
 ];
 
 /** `path` with `lang=` (the page's language) and, for a Business chat turn, `mode=business` added where the route takes them. */

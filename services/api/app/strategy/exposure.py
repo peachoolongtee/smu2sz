@@ -76,6 +76,7 @@ from app.strategy.words import buyer_short, share_text, whole_yuan
 
 MATERIAL_SHARE_BP = 5_000  # a buyer that is at least half of what the supplier is owed is named on Home's open-offer row
 ASKED = "asked"
+DO_NOTHING = "do_nothing"  # the books as they stand: a path of the deal reads only (`app.api.exposure_words`), with words and no figures of its own
 CACHE_SIZE = 32
 
 _BASE: AnswerCache[dict[str, Any]] = AnswerCache(CACHE_SIZE)
@@ -325,8 +326,8 @@ def _flag(conc: Concentration, lang: str) -> dict[str, Any]:
     return {"material": material, "text": text, "min_share_bp": MATERIAL_SHARE_BP}
 
 
-def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id: str, verdict: Verdict | None,
-                  lang: str, commitments: Sequence[Commitment], inputs: CustomerInputs) -> dict[str, Any]:
+def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id: str, offer_id: str, verdict: Verdict | None,
+                  lang: str, commitments: Sequence[Commitment], inputs: CustomerInputs, deal_words: bool) -> dict[str, Any]:
     """Everything that does not need the spare-capacity search. Raises `EngineError` when the books cannot be projected."""
     state, today = books.state, max(day, books.state.as_of_day)
     name = party_name(state, buyer_id)
@@ -365,7 +366,7 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
         afters[p.key] = ba
         capacity_paths[p.key] = _capacity_view(books, ba, today, lang, mandate.horizon_days)
 
-    return {
+    base: dict[str, Any] = {
         "buyer": {"id": buyer_id, "name": name},
         "paths": [{"key": p.key, "kind": p.kind, "label": p.label} for p in paths],
         "concentration": shares.model_dump(mode="json"),
@@ -374,6 +375,11 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
         "capacity": capacity_paths, "economics": None, "loss": None, "partial": False, "flag": _flag(shares, lang),
         "_afters": afters, "_bound": bound,
     }
+    if deal_words:  # the Deals queue's words, worked out once with the block, from the same books, picture and concentration
+        from app.api.exposure_words import deal_extras
+
+        base.update(deal_extras(rt, books, mandate, day, buyer_id, offer_id, verdict, lang, inputs, base))
+    return base
 
 
 def _path_sentences(p: _Path, base: dict[str, Any], spare: dict[str, Any] | None, until: int | None, lang: str) -> dict[str, Any]:
@@ -386,7 +392,7 @@ def _path_sentences(p: _Path, base: dict[str, Any], spare: dict[str, Any] | None
 
 def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: CompiledOffer, verdict: Verdict | None, lang: str,
              commitments: Sequence[Commitment], inputs: CustomerInputs, *, response: str = ASKED,
-             spare: bool = True) -> dict[str, Any]:
+             spare: bool = True, deal_words: bool = False) -> dict[str, Any]:
     """The exposure block for `offer`'s buyer: all paths at once, the sentences leading with `response`'s path.
 
     `books` and `commitments` are the books without this offer's own commitments (the offer as asked, the picture's rule), `verdict`
@@ -395,20 +401,32 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
     Cached by the books, the mandate, the day, the commitments, the buyer, the verdict, the language and the inputs in force, with
     single-flight; `response` is not part of the key. `EngineError` when the books cannot be projected; `ValueError` for a
     `response` that names no path."""
+    return buyer_exposure(rt, books, mandate, day, offer.counterparty_id, offer.offer_id, verdict, lang, commitments, inputs,
+                          response=response, spare=spare, deal_words=deal_words)
+
+
+def buyer_exposure(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id: str, offer_id: str, verdict: Verdict | None,
+                   lang: str, commitments: Sequence[Commitment], inputs: CustomerInputs, *, response: str = ASKED,
+                   spare: bool = True, deal_words: bool = False) -> dict[str, Any]:
+    """`exposure` for a buyer by id: `offer_id` is "" and `verdict` None for a buyer with no open offer (the one asked path then has no
+    package, and its stress, capacity and concentration are those of the books as they stand). Same cache, same rules.
+
+    `deal_words` adds the Deals queue's reading of the deal (`app.api.exposure_words.deal_extras`) to the cached block: per path `lowest_*`,
+    `limit_*` and `share_after_text`, the `do_nothing` path, and `customer_context`. `do_nothing` carries words only: its entries in
+    `stress.paths`, `capacity` and `band.by_path` are explicit nulls."""
     lang = "zh" if lang == "zh" else "en"
     lead = lead_key(verdict, response)
-    buyer_id = offer.counterparty_id
     key = cache_key(books.state, mandate, day, commitments, "exposure", "|".join(o.model_dump_json() for o in books.obligations),
-                    buyer_id, lang, inputs.digest(), verdict.id if verdict is not None else "", offer.offer_id)
+                    buyer_id, lang, inputs.digest(), verdict.id if verdict is not None else "", offer_id, deal_words)
 
     def compute() -> dict[str, Any]:
-        return _compute_base(rt, books, mandate, day, buyer_id, verdict, lang, commitments, inputs)
+        return _compute_base(rt, books, mandate, day, buyer_id, offer_id, verdict, lang, commitments, inputs, deal_words)
 
     base = _BASE.get_or_compute(key, compute)
     paths = _paths(verdict, lang)
     today = max(day, books.state.as_of_day)
     capacity: dict[str, Any] = {}
-    sentences: dict[str, dict[str, Any]] = {}
+    sentences: dict[str, Any] = {}
     if spare:
         today_s = spare_capacity(books, mandate, day, commitments, None, trusted_owner_key_hex=rt.owner_key_hex)
     for p in paths:
@@ -421,6 +439,9 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
         sentences[p.key] = _path_sentences(p, base, view_spare, _until(base["_afters"][p.key], today)
                                            if view_spare is not None and view_spare["x_star_fen"] == 0 else None, lang)
         capacity[p.key] = view
+    if deal_words:
+        capacity[DO_NOTHING] = None
+        sentences[DO_NOTHING] = None
     led = sentences[lead]
     shares = base["concentration"]
     body = {
@@ -431,5 +452,5 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
     return displayed(body)
 
 
-__all__ = ["ASKED", "MATERIAL_SHARE_BP", "STRESS_DELAY_DAYS", "Source", "capacity_sentence", "clear_cache", "concentration", "exposure",
+__all__ = ["ASKED", "DO_NOTHING", "MATERIAL_SHARE_BP", "STRESS_DELAY_DAYS", "Source", "buyer_exposure", "capacity_sentence", "clear_cache", "concentration", "exposure",
            "extra_delays", "lead_key", "payment_behaviour", "stress_sentence", "window_row"]

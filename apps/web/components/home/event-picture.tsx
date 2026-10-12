@@ -4,7 +4,7 @@ import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { HomeRailEvent, HomeSeriesPoint, HomeView } from "@/lib/types";
+import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 /**
@@ -54,7 +54,19 @@ export function eventPictureReady(h: HomeView): boolean {
   return Boolean(h.cash.events_rail?.length && line?.some((p) => p.day >= h.day));
 }
 
-export function EventPicture({ h }: { h: HomeView }) {
+/**
+ * A late-payment test the page read itself (the Cash page's stress link: `GET /buyers/{id}/exposure`), drawn in place of the home's own `cash.stress`: the
+ * same stressed line, switch and panel. `sentence` is the server's stress sentence for the panel and `lines` the sentences that follow it (the net a month
+ * later, the financing's charges); `startLate` opens the picture on the late scenario.
+ */
+export interface LateRead {
+  stress: HomeStress;
+  sentence: string;
+  lines?: string[];
+  startLate?: boolean;
+}
+
+export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const hintId = useId();
@@ -69,14 +81,15 @@ export function EventPicture({ h }: { h: HomeView }) {
   // The chosen event is kept by its key, so a re-read that reorders or drops events never moves the choice to another one.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [preview, setPreview] = useState<number | null>(null);
-  const [scenario, setScenario] = useState<"expected" | "late">("expected");
+  const [scenario, setScenario] = useState<"expected" | "late">(lateRead?.startLate ? "late" : "expected");
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
   const [focused, setFocused] = useState(false);
 
   const n = rail.length;
   // The switch needs the server's stress, its series and the delay it is about; without any of them there is no scenario to offer.
-  const stress = cash.stress_available && cash.stress?.series?.length && cash.stress.delay_days ? cash.stress : null;
+  const own = lateRead ? lateRead.stress : cash.stress_available ? cash.stress : null;
+  const stress = own?.series?.length && own.delay_days ? own : null;
   if (scenario === "late" && stress === null) setScenario("expected");
   const late = scenario === "late" && stress !== null;
   const chosen = Math.max(rail.findIndex((e) => e.key === selectedKey), 0);
@@ -192,6 +205,8 @@ export function EventPicture({ h }: { h: HomeView }) {
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
+  // The last label is anchored to the right edge: the one before it gives way when the two would touch (the widened late picture only; Home's axis is as it was).
+  if (lateRead && ticks.length > 2 && ticks[ticks.length - 1] === end && ((end - ticks[ticks.length - 2]) / last) * (pr - pl) < 96) ticks.splice(ticks.length - 2, 1);
   const reserveText = t("biz.picture.reserve", { amount: cash.floor_short });
 
   // ---- pointing
@@ -449,8 +464,13 @@ export function EventPicture({ h }: { h: HomeView }) {
                   {stress.assumption_text}
                 </p>
                 <p className="text-[0.9375rem] font-medium text-ink" data-testid="stress-sentence">
-                  {[stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
+                  {lateRead ? lateRead.sentence : [stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
                 </p>
+                {lateRead?.lines?.map((line, i) => (
+                  <p key={i} className="text-[0.9375rem] text-ink-2" data-testid="stress-line">
+                    {line}
+                  </p>
+                ))}
               </div>
             ) : event ? (
               <div className="space-y-1.5">

@@ -309,6 +309,19 @@ export function readPoint(): ReadPoint {
   return s.stage === "approved" ? "after" : s.stage === "pending" ? "pending" : "day34";
 }
 
+/**
+ * Which recording of GET /receivables the mock serves: the same point of the story the home is read at, and at day 34 the books the test hook
+ * selected (no receipt, half a receipt, the cure that left the reserve short). The recordings are `mocks/receivables/<point>[_zh].json`.
+ */
+export type ReceivablesPoint = StoryPoint | "day34_noreceipt" | "day34_half" | "day34_residual";
+
+export function receivablesPoint(dealt: boolean): ReceivablesPoint {
+  const point = storyPoint(dealt);
+  if (point !== "day34") return point;
+  const v = receiptVariant();
+  return v === "none" ? "day34_noreceipt" : v === "half" ? "day34_half" : v === "residual" ? "day34_residual" : "day34";
+}
+
 function day34Summary(zh: boolean): unknown {
   const variant = receiptVariant();
   if (variant === "none") return zh ? summaryDay34NoReceiptZh : summaryDay34NoReceipt;

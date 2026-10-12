@@ -156,6 +156,7 @@ export function Card({
   id,
   tone,
   flat = false,
+  labelledBy,
 }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -166,6 +167,8 @@ export function Card({
   tone?: Tone;
   /** No card chrome (the seamless Home): a small-caps heading over the content, no box, no fill, no shadow. */
   flat?: boolean;
+  /** The id of a heading inside that names the card, when its title is not the `title` prop. */
+  labelledBy?: string;
 }) {
   const border = tone ? toneBorder[tone] : "border-line";
   if (flat) {
@@ -189,7 +192,7 @@ export function Card({
   return (
     <section
       id={id}
-      aria-labelledby={title && id ? `${id}-title` : undefined}
+      aria-labelledby={labelledBy ?? (title && id ? `${id}-title` : undefined)}
       className={`motion-reveal min-w-0 rounded-card border bg-surface shadow-card ${border} ${className}`}
     >
       {title ? (

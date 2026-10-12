@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CustomerSentence } from "@/components/customer-link";
 import { DealSummary } from "@/components/deals/deal-summary";
 import { Badge, Card, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
 import { dealRecordId, getLedger } from "@/lib/api";
@@ -87,12 +88,14 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
   }
 }
 
-function CommitmentItem({ c, buyer, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
+function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
   const { t, te } = useI18n();
   return (
     <li className="border-t border-line py-4 first:border-t-0 first:pt-1" data-testid={`commitment-${c.id}`} data-status={c.status}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer })}</p>
+        <p className="min-w-0 break-words text-sm font-semibold text-ink">
+          <CustomerSentence id={buyerId} name={buyer} sentence={(b) => t("deal.with", { buyer: b })} />
+        </p>
         <Badge tone={statusTone[c.status]}>
           <span data-testid="commitment-state">{recordState ?? te("deal.status", c.status)}</span>
         </Badge>
@@ -162,7 +165,7 @@ export function ActiveCommitments({
     placed.add(buyerId);
     return <DealSummary deal={deal} today={dealsDay ?? today} />;
   };
-  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} summary={summaryFor(c.counterparty_id)} />);
+  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} summary={summaryFor(c.counterparty_id)} />);
   const loose = agreed.filter((d) => !placed.has(d.counterparty_id) && ledger.data);
   return (
     <Card
@@ -192,7 +195,9 @@ export function ActiveCommitments({
           {items}
           {loose.map((d) => (
             <li key={d.counterparty_id} className="border-t border-line py-4 first:border-t-0 first:pt-1">
-              <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer: d.counterparty_name })}</p>
+              <p className="min-w-0 break-words text-sm font-semibold text-ink">
+                <CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />
+              </p>
               <DealSummary deal={d} today={dealsDay ?? today} />
             </li>
           ))}

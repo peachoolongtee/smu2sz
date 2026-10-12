@@ -47,6 +47,24 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
+// receivables/<point>[_zh].json   GET /receivables (the Receivables page's rows and summary) at each point of the home's story: day0, quiet,
+// day2, after_fund, day34 (and its noreceipt / half / residual books), pending, after, settled, in both languages; receivables/offer[_zh].json is
+// the opening books with the buyer's early-payment message open (the row carries pending_counter) and receivables/exposure_offer[_zh].json the
+// exposure of that deal's decision (the aside's late-payment test). buyer_exposure[_zh] and buyer_exposure_day34[_zh] are GET /buyers/BUYER-1/exposure on
+// the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
+// buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
+//
+// --overview records ONLY apps/web/mocks/customer_overview.json and exits (GET /customers/BUYER-1/overview, ticket #108): for each moment the
+// mock chooses among (lib/mock/handlers.ts overviewMoment), { en, zh } of { view, backs }, where `backs` holds the back link the server builds for
+// each query the specs open the page with (a deal; a deal and its path; an invoice). The moments: quiet (the opening books), offer_received and
+// offer_evaluated (the package offer waiting, unread and read), after_fund (the day-0 plan ran: the financing arranged), day34 and day34_after (the
+// late invoice, then the approved cure). The API needs FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1
+// and the other flags as above:
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
+//   node scripts/record-mocks.mjs --api http://localhost:8016 --overview
+// and, against an API started WITHOUT FEATURE_EXPOSURE, `--overview --exposure-off` records customer_overview_exposure_off.json ({ en, zh }: the opening
+// books' overview with the exposure panel off and the server's note for it), which the mock serves while the spec's hook key is set.
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -62,12 +80,14 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
+const OVERVIEW = process.argv.includes("--overview");
+const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -152,7 +172,7 @@ function normalise(name, value) {
       }
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
-  if (name.startsWith("strategy/")) out.computed_in_seconds = 0;
+  if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   return out;
@@ -233,7 +253,32 @@ async function reset() {
 // ------------------------------------------------------------------ the demo stepper, in order, snapshotting after each step
 const ops = {};
 const files = {};
+mkdirSync(join(OUT, "receivables"), { recursive: true });
+/** GET /buyers/BUYER-1/exposure (the aside's late-payment test with no deal), in both languages, at the opening books and at day 34. */
+async function buyerExposure(name) {
+  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+    const view = await live.getBuyerExposure("BUYER-1", lang);
+    if (!view) throw new Error("GET /buyers/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1 from a branch that carries it (feat/connected-words)");
+    files[`${name}${suffix}.json`] = view;
+  }
+}
+/** GET /receivables at this point of the story, in both languages (the mock chooses among them as it chooses the home summary). */
+async function recvRead(point) {
+  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+    const view = await live.getReceivables(lang);
+    if (!view || !Array.isArray(view.rows)) throw new Error("GET /receivables is absent: start the API from a branch that carries it (feat/net-collection)");
+    files[`receivables/${point}${suffix}.json`] = view;
+  }
+}
 
+// --buyer-exposure: buyer_exposure[_zh].json and nothing else, on the opening books.
+if (BUYER_EXPOSURE) {
+  await live.demoReset();
+  await buyerExposure("buyer_exposure");
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} buyer-exposure files into ${OUT} from ${API}`);
+  process.exit(0);
+}
 // --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.
 if (STRATEGY) {
   const BUYER = "BUYER-1";
@@ -274,6 +319,69 @@ if (STRATEGY) {
   process.exit(0);
 }
 
+// --overview: the customer overview of the demo's first buyer and nothing else (see the header).
+if (OVERVIEW) {
+  const BUYER = "BUYER-1";
+  // --exposure-off (the API started without FEATURE_EXPOSURE): the opening books' overview with its exposure panel off and the server's note for it.
+  if (process.argv.includes("--exposure-off")) {
+    await reset();
+    const off = { en: await live.getCustomerOverview(BUYER, "en"), zh: await live.getCustomerOverview(BUYER, "zh") };
+    if (off.en.exposure || !off.en.note) throw new Error("the exposure is on: start the API without FEATURE_EXPOSURE");
+    await live.demoReset();
+    write("customer_overview_exposure_off.json", off);
+    console.log(`recorded customer_overview_exposure_off.json into ${OUT} from ${API}`);
+    process.exit(0);
+  }
+  const queryOf = (href) => Object.fromEntries(new URL(href, "http://flow.local").searchParams);
+  const read = async (lang) => {
+    const view = await live.getCustomerOverview(BUYER, lang);
+    if (!view.exposure) throw new Error("the exposure panel is off: start the API with FEATURE_EXPOSURE=1");
+    const backs = [];
+    const ask = async (query) => backs.push({ query, back: (await live.getCustomerOverview(BUYER, lang, query)).context.back });
+    if (view.decision) {
+      const { decision, path } = queryOf(view.decision.primary.href);
+      await ask({ decision });
+      if (path) await ask({ decision, path });
+    }
+    const invoices = view.actions.find((a) => a.key === "invoices");
+    if (invoices && queryOf(invoices.href).invoice) await ask({ invoice: queryOf(invoices.href).invoice });
+    return { view, backs };
+  };
+  const moment = async () => ({ en: await read("en"), zh: await read("zh") });
+  const moments = {};
+  await reset();
+  moments.quiet = await moment();
+  await step("inbox").run();
+  moments.offer_received = await moment();
+  await step("trajectory").run();
+  moments.offer_evaluated = await moment();
+  // The day-0 plan, as the home's "Go ahead" runs it on the opening books: the financing is arranged.
+  await reset();
+  {
+    const a = (await live.getHome("en")).next_action;
+    await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
+    moments.after_fund = await moment();
+  }
+  await toDay34();
+  moments.day34 = await moment();
+  {
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    const act = await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    if (act.results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+    await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+  }
+  moments.day34_after = await moment();
+  await live.demoReset();
+  write("customer_overview.json", moments);
+  console.log(`recorded customer_overview.json into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
 await reset();
 files["state.json"] = await live.getState();
 const navCounts = {}; // GET /nav/counts at the moments the sidebar shows (the mock chooses among them by its story state)
@@ -285,6 +393,8 @@ files["reconciliation.json"] = await live.getReconciliation();
 files["chase_day0.json"] = await chaseAll(files["reconciliation.json"]); // the collection handoff on the opening books (nothing due yet)
 files["home_summary_day0.json"] = await live.getHome("en");
 files["home_summary_day0_zh.json"] = await live.getHome("zh");
+await recvRead("day0");
+await buyerExposure("buyer_exposure");
 files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // The day-0 fix runs alone (Tier 1): the home's "Go ahead" on the opening books, bound to what the home showed.
 {
@@ -294,6 +404,7 @@ files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVAT
   await snap("cure_day0", files["home_act_day0.json"].decision_id);
   files["home_summary_after_fund.json"] = await live.getHome("en");
   files["home_summary_after_fund_zh.json"] = await live.getHome("zh");
+  await recvRead("after_fund");
   files["trajectory_conservative_after_fund.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 }
 
@@ -414,6 +525,22 @@ await reset();
   files["w2_counter_changed.json"] = { replaced, moved };
 }
 
+// ------------------------------------------------------------------ Receivables in three layers: the opening books with the buyer's message open
+// The row carries pending_counter (the Option A counter would apply to part of the invoice), and the deal's decision answers the exposure read the
+// aside shows: the 30-day late-payment test, the concentration and the payment history. The mock serves these when "tl-mock-receivables-offer" is "1".
+await reset();
+{
+  const read = await live.submitOffer({ fixture_id: "EX01_PACKAGE" });
+  await live.evaluateOffer(read.offer.offer_id, "EX01_PACKAGE");
+  await recvRead("offer");
+  if (!files["receivables/offer.json"].rows.some((r) => r.pending_counter?.decision_id)) throw new Error("the open offer's counter should reach the invoice row as pending_counter: the API has changed");
+  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+    const exposure = await live.getDecisionExposure(dealId(read.offer.offer_id), lang);
+    if (!exposure) throw new Error("GET /decisions/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1");
+    files[`receivables/exposure_offer${suffix}.json`] = exposure;
+  }
+}
+
 // ------------------------------------------------------------------ what-if: the presets and a coarse grid, on the opening books
 await reset();
 {
@@ -482,6 +609,7 @@ await toDay34(async () => {
   files["home_opener_quiet_zh.json"] = await live.nlOpener("rec-quiet-zh", "zh");
   files["home_summary_quiet.json"] = await live.getHome("en");
   files["home_summary_quiet_zh.json"] = await live.getHome("zh");
+  await recvRead("quiet");
   files["trajectory_conservative_quiet.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 }, async () => {
   // Day 2, right after the synthetic bank event (the Demo's scene 4 shows the Receivables page here): the receipt is booked and nothing is late yet.
@@ -489,6 +617,7 @@ await toDay34(async () => {
   files["chase_day2.json"] = await chaseAll(files["home_reconciliation_day2.json"]);
   files["home_summary_day2.json"] = await live.getHome("en");
   files["home_summary_day2_zh.json"] = await live.getHome("zh");
+  await recvRead("day2");
   files["trajectory_conservative_day2.json"] = await live.getTrajectory("CONSERVATIVE");
   files["home_state_day2.json"] = await live.getState();
   const receipt = (await live.getLedger()).operations.filter((o) => o.kind === "RECEIVE_PAYMENT").at(-1);
@@ -499,6 +628,8 @@ files["home_alerts_day34.json"] = await live.getAlerts();
 navCounts.day34 = await live.getNavCounts("en"); // the late invoice, the reserve alert open
 files["home_summary_day34.json"] = await live.getHome("en");
 files["home_summary_day34_zh.json"] = await live.getHome("zh");
+await recvRead("day34");
+await buyerExposure("buyer_exposure_day34");
 files["trajectory_conservative_day34.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_state_day34.json"] = await live.getState();
 // The books' history at day 34 (the deal, the funding, the day-2 receipt): the mock replays it when the clock is moved to day 34 without the walk.
@@ -526,6 +657,7 @@ navCounts.pending = await live.getNavCounts("en"); // the cure waits for the own
 files["home_opener_pending.json"] = await live.nlOpener("rec-home-pending", "en");
 files["home_summary_pending.json"] = await live.getHome("en");
 files["home_summary_pending_zh.json"] = await live.getHome("zh");
+await recvRead("pending");
 files["trajectory_conservative_pending.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_approval_pending.json"] = (await live.getApprovals())[0];
 // The same row in Chinese (the queue takes ?lang=zh): the zh mock serves it with the same amounts.
@@ -545,6 +677,7 @@ files["home_state_after_approve.json"] = await live.getState();
 files["home_opener_after_approve.json"] = await live.nlOpener("rec-home-after", "en");
 files["home_summary_after.json"] = await live.getHome("en");
 files["home_summary_after_zh.json"] = await live.getHome("zh");
+await recvRead("after");
 files["trajectory_conservative_after.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // Day 38: the advance landed on day 37 and settled the day after. The Demo's "the funding settles" step shows these books.
 await live.advanceClock(38 - 34);
@@ -554,6 +687,7 @@ files["home_alerts_settled.json"] = await live.getAlerts();
 files["home_state_settled.json"] = await live.getState();
 files["home_summary_settled.json"] = await live.getHome("en");
 files["home_summary_settled_zh.json"] = await live.getHome("zh");
+await recvRead("settled");
 files["trajectory_conservative_settled.json"] = await live.getTrajectory("CONSERVATIVE");
 await snap("cure_settled", files["home_approval_pending.json"].decision_id);
 if (decisions.cure_settled.en.state !== "SETTLED") throw new Error("the landed cure should read SETTLED: the API has changed");
@@ -651,6 +785,7 @@ await live.advanceClock(28);
 await live.advanceClock(4);
 files["home_summary_day34_noreceipt.json"] = await live.getHome("en");
 files["home_summary_day34_noreceipt_zh.json"] = await live.getHome("zh");
+await recvRead("day34_noreceipt");
 files["trajectory_conservative_day34_noreceipt.json"] = await live.getTrajectory("CONSERVATIVE");
 if (files["home_summary_day34_noreceipt.json"].cash.below_reserve_today !== true) throw new Error("day 34 without a receipt should be below the reserve today: the API has changed");
 await snap("noreceipt_day34.ex01", dealId(demoStore.get().offerId));
@@ -667,6 +802,7 @@ await live.advanceClock(28);
 await live.advanceClock(4);
 files["home_summary_day34_half.json"] = await live.getHome("en");
 files["home_summary_day34_half_zh.json"] = await live.getHome("zh");
+await recvRead("day34_half");
 files["trajectory_conservative_day34_half.json"] = await live.getTrajectory("CONSERVATIVE");
 if (!files["home_summary_day34_half.json"].changes.some((c) => c.window_state)) throw new Error("a half receipt should give a change row with the part-paid facts: the API has changed");
 // The Receivables page on the same books: the receipt row carries the four facts (F25) and the late invoice has its handoff (F15).
@@ -696,6 +832,7 @@ await live.advanceClock(4);
   await live.advanceClock(4); // the advance lands on day 37 and settles the day after
   files["home_summary_day34_residual.json"] = await live.getHome("en");
   files["home_summary_day34_residual_zh.json"] = await live.getHome("zh");
+  await recvRead("day34_residual");
   files["trajectory_conservative_day34_residual.json"] = await live.getTrajectory("CONSERVATIVE");
   if (!files["home_summary_day34_residual.json"].remaining_task) throw new Error("the cure that leaves the reserve short should give a remaining task: the API has changed");
   await snap("cure_residual", files["home_summary_day34_residual.json"].remaining_task_decision_id);

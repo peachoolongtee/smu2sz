@@ -291,5 +291,11 @@ class LedgerStore(Protocol):
         """The row in force for each (counterparty id or None for the firm, field): the latest stored wins."""
         ...
 
+    # a cheap marker of what a read cache must not outlive
+    def change_marker(self) -> tuple[int, int, int, int, int]:
+        """(log entries, verdicts, approvals, approvals decided, contract records): counts only, so a cache can tell that something
+        was written without reading the rows. Every write that matters to a read moves one of them."""
+        ...
+
     # evidence
     def export_evidence(self) -> str: ...

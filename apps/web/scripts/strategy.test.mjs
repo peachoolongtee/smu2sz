@@ -31,7 +31,7 @@ test("STRATEGY_MVP is on only for NEXT_PUBLIC_STRATEGY_MVP=1 (unset, 0 and true 
 test("every strategy read goes through useStrategyAsync, which is the idle hook (the thunk never runs) unless the build flag is on", () => {
   for (const [file, call] of [
     ["app/cash/page.tsx", "getPriceCurve"],
-    ["app/receivables/page.tsx", "getReceivablesWorth"],
+    ["app/receivables/legacy.tsx", "getReceivablesWorth"], // the page of before (the fallback) keeps the ranking read
     ["app/page.tsx", "getReceivablesWorth"],
   ]) {
     const uses = source(file).split("\n").filter((line) => line.includes(`${call}(`));
