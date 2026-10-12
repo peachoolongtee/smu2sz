@@ -63,6 +63,7 @@ test("day 0: the invoice is owed on the day-32 row, the later billing is schedul
   const owed = page.getByTestId("rail-basis-5");
   await expect(owed).toHaveText(OWED_32);
   await expect(owed).toHaveAttribute("data-basis", "OWED");
+  await expect(owed).toHaveAttribute("data-state", "owed"); // a StateWord (#112)
   expect(await px(owed)).toBe(13);
   await expect(page.locator("[data-testid^='rail-basis-']")).toHaveCount(1);
   // The tooltip says it too: the keyboard moves the cursor to the receipt, and the day's words carry the sentence.

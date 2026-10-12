@@ -2,9 +2,10 @@
 
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
-import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
+import { BasisLine, BasisRows, type BasisRow } from "@/components/home/receipt-basis";
 import { CalendarIcon, CheckIcon, ClockIcon } from "@/components/icons";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -570,18 +571,18 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                           </span>
                           {/* A landing that only the plan would bring: the financing state word, quietly (a word, never a badge). */}
                           {e.planned ? (
-                            <span className="block text-xs font-medium text-ink-3" data-testid={`rail-planned-${i}`}>
+                            <StateWord state="planned" testId={`rail-planned-${i}`} className="justify-end">
                               {t("home.hy.planned")}
-                            </span>
+                            </StateWord>
                           ) : null}
                         </span>
                       </span>
                       <span className="block text-xs text-ink-3">{e.when}</span>
                       {/* What the receipt rests on, in the server's sentence; a scheduled one (not invoiced yet) is a shade quieter. */}
                       {e.basis_text ? (
-                        <span className={`mt-0.5 block text-[13px] leading-snug ${e.basis === "SCHEDULED" ? "text-ink-3" : "text-ink-2"}`} data-testid={`rail-basis-${i}`} data-basis={e.basis ?? undefined}>
+                        <BasisLine basis={e.basis} testId={`rail-basis-${i}`} className="mt-0.5">
                           {e.basis_text}
-                        </span>
+                        </BasisLine>
                       ) : null}
                       {lowest && (e.note || e.room_after_short) ? (
                         <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>

@@ -19,8 +19,3 @@ export function inFilter(r: ReceivableRow, f: RecvFilter): boolean {
 export function statusTone(rows: ReceivableRow[]): "ok" | "warn" | "bad" {
   return rows.some(isLate) ? "bad" : rows.some(isSoon) ? "warn" : "ok";
 }
-
-/** The pill tone of one invoice's collection state (its word is the server's `collection_state_text`). */
-export function stateTone(r: ReceivableRow): "ok" | "warn" | "bad" {
-  return isLate(r) ? "bad" : isSoon(r) ? "warn" : "ok";
-}

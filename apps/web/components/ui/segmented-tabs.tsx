@@ -50,7 +50,7 @@ export function SegmentedTabs<T extends string | number>({
   tabs: SegmentedTabOption<T>[];
   /** Fill the width of the parent (the queue's four tabs); the default is as narrow as the options allow. */
   stretch?: boolean;
-  /** Keep every label on one line and let the track scroll sideways where it does not fit (the queue's four tabs on a phone); the default shrinks the options and wraps a long label. */
+  /** Keep every label on one line and let the track scroll sideways where it does not fit (the queue's four tabs on a phone); the default shrinks the options and wraps a long label on a phone (one line from `sm`). */
   scroll?: boolean;
   className?: string;
   testId?: string;
@@ -98,7 +98,7 @@ export function SegmentedTabs<T extends string | number>({
               data-testid={o.testId}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`relative z-10 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-pill px-3 text-center text-sm font-semibold leading-tight sm:px-4 ${scroll ? "whitespace-nowrap" : ""} transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "text-ink" : "text-ink-2 enabled:hover:text-ink"}`}
+              className={`relative z-10 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-pill px-3 text-center text-sm font-semibold leading-tight sm:px-4 ${scroll ? "whitespace-nowrap" : "sm:whitespace-nowrap"} transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "text-ink" : "text-ink-2 enabled:hover:text-ink"}`}
             >
               {Icon ? <Icon className="size-4 shrink-0" /> : null}
               <span className="min-w-0">{o.label}</span>

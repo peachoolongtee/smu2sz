@@ -94,6 +94,28 @@ export const ChatIcon = (p: P) => (
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const DashedRingIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" strokeDasharray="2.2 2.2" />
+  </svg>
+);
+export const RingIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+  </svg>
+);
+export const RingDotIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const CheckCircleIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M5.4 8.2l1.8 1.8 3.4-3.6" />
+  </svg>
+);
 export const ListIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8M2.5 4.5h.01M2.5 8h.01M2.5 11.5h.01" />

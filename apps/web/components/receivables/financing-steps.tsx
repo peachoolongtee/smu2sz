@@ -1,17 +1,20 @@
 "use client";
 
 import { CheckIcon } from "@/components/icons";
+import { StateWord } from "@/components/ui/state-word";
+import type { StateKey } from "@/components/ui/state-word-model";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
 import type { FinancingState } from "@/lib/types";
 
 const STEPS = ["ARRANGED", "RECEIVED", "REPAID"] as const;
+const KEY: Record<(typeof STEPS)[number], StateKey> = { ARRANGED: "arranged", RECEIVED: "received", REPAID: "repaid" };
 const WORD: Record<(typeof STEPS)[number], DictKey> = { ARRANGED: "recv3.fin.arranged", RECEIVED: "recv3.fin.received", REPAID: "recv3.fin.repaid" };
 
 /**
  * The financing against one invoice as three steps, Arranged, Received, Repaid, the server's `financing_state` filled. The steps before it are done
- * (green), the current one is the action blue (green once Repaid), the rest are quiet. The mark and the word change together over 200 ms when the
- * state changes (none under reduced motion, which the global rule enforces). No financing says so in one quiet word. The state is also a step in
+ * (green), the current one is the action blue (green once Repaid), the rest are quiet; each word is a `StateWord` (the step's disc is this list's own mark). The mark
+ * and the word change together over `--dur` when the state changes (only their opacity under reduced motion, which the global rule enforces). No financing says so in one quiet word. The state is also a step in
  * the list for a screen reader (`aria-current="step"`), so colour is never the only channel.
  */
 export function FinancingSteps({ state, testId }: { state: FinancingState | undefined; testId?: string }) {
@@ -35,7 +38,7 @@ export function FinancingSteps({ state, testId }: { state: FinancingState | unde
             aria-current={current ? "step" : undefined}
             data-step={step}
             data-on={current ? "true" : undefined}
-            className={`inline-flex items-center gap-1.5 text-sm transition-colors duration-(--dur) ${current ? (done ? "font-bold text-ok-fg" : "font-bold text-brand-700") : done ? "text-ok-fg" : "text-ink-3"}`}
+            className={`inline-flex items-center gap-1.5 text-sm ${current ? "font-bold" : ""}`}
           >
             <span
               aria-hidden
@@ -45,7 +48,9 @@ export function FinancingSteps({ state, testId }: { state: FinancingState | unde
             >
               {done ? <CheckIcon className="size-3" /> : null}
             </span>
-            {t(WORD[step])}
+            <StateWord state={KEY[step]} variant="step" glyph={false} tone={done ? "ok" : current ? "info" : "neutral"} className="transition-colors duration-(--dur)">
+              {t(WORD[step])}
+            </StateWord>
           </li>
         );
       })}

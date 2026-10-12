@@ -3,12 +3,14 @@
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { CustomerName } from "@/components/customer-link";
 import { AlertIcon, CheckIcon, ClockIcon, ListIcon } from "@/components/icons";
-import { Badge } from "@/components/ui";
+import { BasisLine } from "@/components/home/receipt-basis";
 import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
+import { StateWord } from "@/components/ui/state-word";
+import { stateKey } from "@/components/ui/state-word-model";
 import { useI18n } from "@/lib/i18n";
 import type { ReceivableRow } from "@/lib/types";
 import { FinancingSteps } from "./financing-steps";
-import { inFilter, stateTone, type RecvFilter } from "./state";
+import { inFilter, type RecvFilter } from "./state";
 
 /** One glyph per filter (the segmented control draws an icon and a label on each pill). */
 const FILTER_ICON: Record<RecvFilter, TabIcon> = { all: ListIcon, soon: ClockIcon, overdue: AlertIcon, promises: CheckIcon };
@@ -108,9 +110,9 @@ export function InvoiceList({
                     <span data-testid={`recv-due-${r.receivable_id}`}>{r.due_when}</span>
                     {/* What the payment rests on, in the server's sentence (the same words the cash picture says). */}
                     {r.basis_text ? (
-                      <span className="mt-0.5 block text-[13px] leading-snug text-ink-2" data-testid={`recv-basis-${r.receivable_id}`} data-basis={r.basis ?? undefined}>
+                      <BasisLine basis={r.basis} testId={`recv-basis-${r.receivable_id}`} className="mt-0.5">
                         {r.basis_text}
-                      </span>
+                      </BasisLine>
                     ) : null}
                   </div>
                   <div role="cell" className="col-span-2 min-w-0 space-y-1 lg:col-span-1">
@@ -128,9 +130,13 @@ export function InvoiceList({
                   </div>
                   <div role="cell" className="min-w-0">
                     <Label>{t("recv3.col.status")}</Label>
-                    <Badge tone={stateTone(r)} wrap>
+                    {stateKey(r.collection_state) ? (
+                      <StateWord state={stateKey(r.collection_state)!} variant="pill" testId={`recv-state-${r.receivable_id}`}>
+                        {r.collection_state_text}
+                      </StateWord>
+                    ) : (
                       <span data-testid={`recv-state-${r.receivable_id}`}>{r.collection_state_text}</span>
-                    </Badge>
+                    )}
                   </div>
                 </div>
               );

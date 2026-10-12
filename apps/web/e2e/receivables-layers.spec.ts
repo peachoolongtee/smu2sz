@@ -169,6 +169,10 @@ test("day 38: the financing has been received, the step moves on", async ({ page
   await expect(steps.locator('li[data-on="true"]')).toHaveText("Received");
   await expect(steps.locator('li[data-step="ARRANGED"]')).not.toHaveAttribute("data-on", "true");
   await expect(steps.locator('li[data-step="ARRANGED"] svg')).toHaveCount(1);
+  // Each step's word is a StateWord (#112): a step already passed is green, the current one blue, the one to come quiet.
+  await expect(steps.locator('li[data-step="ARRANGED"] [data-state="arranged"]')).toHaveAttribute("data-tone", "ok");
+  await expect(steps.locator('li[data-step="RECEIVED"] [data-state="received"]')).toHaveAttribute("data-tone", "info");
+  await expect(steps.locator('li[data-step="REPAID"] [data-state="repaid"]')).toHaveAttribute("data-tone", "neutral");
 });
 
 test("day 34: the pills filter by the server's collection state, an empty pill is disabled, and the late invoice leads", async ({ page }) => {
@@ -190,6 +194,10 @@ test("day 34: the pills filter by the server's collection state, an empty pill i
   await expect(page.getByTestId("recv-filter-overdue")).toHaveAttribute("aria-selected", "true");
   await expect(page.locator('[data-testid^="recv-state-"]')).toHaveCount(late);
   await expect(page.locator('[data-testid^="recv-state-"]').first()).toHaveText(day34.rows.find((r) => r.collection_state === "OVERDUE")!.collection_state_text);
+  // The state is a StateWord (#112): the server's word, the state's tone and a glyph, so it is never colour alone; the lifecycle's words are StateWords too.
+  await expect(page.locator('[data-testid^="recv-state-"]').first()).toHaveAttribute("data-state", "overdue");
+  await expect(page.locator('[data-testid^="recv-state-"]').first()).toHaveAttribute("data-tone", "bad");
+  await expect(page.locator('[data-testid^="recv-state-"]').first().locator("svg[aria-hidden=true]")).toHaveCount(1);
   await page.getByTestId("recv-filter-all").click();
   await expect(page.locator('[data-testid^="recv-state-"]')).toHaveCount(ids.length);
   // The late invoice is first in the server's order and is the one shown.

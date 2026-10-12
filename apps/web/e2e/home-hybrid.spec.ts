@@ -683,6 +683,10 @@ test("a landing that only the plan would bring says 'planned' beside its amount;
   expect(planned).toEqual([0, 1]); // the credit line draw and the invoice financing
   for (const i of planned) {
     await expect(page.getByTestId(`rail-planned-${i}`)).toHaveText("planned");
+    // It is a StateWord (#112): the state and its tone on the element, a glyph beside the word (the word is never colour alone).
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-state", "planned");
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-tone", "info");
+    await expect(page.getByTestId(`rail-planned-${i}`).locator("svg[aria-hidden=true]")).toHaveCount(1);
     await expect(page.getByTestId(`rail-row-${i}`)).toContainText("would arrive, if you run the plan");
   }
   await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(2);

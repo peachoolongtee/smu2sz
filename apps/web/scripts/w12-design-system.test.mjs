@@ -57,3 +57,43 @@ test("SegmentedTabs badge: a number (zero too) or a word is shown, nothing else;
   assert.doesNotMatch(BADGE_CLASS.neutral, /bad/);
   assert.notEqual(BADGE_CLASS.alert, BADGE_CLASS.neutral);
 });
+
+// ---------------------------------------------------------------- StateWord
+import { STATE_KEYS, STATE_LOOK, TONE_INK, TONE_MARK, stateKey } from "../components/ui/state-word-model.ts";
+
+test("StateWord: the twelve states each have a tone and a glyph, and no two states look the same", () => {
+  assert.deepEqual([...STATE_KEYS], ["planned", "arranged", "received", "repaid", "owed", "scheduled", "agreed", "pending", "current", "due_soon", "overdue", "promise_missed"]);
+  for (const k of STATE_KEYS) {
+    assert.ok(STATE_LOOK[k], k);
+    assert.ok(TONE_INK[STATE_LOOK[k].tone] && TONE_MARK[STATE_LOOK[k].tone], k);
+  }
+  const looks = STATE_KEYS.map((k) => `${STATE_LOOK[k].tone}/${STATE_LOOK[k].glyph}`);
+  assert.equal(new Set(looks).size, looks.length, looks.join(" "));
+});
+
+test("StateWord: the tone of a collection state is the page's: overdue and a missed promise red, due soon amber, current green; the plan is blue, never green", () => {
+  assert.equal(STATE_LOOK.overdue.tone, "bad");
+  assert.equal(STATE_LOOK.promise_missed.tone, "bad");
+  assert.equal(STATE_LOOK.due_soon.tone, "warn");
+  assert.equal(STATE_LOOK.current.tone, "ok");
+  assert.equal(STATE_LOOK.planned.tone, "info");
+  assert.equal(STATE_LOOK.arranged.tone, "info");
+  assert.equal(STATE_LOOK.received.tone, "ok");
+  assert.equal(STATE_LOOK.repaid.tone, "ok");
+  assert.notEqual(STATE_LOOK.overdue.glyph, STATE_LOOK.promise_missed.glyph, "a breach and a missed promise are told apart without colour");
+});
+
+test("StateWord: the server's enums map to a state; NONE and a word the browser does not know draw no state", () => {
+  assert.equal(stateKey("DUE_SOON"), "due_soon");
+  assert.equal(stateKey("PROMISE_MISSED"), "promise_missed");
+  assert.equal(stateKey("OVERDUE"), "overdue");
+  assert.equal(stateKey("CURRENT"), "current");
+  assert.equal(stateKey("ARRANGED"), "arranged");
+  assert.equal(stateKey("REPAID"), "repaid");
+  assert.equal(stateKey("OWED"), "owed");
+  assert.equal(stateKey("SCHEDULED"), "scheduled");
+  assert.equal(stateKey("AGREED"), "agreed");
+  assert.equal(stateKey("PENDING"), "pending");
+  assert.equal(stateKey("planned"), "planned");
+  for (const none of ["NONE", "", null, undefined, "SETTLED_OTHERWISE"]) assert.equal(stateKey(none), null, String(none));
+});
