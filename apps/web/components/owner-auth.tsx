@@ -73,7 +73,7 @@ function SignInForm() {
           aria-invalid={error ? true : undefined}
           className={`mt-1 w-full font-mono ${inputClass}`}
         />
-        <p className="mt-1 text-xs text-ink-3">
+        <p className="mt-1 text-meta text-ink-3">
           {DEMO_BUILD ? t("auth.demo.hint") : apiMode === "mock" ? t("auth.mock.hint") : null}
         </p>
       </div>

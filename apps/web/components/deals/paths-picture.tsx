@@ -268,7 +268,7 @@ export function PathsPicture({
 
             {cursorX !== null ? (
               <g data-testid="path-cursor" data-day={cursorDay ?? undefined} data-preview={pday !== null ? "true" : "false"} className="pointer-events-none">
-                <g className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                <g className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
                   <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" data-testid="path-moment-band" />
                   <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                 </g>
@@ -295,7 +295,7 @@ export function PathsPicture({
                   strokeDasharray={hue.dash}
                   strokeWidth={hue.width + (on ? 1.5 : 0)}
                   opacity={on ? 1 : dimmed ? 0.4 : 0.85}
-                  className={`${hue.stroke} ${reduced ? "" : "transition-[opacity,stroke-width] duration-(--dur) ease-out"}`}
+                  className={`${hue.stroke} ${reduced ? "" : "transition-[opacity,stroke-width] duration-(--dur) ease-ui"}`}
                 />
               );
             })}
@@ -312,7 +312,7 @@ export function PathsPicture({
                   const fen = pday !== null ? pointAt(p, pday)?.closing_fen : moment.values.find((x) => x.key === p.key)?.closing_fen;
                   if (fen === undefined) return null;
                   return (
-                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(fen)}px)` }}>
+                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced || pday !== null ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translate(${cursorX}px, ${yOf(fen)}px)` }}>
                       <Marker hue={hueOf(p)} />
                     </g>
                   );
@@ -331,7 +331,7 @@ export function PathsPicture({
           <div
             aria-hidden
             data-testid="path-tooltip"
-            className="pointer-events-none absolute z-10 w-44 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop"
+            className="pointer-events-none absolute z-10 w-44 rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop"
             style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
           >
             <p className="font-bold text-ink">{tipWord}</p>
@@ -429,7 +429,7 @@ export function PathsPicture({
           </div>
 
           {/* The sentence is the moment under the cursor (or the chip being previewed); it is announced once per step by the live region below, never on a preview. */}
-          <p className="min-h-16 text-pretty text-[0.9375rem] font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={cursorDay ?? undefined}>
+          <p className="min-h-16 text-pretty text-body-lg font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={cursorDay ?? undefined}>
             {pday !== null ? (onDay?.text ?? tipWord) : moment?.text}
           </p>
           <div aria-live="polite" className="sr-only" data-testid="path-announce">
@@ -454,22 +454,22 @@ export function PathsPicture({
                   onPointerLeave={() => onHover(null)}
                   className={`min-w-0 rounded-tile border px-2.5 py-2 sm:px-3 ${tone === "bad" ? "border-bad-line bg-bad-bg" : "border-line bg-subtle"}`}
                 >
-                  <p className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
+                  <p className="flex items-center gap-1.5 text-supporting font-bold text-ink-2">
                     <Swatch hue={hueOf(p)} />
                     <span className="min-w-0 break-words">{p.label}</span>
                   </p>
                   <p className={`mt-1 break-words text-base font-extrabold tabular-nums sm:text-lg ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-tile-figure-${i}`}>
                     {pday !== null && !onDay ? (point?.closing_display ?? "—") : v ? (v.closing_short ?? v.closing_display) : "—"}
                   </p>
-                  {pday !== null && !onDay && p.kind !== "asked" ? <p aria-hidden className="invisible text-xs font-semibold">&nbsp;</p> : null}
+                  {pday !== null && !onDay && p.kind !== "asked" ? <p aria-hidden className="invisible text-supporting font-semibold">&nbsp;</p> : null}
                   {p.kind !== "asked" && v?.vs_asked_short ? (
-                    <p className={`text-xs font-semibold ${TONE_INK[v.vs_asked_tone ?? "neutral"]}`} data-testid={`path-tile-vs-${i}`}>
+                    <p className={`text-supporting font-semibold ${TONE_INK[v.vs_asked_tone ?? "neutral"]}`} data-testid={`path-tile-vs-${i}`}>
                       {t("biz.deals.paths.vsAsked", { amount: v.vs_asked_short })}
                     </p>
                   ) : null}
-                  {v?.below_floor && v.note ? <p className="text-xs font-bold text-bad-fg">{v.note}</p> : null}
+                  {v?.below_floor && v.note ? <p className="text-supporting font-bold text-bad-fg">{v.note}</p> : null}
                   {p.assumption_text ? (
-                    <p className="mt-0.5 text-xs text-ink-3" data-testid={`path-tile-assumption-${i}`}>
+                    <p className="mt-0.5 text-supporting text-ink-3" data-testid={`path-tile-assumption-${i}`}>
                       {p.assumption_text}
                     </p>
                   ) : null}
@@ -483,7 +483,7 @@ export function PathsPicture({
               <div className="space-y-2 pt-1">
                 {eventRows.map(({ p, lines }) => (
                   <div key={p.key}>
-                    <p className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
+                    <p className="flex items-center gap-1.5 text-supporting font-bold text-ink-2">
                       <Swatch hue={hueOf(p)} />
                       {p.label}
                     </p>

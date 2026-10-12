@@ -108,10 +108,10 @@ export function QueueDetail({
           {deal.counterparty_name} ›
         </Link>
       </p>
-      <h2 tabIndex={-1} className="text-balance font-display text-lg font-extrabold leading-tight tracking-tight text-ink sm:text-[1.625rem]" data-testid="queue-heading">
+      <h2 tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
         {heading}
       </h2>
-      <p className="text-sm leading-snug text-ink-2 sm:text-[0.9375rem] sm:leading-normal" data-testid="queue-ask">
+      <p className="text-sm leading-snug text-ink-2 sm:text-body-lg sm:leading-normal" data-testid="queue-ask">
         {t("dq.ask", { buyer, asks: open.asks_text })}
       </p>
 
@@ -119,7 +119,7 @@ export function QueueDetail({
         <div className={`flex flex-col gap-0.5 border-l-[3px] py-0.5 pl-3 sm:gap-1 sm:pl-3.5 ${RULE[action ?? "counter"] ?? "border-line-strong"}`} data-testid="queue-why">
           <p className={`${eyebrowCls} ${RULE_INK[action ?? "counter"] ?? "text-ink-3"}`}>{t(`dq.why.${action ?? "counter"}` as DictKey)}</p>
           {ws.why_it_matters.reasons.slice(0, 2).map((r) => (
-            <p key={r} className="text-sm leading-snug text-ink sm:text-[0.9375rem] sm:leading-normal">
+            <p key={r} className="text-sm leading-snug text-ink sm:text-body-lg sm:leading-normal">
               {r}
             </p>
           ))}
@@ -154,16 +154,16 @@ export function QueueDetail({
               {!card ? t("dq.rec.plain") : card.kind === "asked" ? t("biz.deals.reply.cannot") : card.recommended ? t("dq.rec.eyebrow", { label: card.label }) : card.needs_owner ? t("biz.deals.reply.approveFirst", { label: card.label }) : t("biz.deals.reply.eyebrow", { label: card.label })}
             </h3>
           </div>
-          <p className="font-display text-[0.9375rem] font-bold leading-snug text-ink sm:text-[1.0625rem]" data-testid="queue-option">
+          <p className="font-display text-body-lg font-bold leading-snug text-ink sm:text-body-lg" data-testid="queue-option">
             {card ? (card.sendable ? (card.reply_text ?? card.decides_text) : authorityText(card)) : (ws?.recommends.text ?? open.read_text)}
           </p>
           {cost ? (
-            <p className="text-sm leading-snug text-ink sm:text-[0.9375rem]" data-testid="queue-cost">
+            <p className="text-sm leading-snug text-ink sm:text-body-lg" data-testid="queue-cost">
               {cost}
             </p>
           ) : null}
           {card && card.kind === "reply" ? (
-            <p className={`text-sm font-semibold leading-snug sm:text-[0.9375rem] ${AUTHORITY_INK[authorityTone(card)] ?? "text-ink"}`} data-testid="queue-authority" data-authority={card.authority ?? ""} data-tone={authorityTone(card)}>
+            <p className={`text-sm font-semibold leading-snug sm:text-body-lg ${AUTHORITY_INK[authorityTone(card)] ?? "text-ink"}`} data-testid="queue-authority" data-authority={card.authority ?? ""} data-tone={authorityTone(card)}>
               {card.decides_text}
             </p>
           ) : null}
@@ -189,7 +189,7 @@ export function QueueDetail({
                 <Button variant="primary" aria-expanded={false} onClick={() => setReviewing(reviewKey)} data-testid="queue-review-open">
                   {t("dq.review")}
                 </Button>
-                {ws?.priced_response?.recheck_text ? <span className="min-w-0 flex-[1_1_16rem] text-[0.8125rem] text-ink-2">{ws.priced_response.recheck_text}</span> : null}
+                {ws?.priced_response?.recheck_text ? <span className="min-w-0 flex-[1_1_16rem] text-supporting text-ink-2">{ws.priced_response.recheck_text}</span> : null}
               </div>
             )
           ) : null}
@@ -227,7 +227,7 @@ export function QueueDetail({
       {verdict && ws && asked && reply ? (
         <Disclosure testId="queue-compare" className="border-t border-line pt-2" summary={t("dq.compare")}>
           <div className="space-y-3 pt-1">
-            <p className="text-[0.8125rem] text-ink-3">{t("dq.compare.note")}</p>
+            <p className="text-supporting text-ink-3">{t("dq.compare.note")}</p>
             <ImpactTable asked={asked as PicturePath} reply={reply as PicturePath} exposure={exposure} verdict={verdict} buyer={buyer} windowDays={picture?.picture_days ?? null} />
             <AdvancedDetails ws={ws} v={verdict} offer={offer} items={items} asks={asks} only={["source_text", "formula"]} />
           </div>

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "mocks:record": "node scripts/record-mocks.mjs --api http://localhost:8011",
-    "test:unit": "node --no-warnings --import ./scripts/ts-resolve.mjs --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs scripts/w6-demo.test.mjs scripts/timeout.test.mjs scripts/w9-demo-story.test.mjs scripts/customer-href.test.mjs scripts/cash-stress.test.mjs scripts/w11-queue.test.mjs",
+    "test:unit": "node --no-warnings --import ./scripts/ts-resolve.mjs --test scripts/check-mocks.test.mjs scripts/retry.test.mjs scripts/presentation-fallbacks.test.mjs scripts/strategy.test.mjs scripts/w1-trust.test.mjs scripts/w5-collections.test.mjs scripts/chat-prompts.test.mjs scripts/w2-record.test.mjs scripts/w3-flows.test.mjs scripts/w6-demo.test.mjs scripts/timeout.test.mjs scripts/w9-demo-story.test.mjs scripts/customer-href.test.mjs scripts/cash-stress.test.mjs scripts/w11-queue.test.mjs scripts/w12-design-system.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:mock": "E2E_TARGET=mock playwright test",
     "test:e2e:live": "E2E_TARGET=live playwright test"

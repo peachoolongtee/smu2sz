@@ -209,7 +209,7 @@ function TourCard({ steps }: { steps: Step[] }) {
         className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
+        <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
         <h2 id="tour-title" className="mt-1 text-balance text-lg font-semibold leading-snug">
           {t(current.title)}
         </h2>

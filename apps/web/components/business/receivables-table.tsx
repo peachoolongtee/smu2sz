@@ -97,7 +97,7 @@ export function ReceivablesTable({
         <h2 id="recv-open-title" className="text-base font-extrabold text-ink">
           {t("biz.recv.open")}
         </h2>
-        <p className="text-xs text-ink-3">{t("biz.recv.open.sub")}</p>
+        <p className="text-supporting text-ink-3">{t("biz.recv.open.sub")}</p>
       </div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         {showFilters ? (
@@ -138,7 +138,7 @@ export function ReceivablesTable({
                       {worth && n !== undefined ? <span className="mr-1.5 tabular-nums text-ink-3">{n + 1}</span> : null}
                       <CustomerName id={o.counterparty_id}>{buyer}</CustomerName>
                     </span>
-                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-3">
                       <span>
                         {t("biz.due")} {whenText(o.due_day, asOfDay, t)}
                       </span>
@@ -150,7 +150,7 @@ export function ReceivablesTable({
                 {w ? (
                   <div className="mt-2 space-y-1.5 pl-12">
                     <div>
-                      <span className="block text-xs text-ink-3">{t("biz.strategy.worth")}</span>
+                      <span className="block text-supporting text-ink-3">{t("biz.strategy.worth")}</span>
                       <WorthText row={w} testId={`recv-list-worth-${o.receivable_id}`} />
                     </div>
                     <ActionChip action={w.action} />
@@ -267,12 +267,12 @@ export function ReceivablesTable({
 }
 
 const tableCls = "w-full border-collapse text-left text-sm [&_tbody_tr:last-child_td]:border-b-0";
-const thCls = "whitespace-nowrap border-b border-line-strong px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3";
+const thCls = "whitespace-nowrap border-b border-line-strong px-3 py-2 text-meta font-semibold uppercase tracking-wide text-ink-3";
 const tdCls = "border-b border-line px-3 py-3 align-middle";
 
 /** The small heading over a group of rows ("Overdue first", "Ranked by what collecting saves you"); in the table it is the row-group's header cell. */
 function GroupHeading({ children, table = false }: { children: ReactNode; table?: boolean }) {
-  const cls = "text-xs font-semibold uppercase tracking-wide text-ink-3";
+  const cls = "text-meta font-semibold uppercase tracking-wide text-ink-3";
   return table ? <span className={cls}>{children}</span> : <h3 className={`${cls} pb-1 pt-3 first:pt-0`}>{children}</h3>;
 }
 
@@ -282,13 +282,13 @@ function GroupHeading({ children, table = false }: { children: ReactNode; table?
  */
 function RowDetail({ o, w, testId }: { o: OutstandingReceivable; w: ReceivableWorth | undefined; testId: string }) {
   const { t } = useI18n();
-  if (!w) return <p className="font-mono text-xs text-ink-3">{o.receivable_id}</p>;
+  if (!w) return <p className="font-mono text-meta text-ink-3">{o.receivable_id}</p>;
   return (
     <div className="max-w-3xl space-y-2 text-sm">
       {w.no_saving ? null : <WorthSentence row={w} testId={`${testId}-worth`} />}
       <ActionText row={w} testId={testId} />
       <Disclosure summary={t("biz.auditDetails")} testId={`recv-audit-${o.receivable_id}`}>
-        <p className="font-mono text-xs text-ink-3">{o.receivable_id}</p>
+        <p className="font-mono text-meta text-ink-3">{o.receivable_id}</p>
       </Disclosure>
     </div>
   );

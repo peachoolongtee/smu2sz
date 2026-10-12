@@ -147,7 +147,7 @@ function TrajectoryBody({
             showCured={showCured}
           />
         </div>
-        <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
+        <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-meta text-ink-2">
           <li className="flex items-center gap-1.5">
             <span className="inline-block h-0.5 w-5 bg-brand-600" aria-hidden />
             {t("traj.legend.cash")}
@@ -205,7 +205,7 @@ function TrajectoryBody({
       </div>
 
       <Card id="months" title={t("traj.months")} subtitle={t("traj.months.sub")}>
-        {tr.months.length ? <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
+        {tr.months.length ? <p className="mb-2 text-meta text-ink-3">{t("dscr.readingNote")}</p> : null}
         {tr.months.length ? (
           <TableWrap label={t("traj.months")}>
             <table className={tableCls}>
@@ -265,7 +265,7 @@ function TrajectoryBody({
                       <td className={tdCls}>{e.label}</td>
                       <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{e.amount_display}</td>
                       <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{i === d.events.length - 1 ? d.closing_display : ""}</td>
-                      <td className={`${tdCls} font-mono text-xs text-ink-2`}>{e.formula ?? ""}</td>
+                      <td className={`${tdCls} font-mono text-meta text-ink-2`}>{e.formula ?? ""}</td>
                     </tr>
                   )),
                 )}

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { QuoteBlock } from "@/components/approval-card";
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
 import { useI18n } from "@/lib/i18n";
@@ -14,7 +15,7 @@ import { useDecision } from "@/lib/use-decision";
 function Fact({ label, children, testId, figure = false }: { label: string; children: React.ReactNode; testId?: string; figure?: boolean }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
+      <dt className="text-meta font-medium text-ink-3">{label}</dt>
       <dd className={`break-words text-sm text-ink ${figure ? "font-semibold tabular-nums" : ""}`} data-testid={testId}>
         {children}
       </dd>
@@ -34,7 +35,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       <Card id="record-status" tone={tone === "bad" ? "bad" : tone === "warn" || d.residual || awaitsOwner ? "warn" : undefined}>
         <div className="flex flex-wrap items-center gap-3">
           <span data-testid="record-state" data-state={d.state} data-tone={tone}>
-            <StatePill tone={tone}>{d.state_text}</StatePill>
+            <StateWord tone={tone}>{d.state_text}</StateWord>
           </span>
           <p className="min-w-0 flex-1 basis-64 text-sm text-ink" data-testid="record-waiting">
             {d.waiting_for.text}
@@ -59,7 +60,7 @@ function RecordBody({ d }: { d: DecisionView }) {
         </dl>
         {d.residual || d.remaining_task.links.length ? (
           <div className="mt-4 border-t border-line pt-3" data-testid="record-remaining">
-            <p className="text-xs font-medium text-ink-3">{t("rec.remaining")}</p>
+            <p className="text-meta font-medium text-ink-3">{t("rec.remaining")}</p>
             <p className="mt-0.5 text-sm text-ink">{d.residual?.text ?? d.remaining_task.text}</p>
             {d.remaining_task.links.length ? (
               <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-sm">
@@ -109,7 +110,7 @@ function RecordBody({ d }: { d: DecisionView }) {
             </ul>
           ) : null}
           <div className="mt-3 border-t border-line pt-3" data-testid="record-sent">
-            <p className="text-xs font-medium text-ink-3">{t("rec.sent")}</p>
+            <p className="text-meta font-medium text-ink-3">{t("rec.sent")}</p>
             {sent === null ? (
               <p className="text-sm text-ink-2">{t("rec.sent.none")}</p>
             ) : sent.recorded ? (
@@ -118,12 +119,12 @@ function RecordBody({ d }: { d: DecisionView }) {
                   {sent.chosen_label ? t("rec.sent.chosen", { label: sent.chosen_label_text ?? sent.chosen_label }) : t("rec.sent.unbound")} {t("rec.sent.simulated")}
                 </p>
                 {sent.economics ? (
-                  <p className="mt-0.5 text-xs text-ink-2">
+                  <p className="mt-0.5 text-meta text-ink-2">
                     {t("biz.deals.netCost")} {sent.economics.net_display}
                     {sent.economics.basis_facility_name ? ` · ${sent.economics.basis_facility_name}` : ""}
                   </p>
                 ) : null}
-                {sent.funding_blocked ? <p className="mt-0.5 text-xs font-medium text-warn-fg">{sent.funding_blocked}</p> : null}
+                {sent.funding_blocked ? <p className="mt-0.5 text-meta font-medium text-warn-fg">{sent.funding_blocked}</p> : null}
               </div>
             ) : (
               <p className="text-sm text-ink-2">{sent.text}</p>
@@ -171,7 +172,7 @@ function RecordBody({ d }: { d: DecisionView }) {
             {d.operations.map((o) => (
               <li key={o.op_id} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5 text-sm">
                 <span className="min-w-0 flex-1 basis-64 break-words text-ink">{o.event_text ?? o.kind_text ?? o.kind}</span>
-                {o.when ? <span className="text-xs text-ink-3">{o.when}</span> : null}
+                {o.when ? <span className="text-meta text-ink-3">{o.when}</span> : null}
                 <OpStatusBadge status={o.status} />
               </li>
             ))}
@@ -186,7 +187,7 @@ function RecordBody({ d }: { d: DecisionView }) {
               <li key={l.lot_id} className="flex flex-wrap items-baseline gap-x-2">
                 <span className="font-semibold tabular-nums text-ink">{l.principal_display}</span>
                 <span className="text-ink-2">{l.facility_name}</span>
-                <span className={`text-xs font-medium ${l.settled ? "text-ok-fg" : "text-ink-3"}`}>{l.settled ? t("deal.cashReceived", { when: l.arrival_when }) : t("deal.cashArrives", { when: l.arrival_when })}</span>
+                <span className={`text-meta font-medium ${l.settled ? "text-ok-fg" : "text-ink-3"}`}>{l.settled ? t("deal.cashReceived", { when: l.arrival_when }) : t("deal.cashArrives", { when: l.arrival_when })}</span>
               </li>
             ))}
           </ul>
@@ -206,7 +207,7 @@ function RecordBody({ d }: { d: DecisionView }) {
         </Card>
       ) : null}
 
-      <p className="text-xs text-ink-3">
+      <p className="text-meta text-ink-3">
         <Link href={dealHome} className={textLinkClass}>
           {d.family === "DEAL" ? t("rec.openDeals") : t("rec.openApprovals")}
         </Link>

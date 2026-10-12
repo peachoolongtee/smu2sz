@@ -45,7 +45,7 @@ export function StressAside({
 
   return (
     <aside aria-labelledby="recv3-stress-title" aria-busy={loading} className="min-w-0 space-y-3 lg:border-l lg:border-line lg:pl-6" data-testid="recv3-stress">
-      <h2 id="recv3-stress-title" className="text-balance text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+      <h2 id="recv3-stress-title" className="text-balance text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
         {t("recv3.stress.title", { buyer, days })}
       </h2>
       <p className="text-sm text-ink-2">{t("recv3.stress.test", { buyer, days })}</p>

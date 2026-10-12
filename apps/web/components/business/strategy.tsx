@@ -52,7 +52,7 @@ export function ActionText({ row, testId }: { row: ReceivableWorth; testId: stri
     <span className="block" data-testid={testId}>
       <span className="block text-ink-2">{row.action_sentence}</span>
       {row.reason_sentence ? (
-        <span className="mt-0.5 block text-xs text-ink-2" data-testid={`${testId}-reason`}>
+        <span className="mt-0.5 block text-supporting text-ink-2" data-testid={`${testId}-reason`}>
           {row.reason_sentence}
         </span>
       ) : null}
@@ -67,7 +67,7 @@ export function ActionText({ row, testId }: { row: ReceivableWorth; testId: stri
 export function RankingNote({ worth }: { worth: ReceivablesWorthView }) {
   const { t } = useI18n();
   return (
-    <p className="min-w-0 text-xs text-ink-3" data-testid="recv-ranking-note">
+    <p className="min-w-0 text-supporting text-ink-3" data-testid="recv-ranking-note">
       {worth.ranking_note || t("biz.recv.ranking.default")}
     </p>
   );

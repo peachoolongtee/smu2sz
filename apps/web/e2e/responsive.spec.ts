@@ -91,8 +91,11 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
   for (const route of BUSINESS_ROUTES) {
     await page.goto(route);
     await expect(page.locator("h1")).toHaveCount(1);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const covered = await page.evaluate(() => {
+    // The h1 is there before the page's data is: wait for the reads to settle, then scroll and measure until the measure holds (content that arrives late grows the page under the scroll).
+    await page.waitForLoadState("networkidle");
+    const measure = () =>
+      page.evaluate(() => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
       const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
       const bar = document.querySelector('[data-testid="tab-bar"]');
       const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
@@ -106,7 +109,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
         return hitsChat || r.bottom > barTop;
       }).length;
     });
-    expect(covered, `${route}: controls under the bar or Ask FLOW at the end of the page`).toBe(0);
+    await expect.poll(measure, { message: `${route}: controls under the bar or Ask FLOW at the end of the page`, timeout: 8000 }).toBe(0);
   }
 });
 

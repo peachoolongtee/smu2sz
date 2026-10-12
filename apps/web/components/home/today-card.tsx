@@ -41,7 +41,7 @@ export function TodayCard({ onAdvanced, folded = false }: { onAdvanced: () => vo
 
   const body = (
     <>
-      {folded ? <p className="mb-3 text-xs text-ink-3">{t("home.today.sub")}</p> : null}
+      {folded ? <p className="mb-3 text-supporting text-ink-3">{t("home.today.sub")}</p> : null}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <p className="text-3xl font-semibold tabular-nums text-ink" data-testid="home-day" aria-live="polite">
           {clock.data ? t("common.dayN", { n: clock.data.day }) : "…"}
@@ -54,7 +54,7 @@ export function TodayCard({ onAdvanced, folded = false }: { onAdvanced: () => vo
             void advance(Number(days));
           }}
         >
-          <label className="text-xs font-medium text-ink-3">
+          <label className="text-supporting font-medium text-ink-3">
             {t("home.demo.days")}
             <input
               type="number"
@@ -80,9 +80,9 @@ export function TodayCard({ onAdvanced, folded = false }: { onAdvanced: () => vo
           </span>
         </form>
       </div>
-      <p className="mt-3 text-xs text-ink-3">{t("home.demo.hint")}</p>
+      <p className="mt-3 text-supporting text-ink-3">{t("home.demo.hint")}</p>
       {message ? (
-        <p className="mt-2 text-xs text-ink-2" role="status" data-testid="home-moved">
+        <p className="mt-2 text-supporting text-ink-2" role="status" data-testid="home-moved">
           {t("home.demo.moved", { message })}
         </p>
       ) : null}

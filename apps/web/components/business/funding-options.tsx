@@ -124,13 +124,13 @@ function Row({ c, name, recommended, chosen, maxTotal, onChoose }: { c: Option; 
         </span>
         <span className="min-w-0 space-y-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {ranked ? <span className="text-xs font-semibold tabular-nums text-ink-3">{t("biz.option.rank", { n: c.rank as number })}</span> : null}
+            {ranked ? <span className="text-supporting font-semibold tabular-nums text-ink-3">{t("biz.option.rank", { n: c.rank as number })}</span> : null}
             <span className={`text-sm ${c.selected || recommended ? "font-semibold" : "font-medium"} text-ink`}>{name}</span>
             <Badge tone={recommended ? "brand" : "neutral"} dot={false}>{t(ROLE_KEY[group])}</Badge>
-            {chosen && hasLine ? <span className="text-xs font-semibold text-brand-700">{t("biz.cash.opt.onChart")}</span> : null}
+            {chosen && hasLine ? <span className="text-supporting font-semibold text-brand-700">{t("biz.cash.opt.onChart")}</span> : null}
           </span>
           {legs || reason ? (
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2" data-testid="cash-option-legs">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-2" data-testid="cash-option-legs">
               {legs ? <span className="tabular-nums">{legs}</span> : null}
               {reason ? <Chip wrap>{reason}</Chip> : null}
             </span>
@@ -146,7 +146,7 @@ function Row({ c, name, recommended, chosen, maxTotal, onChoose }: { c: Option; 
                 {coveredFen > 0 ? <span className="rounded-[3px] bg-ok-solid" style={{ flex: `${coveredFen} 1 0` }} /> : null}
                 {gapFen > 0 ? <span className="rounded-[3px] bg-bad-solid" style={{ flex: `${gapFen} 1 0` }} /> : null}
               </span>
-              <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-ink-2">
+              <span className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-supporting text-ink-2">
                 <span className="inline-flex items-center gap-1.5">
                   <span aria-hidden className="size-2 rounded-[2px] bg-ok-solid" />
                   {t("biz.cash.opt.covered")}
@@ -176,19 +176,19 @@ function Row({ c, name, recommended, chosen, maxTotal, onChoose }: { c: Option; 
             </span>
           ) : null}
           {c.basis_text ? (
-            <span className="block text-xs text-ink-3" data-testid="cash-option-basis">
+            <span className="block text-supporting text-ink-3" data-testid="cash-option-basis">
               {c.basis_text}
             </span>
           ) : null}
           {/* A plan the server could not project has no line: it says why, and the picture stays on the baseline. */}
           {!hasLine ? (
-            <span className="block text-xs text-ink-3" data-testid="cash-option-series-note">
+            <span className="block text-supporting text-ink-3" data-testid="cash-option-series-note">
               {c.series_note ?? t("biz.cash.opt.noLine")}
             </span>
           ) : null}
         </span>
         <span className="col-span-2 col-start-2 min-w-0 sm:col-span-1 sm:col-start-3 sm:row-start-1">
-          <span className="block text-xs font-medium text-ink-3">{t("biz.cash.opt.cost")}</span>
+          <span className="block text-supporting font-medium text-ink-3">{t("biz.cash.opt.cost")}</span>
           <span className="block text-base font-bold tabular-nums text-ink" data-testid="cash-option-total">{total}</span>
           <span aria-hidden className="mt-1 block h-1.5 w-full rounded-pill bg-subtle" data-testid="cash-option-cost-bar" data-pct={Math.round(costPct)}>
             <span className="block h-full rounded-pill bg-brand-600" style={{ width: `${costPct}%` }} />
@@ -197,7 +197,7 @@ function Row({ c, name, recommended, chosen, maxTotal, onChoose }: { c: Option; 
       </label>
       {hasMore ? (
         <Disclosure testId="cash-option-details" className="pl-9" summary={t("biz.cash.opt.why")}>
-          <div className="space-y-1.5 pb-3 text-xs text-ink-2" data-testid="cash-option-why">
+          <div className="space-y-1.5 pb-3 text-supporting text-ink-2" data-testid="cash-option-why">
             {why ? <p data-testid={status === "unavailable" || status === "blocked" ? "cash-option-unavailable-note" : status === "alternative" ? "cash-option-alternative-note" : undefined}>{why}</p> : null}
             {notes}
           </div>
@@ -250,13 +250,13 @@ export function FundingOptions({
   return (
     <div className="space-y-4" data-testid="cash-options-list" role="radiogroup" aria-label={t("biz.cash.opt.group")}>
       {orderText ? (
-        <p className="text-xs text-ink-2" data-testid="cash-options-order">
+        <p className="text-supporting text-ink-2" data-testid="cash-options-order">
           {orderText}
         </p>
       ) : null}
       {chunks(options).map((g) => (
         <div key={`${g.group}-${g.rows[0].key ?? g.rows[0].label}`} data-testid={`cash-options-${g.group}`} data-group={g.group}>
-          <h3 className="border-b border-line px-2 pb-1.5 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{g.heading ?? fallbackHeading(g.group)}</h3>
+          <h3 className="border-b border-line px-2 pb-1.5 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{g.heading ?? fallbackHeading(g.group)}</h3>
           <ul className="motion-rise divide-y divide-line">
             {g.rows.map((c) => (
               <Row key={rowKey(c)} c={c} name={optionName(c, menu, t)} recommended={isRecommended(c)} chosen={chosenKey === rowKey(c)} maxTotal={maxTotal} onChoose={() => onChoose(rowKey(c))} />

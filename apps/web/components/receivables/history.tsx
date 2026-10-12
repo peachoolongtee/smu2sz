@@ -21,7 +21,7 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
       <section id="recv-promised" aria-labelledby="recv-promised-title">
         <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 border-b border-line-strong pb-2">
           <div>
-            <h2 id="recv-promised-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            <h2 id="recv-promised-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {t("biz.recv.promised")}
             </h2>
             <p className="text-sm text-ink-3">{t("biz.recv.promised.sub")}</p>
@@ -56,7 +56,7 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
     {data.receipts.length ? (
       <section id="recv-receipts" aria-labelledby="recv-receipts-title">
         <div className="mb-1 border-b border-line-strong pb-2">
-          <h2 id="recv-receipts-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+          <h2 id="recv-receipts-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.recv.receipts")}
           </h2>
           <p className="text-sm text-ink-3">{t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}</p>

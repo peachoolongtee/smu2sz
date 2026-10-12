@@ -45,7 +45,7 @@ export default function LimitsPage() {
           <Disclosure className="border-t border-line pt-1" summary={t("biz.auditDetails")}>
             <div className="space-y-2 text-sm text-ink-2">
               <p>
-                {t("mandate.signature")}: <Badge tone={v.signature.status === "VALID" ? "ok" : "bad"}>{te("sigstatus", v.signature.status)}</Badge> <span className="text-xs">{v.signature.algorithm} · {v.signature.key_fingerprint}</span>
+                {t("mandate.signature")}: <Badge tone={v.signature.status === "VALID" ? "ok" : "bad"}>{te("sigstatus", v.signature.status)}</Badge> <span className="text-meta">{v.signature.algorithm} · {v.signature.key_fingerprint}</span>
               </p>
               <p className="flex items-center gap-1">
                 {t("mandate.sig")}: <Hash value={m.signature_hex} />

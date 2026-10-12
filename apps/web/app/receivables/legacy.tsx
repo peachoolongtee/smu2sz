@@ -20,9 +20,9 @@ import { WhoPaysWhen } from "@/components/business/who-pays-when";
 function Fact({ label, caption, children, last = false }: { label: string; caption?: React.ReactNode; children: React.ReactNode; last?: boolean }) {
   return (
     <div className={`min-w-0 flex-1 basis-44 py-1 sm:px-5 sm:first:pl-0 ${last ? "" : "sm:border-r sm:border-line"}`}>
-      <dt className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{label}</dt>
+      <dt className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{label}</dt>
       <dd className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.01em] text-ink">{children}</dd>
-      {caption ? <dd className="mt-0.5 text-xs text-ink-3">{caption}</dd> : null}
+      {caption ? <dd className="mt-0.5 text-meta text-ink-3">{caption}</dd> : null}
     </div>
   );
 }
@@ -93,7 +93,7 @@ export function LegacyReceivables() {
       {r?.headline && (r.headline_tone === "bad" || r.headline_tone === "warn") ? (
         // The server's tone as a status pill above the heading, built like Home's; the heading itself stays in the ink colour.
         <span
-          className={`mb-2 inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.06em] ${r.headline_tone === "bad" ? "border-bad-line bg-bad-bg text-bad-fg" : "border-warn-line bg-warn-bg text-warn-fg"}`}
+          className={`mb-2 inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-meta font-extrabold uppercase tracking-[0.06em] ${r.headline_tone === "bad" ? "border-bad-line bg-bad-bg text-bad-fg" : "border-warn-line bg-warn-bg text-warn-fg"}`}
           data-testid="recv-status-word"
           data-tone={r.headline_tone}
         >
@@ -158,7 +158,7 @@ export function LegacyReceivables() {
           {someoneLate && chaseTarget ? (
             <ActionBar aria-label={t("biz.chase.button")} data-testid="recv-top-action">
               <div className="min-w-0 flex-[2_1_20rem]">
-                <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
+                <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
                 {worth?.top_action_second && !worth.no_plan ? (
                   <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="recv-top-action-second">
                     {worth.top_action_second}

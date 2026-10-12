@@ -154,7 +154,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         <section
           ref={detailRef}
           aria-labelledby="recv3-detail-eyebrow"
-          className="grid scroll-mt-20 gap-6 rounded-card border border-line bg-surface p-5 shadow-card lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
+          className="grid scroll-mt-20 gap-6 card-standard p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
           data-testid="recv3-selected"
         >
           <p role="status" aria-live="polite" className="sr-only" data-testid="recv3-announce">

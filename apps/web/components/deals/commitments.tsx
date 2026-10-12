@@ -111,7 +111,7 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c:
           );
         })}
       </ul>
-      <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+      <dl className="mt-3 grid grid-cols-1 gap-2 text-supporting sm:grid-cols-2">
         <div>
           <dt className="text-ink-3">{t("biz.deals.giveawaysBooked")}</dt>
           <dd className="font-medium tabular-nums text-ink">{c.forward_value_display}</dd>

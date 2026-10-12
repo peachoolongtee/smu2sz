@@ -28,7 +28,7 @@ const C = {
   sky: "var(--color-chart-sky)",
 };
 const SLICES = [C.cash, C.deal, C.plan, C.sky, C.navy];
-const axisProps = { stroke: C.axis, fontSize: 12, tickLine: false } as const;
+const axisProps = { stroke: C.axis, fontSize: 13, tickLine: false } as const;
 
 /** The buyer-contract terms that move money or time, in the order an owner asks about them. */
 const BUYER_TILES: ContractFieldName[] = ["PRICE", "PAYMENT_TERMS", "EARLY_PAYMENT", "LATE_INTEREST", "INVOICING", "DURATION"];
@@ -80,8 +80,8 @@ export function DealPicture({ doc }: { doc: DocumentView }) {
       {tiles.length ? (
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" data-testid="deal-picture-terms">
           {tiles.map((x) => (
-            <div key={x.key} className="min-w-0 rounded-tile border border-line bg-surface p-4 shadow-card">
-              <dt className="text-xs font-bold uppercase tracking-wide text-ink-3">{x.label}</dt>
+            <div key={x.key} className="min-w-0 rounded-tile border border-line bg-surface p-4">
+              <dt className="text-meta font-bold uppercase tracking-wide text-ink-3">{x.label}</dt>
               <dd className={`mt-1.5 break-words text-base font-bold leading-snug ${x.value ? "text-ink" : "text-ink-3"}`}>{x.value ?? t("pic.notInContract")}</dd>
             </div>
           ))}
@@ -152,10 +152,10 @@ function PictureBody({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       {/* Cash position */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-cash">
+      <figure className="card-standard min-w-0 p-5" data-testid="deal-picture-cash">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.cash")}</h3>
-          <p className="mt-0.5 text-xs text-ink-3">{t(lender ? "pic.cash.lender" : "pic.cash.sub", { n: span, name })}</p>
+          <p className="mt-0.5 text-supporting text-ink-3">{t(lender ? "pic.cash.lender" : "pic.cash.sub", { n: span, name })}</p>
         </figcaption>
         <dl className="mt-4 grid grid-cols-3 gap-3">
           <Figure label={t("pic.cashToday")} value={cash.cash_short} />
@@ -180,11 +180,11 @@ function PictureBody({
               <Area type="stepAfter" dataKey="cash" stroke={C.cash} strokeWidth={2.5} fill="url(#pic-cash-fill)" isAnimationActive={false} />
               {!lender ? <Bar dataKey="deal" fill={C.deal} barSize={10} radius={[4, 4, 0, 0]} isAnimationActive={false} /> : null}
               {showPlan ? <Line type="stepAfter" dataKey="plan" stroke={C.plan} strokeWidth={2} strokeDasharray="8 5" dot={false} isAnimationActive={false} /> : null}
-              <ReferenceLine y={cash.floor_fen} stroke={C.reserve} strokeDasharray="6 4" label={{ value: t("pic.reserveLine", { amount: cash.floor_short }), position: "insideTopRight", fill: C.reserve, fontSize: 12 }} />
+              <ReferenceLine y={cash.floor_fen} stroke={C.reserve} strokeDasharray="6 4" label={{ value: t("pic.reserveLine", { amount: cash.floor_short }), position: "insideTopRight", fill: C.reserve, fontSize: 13 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-2">
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-supporting text-ink-2">
           <Legend color={C.cash} label={t("pic.legend.cash")} />
           {!lender ? <Legend color={C.deal} label={t("pic.legend.deal", { name })} /> : null}
           {showPlan ? <Legend color={C.plan} label={t("pic.legend.plan")} dashed /> : null}
@@ -193,10 +193,10 @@ function PictureBody({
       </figure>
 
       {/* Cash you can reach */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-reach">
+      <figure className="card-standard min-w-0 p-5" data-testid="deal-picture-reach">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.reach")}</h3>
-          <p className="mt-0.5 text-xs text-ink-3">{t("pic.reach.sub")}</p>
+          <p className="mt-0.5 text-supporting text-ink-3">{t("pic.reach.sub")}</p>
         </figcaption>
         <div className="mt-3 flex flex-col items-center gap-4">
           <div className="relative size-40 shrink-0" role="img" aria-label={reach.map((r) => `${r.name} ${r.display}`).join(", ")}>
@@ -211,7 +211,7 @@ function PictureBody({
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
               <span>
-                <span className="block text-xs font-bold uppercase tracking-wide text-ink-3">{t("pic.reach.cash")}</span>
+                <span className="block text-meta font-bold uppercase tracking-wide text-ink-3">{t("pic.reach.cash")}</span>
                 <span className="block font-display text-lg text-ink">{cash.cash_short}</span>
               </span>
             </div>
@@ -231,10 +231,10 @@ function PictureBody({
       </figure>
 
       {/* Loans and credit lines */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card lg:col-span-2" data-testid="deal-picture-loans">
+      <figure className="card-standard min-w-0 p-5 lg:col-span-2" data-testid="deal-picture-loans">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.loans")}</h3>
-          <p className="mt-0.5 text-xs text-ink-3">{t("pic.loans.sub")}</p>
+          <p className="mt-0.5 text-supporting text-ink-3">{t("pic.loans.sub")}</p>
         </figcaption>
         <ul className="mt-3 grid gap-x-8 md:grid-cols-2">
           {facilities.map((f) => (
@@ -242,12 +242,12 @@ function PictureBody({
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                 <span className="min-w-0 text-sm font-bold text-ink">
                   {f.name}
-                  {f.id === focusFacility ? <span className="ml-2 rounded-pill bg-surface px-2 py-px text-xs font-bold text-sec-deals-fg">{t("pic.thisDoc")}</span> : null}
+                  {f.id === focusFacility ? <span className="ml-2 rounded-pill bg-surface px-2 py-px text-supporting font-bold text-sec-deals-fg">{t("pic.thisDoc")}</span> : null}
                 </span>
                 <span className="text-sm font-bold tabular-nums text-ink">{t("pic.rateAt", { rate: f.rate_display })}</span>
               </div>
               <Meter used={f.drawn_fen} limit={f.limit_fen} />
-              <p className="mt-1 text-xs text-ink-3">{t("pic.drawnOf", { drawn: f.drawn_display, limit: f.limit_display })}</p>
+              <p className="mt-1 text-supporting text-ink-3">{t("pic.drawnOf", { drawn: f.drawn_display, limit: f.limit_display })}</p>
             </li>
           ))}
           {debts.map((d) => (
@@ -256,7 +256,7 @@ function PictureBody({
                 <span className="min-w-0 text-sm font-bold text-ink">{d.label}</span>
                 {d.rate_display ? <span className="text-sm font-bold tabular-nums text-ink">{t("pic.rateAt", { rate: d.rate_display })}</span> : null}
               </div>
-              <p className="mt-1 text-xs text-ink-3">{t("pic.loanLine", { principal: d.principal_display, monthly: d.monthly_debt_service_display })}</p>
+              <p className="mt-1 text-supporting text-ink-3">{t("pic.loanLine", { principal: d.principal_display, monthly: d.monthly_debt_service_display })}</p>
             </li>
           ))}
         </ul>
@@ -268,9 +268,9 @@ function PictureBody({
 function Figure({ label, value, sub, tone }: { label: string; value: string; sub?: string | null; tone?: "ok" | "warn" | "bad" }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-bold uppercase tracking-wide text-ink-3">{label}</dt>
+      <dt className="text-meta font-bold uppercase tracking-wide text-ink-3">{label}</dt>
       <dd className={`mt-0.5 font-display text-lg tabular-nums sm:text-xl ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-ink"}`}>{value}</dd>
-      {sub ? <dd className="text-xs text-ink-3">{sub}</dd> : null}
+      {sub ? <dd className="text-supporting text-ink-3">{sub}</dd> : null}
     </div>
   );
 }
@@ -312,7 +312,7 @@ function RowTooltip({
   if (!active || !payload?.length) return null;
   const r = payload[0].payload;
   return (
-    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop">
+    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop">
       <p className="font-bold text-ink">
         {dayText(r.day)}
       </p>

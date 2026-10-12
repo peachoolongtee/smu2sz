@@ -310,7 +310,7 @@ function Deals() {
         </ul>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <ButtonLink href="/chat">{t("biz.deals.clarify")}</ButtonLink>
-          <Disclosure className="text-xs" summary={t("biz.auditDetails")}>
+          <Disclosure className="text-supporting" summary={t("biz.auditDetails")}>
             <ul className="mt-1 list-disc pl-5 font-mono">
               {offer.offer.abstentions.map((a) => (
                 <li key={a.field} className="break-all">

@@ -82,7 +82,7 @@ export function PlanCard({
               {plan.actions.map((a, i) => (
                 <tr key={i}>
                   <td className={`${tdCls} font-medium`}>{te("action", a.kind)}</td>
-                  <td className={`${tdCls} font-mono text-xs`}>
+                  <td className={`${tdCls} font-mono text-meta`}>
                     {a.facility_id}
                     {a.receivable_id ? ` · ${a.receivable_id}` : ""}
                   </td>
@@ -102,7 +102,7 @@ export function PlanCard({
         </TableWrap>
 
         <div>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("plan.costs")}</h3>
+          <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("plan.costs")}</h3>
           <ul className="divide-y divide-line rounded-tile border border-line">
             {plan.costs.map((c) => (
               <li key={c.label} className="space-y-1.5 px-3 py-2">
@@ -133,7 +133,7 @@ export function PlanCard({
             {plan.violations.map((v) => (
               <li key={v.code} className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
                 <PlainCode code={v.code} tone="warn" /> <span className="ml-1">{said(v.message, v.message_when)}</span>
-                {v.cure_note ? <p className="mt-1 text-xs">{said(v.cure_note, v.cure_note_when)}</p> : null}
+                {v.cure_note ? <p className="mt-1 text-supporting">{said(v.cure_note, v.cure_note_when)}</p> : null}
               </li>
             ))}
           </ul>
@@ -141,7 +141,7 @@ export function PlanCard({
 
         {plan.rejected.length ? (
           <div>
-            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("plan.rejected")}</h3>
+            <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("plan.rejected")}</h3>
             <ul className="space-y-2">
               {plan.rejected.map((r) => (
                 <li key={r.label} className="rounded-tile border border-line px-3 py-2 text-sm">

@@ -352,9 +352,17 @@ test("section 3: the window switch widens the picture", async ({ page }) => {
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "36");
   await page.getByTestId("home-window-60").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
-  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-selected", "true");
   await page.getByTestId("home-window-120").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "120");
+  // The window switch is a SegmentedTabs tablist (#112): tabs of 44 px, one tab stop, the arrows move the choice.
+  await expect(page.getByRole("tablist").filter({ has: page.getByTestId("home-window-60") })).toBeVisible();
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("role", "tab");
+  expect((await page.getByTestId("home-window-60").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByTestId("home-window-120").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
+  await expect(page.getByTestId("home-window-60")).toBeFocused();
 });
 
 test("section 3: the scenario switch is absent while the server says stress is not available", async ({ page }) => {
@@ -496,18 +504,18 @@ test("a phone (390 x 844): the primary is in the first screen, the rail sits bel
   await page.getByTestId(`rail-row-${LOWEST}`).click();
   await expect(page.getByTestId("rail-explain")).toHaveText(rail0Explain(LOWEST));
   // The h1 is 24 px here.
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "24px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "26px");
 });
 
 const rail0Explain = (i: number) => rail(day0)[i].explain;
 
-test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 34 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
+test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 36 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
   await open(page);
   const chart = (await page.getByTestId("home-chart").boundingBox())!;
   const rail = (await page.getByTestId("home-rail").boundingBox())!;
   expect(rail.x).toBeGreaterThanOrEqual(chart.x + chart.width);
   expect(Math.round(rail.width)).toBe(312);
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "34px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "36px");
   await expect(page.getByTestId("home-headline")).toHaveCSS("font-weight", "800");
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -567,7 +575,7 @@ test("section 3: a rail longer than the picture widens the window with its own o
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "62");
   await expect(page.getByTestId("home-widened")).toHaveText("Showing 62 days so every key event appears.");
   // The owner's own choices stay what they are: the first window is still the one pressed.
-  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-selected", "true");
 });
 
 test("section 3: reduced motion carries no transition on the cursor; with motion allowed it eases", async ({ page }) => {
@@ -615,7 +623,7 @@ test("the older Home renders exactly when the server sends none of the hybrid's 
   await expect(page.getByTestId("home-next-action").getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(page.getByTestId("home-picture")).toBeVisible();
   await expect(page.getByTestId("picture-chips")).toContainText("Payroll");
-  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
   await expect(page.getByTestId("home-deals")).toBeVisible();
@@ -675,6 +683,10 @@ test("a landing that only the plan would bring says 'planned' beside its amount;
   expect(planned).toEqual([0, 1]); // the credit line draw and the invoice financing
   for (const i of planned) {
     await expect(page.getByTestId(`rail-planned-${i}`)).toHaveText("planned");
+    // It is a StateWord (#112): the state and its tone on the element, a glyph beside the word (the word is never colour alone).
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-state", "planned");
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-tone", "info");
+    await expect(page.getByTestId(`rail-planned-${i}`).locator("svg[aria-hidden=true]")).toHaveCount(1);
     await expect(page.getByTestId(`rail-row-${i}`)).toContainText("would arrive, if you run the plan");
   }
   await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(2);
@@ -814,6 +826,8 @@ test("a phone (390 x 844), Chinese: the effect table and the planned rows stay i
 
 test("axe: no serious or critical finding on the hybrid Home, in both scenarios, at 1440 and at 390", async ({ page }) => {
   const scan = async (label: string) => {
+    // Under reduced motion a fold's opacity still eases (#112): read the settled colours.
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
     const result = await new AxeBuilder({ page }).analyze();
     const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), label).toEqual([]);

@@ -108,23 +108,23 @@ function VerdictBody({
       <Card id="outcome" tone={verdict.outcome === "REJECT" ? "bad" : verdict.outcome === "ACCEPT" ? "ok" : "warn"}>
         <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
           <div>
-            <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.outcome")}</p>
+            <p className="mb-1 text-meta font-medium text-ink-3">{t("verdict.outcome")}</p>
             <span data-testid="outcome-badge">
               <OutcomeBadge outcome={verdict.outcome} large />
             </span>
           </div>
           <div className="min-w-0 flex-1 basis-72">
             <p className="text-sm leading-relaxed">{verdict.summary}</p>
-            <p className="mt-2 font-mono text-xs text-ink-3">
+            <p className="mt-2 font-mono text-meta text-ink-3">
               {verdict.id} &middot; {offerId} &middot; {t("verdict.versions", { m: verdict.mandate_version, s: verdict.state_version, c: verdict.calc_version })}
             </p>
           </div>
           <div className="min-w-44">
-            {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-xs font-medium text-ink-3">{t("verdict.tier")}</p> : null}
+            {outcomeHasTier(verdict.outcome) ? <p className="mb-1 text-meta font-medium text-ink-3">{t("verdict.tier")}</p> : null}
             {outcomeHasTier(verdict.outcome) ? (
               <>
                 <TierBadge tier={verdict.required_tier} />
-                <p className="mt-1 max-w-56 text-xs text-ink-2">{te("tier.short", verdict.required_tier)}</p>
+                <p className="mt-1 max-w-56 text-meta text-ink-2">{te("tier.short", verdict.required_tier)}</p>
               </>
             ) : (
               <p className="max-w-56 text-sm text-ink-2" data-testid="nothing-executed">
@@ -174,8 +174,8 @@ function VerdictBody({
                     </span>
                     {c.label}
                   </p>
-                  {c.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{c.formula}</p> : null}
-                  {c.code === "DSCR_MIN" ? <p className="mt-0.5 text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
+                  {c.formula ? <p className="mt-0.5 font-mono text-meta text-ink-3">{c.formula}</p> : null}
+                  {c.code === "DSCR_MIN" ? <p className="mt-0.5 text-meta text-ink-3">{t("dscr.readingNote")}</p> : null}
                 </div>
                 <p className="text-sm tabular-nums">
                   <span className="font-semibold">{c.observed}</span>
@@ -208,7 +208,7 @@ function VerdictBody({
               <tbody>
                 {verdict.concession_values.map((c) => (
                   <tr key={c.obligation_id}>
-                    <td className={`${tdCls} font-mono text-xs`}>{c.obligation_id}</td>
+                    <td className={`${tdCls} font-mono text-meta`}>{c.obligation_id}</td>
                     <td className={`${tdCls} text-right font-medium tabular-nums`}>{c.value_display}</td>
                     <td className={`${tdCls} text-right tabular-nums`}>{c.per_invoice_display ?? t("common.none")}</td>
                     <td className={`${tdCls} min-w-72`}>
@@ -279,7 +279,7 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
               { value: "hard_line", label: t("neg.hardLine") },
             ]}
           />
-          <p className="text-xs text-ink-3">{t("neg.hidden")}</p>
+          <p className="text-meta text-ink-3">{t("neg.hidden")}</p>
           <div>
             <Button variant="primary" loading={busy} onClick={() => void run()}>
               {t("neg.run")}
@@ -299,7 +299,7 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
           <ol className="space-y-2" aria-label={t("neg.rounds")}>
             {negotiation.rounds.map((r) => (
               <li key={r.round} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-tile border border-line px-3 py-2 text-sm">
-                <span className="font-mono text-xs text-ink-3">{t("neg.round", { n: r.round })}</span>
+                <span className="font-mono text-meta text-ink-3">{t("neg.round", { n: r.round })}</span>
                 <span className="font-medium">{r.counter_label ?? t("common.none")}</span>
                 <Badge tone={r.buyer_response === "ACCEPT" ? "ok" : "bad"}>{r.buyer_response === "ACCEPT" ? t("neg.accepted") : t("neg.refused")}</Badge>
                 <span className="text-ink-2">&ldquo;{r.buyer_text}&rdquo;</span>
@@ -314,7 +314,7 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
                 items={[
                   { k: t("neg.commitment.id"), v: negotiation.commitment.id },
                   { k: t("neg.commitment.status"), v: negotiation.commitment.status },
-                  { k: t("neg.commitment.nonce"), v: <span className="font-mono text-xs">{negotiation.commitment.nonce}</span> },
+                  { k: t("neg.commitment.nonce"), v: <span className="font-mono text-meta">{negotiation.commitment.nonce}</span> },
                   { k: t("neg.commitment.expires"), v: t("common.dayN", { n: negotiation.commitment.expires_day }) },
                   { k: t("neg.commitment.forward"), v: negotiation.commitment.forward_value_display },
                   { k: t("neg.commitment.hash"), v: <Hash value={negotiation.commitment.terms_hash} /> },
@@ -324,9 +324,9 @@ function NegotiationPanel({ offerId, negotiation }: { offerId: string; negotiati
           ) : null}
 
           <div>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("neg.operations")}</p>
+            <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("neg.operations")}</p>
             <OperationsList ops={negotiation.operations} />
-            <p className="mt-2 text-xs">
+            <p className="mt-2 text-meta">
               <Link href="/ledger" className="font-medium text-brand-700 underline underline-offset-2">
                 {t("neg.openLedger")}
               </Link>

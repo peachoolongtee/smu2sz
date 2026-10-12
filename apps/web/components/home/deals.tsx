@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { StageTrack } from "@/components/deals/stage-track";
 import { contractsOff } from "@/components/documents";
-import { ButtonLink, ErrorState, LoadingBlock, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { ButtonLink, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { getDeals } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
@@ -52,9 +53,9 @@ function DealRow({ deal }: { deal: DealView }) {
           <Avatar tone={toneFor(deal.counterparty_name)}>{initials(deal.counterparty_name)}</Avatar>
           <h3 className="break-words text-base font-extrabold text-ink">{deal.counterparty_name}</h3>
           {deal.needs_you_text ? (
-            <StatePill tone="warn" testId={`home-deal-needs-${deal.counterparty_id}`}>
+            <StateWord tone="warn" testId={`home-deal-needs-${deal.counterparty_id}`}>
               {deal.needs_you_text}
-            </StatePill>
+            </StateWord>
           ) : null}
           <span className="text-sm text-ink-3">{t("biz.homeDeals.received", { when: open.received_when })}</span>
         </div>
@@ -63,14 +64,14 @@ function DealRow({ deal }: { deal: DealView }) {
         </div>
         <div className="grid gap-x-9 gap-y-3 md:grid-cols-2" data-testid={`home-deal-offer-${deal.counterparty_id}`}>
           <div className="min-w-0">
-            <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.asks")}</h4>
+            <h4 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.asks")}</h4>
             <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-asks">
               {open.asks_text}
             </p>
           </div>
           {readParts.length ? (
             <div className="min-w-0">
-              <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.read")}</h4>
+              <h4 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.read")}</h4>
               <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-read">
                 {readParts.map((part, i) => (
                   <span key={i}>
@@ -107,9 +108,9 @@ function DealRow({ deal }: { deal: DealView }) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="break-words text-base font-extrabold text-ink">{deal.counterparty_name}</h3>
             {deal.pills?.map((p) => (
-              <StatePill key={p.label} tone={toneOf(p.tone)}>
+              <StateWord key={p.label} tone={toneOf(p.tone)}>
                 {p.label}
-              </StatePill>
+              </StateWord>
             ))}
           </div>
           {meta ? <p className="break-words text-sm text-ink-3">{meta}</p> : null}
@@ -149,7 +150,7 @@ export function HomeDeals({ deals, loading, failed, onRetry }: { deals: DealView
   return (
     <section aria-labelledby="home-deals-title" className="pt-1" data-testid="home-deals">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="home-deals-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <h2 id="home-deals-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
           {t("biz.homeDeals.title")}
         </h2>
         <Link href="/deals" className={`${textLinkClass} text-sm font-bold`} data-testid="home-deals-all">

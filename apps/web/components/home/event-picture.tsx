@@ -2,8 +2,10 @@
 
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
-import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
-import { SegmentedButtons } from "@/components/ui";
+import { BasisLine, BasisRows, type BasisRow } from "@/components/home/receipt-basis";
+import { CheckIcon, ClockIcon } from "@/components/icons";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -265,27 +267,27 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   return (
     <section aria-labelledby="home-picture-title" className="space-y-3" data-testid="home-event-picture" data-scenario={late ? "late" : "expected"} data-window={windowDays}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <h2 id="home-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <h2 id="home-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
           {cash.picture_title && windowDays === (cash.picture_days || 30) ? cash.picture_title : t("biz.picture.title")}
         </h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {stress ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("home.hy.scenario")}
               value={scenario}
               onChange={setScenario}
-              options={[
-                { value: "expected", label: t("home.hy.scenario.expected"), testId: "home-scenario-expected" },
-                { value: "late", label: lateName, testId: "home-scenario-late" },
+              tabs={[
+                { value: "expected", label: t("home.hy.scenario.expected"), icon: CheckIcon, testId: "home-scenario-expected" },
+                { value: "late", label: lateName, icon: ClockIcon, testId: "home-scenario-late" },
               ]}
             />
           ) : null}
           {windows.length > 1 ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("biz.forecast.horizon")}
               value={wanted}
               onChange={setChosenWindow}
-              options={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
+              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
             />
           ) : null}
         </div>
@@ -360,7 +362,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
 
                 {cursorX !== null ? (
                   <g data-testid="home-cursor" data-day={cursorDay ?? undefined} className="pointer-events-none">
-                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
                       <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" />
                       <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                     </g>
@@ -383,7 +385,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                 {cursorX !== null ? (
                   <g className="pointer-events-none">
                     {dots.map((d) => (
-                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-slow) ease-out"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
+                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-expanded) ease-ui"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
                     ))}
                   </g>
                 ) : null}
@@ -416,7 +418,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
               <div
                 aria-hidden
                 data-testid="home-tooltip"
-                className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop"
+                className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop"
                 style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
               >
                 {/* The day's words are the server's (the rail's `when`); a day with no event of its own has no day word, only the figures. */}
@@ -426,7 +428,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                   </p>
                 ) : null}
                 {tipEvent?.basis_text ? (
-                  <p className="mt-0.5 text-[13px] leading-snug text-ink-2" data-testid="home-tooltip-basis">
+                  <p className="mt-0.5 text-supporting leading-snug text-ink-2" data-testid="home-tooltip-basis">
                     {tipEvent.basis_text}
                   </p>
                 ) : null}
@@ -447,7 +449,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
 
           {/* What solid and dashed mean, in the server's sentence, and the receipts the dashed line would move. Present only while a reply waits for the buyer. */}
           {pending && cash.receipts_legend_text ? (
-            <p className="text-[13px] leading-snug text-ink-2" data-testid="home-receipts-legend">
+            <p className="text-supporting leading-snug text-ink-2" data-testid="home-receipts-legend">
               {cash.receipts_legend_text}
             </p>
           ) : null}
@@ -489,14 +491,14 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                 <h3 className="text-sm font-bold text-ink" data-testid="rail-panel-title">
                   {lateName}
                 </h3>
-                <p className="text-[0.9375rem] text-ink-2" data-testid="stress-assumption">
+                <p className="text-body-lg text-ink-2" data-testid="stress-assumption">
                   {stress.assumption_text}
                 </p>
-                <p className="text-[0.9375rem] font-medium text-ink" data-testid="stress-sentence">
+                <p className="text-body-lg font-medium text-ink" data-testid="stress-sentence">
                   {lateRead ? lateRead.sentence : [stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
                 </p>
                 {lateRead?.lines?.map((line, i) => (
-                  <p key={i} className="text-[0.9375rem] text-ink-2" data-testid="stress-line">
+                  <p key={i} className="text-body-lg text-ink-2" data-testid="stress-line">
                     {line}
                   </p>
                 ))}
@@ -521,7 +523,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                     </tbody>
                   </table>
                 ) : null}
-                <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="rail-explain">
+                <p className="text-pretty text-body-lg font-medium leading-snug text-ink" data-testid="rail-explain">
                   {event.explain}
                 </p>
               </div>
@@ -533,8 +535,8 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
         </div>
 
         <div className="min-w-0" data-testid="home-rail">
-          <h3 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.rail")}</h3>
-          {late ? <p className="mt-1 text-xs text-ink-3">{t("home.hy.rail.late")}</p> : null}
+          <h3 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.rail")}</h3>
+          {late ? <p className="mt-1 text-supporting text-ink-3">{t("home.hy.rail.late")}</p> : null}
           <ol className="mt-2 space-y-1.5" onPointerLeave={() => setPreview(null)}>
             {rail.map((e, i) => {
               const c = MARK[markOf(e)];
@@ -557,7 +559,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                   >
                     {/* The chosen row also has a bar at its left edge: the choice is not told by colour alone, and it stays while another row is previewed. */}
                     {i === chosen ? <span aria-hidden className="absolute inset-y-1.5 left-0 w-0.75 rounded-pill bg-brand-600" data-testid={`rail-chosen-${i}`} /> : null}
-                    <span aria-hidden className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill border-2 text-xs font-extrabold tabular-nums ${on ? c.chipOn : c.chip}`}>
+                    <span aria-hidden className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill border-2 text-meta font-extrabold tabular-nums ${on ? c.chipOn : c.chip}`}>
                       {i + 1}
                     </span>
                     <span className="min-w-0 flex-1">
@@ -569,21 +571,21 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                           </span>
                           {/* A landing that only the plan would bring: the financing state word, quietly (a word, never a badge). */}
                           {e.planned ? (
-                            <span className="block text-xs font-medium text-ink-3" data-testid={`rail-planned-${i}`}>
+                            <StateWord state="planned" testId={`rail-planned-${i}`} className="justify-end">
                               {t("home.hy.planned")}
-                            </span>
+                            </StateWord>
                           ) : null}
                         </span>
                       </span>
-                      <span className="block text-xs text-ink-3">{e.when}</span>
+                      <span className="block text-supporting text-ink-3">{e.when}</span>
                       {/* What the receipt rests on, in the server's sentence; a scheduled one (not invoiced yet) is a shade quieter. */}
                       {e.basis_text ? (
-                        <span className={`mt-0.5 block text-[13px] leading-snug ${e.basis === "SCHEDULED" ? "text-ink-3" : "text-ink-2"}`} data-testid={`rail-basis-${i}`} data-basis={e.basis ?? undefined}>
+                        <BasisLine basis={e.basis} testId={`rail-basis-${i}`} className="mt-0.5">
                           {e.basis_text}
-                        </span>
+                        </BasisLine>
                       ) : null}
                       {lowest && (e.note || e.room_after_short) ? (
-                        <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
+                        <span className={`mt-0.5 block text-supporting font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
                           {e.note || e.room_after_short}
                         </span>
                       ) : null}

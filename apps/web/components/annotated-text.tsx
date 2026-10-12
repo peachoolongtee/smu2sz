@@ -84,7 +84,7 @@ export function AnnotatedText({
             {startsHere.map((a) => (
               <sup
                 key={a.id}
-                className="mr-0.5 inline-block rounded-pill bg-ink px-1.5 align-top text-xs font-bold leading-4 text-white"
+                className="mr-0.5 inline-block rounded-pill bg-ink px-1.5 align-top text-meta font-bold leading-4 text-white"
               >
                 {a.n}
               </sup>

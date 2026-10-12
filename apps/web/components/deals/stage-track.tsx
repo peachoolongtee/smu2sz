@@ -40,7 +40,7 @@ export function StageTrack({ stages, testId = "deal-stages" }: { stages: TrackSt
             key={s.key}
             data-state={s.state}
             aria-current={s.state === "now" ? "step" : undefined}
-            className={`relative grid justify-items-center gap-1 text-center text-xs before:absolute before:-left-1/2 before:top-1.75 before:h-0.5 before:w-full first:before:hidden ${
+            className={`relative grid justify-items-center gap-1 text-center text-supporting before:absolute before:-left-1/2 before:top-1.75 before:h-0.5 before:w-full first:before:hidden ${
               reached ? "before:bg-brand-600" : "before:bg-line-strong"
             } ${late ? "font-semibold text-bad-fg" : s.state === "now" ? "font-semibold text-ink" : "text-ink-3"}`}
           >
@@ -50,7 +50,7 @@ export function StageTrack({ stages, testId = "deal-stages" }: { stages: TrackSt
             <span className="font-normal" data-testid="deal-stage-state">
               {te("dealstate", s.state)}
             </span>
-            {s.note ? <small className="hidden text-xs font-normal text-ink-3 sm:block">{s.note}</small> : null}
+            {s.note ? <small className="hidden text-supporting font-normal text-ink-3 sm:block">{s.note}</small> : null}
           </li>
         );
       })}

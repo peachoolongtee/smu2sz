@@ -84,7 +84,7 @@ export default function InboxPage() {
             options={SAMPLE_IDS.map((id) => ({ value: id, label: te("sample", id) }))}
           />
           <div>
-            <label htmlFor={textId} className="mb-1 block text-xs font-medium text-ink-2">
+            <label htmlFor={textId} className="mb-1 block text-meta font-medium text-ink-2">
               {t("inbox.message")}
             </label>
             <textarea
@@ -99,7 +99,7 @@ export default function InboxPage() {
             <Button variant="primary" loading={busy === "compile"} disabled={!text.trim()} onClick={() => void compile(text)}>
               {t("inbox.compile")}
             </Button>
-            <span className="text-xs text-ink-3">{t("inbox.compile.hint")}</span>
+            <span className="text-meta text-ink-3">{t("inbox.compile.hint")}</span>
           </div>
           {error ? <ErrorState error={error} /> : null}
         </div>
@@ -143,13 +143,13 @@ export default function InboxPage() {
                   {legendKinds.map((k) => (
                     <li
                       key={k}
-                      className={`rounded-pill border px-2 py-0.5 text-xs font-medium ${ANNOTATION_STYLE[k].chip}`}
+                      className={`rounded-pill border px-2 py-0.5 text-meta font-medium ${ANNOTATION_STYLE[k].chip}`}
                     >
                       {items.find((i) => i.kind === k)?.group === "obligation" ? te("obligation", k) : te("flag", k)}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 text-xs text-ink-3">
+                <p className="mt-3 text-meta text-ink-3">
                   {t("inbox.compiler", { compiler: offer.offer.compiler, version: offer.offer.prompt_version })}
                 </p>
               </Card>

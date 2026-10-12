@@ -92,6 +92,8 @@ test("Cash, Receivables and Approvals carry the same freshness and partial lines
   }
   await page.goto("/approvals");
   await expect(page.getByTestId("appr-read-when")).toHaveText("Read today");
+  // A route callback still fetching when the test ends would fail the test with "Test ended": let the in-flight ones go.
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 test("a model reply that hangs says so, clears busy and Retry asks again with the same request", async ({ page }) => {

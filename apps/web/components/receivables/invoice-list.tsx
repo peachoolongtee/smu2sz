@@ -2,11 +2,18 @@
 
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { CustomerName } from "@/components/customer-link";
-import { Badge, toggleClass } from "@/components/ui";
+import { AlertIcon, ChatIcon, ClockIcon, ListIcon } from "@/components/icons";
+import { BasisLine } from "@/components/home/receipt-basis";
+import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
+import { StateWord } from "@/components/ui/state-word";
+import { stateKey } from "@/components/ui/state-word-model";
 import { useI18n } from "@/lib/i18n";
 import type { ReceivableRow } from "@/lib/types";
 import { FinancingSteps } from "./financing-steps";
-import { inFilter, stateTone, type RecvFilter } from "./state";
+import { inFilter, type RecvFilter } from "./state";
+
+/** One glyph per filter (the segmented control draws an icon and a label on each pill). */
+const FILTER_ICON: Record<RecvFilter, TabIcon> = { all: ListIcon, soon: ClockIcon, overdue: AlertIcon, promises: ChatIcon };
 
 const COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)]";
 
@@ -40,34 +47,26 @@ export function InvoiceList({
 
   return (
     <section aria-label={t("recv3.list.label")} className="space-y-3" data-testid="recv3-list">
-      <div role="group" aria-label={t("biz.recv.filter.label")} className="flex flex-wrap gap-1.5" data-testid="recv-filters">
-        {pills.map((p) => {
-          // A pill with nothing behind it is disabled (not counted for the owner: the page shows no number the server did not write).
-          const empty = p.id !== "all" && !rows.some((r) => inFilter(r, p.id));
-          return (
-            <button
-              key={p.id}
-              type="button"
-              aria-pressed={filter === p.id}
-              disabled={empty}
-              onClick={() => onFilter(p.id)}
-              className={toggleClass(filter === p.id, "md")}
-              data-testid={`recv-filter-${p.id}`}
-            >
-              {p.label}
-            </button>
-          );
+      {/* A filter with nothing behind it says "0" and is dimmed, never dimmed with no number; the count is the rows the server sent that the filter holds, red where the owner must act. */}
+      <SegmentedTabs
+        label={t("biz.recv.filter.label")}
+        value={filter}
+        onChange={onFilter}
+        testId="recv-filters"
+        tabs={pills.map((p) => {
+          const n = rows.filter((r) => inFilter(r, p.id)).length;
+          return { value: p.id, label: p.label, icon: FILTER_ICON[p.id], badge: n, badgeTone: n > 0 && (p.id === "overdue" || p.id === "promises") ? "alert" : "neutral", disabled: p.id !== "all" && n === 0, testId: `recv-filter-${p.id}`, badgeTestId: `recv-filter-count-${p.id}` };
         })}
-      </div>
+      />
 
       {shown.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-2" data-testid="recv-filter-none">
           {rows.length === 0 ? t("recv3.list.empty") : t("biz.recv.filter.none")}
         </p>
       ) : (
-        <div role="table" aria-label={t("recv3.list.label")} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div role="table" aria-label={t("recv3.list.label")} className="card-standard overflow-hidden">
           <div role="rowgroup">
-            <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
+            <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-meta font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
               <span role="columnheader">{t("recv3.col.customer")}</span>
               <span role="columnheader">{t("recv3.col.outstanding")}</span>
               <span role="columnheader">{t("recv3.col.due")}</span>
@@ -88,7 +87,7 @@ export function InvoiceList({
                   data-testid={`recv-${r.receivable_id}`}
                   data-selected={selected ? "true" : undefined}
                   data-state={r.collection_state}
-                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 border-l-[3px] px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:bg-subtle"} transition-colors duration-200`}
+                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 border-l-[3px] px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "row-selected" : "border-transparent hover:bg-subtle"} transition-colors duration-(--dur)`}
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
@@ -114,9 +113,9 @@ export function InvoiceList({
                     <span data-testid={`recv-due-${r.receivable_id}`}>{r.due_when}</span>
                     {/* What the payment rests on, in the server's sentence (the same words the cash picture says). */}
                     {r.basis_text ? (
-                      <span className="mt-0.5 block text-[13px] leading-snug text-ink-2" data-testid={`recv-basis-${r.receivable_id}`} data-basis={r.basis ?? undefined}>
+                      <BasisLine basis={r.basis} testId={`recv-basis-${r.receivable_id}`} className="mt-0.5">
                         {r.basis_text}
-                      </span>
+                      </BasisLine>
                     ) : null}
                   </div>
                   <div role="cell" className="col-span-2 min-w-0 space-y-1 lg:col-span-1">
@@ -134,9 +133,13 @@ export function InvoiceList({
                   </div>
                   <div role="cell" className="min-w-0">
                     <Label>{t("recv3.col.status")}</Label>
-                    <Badge tone={stateTone(r)} wrap>
+                    {stateKey(r.collection_state) ? (
+                      <StateWord state={stateKey(r.collection_state)!} testId={`recv-state-${r.receivable_id}`} wrap={false}>
+                        {r.collection_state_text}
+                      </StateWord>
+                    ) : (
                       <span data-testid={`recv-state-${r.receivable_id}`}>{r.collection_state_text}</span>
-                    </Badge>
+                    )}
                   </div>
                 </div>
               );
@@ -150,5 +153,5 @@ export function InvoiceList({
 
 /** The column's name on a phone, where the header row is hidden. */
 function Label({ children }: { children: string }) {
-  return <span className="mb-0.5 block text-xs font-semibold uppercase tracking-wide text-ink-3 lg:hidden">{children}</span>;
+  return <span className="mb-0.5 block text-meta font-semibold uppercase tracking-wide text-ink-3 lg:hidden">{children}</span>;
 }

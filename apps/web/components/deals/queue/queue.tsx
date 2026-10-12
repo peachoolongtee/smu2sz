@@ -103,7 +103,7 @@ export function QueueBody({ detail, aside, offerKey, announce }: { detail: React
       <p role="status" aria-live="polite" className="sr-only" data-testid="queue-announce">
         {announce}
       </p>
-      <section key={offerKey} className={`motion-select grid gap-x-7 gap-y-6 max-sm:p-0 sm:rounded-card sm:border sm:border-line sm:bg-surface sm:p-6 short:p-4 ${aside ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]" : ""}`} data-testid="queue-body">
+      <section key={offerKey} className={`motion-select grid gap-x-7 gap-y-6 card-standard max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:p-0 sm:p-6 short:p-4 ${aside ? "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]" : ""}`} data-testid="queue-body">
         {detail}
         {aside}
       </section>

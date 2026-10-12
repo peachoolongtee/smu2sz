@@ -30,7 +30,7 @@ function TableSection({ s, title }: { s: BorrowerFileSection; title: string }) {
     <div className="-mx-1 overflow-x-auto px-1" role="region" aria-label={title} tabIndex={0}>
       <table className="w-full min-w-max border-collapse text-sm">
         <thead>
-          <tr className="border-b border-line text-xs text-ink-3">
+          <tr className="border-b border-line text-supporting text-ink-3">
             <th scope="col" className="py-2 pr-4 text-left font-medium">
               <span className="sr-only">{title}</span>
             </th>
@@ -78,7 +78,7 @@ function ListSection({ s }: { s: BorrowerFileSection }) {
           <div key={r.label} className="grid gap-1 py-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
             <dt className="text-ink-2">
               {r.label}
-              {r.note ? <span className="mt-0.5 block text-xs text-ink-3">{r.note}</span> : null}
+              {r.note ? <span className="mt-0.5 block text-supporting text-ink-3">{r.note}</span> : null}
             </dt>
             <dd className="min-w-0 break-words font-medium tabular-nums text-ink">
               {figs.map((f, i) => (
@@ -111,7 +111,7 @@ export function BorrowerFileSections({ sections }: { sections: BorrowerFileSecti
             <h3 className="mb-2 text-sm font-semibold text-ink">{title}</h3>
             {s.columns?.length ? <TableSection s={s} title={title} /> : <ListSection s={s} />}
             {s.notes?.length ? (
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-3">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-supporting text-ink-3">
                 {s.notes.map((n) => (
                   <li key={n}>
                     <Shortened text={n} />

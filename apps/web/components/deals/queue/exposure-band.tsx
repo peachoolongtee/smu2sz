@@ -31,10 +31,10 @@ export function ExposureBand({ exposure, pick }: { exposure: ExposureView; pick:
       <dl className="grid gap-3">
         {tiles.map((x) => (
           <div key={x.key} className={`min-w-0 border-l-[3px] pl-3 ${x.tone === "warn" ? "border-warn-solid" : "border-line-strong"}`} data-testid={`exposure-${x.key}`}>
-            <dt className="text-[0.8125rem] font-semibold text-ink-3">{x.label}</dt>
+            <dt className="text-supporting font-semibold text-ink-3">{x.label}</dt>
             <dd className="mt-0.5 text-sm text-ink">
               {x.text}
-              {x.note ? <span className="mt-1 block text-[0.8125rem] text-ink-3">{x.note}</span> : null}
+              {x.note ? <span className="mt-1 block text-supporting text-ink-3">{x.note}</span> : null}
             </dd>
           </div>
         ))}
@@ -47,8 +47,8 @@ export function ExposureBand({ exposure, pick }: { exposure: ExposureView; pick:
                 <span className="font-semibold">{w.label}</span>
                 {w.facility_name ? <span className="text-ink-3">{` · ${w.facility_name}`}</span> : null}
                 <span className="block text-ink-2">{w.after_text ? t("dq.band.todayAfter", { today: w.today_text ?? "—", after: w.after_text }) : (w.today_text ?? "")}</span>
-                {w.recovers_when ? <span className="block text-[0.8125rem] text-ink-3">{t("dq.band.recovers", { when: w.recovers_when })}</span> : null}
-                {w.recovery_assumed_text ? <span className="block text-[0.8125rem] text-ink-3">{w.recovery_assumed_text}</span> : null}
+                {w.recovers_when ? <span className="block text-supporting text-ink-3">{t("dq.band.recovers", { when: w.recovers_when })}</span> : null}
+                {w.recovery_assumed_text ? <span className="block text-supporting text-ink-3">{w.recovery_assumed_text}</span> : null}
               </li>
             ))}
           </ul>
@@ -66,7 +66,7 @@ export function StressToggle({ exposure, on, onChange }: { exposure: ExposureVie
       <button type="button" aria-pressed={on} onClick={() => onChange(!on)} className={toggleClass(on)} data-testid="stress-toggle">
         {t("dq.stress.toggle", { buyer: exposure.concentration.buyer_name, n: exposure.stress.delay_days })}
       </button>
-      <span className="text-[0.8125rem] text-ink-3">{t("dq.stress.note")}</span>
+      <span className="text-supporting text-ink-3">{t("dq.stress.note")}</span>
     </div>
   );
 }

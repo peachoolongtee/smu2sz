@@ -1,6 +1,26 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { StateWord } from "@/components/ui/state-word";
+import { stateKey } from "@/components/ui/state-word-model";
 import type { ReceiptBasis } from "@/lib/types";
+
+/**
+ * The server's sentence about what a receipt rests on, with the state's glyph (owed, scheduled, agreed, pending) in front: the one place a basis is said (the Home
+ * rail and tooltip rows, the Cash receipts, Receivables' due column). A basis the browser does not know (a newer server) is the sentence alone.
+ */
+export function BasisLine({ basis, children, testId, className = "" }: { basis?: ReceiptBasis | null; children: ReactNode; testId?: string; className?: string }) {
+  const key = stateKey(basis);
+  return key ? (
+    <StateWord state={key} variant="line" testId={testId} data-basis={basis ?? undefined} className={className}>
+      {children}
+    </StateWord>
+  ) : (
+    <span className={`block text-supporting leading-snug text-ink-2 ${className}`} data-testid={testId} data-basis={basis ?? undefined}>
+      {children}
+    </span>
+  );
+}
 
 /**
  * What a receipt rests on, said under the picture (ticket #116). One row per receipt: its name, amount and distance on the first line, the server's basis
@@ -29,9 +49,9 @@ export function BasisRows({ rows, label, pending = false, testId }: { rows: Basi
             </span>
             {r.amount ? <span className="shrink-0 font-extrabold tabular-nums text-ink">{r.amount}</span> : null}
           </p>
-          <p className={`text-[13px] leading-snug ${r.basis === "SCHEDULED" ? "text-ink-3" : "text-ink-2"}`} data-testid={`${testId}-text`}>
+          <BasisLine basis={r.basis} testId={`${testId}-text`}>
             {r.text}
-          </p>
+          </BasisLine>
         </li>
       ))}
     </ul>

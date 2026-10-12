@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { CashPicture, linesDiffer } from "@/components/business/cash-picture";
 import { Disclosure } from "@/components/business/kit";
 import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
-import { SegmentedButtons } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { versusMinimum } from "@/lib/minimum";
 import type { HomeSeriesPoint, HomeView, PictureAxis } from "@/lib/types";
@@ -38,11 +38,11 @@ function defaultHorizon(h: HomeView): Horizon {
 function Fact({ label, children, caption, testId }: { label: string; children: ReactNode; caption?: ReactNode; testId?: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-semibold text-ink-3">{label}</dt>
+      <dt className="text-supporting font-semibold text-ink-3">{label}</dt>
       <dd className="font-display text-lg font-extrabold tabular-nums tracking-[-0.01em] text-ink" data-testid={testId}>
         {children}
       </dd>
-      {caption ? <dd className="text-xs text-ink-3">{caption}</dd> : null}
+      {caption ? <dd className="text-supporting text-ink-3">{caption}</dd> : null}
     </div>
   );
 }
@@ -145,7 +145,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
         labelledBy="cash-picture-title"
         header={
           <>
-            <h2 id="cash-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            <h2 id="cash-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {t("biz.picture.title")}
             </h2>
             {figures}
@@ -155,11 +155,11 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
       <ReceiptBasisBlock h={h} horizon={horizon} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-ink-2">{t("biz.forecast.caption", { n: horizon })}</span>
-        <SegmentedButtons
+        <SegmentedTabs
           label={t("biz.forecast.horizon")}
           value={horizon}
           onChange={setHorizon}
-          options={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
+          tabs={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
         />
       </div>
       {cash.forecast_basis ? <ForecastBasis basis={cash.forecast_basis} /> : null}
@@ -199,7 +199,7 @@ function ReceiptBasisBlock({ h, horizon }: { h: HomeView; horizon: number }) {
         </>
       ) : null}
       {pending && cash.receipts_legend_text ? (
-        <p className="text-[13px] leading-snug text-ink-2" data-testid="cash-receipts-legend">
+        <p className="text-supporting leading-snug text-ink-2" data-testid="cash-receipts-legend">
           {cash.receipts_legend_text}
         </p>
       ) : null}
@@ -212,7 +212,7 @@ function ReceiptBasisBlock({ h, horizon }: { h: HomeView; horizon: number }) {
 function ForecastBasis({ basis }: { basis: NonNullable<HomeView["cash"]["forecast_basis"]> }) {
   const { t } = useI18n();
   return (
-    <Disclosure testId="cash-forecast-basis" className="border-t border-line text-xs" summary={t("biz.forecast.basis")}>
+    <Disclosure testId="cash-forecast-basis" className="border-t border-line text-supporting" summary={t("biz.forecast.basis")}>
       <div className="mt-2 space-y-2 text-ink-2">
         <ul className="list-disc space-y-0.5 pl-5">
           {basis.scheduled_receipts_counted ? <li>{t("biz.forecast.basis.scheduled")}</li> : null}
@@ -245,7 +245,7 @@ function ForecastTable({ h, alternative, alternativeLabel, baselineLabel, horizo
   const plan = (day: number) => alternative?.find((x) => x.day === day);
   const withPlan = linesDiffer(h.cash.series, alternative);
   return (
-    <Disclosure testId="cash-forecast-table" className="border-t border-line text-xs" summary={t("biz.forecast.table")}>
+    <Disclosure testId="cash-forecast-table" className="border-t border-line text-supporting" summary={t("biz.forecast.table")}>
       <div className="mt-2 max-h-64 overflow-auto">
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 bg-canvas text-ink-2">

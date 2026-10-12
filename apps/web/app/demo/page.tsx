@@ -30,7 +30,7 @@ function SideCard({ id, title, subtitle, narrow, children }: { id: string; title
   return (
     <div id={id} className="scroll-mt-20">
       <Disclosure card testId={`story-fold-${id}`} summary={title}>
-        {subtitle ? <p className="mb-3 text-xs text-ink-3">{subtitle}</p> : null}
+        {subtitle ? <p className="mb-3 text-meta text-ink-3">{subtitle}</p> : null}
         {children}
       </Disclosure>
     </div>
@@ -79,7 +79,7 @@ export default function DemoPage() {
             <ol className="space-y-4">
               {SCENES.map((scene) => (
                 <li key={scene.id}>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{te("scene", scene.id)}</p>
+                  <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{te("scene", scene.id)}</p>
                   <ol className="space-y-1">
                     {DEMO_STEPS.map((s, i) => ({ s, i }))
                       .filter(({ s }) => s.scene === (scene.id as SceneId))
@@ -88,13 +88,13 @@ export default function DemoPage() {
                         const active = i === current;
                         return (
                           <li key={s.id} className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 rounded-tile border px-3 py-2 sm:flex sm:flex-wrap sm:gap-y-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
-                            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill text-xs font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
+                            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill text-meta font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
                               {i + 1}
                             </span>
                             {/* On a phone the button sits beside the title and the sentence (three lines; the whole sentence is the tooltip). */}
                             <span className="contents sm:block sm:min-w-0 sm:flex-1 sm:basis-48">
                               <span className="block min-w-0 text-sm font-medium text-ink">{te("demo.step", s.id)}</span>
-                              <span className="block text-xs text-ink-2 max-sm:col-start-2 max-sm:row-start-2 max-sm:line-clamp-3 sm:mt-0" title={stepNarration(i18n, s.id, demo)}>
+                              <span className="block text-meta text-ink-2 max-sm:col-start-2 max-sm:row-start-2 max-sm:line-clamp-3 sm:mt-0" title={stepNarration(i18n, s.id, demo)}>
                                 {stepNarration(i18n, s.id, demo)}
                               </span>
                             </span>
@@ -127,7 +127,7 @@ export default function DemoPage() {
                                   </Button>
                                 </>
                               ) : s.owner && cureWaiting && i === reached + 1 ? (
-                                <span className="text-xs font-medium text-warn-fg" data-testid={`story-waiting-${i + 1}`}>
+                                <span className="text-meta font-medium text-warn-fg" data-testid={`story-waiting-${i + 1}`}>
                                   {t("story.waitingOwner")}
                                 </span>
                               ) : (
@@ -153,12 +153,12 @@ export default function DemoPage() {
               ))}
             </ol>
             {!demo.busy && demo.running !== null ? (
-              <p role="status" className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-2.5 py-1.5 text-xs text-warn-fg" data-testid="story-interrupted">
+              <p role="status" className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-2.5 py-1.5 text-meta text-warn-fg" data-testid="story-interrupted">
                 {t("demo.interrupted", { n: demo.running + 1 })}
               </p>
             ) : null}
             {demo.error ? (
-              <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
+              <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-meta text-bad-fg">
                 {demo.error}
               </p>
             ) : null}
@@ -170,9 +170,9 @@ export default function DemoPage() {
                 <li key={m.id} className="flex flex-wrap items-start gap-x-3 gap-y-2" data-testid={`more-${m.id}`}>
                   <span className="min-w-0 flex-1 basis-48">
                     <span className="block text-sm font-medium text-ink">{te("more.title", m.id)}</span>
-                    <span className="block text-xs text-ink-2">{te("more.desc", m.id)}</span>
-                    {m.replacesBooks ? <span className="block text-xs font-medium text-warn-fg">{t("more.replaces")}</span> : null}
-                    {m.needsWalk && !demo.rewordedId ? <span className="block text-xs text-ink-3">{t("more.needsWalk")}</span> : null}
+                    <span className="block text-meta text-ink-2">{te("more.desc", m.id)}</span>
+                    {m.replacesBooks ? <span className="block text-meta font-medium text-warn-fg">{t("more.replaces")}</span> : null}
+                    {m.needsWalk && !demo.rewordedId ? <span className="block text-meta text-ink-3">{t("more.needsWalk")}</span> : null}
                   </span>
                   <Button
                     size="sm"
@@ -188,7 +188,7 @@ export default function DemoPage() {
               ))}
             </ul>
             <div className="mt-4 border-t border-line pt-3">
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("more.engine")}</p>
+              <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("more.engine")}</p>
               <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 {ENGINE_PAGES.map((p) => (
                   <li key={p.route}>
@@ -217,7 +217,7 @@ export default function DemoPage() {
           <SideCard id="story-reset" title={t("story.books")} subtitle={t("story.books.sub")} narrow={narrow}>
             <div className="space-y-3">
               <label className="block text-sm">
-                <span className="mb-1 block text-xs font-medium text-ink-3">{t("story.scenario")}</span>
+                <span className="mb-1 block text-meta font-medium text-ink-3">{t("story.scenario")}</span>
                 <select
                   value={scenario}
                   disabled={demo.busy}
@@ -233,7 +233,7 @@ export default function DemoPage() {
                 <ResetIcon />
                 {t("story.reset")}
               </Button>
-              <p className="text-xs text-ink-3">{t("story.reset.hint")}</p>
+              <p className="text-meta text-ink-3">{t("story.reset.hint")}</p>
             </div>
           </SideCard>
 

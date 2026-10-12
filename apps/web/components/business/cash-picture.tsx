@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { SegmentedButtons } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
 
@@ -18,7 +18,7 @@ import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
  * Labels that would overlap one already placed, a line or the edge of the plot are skipped; the chips below name every event.
  */
 export const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
-export const FONT = 12;
+export const FONT = 13;
 /** The window never shows fewer than this many days, nor more than the cap; past the last interesting day it keeps a few days of what follows. */
 const MIN_WINDOW = 30;
 const MAX_WINDOW = 60;
@@ -423,11 +423,11 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">{header}</div>
         {hasPlan ? (
-          <SegmentedButtons
+          <SegmentedTabs
             label={viewLabel ?? alternativeLabel}
             value={view}
             onChange={setView}
-            options={[
+            tabs={[
               { value: "nothing", label: baselineLabel, testId: "picture-view-nothing" },
               { value: "plan", label: toggleAlternativeLabel ?? alternativeLabel, testId: "picture-view-plan" },
             ]}

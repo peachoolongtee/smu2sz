@@ -64,7 +64,7 @@ function Slider({
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-2 h-2 w-full cursor-pointer accent-brand-600 touch:h-11 disabled:cursor-not-allowed"
       />
-      {hint ? <p className="mt-1 text-xs text-ink-3">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-meta text-ink-3">{hint}</p> : null}
     </div>
   );
 }
@@ -97,7 +97,7 @@ export function WhatIfControlsCard({
   return (
     <Card id="whatif-controls" title={t("whatif.controls")} subtitle={t("whatif.controls.sub")}>
       <fieldset>
-        <legend className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("whatif.presets")}</legend>
+        <legend className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("whatif.presets")}</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {PRESET_ORDER.map((id) => {
             const p = controls.presets[id];
@@ -117,7 +117,7 @@ export function WhatIfControlsCard({
                     settle_face_fen: p.settle_face_fen,
                   })
                 }
-                className={toggleClass(active, "md", `text-xs ${id === "actual" ? "col-span-2" : ""}`)}
+                className={toggleClass(active, "md", `text-meta ${id === "actual" ? "col-span-2" : ""}`)}
               >
                 {t(`whatif.preset.${id}`)}
               </button>
@@ -168,7 +168,7 @@ export function WhatIfControlsCard({
               />
             </div>
           ) : (
-            <p className="mt-1 text-xs text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
+            <p className="mt-1 text-meta text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
           )}
         </div>
         <Slider

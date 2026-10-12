@@ -29,7 +29,7 @@ const C = {
   violet: "var(--color-info-solid)",
 };
 
-const axisProps = { stroke: C.ink3, fontSize: 12, tickLine: false } as const;
+const axisProps = { stroke: C.ink3, fontSize: 13, tickLine: false } as const;
 
 interface TooltipProps {
   active?: boolean;
@@ -42,7 +42,7 @@ function ChartTooltip({ active, payload, dayLabel, series }: TooltipProps) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-md">
+    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-meta shadow-md">
       <p className="font-semibold text-ink">
         {dayLabel} {row.day}
       </p>
@@ -119,7 +119,7 @@ export function CashChart({
             y={floorFen}
             stroke={C.bad}
             strokeDasharray="6 4"
-            label={{ value: floorLabel, position: "insideTopRight", fill: C.bad, fontSize: 12 }}
+            label={{ value: floorLabel, position: "insideTopRight", fill: C.bad, fontSize: 13 }}
           />
           <Line type="stepAfter" dataKey="cash" stroke={C.brand} strokeWidth={2.5} dot={false} isAnimationActive={false} />
           {showCured ? (
@@ -141,7 +141,7 @@ export function CashChart({
               fill={C.bad}
               stroke="var(--color-surface)"
               strokeWidth={2}
-              label={{ value: breachLabel, position: "bottom", fill: C.bad, fontSize: 12, fontWeight: 600 }}
+              label={{ value: breachLabel, position: "bottom", fill: C.bad, fontSize: 13, fontWeight: 600 }}
             />
           ) : null}
         </LineChart>
@@ -240,7 +240,7 @@ export function ConcessionMeter({
             x={capFen}
             stroke={C.bad}
             strokeWidth={2.5}
-            label={{ value: capLabel, position: "top", fill: C.bad, fontSize: 12, fontWeight: 600 }}
+            label={{ value: capLabel, position: "top", fill: C.bad, fontSize: 13, fontWeight: 600 }}
           />
         </BarChart>
       </ResponsiveContainer>

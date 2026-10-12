@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { HUE, hueOf, Swatch } from "@/components/deals/path-hue";
-import { StatePill, toggleClass, type Tone } from "@/components/ui";
+import { hueOf, Swatch } from "@/components/deals/path-hue";
+import { toggleClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { CounterEconomics, PathAuthority, PicturePath } from "@/lib/types";
 
@@ -60,7 +61,6 @@ export function PathColumns({
     <div ref={group} role="radiogroup" aria-label={t("biz.deals.paths.group")} className="flex flex-wrap items-stretch gap-3" data-testid="path-columns">
       {paths.map((p, i) => {
         const on = p.key === pick;
-        const hue = HUE[hueOf(p)];
         const eco = p.cost_total_display ? null : economics(p);
         const net = eco?.is_net ? eco : null;
         const total = p.cost_total_display ?? (net ? (net.net_words ?? net.net_display) : p.cost_display);
@@ -79,14 +79,14 @@ export function PathColumns({
             // Keyboard focus lights the line too; a tap that happens to focus the button does not (it would leave the other lines dimmed).
             onFocus={(e) => e.target.matches(":focus-visible") && onHover(p.key)}
             onBlur={() => onHover(null)}
-            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-card border-2 bg-surface p-3.5 transition-[border-color,box-shadow] duration-(--dur) ease-out ${on ? `${hue.border} shadow-card` : "border-line"}`}
+            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 p-3.5 ${on ? "card-selected" : "card-standard"}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-ink">
                 <Swatch hue={hueOf(p)} />
                 {p.label}
               </h3>
-              <StatePill tone={toneOfTag(p.tag_tone)}>{p.tag_text}</StatePill>
+              <StateWord tone={toneOfTag(p.tag_tone)}>{p.tag_text}</StateWord>
             </div>
             <div>
               {mixed ? (
@@ -104,7 +104,7 @@ export function PathColumns({
                 </>
               ) : (
                 <>
-                  <p className={net && !p.cost_total_display ? "text-xs text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
+                  <p className={net && !p.cost_total_display ? "text-supporting text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
                   <p className={`text-2xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-cost-${i}`}>
                     {total}
                   </p>
@@ -114,7 +114,7 @@ export function PathColumns({
                 </>
               )}
               {parts.length ? (
-                <dl className="mt-2 divide-y divide-line border-y border-line text-xs" data-testid={`path-col-components-${i}`}>
+                <dl className="mt-2 divide-y divide-line border-y border-line text-supporting" data-testid={`path-col-components-${i}`}>
                   {parts.map((c) => (
                     <div key={c.label} className="flex items-baseline justify-between gap-3 py-1">
                       <dt className="text-ink-3">{c.label}</dt>
@@ -127,7 +127,7 @@ export function PathColumns({
             <dl className="space-y-1.5 text-sm">
               {p.terms.map((term) => (
                 <div key={term.key} className="flex flex-wrap items-baseline gap-x-2">
-                  <dt className="text-xs text-ink-3">{term.label}</dt>
+                  <dt className="text-supporting text-ink-3">{term.label}</dt>
                   <dd className="font-bold text-ink">
                     {term.value_text}
                     {term.instead_of_text ? <span className="ml-1.5 font-semibold text-ink-3">{term.instead_of_text}</span> : null}
@@ -144,7 +144,7 @@ export function PathColumns({
                   </li>
                 ) : null}
                 {p.band_text ? (
-                  <li className="text-xs text-ink-3" data-testid={`path-col-band-${i}`}>
+                  <li className="text-supporting text-ink-3" data-testid={`path-col-band-${i}`}>
                     {p.band_text}
                   </li>
                 ) : null}
@@ -152,7 +152,7 @@ export function PathColumns({
             ) : null}
             <div className="mt-auto space-y-2 border-t border-line pt-2.5">
               <p data-testid={`path-col-decides-${i}`} data-authority={p.authority ?? ""}>
-                <StatePill tone={tone}>{authorityText(p)}</StatePill>
+                <StateWord tone={tone}>{authorityText(p)}</StateWord>
               </p>
               <button
                 type="button"
