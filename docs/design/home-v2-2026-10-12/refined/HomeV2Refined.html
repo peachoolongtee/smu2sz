@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home V2 refined</title>
+<!-- Home V2 visual reference (owner's direction 06_visual_direction.md, 13 Oct 2026). Every money, date and status word below was
+     read from the running API (localhost:8186, Demo day 0, three offers evaluated: EX01_PACKAGE, EX02_EARLY_1_5, EX03_AS_USUAL).
+     States: ?state=default (the default), ?state=deal (Foshan · Payment terms selected). ?shot=1 hides the reviewer's state switch. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* tokens copied from apps/web/app/globals.css (@theme static) */
+  --font-sans:"Lato","Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif;
+  --font-display:"Plus Jakarta Sans","Lato","Inter",ui-sans-serif,system-ui,sans-serif;
+  --color-canvas:#f5f7fb; --color-surface:#ffffff; --color-subtle:#eff3f8; --color-line:#e6e9ef; --color-line-strong:#d3d9e2; --color-line-ui:#768399; --color-track:#eef1f5;
+  --color-ink:#24324a; --color-ink-2:#4d5767; --color-ink-3:#5a6577;
+  --color-brand-50:#e6f1ff; --color-brand-100:#d0e5ff; --color-brand-600:#0368e9; --color-brand-700:#0048a5;
+  --color-ok-fg:#0a6b5f; --color-ok-solid:#12907f;
+  --color-warn-fg:#82490a; --color-warn-solid:#b7791f;
+  --color-bad-fg:#a3241a; --color-bad-bg:#fdecea; --color-bad-solid:#d2362a;
+  --color-info-fg:#0048a5; --color-info-solid:#0472ff;
+  --color-chart-base:#0472ff; --color-chart-reserve:#a3241a; --color-chart-danger:#fdecea; --color-chart-grid:#e6e9ef; --color-chart-axis:#5a6577;
+  --shadow-pill:0 1px 1px rgb(16 24 40 / .08);
+  --shadow-pop:0 4px 8px rgb(36 50 74 / .06),0 18px 36px -12px rgb(36 50 74 / .24);
+  --shadow-up:0 -4px 12px rgb(36 50 74 / .08);
+  --radius-pill:9999px; --radius-decision:16px; --radius-card:14px; --radius-tile:10px; --radius-control:8px;
+  --ease-ui:cubic-bezier(.2,0,0,1); --ease-select:cubic-bezier(.25,1,.5,1);
+  --dur-fast:140ms; --dur:220ms; --dur-scenario:350ms;
+  /* the refined layout system (brief: Layout system) */
+  --nav-w:200px; --pad:32px; --section:32px; --related:12px;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-size-adjust:100%}
+body{margin:0;font-size:15px;line-height:1.5;background:var(--color-surface)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--color-brand-600);outline-offset:2px;border-radius:4px}
+.num{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.label{font-size:13px;line-height:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-ink-3)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:var(--nav-w) minmax(0,1fr);min-height:100dvh}
+.nav{background:var(--color-canvas);padding:22px 14px 20px;display:flex;flex-direction:column;gap:2px;min-height:100dvh}
+.nav-in{position:sticky;top:22px;display:flex;flex-direction:column;gap:2px;height:calc(100dvh - 42px)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px}
+.brand-mark{width:28px;height:28px;border-radius:var(--radius-control);background:var(--color-brand-600);display:grid;place-items:center}
+.brand-name{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:-.01em}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--radius-control);font-size:14px;font-weight:700;color:var(--color-ink-2);transition:background var(--dur-fast) var(--ease-ui),color var(--dur-fast) var(--ease-ui)}
+.nav a:hover{color:var(--color-ink);background:var(--color-subtle)}
+.nav a[aria-current]{background:var(--color-surface);color:var(--color-ink);box-shadow:0 0 0 1px var(--color-line)}
+.nav a[aria-current] svg{color:var(--color-brand-600)}
+.nav svg{width:16px;height:16px;flex:none}
+.nav-foot{margin-top:auto;padding:0 8px;display:grid;gap:14px}
+.nav-note{font-size:13px;line-height:18px;color:var(--color-ink-3)}
+.ask{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:var(--radius-pill);border:1px solid var(--color-line-strong);background:var(--color-surface);font-weight:700;font-size:14px;width:max-content}
+.ask svg{width:16px;height:16px;color:var(--color-brand-600)}
+
+.main{padding:28px var(--pad) 48px;min-width:0}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:28px}
+.greet{font-family:var(--font-display);font-weight:800;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0}
+.status{margin:8px 0 0;display:flex;align-items:center;gap:10px;font-size:17px;line-height:1.4;color:var(--color-ink-2)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.dot.bad{background:var(--color-bad-solid)} .dot.warn{background:var(--color-warn-solid)} .dot.ok{background:var(--color-ok-solid)}
+.top-right{display:flex;align-items:center;gap:14px;flex:none;padding-top:4px}
+.read{font-size:13px;color:var(--color-ink-3);display:flex;align-items:center;gap:8px}
+.read b{color:var(--color-ink);font-weight:700}
+.mode{display:flex;border:1px solid var(--color-line-ui);background:var(--color-track);border-radius:var(--radius-pill);padding:2px}
+.mode span{height:30px;padding:0 14px;display:grid;place-items:center;border-radius:var(--radius-pill);font-size:13px;font-weight:700;color:var(--color-ink-2)}
+.mode span.on{background:var(--color-surface);color:var(--color-ink);box-shadow:var(--shadow-pill);font-weight:900}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--color-brand-50);color:var(--color-brand-700);display:grid;place-items:center;font-weight:900;font-size:13px}
+
+.work{display:grid;grid-template-columns:minmax(0,7fr) minmax(340px,3fr);gap:0 40px;align-items:start}
+.col{min-width:0}
+.section{padding-top:var(--section);margin-top:var(--section);border-top:1px solid var(--color-line)}
+.section.first{padding-top:0;margin-top:0;border-top:0}
+
+/* ---------- MetricStrip ---------- */
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}
+.metric{padding:20px 24px 22px;position:relative;min-width:0}
+.metric+.metric{border-left:1px solid var(--color-line)}
+.metric:first-child{padding-left:0}
+.metric-head{display:flex;align-items:center;gap:6px}
+.info{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--color-ink-3);transition:color var(--dur-fast) var(--ease-ui),background var(--dur-fast) var(--ease-ui)}
+.info:hover,.info[aria-expanded=true]{color:var(--color-brand-600);background:var(--color-brand-50)}
+.info svg{width:15px;height:15px}
+.value{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:10px 0 8px;white-space:nowrap}
+.value.bad{color:var(--color-bad-fg)} .value.plan{color:var(--color-brand-600)}
+.note{font-size:14px;line-height:20px;color:var(--color-ink-2);margin:0}
+.buffer{position:relative;height:16px;margin:12px 0 0;max-width:240px}
+.buffer .track{position:absolute;left:0;right:0;top:7px;height:2px;border-radius:2px;background:var(--color-line)}
+.buffer .fill{position:absolute;left:0;top:7px;height:2px;border-radius:2px;background:var(--color-ink-3)}
+.buffer .min{position:absolute;top:2px;width:2px;height:12px;background:var(--color-warn-solid);border-radius:1px}
+.buffer .cash{position:absolute;top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--color-brand-600);box-shadow:0 0 0 2px var(--color-surface)}
+.buffer-cap{font-size:13px;color:var(--color-warn-fg);margin-top:2px}
+.pop{position:absolute;z-index:20;top:46px;left:12px;width:300px;background:var(--color-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-pop);padding:14px 16px;font-size:14px;line-height:20px;color:var(--color-ink-2);opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity var(--dur) var(--ease-ui),transform var(--dur) var(--ease-ui)}
+.metric:first-child .pop{left:-4px}
+.pop.open{opacity:1;transform:none;pointer-events:auto}
+.pop h4{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--color-ink)}
+.pop ul{margin:0;padding-left:18px}
+
+/* ---------- DecisionHighlight ---------- */
+.decision{background:var(--color-canvas);border-radius:var(--radius-decision);padding:26px 28px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 32px;align-items:end;margin-top:28px}
+.eyebrow{font-size:13px;line-height:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-bad-fg);margin:0 0 8px}
+.eyebrow.brand{color:var(--color-brand-700)}
+.d-title{font-family:var(--font-display);font-weight:800;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px 36px;margin:20px 0 0;padding:0}
+.facts div{min-width:0}
+.facts dt{font-size:13px;line-height:18px;color:var(--color-ink-3);margin:0 0 2px}
+.facts dd{margin:0;font-size:15px;line-height:21px;font-weight:700;color:var(--color-ink)}
+.facts dd.num{font-family:var(--font-display);font-weight:700}
+.d-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.btn{height:44px;padding:0 20px;border-radius:var(--radius-control);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:900;font-size:15px;white-space:nowrap;transition:background var(--dur-fast) var(--ease-ui),color var(--dur-fast) var(--ease-ui),transform 80ms var(--ease-ui)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--color-brand-600);color:#fff}
+.btn.primary:hover{background:var(--color-brand-700)}
+.btn.quiet{color:var(--color-brand-700);font-weight:700;height:36px}
+.btn.quiet:hover{background:var(--color-brand-50)}
+.arrow{font-family:var(--font-display);font-weight:700}
+/* the page action, quiet (while a deal is the focus) */
+.action-quiet{display:none;align-items:center;gap:14px;margin-top:24px;padding:2px 0 2px 14px;border-left:2px solid var(--color-bad-solid);font-size:15px}
+.action-quiet .eyebrow{margin:0;font-size:13px}
+.action-quiet .t{color:var(--color-ink);font-weight:700}
+.link{color:var(--color-brand-700);font-weight:700;white-space:nowrap}
+.link:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- deal focus ---------- */
+.deal{display:none}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--color-ink-3);margin:0 0 18px}
+.crumbs button{color:var(--color-brand-700);font-weight:700}
+.crumbs .here{color:var(--color-ink);font-weight:700}
+.deal-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 32px;align-items:end}
+.read-text{margin:10px 0 0;font-size:15px;line-height:22px;color:var(--color-ink-2);max-width:62ch}
+.ctx{margin:8px 0 0;font-size:14px;color:var(--color-ink-3)}
+.ctx b{color:var(--color-ink-2);font-weight:700}
+.scen-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:28px 0 0}
+.paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:16px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);transition:opacity var(--dur-scenario) var(--ease-ui)}
+.paths.fading{opacity:0}
+.path{padding:18px 20px 20px;min-width:0}
+.path+.path{border-left:1px solid var(--color-line)}
+.path.rec{background:var(--color-brand-50);border-radius:0}
+.path-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.path-name{font-family:var(--font-display);font-weight:800;font-size:17px}
+.tag{font-size:13px;font-weight:700;color:var(--color-brand-700)}
+.path-text{font-size:13px;line-height:19px;color:var(--color-ink-2);margin:0 0 14px;min-height:57px}
+.path dl{margin:0;display:grid;gap:12px}
+.path dt{font-size:13px;color:var(--color-ink-3);line-height:18px}
+.path dd{margin:0;font-size:15px;line-height:21px;color:var(--color-ink)}
+.path dd .big{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:22px;letter-spacing:-.01em;display:block;line-height:1.2}
+.path dd .sub{font-size:13px;color:var(--color-ink-2)}
+.sw{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700}
+.sw svg{width:14px;height:14px}
+.sw.ok{color:var(--color-ok-fg)} .sw.ok svg{color:var(--color-ok-solid)}
+.sw.bad{color:var(--color-bad-fg)} .sw.bad svg{color:var(--color-bad-solid)}
+.bad-ink{color:var(--color-bad-fg)!important}
+
+/* ---------- SegmentedTabs look (components/ui/segmented-tabs.tsx) ---------- */
+.seg{position:relative;display:inline-flex;border:1px solid var(--color-line-ui);background:var(--color-track);border-radius:var(--radius-pill);padding:2px}
+.seg .pill{position:absolute;top:2px;bottom:2px;left:0;border-radius:var(--radius-pill);background:var(--color-surface);border:1px solid var(--color-line);box-shadow:var(--shadow-pill);transition:transform var(--dur-fast) var(--ease-select),width var(--dur-fast) var(--ease-select)}
+.seg button{position:relative;z-index:1;height:32px;padding:0 14px;border-radius:var(--radius-pill);font-size:14px;font-weight:600;color:var(--color-ink-2);white-space:nowrap}
+.seg button[aria-selected=true]{font-weight:800;color:var(--color-ink)}
+
+/* ---------- CashPreview ---------- */
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.legend{display:flex;gap:22px;flex-wrap:wrap;margin:14px 0 0;font-size:13px;color:var(--color-ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid var(--color-chart-base)}
+.legend i.plan{border-top:2px dashed var(--color-ink-3)}
+.legend i.res{border-top:1px solid var(--color-chart-reserve);position:relative}
+.chart-wrap{position:relative;margin-top:8px}
+.chart-wrap svg{display:block;width:100%;overflow:visible}
+.chart-wrap text{font-family:var(--font-sans);font-size:13px;fill:var(--color-chart-axis)}
+.hover{position:absolute;z-index:5;width:250px;background:var(--color-surface);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);padding:12px 14px;pointer-events:none;transition:transform var(--dur) var(--ease-ui),opacity var(--dur) var(--ease-ui)}
+.hover .amt{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:20px;letter-spacing:-.01em;line-height:1.2}
+.hover .when{font-size:13px;color:var(--color-ink-3);margin-top:2px}
+.hover .ev{font-size:14px;color:var(--color-ink);margin-top:8px;padding-top:8px;border-top:1px solid var(--color-line);display:flex;justify-content:space-between;gap:10px}
+.hover .ev span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.hover .extra{font-size:13px;color:var(--color-ink-2);margin-top:6px}
+.chart-foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--color-ink-3)}
+.links{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px}
+
+/* ---------- WorklistRows (inbox) ---------- */
+.inbox{border-left:1px solid var(--color-line);padding-left:28px;min-width:0;position:sticky;top:24px}
+.inbox-head{display:flex;align-items:baseline;gap:10px}
+.inbox-head h2{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.01em;margin:0}
+.inbox-head .count{font-size:14px;color:var(--color-ink-3);font-variant-numeric:tabular-nums}
+.alert{margin:16px 0 0;padding:2px 0 2px 12px;border-left:2px solid var(--color-bad-solid);font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.alert b{color:var(--color-ink);font-weight:700}
+.alert .link{font-size:14px}
+.utabs{position:relative;display:flex;gap:22px;margin-top:20px;border-bottom:1px solid var(--color-line)}
+.utabs button{height:38px;font-size:14px;font-weight:700;color:var(--color-ink-3);display:inline-flex;align-items:center;gap:6px;transition:color var(--dur-fast) var(--ease-ui)}
+.utabs button:hover{color:var(--color-ink)}
+.utabs button[aria-selected=true]{color:var(--color-ink)}
+.utabs .n{font-size:13px;font-weight:700;color:var(--color-ink-3);font-variant-numeric:tabular-nums}
+.utabs .n.alert-n{color:var(--color-bad-fg)}
+.utabs .bar{position:absolute;bottom:-1px;left:0;height:2px;background:var(--color-ink);border-radius:2px;transition:transform var(--dur) var(--ease-select),width var(--dur) var(--ease-select)}
+.search{display:flex;align-items:center;gap:8px;height:38px;margin:12px 0 4px;padding:0 2px;border-bottom:1px solid var(--color-line);color:var(--color-ink-3)}
+.search svg{width:16px;height:16px;flex:none}
+.search input{border:0;outline:0;font:inherit;font-size:14px;color:var(--color-ink);background:transparent;width:100%;height:100%}
+.search input::placeholder{color:var(--color-ink-3)}
+.rows{list-style:none;margin:0;padding:0}
+.row{position:relative;display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:2px 10px;padding:14px 10px 14px 8px;margin:0 -10px 0 -8px;border-radius:var(--radius-tile);cursor:pointer;transition:background var(--dur-fast) var(--ease-ui)}
+.row+.row::before{content:"";position:absolute;left:26px;right:10px;top:0;border-top:1px solid var(--color-line)}
+.row:hover{background:var(--color-canvas)}
+.row[aria-selected=true]{background:var(--color-brand-50)}
+.row[aria-selected=true]::before,.row[aria-selected=true]+.row::before{border-color:transparent}
+.row .lead{padding-top:8px}
+.row .subj{font-size:15px;font-weight:700;line-height:21px;color:var(--color-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .st{font-size:13px;line-height:19px;color:var(--color-ink-2);grid-column:2}
+.row .cq{font-size:13px;line-height:19px;color:var(--color-ink-3);grid-column:2}
+.row .why{font-size:13px;line-height:19px;color:var(--color-ink-3);grid-column:2;font-style:normal}
+.row .sev{font-size:13px;font-weight:700;color:var(--color-warn-fg);padding-top:1px;white-space:nowrap}
+.panel{animation:none}
+.empty{padding:36px 0 28px}
+.empty h3{font-family:var(--font-display);font-weight:700;font-size:16px;margin:0 0 4px}
+.empty p{margin:0;font-size:14px;color:var(--color-ink-3)}
+.inbox-foot{margin-top:14px;font-size:14px}
+
+/* crossfade of the workspace when the focus changes (brief: Motion) */
+.fadeable{transition:opacity var(--dur) var(--ease-ui)}
+body[data-state=deal] .decision{display:none}
+body[data-state=deal] .action-quiet{display:flex}
+body[data-state=deal] .deal{display:block}
+
+/* reviewer's switch: not part of the design */
+.rev{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;gap:4px;padding:4px;border-radius:var(--radius-pill);background:var(--color-ink);box-shadow:var(--shadow-pop)}
+.rev a{color:#fff;font-size:13px;font-weight:700;padding:6px 12px;border-radius:var(--radius-pill)}
+.rev a.on{background:#fff;color:var(--color-ink)}
+body.shot .rev{display:none}
+
+.tabbar,.m-top,.m-jump{display:none}
+
+/* ---------- phone (390) ---------- */
+@media (max-width:1023px){
+  :root{--pad:20px;--section:28px}
+  .app{grid-template-columns:1fr}
+  .nav{display:none}
+  .main{padding:0 var(--pad) 40px}
+  .hover{width:210px}
+  .decision{padding:18px 18px 16px}
+  .metric{padding:14px 0}
+  .m-top{display:flex;align-items:center;justify-content:space-between;height:60px;margin:0 calc(-1 * var(--pad)) 8px;padding:0 var(--pad)}
+  .m-top .brand{padding:0}
+  .m-top .right{display:flex;gap:10px;align-items:center}
+  .topbar{display:block;margin-bottom:20px}
+  .top-right{display:none}
+  .greet{font-size:26px}
+  .status{font-size:16px;align-items:flex-start}
+  .status .dot{margin-top:8px}
+  .work{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric{padding:16px 0 16px}
+  .metric:first-child{grid-column:1 / -1;border-bottom:1px solid var(--color-line);display:grid;grid-template-columns:1fr auto;align-items:end;column-gap:12px}
+  .metric:first-child .metric-head{grid-column:1 / -1}
+  .metric:first-child .value{margin-bottom:4px}
+  .metric:first-child .buffer-wrap{grid-column:1 / -1}
+  .metric:nth-child(2){border-left:0;padding-right:14px}
+  .metric:nth-child(3){padding-left:14px}
+  .value{font-size:30px;margin:6px 0 6px}
+  .metric:nth-child(n+2) .value{font-size:26px}
+  .note{font-size:13px;line-height:18px}
+  .pop{width:calc(100vw - 40px);left:0!important}
+  .metric:nth-child(3) .pop{left:auto!important;right:0}
+  .decision{grid-template-columns:1fr;padding:20px;margin-top:20px;gap:16px}
+  .d-title{font-size:22px}
+  .facts{grid-template-columns:auto minmax(0,1fr);gap:10px 20px;margin-top:14px}
+  .facts div:nth-child(2){grid-column:2;grid-row:1 / span 2}
+  .facts dd{font-size:14px;line-height:19px}
+  .d-actions{flex-direction:row;align-items:center}
+  .d-actions .btn.primary{flex:1}
+  .m-jump{display:flex;align-items:center;justify-content:space-between;margin-top:16px;height:48px;padding:0 4px;border-bottom:1px solid var(--color-line);font-size:15px;font-weight:700}
+  .m-jump .n{color:var(--color-bad-fg);font-variant-numeric:tabular-nums}
+  .inbox{border-left:0;padding-left:0;position:static;margin-top:var(--section);padding-top:var(--section);border-top:1px solid var(--color-line)}
+  .chart-head .seg button{padding:0 12px}
+  .paths{grid-template-columns:1fr}
+  .path+.path{border-left:0;border-top:1px solid var(--color-line)}
+  .deal-head{grid-template-columns:1fr}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:sticky;left:0;right:0;bottom:0;z-index:30;background:var(--color-surface);box-shadow:var(--shadow-up);padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  .tabbar a{display:grid;justify-items:center;gap:3px;font-size:13px;font-weight:700;color:var(--color-ink-3)}
+  .tabbar a[aria-current]{color:var(--color-brand-600)}
+  .tabbar svg{width:20px;height:20px}
+  .rev{bottom:84px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-property:opacity!important;animation:none!important}
+  .seg .pill,.utabs .bar,.hover{transition:none!important}
+}
+</style>
+</head>
+<body data-state="default">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-deals" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+  <symbol id="i-recv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-act" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="nav" aria-label="Main">
+    <div class="nav-in">
+    <div class="brand"><span class="brand-mark"><svg width="16" height="16"><use href="#i-shield"/></svg></span><span class="brand-name">FLOW 流</span></div>
+    <a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Home</a>
+    <a href="#"><svg><use href="#i-deals"/></svg>Deals</a>
+    <a href="#"><svg><use href="#i-cash"/></svg>Cash &amp; funding</a>
+    <a href="#"><svg><use href="#i-recv"/></svg>Receivables</a>
+    <a href="#"><svg><use href="#i-act"/></svg>Activity</a>
+    <div class="nav-foot">
+      <p class="nav-note">A simulated company: the lenders, the buyer and the bank feed are simulated. No real funds move.</p>
+      <button class="ask" type="button"><svg><use href="#i-ask"/></svg>Ask FLOW</button>
+    </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="m-top">
+      <div class="brand"><span class="brand-mark"><svg width="16" height="16"><use href="#i-shield"/></svg></span><span class="brand-name">FLOW 流</span></div>
+      <div class="right"><div class="mode"><span class="on">Business</span><span>Demo</span></div><span class="avatar">O</span></div>
+    </div>
+
+    <header class="topbar">
+      <div>
+        <h1 class="greet" id="greet">Good afternoon</h1>
+        <p class="status"><span class="dot bad" aria-hidden="true"></span><span id="status-line"></span></p>
+      </div>
+      <div class="top-right">
+        <span class="read"><span class="dot bad" aria-hidden="true"></span><b id="status-word"></b> · <span id="read-when"></span></span>
+        <div class="mode" aria-label="Mode"><span class="on">Business</span><span>Demo</span></div>
+        <span class="avatar" aria-label="Owner">O</span>
+      </div>
+    </header>
+
+    <div class="work">
+      <div class="col">
+        <!-- MetricStrip -->
+        <section class="metrics" aria-label="Your company" id="metrics"></section>
+
+        <!-- DecisionHighlight: the page action -->
+        <section class="decision fadeable" id="decision" aria-labelledby="d-title"></section>
+        <div class="action-quiet fadeable" id="action-quiet"></div>
+        <a class="m-jump" href="#worklist" id="m-jump"></a>
+
+        <!-- deal focus (state b) -->
+        <section class="deal section fadeable" id="deal" aria-labelledby="deal-title"></section>
+
+        <!-- CashPreview -->
+        <section class="section" id="chart-sec" aria-labelledby="chart-title">
+          <div class="chart-head">
+            <h2 class="label" id="chart-title" style="margin:0"></h2>
+            <div class="seg" role="tablist" aria-label="Days shown" id="win-tabs"><span class="pill" aria-hidden="true"></span></div>
+          </div>
+          <div class="legend" id="legend"></div>
+          <div class="chart-wrap" id="chart-wrap"><svg id="chart" role="img" aria-label="Your company's cash over the days ahead, with the lowest point marked."></svg><div class="hover" id="hover" aria-live="polite"></div></div>
+          <div class="chart-foot"><span id="chart-note"></span><a class="link" href="#">Full timeline in Cash &amp; Funding <span class="arrow">→</span></a></div>
+        </section>
+
+        <nav class="section links" aria-label="Where the rest of the picture lives" id="links"></nav>
+      </div>
+
+      <!-- WorklistRows (inbox) -->
+      <aside class="inbox" id="worklist" aria-labelledby="wl-title">
+        <div class="inbox-head"><h2 id="wl-title">Your worklist</h2><span class="count" id="wl-count"></span></div>
+        <div class="alert" id="wl-alert"></div>
+        <div class="utabs" role="tablist" aria-label="Worklist views" id="wl-tabs"><span class="bar" aria-hidden="true"></span></div>
+        <label class="search"><svg><use href="#i-search"/></svg><span class="sr">Search customers or deals</span><input id="wl-q" type="search" placeholder="Search customers or deals"></label>
+        <div id="wl-panel" class="fadeable" role="tabpanel"></div>
+        <div class="inbox-foot"><a class="link" href="#">All deals <span class="arrow">→</span></a></div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Main">
+  <a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Home</a>
+  <a href="#"><svg><use href="#i-deals"/></svg>Deals</a>
+  <a href="#"><svg><use href="#i-cash"/></svg>Cash</a>
+  <a href="#"><svg><use href="#i-recv"/></svg>Receivables</a>
+  <a href="#"><svg><use href="#i-act"/></svg>Activity</a>
+</nav>
+
+<div class="rev" aria-label="Reviewer: state">
+  <a href="?state=default" data-s="default">a · Default</a>
+  <a href="?state=deal" data-s="deal">b · Deal selected</a>
+</div>
+
+<script>
+/* ===== The reads (verbatim from GET /home, /worklist, /customers, /deals, /offers/{id}/exposure and the evaluate response, lang=en, Demo day 0) ===== */
+const HOME = {
+  status_word: "Action needed", status_tone: "bad", last_read_when: "today",
+  headline_conditional: "Your cash reserve becomes unsafe in 12 days.",
+  kpis: {
+    cash_available: { eyebrow: "CASH AVAILABLE", value_display: "¥400,000", note: "¥100k above your ¥300k minimum", buffer: { min_fen: 30000000, cash_fen: 40000000, min_display: "¥300k" } },
+    lowest_ahead: { eyebrow: "LOWEST CASH AHEAD", value_display: "−¥105,000", note: "¥405k below your minimum in 30 days · current books, no new funding", tone: "bad",
+      with_plan_hint: "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned." },
+    funding: { eyebrow: "PLANNED FUNDING", value_display: "¥405,000", note: "¥150k credit line today + ¥255k invoice financing in 3 days", hint: "Conditional on you running the plan; not counted as cash." }
+  },
+  assumptions: ["Foshan pays ¥420k in 32 days, as scheduled.", "The scheduled payroll, supplier and debt payments are paid as entered."],
+  forecast_basis_text: "Expected invoice payments at their due dates and committed funding; overdue payments are excluded; assumed line repayment in 32 days.",
+  action: { eyebrow: "NEXT ACTION · WITHIN 12 DAYS", title: "Secure ¥405,000 before payroll in 12 days.",
+    /* the server sends these three as one sentence (action.text); split here at its " · " separators, words unchanged */
+    facts: [ ["Estimated cost", "cost ¥3,113.93", true], ["Funding", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned", false], ["Approval", "no approval needed", false] ],
+    primary: "Run the funding plan", secondary: "Compare" },
+  chart: { scope_title: "COMPANY CASH FORECAST", legend: ["Current books · no new funding", "If FLOW's plan runs (planned)"],
+    note: "Current books, nothing new assumed. The same figures as Cash & Funding.",
+    lowest: { day: 30, third_label: "Shortfall", third_display: "¥405,000", minimum_display: "¥300,000",
+      note: "With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned." } },
+  axes: { 36: { min: -200000, max: 1000000, ticks: [[0,"¥0"],[400000,"¥400k"],[800000,"¥800k"]] },
+          60: { min: -200000, max: 1000000, ticks: [[0,"¥0"],[400000,"¥400k"],[800000,"¥800k"]] },
+          120:{ min: -500000, max: 1500000, ticks: [[0,"¥0"],[500000,"¥500k"],[1000000,"¥1,000k"],[1500000,"¥1,500k"]] } },
+  floor: 300000, floor_label: "Minimum reserve",
+  /* cash.series step points: [day, closing (yuan), closing_display, events[[label_short, amount_display]]] */
+  series: [
+    [0,400000,"¥400,000.00",[]],
+    [12,60000,"¥60,000.00",[["Payroll","−¥340,000.00"]]],
+    [20,-60000,"−¥60,000.00",[["Supplier payment","−¥120,000.00"]]],
+    [30,-105000,"−¥105,000.00",[["Debt service","−¥45,000.00"]]],
+    [32,315000,"¥315,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],
+    [47,635000,"¥635,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Operating bill","−¥100,000.00"]]],
+    [60,590000,"¥590,000.00",[["Debt service","−¥45,000.00"]]],
+    [77,1010000,"¥1,010,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],
+    [90,965000,"¥965,000.00",[["Debt service","−¥45,000.00"]]],
+    [107,1385000,"¥1,385,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],
+    [120,1340000,"¥1,340,000.00",[["Debt service","−¥45,000.00"]]]
+  ],
+  plan_series: [[0,550000],[3,805000],[12,465000],[20,345000],[30,300000],[32,311886.07],[47,631886.07],[60,586886.07],[77,1006886.07],[90,961886.07],[107,1381886.07],[120,1336886.07]],
+  /* the server's own "when" words (events_rail); later days take the app's dictionary format biz.when.inDays */
+  when: { 0: "today", 3: "in 3 days", 12: "in 12 days", 20: "in 20 days", 30: "in 30 days", 32: "in 32 days" },
+  links: ["Where the cash goes", "Facility headroom", "What you are owed, by when", "All deals"]
+};
+const WORKLIST = {
+  alert: { eyebrow: "Company cash", text: "Reserve unsafe in 12 days. A funding plan is ready.", primary: "Run or compare" },
+  counts: { needs_you: 3, waiting: 0, customers: 2 },
+  needs_you: [
+    { key: "deal:OFF-f806f79b6c21", subject_text: "Foshan · Payment terms", status_text: "Counter ready · Reply needed", consequence_text: "As asked: below your minimum for 15 days.", severity: "CAUTION", why_first_text: "Why first: it has the largest effect on your cash." },
+    { key: "deal:OFF-39cabafae4ee", subject_text: "Foshan · Early-payment discount", status_text: "Counter ready · Reply needed", consequence_text: "Accepting as asked does not take cash below your minimum.", severity: "NORMAL", why_first_text: null },
+    { key: "deal:OFF-4f6bf9834d4d", subject_text: "Foshan · Early-payment discount", status_text: "Counter ready · Reply needed", consequence_text: "Accepting as asked does not take cash below your minimum.", severity: "NORMAL", why_first_text: null }
+  ],
+  waiting: [],
+  customers: [
+    { name: "Foshan Home Retail Co.", status_text: "3 open negotiations · 3 need you", detail_text: "¥420,000 outstanding · 100% of what you are owed", tone: "warn" },
+    { name: "Dongguan Office Supplies Ltd.", status_text: "Nothing open", detail_text: "¥0 outstanding", tone: "neutral" }
+  ]
+};
+/* GET /deals open_offer + GET /offers/OFF-f806f79b6c21/exposure + the evaluate response's counters (VER-a899ca66120c) */
+const DEAL = {
+  key: "deal:OFF-f806f79b6c21", buyer: "Foshan", subject: "Payment terms", buyer_name: "Foshan Home Retail Co.",
+  recommends: "Counter recommended", headline_short: "Counter instead of accepting as asked",
+  read_text: "Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.",
+  ctx: { contribution_display: "about ¥1.09m", contribution_note: "a year, estimated", owes_display: "¥420,000", share_text: "100%" },
+  primary: "Review and send the counter", secondary: "Customer profile",
+  scenarios: ["Expected payments", "Foshan 30 days late"],
+  paths: [
+    { key: "CTR-193394b6ba8b", label: "Option A", rec: true,
+      text: "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
+      cost: "¥3,027.77", lowest: "¥300k", lowest_when: "in 30 days", lowest_when_text: "at your minimum", limit: ["ok","within"], share_after: "100%, paid 2 days after the offer",
+      late: { lowest: "−¥250k", lowest_when: "in 60 days", text: "65 days below your minimum; no committed facility covers the ¥550,000." },
+      capacity: "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000." },
+    { key: "CTR-6b07cbf70441", label: "Option B",
+      text: "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
+      cost: "¥0.00", lowest: "¥300k", lowest_when: "in 30 days", lowest_when_text: "at your minimum", limit: ["ok","within"], share_after: "100%, for 10 days longer",
+      late: { lowest: "−¥250k", lowest_when: "in 60 days", text: "75 days below your minimum; no committed facility covers the ¥550,000." },
+      capacity: "Option B leaves ¥62,000 of room for another payment; today ¥81,000." },
+    { key: "asked", label: "As they asked",
+      text: "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate",
+      cost: "¥28,326.92", cost_note: "over 12 months", lowest: "¥165k", lowest_when: "in 60 days", lowest_when_text: "below it for 15 days", limit: ["bad","exceeded"], share_after: "100%, for 15 days longer", lowest_bad: true,
+      late: { lowest: "−¥250k", lowest_when: "in 60 days", text: "80 days below your minimum; no committed facility covers the ¥550,000." },
+      capacity: "Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000." }
+  ]
+};
+
+/* ===== rendering ===== */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const params = new URLSearchParams(location.search);
+const STATE = params.get("state") === "deal" ? "deal" : "default";
+if (params.get("shot")) document.body.classList.add("shot");
+document.body.dataset.state = STATE;
+document.querySelectorAll(".rev a").forEach((a) => a.classList.toggle("on", a.dataset.s === STATE));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+$("#status-line").textContent = HOME.headline_conditional;
+$("#status-word").textContent = HOME.status_word;
+$("#read-when").textContent = "Read " + HOME.last_read_when;
+
+/* MetricStrip */
+const K = HOME.kpis;
+const pct = (v) => Math.max(0, Math.min(100, v));
+const scaleMax = K.cash_available.buffer.cash_fen * 1.5; /* the scale runs from ¥0 to 1.5× today's cash */
+const minPct = pct(K.cash_available.buffer.min_fen / scaleMax * 100), cashPct = pct(K.cash_available.buffer.cash_fen / scaleMax * 100);
+const metric = (id, k, valueClass, extra, popHtml) => `
+  <div class="metric">
+    <div class="metric-head"><span class="label">${esc(k.eyebrow)}</span>
+      <button class="info" type="button" aria-expanded="false" aria-controls="pop-${id}" aria-label="About ${esc(k.eyebrow.toLowerCase())}"><svg><use href="#i-info"/></svg></button></div>
+    <div class="value ${valueClass}">${esc(k.value_display)}</div>
+    <p class="note">${esc(k.note)}</p>${extra}
+    <div class="pop" id="pop-${id}" role="dialog" aria-label="${esc(k.eyebrow)}">${popHtml}</div>
+  </div>`;
+$("#metrics").innerHTML =
+  metric("cash", K.cash_available, "", `<div class="buffer-wrap"><div class="buffer" aria-hidden="true"><span class="track"></span><span class="fill" style="width:${cashPct}%"></span><span class="min" style="left:${minPct}%"></span><span class="cash" style="left:${cashPct}%"></span></div></div>`,
+    `<h4>Assumptions</h4><ul>${HOME.assumptions.map((a) => `<li>${esc(a)}</li>`).join("")}</ul><p style="margin:8px 0 0">${esc(HOME.forecast_basis_text)}</p>`) +
+  metric("low", K.lowest_ahead, "bad", "", `<p style="margin:0">${esc(K.lowest_ahead.with_plan_hint)}</p>`) +
+  metric("fund", K.funding, "plan", "", `<p style="margin:0">${esc(K.funding.hint)}</p>`);
+document.querySelectorAll(".info").forEach((b) => b.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = b.getAttribute("aria-expanded") !== "true";
+  document.querySelectorAll(".info").forEach((o) => { o.setAttribute("aria-expanded", "false"); $("#" + o.getAttribute("aria-controls")).classList.remove("open"); });
+  if (open) { b.setAttribute("aria-expanded", "true"); $("#" + b.getAttribute("aria-controls")).classList.add("open"); }
+}));
+document.addEventListener("click", () => document.querySelectorAll(".info[aria-expanded=true]").forEach((b) => b.click()));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".info[aria-expanded=true]").forEach((b) => { b.click(); b.focus(); }); });
+
+/* DecisionHighlight */
+const A = HOME.action;
+$("#decision").innerHTML = `
+  <div>
+    <p class="eyebrow">${esc(A.eyebrow)}</p>
+    <h2 class="d-title" id="d-title">${esc(A.title)}</h2>
+    <dl class="facts">${A.facts.map(([l, v, n]) => `<div><dt>${esc(l)}</dt><dd class="${n ? "num" : ""}">${esc(n ? v.replace(/^cost /, "") : v.charAt(0).toUpperCase() + v.slice(1))}</dd></div>`).join("")}</dl>
+  </div>
+  <div class="d-actions">
+    <button class="btn primary" type="button">${esc(A.primary)} <span class="arrow" aria-hidden="true">→</span></button>
+    <button class="btn quiet" type="button">${esc(A.secondary)}</button>
+  </div>`;
+$("#action-quiet").innerHTML = `<p class="eyebrow">${esc(A.eyebrow)}</p><span class="t">${esc(A.title)}</span><a class="link" href="#">${esc(A.primary)} <span class="arrow">→</span></a>`;
+$("#m-jump").innerHTML = `<span>Your worklist</span><span><span class="n">${WORKLIST.counts.needs_you}</span> <span class="arrow" aria-hidden="true">→</span></span>`;
+
+/* Deal focus */
+let scenario = 0;
+function pathCol(p) {
+  const late = scenario === 1;
+  const low = late ? p.late.lowest : p.lowest, lowWhen = late ? p.late.lowest_when : p.lowest_when;
+  const lowSub = late ? p.late.text : p.lowest_when_text;
+  const lowBad = late || p.lowest_bad;
+  return `<div class="path ${p.rec ? "rec" : ""}">
+    <div class="path-top"><span class="path-name">${esc(p.label)}</span>${p.rec ? `<span class="tag">Recommended</span>` : ""}</div>
+    <p class="path-text">${esc(p.text.charAt(0).toUpperCase() + p.text.slice(1))}</p>
+    <dl>
+      <div><dt>Cost</dt><dd><span class="big ${p.lowest_bad ? "bad-ink" : ""}">${esc(p.cost)}</span>${p.cost_note ? `<span class="sub">${esc(p.cost_note)}</span>` : ""}</dd></div>
+      <div><dt>Lowest cash</dt><dd><span class="big ${lowBad ? "bad-ink" : ""}">${esc(low)}</span><span class="sub">${esc(lowWhen)} · ${esc(lowSub)}</span></dd></div>
+      <div><dt>Your limit</dt><dd><span class="sw ${p.limit[0]}"><svg><use href="#i-${p.limit[0] === "ok" ? "check" : "cross"}"/></svg>${esc(p.limit[1])}</span></dd></div>
+      <div><dt>Foshan's share after</dt><dd><span class="sub" style="font-size:14px;color:var(--color-ink)">${esc(p.share_after)}</span></dd></div>
+      <div><dt>Room for another payment</dt><dd><span class="sub">${esc(p.capacity)}</span></dd></div>
+    </dl></div>`;
+}
+const D = DEAL;
+$("#deal").innerHTML = `
+  <nav class="crumbs" aria-label="Focus"><button type="button" id="back">‹ Your company</button><span aria-hidden="true">/</span><span>${esc(D.buyer)}</span><span aria-hidden="true">/</span><span class="here">${esc(D.subject)}</span></nav>
+  <div class="deal-head">
+    <div>
+      <p class="eyebrow brand">${esc(D.recommends)}</p>
+      <h2 class="d-title" id="deal-title">${esc(D.headline_short)}</h2>
+      <p class="read-text">${esc(D.read_text)}</p>
+      <p class="ctx"><b>${esc(D.buyer_name)}</b> · ${esc(D.ctx.contribution_display)} ${esc(D.ctx.contribution_note)} · owes you ${esc(D.ctx.owes_display)} · ${esc(D.ctx.share_text)} of what you are owed</p>
+    </div>
+    <div class="d-actions"><button class="btn primary" type="button">${esc(D.primary)} <span class="arrow" aria-hidden="true">→</span></button><button class="btn quiet" type="button">${esc(D.secondary)}</button></div>
+  </div>
+  <div class="scen-row"><span class="label">Three paths</span><div class="seg" role="tablist" aria-label="Scenario" id="scen-tabs"><span class="pill" aria-hidden="true"></span></div></div>
+  <div class="paths" id="paths"></div>`;
+function renderPaths() { $("#paths").innerHTML = D.paths.map(pathCol).join(""); }
+renderPaths();
+
+/* SegmentedTabs (pill measured from the chosen tab, as segmented-tabs.tsx does) */
+function seg(el, labels, value, onChange) {
+  labels.forEach((l, i) => { const b = document.createElement("button"); b.type = "button"; b.role = "tab"; b.textContent = l; b.setAttribute("aria-selected", i === value); b.tabIndex = i === value ? 0 : -1;
+    b.addEventListener("click", () => set(i)); b.addEventListener("keydown", (e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); const n = (value + d + labels.length) % labels.length; set(n); el.querySelectorAll("button")[n].focus(); } });
+    el.appendChild(b); });
+  const pill = el.querySelector(".pill");
+  function place() { const b = el.querySelectorAll("button")[value]; pill.style.width = b.offsetWidth + "px"; pill.style.transform = `translateX(${b.offsetLeft - 2}px)`; }
+  function set(i) { value = i; el.querySelectorAll("button").forEach((b, j) => { b.setAttribute("aria-selected", j === i); b.tabIndex = j === i ? 0 : -1; }); place(); onChange(i); }
+  requestAnimationFrame(place); addEventListener("resize", place); document.fonts && document.fonts.ready.then(place);
+  return { place };
+}
+const scenSeg = seg($("#scen-tabs"), D.scenarios, 0, (i) => {
+  scenario = i; const p = $("#paths");
+  if (reduced) { renderPaths(); return; }
+  p.classList.add("fading"); setTimeout(() => { renderPaths(); p.classList.remove("fading"); }, 175);
+});
+
+/* CashPreview */
+$("#chart-title").textContent = HOME.chart.scope_title;
+$("#legend").innerHTML = `<span><i></i>${esc(HOME.chart.legend[0])}</span><span><i class="plan"></i>${esc(HOME.chart.legend[1])}</span><span><i class="res"></i>${esc(HOME.floor_label)} ${esc(HOME.chart.lowest.minimum_display)}</span>`;
+$("#chart-note").textContent = HOME.chart.note;
+let windowDays = 36, selDay = HOME.chart.lowest.day;
+const valueAt = (s, d) => { let v = s[0][1]; for (const p of s) { if (p[0] <= d) v = p[1]; } return v; };
+const pointAt = (d) => { let p = HOME.series[0]; for (const q of HOME.series) if (q[0] <= d) p = q; return p; };
+const whenOf = (d) => HOME.when[d] ?? `in ${d} days`;
+function stepPath(s, x, y, W) {
+  let d = `M${x(0)},${y(s[0][1])}`;
+  for (const [day, v] of s.slice(1)) { if (day > W) break; d += `H${x(day)}V${y(v)}`; }
+  return d + `H${x(W)}`;
+}
+function drawChart() {
+  const wrap = $("#chart-wrap"), svg = $("#chart");
+  const Wpx = wrap.clientWidth, phone = Wpx < 600, H = phone ? 220 : 280;
+  const m = { l: phone ? 44 : 56, r: 8, t: 16, b: 30 };
+  const ax = HOME.axes[windowDays], W = windowDays;
+  const x = (d) => m.l + (d / W) * (Wpx - m.l - m.r);
+  const y = (v) => m.t + (1 - (v - ax.min) / (ax.max - ax.min)) * (H - m.t - m.b);
+  svg.setAttribute("viewBox", `0 0 ${Wpx} ${H}`); svg.setAttribute("height", H);
+  const xt = W === 36 ? (phone ? [0, 12, 24, 36] : [0, 6, 12, 18, 24, 30, 36]) : W === 60 ? [0, 15, 30, 45, 60] : [0, 30, 60, 90, 120];
+  let g = "";
+  /* the shade below the reserve, then two faint gridlines and the zero line */
+  g += `<rect x="${m.l}" y="${y(HOME.floor)}" width="${Wpx - m.l - m.r}" height="${y(ax.min) - y(HOME.floor)}" fill="var(--color-chart-danger)" opacity=".55"/>`;
+  for (const [v, l] of ax.ticks) {
+    g += `<line x1="${m.l}" x2="${Wpx - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? "var(--color-line-strong)" : "var(--color-chart-grid)"}" stroke-width="1"/>`;
+    g += `<text x="${m.l - 10}" y="${y(v) + 4}" text-anchor="end">${esc(l)}</text>`;
+  }
+  g += `<line x1="${m.l}" x2="${Wpx - m.r}" y1="${y(HOME.floor)}" y2="${y(HOME.floor)}" stroke="var(--color-chart-reserve)" stroke-width="1.25"/>`;
+  g += `<text x="${m.l + 8}" y="${y(HOME.floor) + 17}" text-anchor="start" style="fill:var(--color-chart-reserve);font-weight:700">${esc(HOME.floor_label)} ¥300k</text>`;
+  for (const d of xt) g += `<text x="${x(d)}" y="${H - 8}" text-anchor="${d === 0 ? "start" : d === W ? "end" : "middle"}">${d === 0 ? "Today" : "in " + d + " days"}</text>`;
+  g += `<path d="${stepPath(HOME.plan_series, x, y, W)}" fill="none" stroke="var(--color-ink-3)" stroke-width="1.5" stroke-dasharray="5 4" stroke-linejoin="miter" opacity=".8"/>`;
+  g += `<path d="${stepPath(HOME.series.map((p) => [p[0], p[1]]), x, y, W)}" fill="none" stroke="var(--color-chart-base)" stroke-width="2.25" stroke-linejoin="miter" stroke-linecap="square"/>`;
+  /* the lowest point: a quiet ring always; the selected point: a guide and a filled dot */
+  const lo = HOME.chart.lowest.day;
+  if (lo <= W) g += `<circle cx="${x(lo)}" cy="${y(valueAt(HOME.series, lo))}" r="5" fill="var(--color-surface)" stroke="var(--color-bad-solid)" stroke-width="2"/>`;
+  if (selDay <= W) {
+    const sx = x(selDay), sy = y(valueAt(HOME.series, selDay));
+    g += `<line x1="${sx}" x2="${sx}" y1="${m.t}" y2="${H - m.b}" stroke="var(--color-ink)" stroke-width="1" opacity=".25"/>`;
+    g += `<circle cx="${sx}" cy="${sy}" r="5.5" fill="var(--color-chart-base)" stroke="var(--color-surface)" stroke-width="2.5"/>`;
+  }
+  g += `<rect id="hit" x="${m.l}" y="0" width="${Wpx - m.l - m.r}" height="${H}" fill="transparent" style="cursor:crosshair"/>`;
+  svg.innerHTML = g;
+  /* the hover card */
+  const hv = $("#hover");
+  if (selDay > W) { hv.style.opacity = 0; return; }
+  const p = pointAt(selDay), isLow = selDay === lo, evs = selDay === p[0] ? p[3] : [];
+  hv.innerHTML = `<div class="amt ${p[1] < HOME.floor ? "bad-ink" : ""}">${esc(p[2])}</div><div class="when">${esc(whenOf(selDay).charAt(0).toUpperCase() + whenOf(selDay).slice(1))}${isLow ? " · the lowest point" : ""}</div>` +
+    evs.map(([l, a]) => `<div class="ev"><span>${esc(l)}</span><span>${esc(a)}</span></div>`).join("") +
+    (isLow ? `<div class="extra">${esc(HOME.chart.lowest.third_label)} <b class="num">${esc(HOME.chart.lowest.third_display)}</b></div>` : "");
+  const sx = x(selDay), cw = hv.offsetWidth || 250, left = sx + 16 + cw > Wpx ? sx - 16 - cw : sx + 16;
+  const top = m.t;
+  hv.style.opacity = 1; hv.style.left = 0; hv.style.top = 0; hv.style.transform = `translate(${Math.max(0, left)}px, ${top}px)`;
+  const hit = $("#hit");
+  const snap = (cx) => { const r = svg.getBoundingClientRect(); const d = ((cx - r.left - m.l) / (Wpx - m.l - m.r)) * W;
+    const cands = HOME.series.map((q) => q[0]).filter((q) => q <= W); return cands.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a); };
+  hit.addEventListener("mousemove", (e) => { const d = snap(e.clientX); if (d !== selDay) { selDay = d; drawChart(); } });
+  hit.addEventListener("mouseleave", () => { if (selDay !== lo) { selDay = lo <= W ? lo : 0; drawChart(); } });
+}
+seg($("#win-tabs"), ["36 days", "60 days", "120 days"], 0, (i) => { windowDays = [36, 60, 120][i]; if (selDay > windowDays) selDay = HOME.chart.lowest.day; drawChart(); });
+addEventListener("resize", drawChart);
+
+$("#links").innerHTML = HOME.links.map((l) => `<a class="link" href="#">${esc(l)} <span class="arrow" aria-hidden="true">→</span></a>`).join("");
+
+/* WorklistRows */
+const WL = WORKLIST;
+$("#wl-count").textContent = WL.counts.needs_you + " need you";
+$("#wl-alert").innerHTML = `<b>${esc(WL.alert.eyebrow)}.</b> ${esc(WL.alert.text)} <a class="link" href="#decision">${esc(WL.alert.primary)}</a>`;
+const TABS = [["needs", "Needs you", WL.counts.needs_you], ["waiting", "Waiting", WL.counts.waiting], ["customers", "Customers", WL.counts.customers]];
+let tab = 0, selected = STATE === "deal" ? DEAL.key : null;
+const tabsEl = $("#wl-tabs");
+TABS.forEach(([k, l, n], i) => { const b = document.createElement("button"); b.type = "button"; b.role = "tab"; b.setAttribute("aria-selected", i === 0);
+  b.innerHTML = `${esc(l)} <span class="n ${k === "needs" && n > 0 ? "alert-n" : ""}">${n}</span>`; b.addEventListener("click", () => setTab(i)); tabsEl.appendChild(b); });
+function placeBar() { const b = tabsEl.querySelectorAll("button")[tab], bar = tabsEl.querySelector(".bar"); bar.style.width = b.offsetWidth + "px"; bar.style.transform = `translateX(${b.offsetLeft}px)`; }
+function setTab(i) { tab = i; tabsEl.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-selected", j === i)); placeBar(); renderRows(); }
+function renderRows() {
+  const q = $("#wl-q").value.trim().toLowerCase(), panel = $("#wl-panel");
+  let html = "";
+  if (tab === 0) {
+    const rows = WL.needs_you.filter((r) => !q || r.subject_text.toLowerCase().includes(q));
+    html = rows.length ? `<ul class="rows">${rows.map((r, i) => `
+      <li class="row" role="option" tabindex="0" data-key="${r.key}" aria-selected="${r.key === selected}">
+        <span class="lead">${r.severity === "CAUTION" ? `<span class="dot warn" aria-hidden="true"></span>` : r.severity === "CRITICAL" ? `<span class="dot bad" aria-hidden="true"></span>` : ""}</span>
+        <span class="subj">${esc(r.subject_text)}</span>
+        <span class="sev">${r.severity === "CAUTION" ? "Caution" : ""}</span>
+        <span class="st">${esc(r.status_text)}</span>
+        <span class="cq">${esc(r.consequence_text)}</span>
+        ${r.why_first_text && i === 0 ? `<span class="why">${esc(r.why_first_text)}</span>` : ""}
+      </li>`).join("")}</ul>` : `<div class="empty"><h3>All caught up.</h3><p>Nothing needs a decision from you.</p></div>`;
+  } else if (tab === 1) {
+    html = `<div class="empty"><h3>All caught up.</h3><p>FLOW is not waiting for anyone.</p></div>`;
+  } else {
+    const rows = WL.customers.filter((r) => !q || r.name.toLowerCase().includes(q));
+    html = `<ul class="rows">${rows.map((r) => `
+      <li class="row" tabindex="0"><span class="lead">${r.tone === "warn" ? `<span class="dot warn" aria-hidden="true"></span>` : ""}</span>
+        <span class="subj">${esc(r.name)}</span><span></span>
+        <span class="st">${esc(r.status_text)}</span><span class="cq">${esc(r.detail_text)}</span></li>`).join("")}</ul>`;
+  }
+  panel.innerHTML = html;
+  panel.querySelectorAll(".row[data-key]").forEach((li) => {
+    const go = () => select(li.dataset.key);
+    li.addEventListener("click", go); li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  });
+}
+$("#wl-q").addEventListener("input", renderRows);
+function select(key) {
+  const toDeal = key === DEAL.key && selected !== key;
+  selected = toDeal ? key : null;
+  const fade = document.querySelectorAll(".decision,.action-quiet,.deal");
+  const apply = () => { document.body.dataset.state = selected ? "deal" : "default"; renderRows(); requestAnimationFrame(() => { scenSeg.place(); fade.forEach((f) => f.style.opacity = 1); }); };
+  if (reduced) return apply();
+  fade.forEach((f) => f.style.opacity = 0); setTimeout(apply, 180);
+}
+$("#back").addEventListener("click", () => select(null));
+renderRows();
+requestAnimationFrame(() => { placeBar(); drawChart(); });
+document.fonts && document.fonts.ready.then(() => { placeBar(); drawChart(); });
+
+/* the greeting follows the owner's clock (no server word yet: see 07_refined_kit_proposal.md) */
+const h = new Date().getHours();
+if (!params.get("shot")) $("#greet").textContent = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+</script>
+</body>
+</html>
