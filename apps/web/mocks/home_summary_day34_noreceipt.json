@@ -2737,7 +2737,9 @@
         "day": 37,
         "when": "in 3 days",
         "kind": "landing",
-        "label": "invoice financing arrives",
+        "label": "invoice financing would arrive, if you run the plan",
+        "note": null,
+        "planned": true,
         "amount_fen": 15501380,
         "amount_short": "+¥155k",
         "net_short": "+¥155k",
@@ -2747,6 +2749,24 @@
         "room_after_short": "¥100k below your minimum",
         "tone": "bad",
         "explain": "Cash rises from ¥45k to ¥200k. Your minimum is ¥300k, so cash is ¥100k below it.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥45k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥200k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash below reserve",
+            "display": "¥100k"
+          }
+        ],
         "amount_display": "¥155,013.80",
         "cash_after_display": "¥200,000.00",
         "room_after_display": "−¥100,000.00"
@@ -2756,7 +2776,9 @@
         "day": 42,
         "when": "in 8 days",
         "kind": "lowest",
-        "label": "cash is at its lowest",
+        "label": "payroll is paid",
+        "note": "cash at its lowest, ¥0, ¥300k below your minimum",
+        "planned": false,
         "amount_fen": -20000000,
         "amount_short": "−¥200k",
         "net_short": "−¥200k",
@@ -2766,6 +2788,24 @@
         "room_after_short": "¥300k below your minimum",
         "tone": "bad",
         "explain": "This is the lowest point on your cash line: ¥0, ¥300k below your minimum. Payroll of ¥200k takes cash from ¥200k to ¥0. Without the plan FLOW proposes, the lowest point would be −¥155k in 8 days.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥200k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥0"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash below reserve",
+            "display": "¥300k"
+          }
+        ],
         "amount_display": "−¥200,000.00",
         "cash_after_display": "¥0.00",
         "room_after_display": "−¥300,000.00"
@@ -2776,6 +2816,8 @@
         "when": "in 13 days",
         "kind": "receipt",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
         "net_short": "+¥164k",
@@ -2785,6 +2827,24 @@
         "room_after_short": "¥136k below your minimum",
         "tone": "bad",
         "explain": "Foshan pays ¥420k, and ¥156k of it repays the invoice financing, leaving ¥264k. Cash rises from ¥0 to ¥164k, ¥136k below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥0"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥164k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash below reserve",
+            "display": "¥136k"
+          }
+        ],
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥163,604.88",
         "room_after_display": "−¥136,395.12"
@@ -2795,6 +2855,8 @@
         "when": "in 26 days",
         "kind": "debt",
         "label": "debt service is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
@@ -2804,6 +2866,24 @@
         "room_after_short": "¥181k below your minimum",
         "tone": "bad",
         "explain": "Cash falls from ¥164k to ¥119k. Your minimum is ¥300k, so cash is ¥181k below it. Without the plan FLOW proposes, debt service would take cash to ¥120k, below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥164k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥119k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash below reserve",
+            "display": "¥181k"
+          }
+        ],
         "amount_display": "−¥45,000.00",
         "cash_after_display": "¥118,604.88",
         "room_after_display": "−¥181,395.12"
@@ -2814,6 +2894,8 @@
         "when": "in 43 days",
         "kind": "receipt",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
         "net_short": "+¥268k",
@@ -2823,6 +2905,24 @@
         "room_after_short": "¥87k above your minimum",
         "tone": "ok",
         "explain": "Foshan pays ¥420k. ¥152k of it repays the Bank credit line. Cash rises from ¥119k to ¥387k, ¥87k above your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥119k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥387k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥87k"
+          }
+        ],
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥386,593.66",
         "room_after_display": "¥86,593.66"
@@ -4027,6 +4127,7 @@
       }
     ],
     "counterfactual_label": "without the plan FLOW proposes (a comparison)",
+    "plan_line_label": "If you run FLOW's plan",
     "cash_display": "¥44,986.20",
     "floor_display": "¥300,000.00",
     "lowest_display": "−¥155,013.80",
@@ -4052,6 +4153,11 @@
           {
             "label": "Funds arrive",
             "value": "in 3 days",
+            "tone": "neutral"
+          },
+          {
+            "label": "Invoice financing",
+            "value": "¥155k in 3 days (planned)",
             "tone": "neutral"
           },
           {

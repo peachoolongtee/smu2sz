@@ -2618,6 +2618,12 @@ export interface HomeRailEvent {
   explain: string;
   /** A day with several events (a receipt and a repayment) is one event; its net. */
   net_short?: string | null;
+  /** The lowest point's own sentence ("cash at its lowest, ¥300k, at your minimum"), under its label. Only on the lowest row. */
+  note?: string | null;
+  /** A landing the plan would bring if the owner runs it (the plan has not run): said with the financing state word, never as a fact. */
+  planned?: boolean;
+  /** The day's effect as a table, from the figures the paragraph uses (cash before, cash after, the minimum, the room), label and figure as the server wrote them. */
+  effect_rows?: { label: string; display: string }[];
 }
 
 /** "What if the buyer pays late": the stress series and the sentences the server wrote for it. Behind a flag; absent when off. */
@@ -2631,6 +2637,11 @@ export interface HomeStress {
   breach_days: number;
   need_short?: string | null;
   plan_text?: string | null;
+  /** The stress sentence the server wrote: the lowest point, the breach days and the uncovered amount. The browser composes none of it. */
+  text?: string | null;
+  /** What funds it (the server's sentence), and, when the money comes in later anyway, what the net is then. */
+  funding_text?: string | null;
+  net_later_text?: string | null;
   assumption_text: string;
   /** How many days the picture must show to include the moved receipt. */
   window_days_needed?: number;
@@ -2792,6 +2803,8 @@ export interface HomeView {
     facts?: HomeFact[];
     /** Section 3, the picture: the key events (the rail and the numbered marks), the name of the dashed comparison line, and the late-payment scenario. */
     events_rail?: HomeRailEvent[];
+    /** The plan line's legend ("If you run FLOW's plan" before the run, "With FLOW's plan" after); absent with no plan. */
+    plan_line_label?: string | null;
     /** How many days from today the rail spans (the lowest point stays on it even past the picture's window). */
     events_rail_days?: number;
     /** The books without the whole plan (or without any action): drawn dashed grey with `counterfactual_label`. Both absent when there is nothing to compare. */

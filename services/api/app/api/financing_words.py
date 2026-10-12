@@ -1,5 +1,6 @@
 """The three words for an invoice-financing advance, said one way everywhere (map #88, ticket #107; the owner's rule of 12 Oct).
 
+    PLANNED   no operation has run yet: the plan is only ready (the Home before "Go ahead")
     ARRANGED  the lot exists, its cash has not landed        "Never the word advanced for an unlanded lot"
     RECEIVED  the cash has landed: it is in the account from that day
     REPAID    a receipt cleared the claim
@@ -17,22 +18,24 @@ from typing import Literal
 
 from app.domain.models import FundingLot
 
-State = Literal["ARRANGED", "RECEIVED", "REPAID", "NONE"]
+State = Literal["PLANNED", "ARRANGED", "RECEIVED", "REPAID", "NONE"]
 
 _WORD: dict[State, tuple[str, str]] = {
     "NONE": ("", ""),
+    "PLANNED": ("planned", "计划中"),
     "ARRANGED": ("arranged", "已安排"),
     "RECEIVED": ("received", "已到账"),
     "REPAID": ("repaid", "已还清"),
 }
 
 
-def state_of(lot: FundingLot | None, *, repaid: bool = False) -> State:
+def state_of(lot: FundingLot | None, *, repaid: bool = False, planned: bool = False) -> State:
     """The state of an advance by its lot: not landed -> ARRANGED; landed and still on the lender's books -> RECEIVED; a lot with
     nothing left -> REPAID. With no lot the books keep no trace of a cleared advance, so the caller that read the log says whether
-    one was repaid (`repaid`): REPAID then, else NONE (never financed)."""
+    one was repaid (`repaid`): REPAID then, else NONE (never financed). A leg that no operation has run yet has no lot either: the caller
+    that holds the plan, not the books, says so (`planned`) and gets PLANNED. PLANNED is never the state of a lot."""
     if lot is None:
-        return "REPAID" if repaid else "NONE"
+        return "REPAID" if repaid else "PLANNED" if planned else "NONE"
     if lot.remaining_fen <= 0:
         return "REPAID"
     return "RECEIVED" if lot.settled else "ARRANGED"
