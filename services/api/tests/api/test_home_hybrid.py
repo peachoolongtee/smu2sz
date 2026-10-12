@@ -7,6 +7,8 @@ closing cash, the costs are the router's cost lines, the deal's cost is the verd
 from __future__ import annotations
 
 import importlib
+import logging
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -21,6 +23,14 @@ ROUTES = [r"\.attention\.items\[\]\.(primary|secondary)\.href", r"\.(deals_card\
 AUDIT = [r"\.next_action\.(formula|detail_raw)", r"\.next_action\.legs\[\]\.formula", r"\.next_action\.cost_breakdown\[\]\.formula",
          r"\.cash\.series\[\]\.events\[\]\.label(_short)?", r"\.cash\.plan_series\[\]\.events\[\]\.label(_short)?",
          r"\.cash\.counterfactual_series\[\]\.events\[\]\.label(_short)?", *ROUTES]
+
+
+@pytest.fixture(autouse=True)
+def _no_fallback(caplog):
+    """No test passes through the home's fallback for a hybrid that could not be built (the one test that means to says so)."""
+    with caplog.at_level(logging.WARNING, logger="termsledger.decisions"):
+        yield
+    assert not [r for r in caplog.records if "could not be built" in r.getMessage()], "the hybrid fell back"
 
 
 def _offer(client) -> str:
@@ -38,14 +48,18 @@ def _run_plan(client) -> None:
 def _before(client) -> dict[str, Any]:
     """Golden day 0 with the offer waiting and the plan ready, not run."""
     _offer(client)
-    return client.get("/home").json()
+    h = client.get("/home").json()
+    assert h["partial"] is None
+    return h
 
 
 def _after(client) -> dict[str, Any]:
     """Golden day 0 after the plan ran: ¥150k drawn, ¥255k of invoice financing landing in 3 days."""
     _offer(client)
     _run_plan(client)
-    return client.get("/home").json()
+    h = client.get("/home").json()
+    assert h["partial"] is None
+    return h
 
 
 def _closing(h: dict[str, Any]) -> dict[int, int]:
@@ -84,7 +98,7 @@ def test_the_three_facts_carry_their_notes_and_tones(client):
     assert today["value_fen"] == cash["cash_fen"] and lowest["value_fen"] == cash["lowest_fen"]
 
 
-def test_before_the_plan_the_position_is_the_existing_headline_and_the_lowest_is_bad(client):
+def test_before_the_plan_the_position_is_the_existing_headline_and_the_lowest_is_the_plans(client):
     h = _before(client)
     cash = h["cash"]
     assert (cash["status_word"], cash["status_tone"]) == ("Action needed", "bad")
@@ -92,9 +106,22 @@ def test_before_the_plan_the_position_is_the_existing_headline_and_the_lowest_is
     assert cash["headline_note"] == h["note"]  # nothing is covered yet, so no assumptions are leaned on
     today, lowest, arriving = cash["facts"]
     assert (today["note"], today["tone"]) == ("¥100k above your minimum", "ok")
-    assert (lowest["value_short"], lowest["note"], lowest["tone"]) == ("−¥105k", "¥405k below your minimum", "bad")
+    # one lowest point on the page: the plan line's, which the rail names too; the do-nothing −¥105k stays in the existing fields
+    assert (lowest["label"], lowest["value_short"], lowest["note"], lowest["tone"]) == (
+        "Lowest point with the plan, in 30 days", "¥300k", "¥0 above your minimum", "warn")
+    rail_low = next(e for e in cash["events_rail"] if e["kind"] == "lowest")
+    assert (lowest["value_fen"], lowest["when"]) == (rail_low["cash_after_fen"], rail_low["when"])
+    assert cash["lowest_short"] == "−¥105k" and cash["lowest_tone"] == "bad"
     assert (arriving["value_short"], arriving["note"]) == ("¥420k", "Foshan, in 32 days")
     assert cash["assumptions"][0] == "Foshan pays ¥420k in 32 days, as scheduled."
+
+
+@pytest.mark.parametrize("plan", [False, True])
+def test_the_lowest_fact_and_the_rails_lowest_event_always_agree(client, plan):
+    h = _after(client) if plan else _before(client)
+    facts = {f["key"]: f for f in h["cash"]["facts"]}
+    rail_low = next(e for e in h["cash"]["events_rail"] if e["kind"] == "lowest")
+    assert (facts["lowest"]["value_fen"], facts["lowest"]["when"]) == (rail_low["cash_after_fen"], rail_low["when"])
 
 
 def test_status_tone_follows_the_pill(client):
@@ -204,7 +231,7 @@ def test_a_late_customer_is_the_collection_and_a_calm_book_has_no_queue(client):
     _run_plan(client)
     client.post("/clock/advance", json={"to_day": 10})
     calm = client.get("/home").json()["attention"]
-    assert calm["items"] == [] or all(i["kind"] == "deal" for i in calm["items"])  # the offer still waits; nothing else does
+    assert [i["kind"] for i in calm["items"]] == ["deal"]  # the offer still waits; nothing else does
     # without any offer or pending landing, nothing needs the owner
     client.post("/demo/reset", json={})
     _run_plan(client)
@@ -218,12 +245,23 @@ def test_a_late_customer_is_the_collection_and_a_calm_book_has_no_queue(client):
     assert [(f["label"], f["value"], f["tone"]) for f in item["facts"]] == [("Overdue", "¥420k", "bad"), ("Late by", "8 days", "bad")]
 
 
-def test_the_queue_is_ranked_funding_deal_approval_collection_landing():
-    ranked = ("funding", "deal", "approval", "collection", "landing")
-    src = importlib.import_module("app.api.home_hybrid")
-    body = importlib.import_module("inspect").getsource(src.attention)
-    order = [body.index(name) for name in ("_funding_item", "_deal_item", "_approval_items", "_collection_items", "_landing_items")]
-    assert order == sorted(order) and len(ranked) == len(order)
+def test_the_queue_is_ranked_funding_deal_approval_collection_landing(monkeypatch):
+    def one(kind):
+        return {"key": kind, "kind": kind}
+
+    c = SimpleNamespace(lang="en")
+    monkeypatch.setattr(home_hybrid, "_funding_item", lambda c: one("funding"))
+    monkeypatch.setattr(home_hybrid, "_deal_item", lambda c, d, n: one("deal"))
+    monkeypatch.setattr(home_hybrid, "_approval_items", lambda c: [one("approval")])
+    monkeypatch.setattr(home_hybrid, "_collection_items", lambda c: [one("collection")])
+    monkeypatch.setattr(home_hybrid, "_landing_items", lambda c: [one("landing")])
+    deals = [SimpleNamespace(state=home_hybrid.DealState.RESPONSE_READY)]
+    att = home_hybrid.attention(c, deals)
+    assert [i["kind"] for i in att["items"]] == ["funding", "deal", "approval", "collection", "landing"]
+    assert att["primary_key"] == "funding"
+    # a deal waiting for the buyer, or a funding that waits on an approval, is not a deal for the owner to answer
+    waiting = [SimpleNamespace(state=home_hybrid.DealState.NEEDS_CLARIFICATION)]
+    assert "deal" not in [i["kind"] for i in home_hybrid.attention(c, waiting)["items"]]
 
 
 def test_the_exposure_fact_is_named_only_with_the_flag_and_the_layer(client, monkeypatch):
@@ -378,6 +416,43 @@ def test_before_the_plan_the_grey_line_is_doing_nothing_and_without_a_plan_there
     assert "counterfactual_series" not in rich["cash"] and "counterfactual_label" not in rich["cash"]
 
 
+def test_a_further_plan_after_one_ran_is_compared_as_proposed_not_as_the_plan_that_ran(client, monkeypatch):
+    _offer(client)
+    monkeypatch.setattr(home_hybrid, "_plan_has_run", lambda state: True)  # a plan has run and another is ready
+    cash = client.get("/home").json()["cash"]
+    assert cash["counterfactual_label"] == "without the plan FLOW proposes (a comparison)"
+    assert [r["closing_fen"] for r in cash["counterfactual_series"]] == [r["closing_fen"] for r in cash["series"]]
+    by = {e["day"]: e for e in cash["events_rail"]}
+    assert "Without the plan FLOW proposes, payroll would take cash to ¥60k" in by[12]["explain"]
+    assert "financing plan" not in by[12]["explain"]
+
+
+def test_the_lowest_point_stays_on_the_rail_when_the_window_does_not_reach_it(client, monkeypatch):
+    from app.api import home
+
+    monkeypatch.setattr(home, "_picture_days", lambda *a, **k: 10)
+    h = _after(client)
+    cash = h["cash"]
+    kinds = {e["day"]: e["kind"] for e in cash["events_rail"]}
+    assert cash["picture_days"] == 10 and kinds[30] == "lowest"
+    assert [d for d in kinds if d <= 10] == [3] and cash["events_rail_days"] >= 30  # the rail says how far it runs
+    assert all(d <= 10 or d == 30 for d in kinds)
+
+
+def test_the_financing_is_the_lenders_postings_by_ref_never_a_substring_of_a_label(client):
+    _offer(client)
+    state = get_runtime().store.get_state()
+    ev = lambda kind, fen, ref, label: SimpleNamespace(kind=kind, amount_fen=fen, ref=ref, label=label)
+    from app.domain.models import LedgerEventKind as K
+
+    receipt = ev(K.RECEIPT, 42_000_000, "RCV-A", "Receipt RCV-A from BUYER-1")
+    day = SimpleNamespace(events=[receipt, ev(K.REPAYMENT, -25_500_000, "FAC-IF", "Repay advance on RCV-A"),
+                                  ev(K.REPAYMENT, -10_000_000, "FAC-LINE", "Repay line, with RCV-AB in the label")])
+    text = home_hybrid.receipt_words(SimpleNamespace(state=state, lang="en"), day, receipt, "en")
+    assert text == ("Foshan pays ¥420k, and ¥255k of it repays the invoice financing, leaving ¥165k. "
+                    "¥100k of that repays the Bank credit line.")
+
+
 def test_the_rail_holds_at_most_six_and_keeps_the_lowest_point(client, monkeypatch):
     h = _after(client)
     monkeypatch.setattr(home_hybrid, "MAX_RAIL", 3)
@@ -407,12 +482,13 @@ def test_the_stress_is_omitted_when_the_exposure_flag_is_off(client):
     assert cash["stress_available"] is False and "stress" not in cash
 
 
-def test_the_stress_is_absent_not_broken_when_the_layer_lacks_it(client, monkeypatch):
+def test_the_stress_is_absent_not_broken_when_the_layer_lacks_it(client, monkeypatch, caplog):
     if _stress_fn is not None:
         pytest.skip("the exposure layer is present on this branch")
     monkeypatch.setattr(home_hybrid, "_exposure_on", lambda rt: True)
     cash = _after(client)["cash"]
     assert cash["stress_available"] is False and "stress" not in cash
+    assert any("no late-payment stress" in r.getMessage() for r in caplog.records)  # the absence is said, not hidden
 
 
 @pytest.mark.skipif(_stress_fn is None, reason="the exposure layer's stress is not on this branch")
@@ -434,6 +510,15 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     assert "financed; its delay is not modelled" in s["assumption_text"] and "RCV-" not in s["assumption_text"]
     # the page widens its window to show the moved receipt: Foshan's day-32 receipt is paid on day 62
     assert s["window_days_needed"] >= 62 + 4 - h["day"]
+    # one search per state: a second read of the same books takes the cached answer
+    from app.strategy import impact
+
+    calls = []
+    real = impact.stress
+    monkeypatch.setattr(impact, "stress", lambda *a, **k: calls.append(1) or real(*a, **k))
+    client.get("/home")
+    client.get("/home")
+    assert calls == []
 
 
 # ---------------------------------------------------------------- H4: the cards
@@ -464,8 +549,11 @@ def test_the_receivables_card_says_what_the_receipt_will_do(client):
     after = _after(client)["receivables_card"]
     assert after["outstanding_short"] == "¥420k" and after["next_text"] == "Foshan, ¥420k in 32 days"
     # the trajectory's events on the due day: ¥257k to the financing, ¥163k left of the receipt, ¥151k of that to the credit line
-    assert after["financing_note"] == ("Part of this receipt will repay the ¥255k invoice financing; about ¥163k is left after that, "
-                                       "and ¥151k of it repays the Bank credit line.")
+    # one claim, the same words as the rail's event for that day: ¥257k is the financing's principal and charges
+    assert after["financing_note"] == ("Foshan pays ¥420k, and ¥257k of it repays the invoice financing, leaving ¥163k. "
+                                       "¥151k of that repays the Bank credit line.")
+    day32 = next(e for e in client.get("/home").json()["cash"]["events_rail"] if e["day"] == 32)
+    assert day32["explain"].startswith(after["financing_note"])
 
 
 def test_the_receivables_card_counts_what_is_late(client):
@@ -524,7 +612,36 @@ def test_the_zh_hybrid_has_the_owners_voice(client):
     assert zh["attention"]["items"][0]["primary"]["label"] == "查看还价"
 
 
-def test_a_failing_hybrid_never_takes_the_home_down(client, monkeypatch):
+def test_a_deals_read_that_fails_is_a_partial_home_never_an_empty_one(client, monkeypatch, caplog):
+    from app.api import deal_offers
+
+    def boom(ctx, lang):
+        raise RuntimeError("no")
+
+    _offer(client)
+    monkeypatch.setattr(deal_offers, "open_offers", boom)
+    h = client.get("/home").json()
+    assert h["attention"] is None and h["deals_card"] is None  # not "No deals are open", not "No urgent action required"
+    assert h["partial"]["missing"] == ["summary"] and h["headline"]
+    caplog.clear()
+
+
+def test_an_unreadable_record_is_not_a_calm_queue(client, monkeypatch):
+    from app.api import home as home_module
+
+    _offer(client)
+
+    def broken(*_a, **_k):
+        raise RuntimeError("the decision record is unreadable")
+
+    monkeypatch.setattr(home_module, "load_context", broken)
+    h = client.get("/home").json()
+    assert h["partial"]["missing"] == ["decision_record"]  # the home names it
+    assert h["deals_card"] is None and h["attention"]["none_text"] is None and h["attention"]["incomplete"] is True
+    assert [i["kind"] for i in h["attention"]["items"]] == ["funding"]  # what the books alone say still stands
+
+
+def test_a_failing_hybrid_never_takes_the_home_down(client, monkeypatch, caplog):
     def boom(_c):
         raise RuntimeError("no")
 
@@ -534,6 +651,7 @@ def test_a_failing_hybrid_never_takes_the_home_down(client, monkeypatch):
     h = r.json()
     assert h["attention"] is None and h["funding_line"] is None and h["partial"]["missing"] == ["summary"]
     assert "events_rail" not in h["cash"] and h["headline"]  # the conclusion stands
+    caplog.clear()
 
 
 def test_the_existing_fields_are_all_still_there(client):
