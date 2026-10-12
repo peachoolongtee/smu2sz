@@ -506,35 +506,6 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   block-size: auto;
 }
 
-/* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
-   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They are still
-   (a 64 px blur that animates is paint work for the life of the tab, and no motion token covers a 40 s drift). The Cash disc is left out on a phone, where the tab bar covers it anyway. Cards stay solid on top. */
-.biz-disc {
-  position: absolute;
-  border-radius: var(--radius-pill);
-  filter: blur(64px);
-  opacity: 0.35;
-}
-.biz-disc-home {
-  top: -8rem;
-  left: -10rem;
-  width: 38rem;
-  height: 32rem;
-  background: color-mix(in srgb, var(--color-sec-home-solid) 12%, var(--color-canvas));
-}
-.biz-disc-cash {
-  right: -12rem;
-  bottom: -10rem;
-  width: 40rem;
-  height: 30rem;
-  background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
-}
-@media (max-width: 39.999rem) {
-  .biz-disc-cash {
-    display: none;
-  }
-}
-
 /* The cash picture's one draw (components/home/cash-picture.tsx): the do-nothing line draws first, the plan after it, each about 900 ms, then the
    shortfall and the labels fade in. A deliberate exception to "transform and opacity only" (stroke-dashoffset); once, on mount. The reduced-motion
    block below leaves every part in its final state at once. */

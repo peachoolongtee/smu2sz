@@ -12,7 +12,6 @@ import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
-import { Backdrop } from "./business/backdrop";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
@@ -349,7 +348,6 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <SkipLink />
       <OwnerSignInDialog />
       <Tour />
-      <Backdrop />
       <header className="sticky top-0 z-30 bg-canvas">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
