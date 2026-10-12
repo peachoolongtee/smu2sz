@@ -194,11 +194,12 @@ test.describe("desktop", () => {
     await expect(card).toContainText("Estimate");
     await expect(card).not.toContainText("Hypothetical");
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
-    expect(await sectionOrder(page)).toEqual(["deal-ask", "deal-envelope"]);
+    // The heading is the page's first section from the moment an offer is open (the server's sentence about it); the card sits right after the ask section.
+    expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
 
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
     await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-    // The recommendation and the priced response come first (the server's order); the card sits right after the ask card.
+    // The verdict is the heading; the card sits right after the ask section.
     expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
 
     // Details: the levers (six), the approved packages and, where the server gave it, the terms-and-price zone.

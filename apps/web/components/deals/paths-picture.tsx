@@ -123,6 +123,8 @@ export function PathsPicture({
     return roomy ? { x: (roomy.x0 + roomy.x1) / 2, y: (roomy.y0 + roomy.y1) / 2 + 4, text: picked.band_text } : null;
   })();
 
+  const cursorX0 = moment ? xOf(Math.min(Math.max(moment.day, today), end)) : null;
+
   // ---- the picked path's lowest point
   const low = (() => {
     if (!picked.series || picked.lowest_fen === null || !picked.lowest_short) return null;
@@ -138,10 +140,16 @@ export function PathsPicture({
       { x: x + 8, y: y - 8, anchor: "start" as const },
       { x: x - 8, y: y - 8, anchor: "end" as const },
     ];
-    const spot = spots.find((s) => {
+    // A spot must be inside the plot and, where one is free, clear of the cursor's line (which moves with the stop).
+    const inside = (s: (typeof spots)[number]) => {
       const x0 = s.anchor === "start" ? s.x : s.anchor === "end" ? s.x - w : s.x - w / 2;
-      return x0 >= pl && x0 + w <= pr + 4 && s.y - FONT >= 4 && s.y + 4 <= pb + 24;
-    });
+      return x0 >= pl && x0 + w <= pr + 4 && s.y - FONT >= 4 && s.y + 4 <= pb + 24 ? x0 : null;
+    };
+    const clear = (s: (typeof spots)[number]) => {
+      const x0 = inside(s);
+      return x0 !== null && (cursorX0 === null || x0 + w < cursorX0 - 8 || x0 > cursorX0 + 8);
+    };
+    const spot = spots.find(clear) ?? spots.find((s) => inside(s) !== null);
     return { x, y, text, spot: spot ?? spots[1] };
   })();
 
@@ -162,7 +170,8 @@ export function PathsPicture({
     .map((p, i) => ({ p, i, y: segs[i] ? yOf(valueAt(segs[i]!, end - 1)) : null }))
     .filter((e): e is { p: PicturePath; i: number; y: number } => e.y !== null)
     .sort((a, b) => a.y - b.y);
-  const endLabels = ends.reduce<((typeof ends)[number] & { ly: number })[]>((acc, e) => [...acc, { ...e, ly: Math.max(e.y - 8, (acc[acc.length - 1]?.ly ?? -Infinity) + FONT + 3) }], []);
+  // Stacked upward from the highest end so they sit above the lines, not across them.
+  const endLabels = ends.map((e, k) => ({ ...e, ly: (ends[0]?.y ?? 0) - 8 - (ends.length - 1 - k) * (FONT + 4) }));
 
   // ---- the server's y ticks and the foot's day ticks
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -178,7 +187,7 @@ export function PathsPicture({
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
 
-  const cursorX = moment ? xOf(Math.min(Math.max(moment.day, today), end)) : null;
+  const cursorX = cursorX0;
   const ariaLabel = t("biz.deals.paths.alt", { paths: paths.map((p) => (p.band_text ? `${p.label}: ${p.band_text}` : p.label)).join(". ") });
 
   return (
@@ -228,6 +237,23 @@ export function PathsPicture({
               />
             ) : null}
 
+            {cursorX !== null && moment ? (
+              <g data-testid="path-cursor" data-day={moment.day} className="pointer-events-none">
+                <g className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translateX(${cursorX}px)` }}>
+                  <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
+                </g>
+                {paths.map((p) => {
+                  const v = moment.values.find((x) => x.key === p.key);
+                  if (!v) return null;
+                  return (
+                    <g key={`c${p.key}`} className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
+                      <circle r={5.5} className={`${HUE[hueOf(p)].fill} stroke-surface`} strokeWidth={2} />
+                    </g>
+                  );
+                })}
+              </g>
+            ) : null}
+
             {low ? (
               <g key={`low-${picked.key}`} className="picture-fade" style={{ animationDelay: "700ms" }}>
                 <circle cx={low.x} cy={low.y} r={5} className={`${hue.fill} stroke-surface`} strokeWidth={2} />
@@ -254,23 +280,6 @@ export function PathsPicture({
                 {e.p.label}
               </text>
             ))}
-
-            {cursorX !== null && moment ? (
-              <g data-testid="path-cursor" data-day={moment.day} className="pointer-events-none">
-                <g className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translateX(${cursorX}px)` }}>
-                  <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
-                </g>
-                {paths.map((p) => {
-                  const v = moment.values.find((x) => x.key === p.key);
-                  if (!v) return null;
-                  return (
-                    <g key={`c${p.key}`} className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
-                      <circle r={5.5} className={`${HUE[hueOf(p)].fill} stroke-surface`} strokeWidth={2} />
-                    </g>
-                  );
-                })}
-              </g>
-            ) : null}
 
             {paths.map((p, i) =>
               segs[i] ? <path key={`h${p.key}`} d={pathOf(segs[i]!)} fill="none" stroke="transparent" strokeWidth={14} pointerEvents="stroke" className="cursor-pointer" onClick={() => onPick(p.key)} /> : null,

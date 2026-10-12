@@ -1,12 +1,17 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { filledBrand } from "./helpers";
+import { filledBrand, resetBooks } from "./helpers";
 
 /**
  * The Deals page's three paths on one chart (the offer as asked and the two replies), tied to three columns, with a day cursor you can step or play
  * through, and the reply in the one raised bar. Mock mode replays the recorded picture of the package offer (EX01): paths, moments and the axis are
  * the server's. Every word asserted here is the server's string.
  */
+
+// Live mode keeps the books between tests: every test starts from the opening books (mock mode starts empty on its own).
+test.beforeEach(async ({ request }) => {
+  await resetBooks(request);
+});
 
 async function checked(page: Page) {
   await page.goto("/deals");
