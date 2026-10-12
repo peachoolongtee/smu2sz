@@ -1224,15 +1224,15 @@ def build(c: HomeRead, *, v2: bool = True) -> dict[str, Any]:
                            "funding_line": line, "deals_card": deals_card(c, deals) if deals is not None else None,
                            "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
     if v2 and get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
-        out["home_v2"] = _guarded_v2(c, att, line)
+        out["home_v2"] = _guarded_v2(c, att, line, out["cash"]["events_rail"])
     return out
 
 
-def _guarded_v2(c: HomeRead, att: dict[str, Any], line: dict[str, Any]) -> dict[str, Any] | None:
+def _guarded_v2(c: HomeRead, att: dict[str, Any], line: dict[str, Any], rail: list[dict[str, Any]]) -> dict[str, Any] | None:
     from app.api import home_v2
 
     try:
-        return home_v2.build(c, att, line)
+        return home_v2.build(c, att, line, rail)
     except Exception:
         log.exception("the Home V2 fields could not be built")
         if c.partial is not None:

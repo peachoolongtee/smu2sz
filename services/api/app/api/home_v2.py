@@ -4,15 +4,17 @@ Composed from what the Home hybrid has already read (the position, the facts, th
 trajectory); no figure is computed here and no state word is invented. Every sentence goes through `t(lang, en, zh)` and is the
 prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
 
-    kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`)
+    kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`, with `headroom_text`:
+                          the room as a short signed figure, "+¥100k", negative below the minimum)
     kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
-                          plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`).
+                          plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`) and, structured, `with_plan` {label, value_text} (null with no plan figure).
     kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
                           is pending; cash only when it lands) or NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here.
-    chart                 the scope the chart states, its legend (current / proposed / hypothetical) and the lowest point's inspector
+    chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
+                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none)
     links                 where the rest of the company's picture lives
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
@@ -35,6 +37,7 @@ from app.api.home_hybrid import (
     _pending_lots,
     _plan_has_run,
     _short,
+    _signed,
     _sp,
     _tone,
     whole,
@@ -77,7 +80,7 @@ def _cash_available(c: HomeRead) -> dict[str, Any]:
     else:
         note = t(lang, f"{_short(-gap)} below your {_short(floor)} minimum", f"比您 {_short(floor)} 的最低现金低 {_short(-gap)}")
     return {"eyebrow": _eyebrow(lang, "Cash available", "可用现金"), "value_display": whole(cash), "note": note,
-            "tone": _tone(cash, floor), "buffer": {"min_fen": floor, "cash_fen": cash, "min_display": _short(floor)}}
+            "tone": _tone(cash, floor), "buffer": {"min_fen": floor, "cash_fen": cash, "min_display": _short(floor), "headroom_text": _signed(gap)}}
 
 
 def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
@@ -98,10 +101,12 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
         hint = t(lang, f"If FLOW's plan executes: {whole(plan_fen)}, assuming the funds arrive as planned.",
                  f"如果 FLOW 的方案执行：{whole(plan_fen)}，前提是资金按计划到账。")
+        with_plan: dict[str, str] | None = {"label": t(lang, "with plan", "采用方案后"), "value_text": whole(plan_fen)}
     else:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
+        with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint}
+            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:
@@ -253,12 +258,19 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------- the chart
 
 
-def _chart(c: HomeRead) -> dict[str, Any]:
+def _lowest_cause(rail: list[dict[str, Any]] | None) -> str | None:
+    """What makes the lowest point the lowest: the label of the rail's lowest row, which the hybrid names by its cause (`_cause_label`),
+    word for word. A lowest row with no event behind it (the fallback "cash is at its lowest") names no cause: None."""
+    row = next((r for r in rail or [] if r["kind"] == "lowest"), None)
+    return str(row["label"]) if row is not None and row["amount_fen"] else None
+
+
+def _chart(c: HomeRead, rail: list[dict[str, Any]] | None) -> dict[str, Any]:
     lang, floor = c.lang, c.floor
     legend = [{"label": (t(lang, "Current books · the plan ran", "当前账目 · 方案已执行") if _plan_has_run(c.state)
                          else t(lang, "Current books · no new funding", "当前账目 · 未新增融资")), "kind": "current"}]
     if c.plan_traj is not None:
-        legend.append({"label": t(lang, f"If FLOW's plan runs ({_planned(lang)})", f"如果 FLOW 的方案执行（{_planned(lang)}）"), "kind": "proposed"})
+        legend.append({"label": t(lang, f"If FLOW's plan runs ({_planned(lang)})", f"如果 FLOW 的方案执行（{_planned(lang)}）"), "kind": "planned"})
     low_fen, low_day = c.low
     gap = low_fen - floor
     if gap < 0:
@@ -279,6 +291,7 @@ def _chart(c: HomeRead) -> dict[str, Any]:
             "lowest_inspector": {"day_text": t(lang, f"The lowest point · {when}", f"最低点 · {when}"),
                                  "projected_display": whole(low_fen), "minimum_display": whole(floor),
                                  "third_label": third[0], "third_display": third[1], "note": note},
+            "lowest": {"cause": _lowest_cause(rail)},
             "note": t(lang, "Current books, nothing new assumed. The same figures as Cash & Funding.",
                       "当前账目，没有假设任何新增事项。数字与现金与融资页一致。")}
 
@@ -291,10 +304,10 @@ def _links(c: HomeRead) -> list[dict[str, str]]:
             {"label": t(lang, "All deals", "全部交易"), "href": "/deals"}]
 
 
-def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any]) -> dict[str, Any]:
-    """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links."""
+def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any], rail: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links. `rail` is the cash block's events rail."""
     return {"kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
-            "action": _action(c, att), "chart": _chart(c), "links": _links(c)}
+            "action": _action(c, att), "chart": _chart(c, rail), "links": _links(c)}
 
 
 __all__ = ["build"]
