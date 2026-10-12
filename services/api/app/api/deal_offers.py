@@ -44,6 +44,29 @@ def _read_text(ds: Any, action: str, cost: str, window: str, limit: str, over: b
     return say(lang, f"{lead[0]}: {cost_en}, {rel_en}.", f"{lead[1]}：{cost_zh}，{rel_zh}。")
 
 
+_SHORT = {"accept": ("Accept as asked", "按对方要求接受"), "counter": ("Counter instead of accepting as asked", "还价，不按对方要求接受"),
+          "decline": ("No deal", "不成交"), "needs_owner": ("Accept, with your approval", "经您批准后接受"),
+          "cannot": ("Not safe to act on", "暂不宜据此行动")}
+_CLARIFY = ("Clarify before deciding", "先澄清，再决定")
+
+
+def _headline_short(state: DealState, action: str, lang: str) -> str:
+    """The verdict in a few words and no figure: the heading when the figures move to `headline_note`. Same branches as `_read_text`."""
+    return say(lang, *(_CLARIFY if state == DealState.NEEDS_CLARIFICATION else _SHORT[action]))
+
+
+def _headline_note(action: str, cost: str, window: tuple[str, str], limit: str, over: bool, replies: int, lang: str) -> str | None:
+    """The figures that left the heading, in one sentence (the same display strings `_read_text` says), with the replies ready for a counter."""
+    if action == "cannot":
+        return None
+    rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
+    en, zh = f"As asked costs {cost} {window[0]}, {rel_en}.", f"按对方要求，成本将为{cost}（{window[1]}），{rel_zh}。"
+    if action == "counter" and replies:
+        w_en, w_zh = _COUNT_WORDS.get(replies, (f"{replies} replies are", f"{replies} 份回复"))
+        en, zh = f"{en} {w_en} ready to send.", f"{zh}{w_zh}已可发送。"
+    return say(lang, en, zh)
+
+
 def _action_text(state: DealState, action: str | None, replies: int, lang: str) -> str:
     if state == DealState.RECEIVED:
         return say(lang, "FLOW has not read it yet.", "FLOW 尚未读取。")
@@ -116,6 +139,9 @@ def _open_offer(ctx: Context, ds: Any, offer: Any, lang: str) -> dict[str, Any]:
         "asks_text": _join(asked, lang) if asked else None,
         "read_text": (_read_text(ds, action, fmt_yuan(verdict.forward_concession_total_fen), window, fmt_yuan(cap), over, lang)
                       if verdict is not None and action is not None else None),
+        "headline_short": _headline_short(state, action, lang) if verdict is not None and action is not None else None,
+        "headline_note": (_headline_note(action, fmt_yuan(verdict.forward_concession_total_fen), window, fmt_yuan(cap), over, replies, lang)
+                          if verdict is not None and action is not None else None),
         "action_text": _action_text(state, action, replies, lang),
         "cost_display": fmt_yuan(verdict.forward_concession_total_fen) if verdict is not None else None,
         "cost_window_text": say(lang, window[0], window[1]) if verdict is not None else None,
