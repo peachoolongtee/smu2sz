@@ -14,6 +14,7 @@ import { Disclosure } from "@/components/business/kit";
 import { chaseIds, shortfallStretch } from "@/lib/chase";
 import { DUE_SOON_DAYS, ReceivablesTable, type RecvFilter } from "@/components/business/receivables-table";
 import { ChasePayment } from "@/components/business/chase-payment";
+import { CustomerName } from "@/components/customer-link";
 import { WhoPaysWhen } from "@/components/business/who-pays-when";
 
 /** One fact of the facts row: a label, the figure and a caption, beside the next with a hairline between. */
@@ -163,7 +164,9 @@ export default function ReceivablesPage() {
                   </p>
                 ) : (
                   <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink">
-                    {name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)}
+                    <CustomerName id={invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id}>
+                      {name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)}
+                    </CustomerName>
                     <span className="ml-3 text-base font-bold text-bad-fg tabular-nums">
                       {t("biz.recv.bar.overdue")} {r.overdue_total_display}
                     </span>
@@ -208,7 +211,9 @@ export default function ReceivablesPage() {
                     data-status={p.status}
                   >
                     <span className="min-w-0">
-                      <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
+                      <span className="font-medium text-ink">
+                        <CustomerName id={p.counterparty_id}>{name(p.counterparty_id)}</CustomerName>
+                      </span>
                       <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
                     </span>
                     <span className="flex items-center gap-2">
@@ -233,7 +238,9 @@ export default function ReceivablesPage() {
                 {data.receipts.map((x) => (
                   <li key={x.entry_hash} className="py-3 text-sm" data-testid={`receipt-${x.op_id}`}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
+                      <span className="font-medium text-ink">
+                        <CustomerName id={x.counterparty_id}>{name(x.counterparty_id)}</CustomerName>
+                      </span>
                       <span className="flex items-center gap-2">
                         <span className="font-semibold tabular-nums">{x.received_display}</span>
                         <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>

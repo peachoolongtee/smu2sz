@@ -6,6 +6,7 @@
 
 import { DEMO_BUYER_KEYS } from "../config";
 import { ApiError } from "../errors";
+import { contextQuery, type CustomerContext } from "../customer-href";
 import type {
   ActRequest,
   AlertActResult,
@@ -23,6 +24,7 @@ import type {
   CapexView,
   EnvelopeView,
   ContractFixture,
+  CustomerOverviewView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -210,6 +212,10 @@ export const live = {
   getNavCounts: (lang: "en" | "zh" = "en") => http<NavCounts>("GET", `/nav/counts?lang=${lang}`),
   /** GET /offers/{id}/picture: the offer's cash line as asked and of each reply ready. */
   getOfferPicture: (offerId: string, lang: "en" | "zh" = "en") => http<OfferPictureView>("GET", `/offers/${enc(offerId)}/picture?lang=${lang}`),
+
+  /** GET /customers/{id}/overview: one page's read; the context (`decision`, `path`, `invoice`) only builds the back link. */
+  getCustomerOverview: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
+    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery(ctx)}`),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {

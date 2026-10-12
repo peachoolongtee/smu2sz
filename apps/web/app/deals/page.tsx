@@ -265,6 +265,7 @@ export default function DealsPage() {
       <SelectedBuyer
         key="buyer"
         buyer={buyerName(offer.offer.counterparty_id)}
+        buyerId={offer.offer.counterparty_id}
         received={t("biz.deals.messageWhen", { channel: te("channel", offer.documents[0]?.channel ?? "chat"), when: whenText(offer.offer.received_day, today, t) })}
         evaluatedWhen={v ? (record?.evaluation?.evaluated_when ?? v.evaluated_when ?? null) : null}
         state={record ? { code: record.state, text: record.state_text, tone: record.state_tone ?? "neutral" } : null}

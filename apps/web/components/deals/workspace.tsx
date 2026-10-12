@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
+import { CustomerName } from "@/components/customer-link";
 import { decisionHref } from "@/components/business/open-decisions";
 import { DealStage } from "@/components/deals/deal-steps";
 import { ParsedTerms } from "@/components/deals/asks";
@@ -29,12 +30,15 @@ import { whenText } from "@/lib/when";
  */
 export function SelectedBuyer({
   buyer,
+  buyerId,
   received,
   evaluatedWhen,
   state = null,
   open = null,
 }: {
   buyer: string;
+  /** The buyer's id, so the name is the link to their overview. */
+  buyerId?: string;
   received: string;
   evaluatedWhen: string | null;
   state?: { code: string; text: string; tone: Tone } | null;
@@ -45,7 +49,15 @@ export function SelectedBuyer({
     <section id="deal-selected" aria-label={buyer} className="motion-reveal min-w-0 space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="min-w-0 text-sm text-ink-3" data-testid="deal-selected-meta">
-          <strong className="font-extrabold text-ink">{buyer}</strong>
+          <strong className="font-extrabold text-ink">
+            {buyerId ? (
+              <CustomerName id={buyerId} testId="deal-selected-customer">
+                {buyer}
+              </CustomerName>
+            ) : (
+              buyer
+            )}
+          </strong>
           {" · "}
           {received}
           {evaluatedWhen ? (

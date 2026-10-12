@@ -11,6 +11,7 @@
 
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
+import type { CustomerContext } from "./customer-href";
 import type {
   ActRequest,
   AlertActResult,
@@ -30,6 +31,7 @@ import type {
   CapexView,
   ClockView,
   ContractFixture,
+  CustomerOverviewView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -350,4 +352,13 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 /** GET /offers/{offer_id}/picture?lang=: the cash line of an offer as asked and of each reply FLOW has ready. Display only. */
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
   return isMock ? (await mock()).getOfferPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang);
+}
+
+/**
+ * GET /customers/{id}/overview: what a buyer is worth to the owner and what it puts at risk, in one read composed from the reads the other
+ * pages make. `ctx` is the context the page was opened with (`decision`, `path`, `invoice` from the URL); the server builds the back link
+ * from it. A 404 means the books hold no such customer.
+ */
+export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
+  return isMock ? (await mock()).getCustomerOverview(id, lang, ctx) : (await live()).getCustomerOverview(id, lang, ctx);
 }
