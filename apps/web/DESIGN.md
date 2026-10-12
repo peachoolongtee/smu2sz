@@ -1,12 +1,13 @@
 ---
 name: FLOW web
-description: A light fintech surface for a supplier's owner (midnight-blue ink, royal-blue action, sans headlines in weight 800, a sidebar on the canvas), status colour only for status, five section hues for wayfinding, Home seamless with one raised frosted surface, and the navy block kept for the Demo strip.
+description: A light fintech surface for a supplier's owner (midnight-blue ink, royal-blue action, sans headlines in weight 800, a sidebar on the canvas), status colour only for status, five section hues for wayfinding, Home seamless with one raised decision card, three card types, one segmented control, one state vocabulary, a seven-role type scale, six motion durations, and the navy block kept for the Demo strip.
 colors:
   canvas: "#f5f7fb"
   surface: "#ffffff"
   subtle: "#eff3f8"
-  line: "#e6eaf0"
+  line: "#e6e9ef"
   line-strong: "#d3d9e2"
+  track: "#eef1f5"
   line-ui: "#768399"
   ink: "#24324a"
   ink-2: "#4d5767"
@@ -59,7 +60,7 @@ colors:
   chart-reserve: "#a3241a"
   chart-danger: "#fdecea"
   chart-worst: "#b7791f"
-  chart-grid: "#e6eaf0"
+  chart-grid: "#e6e9ef"
   chart-axis: "#5a6577"
   chart-teal: "#38d0c7"
   chart-purple: "#9b5fff"
@@ -70,32 +71,38 @@ colors:
 typography:
   display:
     fontFamily: "'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
-    fontSize: "40px"
+    fontSize: "34px"
     fontWeight: 800
-    lineHeight: 1.12
+    lineHeight: 1.15
     letterSpacing: "-0.025em"
-  headline:
+  value:
     fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
-    fontSize: "24px"
-    fontWeight: 600
-    lineHeight: 1.375
-  title:
-    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
-    fontSize: "20px"
-    fontWeight: 600
-    lineHeight: 1.4
-    letterSpacing: "-0.025em"
-  figure:
-    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
-    fontSize: "20px"
-    fontWeight: 600
-    lineHeight: 1.4
+    fontSize: "32px"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
     fontFeature: "tnum"
+  section:
+    fontFamily: "'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "20px"
+    fontWeight: 800
+    lineHeight: 1.3
+    letterSpacing: "-0.015em"
+  card-title:
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "16px"
+    fontWeight: 700
+    lineHeight: 1.375
   body:
     fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.45
+  supporting:
+    fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.25
   label:
     fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "12px"
@@ -104,12 +111,13 @@ typography:
     letterSpacing: "0.025em"
   mono:
     fontFamily: "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace"
-    fontSize: "12px"
+    fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.625
 rounded:
   pill: "9999px"
   card: "14px"
+  decision: "16px"
   tile: "10px"
   control: "8px"
 spacing:
@@ -214,16 +222,26 @@ components:
     textColor: "{colors.on-deep}"
     rounded: "{rounded.control}"
     padding: "6px 16px"
-  plan-bar-frosted:
+  decision-card:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.card}"
+    rounded: "{rounded.decision}"
     padding: "16px 20px"
+  selected-card:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "16px"
   segmented-track:
-    backgroundColor: "{colors.subtle}"
+    backgroundColor: "{colors.track}"
     rounded: "{rounded.pill}"
     padding: "2px"
-    height: "36px"
+    height: "48px"
+  segmented-pill-selected:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    height: "44px"
   avatar:
     backgroundColor: "{colors.subtle}"
     textColor: "{colors.ink-2}"
@@ -240,20 +258,20 @@ The single reference for the look of `apps/web`, recorded from the shipped build
 
 **Creative North Star: "The Owner's Ledger, Lifted"**
 
-A light, flat, calm surface for a supplier's owner who reads cash the way a banker reads a statement: a faintly cool canvas under solid white cards, one confident blue that only ever means "the next step", and status colour that only ever means status and always comes with a word. The one deep moment is the navy Demo strip. Home has no hero card: the status pill, the headline and one chart sit directly on the page, and the plan is the one raised surface, a frosted bar. Density is a banking app's: 14 px data in rows and tables, 16 px inside a card, fact tiles with a 12 px label, a 20 px figure and a 12 px caption, 24 px of air between sections.
+A light, flat, calm surface for a supplier's owner who reads cash the way a banker reads a statement: a faintly cool canvas under solid white cards, one confident blue that only ever means "the next step", and status colour that only ever means status and always comes with a word. The one deep moment is the navy Demo strip. Home has no hero card: the status pill, the headline and one chart sit directly on the page, and the attention card is the one raised surface, a solid decision card on one soft shadow. Density is a banking app's: 14 px data in rows and tables, 16 px inside a card, fact tiles with a 12 px label, a 20 px figure and a 13 px caption, 24 px of air between sections.
 
-Depth is "lifted base": a card rests on a hairline and a whisper of shadow, a row lifts one pixel on hover, a sheet or dialog takes a deeper pop. Motion is ease-out, under 300 ms, transform and opacity only; nothing moves the layout (the cash picture's one draw on mount is the single, named exception). Wayfinding is in colour: each of the five Business sections owns a hue that appears on its icon chip, its tab, its shortcut and a buyer's avatar, never on a status. Both the English and the Chinese shells live in one type stack that falls through to the system's Latin and CJK faces: no web font is fetched from a font host.
+Depth is "lifted base": a standard card rests on a hairline alone, the decision card on one soft shadow, a row lifts one pixel on hover, a sheet or dialog takes a deeper pop. Motion is six durations and two easings, transform and opacity only; nothing moves the layout (the cash picture's one draw on mount is the single, named exception); under reduced motion only opacity transitions remain. Wayfinding is in colour: each of the five Business sections owns a hue that appears on its icon chip, its tab, its shortcut and a buyer's avatar, never on a status. Both the English and the Chinese shells live in one type stack that falls through to the system's Latin and CJK faces: no web font is fetched from a font host.
 
-Confirmed rejections: no dark theme (`color-scheme: light`), no gradient on a button or a card, no coloured rail on a card's edge, no runtime web fonts (a font is bundled with the app or it is not used), no browser-drawn sparklines (a labelled chart drawn from the server's own series, with its figures in the server's strings, is not a sparkline: it has days along its foot, named lines, a named reserve and a table behind it), no text below 12 px, and no money computed in the browser (every figure, date and sentence arrives formatted from the server).
+Confirmed rejections: no dark theme (`color-scheme: light`), no gradient on a button or a card, no glow, particle, parallax or glassmorphism (no frost, no backdrop blur, no blurred discs), no count-up on load, no decorative badge, no coloured rail on a card's edge (the selected card's 3 px accent rule and the "why" rule are the two left rules there are), no runtime web fonts (a font is bundled with the app or it is not used), no browser-drawn sparklines (a labelled chart drawn from the server's own series, with its figures in the server's strings, is not a sparkline: it has days along its foot, named lines, a named reserve and a table behind it), no text below 12 px, no figure or qualification below 13 px, and no money computed in the browser (every figure, date and sentence arrives formatted from the server).
 
 **Key Characteristics:**
-- Light only, flat materials, white cards on a cool `canvas`, lifted by shadow steps rather than tone; Home is seamless (no hero card, rows with hairlines) with one raised, frosted surface.
+- Light only, flat materials, white cards on a cool `canvas`; three card types (standard, decision, selected); Home is seamless (no hero card, rows with hairlines) with one raised decision card.
 - One brand blue for the page's single primary action, links, focus and selection; never a status.
 - Status tokens (`ok`, `warn`, `bad`, `info`) in five weights each, always paired with a word.
 - Five section hues for wayfinding only; teal and orange pushed away from green and amber.
 - One radius scale: 8 px controls (buttons, toggles, fields), 14 px cards, 10 px inner tiles, and a pill for badges, chips, avatars and the segmented track.
-- 14 px body and data, 12 px floor, tabular figures, right-aligned money that never wraps.
-- Ease-out motion kit (120 / 200 / 280 ms), reduced motion honoured and forced in tests.
+- 14 px body and data, 13 px for any qualification of a figure, 12 px for metadata only, tabular figures, right-aligned money that never wraps.
+- Six motion durations (80 / 140 / 220 / 280 / 350 / 500 ms) and two easings, reduced motion honoured and forced in tests.
 - 44 px touch targets wherever a finger is the pointer, through a transparent hit area.
 
 ## Colors
@@ -281,7 +299,7 @@ Seven tokens for the cash chart's marks and nothing else: `chart-base` (the line
 - **Subtle** (`subtle`): quiet fills: the segmented track, the nav track, table heads, skeletons, hover on a secondary button.
 - **Line / line-strong** (`line`, `line-strong`): hairlines and dividers (1.2:1 on white: decoration, not a boundary that must be seen). `line-strong` is the dashed edge of an empty state.
 - **Line-ui** (`line-ui`): any boundary that must be seen: inputs, secondary buttons, the segmented track, the account button (3.8:1 on white, 3.5:1 on canvas, 3.4:1 on subtle).
-- **Ink / ink-2 / ink-3** (`ink`, `ink-2`, `ink-3`): text primary, secondary, quiet. `ink` 12.0:1 on canvas, 12.8 on white; `ink-2` 6.8 on canvas, 7.3 on white, 6.5 on subtle; `ink-3` 5.4 on canvas, 5.8 on white, 5.2 on subtle, 5.1 on `brand-50`, 5.5 on an open table row (`subtle` at 60% on white), 5.5 on a late row (`bad-bg` at 40% on white), 5.1 / 5.2 on the strongest point of the backdrop discs (`#ebf1fa`, `#ebf2f6`). `ink-3` is for captions, never for anything the owner must act on.
+- **Ink / ink-2 / ink-3** (`ink`, `ink-2`, `ink-3`): text primary, secondary, quiet. `ink` 12.0:1 on canvas, 12.8 on white; `ink-2` 6.8 on canvas, 7.3 on white, 6.5 on subtle; `ink-3` 5.4 on canvas, 5.8 on white, 5.2 on subtle, 5.1 on `brand-50`, 5.5 on an open table row (`subtle` at 60% on white), 5.5 on a late row (`bad-bg` at 40% on white). `ink-3` is for captions, never for anything the owner must act on.
 - **Focus** (`focus`, `focus-on-deep`): the brand ring, 4.7:1 on canvas, 5.0:1 on white, 4.4:1 on `brand-50`; white inside the deep block (12.8:1).
 
 ### Named Rules
@@ -289,7 +307,7 @@ Seven tokens for the cash chart's marks and nothing else: `chart-base` (the line
 **The Status Speaks Rule.** Status colour means status and nothing else, and it is never the only channel: the word is always there, the dot or tint is the second voice.
 **The Hue Is a Place Rule.** A section hue says where you are or where a link goes; it never says how things are going.
 **The Deep Block Rule.** `brand-900` is the Demo strip only. It stays navy.
-**The One Raised Surface Rule.** On Home the plan bar is the only raised surface: a frosted `surface` at 84% with a backdrop blur, a hairline and `--shadow-pop`, sticky at the bottom of the window from `lg` until the reader reaches its place. Everything else on Home sits on the canvas, separated by hairlines; a block that asks the owner to decide something (an approval, the remaining task) keeps the white card.
+**The One Raised Surface Rule.** On Home the attention card is the only raised surface: a `DecisionCard` (solid `surface`, a hairline and `--shadow-decision`), and the plan's bar, where it is sticky, is the same card, sticky at the bottom of the window from `lg` until the reader reaches its place. There is no frost and no backdrop blur anywhere. Everything else on Home sits on the canvas, separated by hairlines; a block that asks the owner to decide something (an approval, the remaining task) keeps the white card.
 **The 4.5 / 3 Rule.** Every text pair 4.5:1 or better, every visible boundary and icon 3:1 or better, on the surface it actually sits on (tiles, rows, discs and tints included).
 
 ## Typography
@@ -301,24 +319,26 @@ Seven tokens for the cash chart's marks and nothing else: `chart-base` (the line
 **Character:** one sans family in two voices: the display voice is Plus Jakarta Sans at weight 800 with `-0.02em` to `-0.025em` tracking, everything else is the body sans. The face is bundled (`@fontsource-variable/plus-jakarta-sans`, imported once in `app/layout.tsx`, registered as "Plus Jakarta Sans Variable"): its woff2 files are served by the app itself, only the subsets a page uses are fetched, and nothing comes from a font host, so "no runtime web font" stays true where Google Fonts cannot be reached (the Demo is judged there). Lato is named first in the body stack so a machine that has it uses it; every stack falls back to faces the platform already has, and the layout must hold in the fallback (it is what the tests and the screenshots see). Weight does the work: 800 for headlines, 600 for titles, figures and labels, 500 for controls and row titles, 400 for sentences. Antialiased, `text-size-adjust: 100%`. The serif and the "Flow Figures" digit workaround are gone: a sans face sets lining figures by itself.
 
 ### Hierarchy
-- **Display** (800, 28 px, 36 px from `sm`, 40 px from `lg`, line-height 1.12, `-0.025em`): the Home headline, the one `h1` on the page; the cash figure beside the picture is 24 px; the Today card's day number is 30 px.
-- **Headline** (800, 24 px / 30 px from `lg`, line-height 1.375): page titles, a deal's recommendation, a plan total, the plan bar's title at 22 px.
-- **Title** (600, 20 px, tight tracking): a page title (`PageHeader`), and the `Stat` figure at `size="lg"` (24 px from `sm`; 20 px on a phone).
-- **Figure** (600, 20 px, `tabular-nums`): the `Stat` figure (18 px on a phone), a row's amount at 14 px; every money column is `tabular-nums`, right-aligned, and a cell that holds an amount never wraps.
-- **Body** (400, 14 px, line-height 1.45): sentences, data in a table or a row, the subtitle under a page title, controls. Headlines and card titles are `text-balance`; the sentences under them `text-pretty`.
-- **Label** (600 / 500, 12 px, `0.025em` tracking when uppercase): a tile's label and caption, table heads, badges and chips, tab words, captions, the nav's section heading in Demo. 12 px is the floor: nothing is set below it, so there is no `text-2xs`.
-- **Mono** (400, 12 px, line-height 1.625): hashes (shortened, with copy), formulas (`Formula`, in a `subtle` tile).
+Seven roles, each a CSS variable in `app/globals.css` (`--text-*`, with a `--line-height` beside it) and a Tailwind size utility; the four that carry more than a size also have a kit class that adds the face, weight and tracking. Nothing is set between them.
+- **Headline** (`.type-headline`, `--text-headline`: 24 px on a phone, 30 px from `sm`, 34 px from `lg`; display face, 800, line-height 1.15, `-0.025em`): the one `h1` of a page: the Home headline, every `PageHeader` title (Deals, the customer's name, Receivables' answer), Cash's headline. 24 px on a phone is the one deliberate step under the 30 to 34 range, so the primary action stays in the first screen.
+- **Major value** (`.type-value`, `--text-value`: 28 to 32 px by width, 700, `tabular-nums`): the large figure of a fact tile (`Stat size="lg"`) and the Customer page's four figures.
+- **Section** (`.type-section`, `--text-section`: 18 to 20 px, display face, 800): a block's title inside the page: the attention card's and the plan's title, the Deals queue's heading, the `Stat` figure at `size="md"` (`text-section`, weight 600).
+- **Card title** (`.type-card-title`, `--text-card-title`: 16 px, 700): a `Card`'s heading.
+- **Body** (`text-body`, 14 px, line-height 1.45; `text-body-lg`, 15 px, for the sentences that carry a page: the note under a headline, the stress sentences): sentences, data in a table or a row, controls. Headlines and card titles are `text-balance`; the sentences under them `text-pretty`.
+- **Supporting** (`text-supporting`, 13 px, line-height 1.25 rem): the floor for any financial qualification: a figure, a rate, a limit ("limit: at least 1.25×"), the caption under a fact, the words that say what a number is against, a status word, a table head, a basis sentence, a formula. A fact tile's caption, a `Badge`, a `StateWord` and `thCls` are 13 px.
+- **Metadata** (`text-meta`, 12 px; 11 px is allowed, 10 and below is not): a small-caps eyebrow, a column or fact label, a time ("in 3 days"), an index mark, a legend. Never a figure and never a qualification: `e2e/design-system.spec.ts` fails on any visible text under 13 px that carries an amount, a rate, a multiple or a thousands group, on Home, Deals, Cash, Receivables and the Customer page.
+- **Mono** (400, 13 px, line-height 1.625): hashes (shortened, with copy), formulas (`Formula`, in a `subtle` tile).
 
 ### Named Rules
-**The Twelve Pixel Floor Rule.** No text is set below 12 px, on any surface, in any language.
+**The Thirteen Pixel Qualification Rule.** No text is set below 12 px, on any surface, in any language; metadata (a label, a time, a legend) may be 12 px, and nothing that states or qualifies a figure is below 13 px.
 **The Tabular Money Rule.** A figure is `tabular-nums` and semibold or heavier; in a column it is right-aligned and never wraps. Figures are lining in every stack.
 **The Sentence Before the Formula Rule.** A calculation is said in body text first; the formula follows in mono, in its own tile.
 
 ## Layout
 
-From `lg` a sidebar of 15 rem on the canvas (the active item a white pill) and a centred column of 1120 px at most beside it, 16 px of side padding (40 px from `lg`), 20 px under the sticky header (32 px from `lg`). The header is the canvas at 70% with a blur and no border at rest, so it is invisible at the top of the page and reads as frosted glass once content passes under it. Sections sit 24 px apart (`space-y-6`, 28 px on Home); inside a card the padding is 16 px (`p-4`), a card's header row is 16 px by 12 px with a hairline under it; tiles sit 12 px apart (`gap-3`); the chips and controls in a row sit 8 px apart (`gap-2`); the hero keeps its own 20 px. Everything is on a 4 px base.
+From `lg` a sidebar of 15 rem on the canvas (the active item a white pill) and a centred column of 1120 px at most beside it, 16 px of side padding (40 px from `lg`), 20 px under the sticky header (32 px from `lg`). The header is the solid canvas: no blur, no translucency, no border. Sections sit 24 px apart (`space-y-6`, 28 px on Home); inside a card the padding is 16 px (`p-4`), a card's header row is 16 px by 12 px with a hairline under it; tiles sit 12 px apart (`gap-3`); the chips and controls in a row sit 8 px apart (`gap-2`); the hero keeps its own 20 px. Everything is on a 4 px base.
 
-Breakpoints are Tailwind's: `sm` 640 px, `lg` 1024 px, `xl` 1280 px, plus a 1440 px (`90rem`) step for the dock and a `touch:` variant that is "below `lg`, or a coarse pointer at any width". A row of three tiles is `grid-cols-2 sm:grid-cols-3` with the first tile spanning two columns on a phone. `KeyValueList` stacks label over value on a phone and goes two-column from `sm`. The cash chart on `/cash` is 256 px tall (320 px from `sm`); the Home cash picture is 250 px (300 px from 520 px wide) and is drawn at the width it has. Below `sm` the Cash backdrop disc is dropped; below `lg` the desktop pill nav is replaced by the fixed phone tab bar and the Demo sidebar by a menu.
+Breakpoints are Tailwind's: `sm` 640 px, `lg` 1024 px, `xl` 1280 px, plus a 1440 px (`90rem`) step for the dock and a `touch:` variant that is "below `lg`, or a coarse pointer at any width". A row of three tiles is `grid-cols-2 sm:grid-cols-3` with the first tile spanning two columns on a phone. `KeyValueList` stacks label over value on a phone and goes two-column from `sm`. The cash chart on `/cash` is 256 px tall (320 px from `sm`); the Home cash picture is 250 px (300 px from 520 px wide) and is drawn at the width it has. Below `lg` the desktop pill nav is replaced by the fixed phone tab bar and the Demo sidebar by a menu.
 
 **The dock.** A fixed bottom bar (the phone tab bar, the Demo stepper) publishes its measured height as `--dock-h` on `html` (`useDock` in `app-shell.tsx`; 0 when the bar is not fixed). `main` takes `.dock-pad`: the bar plus 24 px below `sm`, the bar plus 72 px (room for the Ask FLOW pill) from `sm`, 80 px from `lg` where there is no bar, and the pill sits in the sidebar's foot, not beside the column. `html` takes a matching `scroll-padding-bottom`, so the last row of a page and a focused control always clear both the bar and the pill.
 
@@ -331,17 +351,18 @@ Breakpoints are Tailwind's: `sm` 640 px, `lg` 1024 px, `xl` 1280 px, plus a 1440
 
 ## Elevation & Depth
 
-A lifted base: solid white cards on a cool canvas, each resting on a 1 px hairline and a soft two-layer shadow. Depth is a response to role and state, not decoration: a card at rest takes `--shadow-card`; the plan bar takes `--shadow-pop` on a frosted surface; a row, tile or option that leads somewhere lifts 1 px and takes `--shadow-lift` on hover (only on devices that hover); a sheet, menu, the chat panel and the Ask FLOW pill take `--shadow-pop`; the Demo strip fixed to the bottom of a phone casts `--shadow-up`. There is no tonal layering of surfaces; `subtle` is a fill for a track or a head, not a level. The translucent surfaces are the plan bar (`surface` at 84%, 18 px blur) and the top bar (`canvas` at 70%, blur). The Business pages sit on a backdrop of two blurred discs (Home blue, Cash teal; 64 px blur at 35%) that drift once over 40 s and then rest; cards stay solid on top.
+A lifted base: solid white cards on a cool canvas. Depth is a response to role and state, not decoration. A standard card rests on a 1 px hairline and no shadow; the decision card (the one thing the owner is asked to decide) takes `--shadow-decision`; a row, tile or option that leads somewhere lifts 1 px and takes `--shadow-lift` on hover (only on devices that hover); a sheet, menu, dialog, the chat panel and the Ask FLOW pill take `--shadow-pop`; a segmented control's selected pill takes the one-pixel `--shadow-pill`; the Demo strip fixed to the bottom of a phone casts `--shadow-up`. There is no tonal layering of surfaces (`subtle` is a fill for a track or a head, not a level), no translucent surface and no backdrop: the top bar is the solid canvas and the pages sit on the plain canvas.
 
 ### Shadow Vocabulary
-- **Card** (`box-shadow: 0 1px 2px rgb(15 28 46 / 0.05), 0 6px 14px -10px rgb(15 28 46 / 0.12)`): a card at rest, the segmented thumb, a link tile.
+- **Decision** (`--shadow-decision`: `0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.06)`): the decision card and nothing else.
+- **Pill** (`--shadow-pill`: `0 1px 1px rgb(16 24 40 / 0.08)`): the selected pill of a segmented control.
 - **Lift** (`box-shadow: 0 2px 4px rgb(15 28 46 / 0.06), 0 12px 22px -14px rgb(15 28 46 / 0.22)`): a row, tile or option on hover (`motion-lift`).
 - **Pop** (`box-shadow: 0 4px 8px rgb(15 28 46 / 0.06), 0 18px 36px -12px rgb(15 28 46 / 0.24)`): the account sheet, the chat slide-over, the walkthrough card, the floating Ask FLOW pill, the skip link.
 - **Up** (`box-shadow: 0 -4px 12px rgb(15 28 46 / 0.08)`): the Demo strip fixed to a phone's bottom edge.
 
 ### Named Rules
 **The Hairline First Rule.** A card's edge is a 1 px `line`; the shadow is the whisper under it, never the boundary.
-**The No Rail Rule.** No gradient on a button or a card, and no coloured rail on a card's edge: a status is a pill with a word, a tone is a 1 px tone line.
+**The No Rail Rule.** No gradient on a button or a card, and no coloured rail on a card's edge but two: the selected card's 3 px accent rule (the choice the detail is about) and the "why" rule beside a reason. A status is a pill with a word, a tone is a 1 px tone line.
 
 ## Shapes
 
@@ -361,14 +382,14 @@ All in `components/ui.tsx` unless noted. Motion classes are in `app/globals.css`
 - **Text link** (`textLinkClass`, `a.underline`): `brand-700`, underlined, 12 px medium, a pill hover of `brand-50`; the underline thickens to 2 px on hover (no colour change). A card's quiet links ("All receivables", "Open approvals") are text links; a button is for a step.
 
 ### Chips and badges
-- **Badge** (`tone`): a pill with its tint, its `-line` border and (for a status) a 6 px `-solid` dot; 12 px medium, 10 px by 2 px padding, `whitespace-nowrap`. Neutral and brand badges (a tier, a count, "Recommended") carry no status and no dot.
+- **Badge** (`tone`): a pill with its tint, its `-line` border and (for a status) a 6 px `-solid` dot; 13 px medium, 10 px by 2 px padding, `whitespace-nowrap`. Neutral and brand badges (a tier, a count, "Recommended") carry no status and no dot.
 - **Chip:** a Badge without the dot, for a tag that carries no status (a channel, a kind). A label that is a whole server sentence (a plan's `role_reason`) takes `wrap`: it breaks inside its pill and never runs wider than its row.
 - **Ranking:** wherever the server ranks, the rank is a numeral (a column in a table, `#1` on a Cash plan, a number before a buyer on a phone) and the order is the server's. "Recommended" is the brand badge wherever the server marks a row; an alternative says why in a neutral chip.
 
 ### Cards and containers
-- **Card:** `14px` radius, white, `line` hairline, `--shadow-card`, reveals on mount (`motion-reveal`). An optional header row (title 14 px semibold, subtitle 12 px `ink-3`, actions on the right) with a hairline under it; the body is 16 px padding. A card's `tone` is a 1 px tone line, never a rail. A section with nothing in it is not a card around nothing: on Activity the empty Agreements and Refused sections are one quiet `ink-3` line each (title, colon, the sentence), and the empty Timeline is the same line inside its card.
+- **Card, DecisionCard, SelectedCard:** the three card types (see Design system, below, for when to use which). `Card`: `14px` radius, white, `line` hairline (`#e6e9ef`), no shadow (`.card-standard`), reveals on mount (`motion-reveal`). An optional header row (title 16 px bold, subtitle 13 px `ink-3`, actions on the right) with a hairline under it; the body is 16 px padding. A card's `tone` is a 1 px tone line, never a rail. A section with nothing in it is not a card around nothing: on Activity the empty Agreements and Refused sections are one quiet `ink-3` line each (title, colon, the sentence), and the empty Timeline is the same line inside its card.
 - **Callout** (`tone`): a `10px` tile on the tone's tint and line; its title in the tone's fg, its body in `ink-2`.
-- **TableWrap / table:** a scrollable `role="region"` with a card radius and hairline; heads are 12 px semibold `ink-2` on `subtle`; cells are 14 px with a `line` rule, 12 px by 8 px padding, last row unruled.
+- **TableWrap / table:** a scrollable `role="region"` with a card radius and hairline; heads are 13 px semibold `ink-2` on `subtle`; cells are 14 px with a `line` rule, 12 px by 8 px padding, last row unruled.
 - **Link tile** (`DoorTile` in `app/cash/page.tsx`): a quiet bordered card-radius tile with what the door is for (14 px semibold, 12 px `ink-3` under it) and one text link stretched over the whole tile; lifts on hover.
 - **Stat:** the one fact tile (hero tiles, Cash facts, Receivables summary, the Deals ceilings and recommendation facts, the Mandate limits, the next step's cost, landing and authority). A `10px` tile, 16 px by 12 px padding, in a `<dl>`: an uppercase 12 px semibold tracked label (`ink-3`), the figure (`tabular-nums`, 18 → 20 px, 20 → 24 px with `size="lg"`; its colour is a status only when `tone` names one), a 12 px `ink-3` caption (when, of what, against what; a second line is a second `block` span) and, only when the server sent a `delta_display`, a delta chip (neutral unless the server names its tone; the browser never subtracts). Two surfaces: `surface` (white, a `line` hairline) and `deep` (the Home hero: `on-deep` at 10%, label and caption in `on-deep-muted`, a status figure in its `-bright` tone). `tint` fills the tile with its status tint for the one tile that says who decides. A caption may carry a related figure (the headroom under the reserve and under the lowest point) with its own test id.
 - **Avatar** (`kit.tsx`): a 36 px disc, 12 px bold. A change row's icon sits on its status tint; a buyer's initials sit on a section tint (`toneFor(name)` is stable per name, four hues, never orange).
@@ -377,10 +398,10 @@ All in `components/ui.tsx` unless noted. Motion classes are in `app/globals.css`
 ### Inputs / Fields
 - **Style:** `inputClass`: an 8 px rounded rectangle, 40 px, `line-ui` border, white, 16 px padding, 14 px `ink`, placeholder `ink-3`. `textareaClass`: the same in a card radius with 10 px by 16 px padding and relaxed leading. The caret is `brand-600`; checkboxes and radios take the brand accent.
 - **Focus:** the global ring. **Disabled:** inherited from the button rules (50% opacity).
-- **Segmented / SegmentedButtons:** a pill track (`line-ui` border on `subtle`, 2 px inset) with a sliding white pill thumb carrying `--shadow-card`; options are 32 px, 12 px medium, `ink` when selected and `ink-2` otherwise, each with `.hit`. `Segmented` is a radio group (the Business/Demo switch, the language switch); `SegmentedButtons` is the same track made of `aria-pressed` buttons (the forecast horizon). The thumb moves by transform (`motion-slide`).
+- **SegmentedTabs** (`components/ui/segmented-tabs.tsx`): the one segmented control, the owner's reference rendered light: a pill track (`track`, `#eef1f5`, 2 px inset), a raised white selected pill with the hairline and `--shadow-pill`, each option an icon and a label (`ink` when selected, `ink-2` otherwise) and an optional count badge. It is a `role="tablist"` of `role="tab"` with `aria-selected`, one tab stop (the selected tab), the arrow keys, Home and End to move (the selection follows the focus), 44 px tall options, and the pill slides by `transform` alone (`--dur-fast`, `--ease-select`; no transition under reduced motion, through `useReducedMotion`). Options share one width; a long label wraps on a phone, or, with `scroll`, stays whole and the track scrolls sideways with the chosen tab kept in view. It replaced the Receivables filter, the Deals queue tabs and the Home window and scenario switches. The older `Segmented` (a radio group: the Business/Demo and language switches, the chat's actor choice) and `SegmentedButtons` (the Cash horizon and picture-view switches) keep their track and take the same `--shadow-pill` thumb.
 
 ### Navigation
-- **Sidebar** (`app-shell.tsx`, from `lg`): the five sections as 44 px rows (icon and word) on the canvas, no fill of its own; the active one is a white pill with a whisper of shadow, `brand-700` bold text and `aria-current="page"`, the rest `ink-2` with a `subtle` hover. The header above it is sticky and frosted (see Layout); the brand mark is a 32 px brand-blue disc.
+- **Sidebar** (`app-shell.tsx`, from `lg`): the five sections as 44 px rows (icon and word) on the canvas, no fill of its own; the active one is a white pill with a whisper of shadow, `brand-700` bold text and `aria-current="page"`, the rest `ink-2` with a `subtle` hover. The header above it is sticky and solid canvas; the brand mark is a 32 px brand-blue disc. On a laptop (1024 to 1366 px, the `laptop:` variant) a toggle at the top collapses it to a 4.5 rem rail of icons (see Design system, below).
 - **Phone tab bar** (below `lg`): fixed to the bottom, white with a hairline over it and safe-area padding; five tabs of 56 px, icon over a 12 px word. The active tab's icon takes its section's solid, its word stays `ink`; inactive tabs are `ink-3`. A 2 px, 40 px wide bar in the section's solid slides to the active tab (`motion-slide`). Its last 3 rem below `sm` is Ask FLOW. A section whose word is too long for a fifth of a phone takes a shorter word (the link keeps its full name for assistive tools).
 - **Ask FLOW** (`components/chat/chat-panel.tsx`, `.ask-trigger`): never floats over content (from `lg` the sidebar leaves no gutter, so the pill sits in the foot of the sidebar, in the room both sidebars keep for it). Below `sm` it is the last cell of the bottom bar, 48 by 56 px, icon over "Ask"; from `sm` a brand pill 16 px above the bar; from `lg` 12 px from the sidebar's left edge and 24 px above the bottom. It opens a native modal `<dialog>` that slides in from the right (`motion-panel`), 32 rem wide at most, white, a `line` left edge, `--shadow-pop`, over a 30% ink backdrop; its close button is a 40 px pill with a `line-ui` border.
 - **Account sheet** (`AccountSheet`): a native `<details>` under a small 32 px pill button (`line-ui` border, a 24 px `brand-50` initial disc); the sheet is a 288 px card with `--shadow-pop` that drops in from its top-right corner (`motion-sheet`); its rows are 44 px pills. Escape closes it and returns focus to the button, a press outside closes it. Business: the identity, Limits, the tour, the language. Demo, below `lg`: mock or live data, who is signed in, the language.
@@ -406,7 +427,7 @@ All in `components/ui.tsx` unless noted. Motion classes are in `app/globals.css`
 - **Loading** (`LoadingBlock`): `role="status"`, `aria-live="polite"`, a visually hidden label, and `subtle` tile-radius skeletons (a 32 px third-width line, then 64 px rows) that pulse.
 - **Empty** (`EmptyState`): a card-radius box with a dashed `line-strong` edge, 40 px by 24 px padding, centred 14 px semibold title, 14 px `ink-2` body, an optional action under 16 px of air.
 - **Error** (`ErrorState`): `role="alert"`, a card-radius `bad-bg` box with a `bad-line` edge, "Something went wrong" in `bad-fg`, the message in `ink-2`, a compact secondary "Retry". A failure the client recognises carries a code (`ApiError.code`) and is said through the dictionary (`err.<code>`, `errorText` in `lib/error-text.ts`); a failure the server explained shows the server's own words.
-- **Signed out (401 / 403):** not an error. `role="status"`, a white card with `--shadow-card`, "Sign in to see this" in `ink`, the reason in `ink-2`, and the page's one primary "Sign in" (`data-testid="signin-needed"`).
+- **Signed out (401 / 403):** not an error. `role="status"`, a standard card, "Sign in to see this" in `ink`, the reason in `ink-2`, and the page's one primary "Sign in" (`data-testid="signin-needed"`).
 
 ### Dialogs and the tour
 The chat and the walkthrough (`components/business/tour.tsx`) are native `<dialog>`s (`showModal`: the page behind is inert, Escape closes, focus returns). The walkthrough's card is 24 rem wide at most, card radius, white, `--shadow-pop`, scaling in (`motion-pop`); its spotlight is a card-radius hole ringed in white, cut from `ink` at 60%, tracked with a `ResizeObserver` and scroll, never a timer, and it jumps between steps. The tour returns focus to the account button when it closes.
@@ -420,18 +441,21 @@ A step-after area chart with a horizontal-only grid in `chart-grid`, axis text i
 ### Browser surfaces and first paint
 Text selection is `brand-100` on `ink`; the caret and checkboxes are `brand-600`. `color-scheme: light` on `html`: there is no dark theme; the scrollbars, form controls and dialog backdrop must not take a dark phone's. An inline script in `<head>` (`lib/pre-hydration.ts`) reads `tl-lang` and `tl-mode`, sets `lang` and `data-mode` at once, and keeps the body hidden (`data-pending`) while the server's Business/English markup would be the wrong shell or language; the shell clears it after hydration (a 2 s timer is the way out). The tab title of every route is server metadata (`lib/route-title.ts`, one `layout.tsx` per route); the shell puts the owner's language in.
 
-### Backdrop (`components/business/backdrop.tsx`)
-Two blurred discs (Home blue, Cash teal: the section solid at 12% in the canvas, 64 px blur, 35% opacity) that drift once over 40 s and then rest, at a strength that keeps `ink-3` above 4.5:1 on their strongest point (the Cash disc is left out on a phone). Behind the Business pages only; cards stay solid.
-
 ### Motion
-Ease-out, short, transform and opacity only. Two deliberate exceptions: a disclosure's height, and the cash picture's one draw (`stroke-dashoffset`, once, on mount).
+Six durations and two easings; nothing else moves the app. Transform and opacity only. Two deliberate exceptions: a disclosure's height, and the cash picture's one draw (`stroke-dashoffset`, once, on mount).
 
 | Token | Value |
 |---|---|
-| `--ease-out` | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
-| `--dur-fast` | 120 ms (a press) |
-| `--dur` | 200 ms (hovers, switches, sheets, disclosures) |
-| `--dur-slow` | 280 ms (a card or row arriving, a panel sliding in) |
+| `--ease-ui` | `cubic-bezier(0.2, 0, 0, 1)`: the one ease-out |
+| `--ease-select` | `cubic-bezier(0.34, 1.2, 0.64, 1)`: a damped spring (one small overshoot, no bounce), for a choice settling into place (the segmented pill) |
+| `--dur-instant` | 80 ms (a press, a toggle's mark) |
+| `--dur-fast` | 140 ms (a hover, a colour, the segmented pill sliding, a label appearing beside a collapsed sidebar icon) |
+| `--dur` | 220 ms (a switch, a sheet, a disclosure, a detail replacing in place) |
+| `--dur-expanded` | 280 ms (a card or row arriving, a panel sliding in, a chart cursor) |
+| `--dur-scenario` | 350 ms (a scenario or window switch: the figures that change update together; the picture's labels fading in) |
+| `--dur-narrative` | 500 ms (the one story the Home picture tells: the lines draw, the first breach pulses; the skeleton's breathing and the spinner's turn are multiples of it) |
+
+Every `duration-`, `transition` and `animation` in the app names one of these; a delay is a multiple of `--dur-instant` or a 30 ms stagger. A transition is never queued: a new target replaces the running one.
 
 | Class | What it does |
 |---|---|
@@ -441,12 +465,11 @@ Ease-out, short, transform and opacity only. Two deliberate exceptions: a disclo
 | `motion-press` | a button scales to 0.98 while pressed and eases its colour |
 | `motion-slide` | a thumb or indicator moves by transform (the segmented thumb, the tab bar's active bar) |
 | `motion-sheet` / `motion-panel` / `motion-pop` | the account sheet drops in from its corner; the chat slide-over enters from the right; the walkthrough card scales in |
-| `motion-pulse` | the status dot's ring grows to 3x and fades once (900 ms, after 400 ms), for ACTION_NEEDED and CRITICAL only (never on a calm status) |
+| `motion-pulse` | the status dot's ring grows to 3x and fades once (`--dur-narrative`, after `--dur-scenario`), for ACTION_NEEDED and CRITICAL only (never on a calm status) |
 | `.disclosure-body` | a one-row grid from `0fr` to `1fr` with a fade; other `<details>` use the browser's `::details-content` height transition where it exists |
-| `.biz-disc` | the backdrop's one 40 s drift, then rest |
-| `.picture-draw` / `.picture-fade` / `.picture-pulse` | **the chart's one draw**: on mount the do-nothing line draws (`stroke-dashoffset`, about 900 ms), the plan line after it, then the shortfall and the labels fade in and the first breach pulses once; later toggles and chips never replay it. A deliberate exception to "transform and opacity only", on one SVG, once. |
+| `.picture-draw` / `.picture-fade` / `.picture-pulse` | **the chart's one draw**: on mount the do-nothing line draws (`stroke-dashoffset`, `--dur-narrative`), the plan line after it, then the shortfall and the labels fade in and the first breach pulses once; later toggles and chips never replay it. A deliberate exception to "transform and opacity only", on one SVG, once. |
 
-The Tailwind transition utilities (`transition-colors`, `-opacity`, `-transform`) take `--dur` and `--ease-out` as their default, so a bare one still comes from this kit. Nothing animates width, height (but the disclosure), margin or position, so nothing shifts the layout. `prefers-reduced-motion: reduce` sets every duration to 0.001 ms, removes delays and loops, cancels the hover and press transforms, stops the backdrop and replaces the `Spinner` arc with an ellipsis after the label. The Playwright config sets `reducedMotion: "reduce"` so every spec runs without animation.
+The Tailwind transition utilities (`transition-colors`, `-opacity`, `-transform`) take `--dur` and `--ease-ui` as their default, so a bare one still comes from this kit. Nothing animates width, height (but the disclosure), margin or position, so nothing shifts the layout. Under `prefers-reduced-motion: reduce` animations end at once (0.001 ms), delays and loops are removed, the hover and press transforms are cancelled, and of the transitions only opacity remains, at its own token's duration (`transition-property: opacity`: a colour, a transform or a height changes at once); the `Spinner` arc is replaced by an ellipsis after the label. Components that choose in script (the chart cursors, the segmented pill) read the same signal through the one hook, `lib/use-reduced-motion.ts`. `e2e/design-system.spec.ts` asserts the six tokens, that no stylesheet rule names a duration that is not one, and that under reduced motion a transition on each token keeps only opacity. The Playwright config sets `reducedMotion: "reduce"` so every spec runs without animation.
 
 ### Language and figures
 Every string is in the dictionary in both English and Chinese (`lib/dictionary.ts`: 1608 keys each, `zh` typed as `Record<DictKey, string>` so a missing twin fails the build); `<html lang>` follows the owner's choice (`en` / `zh-CN`). One plural template (`{n|invoice|invoices}`) serves every count. The browser computes no money: every figure, date and sentence arrives formatted from the server as a display string (`*_display`, `*_short`, `*_when`, `event_text`, `label_short`), traceable to a formula; the client does no regex rewrite, approval inference, subtraction or truncation. Business mode shows no engine terms and no day numbers.
@@ -458,20 +481,20 @@ Every string is in the dictionary in both English and Chinese (`lib/dictionary.t
 - **Do** give each page one brand-filled primary; make every other step a secondary pill, a ghost or a text link.
 - **Do** pair every status colour with a word (the pill, the dot and the tint are the second channel).
 - **Do** use a section hue only to say where you are or where a link goes: the page chip, the tab, a shortcut, a buyer's avatar.
-- **Do** keep text at 12 px or above, body and data at 14 px, and set every figure `tabular-nums`, right-aligned in a column, never wrapping.
+- **Do** keep text at 12 px or above (metadata only), every figure and qualification at 13 px or above, body and data at 14 px, and set every figure `tabular-nums`, right-aligned in a column, never wrapping.
 - **Do** use `Stat` for a fact, `Disclosure` for a fold, `Badge` for a status, `Chip` for a tag, `Row` for a list line, and the one `FoldChevron`.
 - **Do** hold every text pair at 4.5:1 and every boundary and icon at 3:1 on the surface it actually sits on; use `line-ui` for any edge that must be seen.
 - **Do** reach 44 px on touch by growing a control or giving it `.hit`; keep the desktop 32 / 40 px look.
 - **Do** publish and read `--dock-h` so nothing fixed to the bottom covers content.
-- **Do** animate transform and opacity only, with the kit's three durations and one easing, and respect `prefers-reduced-motion`.
+- **Do** animate transform and opacity only, with the six durations and two easings, and respect `prefers-reduced-motion` (opacity only).
 - **Do** show every figure, date and sentence as the server sent it, in both languages.
 
 ### Don't:
-- **Don't** ship a dark theme, a gradient on a button or a card, a coloured rail on a card's edge, or a font fetched from a font host.
+- **Don't** ship a dark theme, a gradient on a button or a card, a glow, a particle or parallax effect, glassmorphism (frost or a backdrop blur) anywhere on the dashboard, a count-up on load, a decorative badge, an internal label ("Executive snapshot", "Autonomous strategy", "Retained yield", "Treasury engine", "Live stress simulation"), a coloured rail on a card's edge (the selected card's accent rule excepted), or a font fetched from a font host.
 - **Don't** let the brand blue mean a status, or a status colour mean anything but that status.
-- **Don't** use `brand-900` anywhere but the Demo strip, put a card around the Home headline, or add a second raised surface to Home.
-- **Don't** set text below 12 px; there is no `text-2xs`.
-- **Don't** hand-roll a `<details>`, a second chevron, a second fact tile, or a second radius; the scale is pill / 16 / 12.
+- **Don't** use `brand-900` anywhere but the Demo strip, put a card around the Home headline, or add a second decision card to Home.
+- **Don't** set text below 12 px (there is no `text-2xs`), or a figure or qualification below 13 px.
+- **Don't** hand-roll a `<details>`, a second chevron, a second fact tile, a pill group (use `SegmentedTabs`), a state word (use `StateWord`), or a second radius; the scale is pill / 16 / 14 / 10 / 8.
 - **Don't** compute, subtract, round, truncate or reword money in the browser, or draw a sparkline there.
 - **Don't** remove a focus outline, animate height or position (the disclosure's height excepted), or let Ask FLOW float over content.
 - **Don't** tint a buyer's avatar orange, and don't give two folds on one page the same label.
@@ -510,7 +533,7 @@ Every string is in the dictionary in both English and Chinese (`lib/dictionary.t
 
 - **Deals order, one at every width** (the server's `workspace.order`): the folded inbox row, the selected-buyer card (the buyer, when it came, when it was checked, and ONE state chip: the record's `state_text` in a `StatePill`, its colour the server's `state_tone`; no ask line, no step line), "FLOW recommends" with its first reason under it, the priced response, then what the buyer asks, what it costs and why it matters, the agreements, the folded details. Once the deal has an outcome the eyebrow reads "Where this deal stands", never "FLOW recommends: {outcome}", and the card carries the Money line ("Received {amount} {when}." / "{amount} arrives {when}.", from the record's lots, neutral until the cash has landed) and "What is left" (the record's remaining task). The Action band appears only where it names a real action (the approval to answer, the way back to the offers).
 - **Send** asks once, as Home's Run does. Above the button, in 14 px `ink`, "This will" and the server's `send_scope_lines` (the agreement it records, the funding it draws or requests, the estimated cost); the first press opens a confirm box ("Send {label} to the buyer?", the reply is simulated), the second sends exactly what is shown. Another counter keeps the server's one sentence.
-- **`StatePill`** (`components/ui.tsx`) is the one pill for a state the server names: the words, a glyph for the tone (never colour alone) and the server's tone (`state_tone`, `result_tone`); the browser never colours a state itself. 12 px, no dot. The execution summary is green only when cash has landed; until then a request that ran is "Requested" (info).
+- **`StatePill`** (`components/ui.tsx`) is the one pill for a state the server names: the words, a glyph for the tone (never colour alone) and the server's tone (`state_tone`, `result_tone`); the browser never colours a state itself. 13 px, no dot. The twelve states the owner's money moves through are `StateWord`'s (below). The execution summary is green only when cash has landed; until then a request that ran is "Requested" (info).
 - **The approval card** (decided): the result block first (the state word and its server tone in the header, what the decision run did, "Your minimum cash reserve is still ... short" when the cure left one, when it was decided), then the facts and terms, then "Quoted when requested" and the stale After behind a fold; no subtitle when the Source and Invoice facts say it, no landing in the quote when a Timing fact shows it. The Approvals page has no next-step band and no token note; its sections are 24 px apart.
 - **One primary per decision card.** An approval waiting is held by the next-step card's "Review and decide" (the Decisions card and the "Waiting" change row are not shown beside it); a record waiting for the owner has the same one primary. A remaining-task card's first route is its primary (when no approval waits) and the others are text links. An in-page jump is a text link (`textLinkClass`), never a brand button. Standalone links are `textLinkClass` (32 px, 44 px under `touch:`); the Chase button follows the same `touch:` rule.
 - **Owner words.** Cash against the minimum is "{amount} above your minimum" / "{amount} below your minimum" and "Lowest point: ..." (`lib/minimum.ts`: the server's figure and the sign of its integer; no arithmetic). "Estimated cost" is the headline figure and "Total" only a sum. "What is left" is the one word for what remains ("Needs your decision" is the warning variant). Future give-aways are "Future costs you have promised". A funding arrives ("Cash arrives {when}") or has arrived ("Cash received {when}"). One state vocabulary: Needs your approval, Declined, Agreed, Agreed and settled, Expired, Revoked. The assistant is FLOW; a Business chat turn shows one outcome in the owner's words (no verdict panel, tier badge or intent chip) and confirms with "Yes, run it".
@@ -543,7 +566,7 @@ The owner asked for a look and flow in the manner of a wealth platform; the pale
 this system's own. Where the sections above still describe the earlier look (pills for buttons and fields, 16 px cards, the
 single type family, a top navigation), this section and the front matter win. Midnight blue `#24324a` is the ink and the deep
 block, royal blue `#0472ff` marks charts and information, and the action fill is the pressed shade `#0368e9` (white on it is
-5.0:1; `#0472ff` itself is 4.3:1 and fails AA for 14 px text). The canvas is a pale blue-grey, the hairlines `#e6eaf0`, and the
+5.0:1; `#0472ff` itself is 4.3:1 and fails AA for 14 px text). The canvas is a pale blue-grey, the hairlines `#e6e9ef`, and the
 chart series take a turquoise `#38d0c7` and a purple `#9b5fff` (`chart-teal`, `chart-purple`, plus `chart-sky` and `chart-navy`).
 Success shifts toward teal to sit with them.
 
@@ -565,7 +588,7 @@ Success shifts toward teal to sit with them.
 
 ## Amendments from the Home redesign (12 October 2026, mockup A1 "Seamless")
 
-- **Home is seamless.** No hero card: the status pill, the one `h1`, the note and the cash picture sit on the canvas; the plan is the one raised, frosted surface (sticky from `lg`); the owner's deals are rows with hairlines; the other blocks lose their card chrome (a small-caps heading, hairlines), except a block that asks the owner to decide. Warnings are "Also on your radar", a quiet row above the details fold.
+- **Home is seamless.** No hero card: the status pill, the one `h1`, the note and the cash picture sit on the canvas; the attention card is the one raised surface, a decision card (the plan's bar sticky from `lg`); the owner's deals are rows with hairlines; the other blocks lose their card chrome (a small-caps heading, hairlines), except a block that asks the owner to decide. Warnings are "Also on your radar", a quiet row above the details fold.
 - **The shell.** The sidebar is on the canvas with a white active pill; the top bar is the canvas at 70% with blur and no border at rest.
 - **Type.** The display voice is sans (Plus Jakarta Sans, 800); the serif and the Flow Figures workaround are removed.
 - **A new token:** `brand-300`, the lighter second part of the funding bar (decorative, named in its legend).
@@ -576,7 +599,7 @@ Success shifts toward teal to sit with them.
 
 **The page pattern.** Every Business page answers one question at the top, shows one picture where the data supports one, has at most one raised surface (the action), and leaves everything else unboxed on hairlines. The `h1` is the answer in the server's own sentence (never composed in the browser): Home's headline, Activity's "now" sentence, Receivables' `receivables.headline` (else the collections read's top action while someone is late, else the plain page title). A section is a 16 px extrabold title, a 12 px `ink-3` line and a hairline, then rows divided by hairlines; a block that asks the owner to decide keeps the white card.
 
-**Action bar (`components/business/action-bar.tsx`).** The one raised surface, extracted from Home's plan bar: frosted `surface` at 84%, 18 px blur, `--shadow-pop`, in flow below `lg` and sticky 16 px above the window's foot from `lg`. Home's plan and Receivables' "Chase payment" use it; nobody late, no bar.
+**Action bar (`components/business/action-bar.tsx`).** The one raised surface, a `DecisionCard` (solid `surface`, `--shadow-decision`; it was frosted until #112), in flow below `lg` and sticky 16 px above the window's foot from `lg`. Home's plan and Receivables' "Chase payment" use it; nobody late, no bar.
 
 **Facts row.** The outstanding, overdue and next-payment facts are one inline row: a 12 px uppercase `ink-3` label, a 24 px extrabold tabular figure (the overdue one in `bad-fg` only while something is late) and a 12 px caption, hairlines between from `sm`, a hairline above and below. No tiles.
 
@@ -590,7 +613,7 @@ Success shifts toward teal to sit with them.
 
 ## pages A1 (part 2): Approvals, Cash and funding, the secondary pages
 
-- **The approval.** With one approval waiting, its question (the server's sentence) is the page's one `h1` and the card does not repeat it; with several, the `h1` is a counted sentence and each card carries its own question; with none, the plain title. A waiting approval is the page's one raised surface (the plan bar's frosted surface and `--shadow-pop`, in flow, not sticky): three facts (what you get, what it costs with its rate beneath, when it lands), "Why it needs you" in one sentence, then the picture (the shared cash picture with "If you decline" as the baseline and "If you approve" as the alternative, the minimum line, each line's lowest point in the server's short string, no chips), the server's "If you decline" and "After" sentences as its two captions, the quote behind one fold, Approve (the page's one brand-filled primary) and Decline, the record link and Audit details. An approval with no cash line (an agreement's terms) keeps its terms and shows no picture. Below `lg` the two buttons sit right after the reason, before the picture, so they stay in the first screen. Decided approvals are unboxed rows on hairlines under "Already decided" (state pill, the question, the outcome, the record link). The reserve and today come from the home read; if it fails the picture is simply absent.
+- **The approval.** With one approval waiting, its question (the server's sentence) is the page's one `h1` and the card does not repeat it; with several, the `h1` is a counted sentence and each card carries its own question; with none, the plain title. A waiting approval is the page's one raised surface (a `DecisionCard`, in flow, not sticky): three facts (what you get, what it costs with its rate beneath, when it lands), "Why it needs you" in one sentence, then the picture (the shared cash picture with "If you decline" as the baseline and "If you approve" as the alternative, the minimum line, each line's lowest point in the server's short string, no chips), the server's "If you decline" and "After" sentences as its two captions, the quote behind one fold, Approve (the page's one brand-filled primary) and Decline, the record link and Audit details. An approval with no cash line (an agreement's terms) keeps its terms and shows no picture. Below `lg` the two buttons sit right after the reason, before the picture, so they stay in the first screen. Decided approvals are unboxed rows on hairlines under "Already decided" (state pill, the question, the outcome, the record link). The reserve and today come from the home read; if it fails the picture is simply absent.
 - **Cash and funding, in order.** The headline is the `h1` (status pill, the server's sentence, the note, "Cash read ..."; the price sentence stays a quiet line with its fold), then the picture with a 30 / 60 / 120-day switch (`windowDays`) and the facts on its header row (cash today, the minimum with its headroom, when cash becomes unsafe, the worst point), the Basis and "figures as a table" folds under it, then the plan bar (`NextActionBlock variant="bar"`: sticky from `lg`, in flow right after the headline below it), "Ways to cover the gap", "Your funding sources", the debt readings fold and one quiet row of two links. The recharts forecast is gone from this page.
 - **Option rows and their bars.** The rows are a radio group in the server's order and groups, the recommended plan chosen by default; choosing one draws its `series` as the picture's alternative line under its name (the toggle says "Chosen plan"), and a row with no series shows the server's `series_note` and leaves the baseline alone. Each row: the name and a role pill, the legs, when the money arrives, a **cost bar** (`total_fen` against the dearest row, `brand-600` on a `subtle` track) and a **coverage bar** (the legs' amounts against `remaining_gap_fen`: `ok-solid` then `bad-solid`), with "Covered" and "Uncovered {amount}" beside it so colour is never the only channel. Bars are plotting only; every word and figure is the server's. The selected row is marked by a filled radio, a light tint and "On the chart".
 - **Facility bars.** Each funding source is a row: its name, how fast the money arrives (the router's `time_to_cash_display`), a utilisation bar (`drawn_fen` against `limit_fen`, `brand-600` on `subtle`, labelled for a screen reader with the server's drawn and limit strings) and the server's limit, drawn and available. The plain-words explainer stays behind its fold.
@@ -634,7 +657,38 @@ A drill-down, never a tab: it opens from a customer's name (`CustomerName` in `c
 
 - **Rendered per field.** Each section renders when the server sent its field and the old block stays as the fallback: `cash.status_word` (the position), `attention` (the queue), `cash.events_rail` (the picture), `deals_card` / `receivables_card` / `changes_card` (the cards). Components are in `components/home/` (`position.tsx`, `attention.tsx`, `event-picture.tsx`, `cards.tsx`).
 - **The position.** A tone dot, the status word in sentence case and "· read today"; the one `h1` (`headline_conditional`, else the headline) at 24 px on a phone and 34 px from `sm`, weight 800; the note at 15 px `ink-2`; "Forecast assumptions" is a closed `Disclosure`; three `Stat` tiles from `cash.facts` (one row each on a phone), the tone colouring the figure only (warn at zero room, bad below).
-- **The attention card is the one raised surface** (`ActionBar flow`) and only for an item that needs the owner (a plan to run, an approval, a reply, a collection): the eyebrow in `warn-fg`, the title trimmed to the recommendation (the `h1` above already says the first sentence), the facts the funding line does not repeat (matched by content, never by label), the page's only filled primary (for the funding item and the approval its plan waits in, the plan bar's own confirm-and-run control, `usePlanRun`, same test ids) beside the compare link and "Why this?", then under a hairline the funding line: its sentence and the costs ("Cost ¥2,272.29 for the invoice-financing leg; ¥3,113.93 for the whole plan, with ..."; one cost when the leg is the whole plan) and who decides. An item that only informs (a landing) is quiet: a neutral eyebrow, the facts once, a text link, no raised card, no filled button. Other queue items are a quiet "Also waiting" ordered list. An empty queue is one quiet line and the funding line, unraised; an incomplete queue (`incomplete`) never says nothing is urgent. While `attention` is present the next-step bar and the decisions card are not drawn, "Waiting on" drops the approval and the landing, and no other block is a filled primary.
+- **The attention card is the one raised surface** (`ActionBar flow`, a `DecisionCard`) and only for an item that needs the owner (a plan to run, an approval, a reply, a collection): the eyebrow in `warn-fg`, the title trimmed to the recommendation (the `h1` above already says the first sentence), the facts the funding line does not repeat (matched by content, never by label), the page's only filled primary (for the funding item and the approval its plan waits in, the plan bar's own confirm-and-run control, `usePlanRun`, same test ids) beside the compare link and "Why this?", then under a hairline the funding line: its sentence and the costs ("Cost ¥2,272.29 for the invoice-financing leg; ¥3,113.93 for the whole plan, with ..."; one cost when the leg is the whole plan) and who decides. An item that only informs (a landing) is quiet: a neutral eyebrow, the facts once, a text link, no raised card, no filled button. Other queue items are a quiet "Also waiting" ordered list. An empty queue is one quiet line and the funding line, unraised; an incomplete queue (`incomplete`) never says nothing is urgent. While `attention` is present the next-step bar and the decisions card are not drawn, "Waiting on" drops the approval and the landing, and no other block is a filled primary.
 - **The picture and the event rail** (`event-picture.tsx`). Two columns from `lg` (the rail 19.5 rem = 312 px), stacked on a phone with the rail under the picture. The plan line is solid `brand-600`, the comparison dashed `ink-3` named in the legend by `counterfactual_label`, the stress line dashed `bad-solid`; no event labels, no chips, no Play. Numbered marks (outlined, filled while chosen or previewed): the lowest point amber, landings and receipts green, outflows grey, red only where the server's tone says under the minimum; the rail rows carry the same numbers and colours, and the chosen row also has a 3 px bar at its left edge (not colour alone). Click or Enter chooses (`aria-pressed`), hover or focus previews, leaving returns to the chosen row; the panel under the picture is the event's `effect_rows` as a four-row table above its `explain` sentence; one polite live region announces the chosen title. The dotted cursor follows the pointer with the lines' figures and returns to the chosen event on leave; a click or tap picks the nearest event. The late scenario replaces the panel with the assumption and the stress sentence, widens the window to `window_days_needed` with one line saying so, makes the rail inert (disabled rows, no marks) and restores everything on the way back. Reduced motion: no transition classes.
 - **Home truth additions.** The plan line's legend is the server's `cash.plan_line_label` ("If you run FLOW's plan" before the run, "With FLOW's plan" after). A rail row whose landing only the plan would bring (`planned`) has the financing state word "planned" under its amount, a quiet word and never a badge; the lowest row shows the server's `note` under its label. The funding item has one fact per leg ("¥150k today (planned)"), in a list that is one line per fact on a phone and a wrapping row from `sm`. The inspector shows the event's `effect_rows` as a four-row table (label left, figure right, 14 px tabular figures) above the sentence.
 - **The cards** are unboxed on a hairline, each a link (the heading's link is stretched over it); nothing inside is a button. "Also on your radar" and "What changed" are closed folds under the row.
+
+## Design system (map #88, ticket #112)
+
+One system for the five pages. Where an older section above says something different (a frosted bar, a 12 px floor, three durations, a pill group), this section is right and the older sentence is history.
+
+### Tokens
+All in `app/globals.css`, `@theme static`: colours as above (`line` is `#e6e9ef`; `track` is `#eef1f5`, the segmented control's track), radii pill / 16 (`--radius-decision`) / 14 (`--radius-card`) / 10 / 8, shadows decision / lift / pop / pill / up, and the type and motion scales below. Brand `#0368e9`; `ok`, `warn` and `bad` keep their meanings. No new font, no new hue.
+
+### Three card types
+| Card | Look | Use it for |
+|---|---|---|
+| `Card` (`.card-standard`) | 14 px radius, `line` hairline, no shadow, white | Everything that is content in a box: a block of facts, a table, a list, an empty or error state. The default; most things on a page are not boxed at all. |
+| `DecisionCard` (`.card-decision`) | 16 px radius, hairline, `--shadow-decision`, white; one strong `action` slot | The one thing the owner is asked to decide: Home's attention card and plan bar, the Deals reply bar, a waiting approval, Receivables' chase bar (`ActionBar` is its sticky form). One per page, and its one filled primary lives in its action slot. Solid: no frost, no blur. |
+| `SelectedCard` (`.card-selected`) | `brand-50` fill, a 3 px `brand-600` left rule, `brand-100` hairline | The item whose detail the page is showing: Receivables' chosen invoice strip. It says "this is the one", never a status. |
+
+A card is a card by its class and nothing else: no `shadow-*` or `bg-surface/…` on a card, no second box inside a card for the same thing, and a status colour on a card is a 1 px tone line (`Card`'s `tone`), never a tint behind prose.
+
+### SegmentedTabs
+`components/ui/segmented-tabs.tsx` (behaviour in `segmented-tabs-model.ts`, unit-tested): a tablist for choosing among two to five views of the same thing, an icon and a label on each (icons from `components/icons.tsx` only), an optional count `badge` (a small filled circle: `bad-solid` only for a count that needs the owner, `line-strong` for any other, and "0" is shown). Use it where the choice changes what is shown below it and the owner will move between options: the Receivables filter, the Deals queue's four tabs, the Home window and scenario. Do not use it for a form field (a radio group), an on/off (a toggle button) or navigation between pages (links). A disabled option is one with nothing behind it, never hidden. Keyboard: Tab enters at the selected tab; Left / Right (and Up / Down) move and wrap and skip a disabled option, Home and End jump, the selection follows the focus.
+
+### StateWord
+`components/ui/state-word.tsx` (the table in `state-word-model.ts`, unit-tested) draws a state the server names: `planned`, `arranged`, `received`, `repaid`, `owed`, `scheduled`, `agreed`, `pending`, `current`, `due_soon`, `overdue`, `promise_missed`. The text is the server's (`collection_state_text`, a `basis_text`, the lifecycle's three words); the tone and the glyph are the state's, always: blue for the plan and the arrangement, green for money that has moved or is safe, amber for waiting or close, red for a breach, grey for what is only on the books, each with its own glyph (a dashed ring, a ring with a dot, a check, a check in a ring, a ring, a calendar, a clock, an alert, a cross), so colour is never the only channel. Three shapes: the word (the rail's "planned"), the pill (Receivables' status column) and the line (a receipt's basis sentence, in the quiet ink); a lifecycle step is the word alone, its disc drawn by the list. No page composes a state word itself. The Customer overview carries no state field yet; it takes `StateWord` when the server sends one.
+
+### Type scale
+Seven roles as CSS variables (`--text-headline`, `--text-value`, `--text-section`, `--text-card-title`, `--text-body`, `--text-supporting`, `--text-meta`), the first four with kit classes (`.type-headline`, `.type-value`, `.type-section`, `.type-card-title`): headline 24 / 30 / 34 px by width, major value 28 to 32 px tabular, section 18 to 20, card title 16, body 14 (15 for the sentences that carry a page), supporting 13, metadata 12. 13 px is the floor for a figure or any qualification of one; 12 px is for a label, a time or a legend. The audit of the five pages lifted every 12 px figure and qualification (caption, table head, badge, basis line, formula) to 13 px, and `e2e/design-system.spec.ts` keeps it so.
+
+### Sidebar
+From `lg` the Business sidebar is 15 rem. On a laptop (1024 to 1366 px) a toggle at the top (the first tab stop, `aria-expanded`, named "Collapse the sidebar" / "Expand the sidebar" in both languages) collapses it to 4.5 rem of icons: each destination keeps its full accessible name, its word appears beside the icon on hover and on keyboard focus (opacity, `--dur-fast`), a count becomes a badge on the icon's corner, the note at the foot is hidden and the Ask FLOW pill is its icon. The choice is in `localStorage` (`tl-sidebar`, read and written inside try/catch: storage that refuses it still collapses for the visit) and is on `<html data-sidebar="collapsed">` before the first paint (`lib/pre-hydration.ts`), so a collapsed sidebar never flashes open. Wider than 1366 px there is no toggle and the sidebar is always full; below `lg` the phone tab bar replaces it. The five destinations and the Customer drill-down (which has no destination of its own) are unaffected.
+
+### The banned list
+No gradients, no glows, no particles, no parallax, no glassmorphism on the dashboard (no frost, no backdrop blur, no blurred discs: the page backdrop is gone), no count-ups on load, no decorative badges (a badge says a status or a count), no internal labels ("Executive snapshot", "Autonomous strategy", "Retained yield", "Treasury engine", "Live stress simulation": "FLOW recommends" is the only product voice). A reviewer who finds one on a page removes it.
