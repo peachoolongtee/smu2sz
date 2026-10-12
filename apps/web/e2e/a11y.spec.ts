@@ -43,7 +43,7 @@ test.beforeEach(async ({ request }, testInfo) => {
 });
 
 test("Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0", async ({ page }) => {
-  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-options-list"], ["/receivables", "recv3-cards"], ["/activity", ""], ["/approvals", ""], ["/customers/BUYER-1", "customer-figures"]] as const) {
+  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-options-list"], ["/receivables", "recv3-cards"], ["/activity", ""], ["/approvals", ""], ["/customers/BUYER-1", "customer-figures"], ["/customers/BUYER-1/inputs", "inputs-sheet"]] as const) {
     await page.goto(path);
     await expect(page.locator("h1").first()).toBeVisible();
     if (ready) await expect(page.getByTestId(ready).first()).toBeVisible({ timeout: 15_000 });

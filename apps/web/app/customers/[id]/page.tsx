@@ -57,5 +57,5 @@ function Customer() {
     );
   if (read.error) return <ErrorState error={read.error} onRetry={read.reload} />;
   if (!read.data || read.data.asked !== asked) return <LoadingBlock rows={4} label={t("customer.loading")} />;
-  return <CustomerOverview view={read.data.view} onRetry={read.reload} />;
+  return <CustomerOverview view={read.data.view} onRetry={read.reload} ctx={ctx} />;
 }

@@ -378,7 +378,7 @@ def test_a_margin_the_owner_entered_is_not_called_a_demo_assumption(api, rt):
     b = _get(api)
     sales, margin = b["economics"][:2]
     assert (sales["note"], sales["tone"]) == ("from your accounts", "neutral")  # the owner's figure, not the projection
-    assert (margin["value_display"], margin["note"], margin["tone"]) == ("18.50%", "entered by you", "neutral")
+    assert (margin["value_display"], margin["note"], margin["tone"]) == ("18.50%", "you entered", "neutral")
     assert _row(b["economics"], "contribution")["value_display"] == "about ¥1,010,100"
 
 
@@ -567,7 +567,11 @@ def test_the_read_writes_nothing(api, rt):
 def _built(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     calls: list[str] = []
     real = overview._build
-    monkeypatch.setattr(overview, "_build", lambda *a, **k: (calls.append("built"), real(*a, **k))[1])
+    def counted(*a: object, **k: object) -> object:
+        calls.append("built")
+        return real(*a, **k)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(overview, "_build", counted)
     return calls
 
 
@@ -771,7 +775,7 @@ def test_the_edit_link_waits_for_phase_2(api, rt, monkeypatch):
     assert _get(api)["edit_href"] is None
     monkeypatch.setenv("FEATURE_CUSTOMER_ECONOMICS", "1")
     b = _get(api)
-    assert b["edit_href"] == "/inputs?customer=BUYER-1" and b["edit_label"] == "Edit these facts"
+    assert b["edit_href"] == "/customers/BUYER-1/inputs" and b["edit_label"] == "Edit these facts"
 
 
 def test_a_financing_entry_in_the_history_never_says_drawn_for_an_unlanded_lot(api, rt):

@@ -1,0 +1,310 @@
+{
+  "en": {
+    "buyer_id": "BUYER-1",
+    "inputs": [],
+    "rows_stored": 0,
+    "eyebrow_text": "Foshan Home Retail Co. · What you know about this customer",
+    "fields": [
+      {
+        "key": "annual_sales",
+        "field": "annual_sales_fen",
+        "scope": "buyer",
+        "label": "Annual sales to Foshan",
+        "value_display": "¥5,460,000",
+        "input_text": "¥5,460,000",
+        "provenance_key": "PROJECTED",
+        "provenance_text": "projected from your books",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "From your books: ¥420,000 every 30 days, 13 invoices in the next 12 months",
+        "options": []
+      },
+      {
+        "key": "gross_margin",
+        "field": "margin_bp",
+        "scope": "buyer",
+        "label": "Gross margin on Foshan's orders",
+        "value_display": "20%",
+        "input_text": "20%",
+        "provenance_key": "DEMO",
+        "provenance_text": "assumed for the Demo, not confirmed by you",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "The Demo assumes this until you enter Foshan's own",
+        "options": []
+      },
+      {
+        "key": "margin_basis",
+        "field": "margin_basis",
+        "scope": "buyer",
+        "label": "Margin basis",
+        "value_display": "Gross margin",
+        "input_text": "GROSS",
+        "provenance_key": "DEFAULT",
+        "provenance_text": "the usual basis",
+        "entered_day_text": null,
+        "editable": false,
+        "note": null,
+        "options": [
+          {
+            "value": "GROSS",
+            "label": "Gross margin",
+            "note": ""
+          },
+          {
+            "value": "CONTRIBUTION",
+            "label": "Contribution margin",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "key": "classification",
+        "field": "classification",
+        "scope": "buyer",
+        "label": "How you class this customer",
+        "value_display": "not entered yet",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "not entered yet",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "This changes nothing FLOW does on its own.",
+        "options": [
+          {
+            "value": "NORMAL",
+            "label": "Normal",
+            "note": "Context only: it changes the words FLOW uses, never what FLOW may do."
+          },
+          {
+            "value": "IMPORTANT",
+            "label": "Important",
+            "note": "Context only: FLOW says \"Foshan is marked Important\" beside a verdict that needs you. It changes no limit."
+          },
+          {
+            "value": "STRATEGIC",
+            "label": "Strategic",
+            "note": "Context only: FLOW says \"Foshan is marked Strategic, owner review recommended\". A different limit for a strategic customer needs a new signed mandate."
+          }
+        ]
+      },
+      {
+        "key": "typical_delay",
+        "field": "typical_delay_days",
+        "scope": "buyer",
+        "label": "How late Foshan usually pays, if you know",
+        "value_display": "not entered yet",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "not entered yet",
+        "entered_day_text": null,
+        "editable": true,
+        "note": "Used only until three invoices have been paid; after that FLOW uses what it observed and shows your figure beside it if they differ by 5 days or more.",
+        "options": []
+      }
+    ],
+    "firm": [
+      {
+        "key": "company_gross_margin",
+        "field": "company_gross_margin_bp",
+        "scope": "firm",
+        "label": "Your company-wide gross margin",
+        "value_display": "not entered yet",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "not entered yet",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "Stands in for a customer's own margin until you enter it.",
+        "options": []
+      },
+      {
+        "key": "vat_rate",
+        "field": "vat_rate_bp",
+        "scope": "firm",
+        "label": "VAT rate",
+        "value_display": "not set",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "not entered yet",
+        "entered_day_text": null,
+        "editable": false,
+        "note": null,
+        "options": []
+      }
+    ],
+    "vat_note": "as invoiced (VAT status not set)",
+    "consistency": [
+      {
+        "key": "ebitda_floor",
+        "lead": "Check against your books:",
+        "text": "your EBITDA is ¥1,080,000 a year and Foshan is your only invoicing customer, so Foshan's margin is at least 19.8%. 20% passes."
+      }
+    ],
+    "footer_text": "Saved as a dated entry in your name. Your books, the verdict and every approval stay exactly as they are.",
+    "economics_on": false,
+    "economics_off_text": "Customer economics is not switched on yet, so these facts cannot be saved.",
+    "context": {
+      "back": {
+        "label": "Back to Foshan",
+        "href": "/customers/BUYER-1"
+      }
+    },
+    "state_version": 1,
+    "day": 0
+  },
+  "zh": {
+    "buyer_id": "BUYER-1",
+    "inputs": [],
+    "rows_stored": 0,
+    "eyebrow_text": "Foshan Home Retail Co. · 您对这位客户的了解",
+    "fields": [
+      {
+        "key": "annual_sales",
+        "field": "annual_sales_fen",
+        "scope": "buyer",
+        "label": "对Foshan Home Retail Co.的年销售额",
+        "value_display": "¥5,460,000",
+        "input_text": "¥5,460,000",
+        "provenance_key": "PROJECTED",
+        "provenance_text": "根据您的账目推算",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "来自您的账目：每 30 天 ¥420,000，未来 12 个月 13 张发票",
+        "options": []
+      },
+      {
+        "key": "gross_margin",
+        "field": "margin_bp",
+        "scope": "buyer",
+        "label": "Foshan Home Retail Co.订单的毛利率",
+        "value_display": "20%",
+        "input_text": "20%",
+        "provenance_key": "DEMO",
+        "provenance_text": "为演示而假设，尚未经您确认",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "在您填写Foshan Home Retail Co.自己的毛利率之前，演示假设此数值",
+        "options": []
+      },
+      {
+        "key": "margin_basis",
+        "field": "margin_basis",
+        "scope": "buyer",
+        "label": "毛利率口径",
+        "value_display": "毛利率",
+        "input_text": "GROSS",
+        "provenance_key": "DEFAULT",
+        "provenance_text": "默认口径",
+        "entered_day_text": null,
+        "editable": false,
+        "note": null,
+        "options": [
+          {
+            "value": "GROSS",
+            "label": "毛利率",
+            "note": ""
+          },
+          {
+            "value": "CONTRIBUTION",
+            "label": "边际贡献率",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "key": "classification",
+        "field": "classification",
+        "scope": "buyer",
+        "label": "您对这位客户的分类",
+        "value_display": "尚未填写",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "尚未填写",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "这不会改变 FLOW 自行处理的任何事情。",
+        "options": [
+          {
+            "value": "NORMAL",
+            "label": "普通",
+            "note": "仅供参考：它只改变 FLOW 的措辞，从不改变 FLOW 可以做什么。"
+          },
+          {
+            "value": "IMPORTANT",
+            "label": "重要",
+            "note": "仅供参考：在需要您决定的结论旁，FLOW 会注明“Foshan Home Retail Co.被标为重要客户”。它不改变任何上限。"
+          },
+          {
+            "value": "STRATEGIC",
+            "label": "战略",
+            "note": "仅供参考：FLOW 会注明“Foshan Home Retail Co.被标为战略客户，建议您亲自审阅”。要为战略客户设定不同的上限，需要签署新的授权。"
+          }
+        ]
+      },
+      {
+        "key": "typical_delay",
+        "field": "typical_delay_days",
+        "scope": "buyer",
+        "label": "Foshan Home Retail Co.通常晚付几天（如果您知道）",
+        "value_display": "尚未填写",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "尚未填写",
+        "entered_day_text": null,
+        "editable": true,
+        "note": "仅在付清三张发票之前使用；之后 FLOW 采用实际记录，若与您的数字相差 5 天或以上，会并列显示您的数字。",
+        "options": []
+      }
+    ],
+    "firm": [
+      {
+        "key": "company_gross_margin",
+        "field": "company_gross_margin_bp",
+        "scope": "firm",
+        "label": "公司整体毛利率",
+        "value_display": "尚未填写",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "尚未填写",
+        "entered_day_text": null,
+        "editable": false,
+        "note": "在您填写客户自己的毛利率之前代替使用。",
+        "options": []
+      },
+      {
+        "key": "vat_rate",
+        "field": "vat_rate_bp",
+        "scope": "firm",
+        "label": "增值税率",
+        "value_display": "未设置",
+        "input_text": "",
+        "provenance_key": "NONE",
+        "provenance_text": "尚未填写",
+        "entered_day_text": null,
+        "editable": false,
+        "note": null,
+        "options": []
+      }
+    ],
+    "vat_note": "按开票金额（未设置增值税状态）",
+    "consistency": [
+      {
+        "key": "ebitda_floor",
+        "lead": "与您的账目核对：",
+        "text": "您每年的 EBITDA 为 ¥1,080,000，而Foshan Home Retail Co.是您唯一开票的客户，因此Foshan Home Retail Co.的毛利率至少为 19.8%。20% 符合。"
+      }
+    ],
+    "footer_text": "以您的名义保存为一条带日期的记录。您的账目、结论和每一项审批都保持不变。",
+    "economics_on": false,
+    "economics_off_text": "客户盈利分析尚未开启，因此这些信息暂时无法保存。",
+    "context": {
+      "back": {
+        "label": "返回Foshan",
+        "href": "/customers/BUYER-1"
+      }
+    },
+    "state_version": 1,
+    "day": 0
+  }
+}

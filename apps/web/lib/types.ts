@@ -3701,3 +3701,68 @@ export interface CustomerOverviewView {
   /** `back` is built by the server from the query the page was opened with. */
   context?: { back: { label: string; href: string } };
 }
+
+// ---------------------------------------------------------------- the owner's Inputs sheet (map #88 Phase 2, ticket #97)
+
+/** One choice of a field the owner picks from (the margin basis, the classification), with the server's note for it. */
+export interface InputOption {
+  value: string;
+  label: string;
+  note: string;
+}
+
+/** One fact on the sheet, every word the server's: what it is, the value and where it came from, when the owner entered it. */
+export interface InputSheetRow {
+  key: string;
+  field: string;
+  scope: "buyer" | "firm";
+  label: string;
+  value_display: string;
+  /** The value as the form shows it, written by the server ("¥5,460,000", "20%", "GROSS"); the browser parses nothing. */
+  input_text: string;
+  provenance_key: string;
+  provenance_text: string;
+  entered_day_text: string | null;
+  editable: boolean;
+  note: string | null;
+  options: InputOption[];
+}
+
+/** C.2's consistency checks, one sentence each, its lead said in bold. */
+export interface InputCheck {
+  key: string;
+  lead: string;
+  text: string;
+}
+
+/** GET /buyers/{id}/inputs?lang&decision&path&invoice: the sheet. Every section is optional: the page draws what the server sent. */
+export interface InputSheetView {
+  buyer_id: string;
+  /** "Foshan Home Retail Co. · What you know about this customer": the board's eyebrow, the name the books give the customer. */
+  eyebrow_text?: string;
+  fields?: InputSheetRow[];
+  firm?: InputSheetRow[];
+  vat_note?: string | null;
+  consistency?: InputCheck[];
+  footer_text?: string;
+  /** False while the economics fields are refused: `economics_off_text` is the server's reason and no form is drawn. */
+  economics_on?: boolean;
+  economics_off_text?: string | null;
+  context?: { back: { label: string; href: string } | null };
+  state_version: number;
+  day: Day;
+}
+
+/** POST /buyers/{id}/inputs and POST /firm/inputs: what the owner typed, as typed; the server parses it. */
+export interface InputSaveRequest {
+  field: string;
+  value_text: string;
+  provenance: "OWNER_ENTERED";
+  source_ref?: string;
+}
+
+export interface InputSaveResult {
+  input: { field: string; field_label: string; value_display: string; provenance_text: string };
+  state_version: number;
+  day: Day;
+}

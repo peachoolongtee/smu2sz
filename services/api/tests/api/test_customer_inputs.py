@@ -159,11 +159,11 @@ def test_a_bad_body_is_a_422_and_writes_nothing(api: TestClient, rt: Runtime, bo
     assert rt.store.all_customer_inputs() == []
 
 
-ECONOMICS = [
+ECONOMICS: list[tuple[str | None, dict[str, Any]]] = [
     (BUYER, {"field": "annual_sales_fen", "value": 120_000_000, "provenance": "ERP", "source_ref": ""}),
     (BUYER, {"field": "margin_bp", "value": 2000, "provenance": "ESTIMATED", "source_ref": ""}),
-    (BUYER, {"field": "margin_basis", "value": "gross", "provenance": "OWNER_ENTERED", "source_ref": ""}),
-    (BUYER, {"field": "classification", "value": "key account", "provenance": "OWNER_ENTERED", "source_ref": ""}),
+    (BUYER, {"field": "margin_basis", "value": "GROSS", "provenance": "OWNER_ENTERED", "source_ref": ""}),
+    (BUYER, {"field": "classification", "value": "STRATEGIC", "provenance": "OWNER_ENTERED", "source_ref": ""}),
     (None, {"field": "vat_rate_bp", "value": 1300, "provenance": "OWNER_ENTERED", "source_ref": ""}),
     (None, {"field": "company_gross_margin_bp", "value": 2376, "provenance": "ACCOUNTING_HISTORY", "source_ref": "FY2025"}),
 ]
@@ -206,7 +206,8 @@ def test_a_buyer_field_on_the_firm_route_is_a_422_with_a_sentence_in_the_languag
 
 def test_a_value_out_of_range_says_why(api: TestClient) -> None:
     r = _post(api, {**DELAY, "value": 400})
-    assert r.status_code == 422 and r.json()["detail"]["reason"] == "typical_delay_days must be between 0 and 365"
+    # the field's own rule in the owner's words (ticket #97), never the field's id
+    assert r.status_code == 422 and r.json()["detail"]["reason"] == "the usual delay is a whole number of days late, from 0 to 365"
 
 
 # ---------------------------------------------------------------- words in both languages
@@ -299,3 +300,130 @@ def test_a_demo_row_that_fails_validation_stops_the_seed(rt: Runtime, tmp_path: 
     with pytest.raises(ValueError):  # a field outside the enum
         seed_demo_inputs(rt.store, state, _fixture(tmp_path, [{"counterparty_id": BUYER, "field": "mood", "value": 1}]))
     assert rt.store.all_customer_inputs() == []
+
+
+# ---------------------------------------------------------------- the Inputs sheet (ticket #97)
+
+
+def _sheet(api: TestClient, lang: str = "en", query: str = "") -> Any:
+    return api.get(f"/buyers/{BUYER}/inputs?lang={lang}{query}", headers=OWNER).json()
+
+
+def _by(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {r["key"]: r for r in rows}
+
+
+def test_the_sheet_reads_the_three_facts_and_the_delay_in_the_boards_order(api: TestClient) -> None:
+    b = _sheet(api)
+    assert [r["key"] for r in b["fields"]] == ["annual_sales", "gross_margin", "margin_basis", "classification", "typical_delay"]
+    rows = _by(b["fields"])
+    sales, margin = rows["annual_sales"], rows["gross_margin"]
+    assert (sales["label"], sales["value_display"], sales["input_text"], sales["provenance_text"]) == (
+        "Annual sales to Foshan", "¥5,460,000", "¥5,460,000", "projected from your books")
+    assert sales["note"] == "From your books: ¥420,000 every 30 days, 13 invoices in the next 12 months"
+    assert (margin["label"], margin["value_display"], margin["provenance_text"], margin["entered_day_text"]) == (
+        "Gross margin on Foshan's orders", "20%", "assumed for the Demo, not confirmed by you", None)
+    assert margin["note"] == "The Demo assumes this until you enter Foshan's own"
+    assert b["eyebrow_text"] == "Foshan Home Retail Co. · What you know about this customer"
+    assert [o["value"] for o in rows["classification"]["options"]] == ["NORMAL", "IMPORTANT", "STRATEGIC"]
+    assert rows["classification"]["note"] == "This changes nothing FLOW does on its own."
+    assert rows["classification"]["options"][2]["note"].startswith('Context only: FLOW says "Foshan is marked Strategic')
+    assert all(r["editable"] for r in b["fields"]) and b["economics_on"] is True and b["economics_off_text"] is None
+    assert [r["key"] for r in b["firm"]] == ["company_gross_margin", "vat_rate"]
+    assert b["vat_note"] == "as invoiced (VAT status not set)"
+    assert b["consistency"] == [{"key": "ebitda_floor", "lead": "Check against your books:",
+                                 "text": "your EBITDA is ¥1,080,000 a year and Foshan is your only invoicing customer, so Foshan's "
+                                         "margin is at least 19.8%. 20% passes."}]
+    assert b["footer_text"].startswith("Saved as a dated entry in your name.")
+    assert b["context"]["back"] == {"label": "Back to Foshan", "href": "/customers/BUYER-1"}
+    assert b["inputs"] == [] and b["rows_stored"] == 0  # the earlier fields stay as they were
+
+
+def test_the_sheet_in_chinese_leaves_no_english(api: TestClient) -> None:
+    b = _sheet(api, "zh")
+    rows = _by(b["fields"])
+    assert rows["gross_margin"]["provenance_text"] == "为演示而假设，尚未经您确认" and rows["annual_sales"]["provenance_text"] == "根据您的账目推算"
+    assert b["eyebrow_text"] == "Foshan Home Retail Co. · 您对这位客户的了解"
+    assert rows["annual_sales"]["note"] == "来自您的账目：每 30 天 ¥420,000，未来 12 个月 13 张发票"
+    assert b["vat_note"] == "按开票金额（未设置增值税状态）"
+    words = {"rows": [{k: v for k, v in r.items() if k in ("label", "value_display", "provenance_text", "note")} for r in b["fields"] + b["firm"]],
+             "options": [o["label"] + o["note"] for r in b["fields"] for o in r["options"]], "vat": b["vat_note"],
+             "consistency": b["consistency"], "footer": b["footer_text"]}
+    assert english_leaks(words, ("Foshan Home Retail Co.",)) == []
+
+
+def test_what_the_owner_typed_is_parsed_by_the_server(api: TestClient, rt: Runtime) -> None:
+    for field, text, stored in (("annual_sales_fen", "¥5,460,000", 546_000_000), ("annual_sales_fen", "5,460,000.50", 546_000_050),
+                                ("margin_bp", "20%", 2000), ("margin_bp", "-5", -500), ("margin_basis", "Contribution margin", "CONTRIBUTION"),
+                                ("classification", "Strategic", "STRATEGIC"), ("classification", "重要", "IMPORTANT"),
+                                ("typical_delay_days", "10", 10)):
+        r = _post(api, {"field": field, "value_text": text, "provenance": "OWNER_ENTERED"})
+        assert r.status_code == 200, (field, text, r.text)
+        assert r.json()["input"]["value"] == stored, (field, text)
+    assert _post(api, {"field": "vat_rate_bp", "value_text": "13%", "provenance": "OWNER_ENTERED"}, buyer=None).json()["input"]["value"] == 1300
+
+
+@pytest.mark.parametrize(("field", "text", "en", "zh"), [
+    ("margin_bp", "150%", "a gross margin is a percentage between −100% and 100%, such as 20%", "毛利率应为 −100% 到 100% 之间的百分比"),
+    ("annual_sales_fen", "lots", "annual sales are an amount in yuan of zero or more", "年销售额应为不小于零的人民币金额"),
+    ("classification", "VIP", "a customer is classed Normal, Important or Strategic", "客户分类应为普通、重要或战略"),
+    ("margin_basis", "net", "the margin basis is gross margin or contribution margin", "毛利率口径应为毛利率或边际贡献率"),
+])
+def test_a_value_the_field_does_not_take_is_refused_in_both_languages(api: TestClient, rt: Runtime, field: str, text: str, en: str,
+                                                                       zh: str) -> None:
+    r = _post(api, {"field": field, "value_text": text, "provenance": "OWNER_ENTERED"})
+    assert r.status_code == 422 and r.json()["detail"]["reason"].startswith(en)
+    z = _post(api, {"field": field, "value_text": text, "provenance": "OWNER_ENTERED"}, lang="zh")
+    assert zh in z.json()["detail"]["message"] and english_leaks({"m": z.json()["detail"]["message"]}) == []
+    assert rt.store.all_customer_inputs() == []
+
+
+def test_a_class_or_basis_sent_as_a_value_must_be_one_of_its_keys(api: TestClient) -> None:
+    assert _post(api, {"field": "classification", "value": "VIP", "provenance": "OWNER_ENTERED"}).status_code == 422
+    assert _post(api, {"field": "classification", "value": "STRATEGIC", "provenance": "OWNER_ENTERED"}).status_code == 200
+    both = _post(api, {"field": "margin_bp", "value": 2000, "value_text": "20%", "provenance": "OWNER_ENTERED"})
+    neither = _post(api, {"field": "margin_bp", "provenance": "OWNER_ENTERED"})
+    assert both.status_code == neither.status_code == 422
+
+
+def test_saving_a_margin_turns_the_demo_assumption_into_what_you_entered(api: TestClient) -> None:
+    before = api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()
+    assert _by(before["economics"])["gross_margin"]["note"] == "assumed for the Demo, not confirmed by you"
+    assert before["edit_href"] == "/customers/BUYER-1/inputs"
+    assert _post(api, {"field": "margin_bp", "value_text": "25%", "provenance": "OWNER_ENTERED"}).status_code == 200
+    rows = _by(_sheet(api)["fields"])
+    assert (rows["gross_margin"]["value_display"], rows["gross_margin"]["provenance_text"], rows["gross_margin"]["entered_day_text"]) == (
+        "25%", "you entered", "entered today")
+    assert rows["gross_margin"]["note"] is None
+    after = api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()
+    assert (_by(after["economics"])["gross_margin"]["value_display"], _by(after["economics"])["gross_margin"]["note"]) == ("25%", "you entered")
+
+
+def test_the_company_average_stands_in_until_the_buyers_own(api: TestClient) -> None:
+    _post(api, {"field": "company_gross_margin_bp", "value_text": "23.76%", "provenance": "OWNER_ENTERED"}, buyer=None)
+    margin = _by(_sheet(api)["fields"])["gross_margin"]
+    assert (margin["value_display"], margin["provenance_text"]) == ("23.76%", "company average, estimated")
+    assert margin["note"] == "Your company-wide gross margin until you enter Foshan's own"
+    overview = api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()
+    assert _by(overview["economics"])["gross_margin"]["note"] == "company average, estimated"
+    firm = api.get("/firm/inputs", headers=OWNER).json()
+    assert _by(firm["firm"])["company_gross_margin"]["value_display"] == "23.76%" and firm["vat_note"] == "as invoiced (VAT status not set)"
+
+
+def test_the_owners_sales_far_from_the_books_are_both_shown(api: TestClient) -> None:
+    _post(api, {"field": "annual_sales_fen", "value_text": "¥7,000,000", "provenance": "OWNER_ENTERED"})
+    keys = {c["key"]: c for c in _sheet(api)["consistency"]}
+    assert keys["sales_gap"]["text"] == "your books project ¥5,460,000 a year; you entered ¥7,000,000. Both are shown."
+    assert _by(_sheet(api)["fields"])["annual_sales"]["provenance_text"] == "you entered"
+
+
+def test_with_economics_off_the_sheet_says_why_and_saves_nothing(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FEATURE_CUSTOMER_ECONOMICS")
+    b = _sheet(api)
+    assert b["economics_on"] is False and b["economics_off_text"] == (
+        "Customer economics is not switched on yet, so these facts cannot be saved.")
+    assert "FEATURE_" not in b["economics_off_text"]
+    assert not _by(b["fields"])["gross_margin"]["editable"] and _by(b["fields"])["typical_delay"]["editable"]
+    assert api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()["edit_href"] is None
+    zh = _sheet(api, "zh")
+    assert zh["economics_off_text"] == "客户盈利分析尚未开启，因此这些信息暂时无法保存。" and english_leaks({"t": zh["economics_off_text"]}) == []
