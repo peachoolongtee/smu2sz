@@ -10,11 +10,12 @@ import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } f
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
+import { ArrowLeftIcon, ChevronRightIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
+import { toggleSidebar, useSidebarCollapsed } from "@/lib/use-sidebar";
 import { Badge, Button, Segmented, textLinkClass } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
@@ -95,7 +96,7 @@ function Brand({ href }: { href: string }) {
       </span>
       <span className="whitespace-nowrap leading-tight">
         {t("brand.name")}
-        <span className="hidden text-xs font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
+        <span className="hidden text-meta font-normal text-ink-3 sm:block">{t("brand.tagline")}</span>
       </span>
     </Link>
   );
@@ -126,7 +127,7 @@ function ApprovalsBadge() {
   const pending = list.data?.filter((a) => a.status === "PENDING").length ?? 0;
   if (!pending) return null;
   return (
-    <Link href="/approvals" className="motion-press hit inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-xs font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
+    <Link href="/approvals" className="motion-press hit inline-flex min-h-8 items-center rounded-pill border border-warn-line bg-warn-bg px-3 text-meta font-semibold text-warn-fg hover:brightness-95" data-testid="approvals-badge" title={t("approvals.badge", { n: pending })}>
       {/* The count alone where the header is tight (a phone, and the width where the five pills just fit); the sentence elsewhere. */}
       <span className="sm:hidden lg:inline xl:hidden">{pending}</span>
       <span className="hidden sm:inline lg:hidden xl:inline">{t("approvals.badge", { n: pending })}</span>
@@ -156,7 +157,7 @@ const COUNT_TONE: Record<NavKey, string> = { "/deals": "border-warn-line bg-warn
 function NavCount({ href, n, className = "" }: { href: string; n: number | undefined; className?: string }) {
   if (!n || (href !== "/deals" && href !== "/receivables")) return null;
   return (
-    <span aria-hidden className={`inline-flex h-5 min-w-5 items-center justify-center rounded-pill border px-1.5 text-xs font-bold tabular-nums ${COUNT_TONE[href]} ${className}`} data-testid={`nav-count-${href.slice(1)}`}>
+    <span aria-hidden className={`inline-flex h-5 min-w-5 items-center justify-center rounded-pill border px-1.5 text-supporting font-bold tabular-nums ${COUNT_TONE[href]} ${className}`} data-testid={`nav-count-${href.slice(1)}`}>
       {n}
     </span>
   );
@@ -197,9 +198,9 @@ function AccountSheet({ signedIn, children }: { signedIn: boolean; children: Rea
   }, []);
   return (
     <details ref={ref} onToggle={(e) => setOpen(e.currentTarget.open)} className="menu relative" data-testid="account-menu">
-      <summary className="motion-press hit flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-xs font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
+      <summary className="motion-press hit flex min-h-8 cursor-pointer list-none items-center rounded-pill border border-line-ui px-3 text-meta font-medium text-ink-2 hover:bg-subtle [&::-webkit-details-marker]:hidden" aria-label={t("account.menu")}>
         {signedIn ? (
-          <span aria-hidden className="grid size-6 place-items-center rounded-pill bg-brand-50 text-xs font-bold text-brand-700">
+          <span aria-hidden className="grid size-6 place-items-center rounded-pill bg-brand-50 text-meta font-bold text-brand-700">
             {t("account.initial")}
           </span>
         ) : (
@@ -246,7 +247,7 @@ function AccountMenu() {
         <AccountSheet signedIn={false}>
           <TourRow />
           <LangSwitch />
-          <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+          <p className="text-meta text-ink-3">{t("biz.demoData.hint")}</p>
         </AccountSheet>
       </div>
     );
@@ -267,7 +268,7 @@ function AccountMenu() {
       </Link>
       <TourRow />
       <LangSwitch />
-      <p className="text-xs text-ink-3">{t("biz.demoData.hint")}</p>
+      <p className="text-meta text-ink-3">{t("biz.demoData.hint")}</p>
     </AccountSheet>
   );
 }
@@ -291,7 +292,7 @@ function DemoAccountMenu() {
                 <OwnerSessionControl />
               </div>
               <LangSwitch />
-              <p className="text-xs text-ink-3">{t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}</p>
+              <p className="text-meta text-ink-3">{t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}</p>
             </>
           ) : null
         }
@@ -327,6 +328,31 @@ function useDock(ref: RefObject<HTMLElement | null>) {
 // ---------------------------------------------------------------- Business
 
 /** The phone tab bar: one icon and word per section. The current tab's icon takes its section's hue, its word stays in ink, and a bar slides to it. */
+/**
+ * The sidebar's toggle, on a laptop only (1024 to 1366 px; wider screens always have the full sidebar): it collapses the sidebar to its icons and opens it
+ * again, and the choice is kept (lib/use-sidebar.ts). Its name says what it will do; `aria-expanded` says where the sidebar is now.
+ */
+function SidebarToggle({ controls }: { controls: string }) {
+  const { t } = useI18n();
+  const collapsed = useSidebarCollapsed();
+  const label = t(collapsed ? "nav.sidebar.expand" : "nav.sidebar.collapse");
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      aria-expanded={!collapsed}
+      aria-controls={controls}
+      aria-label={label}
+      title={label}
+      data-testid="sidebar-toggle"
+      className="side-toggle motion-press mb-2 hidden min-h-11 w-full items-center gap-3 rounded-control px-3 text-sm font-medium text-ink-2 hover:bg-subtle hover:text-ink laptop:flex"
+    >
+      <ChevronRightIcon width={20} height={20} className={`side-toggle-icon shrink-0 text-ink-3 ${collapsed ? "" : "rotate-180"}`} />
+      <span className="side-toggle-label">{label}</span>
+    </button>
+  );
+}
+
 const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
 const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
@@ -365,9 +391,10 @@ function BusinessShell({ children }: { children: ReactNode }) {
       </header>
       {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
-      <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className="shell-grid lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-canvas px-3 pb-20 pt-5 lg:flex">
-          <nav aria-label={t("nav.label")} data-testid="nav-pills">
+          <SidebarToggle controls="nav-pills" />
+          <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
             <ul className="space-y-1">
               {BUSINESS_NAV.map((n) => {
                 const active = pathname === n.href;
@@ -379,20 +406,20 @@ function BusinessShell({ children }: { children: ReactNode }) {
                       href={n.href}
                       aria-current={active ? "page" : undefined}
                       aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
-                      className={`motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
+                      className={`side-link motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
                         active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
                       }`}
                     >
                       <Icon width={20} height={20} className={active ? "text-brand-600" : "text-ink-3"} />
-                      <span>{t(n.key)}</span>
-                      <NavCount href={n.href} n={counts[n.href as NavKey]} className="ml-auto" />
+                      <span className="side-label">{t(n.key)}</span>
+                      <NavCount href={n.href} n={counts[n.href as NavKey]} className="side-count ml-auto" />
                     </Link>
                   </li>
                 );
               })}
             </ul>
           </nav>
-          <p className="mt-auto px-3 text-xs leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+          <p className="side-foot mt-auto px-3 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
         </aside>
       <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
         {backTo ? (
@@ -427,7 +454,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                       href={n.href}
                       aria-current={active ? "page" : undefined}
                       aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
-                      className={`motion-press relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                      className={`motion-press relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-meta font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
                     >
                       <span className="relative">
                         <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
@@ -478,7 +505,7 @@ function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
     <nav aria-label={t("nav.label")} className="space-y-4">
       {render("story")}
       <div>
-        <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("nav.engine")}</p>
+        <p className="px-3 pb-1 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("nav.engine")}</p>
         {render("engine")}
       </div>
     </nav>
@@ -494,7 +521,7 @@ function DemoShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
       {/* The Demo is visibly not the product: a deep strip across the top says so (the deep hero is the Business home's alone). */}
-      <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-xs" data-testid="demo-strip">
+      <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-meta" data-testid="demo-strip">
         <span className="font-bold tracking-wide text-info-bright">{t("demo.strip.label")}</span>
         <span aria-hidden className="text-on-deep-muted">·</span>
         <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
@@ -507,7 +534,7 @@ function DemoShell({ children }: { children: ReactNode }) {
           <Brand href="/demo" />
         </div>
         <DemoNavLinks />
-        <p className="mt-auto px-3 text-xs text-ink-3">{t("common.synthetic")}</p>
+        <p className="mt-auto px-3 text-meta text-ink-3">{t("common.synthetic")}</p>
       </aside>
 
       <OwnerSignInDialog />
@@ -529,7 +556,7 @@ function DemoShell({ children }: { children: ReactNode }) {
                 </button>
                 <Brand href="/demo" />
               </div>
-              <div className="hidden text-xs text-ink-3 lg:block">{t("common.tagline")}</div>
+              <div className="hidden text-meta text-ink-3 lg:block">{t("common.tagline")}</div>
               <div className="flex items-center justify-end gap-2">
                 <ModeSwitch />
                 {/* Desktop: what this data is, who is signed in and the language sit in the header. Below lg they are the account sheet. */}

@@ -172,3 +172,97 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   found.Deals = await smallFinancialText(page);
   expect(found).toEqual({ Home: [], Cash: [], Receivables: [], Customer: [], Deals: [] });
 });
+
+const NAV = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+const sidebarWidth = (page: import("@playwright/test").Page) => page.locator("aside").first().evaluate((el) => Math.round(el.getBoundingClientRect().width));
+
+test("sidebar: on a laptop it collapses to icons with the label on hover and focus, the choice is kept and restored, and a wide screen is never collapsed", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+  await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
+  const toggle = page.getByTestId("sidebar-toggle");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(toggle).toHaveAccessibleName("Collapse the sidebar");
+  expect(await sidebarWidth(page)).toBe(240);
+  await expect(page.getByRole("link", { name: "Receivables" }).locator(".side-label")).toBeVisible();
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toHaveAccessibleName("Expand the sidebar");
+  expect(await sidebarWidth(page)).toBe(72);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("tl-sidebar") ?? "{}").collapsed)).toBe(true);
+  // Icons only: every destination is still a link with its full name, and its word is hidden until hover or focus (opacity only).
+  const nav = page.getByTestId("nav-pills");
+  for (const name of NAV) await expect(nav.getByRole("link", { name })).toBeVisible();
+  const label = nav.getByRole("link", { name: "Deals" }).locator(".side-label");
+  await expect(label).toHaveCSS("opacity", "0");
+  await nav.getByRole("link", { name: "Deals" }).hover();
+  await expect(label).toHaveCSS("opacity", "1");
+  await page.mouse.move(700, 400);
+  await expect(label).toHaveCSS("opacity", "0");
+  await nav.getByRole("link", { name: "Cash & funding" }).focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(nav.getByRole("link", { name: "Cash & funding" })).toBeFocused();
+  await expect(nav.getByRole("link", { name: "Cash & funding" }).locator(".side-label")).toHaveCSS("opacity", "1");
+  // The way out of the icons is by keyboard too: the toggle is the first stop, and Enter opens the sidebar again.
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(await sidebarWidth(page)).toBe(240);
+  await toggle.click();
+
+  // Restored on load: the attribute is on <html> before the app renders, and the sidebar is the narrow one on the next page.
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-sidebar", "collapsed");
+  expect(await sidebarWidth(page)).toBe(72);
+  await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-expanded", "false");
+  // The five destinations work from the icons, and the Customer drill-down (no destination of its own) sits beside the narrow sidebar.
+  await page.getByTestId("nav-pills").getByRole("link", { name: "Receivables" }).click();
+  await expect(page).toHaveURL(/\/receivables/);
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Receivables" })).toHaveAttribute("aria-current", "page");
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByTestId("customer-overview")).toBeVisible({ timeout: 15_000 });
+  expect(await sidebarWidth(page)).toBe(72);
+  await expect(page.getByTestId("nav-pills").locator("[aria-current=page]")).toHaveCount(0);
+
+  // A wide screen has no toggle and the full sidebar, whatever was chosen on the laptop.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.getByTestId("sidebar-toggle")).toBeHidden();
+  expect(await sidebarWidth(page)).toBe(240);
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).locator(".side-label")).toBeVisible();
+});
+
+test("sidebar: storage that throws never breaks the toggle, and the sidebar below the laptop width has none", async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.setItem = function () {
+      throw new Error("blocked");
+    };
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("sidebar-toggle").click();
+  expect(await sidebarWidth(page)).toBe(72);
+  await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.setViewportSize({ width: 820, height: 900 });
+  await expect(page.getByTestId("sidebar-toggle")).toBeHidden();
+  await expect(page.locator("aside").first()).toBeHidden();
+  await expect(page.getByTestId("tab-bar")).toBeVisible();
+});
+
+test("sidebar: axe finds nothing serious on a collapsed sidebar, with the page beside it", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.addInitScript(() => localStorage.setItem("tl-sidebar", JSON.stringify({ collapsed: true })));
+  const { default: AxeBuilder } = await import("@axe-core/playwright");
+  for (const path of ["/", "/cash", "/receivables", "/customers/BUYER-1"]) {
+    await page.goto(path);
+    await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });
+    expect(await sidebarWidth(page)).toBe(72);
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+    const result = await new AxeBuilder({ page }).analyze();
+    const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+    expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), path).toEqual([]);
+  }
+});
