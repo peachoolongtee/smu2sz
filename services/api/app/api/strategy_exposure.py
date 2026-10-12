@@ -16,6 +16,23 @@ null; each search is cached once computed, so a later `spare=1` read pays only f
 defaults to `spare=1` (the Deals page shows the room), and a caller on a large book should pass `spare=0` for the light read. The
 decision read defaults to `spare=0`: a decision page does not wait on a search, and asks for `spare=1` when it wants the room.
 
+    GET /buyers/{buyer_id}/exposure?lang=en|zh&spare=0|1
+
+The buyer-keyed read (no deal needed): the same block for the buyer on the books as they stand (`buyer_exposure` with no offer), flattened to
+what the Receivables aside and the Customer page read: `concentration`, `payments`, `stress` (its 30-day row carries `net_later_text`, what
+the buyer's open invoices leave the owner a month later, from `net_at_collection`), `capacity` ({before, spare}) and the band's sentences.
+Cached like the Customer overview (the books, the mandate, the day, the commitments, the buyer, the language, `spare`, the inputs, the
+store's change marker and the flag). With the flag off it answers 404 with a sentence. When the query carries `customer`, `invoice` or
+`decision` (with `path`) the read also carries `context.back` {label, href}, built after the cache and following the origin: a `decision`
+back to the deal (`/deals?decision=&path=&customer=`), else an `invoice` back to Receivables (`/receivables?invoice=&customer=`), else
+`customer` back to the Customer page (`app.api.exposure_words.origin_back`), unless `from=deal|invoice|customer` names the origin; a part that names another buyer is ignored.
+
+The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
+`limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
+contribution function), all worked out once with the cached block (`deal_words`), and, when the query carries `customer` or `invoice`,
+`context.back` to the customer's page. `limit_word` is null (with `limit_text`) for a reply the picture cannot draw or price and for
+`do_nothing`. `do_nothing` carries words only: its entries in `stress.paths`, `capacity` and `band.by_path` are explicit nulls.
+
 Read-only and hypothetical: nothing is written, logged or stored; concentration, payment behaviour, stress and capacity are context,
 never a mandate, and change no verdict. The books are those without this offer's own commitments (the offer as asked, as the picture
 draws it). Cached through `app.strategy.exposure` (32 entries, single-flight) by the books, the mandate, the day, the commitments, the
@@ -31,15 +48,20 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.api.customer_overview import customer_context
 from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
-from app.api.features import require_feature
+from app.api.exposure_words import customer_back, net_later, origin_back
+from app.api.features import _MESSAGES, require_feature
+from app.api.presentation import t
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
-from app.decisions.identity import offer_id_of
+from app.config import get_settings
+from app.decisions.identity import deal_id, offer_id_of
 from app.domain.models import CompiledOffer
 from app.financial import EngineError
 from app.strategy import exposure as assembly
+from app.strategy.cache import AnswerCache, cache_key
 from app.strategy.inputs import inputs_from_store
 
 router = APIRouter()
@@ -48,8 +70,12 @@ log = logging.getLogger(__name__)
 _RESPONSE = re.compile(r"^(asked|counter:[0-9]{1,3})$")
 
 
+_BUYER_CACHE: AnswerCache[dict[str, Any]] = AnswerCache(assembly.CACHE_SIZE)
+
+
 def clear_cache() -> None:
     assembly.clear_cache()
+    _BUYER_CACHE.clear()
 
 
 def _not_found(code: str, message: str) -> HTTPException:
@@ -93,30 +119,45 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
         raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer.offer_id} has no {response} any more: its counter-offers changed "
                                               "while you were reading. Read it again.") from None
     try:
-        core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare)
+        core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare,
+                                 deal_words=True)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
     return {"buyer_id": offer.counterparty_id, "buyer_name": core["buyer"]["name"], "response": response, "lang": lang, **core,
             "state_version": state.state_version, "day": day}
 
 
-def _respond(core: dict[str, Any], started: float, **ids: str) -> dict[str, Any]:
-    return displayed({**ids, **core, "computed_in_seconds": round(time.perf_counter() - started, 3)})
+def _respond(core: dict[str, Any], started: float, back: dict[str, str] | None = None, **ids: str) -> dict[str, Any]:
+    body = displayed({**ids, **core, "computed_in_seconds": round(time.perf_counter() - started, 3)})
+    return {**body, "context": {"back": back}} if back is not None else body
+
+
+def _back(rt: Runtime, offer: CompiledOffer, lang: Literal["en", "zh"], customer: str | None, invoice: str | None, path: str | None
+          ) -> dict[str, str] | None:
+    """`context.back`: only when the query carries `customer` or `invoice`; the deal itself is this read's offer."""
+    if not customer and not invoice:
+        return None
+    with rt.lock:
+        return customer_back(rt, rt.store.get_state(), lang, customer=customer, invoice=invoice, decision=deal_id(offer.offer_id), path=path)
 
 
 @router.get("/offers/{offer_id}/exposure")
 def get_offer_exposure(offer_id: str, response: str = Query("asked"), lang: Literal["en", "zh"] = Query("en"),
-                       spare: int = Query(1, ge=0, le=1)) -> dict[str, Any]:
+                       spare: int = Query(1, ge=0, le=1), customer: str | None = Query(None, max_length=120),
+                       invoice: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120)) -> dict[str, Any]:
     require_feature("exposure")
     started = time.perf_counter()
     rt = get_runtime()
     offer = _offer(rt, offer_id)
     _check_response(rt, offer_id, response)
-    return _respond(_answer(rt, offer, response, lang, bool(spare)), started, offer_id=offer_id)
+    core = _answer(rt, offer, response, lang, bool(spare))
+    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), offer_id=offer_id)
 
 
 @router.get("/decisions/{decision_id}/exposure")
-def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(0, ge=0, le=1)) -> dict[str, Any]:
+def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(0, ge=0, le=1),
+                          customer: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
+                          path: str | None = Query(None, max_length=120)) -> dict[str, Any]:
     """A deal decision (`deal:<offer_id>`) is about that offer's buyer, asked as it was. Any other decision (a funding
     decision) is about no buyer: 404."""
     require_feature("exposure")
@@ -126,4 +167,65 @@ def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("e
     offer = rt.store.get_offer(offer_id) if offer_id else None
     if offer is None:
         raise _not_found("DECISION_NOT_FOUND", f"There is no deal decision {decision_id}, so there is no buyer to show exposure for.")
-    return _respond(_answer(rt, offer, "asked", lang, bool(spare)), started, decision_id=decision_id, offer_id=offer.offer_id)
+    core = _answer(rt, offer, "asked", lang, bool(spare))
+    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), decision_id=decision_id, offer_id=offer.offer_id)
+
+
+# ---------------------------------------------------------------- the buyer-keyed read (no deal needed)
+
+
+def _buyer_block(rt: Runtime, buyer_id: str, lang: Literal["en", "zh"], spare: bool) -> dict[str, Any]:
+    """The buyer's exposure on the books as they stand, flattened for the pages that have no deal. Raises `EngineError` when the books
+    cannot be projected."""
+    with rt.lock:
+        state = rt.store.get_state()
+        mandate = rt.store.get_mandate()
+        held = tuple(rt.store.commitments())
+        books = current_books(state, held)
+        day = rt.day
+        inputs = inputs_from_store(rt.store)
+    core = assembly.buyer_exposure(rt, books, mandate, day, buyer_id, "", None, lang, held, inputs, spare=spare)
+    today = max(day, state.as_of_day)
+    stress = core["stress"]
+    later = net_later(books.state, buyer_id, today, stress["delay_days"], lang) or {"net_later_fen": None, "net_later_text": None}
+    stress = {**stress, "now": {**stress["now"], **later}}  # null when the buyer has no open invoice
+    view = core["capacity"][assembly.ASKED]
+    capacity = {"available": view["available"], "unavailable_text": view["unavailable_text"], "before": view.get("before"), "spare": view["spare"]}
+    return {"buyer_id": buyer_id, "buyer_name": core["buyer"]["name"], "lang": lang, "buyer": core["buyer"],
+            "concentration": core["concentration"], "payments": core["payments"], "payments_note": core["payments_note"],
+            "stress": stress, "capacity": capacity, "band": {k: core["band"][k] for k in ("concentration", "stress", "capacity")},
+            "flag": core["flag"], "spare_read": spare, "partial": False, "economics": None,
+            "customer_context": customer_context(state, inputs, buyer_id, today, core["concentration"], lang),
+            "state_version": state.state_version, "day": day}
+
+
+@router.get("/buyers/{buyer_id}/exposure")
+def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(1, ge=0, le=1),
+                       customer: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
+                       decision: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120),
+                       origin: Literal["deal", "invoice", "customer"] | None = Query(None, alias="from")) -> dict[str, Any]:
+    if not get_settings().features.exposure:  # this route answers 404 with a sentence, so a page without the feature reads "no exposure"
+        raise HTTPException(404, detail={"code": "FEATURE_DISABLED", "feature": "exposure",
+                                         "message": t(lang, _MESSAGES["exposure"], "买家风险敞口功能尚未开启（FEATURE_EXPOSURE）。")})
+    started = time.perf_counter()
+    rt = get_runtime()
+    with rt.lock:
+        state, mandate = rt.store.get_state(), rt.store.get_mandate()
+        if not any(c.id == buyer_id and c.role == "BUYER" for c in state.counterparties):
+            raise _not_found("BUYER_NOT_FOUND", t(lang, "There is no such customer on your books.", "您的账目中没有这位客户。"))
+        key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "buyer-exposure", buyer_id, lang, spare,
+                        inputs_from_store(rt.store).digest(), rt.store.change_marker())
+    try:
+        body = _BUYER_CACHE.get_or_compute(key, lambda: displayed(_buyer_block(rt, buyer_id, lang, bool(spare))))
+    except EngineError as exc:
+        raise HTTPException(422, f"cannot project: {exc}") from None
+    out = {**body, "computed_in_seconds": round(time.perf_counter() - started, 3)}
+    if not (customer or invoice or decision):
+        return out
+    # `context.back`, built from the query after the cache (never cached) and following the origin: the deal, the invoice in Receivables or the
+    # Customer page (`exposure_words.origin_back`; `from` = deal | invoice | customer names the origin and decides when the query supports it). A part that names another buyer's is ignored, never echoed.
+    with rt.lock:
+        back = origin_back(rt, rt.store.get_state(), lang, buyer_id, customer=customer, invoice=invoice, decision=decision, path=path, origin=origin)
+    if back is None:
+        return out
+    return {**out, "context": {"back": back}}

@@ -31,6 +31,7 @@ const overflow = (page: Page) => page.evaluate(() => document.documentElement.sc
 // ---------------------------------------------------------------- Receivables
 
 test("Receivables day 0: Who pays when has one mark, the facts are one unboxed row, no bar, one h1", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the page of before (the fallback)
   await page.goto("/receivables");
   await expect(page.getByTestId("recv-picture-svg")).toBeVisible();
   await expect(page.getByTestId("recv-picture").getByRole("heading", { name: "Who pays when" })).toBeVisible();
@@ -50,6 +51,7 @@ test("Receivables day 0: Who pays when has one mark, the facts are one unboxed r
 });
 
 test("Receivables day 34: the late invoice is a filled mark left of Today, the others are outlined, and pressing a mark highlights its row", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the page of before (the fallback)
   await advanceTo34(page, "/receivables");
   await expect(page.getByTestId("recv-picture-svg")).toBeVisible();
   await expect(page.locator('[data-testid^="recv-mark-"][data-state]')).toHaveCount(3);
@@ -78,6 +80,7 @@ test("Receivables day 34: the late invoice is a filled mark left of Today, the o
 });
 
 test("Receivables day 34: the chase bar is the one raised surface, sticky from lg, in flow below it; one h1 and at most one filled primary", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the page of before (the fallback)
   await page.setViewportSize({ width: 1280, height: 800 });
   await advanceTo34(page, "/receivables");
   const bar = page.getByTestId("recv-top-action");
@@ -92,6 +95,7 @@ test("Receivables day 34: the chase bar is the one raised surface, sticky from l
 });
 
 test("Receivables day 34: the buyer's name is on one line at 1440, and there is no sideways scroll at 390", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the page of before (the fallback)
   await advanceTo34(page, "/receivables");
   const name = page.getByTestId("recv-RCV-A").locator("td span.break-words").first();
   expect((await name.boundingBox())!.height).toBeLessThan(24);
@@ -101,6 +105,7 @@ test("Receivables day 34: the buyer's name is on one line at 1440, and there is 
 });
 
 test("Receivables day 34 in Chinese: the picture, its legend, the facts and the bar are in Chinese", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the page of before (the fallback)
   await advanceTo34(page, "/receivables");
   await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await page.reload();

@@ -5,7 +5,7 @@ import { openStoryFold, STORY_STEPS, walkStory } from "./helpers";
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
 const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
-const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
+const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/customers/BUYER-1"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -147,7 +147,9 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
         const h = document.elementFromPoint(x, y);
         return !h || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight || el.contains(h) || h.contains(el);
       };
-      return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
+      // On Receivables the links are checked too (every customer name is a link that carries its own 44 px hit area).
+      const links = location.pathname === "/receivables" ? ", main a" : "";
+      return Array.from(document.querySelectorAll(`header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a${links}`))
         .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
         .filter((el) => {
           // Measured where a finger would meet it: scrolled to the middle of the window, clear of the fixed tab bar.
@@ -386,12 +388,12 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
 });
 
-test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {
+test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto("/receivables");
-  await expect(page.getByTestId("recv-open-list")).toBeVisible();
-  await expect(page.locator("#recv-open table")).toBeHidden();
+  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 

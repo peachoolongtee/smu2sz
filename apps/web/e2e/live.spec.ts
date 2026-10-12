@@ -438,8 +438,8 @@ test("day 34 after a half receipt: Chase payment opens the API's handoff, its ba
   await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-remaining")).toContainText(owed);
   await expect(facts).toContainText("The early-payment window has ended");
 
-  await page.getByTestId("chase-open-RCV-A").click();
-  const dialog = page.getByTestId("chase-dialog-RCV-A");
+  await page.getByTestId("chase-detail-CHASE-open-RCV-A").click();
+  const dialog = page.getByTestId("chase-detail-CHASE-dialog-RCV-A");
   await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText(owed);
   await expect(dialog.getByTestId("chase-request")).toHaveText(handoff.request_text);
   await expect(dialog.getByTestId("chase-thread")).toHaveAttribute("href", handoff.thread_href);
@@ -641,7 +641,7 @@ test("Home: a cure that cannot restore the reserve leaves a remaining task with 
   // The invoice link lands on that invoice's row once the page has loaded.
   await page.goto("/");
   await page.locator("#home-remaining").getByRole("link", { name: /^Open the .* invoice/ }).click();
-  await expect(page).toHaveURL(/\/receivables#/);
+  await expect(page).toHaveURL(/\/receivables(\?[^#]*)?#/);
   const id = decodeURIComponent(new URL(page.url()).hash.slice(1));
   const row = page.locator(`[id="${id}"]:visible`);
   await expect(row).toHaveCount(1);

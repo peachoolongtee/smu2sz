@@ -40,8 +40,8 @@ test.beforeEach(async ({ request }, testInfo) => {
   await resetBooks(request);
 });
 
-test("Home, Cash, Receivables, Activity and Approvals at day 0", async ({ page }) => {
-  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-options-list"], ["/receivables", "recv-summary"], ["/activity", ""], ["/approvals", ""]] as const) {
+test("Home, Cash, Receivables, Activity, Approvals and the customer overview at day 0", async ({ page }) => {
+  for (const [path, ready] of [["/", "home-next-action"], ["/cash", "cash-options-list"], ["/receivables", "recv3-cards"], ["/activity", ""], ["/approvals", ""], ["/customers/BUYER-1", "customer-figures"]] as const) {
     await page.goto(path);
     await expect(page.locator("h1").first()).toBeVisible();
     if (ready) await expect(page.getByTestId(ready).first()).toBeVisible({ timeout: 15_000 });
@@ -100,12 +100,12 @@ test("an approval waiting, the chase dialog and the remaining task at day 34", a
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   await scan(page, "/ day 34");
   await page.goto("/receivables");
-  // The table's button on a desktop, the list's on a phone (the page holds both, one hidden by the breakpoint).
-  const chase = page.locator('[data-testid^="chase-open-"]:visible, [data-testid^="chase-list-open-"]:visible').first();
+  // The first action of the selected invoice: Chase payment, as it is overdue.
+  const chase = page.locator('[data-testid^="chase-detail-CHASE-open-"]:visible').first();
   await expect(chase).toBeVisible();
   await scan(page, "/receivables day 34");
   await chase.click();
-  await expect(page.locator('[data-testid^="chase-dialog-"][open], [data-testid^="chase-list-dialog-"][open]').first()).toBeVisible();
+  await expect(page.locator('[data-testid^="chase-detail-CHASE-dialog-"][open]').first()).toBeVisible();
   await scan(page, "chase dialog");
   await page.keyboard.press("Escape");
   await page.goto("/activity");

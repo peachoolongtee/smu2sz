@@ -29,9 +29,14 @@ export function HomePosition({ h }: { h: HomeView }) {
           {cash.status_word}
         </span>
         {cash.last_read_when ? (
-          <span className="font-normal text-ink-3" data-testid="home-read-when">
-            {t("home.hy.read", { when: cash.last_read_when })}
-          </span>
+          <>
+            <span aria-hidden className="font-normal text-ink-3">
+              ·
+            </span>
+            <span className="font-normal text-ink-3" data-testid="home-read-when">
+              {t("biz.readWhen", { when: cash.last_read_when })}
+            </span>
+          </>
         ) : null}
       </p>
       <h1 id="home-status-title" className="max-w-4xl text-balance font-display text-2xl font-extrabold leading-[1.15] tracking-[-0.025em] text-ink sm:text-[2.125rem]" data-testid="home-headline">

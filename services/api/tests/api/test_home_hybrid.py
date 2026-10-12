@@ -537,7 +537,7 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     zh = client.get("/home", params={"lang": "zh"}).json()["cash"]["stress"]
     assert zh["text"] == "晚付 30 天：60 天后现金将跌至 ¥155,000，有 15 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥145,000 的缺口。"
     assert zh["funding_text"] == zh["plan_text"] and zh["funding_text"] != s["funding_text"]
-    assert zh["net_later_text"] == "约 ¥160k，晚一个月收到"
+    assert zh["net_later_text"] == "约 ¥160k，一个月后"
     assert english_leaks({"stress": {k: zh[k] for k in ("text", "funding_text", "net_later_text")}}, ["Foshan Home Retail Co.", "FLOW"]) == []
     # one search per state: a second read of the same books takes the cached answer
     from app.strategy import impact
@@ -555,7 +555,7 @@ def test_the_net_later_has_no_text_without_an_open_invoice(client):
     state = rt.store.get_state()
     c = SimpleNamespace(state=state.model_copy(update={"receivables": []}), today=0, lang="en")
     assert home_hybrid._net_later(c, "BUYER-1", 30) is None
-    assert home_hybrid._net_later(SimpleNamespace(state=state, today=0, lang="zh"), "BUYER-1", 30) == "约 ¥420k，晚一个月收到"
+    assert home_hybrid._net_later(SimpleNamespace(state=state, today=0, lang="zh"), "BUYER-1", 30) == "约 ¥420k，一个月后"
     assert home_hybrid._net_later(SimpleNamespace(state=state, today=0, lang="en"), "BUYER-9", 30) is None
 
 

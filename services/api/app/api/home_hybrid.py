@@ -608,15 +608,12 @@ _STRESS: AnswerCache[dict[str, Any]] = AnswerCache()
 
 
 def _net_later(c: HomeRead, buyer_id: str, delay: int) -> str | None:
-    """What the buyer's open invoice nets if paid `delay` days after it can be (the later of today and its due day), in the words the buyer's
-    pages use; None when the buyer has no open invoice. The invoice is the earliest due, as the receivable rows put it first."""
-    from app.strategy.net import net_at_collection
+    """What the buyer's open invoices leave the owner `delay` days after the day each is priced on, in the buyer route's own words
+    (`exposure_words.net_later`: one function for the Home and the buyer's pages); None when the buyer owes nothing."""
+    from app.api.exposure_words import net_later
 
-    open_ones = [r for r in c.state.receivables if r.counterparty_id == buyer_id and r.status in ("OPEN", "FINANCED") and r.outstanding_fen > 0]
-    if not open_ones:
-        return None
-    r = min(open_ones, key=lambda x: (x.due_day, x.id))
-    return basis_words.net_later_text(c.lang, net_at_collection(c.state, r, max(c.today, r.due_day) + delay), delay)
+    said = net_later(c.state, buyer_id, c.today, delay, c.lang)
+    return said["net_later_text"] if said is not None else None
 
 
 def _stress(c: HomeRead, buyer_id: str | None) -> dict[str, Any] | None:
