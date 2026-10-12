@@ -7,7 +7,7 @@ import { EventPicture } from "@/components/home/event-picture";
 import { FixResult, type useFixAlert } from "@/components/home/fix-alert";
 import { CustomerFocusPanel, DealFocusPanel } from "@/components/home/v2/focus";
 import { HomeV2ActionBar } from "@/components/home/v2/action-bar";
-import { CompanyStrip, StripHints } from "@/components/home/v2/company-strip";
+import { CompanyStrip } from "@/components/home/v2/company-strip";
 import { HomeV2Links } from "@/components/home/v2/link-row";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { WorklistSheet } from "@/components/home/v2/worklist-sheet";
@@ -100,7 +100,6 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           <CompanyStrip kpis={v2.kpis} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} onBack={focusing ? () => clear("action") : undefined} />
-          <StripHints kpis={v2.kpis} />
           {focusing ? (
             <div id="home-focus-region" className="scroll-mt-4" data-testid="home-focus">
               {selection.decision ? (

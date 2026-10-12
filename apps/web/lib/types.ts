@@ -2798,8 +2798,22 @@ export interface HomeV2Chart {
 
 export interface HomeV2 {
   kpis: {
-    cash_available: HomeV2Kpi & { buffer: { min_fen: Fen; cash_fen: Fen; min_display: string; cash_display?: string } };
-    lowest_ahead: HomeV2Kpi & { with_plan_hint?: string | null };
+    cash_available: HomeV2Kpi & {
+      buffer: {
+        min_fen: Fen;
+        cash_fen: Fen;
+        min_display: string;
+        cash_display?: string;
+        /** The words under the minimum mark and the short headroom figure above the dot ("¥100k above"), when the server sends them; until then the cell keeps its note sentence. */
+        minimum_text?: string | null;
+        headroom_text?: string | null;
+      };
+    };
+    lowest_ahead: HomeV2Kpi & {
+      with_plan_hint?: string | null;
+      /** The plan's effect as a figure ("with plan", "¥300,000"), when the server sends it structured; until then `with_plan_hint` is the sentence. */
+      with_plan?: { label: string; value_text: string } | null;
+    };
     funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null };
   };
   action: HomeV2Action;

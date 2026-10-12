@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { AlertIcon } from "@/components/icons";
 import { Card, ErrorState, inputClass, LoadingBlock, textLinkClass } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
@@ -150,35 +149,41 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
   return (
     <div className="min-w-0" data-testid="home-worklist">
       {alert ? (
-        <div role="group" aria-label={alert.eyebrow} className={`mx-4 mb-3 rounded-tile border bg-surface p-3 ${alert.tone === "bad" ? "border-bad-solid" : "border-warn-solid"}`} data-testid="home-worklist-alert" data-tone={alert.tone}>
-          <p className="flex items-start gap-2 text-supporting text-ink">
-            <AlertIcon className={`mt-px size-3.5 shrink-0 ${alert.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} />
-            <span className="min-w-0">
-              <strong className="block font-bold">{alert.eyebrow}</strong>
-              {alert.text}
-            </span>
-          </p>
+        <div
+          role="group"
+          aria-label={alert.eyebrow}
+          aria-describedby={`${uid}-alert-note`}
+          className={`mx-4 mb-3 border-l-[3px] py-0.5 pl-3 ${alert.tone === "bad" ? "border-bad-solid" : "border-warn-solid"}`}
+          data-testid="home-worklist-alert"
+          data-tone={alert.tone}
+        >
+          <p className="text-meta font-extrabold tracking-[0.08em] text-ink-3">{alert.eyebrow}</p>
+          <p className="mt-0.5 text-pretty text-sm text-ink">{alert.text}</p>
           {alert.primary.href === "/" ? (
-            <button type="button" onClick={toAction} className={`${textLinkClass} -ml-2 mt-1 gap-1 text-supporting font-bold`} data-testid="home-worklist-alert-go">
+            <button type="button" onClick={toAction} className={`${textLinkClass} -ml-2 mt-0.5 gap-1 text-supporting font-bold`} data-testid="home-worklist-alert-go">
               {alert.primary.label} <span aria-hidden>›</span>
             </button>
           ) : (
-            <Link href={alert.primary.href} className={`${textLinkClass} -ml-2 mt-1 gap-1 text-supporting font-bold`} data-testid="home-worklist-alert-go">
+            <Link href={alert.primary.href} className={`${textLinkClass} -ml-2 mt-0.5 gap-1 text-supporting font-bold`} data-testid="home-worklist-alert-go">
               {alert.primary.label} <span aria-hidden>›</span>
             </Link>
           )}
-          <p className="mt-1 text-supporting text-ink-3">{t("hv2.work.alert.note")}</p>
+          {/* What it is, for a reader who asks: an alert, counted nowhere below. */}
+          <p id={`${uid}-alert-note`} className="sr-only" data-testid="home-worklist-alert-note">
+            {t("hv2.work.alert.note")}
+          </p>
         </div>
       ) : null}
-      <div className="px-4 pb-2">
+      <div className="px-2 pb-2">
         <SegmentedTabs
           label={t("hv2.work.views")}
           value={tab}
           onChange={setTab}
+          scroll
           tabs={[
-            { value: "needs_you", label: needsCount > 0 ? t("hv2.work.needs") : t("hv2.work.count", { label: t("hv2.work.needs"), n: 0 }), badge: needsCount > 0 ? needsCount : null, badgeTone: "alert", testId: "home-tab-needs_you", badgeTestId: "home-tab-needs_you-badge", id: tabId("needs_you"), controls: panelId },
-            { value: "waiting", label: t("hv2.work.count", { label: t("hv2.work.waiting"), n: read.counts.waiting }), testId: "home-tab-waiting", id: tabId("waiting"), controls: panelId },
-            { value: "customers", label: t("hv2.work.count", { label: t("hv2.work.customers"), n: read.counts.customers }), testId: "home-tab-customers", id: tabId("customers"), controls: panelId },
+            { value: "needs_you", label: t("hv2.work.needs"), badge: needsCount, badgeTone: needsCount > 0 ? "alert" : "neutral", testId: "home-tab-needs_you", badgeTestId: "home-tab-needs_you-badge", id: tabId("needs_you"), controls: panelId },
+            { value: "waiting", label: t("hv2.work.waiting"), badge: read.counts.waiting, badgeTone: "neutral", testId: "home-tab-waiting", badgeTestId: "home-tab-waiting-badge", id: tabId("waiting"), controls: panelId },
+            { value: "customers", label: t("hv2.work.customers"), badge: read.counts.customers, badgeTone: "neutral", testId: "home-tab-customers", badgeTestId: "home-tab-customers-badge", id: tabId("customers"), controls: panelId },
           ]}
         />
       </div>
@@ -196,9 +201,6 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
           {t("hv2.work.found", { n: shown })}
         </p>
       </div>
-      <p className="px-4 pb-2 text-supporting text-ink-3" data-testid="home-worklist-hint">
-        {t(tab === "needs_you" ? "hv2.work.hint.needs" : tab === "waiting" ? "hv2.work.hint.waiting" : "hv2.work.hint.customers")}
-      </p>
       <div role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} data-testid={`home-panel-${tab}`}>
         {shown === 0 ? (
           <p className="border-t border-line px-4 py-4 text-sm text-ink-2" data-testid="home-worklist-empty">
