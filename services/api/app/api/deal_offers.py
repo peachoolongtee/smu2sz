@@ -121,6 +121,17 @@ def open_offers(ctx: Context, lang: str) -> dict[str, tuple[dict[str, Any], Deal
     return {cp: (_open_offer(ctx, ds, offer, lang), ds.state) for cp, (ds, offer) in found.items()}
 
 
+def open_deals(ctx: Context, lang: str) -> list[tuple[dict[str, Any], DealState, Any]]:
+    """Every open offer, not only the newest of each buyer: (the offer's view as `open_offers` words it, the decision record's state, the
+    decision state), oldest first. A buyer with several negotiations has several entries (Home V2's worklist lists one row per decision)."""
+    found: list[tuple[Any, Any]] = []
+    for ds, _inp in [*ctx.states().values(), *_submitted(ctx)]:
+        if ds.family == "DEAL" and ds.offer is not None and ds.state in OPEN:
+            found.append((ds, ds.offer))
+    found.sort(key=lambda pair: (pair[0].updated_seq, pair[0].decision_id))
+    return [(_open_offer(ctx, ds, offer, lang), ds.state, ds) for ds, offer in found]
+
+
 def _open_offer(ctx: Context, ds: Any, offer: Any, lang: str) -> dict[str, Any]:
     state = ds.state
     verdict = ds.verdict
