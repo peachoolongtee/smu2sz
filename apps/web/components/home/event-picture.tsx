@@ -205,8 +205,8 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
-  // The last label is anchored to the right edge: the one before it gives way when the two would touch.
-  if (ticks.length > 2 && ticks[ticks.length - 1] === end && ((end - ticks[ticks.length - 2]) / last) * (pr - pl) < 96) ticks.splice(ticks.length - 2, 1);
+  // The last label is anchored to the right edge: the one before it gives way when the two would touch (the widened late picture only; Home's axis is as it was).
+  if (lateRead && ticks.length > 2 && ticks[ticks.length - 1] === end && ((end - ticks[ticks.length - 2]) / last) * (pr - pl) < 96) ticks.splice(ticks.length - 2, 1);
   const reserveText = t("biz.picture.reserve", { amount: cash.floor_short });
 
   // ---- pointing

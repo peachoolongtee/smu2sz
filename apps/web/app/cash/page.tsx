@@ -15,9 +15,9 @@ import { EventPicture, eventPictureReady } from "@/components/home/event-picture
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
-import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding, type ExposureContext } from "@/lib/api";
+import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
-import { lateReadOf, parseStress } from "@/lib/cash-stress";
+import { lateReadOf, originOf, parseStress } from "@/lib/cash-stress";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import type { FundingView, HomeView, MenuRow } from "@/lib/types";
@@ -97,9 +97,6 @@ export default function CashPage() {
   );
 }
 
-/** The origin a stress link names (`from`): only the three the server knows are passed on; anything else is the link without one. */
-const originOf = (v: string | null): ExposureContext["from"] => (v === "deal" || v === "invoice" || v === "customer" ? v : null);
-
 function Cash() {
   const { t, te, lang } = useI18n();
   const params = useSearchParams();
@@ -119,7 +116,10 @@ function Cash() {
   // server (the read answers null), the parameters are ignored and the page is the ordinary one.
   const link = parseStress(params.get("stress"));
   const ctx = { customer: params.get("customer"), invoice: params.get("invoice"), decision: params.get("decision"), path: params.get("path"), from: originOf(params.get("from")) };
-  const stressRead = useAsync(() => (link ? getBuyerExposure(link.buyerId, lang, ctx) : Promise.resolve(null)), [link?.buyerId, lang, ctx.customer, ctx.invoice, ctx.decision, ctx.path, ctx.from]);
+  // The read is keyed by buyer, language and context: a read for another buyer, language or context is never shown (the page waits for its own).
+  const stressKey = link ? JSON.stringify([link.buyerId, lang, ctx]) : "";
+  const stressRead = useAsync(async () => (link ? { key: stressKey, view: await getBuyerExposure(link.buyerId, lang, ctx) } : { key: "", view: null }), [stressKey]);
+  const stressCurrent = stressRead.data?.key === stressKey ? stressRead.data : undefined;
   // The invoice's name is the Receivables read's own sentence for it; a failure of that read only leaves the invoice unnamed.
   const invoiceRead = useAsync(() => (link && ctx.invoice ? getReceivables(lang).catch(() => null) : Promise.resolve(null)), [link?.buyerId, ctx.invoice, lang]);
   useEffect(() => onSignedIn(() => bump()), []);
@@ -193,15 +193,27 @@ function Cash() {
   );
 
   const action = h?.next_action ? <NextActionBlock key="action" variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
-  const stressView = link ? stressRead.data : null;
+  const stressView = link ? stressCurrent?.view : null;
   const invoiceRow = ctx.invoice ? invoiceRead.data?.rows?.find((r) => r.receivable_id === ctx.invoice && (!r.buyer_id || r.buyer_id === link?.buyerId)) : null;
   const late = h && stressView ? lateReadOf(stressView, invoiceRow, t) : null;
   const stressed = Boolean(h && late && eventPictureReady(h));
-  const stressPending = Boolean(link && stressRead.data === undefined && !stressRead.error);
+  const stressPending = Boolean(link && stressCurrent === undefined && !stressRead.error);
   const stressNow = stressView?.stress?.now;
   const picture = h ? (
     <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} aria-busy={stressPending} className="motion-reveal min-w-0 space-y-2">
       {stressPending ? <LoadingBlock rows={3} label={t("cash.stress.loading")} /> : stressed && late ? <EventPicture h={h} lateRead={late} /> : <CashForecast h={h} chosen={chosen} />}
+      {/* The picture cannot be drawn (the home read has no rail): the late-payment sentences are still said, never dropped. */}
+      {late && !stressed ? (
+        <div className="space-y-1.5 border-l-2 border-line-strong pl-3" data-testid="cash-stress-fallback">
+          <h2 className="text-sm font-bold text-ink">{t("cash.stress.heading")}</h2>
+          <p className="text-[0.9375rem] font-medium text-ink">{late.sentence}</p>
+          {late.lines?.map((line, i) => (
+            <p key={i} className="text-[0.9375rem] text-ink-2">
+              {line}
+            </p>
+          ))}
+        </div>
+      ) : null}
       {/* What the line counts, in the server's words. */}
       <p className="text-xs text-ink-3">{h.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}</p>
     </section>

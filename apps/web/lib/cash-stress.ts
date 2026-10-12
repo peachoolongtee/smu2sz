@@ -1,4 +1,5 @@
 import type { LateRead } from "@/components/home/event-picture";
+import type { ExposureContext } from "./api";
 import type { useI18n } from "./i18n";
 import type { BuyerExposureView, ReceivableRow } from "./types";
 
@@ -17,6 +18,9 @@ export function parseStress(raw: string | null): StressLink | null {
   if (at > 0 && /^[0-9]{1,3}$/.test(value.slice(at + 1))) return { buyerId: value.slice(0, at), days: Number(value.slice(at + 1)) };
   return { buyerId: value, days: null };
 }
+
+/** The origin a stress link names (`from`): only the three the server knows are passed on; anything else is the link without one. */
+export const originOf = (v: string | null): ExposureContext["from"] => (v === "deal" || v === "invoice" || v === "customer" ? v : null);
 
 /** The windows the picture offers beyond its own; the late path is shown in the shortest that holds its lowest point and a week after it. */
 const WINDOWS = [60, 120] as const;

@@ -6,6 +6,7 @@
 
 import { DEMO_BUYER_KEYS } from "../config";
 import type { ExposureContext } from "../api";
+import { buyerExposureQuery } from "./exposure-query";
 import { ApiError } from "../errors";
 import type {
   ActRequest,
@@ -86,13 +87,6 @@ async function nullWhenRouteAbsent<T>(read: () => Promise<T>): Promise<T | null>
     if (e instanceof ApiError && e.status === 404 && e.detail === "Not Found") return null;
     throw e;
   }
-}
-
-/** The query of the buyer exposure read: the language, the light read, and the page context (customer, invoice, decision, path, from) that asks for `context.back`. */
-export function buyerExposureQuery(lang: "en" | "zh", context: ExposureContext = {}): string {
-  const q = new URLSearchParams({ lang, spare: "0" });
-  for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (context[k]) q.set(k, context[k]);
-  return q.toString();
 }
 
 /** /negotiate returns the executor's raw results; the ledger view adds who asked and a one-line summary. */

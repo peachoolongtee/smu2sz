@@ -86,16 +86,25 @@ for (const [origin, { query, back: b }] of Object.entries(ORIGINS)) {
   });
 }
 
-// The explicit origin (`from=deal|invoice|customer`) decides the server's back link; the page only passes it on, so the recorded read is patched as above.
-test("the origin in the address is passed on: the Customer page's link (with an invoice) returns to the customer", async ({ page }) => {
+// The explicit origin (`from=deal|invoice|customer`) decides the server's back link; the page only passes it on. The mock keeps the context its read was asked
+// with (`tl-mock-last-exposure-context`), so what reaches the request is asserted, and the recorded read is patched for the `context.back` as above.
+const asked = (page: Page) => page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-mock-last-exposure-context") ?? "null"));
+
+test("the address's context reaches the buyer read, `from` included: the Customer page's link (with an invoice) returns to the customer", async ({ page }) => {
   const customerBack = ORIGINS.customer.back;
   await open(page, "stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer", { exposure: back(customerBack) });
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  expect(await asked(page)).toEqual({ customer: "BUYER-1", invoice: "RCV-A", from: "customer" });
   await expect(page.getByTestId("cash-stress-back")).toHaveAttribute("href", customerBack.href);
   await expect(page.getByTestId("cash-stress-invoice")).toBeVisible(); // the invoice is still named
+  // The deal's context: the decision and its path go too.
+  await page.goto(`/cash?${ORIGINS.deals.query}&from=deal`);
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  expect(await asked(page)).toEqual({ customer: "BUYER-1", decision: DEAL, path: "counter:0", from: "deal" });
   // An origin the server does not know is not passed on (the read would be refused): the page is the same.
   await page.goto("/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=home");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  expect(await asked(page)).toEqual({ customer: "BUYER-1", invoice: "RCV-A" });
   await expect(page.getByTestId("cash-stress-failed")).toHaveCount(0);
 });
 
@@ -142,17 +151,36 @@ test("switching back to expected restores the ordinary picture and the address k
   expect(new URL(page.url()).search).toBe(search);
 });
 
-test("the way back and the switch work from the keyboard", async ({ page }) => {
+test("the way back and the switch work from the keyboard: Tab reaches them, Enter and Space press", async ({ page }) => {
   await open(page, ORIGINS.receivables.query, { exposure: back(ORIGINS.receivables.back) });
-  // The way back is the first focusable thing on the page after the shell's own navigation: Tab from it reaches the header's content, not a trap.
   await page.getByTestId("cash-stress-back").focus();
   await expect(page.getByTestId("cash-stress-back")).toBeFocused();
-  await page.getByTestId("home-scenario-expected").focus();
+  // Tab from the way back reaches the expected-payments switch (nothing between them takes focus).
+  const focused = () => page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
+  let at = "";
+  for (let i = 0; i < 8 && at !== "home-scenario-expected"; i++) {
+    await page.keyboard.press("Tab");
+    at = await focused();
+  }
+  expect(at).toBe("home-scenario-expected");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "expected");
-  await page.getByTestId("home-scenario-late").focus();
+  await page.keyboard.press("Tab");
+  expect(await focused()).toBe("home-scenario-late");
   await page.keyboard.press("Space");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+});
+
+test("a home read with no event rail still says the late-payment sentences, under a plain heading", async ({ page }) => {
+  await page.context().addInitScript(() => sessionStorage.setItem("tl-mock-home-patch", JSON.stringify({ cash: { events_rail: null, events_rail_days: null } })));
+  await open(page, ORIGINS.receivables.query, { exposure: back(ORIGINS.receivables.back) });
+  await expect(page.getByTestId("home-event-picture")).toHaveCount(0);
+  const fallback = page.getByTestId("cash-stress-fallback");
+  await expect(fallback).toContainText("If the buyer pays late");
+  await expect(fallback).toContainText(now.text);
+  await expect(fallback).toContainText(now.funding_text);
+  await expect(fallback).toContainText(now.net_later_text);
+  await expect(page.getByTestId("cash-figures")).toBeVisible();
 });
 
 test("flag off: the read answers nothing and the page is the ordinary one", async ({ page }) => {
