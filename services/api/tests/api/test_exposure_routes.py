@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 from app.api import strategy_exposure as route
 from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
+from app.domain.models import Commitment, CommitmentStatus
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.strategy import exposure as assembly
@@ -178,6 +179,12 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
 
     # capacity before and after: the line has ¥13.80 left through day 31 under Option A
     cap = body["capacity"][a]
+    for path in body["capacity"].values():  # a window never has an empty recovery: either a day or the horizon, in words
+        for snap in (path["before"], path["after"]):
+            assert all(w["recovers_when"] for w in snap["windows"])
+    assert any(w["recovers_when"] == "not within the 120-day horizon" for w in cap["after"]["windows"])
+    assumed = [w for w in cap["after"]["windows"] if w["recovery_assumed"]]
+    assert assumed and all(w["recovery_assumed_text"].endswith("(an assumption, not a record).") for w in assumed)
     line = next(w for w in cap["after"]["windows"] if w["dimension"] == "credit_line")
     assert (line["today_fen"], line["today_short"], line["through_when"], line["recovers_when"]) == (1_380, "¥13.80", "in 31 days", "in 32 days")
     assert line["after_short"] == "¥150k" and line["facility_name"] == "Bank credit line" and line["over_by"] is False
@@ -189,6 +196,42 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     iff = next(w for w in cap["after"]["windows"] if w["dimension"] == "invoice_finance" and w["reading"] == "TODAY")
     assert iff["reason_text"].startswith("no invoice can be financed")  # a reason in words, never a code
     assert body["capacity"]["asked"]["after"]["windows"][0]["dimension"] == "cash_buffer"
+
+
+def test_the_golden_cost_of_a_cold_full_read_is_under_three_seconds_and_the_light_read_is_far_cheaper(
+    api: TestClient, offer_id: str
+) -> None:
+    """The documented cost of `spare=1` on the Demo: four router searches (the books as they stand and three paths), cold.
+    The public SME costs about 30 s per search; that benchmark lives in `test_spare_capacity.py` and is skipped under
+    SKIP_PERF_BENCH."""
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    route.clear_cache()
+    full = api.get(f"/offers/{offer_id}/exposure").json()
+    assert full["spare_read"] is True and full["computed_in_seconds"] < 3, full["computed_in_seconds"]
+    route.clear_cache()
+    light = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert light["spare_read"] is False and light["computed_in_seconds"] < full["computed_in_seconds"]
+    route.clear_cache()
+    assert api.get(f"/decisions/deal:{offer_id}/exposure").json()["spare_read"] is False  # the decision read defaults to the light one
+
+
+def test_counters_that_change_between_the_check_and_the_read_are_a_404_with_a_sentence(
+    api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    real = route.latest_verdict_for
+    reads: list[int] = []
+
+    def changing(rt: Runtime, oid: str) -> Any:
+        reads.append(1)
+        verdict = real(rt, oid)
+        return verdict if len(reads) == 1 else verdict.model_copy(update={"counters": []})  # the second read finds none
+
+    monkeypatch.setattr(route, "latest_verdict_for", changing)
+    r = api.get(f"/offers/{offer_id}/exposure?response=counter:0")
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "COUNTER_NOT_FOUND"
+    assert "counter-offers changed" in r.json()["detail"]["message"] and "counter:0" in r.json()["detail"]["message"]
+    assert len(reads) == 2
 
 
 def test_the_response_leads_the_band_and_nothing_else_changes(api: TestClient, offer_id: str) -> None:
@@ -224,7 +267,7 @@ def test_the_read_writes_nothing(api: TestClient, rt: Runtime, offer_id: str) ->
 
 def test_the_offer_and_its_deal_decision_resolve_to_the_same_buyer_and_the_same_block(api: TestClient, offer_id: str) -> None:
     by_offer = api.get(f"/offers/{offer_id}/exposure").json()
-    by_decision = api.get(f"/decisions/deal:{offer_id}/exposure").json()
+    by_decision = api.get(f"/decisions/deal:{offer_id}/exposure?spare=1").json()
     assert by_decision["decision_id"] == f"deal:{offer_id}" and by_decision["offer_id"] == offer_id
     drop = {"decision_id", "computed_in_seconds"}
     assert {k: v for k, v in by_decision.items() if k not in drop} == {k: v for k, v in by_offer.items() if k not in drop}
@@ -242,12 +285,82 @@ def test_an_offer_from_the_other_buyer_shows_that_buyer(api: TestClient, rt: Run
 def test_the_owners_inputs_reach_the_block(api: TestClient, offer_id: str) -> None:
     before = api.get(f"/offers/{offer_id}/exposure").json()
     assert before["payments"]["delay_basis"] == "NONE" and before["concentration"]["is_aggregate"] is False
-    for body in ({"field": "typical_delay_days", "value": 15, "provenance": "OWNER_ENTERED", "source_ref": ""},
-                 {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}):
-        assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
-    after = api.get(f"/offers/{offer_id}/exposure").json()  # the new rows are part of the key: not the cached block
+    delay = {"field": "typical_delay_days", "value": 15, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=delay).status_code == 200
+    after = api.get(f"/offers/{offer_id}/exposure").json()  # the new row is part of the key: not the cached block
     assert after["payments"]["typical_delay_days"] == 15 and after["payments"]["delay_basis"] == "OWNER_ENTERED"
-    assert after["concentration"]["is_aggregate"] is True and after["concentration"]["ar_share_bp"] is None
+    assert after["payments_note"] is None
+    aggregate = {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=aggregate).status_code == 200
+    last = api.get(f"/offers/{offer_id}/exposure").json()
+    assert last["concentration"]["is_aggregate"] is True and last["concentration"]["ar_share_bp"] is None
+
+
+def test_an_aggregate_buyer_gets_no_payment_statistics_and_a_note_says_why(api: TestClient, offer_id: str) -> None:
+    delay = {"field": "typical_delay_days", "value": 45, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    aggregate = {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    for body in (delay, aggregate):
+        assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+    en = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert en["payments"] is None
+    assert en["payments_note"] == "Foshan stands for many small customers, so how it pays is not shown as one customer's history."
+    assert en["stress"]["also"] == [] and en["stress"]["now"]["history_text"] is None  # no estimate to test, no history to quote
+    assert en["concentration"]["is_aggregate"] is True
+    zh = api.get(f"/offers/{offer_id}/exposure?spare=0&lang=zh").json()
+    assert zh["payments"] is None and "代表许多小客户" in zh["payments_note"]
+    assert english_leaks([zh["payments_note"]], NAMES) == []
+
+
+def test_a_refusal_names_the_package_when_the_package_causes_it() -> None:
+    from app.strategy.exposure import _Path, _refused_text
+    from app.strategy.types import SpareCapacity
+
+    def spare(x: int | None) -> SpareCapacity:
+        return SpareCapacity(shape="S1", criterion="R-TODAY", step_fen=100_000, x_star_fen=x, plan_at_x=None, plan_next=None,
+                             binding_reason="", shape_text="", refused_text=None, ceiling_fen=0, evaluations=0, scanned=False, seconds=0)
+
+    asked = _Path("asked", "asked", "As they asked", "Accepting as asked", "按对方要求接受后", None)
+    reply = _Path("C1", "reply", "Option A", "Option A", "采用Option A 后", None)
+    assert _refused_text(asked, spare(8_100_000), "en") == "none: accepting as asked would leave the books needing you or a new facility"
+    assert _refused_text(reply, spare(8_100_000), "en") == "none: Option A would leave the books needing you or a new facility"
+    assert _refused_text(reply, spare(8_100_000), "zh") == "无：采用Option A 后，账面将需要您出面或新增融资额度"
+    assert _refused_text(reply, spare(None), "en") == "none: today's books already need the owner or a new facility"  # not the package's doing
+
+
+def test_a_reset_does_not_leave_a_stale_answer_for_the_same_offer_and_a_new_input(api: TestClient, offer_id: str) -> None:
+    """`seq` restarts after the reset, so the key must carry what the rows say; and the reset itself drops the cache."""
+    delay = {"field": "typical_delay_days", "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json={**delay, "value": 45}).status_code == 200
+    first = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert first["payments"]["typical_delay_days"] == 45
+    assert api.post("/demo/reset").status_code == 200
+    assert api.post("/offers", json=EX01).json()["offer"]["offer_id"] == offer_id  # the same offer, read again
+    assert api.post("/buyers/BUYER-1/inputs", json={**delay, "value": 15}).status_code == 200
+    second = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    assert second["payments"]["typical_delay_days"] == 15 and second["payments"]["owner_delay_days"] == 15
+
+
+def test_the_reset_clears_the_exposure_cache_by_itself(api: TestClient, rt: Runtime, offer_id: str) -> None:
+    api.get(f"/offers/{offer_id}/exposure?spare=0")
+    assert len(assembly._BASE) == 1
+    rt.reset()
+    assert len(assembly._BASE) == 0
+
+
+def test_the_owners_estimate_adds_a_second_stress_row_labelled_as_hers(api: TestClient, offer_id: str) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    plain = api.get(f"/offers/{offer_id}/exposure?spare=0").json()["stress"]
+    assert plain["also"] == [] and plain["delay_days"] == 30
+    body = {"field": "typical_delay_days", "value": 45, "provenance": "OWNER_ENTERED", "source_ref": ""}
+    assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+    got = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
+    [extra] = got["stress"]["also"]
+    assert (extra["delay_days"], extra["basis"], extra["label"]) == (45, "OWNER_ESTIMATE", "Your estimate")
+    assert extra["now"]["text"].startswith("Paid 45 days late: ") and set(extra["paths"]) == set(got["stress"]["paths"])
+    assert extra["now"]["lowest_fen"] <= got["stress"]["now"]["lowest_fen"]  # later receipts, a lower low
+    assert got["stress"]["now"] == plain["now"]  # the standing 30-day row is untouched
+    zh = api.get(f"/offers/{offer_id}/exposure?spare=0&lang=zh").json()["stress"]["also"][0]
+    assert zh["label"] == "您的估计" and zh["now"]["text"].startswith("晚付 45 天：")
 
 
 # ---------------------------------------------------------------- the cache
@@ -292,8 +405,10 @@ def test_spare_zero_skips_the_search_and_a_later_read_pays_only_for_it(api: Test
     full = api.get(f"/offers/{offer_id}/exposure").json()  # spare defaults to 1
     assert len(searches) == 4 and full["spare_read"] is True  # the books as they stand, then each of the three paths
     api.get(f"/offers/{offer_id}/exposure")
-    api.get(f"/decisions/deal:{offer_id}/exposure")  # the decision read asks for it too, and finds it searched
+    api.get(f"/decisions/deal:{offer_id}/exposure?spare=1")  # the decision read can ask for it too, and finds it searched
     assert len(searches) == 12  # asked for each time, answered by the capacity cache (the next test counts the real runs)
+    api.get(f"/decisions/deal:{offer_id}/exposure")  # but by default it does not
+    assert len(searches) == 12
     assert api.get(f"/offers/{offer_id}/exposure?spare=2").status_code == 422
 
 
@@ -317,10 +432,22 @@ def test_the_search_itself_runs_once_per_package(api: TestClient, offer_id: str,
 def test_the_key_follows_the_books_the_day_and_the_commitments(api: TestClient, rt: Runtime, offer_id: str,
                                                               monkeypatch: pytest.MonkeyPatch) -> None:
     calls = _count(monkeypatch, "concentration")
-    api.get(f"/offers/{offer_id}/exposure?spare=0")
-    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
-    body = api.get(f"/offers/{offer_id}/exposure?spare=0").json()
-    assert body["day"] == 3 and len(calls) == 2
+    url = f"/offers/{offer_id}/exposure?spare=0"
+    api.get(url)
+    api.get(url)
+    assert len(calls) == 1  # nothing changed: the second read is the first one's answer
+    state = rt.store.get_state()  # the books: the same day and commitments, a different cash balance
+    rt.store.put_state(state.model_copy(update={"cash_fen": state.cash_fen + 100}))
+    api.get(url)
+    assert len(calls) == 2
+    rt.store.put_commitment(Commitment(  # the commitments: another offer's, live
+        id="CMT-OTHER", offer_id="OFF-OTHER", offer_version=1, counterparty_id="BUYER-2", verdict_id="V-OTHER", terms_hash="h",
+        obligations=[], status=CommitmentStatus.ACTIVE, nonce="n", expires_day=7, mandate_version=1, forward_value_fen=0))
+    api.get(url)
+    assert len(calls) == 3
+    assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200  # the day
+    body = api.get(url).json()
+    assert body["day"] == 3 and len(calls) == 4
 
 
 def test_a_failed_computation_is_not_cached(api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch) -> None:

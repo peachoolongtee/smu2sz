@@ -10,7 +10,9 @@
 
 Exact fractions of integer fen; displayed at 1 dp, half-up (ADR-0002), "100%" only when the share is exactly 1, parts never
 adjusted to add to 100. Bounds [0, 10000] bp. Counterparties the owner marked `aggregate` (a name that stands for many small
-customers) are left out of every denominator and named in a note; they get no per-customer share.
+customers) stay in every total, and so in every denominator (brief G.1: "excluded from per-customer statements, kept in the
+totals"): a 20% buyer stays 20% when another row is an aggregate. Only an aggregate's own per-customer share is suppressed, and a
+note names the aggregates.
 
 CONTEXT, NOT MANDATE (mission section 18; property P8). Nothing here changes a verdict. A concentration may add a fact line,
 order which buyer's stress is shown first, and raise an existing alert's wording; it never changes an outcome, a tier, a code,
@@ -75,8 +77,8 @@ def concentration(books: Books, buyer_id: str, day: int, inputs: CustomerInputs 
     ar = _open_ar(books)
     due = _receipts_due(books, day)
     excluded = sorted(a for a in aggregates if ar.get(a, 0) or due.get(a, 0))
-    ar_total = sum(v for k, v in ar.items() if k not in aggregates)
-    due_total = sum(v for k, v in due.items() if k not in aggregates)
+    ar_total = sum(ar.values())  # the aggregates stay in the totals; only their own per-customer share is suppressed
+    due_total = sum(due.values())
     ar_buyer = 0 if is_aggregate else ar.get(buyer_id, 0)
     due_buyer = 0 if is_aggregate else due.get(buyer_id, 0)
     ar_frac = None if is_aggregate else _share(ar_buyer, ar_total)
@@ -85,8 +87,8 @@ def concentration(books: Books, buyer_id: str, day: int, inputs: CustomerInputs 
     note: str | None = None
     if excluded:
         names = t(lang_, ", ", "、").join(party_name(state, a) for a in excluded)
-        note = t(lang_, f"Not counted in these shares: {names}, which stand for many small customers.",
-                 f"以下不计入这些占比：{names}（代表许多小客户）。")
+        note = t(lang_, f"Counted in the totals but shown with no share of its own: {names}, which stand for many small customers.",
+                 f"以下计入总额，但不单独显示占比：{names}（代表许多小客户）。")
     if is_aggregate:
         stands = t(lang_, f"{name} stands for many small customers, so no single-customer share is shown.",
                    f"{name}代表许多小客户，因此不显示单一客户的占比。")
@@ -96,7 +98,7 @@ def concentration(books: Books, buyer_id: str, day: int, inputs: CustomerInputs 
         receipts_text = _receipts_text(name, due_buyer, due_total, due_frac, lang_)
     return Concentration(
         buyer_id=buyer_id, buyer_name=name, day=day, lang=lang_, is_aggregate=is_aggregate, excluded_aggregates=excluded,
-        aggregate_note=note, ar_buyer_fen=ar_buyer, ar_total_fen=ar_total, ar_all_fen=sum(ar.values()),
+        aggregate_note=note, ar_buyer_fen=ar_buyer, ar_total_fen=ar_total, ar_all_fen=ar_total,
         ar_share_bp=None if ar_frac is None else share_bp(ar_frac), ar_text=ar_text,
         receipts_from_day=day, receipts_to_day=day + RECEIPT_WINDOW_DAYS, receipts_buyer_fen=due_buyer,
         receipts_total_fen=due_total, receipts_share_bp=None if due_frac is None else share_bp(due_frac),

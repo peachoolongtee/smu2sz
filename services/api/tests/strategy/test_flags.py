@@ -13,6 +13,7 @@ _FLAGS = {
     "price_curve": "FEATURE_PRICE_CURVE",
     "collections_worth": "FEATURE_COLLECTIONS_WORTH",
     "exposure": "FEATURE_EXPOSURE",  # map #88 Phase 1
+    "customer_economics": "FEATURE_CUSTOMER_ECONOMICS",  # map #88 Phase 2: the six economics fields of the inputs routes
 }
 
 

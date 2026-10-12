@@ -14,9 +14,15 @@ from fastapi.testclient import TestClient
 from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
-from app.persistence import InMemoryLedgerStore
+from app.persistence import CustomerInputRecord, InMemoryLedgerStore
 from app.strategy import inputs as inputs_module
-from app.strategy.inputs import GOLDEN_INPUTS, InputRejected, load_demo_inputs, seed_demo_inputs
+from app.strategy.inputs import (
+    GOLDEN_INPUTS,
+    InputRejected,
+    inputs_from_rows,
+    load_demo_inputs,
+    seed_demo_inputs,
+)
 from tests.api.conftest import english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
@@ -28,6 +34,7 @@ DELAY = {"field": "typical_delay_days", "value": 15, "provenance": "OWNER_ENTERE
 @pytest.fixture
 def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
     monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    monkeypatch.setenv("FEATURE_CUSTOMER_ECONOMICS", "1")  # most tests below store the economics fields too; the gate has its own tests
     runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     runtime.reset()
     set_runtime(runtime)
@@ -152,6 +159,42 @@ def test_a_bad_body_is_a_422_and_writes_nothing(api: TestClient, rt: Runtime, bo
     assert rt.store.all_customer_inputs() == []
 
 
+ECONOMICS = [
+    (BUYER, {"field": "annual_sales_fen", "value": 120_000_000, "provenance": "ERP", "source_ref": ""}),
+    (BUYER, {"field": "margin_bp", "value": 2000, "provenance": "ESTIMATED", "source_ref": ""}),
+    (BUYER, {"field": "margin_basis", "value": "gross", "provenance": "OWNER_ENTERED", "source_ref": ""}),
+    (BUYER, {"field": "classification", "value": "key account", "provenance": "OWNER_ENTERED", "source_ref": ""}),
+    (None, {"field": "vat_rate_bp", "value": 1300, "provenance": "OWNER_ENTERED", "source_ref": ""}),
+    (None, {"field": "company_gross_margin_bp", "value": 2376, "provenance": "ACCOUNTING_HISTORY", "source_ref": "FY2025"}),
+]
+
+
+@pytest.mark.parametrize(("buyer", "body"), ECONOMICS, ids=[b["field"] for _, b in ECONOMICS])
+def test_the_economics_fields_are_refused_in_phase_1_with_a_sentence_naming_the_later_phase(
+    api: TestClient, rt: Runtime, monkeypatch: pytest.MonkeyPatch, buyer: str | None, body: dict[str, Any]
+) -> None:
+    monkeypatch.delenv("FEATURE_CUSTOMER_ECONOMICS")
+    en = _post(api, body, buyer=buyer)
+    assert en.status_code == 422 and en.json()["detail"]["code"] == "INPUT_REJECTED"
+    assert "later phase (customer economics)" in en.json()["detail"]["message"]
+    assert "FEATURE_CUSTOMER_ECONOMICS" in en.json()["detail"]["message"]
+    zh = _post(api, body, buyer=buyer, lang="zh")
+    assert zh.status_code == 422 and "后续阶段" in zh.json()["detail"]["message"]
+    assert english_leaks([zh.json()["detail"]["message"]], names=["FEATURE_CUSTOMER_ECONOMICS"]) == []
+    assert rt.store.all_customer_inputs() == []
+    monkeypatch.setenv("FEATURE_CUSTOMER_ECONOMICS", "1")  # the same body is taken once the flag is on
+    assert _post(api, body, buyer=buyer).status_code == 200
+
+
+def test_phase_1_still_takes_the_delay_and_the_aggregate_with_the_economics_flag_off(
+    api: TestClient, rt: Runtime, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("FEATURE_CUSTOMER_ECONOMICS")
+    assert _post(api, DELAY).status_code == 200
+    assert _post(api, {"field": "aggregate", "value": True, "provenance": "OWNER_ENTERED", "source_ref": ""}).status_code == 200
+    assert len(rt.store.all_customer_inputs()) == 2
+
+
 def test_a_buyer_field_on_the_firm_route_is_a_422_with_a_sentence_in_the_language_asked(api: TestClient, rt: Runtime) -> None:
     en = _post(api, DELAY, buyer=None)
     assert en.status_code == 422 and en.json()["detail"]["code"] == "INPUT_REJECTED"
@@ -189,6 +232,21 @@ def test_an_estimate_is_never_worded_as_observed(api: TestClient) -> None:
 
 
 # ---------------------------------------------------------------- reset and the Demo's rows
+
+
+def test_the_digest_follows_what_a_row_says_not_only_its_seq(rt: Runtime) -> None:
+    """`seq` restarts after a reset: two rows with the same seq but another value, provenance or time are different keys."""
+    from dataclasses import replace
+
+    from app.strategy.inputs import inputs_from_store
+
+    row = rt.store.add_customer_input(CustomerInputRecord(
+        org_id="O", counterparty_id=BUYER, field="typical_delay_days", value_json="45", provenance="OWNER_ENTERED", source_ref="",
+        entered_by="OWNER", entered_day=0, state_version=1))
+    base = inputs_from_rows([row]).digest()
+    assert base == inputs_from_store(rt.store).digest() == inputs_from_rows([replace(row)]).digest()
+    for changed in (replace(row, value_json="15"), replace(row, provenance="ESTIMATED"), replace(row, recorded_at="2030-01-01T00:00:00+00:00")):
+        assert changed.seq == row.seq and inputs_from_rows([changed]).digest() != base
 
 
 def test_the_demo_reset_clears_the_inputs(api: TestClient, rt: Runtime) -> None:

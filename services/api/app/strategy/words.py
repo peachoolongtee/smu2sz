@@ -1,11 +1,14 @@
-"""Small wording helpers the exposure statements share (concentration, payment behaviour): a buyer's short name, a whole-yuan
-amount, an exact share at 1 dp. Words only; nothing here prices or decides."""
+"""Small wording helpers the exposure statements share (concentration, payment behaviour, the stress assumption): a buyer's
+short name, a whole-yuan amount, an exact share at 1 dp, an invoice as the Business pages name it. Words only; nothing here
+prices or decides."""
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from fractions import Fraction
 
-from app.api.presentation import Lang, t
+from app.api.presentation import Lang, invoice_due_day, invoice_words, t, when_text
+from app.domain.models import FinancialState
 from app.domain.money import fmt_pct, fmt_yuan, round_half_up
 
 BP_FULL = 10_000
@@ -20,6 +23,21 @@ def buyer_short(name: str) -> str:
 def whole_yuan(fen: int) -> str:
     """¥420,000 for a whole number of yuan, ¥420,000.50 otherwise: the figure as the brief's sentences write it."""
     return fmt_yuan(fen).removesuffix(".00")
+
+
+def invoice_label(state: FinancialState, receivable_id: str, today: int, lang: Lang) -> str:
+    """An invoice as a Business page names it, never by its id: "the ¥420,000.00 invoice to Foshan Home Retail Co. (due 70 days
+    ago)" (the amount, the buyer and the due words). The id stays on the audit level."""
+    words = invoice_words(state, receivable_id, lang)
+    due = invoice_due_day(state, receivable_id)
+    if due is None:
+        return words
+    return t(lang, f"{words} (due {when_text(due, today, 'en')})", f"{words}（{when_text(due, today, 'zh')}到期）")
+
+
+def invoice_labels(state: FinancialState, receivable_ids: Sequence[str], today: int, lang: Lang) -> str:
+    """Several invoices named as `invoice_label` does, one after another."""
+    return t(lang, "; ", "；").join(invoice_label(state, rid, today, lang) for rid in receivable_ids)
 
 
 def share_bp(x: Fraction) -> int:

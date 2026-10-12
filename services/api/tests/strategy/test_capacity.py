@@ -432,6 +432,23 @@ def test_window_view_carries_the_displays_the_relative_days_and_the_words():
     assert reasons == "您的授权不允许新增借款"
 
 
+def test_a_window_that_does_not_recover_says_so_and_an_assumed_recovery_is_worded_as_one():
+    books, mandate = golden()
+    s = snapshot(books, mandate, 0)
+    for lang, no_recovery in (("en", "not within the 120-day horizon"), ("zh", "120 天预测期内不会恢复")):
+        views = [window_view(w, 0, lang, mandate.horizon_days) for w in s.windows]
+        assert all(v["recovers_when"] for v in views)  # never an empty string
+        never = [v for v in views if v["recovers_day"] is None]
+        assert never and all(v["recovers_when"] == no_recovery and v["recovery_assumed_text"] is None for v in never)
+        assumed = [v for v in views if v["recovery_assumed"]]
+        assert assumed and all(v["recovery_assumed_text"] for v in assumed)
+        assert all(v["recovery_assumed_text"] is None for v in views if not v["recovery_assumed"])
+    en = window_view(_w(s, "credit_line", "FAC-LINE"), 0, "en", mandate.horizon_days)
+    assert en["recovery_assumed_text"] == "Back in 32 days only if the repayment is made on the planned day (an assumption, not a record)."
+    zh = window_view(_w(s, "credit_line", "FAC-LINE"), 0, "zh", mandate.horizon_days)
+    assert zh["recovery_assumed_text"] == "32 天后恢复，前提是按计划的还款日还款（这是假设，不是记录）。"
+
+
 def test_the_snapshot_is_cached_and_the_books_are_untouched():
     books, mandate = golden()
     before = books.state.model_dump_json()

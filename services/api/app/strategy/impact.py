@@ -36,6 +36,7 @@ from app.funding import plan
 from app.funding.router import shared_runs
 from app.strategy.capacity import Package, books_with, resolve_package
 from app.strategy.types import MarginalImpact, ScenarioState, StressRow
+from app.strategy.words import invoice_labels
 
 _OPEN = ("OPEN", "FINANCED")
 
@@ -247,6 +248,10 @@ def _template_terms(state: FinancialState, buyer_id: str, rid: str) -> int | Non
     return None
 
 
+def _capital(text: str) -> str:
+    return text[:1].upper() + text[1:]
+
+
 def _ids_text(ids: Sequence[str]) -> str:
     return ", ".join(ids)
 
@@ -346,12 +351,13 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
              f"如果 {name} 的每张发票都晚付 {delay_days} 天（这是压力测试，不是预测）。")
     notes = []
     if financed:
-        notes.append(t(lang, f"{_ids_text(financed)} {'is' if len(financed) == 1 else 'are'} financed; its delay is not modelled.",
-                       f"{_ids_text(financed)} 已用于融资，其延期未纳入测算。"))
+        notes.append(t(lang, f"{_capital(invoice_labels(state, financed, today, 'en'))} {'is' if len(financed) == 1 else 'are'} financed; "
+                             f"its delay is not modelled.",
+                       f"{invoice_labels(state, financed, today, 'zh')} 已用于融资，其延期未纳入测算。"))
     if overdue:
-        notes.append(t(lang, f"{_ids_text(overdue)} {'is' if len(overdue) == 1 else 'are'} already past due and "
-                             f"{'stays' if len(overdue) == 1 else 'stay'} as the books count it.",
-                       f"{_ids_text(overdue)} 已经逾期，保持账面原有的计算方式。"))
+        notes.append(t(lang, f"{_capital(invoice_labels(state, overdue, today, 'en'))} {'is' if len(overdue) == 1 else 'are'} already past due "
+                             f"and {'stays' if len(overdue) == 1 else 'stay'} as the books count it.",
+                       f"{invoice_labels(state, overdue, today, 'zh')} 已经逾期，保持账面原有的计算方式。"))
     if taken_off:
         notes.append(t(lang, f"{_ids_text([f.name for f in taken_off])} {'is' if len(taken_off) == 1 else 'are'} taken out: "
                              f"{'it needs' if len(taken_off) == 1 else 'they need'} {name}'s agreement.",

@@ -1,7 +1,7 @@
 """The buyer-exposure routes (map #88 Phase 1; flag `exposure`; brief H.5 and section K).
 
     GET /offers/{offer_id}/exposure?response=asked|counter:<k>&lang=en|zh&spare=0|1
-    GET /decisions/{decision_id}/exposure?lang=en|zh
+    GET /decisions/{decision_id}/exposure?lang=en|zh&spare=0|1
 
 What a deal does to the exposure to one buyer, for ALL the offer's paths at once (the offer as asked and each counter, under the
 Deals page's own keys): the concentration, how the buyer has paid, the 30-day late-payment stress and the capacity before and after
@@ -9,10 +9,12 @@ each path, with the sentences of the Deals band written for `lang` (`app.strateg
 whose stress and capacity sentences lead (`band`); switching the picked column needs no new request, so it is not part of the cache
 key. Both ids resolve to the same buyer: an offer's counterparty, and for a `deal:<offer_id>` decision that offer's (read as asked).
 
-`spare` (default 1) says whether to run the spare-capacity search, "how much more FLOW could still cover alone": a router search
-that costs about 0.6 s on the Demo and about 30 s per search on the public SME, for the books as they stand and for each path. With
-`spare=0` it is skipped and `capacity[*].spare` and the capacity sentences are null; each search is cached once computed, so a later
-`spare=1` read pays only for what has not been searched. The decision read always asks for it.
+`spare` says whether to run the spare-capacity search, "how much more FLOW could still cover alone": a router search that costs
+about 0.6 s on the Demo (about 2.4 s cold for an offer with two counters, four searches) and about 30 s per search on the public SME,
+for the books as they stand and for each path. With `spare=0` it is skipped and `capacity[*].spare` and the capacity sentences are
+null; each search is cached once computed, so a later `spare=1` read pays only for what has not been searched. The offer read
+defaults to `spare=1` (the Deals page shows the room), and a caller on a large book should pass `spare=0` for the light read. The
+decision read defaults to `spare=0`: a decision page does not wait on a search, and asks for `spare=1` when it wants the room.
 
 Read-only and hypothetical: nothing is written, logged or stored; concentration, payment behaviour, stress and capacity are context,
 never a mandate, and change no verdict. The books are those without this offer's own commitments (the offer as asked, as the picture
@@ -86,6 +88,11 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
     if not any(c.id == offer.counterparty_id for c in state.counterparties):
         raise _not_found("BUYER_NOT_FOUND", f"There is no buyer {offer.counterparty_id} on the books.")
     try:
+        assembly.lead_key(verdict, response)  # the counters can change between the check of `response` and this read
+    except ValueError:
+        raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer.offer_id} has no {response} any more: its counter-offers changed "
+                                              "while you were reading. Read it again.") from None
+    try:
         core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
@@ -109,7 +116,7 @@ def get_offer_exposure(offer_id: str, response: str = Query("asked"), lang: Lite
 
 
 @router.get("/decisions/{decision_id}/exposure")
-def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
+def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(0, ge=0, le=1)) -> dict[str, Any]:
     """A deal decision (`deal:<offer_id>`) is about that offer's buyer, asked as it was. Any other decision (a funding
     decision) is about no buyer: 404."""
     require_feature("exposure")
@@ -119,4 +126,4 @@ def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("e
     offer = rt.store.get_offer(offer_id) if offer_id else None
     if offer is None:
         raise _not_found("DECISION_NOT_FOUND", f"There is no deal decision {decision_id}, so there is no buyer to show exposure for.")
-    return _respond(_answer(rt, offer, "asked", lang, True), started, decision_id=decision_id, offer_id=offer.offer_id)
+    return _respond(_answer(rt, offer, "asked", lang, bool(spare)), started, decision_id=decision_id, offer_id=offer.offer_id)

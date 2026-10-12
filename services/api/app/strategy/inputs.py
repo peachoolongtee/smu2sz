@@ -122,8 +122,11 @@ class CustomerInputs:
         return TypicalDelay(days=days, provenance=InputProvenance(row.provenance), source_ref=row.source_ref)
 
     def digest(self) -> str:
-        """What the answers depend on, as a string for a cache key: the rows in force and when they were stored."""
-        return json.dumps(sorted((cp or "", f, r.seq) for (cp, f), r in self.latest.items()))
+        """What the answers depend on, as a string for a cache key: the rows in force, each by what it says (value and
+        provenance) and when it was stored. `seq` alone is not enough: it restarts after a reset, so the same offer read again
+        with a different value would otherwise meet the old answer."""
+        return json.dumps(sorted((cp or "", f, r.seq, r.recorded_at, r.value_json, r.provenance)
+                                 for (cp, f), r in self.latest.items()))
 
 
 def inputs_from_store(store: LedgerStore) -> CustomerInputs:

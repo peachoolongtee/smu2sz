@@ -223,8 +223,8 @@ class Concentration(Contract):
     (brief G.1; mission section 17). Exact fractions of integer fen, shown at 1 dp, half-up (ADR-0002), "100%" only when the
     share is exactly 1; the `*_bp` fields are the same shares as integer basis points in [0, 10000] with the display
     rounding of ADR-0002, never rounding a part-share up to 10000 or a nonzero share down to 0. Parts are never adjusted
-    to add to 100. Aggregate counterparties (an owner-entered `aggregate` input) are left out of every denominator and are
-    named in `aggregate_note`; `ar_all_fen` keeps the firm's whole receivable.
+    to add to 100. Aggregate counterparties (an owner-entered `aggregate` input) stay in every total and denominator; they get no
+    per-customer share of their own and are named in `aggregate_note`.
 
     Context, not mandate: nothing here changes an outcome, a tier, a code, a counter, a cap or a plan. A concentration may
     add a fact line to a verdict, order which buyer's stress appears first, and raise an existing alert's wording; it is never
@@ -235,12 +235,12 @@ class Concentration(Contract):
     day: Day
     lang: Literal["en", "zh"]
     is_aggregate: bool = False
-    excluded_aggregates: list[str] = Field(default_factory=list)  # counterparty ids left out of the denominators
+    excluded_aggregates: list[str] = Field(default_factory=list)  # counterparty ids shown with no share of their own (kept in the totals)
     aggregate_note: str | None = None
     # share of current open AR: face less settled, over OPEN and FINANCED receivables (overdue counts, unissued does not)
     ar_buyer_fen: Fen = 0
-    ar_total_fen: Fen = 0  # without the aggregates: the denominator
-    ar_all_fen: Fen = 0  # with them
+    ar_total_fen: Fen = 0  # the denominator: all buyers, the aggregates included
+    ar_all_fen: Fen = 0  # the same figure as `ar_total_fen`, kept for readers of the earlier contract
     ar_share_bp: Bp | None = Field(default=None, ge=0, le=10_000)
     ar_text: str
     # share of the receipts due on [receipts_from_day, receipts_to_day) in the conservative projection of the current books

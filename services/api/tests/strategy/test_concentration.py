@@ -218,18 +218,30 @@ def test_the_wording_helpers() -> None:
 # ---------------------------------------------------------------- aggregates
 
 
-def test_an_aggregate_is_left_out_of_the_denominators_and_named() -> None:
+def test_an_aggregate_stays_in_the_denominators_and_is_named() -> None:
     rows = [_rcv(0, "BUYER-1", 30_000_000, due=10), _rcv(1, "BUYER-2", 90_000_000, due=10), _rcv(2, "BUYER-3", 30_000_000, due=10)]
     books = _books(rows)
     plain = concentration(books, "BUYER-1", 0)
     assert plain.ar_share_bp == 2000 and plain.excluded_aggregates == []
     c = concentration(books, "BUYER-1", 0, _aggregate("BUYER-2"))
-    assert (c.ar_total_fen, c.ar_all_fen, c.ar_share_bp) == (60_000_000, 150_000_000, 5000)  # totals kept beside
-    assert (c.receipts_total_fen, c.receipts_share_bp) == (60_000_000, 5000)
+    assert (c.ar_total_fen, c.ar_all_fen, c.ar_share_bp) == (150_000_000, 150_000_000, 2000)  # a 20% buyer stays 20%
+    assert (c.receipts_total_fen, c.receipts_share_bp) == (150_000_000, 2000) and c.ar_share_bp == plain.ar_share_bp
     assert c.excluded_aggregates == ["BUYER-2"]
-    assert c.aggregate_note == "Not counted in these shares: Dongguan Office Supplies Ltd., which stand for many small customers."
+    assert c.aggregate_note == ("Counted in the totals but shown with no share of its own: Dongguan Office Supplies Ltd., "
+                                "which stand for many small customers.")
     zh = concentration(books, "BUYER-1", 0, _aggregate("BUYER-2"), lang="zh")
-    assert zh.aggregate_note == "以下不计入这些占比：Dongguan Office Supplies Ltd.（代表许多小客户）。"
+    assert zh.aggregate_note == "以下计入总额，但不单独显示占比：Dongguan Office Supplies Ltd.（代表许多小客户）。"
+
+
+def test_an_aggregate_row_is_suppressed_not_removed_from_the_total() -> None:
+    """The public SME in miniature: one marketplace row holds 48.63% of what is owed. It is named and has no share of its own,
+    yet the other buyer's share is still taken over the whole."""
+    rows = [_rcv(0, "BUYER-1", 5_137_000, due=10), _rcv(1, "BUYER-2", 4_863_000, due=10)]
+    books = _books(rows)
+    market = concentration(books, "BUYER-2", 0, _aggregate("BUYER-2"))
+    assert market.ar_share_bp is None and market.receipts_share_bp is None and market.ar_total_fen == 10_000_000
+    other = concentration(books, "BUYER-1", 0, _aggregate("BUYER-2"))
+    assert other.ar_share_bp == 5137 and other.ar_total_fen == 10_000_000 and other.excluded_aggregates == ["BUYER-2"]
 
 
 def test_an_aggregate_has_no_per_customer_share() -> None:
