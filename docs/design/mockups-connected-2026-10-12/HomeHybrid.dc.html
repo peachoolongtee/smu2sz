@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLOW Home E: the hybrid of C and A</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0368e9}a:hover{color:#0048a5}
+button{font-family:inherit;cursor:pointer}
+.frostbar{background:rgba(246,248,252,.72);-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%)}
+.frost{background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%)}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; background: #f5f7fb; color: #24324a; font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; font-variant-numeric: tabular-nums">
+
+<nav aria-label="Main" style="flex: 1 1 216px; max-width: 232px; box-sizing: border-box; border-right: 1px solid #e6eaf0; background: #ffffff; padding: 20px 12px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<div style="width: 36px; height: 36px; border-radius: 10px; background: #0368e9; color: #ffffff; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"></path></svg></div>
+<div><div style="font-size: 16px; font-weight: 800; letter-spacing: -0.01em">FLOW 流</div><div style="font-size: 12px; color: #5a6577">AI working-capital agent</div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<a href="#home" aria-current="page" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; background: #e6f1ff; color: #0048a5; font-size: 14px; font-weight: 700; text-decoration: none">Home</a>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; color: #4d5767; font-size: 14px; font-weight: 600; text-decoration: none"><span style="flex: 1">Deals</span><span style="font-size: 12px; font-weight: 700; background: #fdf2d9; color: #82490a; border-radius: 6px; padding: 2px 7px">1</span></a>
+<a href="#cash" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; color: #4d5767; font-size: 14px; font-weight: 600; text-decoration: none">Cash &amp; funding</a>
+<a href="#receivables" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; color: #4d5767; font-size: 14px; font-weight: 600; text-decoration: none">Receivables</a>
+<a href="#activity" style="display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; color: #4d5767; font-size: 14px; font-weight: 600; text-decoration: none">Activity</a>
+</div>
+<div style="margin-top: auto; padding: 12px 8px 0; border-top: 1px solid #e6eaf0; font-size: 12px; line-height: 1.5; color: #5a6577">A simulated company: the lenders, the buyer and the bank feed are simulated. No real funds move.</div>
+<button style="display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #0368e9; color: #ffffff; align-self: flex-start">Ask FLOW</button>
+</nav>
+
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div class="frostbar" style="position: sticky; top: 0; z-index: 6; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 32px">
+<span style="font-size: 12px; font-weight: 700; color: #5a6577; border: 1px solid #d3d9e2; border-radius: 999px; padding: 4px 10px; background: #ffffff">Demo data</span>
+<div role="group" aria-label="Mode" style="display: inline-flex; padding: 3px; border-radius: 999px; background: #e9eef5; border: 1px solid #d3d9e2"><button aria-pressed="true" style="border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Business</button><button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 36px; padding: 0 14px; font-size: 13px; font-weight: 600; background: transparent; color: #4d5767">Demo</button></div>
+</div>
+
+<main style="box-sizing: border-box; width: 100%; max-width: 1048px; margin: 0 auto; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 24px">
+
+<header style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5a6577"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #b7791f; display: inline-block"></span><span style="font-weight: 700; color: #82490a">Covered, but tight</span><span>· read today</span></div>
+<h1 style="margin: 0; font-size: 34px; line-height: 1.15; font-weight: 800; letter-spacing: -0.025em">Your cash is covered on the current plan.</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4d5767">Cash stays at or above your ¥300k minimum for the next 120 days, assuming the financing arrives in 3 days and Foshan pays in 32 days as scheduled. It touches the minimum in 30 days. <a href="#assumptions" style="font-weight: 700">Forecast assumptions</a></p>
+</header>
+
+<section aria-label="Financial position" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<div style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">CASH TODAY</div><div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em">¥550k</div><div style="font-size: 13px; color: #4d5767">¥250k above your minimum</div></div>
+<div style="border: 1px solid #ecd092; border-radius: 12px; padding: 12px 14px; background: #ffffff"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">LOWEST AHEAD</div><div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #82490a">¥300k</div><div style="font-size: 13px; color: #4d5767">in 30 days · ¥0 above your minimum</div></div>
+<div style="border: 1px solid #a6e0d7; border-radius: 12px; padding: 12px 14px; background: #ffffff"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">MONEY ARRIVING</div><div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #0a6b5f">¥255k</div><div style="font-size: 13px; color: #4d5767">invoice financing, expected in 3 days</div></div>
+</section>
+
+<section aria-labelledby="attn" class="frost" style="border: 1px solid #d3d9e2; border-radius: 16px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 14px 32px rgba(36,50,74,.12)">
+<div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #82490a">1 DEAL NEEDS YOUR RESPONSE</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px">
+<div style="flex: 2 1 360px; min-width: 0">
+<h2 id="attn" style="margin: 0; font-size: 17px; line-height: 1.35; font-weight: 800">Foshan asked for 60-day terms and a 1% rebate. FLOW recommends countering with Option A.</h2>
+<div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: #4d5767"><span>Cost of the counter <span style="font-weight: 800; color: #24324a">¥3,027.77</span> once</span><span>As asked <span style="font-weight: 800; color: #a3241a">over your ¥5,000 limit</span></span><span>Foshan is <span style="font-weight: 800; color: #24324a">100% of what you are owed</span></span></div>
+</div>
+<div style="display: flex; gap: 8px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; border: 0; border-radius: 10px; min-height: 48px; padding: 0 18px; font-size: 15px; font-weight: 800; background: #0368e9; color: #ffffff; text-decoration: none">Review the counter</a>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; border: 1px solid #768399; border-radius: 10px; min-height: 48px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #ffffff; color: #24324a; text-decoration: none">Why this?</a>
+</div>
+</div>
+<div style="padding-top: 10px; border-top: 1px solid #e1e6ee; font-size: 13px; line-height: 1.5; color: #4d5767"><span style="font-weight: 800; color: #0a6b5f">Funding arranged</span> · ¥255k of invoice financing expected in 3 days, repaid from Foshan's receipt in 32 days. Invoice-financing cost ¥1,069.32; the whole plan, with the ¥150k credit-line draw already made, ¥3,113.93. Within your signed limits; nothing for you to do.</div>
+</section>
+
+<section aria-labelledby="pic" style="display: grid; grid-template-columns: minmax(0, 1fr) 312px; gap: 20px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<h2 id="pic" style="margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .08em; color: #5a6577">YOUR CASH, NEXT 34 DAYS</h2>
+<div style="display: inline-flex; gap: 8px; align-items: center">
+<div role="group" aria-label="Scenario" style="display: inline-flex; padding: 3px; border-radius: 999px; background: #e9eef5; border: 1px solid #d3d9e2"><button aria-pressed="{{ expPressed }}" onClick="{{ pickExpected }}" style="border: 0; border-radius: 999px; min-height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; background: {{ expBg }}; color: {{ expInk }}">Expected payments</button><button aria-pressed="{{ latePressed }}" onClick="{{ pickLate }}" style="border: 0; border-radius: 999px; min-height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; background: {{ lateBg }}; color: {{ lateInk }}">Foshan 30 days late</button></div>
+<div role="group" aria-label="Window" style="display: inline-flex; padding: 3px; border-radius: 999px; background: #e9eef5; border: 1px solid #d3d9e2"><button aria-pressed="true" style="border: 0; border-radius: 999px; min-height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; background: #ffffff; color: #24324a">34 days</button><button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600; background: transparent; color: #4d5767">60</button><button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600; background: transparent; color: #4d5767">120</button></div>
+</div>
+</div>
+<svg viewBox="0 0 700 250" role="img" aria-label="Cash with FLOW's plan over 34 days in blue, the counterfactual without the plan dashed grey, the minimum dashed amber, numbered marks at the four key events" style="width: 100%; height: auto; display: block">
+<text x="4" y="30" style="font-size: 11px; fill: #5a6577">¥900k</text>
+<text x="4" y="90" style="font-size: 11px; fill: #5a6577">¥600k</text>
+<text x="4" y="150" style="font-size: 11px; fill: #5a6577">¥300k</text>
+<text x="4" y="210" style="font-size: 11px; fill: #5a6577">¥0</text>
+<line x1="56" y1="150" x2="690" y2="150" stroke="#b7791f" stroke-dasharray="6 4"></line>
+<polyline fill="none" stroke="#768399" stroke-width="2" stroke-dasharray="7 4" points="56,100 300,100 300,168 450,168 450,192 620,192 620,110 690,110"></polyline>
+<polyline fill="none" stroke="#0368e9" stroke-width="3.5" points="56,100 110,100 110,46 300,46 300,114 450,114 450,138 620,138 620,150 690,150"></polyline>
+<sc-if value="{{ isLate }}" hint-placeholder-val="{{ false }}">
+<polyline fill="none" stroke="#a3241a" stroke-width="2.5" stroke-dasharray="3 6" points="56,100 110,100 110,46 300,46 300,114 450,114 450,138 620,138 620,150 690,150"></polyline>
+<text x="560" y="236" style="font-size: 11px; fill: #a3241a; font-weight: 700">the receipt now arrives in 62 days: widen to 120</text>
+</sc-if>
+<g>
+<circle cx="110" cy="46" r="11" fill="{{ c1Fill }}" stroke="#0a6b5f" stroke-width="2"></circle><text x="110" y="50" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: {{ c1Ink }}">1</text>
+<circle cx="300" cy="114" r="11" fill="{{ c2Fill }}" stroke="#5a6577" stroke-width="2"></circle><text x="300" y="118" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: {{ c2Ink }}">2</text>
+<circle cx="450" cy="138" r="11" fill="{{ c3Fill }}" stroke="#5a6577" stroke-width="2"></circle><text x="450" y="142" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: {{ c3Ink }}">3</text>
+<circle cx="620" cy="150" r="11" fill="{{ c4Fill }}" stroke="#b7791f" stroke-width="2"></circle><text x="620" y="154" text-anchor="middle" style="font-size: 11px; font-weight: 800; fill: {{ c4Ink }}">4</text>
+</g>
+<text x="56" y="232" style="font-size: 11px; fill: #5a6577">Today</text>
+<text x="640" y="232" style="font-size: 11px; fill: #5a6577">in 34 days</text>
+</svg>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #5a6577"><span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 3px; background: #0368e9; display: inline-block"></span>with FLOW's plan</span><span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 0; border-top: 2px dashed #768399; display: inline-block"></span>without FLOW's financing plan (a comparison, not a choice you still have)</span><span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 14px; height: 0; border-top: 2px dashed #b7791f; display: inline-block"></span>minimum ¥300k</span></div>
+<div style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; min-height: 72px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">{{ panelTitle }}</div>
+<div style="font-size: 14px; line-height: 1.5">{{ panelText }}</div>
+</div>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+<li style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577; padding: 2px 2px 4px">KEY EVENTS</li>
+<li><button onClick="{{ pick1 }}" onMouseEnter="{{ on1 }}" onMouseLeave="{{ off }}" aria-pressed="{{ p1 }}" style="width: 100%; text-align: left; display: flex; gap: 10px; align-items: flex-start; border: 1px solid {{ b1 }}; border-radius: 12px; padding: 10px 12px; background: {{ bg1 }}; color: #24324a"><span aria-hidden="true" style="flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid #0a6b5f; color: #0a6b5f; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">1</span><span style="font-size: 13px; line-height: 1.4"><span style="font-weight: 800; color: #0a6b5f">+¥255k</span> invoice financing arrives <span style="color: #5a6577">· in 3 days</span></span></button></li>
+<li><button onClick="{{ pick2 }}" onMouseEnter="{{ on2 }}" onMouseLeave="{{ off }}" aria-pressed="{{ p2 }}" style="width: 100%; text-align: left; display: flex; gap: 10px; align-items: flex-start; border: 1px solid {{ b2 }}; border-radius: 12px; padding: 10px 12px; background: {{ bg2 }}; color: #24324a"><span aria-hidden="true" style="flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid #5a6577; color: #4d5767; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">2</span><span style="font-size: 13px; line-height: 1.4"><span style="font-weight: 800">−¥340k</span> payroll <span style="color: #5a6577">· in 12 days</span></span></button></li>
+<li><button onClick="{{ pick3 }}" onMouseEnter="{{ on3 }}" onMouseLeave="{{ off }}" aria-pressed="{{ p3 }}" style="width: 100%; text-align: left; display: flex; gap: 10px; align-items: flex-start; border: 1px solid {{ b3 }}; border-radius: 12px; padding: 10px 12px; background: {{ bg3 }}; color: #24324a"><span aria-hidden="true" style="flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid #5a6577; color: #4d5767; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">3</span><span style="font-size: 13px; line-height: 1.4"><span style="font-weight: 800">−¥120k</span> supplier payment <span style="color: #5a6577">· in 20 days</span></span></button></li>
+<li><button onClick="{{ pick4 }}" onMouseEnter="{{ on4 }}" onMouseLeave="{{ off }}" aria-pressed="{{ p4 }}" style="width: 100%; text-align: left; display: flex; gap: 10px; align-items: flex-start; border: 1px solid {{ b4 }}; border-radius: 12px; padding: 10px 12px; background: {{ bg4 }}; color: #24324a"><span aria-hidden="true" style="flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid #b7791f; color: #82490a; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">4</span><span style="font-size: 13px; line-height: 1.4"><span style="font-weight: 800">−¥45k</span> debt repayment <span style="color: #5a6577">· in 30 days</span><br><span style="font-weight: 700; color: #82490a">the lowest point, on your minimum</span></span></button></li>
+<li style="font-size: 12px; color: #5a6577; line-height: 1.5; padding: 6px 2px 0">In 32 days Foshan pays ¥420k: ¥257k repays the financing, ¥163k reaches your cash. <span style="font-weight: 700; color: #0048a5">&rsaquo; Every move</span></li>
+</ol>
+</section>
+
+<section aria-label="Other business information" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-top: 16px; border-top: 1px solid #e1e6ee">
+<a href="Main.dc.html" style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; text-decoration: none; color: #24324a"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">YOUR DEALS</div><div style="font-size: 14px; line-height: 1.45; margin-top: 4px"><span style="font-weight: 800">Foshan Home Retail Co.</span> · counter recommended · awaiting your response</div></a>
+<a href="#receivables" style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; text-decoration: none; color: #24324a"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">RECEIVABLES</div><div style="font-size: 14px; line-height: 1.45; margin-top: 4px"><span style="font-weight: 800">¥420k</span> outstanding · next expected receipt in 32 days · no payments yet to say how Foshan usually pays</div></a>
+<a href="#activity" style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; text-decoration: none; color: #24324a"><div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">RECENT CHANGES</div><div style="font-size: 14px; line-height: 1.45; margin-top: 4px">¥150k credit-line draw completed · ¥255k invoice financing arranged</div></a>
+</section>
+
+<section id="assumptions" style="font-size: 13px; font-weight: 700; color: #0048a5">&rsaquo; Forecast assumptions: the ¥255k financing lands in 3 days; Foshan pays ¥420k in 32 days; the scheduled payroll, supplier and debt payments as entered</section>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1460}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { picked: 4, hot: 0, late: false };
+}
+renderVals() {
+const s = this.state || { picked: 4, hot: 0, late: false };
+const active = s.hot || s.picked;
+const stroke = { 1: '#0a6b5f', 2: '#5a6577', 3: '#5a6577', 4: '#b7791f' };
+const panels = {
+1: ['INVOICE FINANCING ARRIVES · IN 3 DAYS', 'Cash rises from ¥550k to ¥805k. This is the ¥255k FLOW arranged against Foshan’s invoice; it is repaid when Foshan pays.'],
+2: ['PAYROLL · IN 12 DAYS', 'Cash falls from ¥805k to ¥465k. Your minimum is ¥300k, so ¥165k of room remains. Without the financing, payroll would have taken cash to ¥210k, below your minimum.'],
+3: ['SUPPLIER PAYMENT · IN 20 DAYS', 'Cash falls from ¥465k to ¥345k. ¥45k of room remains above your minimum.'],
+4: ['THE LOWEST POINT · IN 30 DAYS', 'The ¥45k debt repayment leaves cash exactly on your ¥300k minimum. Without FLOW’s financing plan it would be ¥45k, ¥255k below the minimum. Foshan’s ¥420k arrives two days later.']
+};
+const late = s.late;
+const v = {
+isLate: late,
+expPressed: late ? 'false' : 'true', latePressed: late ? 'true' : 'false',
+expBg: late ? 'transparent' : '#ffffff', expInk: late ? '#4d5767' : '#24324a',
+lateBg: late ? '#ffffff' : 'transparent', lateInk: late ? '#24324a' : '#4d5767',
+panelTitle: late ? 'IF FOSHAN PAYS 30 DAYS LATE · A TEST, NOT A FORECAST' : panels[active][0],
+panelText: late ? 'With the plan, cash falls to −¥250k on day 60 and stays below your minimum for 65 days; no committed facility covers the ¥550k. FLOW does not count on an early payment from Foshan in this test. Widen the window to 120 days to see the receipt land on day 62.' : panels[active][1],
+pickExpected: () => this.setState({ late: false }),
+pickLate: () => this.setState({ late: true }),
+off: () => this.setState({ hot: 0 })
+};
+for (let i = 1; i <= 4; i++) {
+const on = active === i;
+v['c' + i + 'Fill'] = on ? stroke[i] : '#ffffff';
+v['c' + i + 'Ink'] = on ? '#ffffff' : stroke[i];
+v['b' + i] = s.picked === i ? stroke[i] : (on ? stroke[i] : '#e1e6ee');
+v['bg' + i] = s.picked === i ? (i === 4 ? '#fdf2d9' : '#eff3f8') : '#ffffff';
+v['p' + i] = s.picked === i ? 'true' : 'false';
+v['pick' + i] = () => this.setState({ picked: i });
+v['on' + i] = () => this.setState({ hot: i });
+}
+return v;
+}
+}
+</script>
+</body>
+</html>

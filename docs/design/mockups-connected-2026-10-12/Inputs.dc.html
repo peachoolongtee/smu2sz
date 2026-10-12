@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLOW Deals: the owner's inputs sheet for Foshan</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0368e9}a:hover{color:#0048a5}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+</style>
+</helmet>
+<div style="min-height: 900px; background: rgba(36,50,74,.42); display: flex; align-items: flex-start; justify-content: center; padding: 48px 24px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; color: #24324a; font-variant-numeric: tabular-nums">
+<section aria-labelledby="sheet" style="width: 100%; max-width: 640px; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(36,50,74,.28); padding: 24px 28px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div>
+<div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">FOSHAN HOME RETAIL CO. · WHAT YOU KNOW ABOUT THIS CUSTOMER</div>
+<h1 id="sheet" style="margin: 6px 0 0; font-size: 22px; line-height: 1.25; font-weight: 800; letter-spacing: -0.02em">Three facts FLOW cannot read from your books</h1>
+<p style="margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: #4d5767">Each one is shown with where it came from, and none changes what FLOW may do on its own. FLOW works out the rest: what you are owed, what each deal costs, your cash and your facilities.</p>
+</div>
+<button aria-label="Close" style="border: 1px solid #768399; border-radius: 10px; min-height: 44px; min-width: 44px; background: #ffffff; color: #24324a; font-size: 18px">&times;</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: end">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="sales" style="font-size: 13px; font-weight: 700">Annual sales to Foshan</label>
+<input id="sales" type="text" value="¥5,460,000" style="min-height: 44px; border: 1px solid #768399; border-radius: 10px; padding: 0 12px; font-size: 15px; font-weight: 700; color: #24324a">
+<div style="font-size: 12px; color: #5a6577">From your books: ¥420,000 every 30 days, 13 invoices in the next 12 months <span style="font-weight: 700; color: #0048a5">· projected</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="margin" style="font-size: 13px; font-weight: 700">Gross margin on Foshan's orders</label>
+<div style="display: flex; gap: 8px">
+<input id="margin" type="text" value="20%" style="min-height: 44px; flex: 1; min-width: 0; border: 1px solid #768399; border-radius: 10px; padding: 0 12px; font-size: 15px; font-weight: 700; color: #24324a">
+<select aria-label="Margin basis" style="min-height: 44px; border: 1px solid #768399; border-radius: 10px; padding: 0 10px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a"><option>Gross margin (毛利率)</option><option>Contribution margin</option></select>
+</div>
+<div style="font-size: 12px; color: #5a6577">Your company-wide gross margin until you enter Foshan's own <span style="font-weight: 700; color: #82490a">· estimated, Demo assumption</span></div>
+</div>
+</div>
+<div style="padding: 10px 12px; border-radius: 10px; background: #eff3f8; font-size: 13px; line-height: 1.5; color: #4d5767"><span style="font-weight: 700; color: #24324a">Check against your books:</span> your EBITDA is ¥1,080,000 a year and Foshan is your only invoicing customer, so Foshan's margin is at least 19.8%. 20% passes; 15% would not.</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span id="class" style="font-size: 13px; font-weight: 700">How you class this customer</span>
+<div role="group" aria-labelledby="class" style="display: inline-flex; padding: 3px; border-radius: 999px; background: #e9eef5; border: 1px solid #d3d9e2; align-self: flex-start">
+<button aria-pressed="{{ nPressed }}" onClick="{{ pickN }}" style="border: 0; border-radius: 999px; min-height: 38px; padding: 0 16px; font-size: 13px; font-weight: 700; background: {{ nBg }}; color: {{ nInk }}">Normal</button>
+<button aria-pressed="{{ iPressed }}" onClick="{{ pickI }}" style="border: 0; border-radius: 999px; min-height: 38px; padding: 0 16px; font-size: 13px; font-weight: 700; background: {{ iBg }}; color: {{ iInk }}">Important</button>
+<button aria-pressed="{{ sPressed }}" onClick="{{ pickS }}" style="border: 0; border-radius: 999px; min-height: 38px; padding: 0 16px; font-size: 13px; font-weight: 700; background: {{ sBg }}; color: {{ sInk }}">Strategic</button>
+</div>
+<div style="font-size: 12px; color: #5a6577">{{ classNote }}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="delay" style="font-size: 13px; font-weight: 700">How late Foshan usually pays, if you know</label>
+<input id="delay" type="text" placeholder="days late, for example 10" style="min-height: 44px; max-width: 240px; border: 1px solid #768399; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #24324a">
+<div style="font-size: 12px; color: #5a6577">Used only until three invoices have been paid; after that FLOW uses what it observed and shows your figure beside it if they differ by 5 days or more.</div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid #e1e6ee">
+<div style="font-size: 12px; color: #5a6577; line-height: 1.5">Saved as a dated entry in your name. Your books, the verdict and every approval stay exactly as they are.</div>
+<div style="display: flex; gap: 8px">
+<button style="border: 1px solid #768399; border-radius: 10px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #ffffff; color: #24324a">Cancel</button>
+<button style="border: 0; border-radius: 10px; min-height: 44px; padding: 0 18px; font-size: 14px; font-weight: 800; background: #0368e9; color: #ffffff">Save these facts</button>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { cls: 'N' };
+}
+renderVals() {
+const c = (this.state && this.state.cls) || 'N';
+const on = { bg: '#ffffff', ink: '#24324a' };
+const off = { bg: 'transparent', ink: '#4d5767' };
+const notes = {
+N: 'Context only: it changes the words FLOW uses, never what FLOW may do.',
+I: 'Context only: FLOW says "Foshan is marked Important" beside a verdict that needs you. It changes no limit.',
+S: 'Context only: FLOW says "Foshan is marked Strategic, owner review recommended". A different limit for a strategic customer needs a new signed mandate.'
+};
+return {
+nPressed: c === 'N' ? 'true' : 'false', iPressed: c === 'I' ? 'true' : 'false', sPressed: c === 'S' ? 'true' : 'false',
+nBg: c === 'N' ? on.bg : off.bg, nInk: c === 'N' ? on.ink : off.ink,
+iBg: c === 'I' ? on.bg : off.bg, iInk: c === 'I' ? on.ink : off.ink,
+sBg: c === 'S' ? on.bg : off.bg, sInk: c === 'S' ? on.ink : off.ink,
+classNote: notes[c],
+pickN: () => this.setState({ cls: 'N' }), pickI: () => this.setState({ cls: 'I' }), pickS: () => this.setState({ cls: 'S' })
+};
+}
+}
+</script>
+</body>
+</html>

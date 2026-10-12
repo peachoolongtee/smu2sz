@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLOW Deals as a decision queue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0368e9}a:hover{color:#0048a5}
+button{font-family:inherit;cursor:pointer}
+h1,h2,h3,.display{font-family:'Plus Jakarta Sans','Lato','Inter','PingFang SC',system-ui,sans-serif}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid #e6eaf0;text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5a6577}
+.row{display:grid;grid-template-columns:1.3fr 1.6fr 1fr 1.2fr 1fr;gap:12px;padding:14px 16px;font-size:14px;align-items:center;text-decoration:none;color:#24324a;border-top:1px solid #e6eaf0;transition:background .15s ease}
+.row:hover{background:#f7f9fc}
+</style>
+</helmet>
+<div style="background: #f5f7fb; color: #24324a; font-family: 'Lato', 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; font-variant-numeric: tabular-nums">
+<main style="box-sizing: border-box; width: 100%; max-width: 1180px; margin: 0 auto; padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+<div><h1 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -0.025em">Deals</h1><p style="margin: 4px 0 0; font-size: 15px; color: #4d5767">One decision is yours today. The rest is moving or agreed.</p></div>
+<div role="tablist" style="display: grid; grid-template-columns: repeat(4, auto); gap: 8px">
+<button role="tab" onClick="{{ tabNeeds }}" aria-selected="{{ tNeeds }}" style="border: 1px solid {{ bNeeds }}; border-radius: 12px; min-height: 56px; padding: 6px 14px; background: {{ bgNeeds }}; color: #24324a; text-align: left"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #82490a">NEEDS YOUR RESPONSE</div><div class="display" style="font-size: 20px; font-weight: 800">1</div></button>
+<button role="tab" onClick="{{ tabWait }}" aria-selected="{{ tWait }}" style="border: 1px solid {{ bWait }}; border-radius: 12px; min-height: 56px; padding: 6px 14px; background: {{ bgWait }}; color: #24324a; text-align: left"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">AWAITING THE BUYER</div><div class="display" style="font-size: 20px; font-weight: 800">0</div></button>
+<button role="tab" onClick="{{ tabAgreed }}" aria-selected="{{ tAgreed }}" style="border: 1px solid {{ bAgreed }}; border-radius: 12px; min-height: 56px; padding: 6px 14px; background: {{ bgAgreed }}; color: #24324a; text-align: left"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">AGREED, IN FORCE</div><div class="display" style="font-size: 20px; font-weight: 800">1</div></button>
+<button role="tab" onClick="{{ tabSetup }}" aria-selected="{{ tSetup }}" style="border: 1px solid {{ bSetup }}; border-radius: 12px; min-height: 56px; padding: 6px 14px; background: {{ bgSetup }}; color: #24324a; text-align: left"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">CUSTOMER SETUP</div><div class="display" style="font-size: 20px; font-weight: 800">1</div></button>
+</div>
+</header>
+
+<section aria-label="Deals list" style="border: 1px solid #e1e6ee; border-radius: 14px; background: #ffffff; overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.3fr 1.6fr 1fr 1.2fr 1fr; gap: 12px; padding: 10px 16px; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577"><span>CUSTOMER</span><span>REQUEST</span><span>COST AS ASKED</span><span>FLOW RECOMMENDS</span><span>STATUS</span></div>
+<sc-if value="{{ showNeeds }}" hint-placeholder-val="{{ true }}">
+<a class="row" href="#foshan" aria-current="true" style="background: #eff3f8; border-left: 3px solid #0368e9"><span style="font-weight: 700">Foshan Home Retail Co.</span><span>60-day terms + 1% rebate + 1.2% early settlement</span><span style="color: #a3241a; font-weight: 700">¥28.3k over 12 months</span><span style="font-weight: 700">Counter with Option A</span><span><span style="font-size: 12px; font-weight: 800; background: #fdf2d9; color: #82490a; border-radius: 999px; padding: 3px 10px">Reply needed</span></span></a>
+</sc-if>
+<sc-if value="{{ showAgreed }}" hint-placeholder-val="{{ false }}">
+<a class="row" href="Record.dc.html"><span style="font-weight: 700">Foshan Home Retail Co.</span><span>Supply terms: 45 days, no rebate · contract FHR-2026-07, confirmed by you</span><span style="font-weight: 700">¥0</span><span>Nothing to do; the open request would change these terms</span><span><span style="font-size: 12px; font-weight: 800; background: #e2f6f3; color: #0a6b5f; border-radius: 999px; padding: 3px 10px">In force</span></span></a>
+</sc-if>
+<sc-if value="{{ showSetup }}" hint-placeholder-val="{{ false }}">
+<a class="row" href="CustomerOverview.dc.html"><span style="font-weight: 700">Dongguan Fixtures Ltd.</span><span style="color: #5a6577">No contract on file yet</span><span style="color: #5a6577">—</span><span style="color: #5a6577">Add the contract when you have it</span><span><span style="font-size: 12px; font-weight: 800; background: #eff3f8; color: #4d5767; border-radius: 999px; padding: 3px 10px">Setup</span></span></a>
+</sc-if>
+<sc-if value="{{ showWait }}" hint-placeholder-val="{{ false }}">
+<div style="padding: 18px 16px; font-size: 14px; color: #5a6577">No reply is out with a buyer right now.</div>
+</sc-if>
+</section>
+
+<section id="foshan" aria-labelledby="detail" style="display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; border: 1px solid #e1e6ee; border-radius: 16px; background: #ffffff; padding: 24px 26px">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">SELECTED · <a href="CustomerOverview.dc.html" style="color: #0048a5; text-decoration: none">FOSHAN HOME RETAIL CO. &rsaquo;</a></div>
+<h2 id="detail" style="margin: 0; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em">Foshan: counter recommended.</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4d5767">Foshan asks for 60-day terms, a 1% rebate and early settlement at 1.2%.</p>
+
+<div style="border-left: 3px solid #d9534a; padding: 2px 0 2px 14px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #a3241a">WHY COUNTER?</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.5">The request exceeds your ¥5,000 limit for what you give buyers by ¥23,326.92 over 12 months.</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.5">It also takes your cash below its minimum in 47 days, for 15 days.</p>
+</div>
+
+<div style="border: 1px solid #b9d4f6; border-radius: 14px; padding: 16px 18px; background: #f3f8ff; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #0048a5">FLOW RECOMMENDS · OPTION A</div>
+<p class="display" style="margin: 0; font-size: 17px; font-weight: 700; line-height: 1.4">Keep 45-day terms, no rebate. Offer early settlement on ¥257,200 at 0.85%, paid within 2 days.</p>
+<p style="margin: 0; font-size: 15px; color: #24324a"><strong>Estimated one-off cost: ¥3,027.77</strong>, if Foshan accepts. <span style="color: #0a6b5f; font-weight: 700">Within your mandate.</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding-top: 4px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; border: 0; border-radius: 10px; min-height: 46px; padding: 0 18px; font-size: 14px; font-weight: 800; background: #0368e9; color: #ffffff; text-decoration: none">Review and send the counter</a>
+<span style="font-size: 13px; color: #4d5767">Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.</span>
+</div>
+</div>
+
+<details style="border-top: 1px solid #e1e6ee; padding-top: 12px">
+<summary style="cursor: pointer; font-size: 14px; font-weight: 700; color: #0048a5; list-style: none; display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="display: inline-block; transition: transform .2s ease">&#9662;</span>Compare accepting, countering and doing nothing</summary>
+<div style="padding-top: 12px; display: flex; flex-direction: column; gap: 8px">
+<p style="margin: 0; font-size: 13px; color: #5a6577">One comparison, the same figures on every page. All three start from today's books; one-off and 12-month costs are separate rows, never added.</p>
+<table>
+<thead><tr><th>Measure</th><th>Do nothing</th><th>If you accept as asked</th><th>If Foshan accepts Option A</th></tr></thead>
+<tbody>
+<tr><td>Cost now, one-off</td><td>¥0</td><td>¥5,040.00 <span style="color: #5a6577">(the rebate on the open invoice)</span></td><td>¥3,027.77 <span style="color: #5a6577">(the early-settlement discount)</span></td></tr>
+<tr><td>Cost over 12 months, on the terms</td><td>¥0</td><td style="color: #a3241a; font-weight: 700">¥28,326.92</td><td>¥0 <span style="color: #5a6577">(the terms do not change)</span></td></tr>
+<tr><td>Financing cost it causes over 12 months</td><td>¥0</td><td>¥9,120 <span style="color: #5a6577">(15 more days on every invoice)</span></td><td>¥0</td></tr>
+<tr><td>Lowest cash in the next 60 days</td><td>¥300k, at your minimum</td><td style="color: #a3241a; font-weight: 700">¥265k, below it for 15 days</td><td>¥300k, at your minimum</td></tr>
+<tr><td>A one-off payment FLOW could still cover alone</td><td>¥81,000</td><td>¥14,000</td><td style="color: #82490a; font-weight: 700">¥0 until 1 Nov</td></tr>
+<tr><td>Your limit for what you give buyers</td><td>within</td><td style="color: #a3241a; font-weight: 700">exceeded</td><td>within</td></tr>
+<tr><td>Foshan's share of what you are owed</td><td>100%</td><td>100%, for 15 days longer</td><td>100%, paid 2 days after the offer</td></tr>
+</tbody>
+</table>
+<div style="font-size: 13px; font-weight: 700; color: #0048a5; display: flex; gap: 14px"><a href="Main.dc.html">The three paths on the chart</a><a href="Main.dc.html">The buyer's message</a><a href="Main.dc.html">Calculations</a></div>
+</div>
+</details>
+</div>
+
+<aside style="display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #e1e6ee; padding-left: 24px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">WHY FOSHAN MATTERS</div>
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; font-size: 14px; align-items: baseline">
+<dt style="color: #5a6577">Contribution a year</dt><dd class="display" style="margin: 0; font-weight: 800; font-size: 16px">about ¥1.09m <span style="font-family: inherit; font-size: 13px; font-weight: 600; color: #82490a">· estimated</span></dd>
+<dt style="color: #5a6577">Owes you now</dt><dd class="display" style="margin: 0; font-weight: 800; font-size: 16px">¥420,000</dd>
+<dt style="color: #5a6577">Share of what you are owed</dt><dd class="display" style="margin: 0; font-weight: 800; font-size: 16px; color: #82490a">100%</dd>
+</dl>
+<a href="CustomerOverview.dc.html" style="font-size: 14px; font-weight: 700">View the customer profile &rsaquo;</a>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #4d5767; border-top: 1px solid #e1e6ee; padding-top: 10px">Context, not a promise: this is what Foshan brings under today's terms. No counter guarantees Foshan stays; the question is how much of it is at risk if you counter.</p>
+<a href="Late.dc.html" style="font-size: 13px; font-weight: 700">What if Foshan pays 30 days late? &rsaquo;</a>
+<div style="font-size: 13px; color: #5a6577; line-height: 1.5">Either link keeps this deal and Option A selected; the back link brings you here.</div>
+</aside>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1320}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'needs' };
+}
+renderVals() {
+const t = (this.state && this.state.tab) || 'needs';
+const names = ['needs', 'wait', 'agreed', 'setup'];
+const v = {};
+names.forEach((n) => {
+const on = t === n;
+const cap = n.charAt(0).toUpperCase() + n.slice(1);
+v['t' + cap] = on ? 'true' : 'false';
+v['b' + cap] = on ? '#0368e9' : '#e1e6ee';
+v['bg' + cap] = on ? '#e6f1ff' : '#ffffff';
+v['show' + cap] = on;
+v['tab' + cap] = () => this.setState({ tab: n });
+});
+return v;
+}
+}
+</script>
+</body>
+</html>
