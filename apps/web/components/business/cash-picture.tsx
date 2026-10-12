@@ -17,15 +17,15 @@ import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
  * the markers carry the numbers.
  * Labels that would overlap one already placed, a line or the edge of the plot are skipped; the chips below name every event.
  */
-const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
-const FONT = 12;
+export const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
+export const FONT = 12;
 /** The window never shows fewer than this many days, nor more than the cap; past the last interesting day it keeps a few days of what follows. */
 const MIN_WINDOW = 30;
 const MAX_WINDOW = 60;
 const TAIL = 4;
 const MAX_EVENT_LABELS = 3;
 
-interface Seg {
+export interface Seg {
   d0: number;
   d1: number;
   v: number;
@@ -47,7 +47,7 @@ interface Label {
   bold: boolean;
 }
 
-function useWidth(ref: RefObject<HTMLElement | null>): number {
+export function useWidth(ref: RefObject<HTMLElement | null>): number {
   const [w, setW] = useState(0);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -72,14 +72,14 @@ function useIntro(): boolean {
 }
 
 /** How wide a label is, near enough to keep two apart: a CJK character is a full em, anything else about 0.58 em (bold a little more). */
-function textWidth(text: string, bold: boolean): number {
+export function textWidth(text: string, bold: boolean): number {
   let w = 0;
   for (const ch of text) w += /[⺀-鿿＀-￯]/.test(ch) ? FONT : FONT * (bold ? 0.62 : 0.57);
   return w;
 }
 
 /** The series as flat steps: a new segment starts on the day the closing figure changes, the last runs to the window's end. */
-function segments(points: HomeSeriesPoint[], end: number): Seg[] {
+export function segments(points: HomeSeriesPoint[], end: number): Seg[] {
   const out: Seg[] = [];
   for (const p of points) {
     if (p.day > end) break;
@@ -91,7 +91,7 @@ function segments(points: HomeSeriesPoint[], end: number): Seg[] {
   return out;
 }
 
-const r1 = (n: number) => Math.round(n * 10) / 10;
+export const r1 = (n: number) => Math.round(n * 10) / 10;
 
 /** The marks the server names on the lines. Days place them; every word is already written. */
 export interface PictureMarkers {

@@ -101,6 +101,8 @@
   --color-chart-purple: #9b5fff;
   --color-chart-sky: #9bc7ff;
   --color-chart-navy: #24324a;
+  /* The third series on the Deals paths chart (the asked path is `bad`, the recommended reply `ok`): a deep purple, 8:1 on white, never a status. */
+  --color-series-c: #5b2bbf;
 
   --color-focus: #0368e9;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.5:1: the ring turns white inside it */
@@ -523,6 +525,20 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   transform-box: fill-box;
   transform-origin: center;
   animation: dot-pulse 900ms var(--ease-out) 1200ms 1 forwards;
+}
+
+/* A plotted bar (Deals: what each ask costs) grows from its left edge once, by transform; reduced motion leaves it full at once. */
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.motion-grow {
+  transform-origin: left center;
+  animation: bar-grow var(--dur-slow) var(--ease-out) 200ms backwards;
 }
 
 /* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal

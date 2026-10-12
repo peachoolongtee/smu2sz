@@ -194,11 +194,12 @@ test.describe("desktop", () => {
     await expect(card).toContainText("Estimate");
     await expect(card).not.toContainText("Hypothetical");
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
-    expect(await sectionOrder(page)).toEqual(["deal-ask", "deal-envelope"]);
+    // The heading is the page's first section from the moment an offer is open (the server's sentence about it); the card sits right after the ask section.
+    expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
 
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
     await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-    // The recommendation and the priced response come first (the server's order); the card sits right after the ask card.
+    // The verdict is the heading; the card sits right after the ask section.
     expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
 
     // Details: the levers (six), the approved packages and, where the server gave it, the terms-and-price zone.
@@ -239,21 +240,21 @@ test.describe("desktop", () => {
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
     await expect(card.getByTestId("envelope-computed")).toHaveCount(0);
 
-    // The card has no Option A / Option B buttons any more: Option A is the response card below, and "Compare another option" there
-    // opens Option B. The card sends nothing.
+    // The card has no Option A / Option B buttons any more: Option A is the path picked first in the reply below, and picking the Option B column
+    // puts Option B in the reply bar. The card sends nothing.
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
     await expect(card.getByTestId("envelope-open-b")).toHaveCount(0);
-    await expect(page.getByTestId("deal-option-Option-A")).toBeVisible();
-    await expect(page.getByTestId("deal-option-Option-B")).toHaveCount(0);
-    await page.getByTestId("deal-compare").click();
-    await expect(page.getByTestId("deal-option-Option-B")).toBeVisible();
-    await expect(page.getByTestId("deal-compare")).toContainText("Hide");
+    await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("path-reply")).toContainText("Option A");
+    await page.getByTestId("path-col-pick-2").click();
+    await expect(page.getByTestId("path-col-pick-2")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("path-reply")).toContainText("Option B");
     await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
     expect(await filledBrand(page)).toBe(1);
-    await expect(page.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
-    // ... and toggles it closed again.
-    await page.getByTestId("deal-compare").click();
-    await expect(page.getByTestId("deal-option-Option-B")).toHaveCount(0);
+    await expect(page.getByTestId("deal-send-Option-B")).toHaveClass(/bg-brand-600/);
+    // ... and the recommended path comes back with its column.
+    await page.getByTestId("path-col-pick-1").click();
+    await expect(page.getByTestId("path-reply")).toContainText("Option A");
   });
 
   test("Deals: the details open and close from the keyboard", async ({ page }) => {
@@ -350,8 +351,8 @@ test.describe("phone", () => {
     await expect(card.getByTestId("envelope-levers-list").locator("li")).toHaveCount(6);
     await expect(card.getByTestId("envelope-levers").locator("table")).toBeHidden();
     await expect(card.getByTestId("envelope-packages")).toBeVisible();
-    await page.getByTestId("deal-compare").click();
-    await expect(page.getByTestId("deal-option-Option-B")).toBeVisible();
+    await page.getByTestId("path-col-pick-2").click();
+    await expect(page.getByTestId("path-reply")).toContainText("Option B");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
   });

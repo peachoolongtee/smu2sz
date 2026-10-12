@@ -213,11 +213,15 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // One workspace order at every width, the server's: the folded inbox row, the buyer, what FLOW recommends, the priced response, then the asks and the costs.
-  const ids = ["inbox-collapsed", "deal-selected", "deal-recommendation-card", "counters", "deal-ask", "deal-impact", "deal-advanced"];
+  // The order: the folded inbox row, the verdict (the heading), who and where, then on a phone the reply before what they ask and cost (the answer first),
+  // on a desktop what they ask and cost, why it matters, then the reply.
+  const phone = (page.viewportSize()?.width ?? 1440) < 1024;
+  const ids = phone
+    ? ["inbox-collapsed", "deal-recommendation-card", "counters", "deal-selected", "deal-ask", "deal-impact", "deal-why", "deal-advanced"]
+    : ["inbox-collapsed", "deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact", "deal-why", "counters", "deal-advanced"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
@@ -278,7 +282,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   const rec = (await topOf(page, "deal-recommendation-card"))!;
   const send = await page.getByTestId("deal-send").boundingBox();
   const inbox = (await topOf(page, "inbox-collapsed"))!;
@@ -325,7 +329,7 @@ test("on a desktop the Deals workspace keeps the server's order and the inbox ro
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   const inbox = (await topOf(page, "inbox-collapsed"))!;
   const selected = (await topOf(page, "deal-selected"))!;
   expect(inbox.top).toBeLessThan(selected.top);

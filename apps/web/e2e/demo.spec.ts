@@ -58,11 +58,11 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
 
   // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
   await walkStory(page, 1, 1);
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Counter recommended");
+  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
   await expect(page.getByTestId("deal-impact-forward").getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
-  await expect(page.getByTestId("deal-fact-cash")).toContainText("Cash falls to ¥209,960.00");
+  await expect(page.getByTestId("path-col-cash-0")).toContainText("¥209,960.00");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("deal-option-Option-A").getByTestId("deal-option-cost")).toHaveText("¥3,027.77");
+  await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
 
   // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
   await walkStory(page, 1, 2);

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { ChasePayment } from "@/components/business/chase-payment";
-import { Card, textLinkClass } from "@/components/ui";
+import { StatePill, textLinkClass } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
 import { businessAction } from "@/lib/presentation-fallbacks";
-import type { BusinessAction, DecisionView, VerdictView } from "@/lib/types";
+import type { BusinessAction, DealTone, DecisionView, OpenOffer, VerdictView } from "@/lib/types";
 import type { Tone } from "@/components/ui";
 
 export const ACTION_KEY: Record<BusinessAction, DictKey> = {
@@ -18,47 +18,74 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const ACTION_TONE: Record<BusinessAction, "ok" | "warn" | "bad" | "brand" | undefined> = {
-  accept: "ok",
-  // A recommendation is the brand's, not a status: it is the thing to do.
-  counter: "brand",
-  decline: "bad",
-  needs_owner: "warn",
-  cannot: undefined,
-};
+const H1 = "max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl";
+
+const toneOf = (tone: DealTone | undefined): Tone => (!tone || tone === "mute" ? "warn" : tone);
 
 /**
- * What FLOW recommends, as one line (the workspace's "recommends" section): the server's business action ("Counter recommended"), or, once the
- * response has been sent, the deal's record in the server's words ("Agreed", "Early payment did not arrive", "No deal: the buyer did not
- * accept"), never the recommendation that preceded it and never the answer the browser kept from the click. The figures behind the
- * recommendation are the workspace's cost and why-it-matters sections above; this card carries none of them.
+ * The page's heading when a deal is selected, straight on the canvas (the A1 pattern): the status pill (the server's `needs_you_text`), the one
+ * `h1`, one quiet line beneath. Evaluated and still open, the `h1` is FLOW's read of the offer (`open_offer.read_text`, else the workspace's
+ * recommendation) and the line says what is ready; once the deal has an outcome (sent, agreed, lapsed, closed) the `h1` is the record's own words
+ * ("Agreed", "No deal: the buyer did not accept") with the money and what is left beneath. Received and not yet checked, the `h1` is the server's
+ * sentence about it. The sentences are the server's; nothing is composed here.
  */
-export function DealDecision({ v, record = null, text, reason = null }: { v: VerdictView; record?: DecisionView | null; text?: string; reason?: string | null }) {
+export function DealHeading({
+  v = null,
+  record = null,
+  open = null,
+  pillText = null,
+  text,
+  reason = null,
+  title,
+}: {
+  v?: VerdictView | null;
+  record?: DecisionView | null;
+  open?: OpenOffer | null;
+  pillText?: string | null;
+  text?: string;
+  reason?: string | null;
+  /** The plain title, used only when the server has said nothing about an offer that has not been checked. */
+  title: string;
+}) {
   const { t } = useI18n();
-  const action = businessAction(v);
   const progress = record ? dealProgress(record.state) : null;
   // A record that has gone past "response ready" has an outcome; before that the recommendation is the headline.
-  const outcome = record && progress?.reached ? record.state : null;
-  const headline = outcome && record ? record.state_text : (text ?? t(ACTION_KEY[action]));
-  // An agreement in force is fine (ok), a lapse or a failure is not (bad); a closed matter is not an alarm (neutral); a waiting approval is a warning.
-  const tone = !progress || !progress.reached ? ACTION_TONE[action] : progress.tone === "good" ? "ok" : progress.tone === "bad" ? "bad" : progress.tone === "open" ? "warn" : undefined;
+  const outcome = v && record && progress?.reached ? record.state : null;
+  const action = v ? businessAction(v) : null;
+  const headline = !v ? (open?.action_text ?? title) : outcome && record ? record.state_text : (open?.read_text ?? text ?? (action ? t(ACTION_KEY[action]) : title));
+  const pill = !outcome ? pillText : null;
+  const quiet = v && !outcome ? (open?.read_text ? open.action_text : null) : null;
   return (
-    <Card id="deal-recommendation-card" tone={tone} className="[&>div]:py-3">
-      {/* The eyebrow says what the line is: the recommendation while there is one, where the deal stands once it has an outcome. */}
-      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-ink-3" data-testid="deal-eyebrow">{outcome ? t("biz.deals.stands") : t("biz.deals.recommends")}</span>
-        <span className="text-lg font-semibold text-ink sm:text-xl" data-testid="deal-recommendation" data-outcome={outcome ?? ""}>
-          {headline}
-        </span>
-      </p>
-      {/* The first reason rides under the recommendation, so the answer and its cause are one glance. */}
-      {reason && !outcome ? (
-        <p className="mt-1 text-sm text-ink-2" data-testid="deal-recommendation-reason">
+    <header id="deal-recommendation-card" className="motion-reveal flex flex-col items-start gap-2.5 short:gap-2" data-testid="deal-heading">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {pill ? (
+          <StatePill tone={toneOf(open?.tone)} testId="deal-needs-you">
+            {pill}
+          </StatePill>
+        ) : null}
+        {/* The eyebrow says what the line is: where the deal stands once it has an outcome, FLOW's recommendation while there is one and no pill. */}
+        {v && (outcome || !pill) ? (
+          <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3" data-testid="deal-eyebrow">
+            {outcome ? t("biz.deals.stands") : t("biz.deals.recommends")}
+          </span>
+        ) : null}
+      </div>
+      <h1 className={H1} data-testid={v ? "deal-recommendation" : "deal-heading-title"} data-outcome={v ? (outcome ?? "") : undefined}>
+        {headline}
+      </h1>
+      {quiet ? (
+        <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-action">
+          {quiet}
+        </p>
+      ) : null}
+      {/* The first reason rides under the recommendation when the server sent no read of its own, so the answer and its cause are one glance. */}
+      {v && reason && !outcome && !open?.read_text ? (
+        <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-recommendation-reason">
           {reason}
         </p>
       ) : null}
       {outcome && record ? <DealMoney record={record} /> : null}
-    </Card>
+    </header>
   );
 }
 
