@@ -435,8 +435,8 @@ test("day 34 after a half receipt: Chase payment opens the API's handoff, its ba
   await expect(facts.getByTestId("receipt-facts-e2e-receipt-1-remaining")).toContainText(owed);
   await expect(facts).toContainText("The early-payment window has ended");
 
-  await page.getByTestId("chase-open-RCV-A").click();
-  const dialog = page.getByTestId("chase-dialog-RCV-A");
+  await page.getByTestId("chase-detail-CHASE-open-RCV-A").click();
+  const dialog = page.getByTestId("chase-detail-CHASE-dialog-RCV-A");
   await expect(dialog.getByTestId("chase-fact-outstanding")).toContainText(owed);
   await expect(dialog.getByTestId("chase-request")).toHaveText(handoff.request_text);
   await expect(dialog.getByTestId("chase-thread")).toHaveAttribute("href", handoff.thread_href);

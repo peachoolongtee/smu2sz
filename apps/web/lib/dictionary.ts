@@ -2257,7 +2257,7 @@ export const en = {
   "recv3.status.ok": "On track",
   "recv3.status.warn": "Due soon",
   "recv3.status.bad": "Overdue",
-  "recv3.h1.expected": "{amount} expected from {buyer}.",
+  "recv3.h1.expected": "{amount} expected from {buyer}",
   "recv3.h1.expected.none": "Nothing else is expected yet.",
   "recv3.h1.net": "{net} becomes available at collection, after the financing is repaid.",
   "recv3.h1.net.plain": "{net} becomes available at collection.",

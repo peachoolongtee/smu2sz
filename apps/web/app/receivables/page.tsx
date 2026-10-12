@@ -7,8 +7,10 @@ import { InvoiceList } from "@/components/receivables/invoice-list";
 import { inFilter, type RecvFilter } from "@/components/receivables/state";
 import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside";
 import { Summary } from "@/components/receivables/summary";
+import { PartialRead } from "@/components/business/freshness";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
-import { getDecisionExposure, getReceivables } from "@/lib/api";
+import { PromisedAndReceived } from "@/components/receivables/history";
+import { getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { withContext } from "@/lib/receivables-context";
 import type { ReceivableRow, ReceivablesRead } from "@/lib/types";
@@ -49,10 +51,10 @@ function Receivables() {
   }
   // The server has no GET /receivables yet: the page of before.
   if (read.data === null || !Array.isArray(read.data.rows)) return <LegacyReceivables />;
-  return <Layers read={read.data} />;
+  return <Layers read={read.data} reload={read.reload} />;
 }
 
-function Layers({ read }: { read: ReceivablesRead }) {
+function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void }) {
   const { t, lang } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
@@ -86,6 +88,12 @@ function Layers({ read }: { read: ReceivablesRead }) {
   const exposure = useAsync(() => (decisionId ? getDecisionExposure(decisionId, lang) : Promise.resolve(null)), [decisionId, lang]);
   const forBuyer = selected && exposure.data && exposure.data.buyer_id === selected.buyer_id ? exposure.data : null;
 
+  // What was promised early and what arrived, under the layers: the reconciliation read, as the page has always shown it. If it cannot be read
+  // the page stands without it (the server's own `partial` says so for the rows' side); nothing is shown in its place.
+  const recon = useAsync(getReconciliation, [lang]);
+  const books = useAsync(getState, []);
+  const nameOf = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? rows.find((r) => r.buyer_id === id)?.buyer_name ?? id ?? "";
+
   const customerHref = (r: ReceivableRow) =>
     withContext(`/customers/${encodeURIComponent(r.buyer_id ?? "")}`, params, { customer: r.buyer_id ?? null, invoice: r.receivable_id });
   const dealHref = (r: ReceivableRow) =>
@@ -96,6 +104,7 @@ function Layers({ read }: { read: ReceivablesRead }) {
       <div>
         <Summary read={read} rows={rows} />
       </div>
+      <PartialRead partial={read.partial} onRetry={reload} />
       <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={setFilter} customerHref={customerHref} />
 
       {selected ? (
@@ -122,6 +131,12 @@ function Layers({ read }: { read: ReceivablesRead }) {
             />
           </div>
         </section>
+      ) : null}
+
+      {recon.data ? (
+        <div className="space-y-7" data-testid="recv3-history-sections">
+          <PromisedAndReceived data={recon.data} name={nameOf} />
+        </div>
       ) : null}
     </div>
   );

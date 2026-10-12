@@ -94,7 +94,7 @@ export function InvoiceList({
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                    <Link href={customerHref(r)} className="relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700 underline-offset-2 hover:underline" data-testid={`recv-customer-${r.receivable_id}`}>
+                    <Link prefetch={false} href={customerHref(r)} className="relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700 underline-offset-2 hover:underline" data-testid={`recv-customer-${r.receivable_id}`}>
                       {buyer}
                     </Link>
                   </div>
@@ -122,7 +122,11 @@ export function InvoiceList({
                   </div>
                   <div role="cell" className="min-w-0 text-sm font-bold tabular-nums text-ok-fg">
                     <Label>{t("recv3.col.net")}</Label>
-                    <span data-testid={`recv-net-${r.receivable_id}`}>{r.net?.net_short}</span>
+                    {r.net?.unrecorded_text ? (
+                      <span className="block font-medium text-warn-fg" data-testid={`recv-net-${r.receivable_id}`}>{r.net.unrecorded_text}</span>
+                    ) : (
+                      <span data-testid={`recv-net-${r.receivable_id}`}>{r.net?.net_short}</span>
+                    )}
                   </div>
                   <div role="cell" className="min-w-0">
                     <Label>{t("recv3.col.status")}</Label>

@@ -61,7 +61,7 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   for (const [path, expected, loaded] of [
     ["/", 1, "[data-testid=home-next-action]"],
     ["/cash", 1, "[data-testid=cash-forecast]"],
-    ["/receivables", 0, "[data-testid=recv-summary]"],
+    ["/receivables", 1, "[data-testid=recv3-page]"], // the one primary is "Explore the cash impact"
     ["/activity", 0, "#activity-timeline"],
   ] as const) {
     await page.goto(path);

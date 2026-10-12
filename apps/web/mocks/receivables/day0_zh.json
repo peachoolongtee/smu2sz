@@ -28,6 +28,7 @@
         "period_days": 0,
         "arrival_day": null,
         "on_day": 32,
+        "financing_unrecorded": false,
         "net_display": "¥420,000.00",
         "net_short": "约 ¥420k",
         "condition_text": "如果 Foshan 在到期日付款",
@@ -35,6 +36,7 @@
         "financing_state_text": null,
         "per_period_text": null,
         "owed_text": null,
+        "unrecorded_text": null,
         "face_display": "¥420,000.00",
         "outstanding_display": "¥420,000.00",
         "advance_display": "¥0.00",
@@ -85,6 +87,7 @@
     "net_total_display": "¥420,000.00",
     "net_total_text": "如果每张发票都在到期日付款"
   },
+  "partial": null,
   "last_read_when": "今天",
   "last_read_day": 0,
   "computed_in_seconds": 0

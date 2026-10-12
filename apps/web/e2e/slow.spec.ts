@@ -84,7 +84,8 @@ test("a partial home says which supporting facts were not read, with Retry; the 
 test("Cash, Receivables and Approvals carry the same freshness and partial lines", async ({ page }) => {
   await page.route(isApi(/^\/home$/), (route) => withFields(route, { partial: { missing: ["Buyer names"] } }));
   await page.route(isApi(/^\/approvals\/queue$/), (route) => withFields(route, { last_read_when: "today" }));
-  for (const [path, read] of [["/cash", "cash-read-when"], ["/receivables", "recv-read-when"]] as const) {
+  await page.route(isApi(/^\/receivables$/), (route) => withFields(route, { partial: { missing: ["Buyer names"] } }));
+  for (const [path, read] of [["/cash", "cash-read-when"], ["/receivables", "recv3-read-when"]] as const) {
     await page.goto(path);
     await expect(page.getByTestId(read)).toContainText("read today", { ignoreCase: true });
     await expect(page.getByTestId("partial-read")).toContainText("Buyer names");

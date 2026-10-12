@@ -42,19 +42,24 @@ export function InvoiceDetail({
         {buyer ? (
           <>
             {" · "}
-            <Link href={customerHref} className="rounded-pill font-extrabold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-detail-customer">
+            <Link prefetch={false} href={customerHref} className="rounded-pill font-extrabold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-detail-customer">
               {buyer} ›
             </Link>
           </>
         ) : null}
       </p>
-      {net.condition_text && net.net_short ? (
+      {net.unrecorded_text ? (
+        // Marked financed but no financing on record: the server says so in place of the net, whose figures would mislead.
+        <p className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2.5 text-sm font-medium text-warn-fg" data-testid="recv3-unrecorded">
+          {net.unrecorded_text}
+        </p>
+      ) : net.condition_text && net.net_short ? (
         <h2 id="recv3-detail-title" className="text-balance font-display text-xl font-extrabold leading-snug tracking-[-0.02em] text-ink first-letter:uppercase sm:text-2xl" data-testid="recv3-detail-title">
           {t("recv3.detail.h2", { condition: net.condition_text, net: net.net_short })}
         </h2>
       ) : null}
 
-      {net.net_display ? (
+      {net.net_display && !net.unrecorded_text ? (
         <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2.5 text-sm" data-testid="recv3-breakdown">
           <Line label={t("recv3.bd.invoice", { when: row.due_when ?? "" })} value={row.outstanding_display} testId="recv3-bd-invoice" />
           {financed ? (
@@ -93,7 +98,7 @@ export function InvoiceDetail({
               <>
                 <span className="font-normal text-ink-3"> · </span>
                 {dealHref ? (
-                  <Link href={dealHref} className="font-normal text-brand-700 underline underline-offset-2" data-testid="recv3-counter">
+                  <Link prefetch={false} href={dealHref} className="font-normal text-brand-700 underline underline-offset-2" data-testid="recv3-counter">
                     {row.pending_counter.text}
                   </Link>
                 ) : (
@@ -111,12 +116,12 @@ export function InvoiceDetail({
           <div role="group" aria-label={t("recv3.actions")} className="flex flex-wrap gap-2" data-testid="recv3-actions">
             {actions.map((a, i) =>
               a.action === "VIEW_TERMS" ? (
-                <ButtonLink key={a.action} href={customerHref} className="min-h-11" data-testid={`recv3-action-${a.action}`} data-order={i}>
+                <ButtonLink prefetch={false} key={a.action} href={customerHref} className="min-h-11" data-testid={`recv3-action-${a.action}`} data-order={i}>
                   {a.label}
                 </ButtonLink>
               ) : (
                 <span key={a.action} className="contents" data-testid={`recv3-action-${a.action}`} data-order={i}>
-                  <ChasePayment receivableId={row.receivable_id} buyer={buyer} label={a.label} size="md" scope="detail-" className="min-h-11" />
+                  <ChasePayment receivableId={row.receivable_id} buyer={buyer} label={a.label} size="md" scope={`detail-${a.action}-`} className="min-h-11" />
                 </span>
               ),
             )}

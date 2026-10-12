@@ -385,12 +385,12 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await expect(page.getByTestId("home-floor")).toBeVisible();
 });
 
-test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {
+test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto("/receivables");
-  await expect(page.getByTestId("recv-open-list")).toBeVisible();
-  await expect(page.locator("#recv-open table")).toBeHidden();
+  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 

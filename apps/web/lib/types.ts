@@ -1905,6 +1905,9 @@ export interface ReceivableNet {
   per_period_text?: string | null;
   /** What the receipt leaves owed by the owner when it falls short; null otherwise. */
   owed_text?: string | null;
+  /** The invoice is marked financed but no financing is on record: shown in place of the net, whose figures are then before any financing. */
+  financing_unrecorded?: boolean;
+  unrecorded_text?: string | null;
   /** Arranged / Received / Repaid; null without financing. */
   financing_state_text?: string | null;
   claim_display?: string;
@@ -1937,6 +1940,8 @@ export interface ReceivablesRead {
   lang?: "en" | "zh";
   state_version?: number;
   last_read_when?: string | null;
+  /** Supporting reads the server could not make (the reconciliation): the rows stand without them and the page says so. */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   rows?: ReceivableRow[];
   summary?: {
     outstanding_total_display?: string;

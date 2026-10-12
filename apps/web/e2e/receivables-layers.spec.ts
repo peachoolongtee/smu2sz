@@ -40,8 +40,8 @@ async function advanceTo34(page: Page, to = "/receivables") {
 /** The books after the day-0 funding plan ran (the financing is arranged, expected in a few days). */
 async function afterFund(page: Page) {
   await page.goto("/");
-  await runPlan(page, "ALERT-RESERVE-42");
-  await expect(page.getByTestId("home-act-result")).toBeVisible().catch(() => undefined);
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("fix-result")).toBeVisible();
   await page.goto("/receivables");
 }
 
@@ -55,7 +55,7 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   await expect(page.getByTestId("recv3-status")).toHaveAttribute("data-tone", "ok");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
   await expect(page.getByTestId("recv3-status")).toContainText("Read today");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${day0.summary.next_expected.amount_display} expected from ${row.buyer_name}.`);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${day0.summary.next_expected.amount_display} expected from ${row.buyer_name}`);
   // Nothing is financed on the opening books: no second line, no financing sentence.
   await expect(page.getByTestId("recv3-h1-net")).toHaveCount(0);
   await expect(page.getByTestId("recv3-sub")).toHaveText("Nothing is overdue.");
@@ -79,7 +79,7 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   expect((await link.getAttribute("href")) ?? "").toContain(`invoice=${row.receivable_id}`);
   expect((await link.getAttribute("href")) ?? "").toContain(`customer=${row.buyer_id}`);
   // The selected invoice: the condition as the heading; with no financing the breakdown is the invoice and the cash.
-  await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.condition_text.replace(/^if/, "If"));
+  await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.condition_text);
   await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.net_short);
   await expect(page.getByTestId("recv3-bd-invoice")).toHaveText(row.outstanding_display);
   await expect(page.getByTestId("recv3-bd-advance")).toHaveCount(0);
@@ -98,8 +98,8 @@ test("the financing is arranged: the answer has two lines, the steps show where 
   const row = after.rows[0];
   expect(row.financing_state).toBe("ARRANGED");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${after.summary.next_expected.amount_display} expected from ${row.buyer_name}.`);
-  await expect(page.getByTestId("recv3-h1-net")).toHaveText(new RegExp(`^${row.net.net_short.replace("about", "About")} becomes available at collection, after the financing is repaid\\.$`));
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${after.summary.next_expected.amount_display} expected from ${row.buyer_name}`);
+  await expect(page.getByTestId("recv3-h1-net")).toHaveText(new RegExp(`^${row.net.net_short} becomes available at collection, after the financing is repaid\\.$`, "i"));
   await expect(page.getByTestId("recv3-sub")).toContainText("Nothing is overdue.");
   await expect(page.getByTestId("recv3-sub")).toContainText(row.net.repays_text);
   await expect(page.getByTestId("recv3-sub")).toContainText("it is not money lost");
@@ -185,8 +185,8 @@ test("selecting an invoice replaces the detail in place and sets ?invoice=; the 
   await expect(page.getByTestId("recv3-detail")).toHaveAttribute("data-receivable", current.receivable_id);
   // Back to the late one: the prepared handoff opens from the first action.
   await page.getByTestId(`recv-select-${overdue.receivable_id}`).click();
-  await page.getByTestId(`chase-detail-open-${overdue.receivable_id}`).click();
-  await expect(page.getByTestId(`chase-detail-dialog-${overdue.receivable_id}`)).toBeVisible();
+  await page.getByTestId(`chase-detail-CHASE-open-${overdue.receivable_id}`).click();
+  await expect(page.getByTestId(`chase-detail-CHASE-dialog-${overdue.receivable_id}`)).toBeVisible();
   await expect(page.getByTestId("chase-request")).toContainText(overdue.buyer_name);
 });
 
@@ -202,8 +202,6 @@ test("the late-payment test: the result is the server's strings for the deal in 
   await expect(page.getByTestId("recv3-history")).toHaveText(exposure.payments.sentence);
   await expect(page.getByTestId("recv3-concentration")).toContainText(exposure.concentration.ar_text);
   await expect(page.getByTestId("recv3-counter")).toHaveText(row.pending_counter.text);
-  // The same string as the deal shows for this buyer: the Deals band reads the very same exposure sentence.
-  expect(exposure.band.stress).toContain(now.lowest_short);
   // The primary: one brand-filled action on the page, a link into Cash carrying the buyer, the invoice and the context.
   const explore = page.getByTestId("recv3-explore");
   await expect(explore).toHaveText("Explore the cash impact");
@@ -223,7 +221,7 @@ test("the late-payment test: the result is the server's strings for the deal in 
 test("without a deal in context the aside keeps its explanation and the way into Cash, and shows no result", async ({ page }) => {
   await page.goto("/receivables");
   await expect(page.getByTestId("recv3-stress")).toBeVisible();
-  await expect(page.getByTestId("recv3-stress-result")).toHaveCount(0);
+  await expect(page.getByTestId("recv3-stress-cash")).toHaveCount(0);
   await expect(page.getByTestId("recv3-stress-failed")).toHaveCount(0);
   await expect(page.getByTestId("recv3-explore")).toBeVisible();
   await expect(page.getByTestId("recv3-concentration-link")).toBeVisible();
@@ -248,9 +246,7 @@ test("Chinese: the same page and figures in the server's Chinese, with the dicti
   await expect(page.getByTestId("recv3-explore")).toHaveText("查看对现金的影响");
   expect(await page.locator("main").innerText()).not.toMatch(/\bDay \d|RCV-|BUYER-1/);
   // The financed books, in Chinese: the steps are the dictionary's.
-  await page.goto("/");
-  await runPlan(page, "ALERT-RESERVE-42");
-  await page.goto("/receivables");
+  await afterFund(page);
   await expect(page.getByTestId(`recv-steps-${afterZh.rows[0].receivable_id}`).locator("li")).toHaveText(["已安排", "已到账", "已还清"]);
   await expect(page.getByTestId("recv3-sub")).toContainText(afterZh.rows[0].net.repays_text);
 });

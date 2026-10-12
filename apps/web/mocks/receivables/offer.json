@@ -28,6 +28,7 @@
         "period_days": 0,
         "arrival_day": null,
         "on_day": 32,
+        "financing_unrecorded": false,
         "net_display": "¥420,000.00",
         "net_short": "about ¥420k",
         "condition_text": "if Foshan pays on the due day",
@@ -35,6 +36,7 @@
         "financing_state_text": null,
         "per_period_text": null,
         "owed_text": null,
+        "unrecorded_text": null,
         "face_display": "¥420,000.00",
         "outstanding_display": "¥420,000.00",
         "advance_display": "¥0.00",
@@ -88,6 +90,7 @@
     "net_total_display": "¥420,000.00",
     "net_total_text": "if every invoice is paid on its due day"
   },
+  "partial": null,
   "last_read_when": "today",
   "last_read_day": 0,
   "computed_in_seconds": 0
