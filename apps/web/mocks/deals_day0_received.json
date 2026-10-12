@@ -354,6 +354,8 @@
         "received_when": "today",
         "asks_text": "early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate",
         "read_text": null,
+        "headline_short": null,
+        "headline_note": null,
         "action_text": "FLOW has not read it yet.",
         "cost_display": null,
         "cost_window_text": null,
