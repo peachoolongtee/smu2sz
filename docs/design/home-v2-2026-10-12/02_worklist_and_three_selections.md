@@ -58,3 +58,22 @@ No pending decisions; one deal; five deals sorted; three deals from one customer
 an approval required; funding proposed; funding submitted (not shown as cash); a payment overdue; cash critical; a customer
 selected during the crisis (the warning persists); a scenario still calculating. Desktop and 390 wide, en and zh, the figures
 checked against Cash & Funding and the deal, and the five-second test.
+
+## Round five (owner's fifth review, 12 Oct): the five targeted changes, in the prototype (canvas v23)
+
+1. The chart legend renders as text, never markup; series labelled "Current books · no new funding" and "If FLOW's plan
+   executes (proposed)" before the run, "Current books · the plan ran" after; the proposed line subordinate (grey dashed).
+2. Counts are derived from the rows shown: Needs you = decisions only a person can take; Waiting = what FLOW waits for
+   (buyers, banks, settlements, promises); Customers = relationships. The company cash alert is pinned above the tabs and
+   counted nowhere ("an alert, not a queue item"). Illustrative rows say so and never contradict the company forecast.
+3. The third KPI is PROPOSED FUNDING ¥405,000 (the two legs, "conditional on you running the plan; not counted as cash");
+   after the run FUNDING ARRANGED with what landed and what is pending.
+4. Three row shapes, one per tab: a decision row (subject · status with who acts · consequence or deadline, plus a
+   severity word Critical / Caution / Normal separate from ownership); a waiting row (what FLOW waits for, since when, what
+   follows); a customer row (negotiations, how many need you, outstanding, share). Clicking a customer opens the relationship;
+   clicking a deal opens the decision; clicking the company alert restores the company analysis; "All business" returns.
+5. A busy-worklist toggle: seven customers (Foshan with three negotiations, two needing decisions; Dongguan with a pending
+   contract and an overdue invoice; an approval; a counter awaiting reply; a funding settlement pending; a payment promised for
+   tomorrow; one with nothing), long names, Needs you 4 / Waiting 5 / Customers 7. The lowest point on the chart is clickable
+   and shows: projected cash, the minimum, the shortfall, and "with FLOW's proposed plan: ¥300,000, assuming it executes".
+   The six-event rail stays off Home. New items never reorder the list under the owner's selection.
