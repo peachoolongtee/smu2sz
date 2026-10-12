@@ -1884,6 +1884,92 @@ export interface ReceivableWorth {
   hypothetical: true;
 }
 
+// ------------------------------------------------------------------ GET /receivables (map #88, ticket #107): Receivables in three layers
+// Every field is optional: a section renders only when the server sends it, the old page being the fallback. Every word and figure is the
+// server's string; the browser compares and computes none of them.
+
+export type FinancingState = "ARRANGED" | "RECEIVED" | "REPAID" | "NONE";
+export type CollectionState = "CURRENT" | "DUE_SOON" | "OVERDUE" | "PROMISE_MISSED";
+export type CollectionActionKind = "VIEW_TERMS" | "PREPARE_REMINDER" | "CHASE";
+
+/** What one invoice leaves the owner if it is paid on the due day, with the server's words for it. */
+export interface ReceivableNet {
+  net_display?: string;
+  /** "about ¥163k" */
+  net_short?: string;
+  /** "if Foshan pays on the due day" */
+  condition_text?: string;
+  /** "¥257,186.08 repays the financing received 29 days earlier, with its charges"; null without financing. */
+  repays_text?: string | null;
+  /** "about ¥1,870 more for every 30 days late"; null when a late day adds nothing. */
+  per_period_text?: string | null;
+  /** What the receipt leaves owed by the owner when it falls short; null otherwise. */
+  owed_text?: string | null;
+  /** Arranged / Received / Repaid; null without financing. */
+  financing_state_text?: string | null;
+  claim_display?: string;
+  charges_display?: string;
+  advance_display?: string;
+}
+
+export interface ReceivableRow {
+  receivable_id: string;
+  buyer_id?: string;
+  buyer_name?: string;
+  /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
+  invoice?: string;
+  outstanding_display?: string;
+  face_display?: string;
+  due_when?: string;
+  past_due?: boolean;
+  net?: ReceivableNet;
+  financing_state?: FinancingState;
+  governed_by?: { terms_text?: string; contract_ref?: string | null };
+  early_payment?: { agreed?: boolean; text?: string };
+  pending_counter?: { decision_id?: string; text?: string } | null;
+  collection_state?: CollectionState;
+  collection_state_text?: string;
+  collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+}
+
+export interface ReceivablesRead {
+  day?: Day;
+  lang?: "en" | "zh";
+  state_version?: number;
+  last_read_when?: string | null;
+  rows?: ReceivableRow[];
+  summary?: {
+    outstanding_total_display?: string;
+    next_expected?: { when_text?: string; amount_display?: string } | null;
+    net_total_display?: string;
+    /** "if every invoice is paid on its due day" */
+    net_total_text?: string;
+  };
+}
+
+/** The late-payment test of one buyer (GET /decisions/{id}/exposure, flag `exposure`): only what the Receivables aside reads. */
+export interface BuyerStressRow {
+  delay_days?: number;
+  available?: boolean;
+  unavailable_text?: string | null;
+  /** "−¥250k" and "in 60 days" */
+  lowest_short?: string;
+  lowest_when?: string;
+  /** "Cash is below your minimum on 65 days. No committed plan covers the ¥550,000.00 shortfall..." */
+  funding_text?: string;
+  text?: string;
+  assumption?: string;
+}
+
+export interface BuyerExposureView {
+  decision_id?: string;
+  buyer_id?: string;
+  buyer_name?: string;
+  concentration?: { sentence?: string; ar_text?: string };
+  payments?: { sentence?: string };
+  stress?: { delay_days?: number; now?: BuyerStressRow };
+}
+
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */
 export interface ReceivablesWorthView {
   rows: ReceivableWorth[];

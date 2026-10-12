@@ -1,278 +1,128 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ReceiptFacts } from "@/components/receipt-facts";
-import { Badge, ErrorState, LoadingBlock, PageHeader, textLinkClass } from "@/components/ui";
-import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { InvoiceDetail } from "@/components/receivables/invoice-detail";
+import { InvoiceList } from "@/components/receivables/invoice-list";
+import { inFilter, type RecvFilter } from "@/components/receivables/state";
+import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside";
+import { Summary } from "@/components/receivables/summary";
+import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { getDecisionExposure, getReceivables } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import { isOverdue, orderInvoices } from "@/lib/receivables-order";
-import { daysLate, whenText } from "@/lib/when";
-import { useAsync, useStrategyAsync } from "@/lib/use-async";
-import { ActionBar } from "@/components/business/action-bar";
-import { PartialRead, ReadWhen } from "@/components/business/freshness";
-import { Disclosure } from "@/components/business/kit";
-import { chaseIds, shortfallStretch } from "@/lib/chase";
-import { DUE_SOON_DAYS, ReceivablesTable, type RecvFilter } from "@/components/business/receivables-table";
-import { ChasePayment } from "@/components/business/chase-payment";
-import { WhoPaysWhen } from "@/components/business/who-pays-when";
+import { withContext } from "@/lib/receivables-context";
+import type { ReceivableRow, ReceivablesRead } from "@/lib/types";
+import { useAsync } from "@/lib/use-async";
+import { LegacyReceivables } from "./legacy";
 
-/** One fact of the facts row: a label, the figure and a caption, beside the next with a hairline between. */
-function Fact({ label, caption, children, last = false }: { label: string; caption?: React.ReactNode; children: React.ReactNode; last?: boolean }) {
+/**
+ * Receivables in three layers (map #110): what customers owe you, what each invoice nets once its financing is repaid, and what to do about it.
+ * It reads `GET /receivables?lang=`; a server without that route (null) keeps the page of before (`legacy.tsx`), and each section renders only when its
+ * field is present. The chosen invoice is in the address (`?invoice=`) beside the shared context (`customer`, `decision`, `path`), and nowhere else.
+ */
+export default function ReceivablesPage() {
   return (
-    <div className={`min-w-0 flex-1 basis-44 py-1 sm:px-5 sm:first:pl-0 ${last ? "" : "sm:border-r sm:border-line"}`}>
-      <dt className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{label}</dt>
-      <dd className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.01em] text-ink">{children}</dd>
-      {caption ? <dd className="mt-0.5 text-xs text-ink-3">{caption}</dd> : null}
-    </div>
+    <Suspense fallback={<LoadingBlock rows={3} />}>
+      <Receivables />
+    </Suspense>
   );
 }
 
-/**
- * Receivables, in the order the owner asks: who owes me, who is late, what should I do. The page title is the server's answer sentence
- * (`receivables.headline`, else the strategy read's top action while someone is late; never composed here), then a facts row, the one raised
- * action (Chase payment, only while someone is late), the "Who pays when" picture, the open invoices (late first), what was promised early and
- * what arrived. The last two appear only when there is something to show.
- */
-export default function ReceivablesPage() {
-  const { t, te, lang } = useI18n();
-  const recon = useAsync(getReconciliation, [lang]);
-  const books = useAsync(getState, []);
-  const home = useAsync(() => getHome(lang), [lang]);
-  // The worth of collecting each invoice (strategy MVP, build-time flag): null while loading, when the server has it off, or
-  // when the read fails; the page then shows the table it always had. Matched to the invoices by receivable_id.
-  const worthRead = useStrategyAsync(() => getReceivablesWorth(lang), [lang]);
-  const worth = worthRead.data;
-  // The open invoices' filter lives here so the Overdue fact can apply Late; the picture's pressed mark highlights its row.
-  const [filter, setFilter] = useState<RecvFilter>("all");
-  const [picked, setPicked] = useState<string | null>(null);
-  const worthOf = new Map((worth?.rows ?? []).map((w) => [w.receivable_id, w]));
-  const data = recon.data;
-  const r = home.data?.receivables;
-  const name = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id ?? "";
-  // Overdue rows are pinned first, whatever the ranking says (the server's `past_due` / `overdue_text`; no date is compared here); inside each group the
-  // server's own rank leads (what collecting each saves). The page counts days, the server does the money.
-  const rank = new Map((worth?.rows ?? []).map((w, i) => [w.receivable_id, i]));
-  const invoices = data ? orderInvoices(data.outstanding, worth?.rows ?? []) : [];
-  const isLate = (o: (typeof invoices)[number]) => isOverdue(o, worthOf.get(o.receivable_id));
-  const error = recon.error ?? home.error;
-  // Chase payment is offered on the invoices that are late, that fall due inside the forecast's shortfall (the home read's first
-  // breach to its lowest day) or whose early payment lapsed. Day numbers are compared; the handoff itself is the server's.
-  const chase = chaseIds(invoices, data?.promised, shortfallStretch(home.data?.cash.first_breach_day, home.data?.cash.lowest_day));
-  const lateInvoice = invoices.find(isLate);
-  const someoneLate = Boolean(lateInvoice);
-  // The page's answer: the server's sentence for every state when it sends one, else the strategy read's top action while someone is late;
-  // otherwise the plain title stands (nothing is composed in the browser).
-  const sentence = r?.headline || (someoneLate && worth?.top_action ? worth.top_action : null);
-  const note = r?.headline ? (r.headline_note ?? null) : worth?.no_plan && worth.top_action_second && sentence ? worth.top_action_second : null;
-  const chaseTarget = lateInvoice?.receivable_id;
-
-  // A link such as /receivables#RI:BUYER-1:2 (from the home's remaining task) lands on that invoice once the page has loaded. The phone list and
-  // the table both carry the id, one of them hidden: the visible one is scrolled to.
-  const loaded = Boolean(data && r);
-  useEffect(() => {
-    if (!loaded || typeof window === "undefined" || !window.location.hash) return;
-    const id = decodeURIComponent(window.location.hash.slice(1));
-    const target = Array.from(document.querySelectorAll<HTMLElement>("[id]")).find((el) => el.id === id && el.getClientRects().length > 0);
-    target?.scrollIntoView({ block: "center" });
-  }, [loaded]);
-
-  /** A pressed mark: show every invoice, then bring the visible row (table or phone list) into view and highlight it. */
-  function pick(rowId: string) {
-    setPicked(rowId);
-    setFilter("all");
-    window.setTimeout(() => {
-      const el = Array.from(document.querySelectorAll<HTMLElement>("[id]")).find((x) => x.id === rowId && x.getClientRects().length > 0);
-      el?.scrollIntoView({ block: "center", behavior: "auto" });
-    }, 0);
+function Receivables() {
+  const { t, lang } = useI18n();
+  const read = useAsync(() => getReceivables(lang), [lang]);
+  if (read.error) {
+    return (
+      <>
+        <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+        <ErrorState error={read.error} onRetry={read.reload} />
+      </>
+    );
   }
+  if (read.data === undefined) {
+    return (
+      <>
+        <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+        <LoadingBlock rows={3} />
+      </>
+    );
+  }
+  // The server has no GET /receivables yet: the page of before.
+  if (read.data === null || !Array.isArray(read.data.rows)) return <LegacyReceivables />;
+  return <Layers read={read.data} />;
+}
+
+function Layers({ read }: { read: ReceivablesRead }) {
+  const { t, lang } = useI18n();
+  const router = useRouter();
+  const params = useSearchParams();
+  const rows = read.rows ?? [];
+  const [filter, setFilter] = useState<RecvFilter>("all");
+  const invoiceParam = params.get("invoice");
+  const shown = rows.filter((r) => inFilter(r, filter));
+  const selected: ReceivableRow | null = rows.find((r) => r.receivable_id === invoiceParam) ?? shown[0] ?? rows[0] ?? null;
+
+  const select = (id: string) => {
+    const q = new URLSearchParams(params.toString());
+    q.set("invoice", id);
+    router.replace(`/receivables?${q.toString()}`, { scroll: false });
+  };
+
+  // A link such as /receivables#RI:BUYER-1:2 (the home's remaining task) chooses that invoice and brings its row into view.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.location.hash || params.get("invoice")) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!rows.some((r) => r.receivable_id === id)) return;
+    const q = new URLSearchParams(params.toString());
+    q.set("invoice", id);
+    router.replace(`/receivables?${q.toString()}${window.location.hash}`, { scroll: false });
+    document.getElementById(id)?.scrollIntoView({ block: "center" });
+    // Once per load: the hash is the arrival, the address is the state afterwards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The late-payment test needs a deal to be read against: the one whose counter would apply to this invoice, else the one in the address.
+  const decisionId = selected?.pending_counter?.decision_id ?? params.get("decision");
+  const exposure = useAsync(() => (decisionId ? getDecisionExposure(decisionId, lang) : Promise.resolve(null)), [decisionId, lang]);
+  const forBuyer = selected && exposure.data && exposure.data.buyer_id === selected.buyer_id ? exposure.data : null;
+
+  const customerHref = (r: ReceivableRow) =>
+    withContext(`/customers/${encodeURIComponent(r.buyer_id ?? "")}`, params, { customer: r.buyer_id ?? null, invoice: r.receivable_id });
+  const dealHref = (r: ReceivableRow) =>
+    r.pending_counter?.decision_id ? withContext("/deals", params, { decision: r.pending_counter.decision_id, customer: r.buyer_id ?? null, invoice: r.receivable_id }, r.buyer_id ? { buyer: r.buyer_id } : {}) : null;
 
   return (
-    <>
-      {r?.headline && (r.headline_tone === "bad" || r.headline_tone === "warn") ? (
-        // The server's tone as a status pill above the heading, built like Home's; the heading itself stays in the ink colour.
-        <span
-          className={`mb-2 inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.06em] ${r.headline_tone === "bad" ? "border-bad-line bg-bad-bg text-bad-fg" : "border-warn-line bg-warn-bg text-warn-fg"}`}
-          data-testid="recv-status-word"
-          data-tone={r.headline_tone}
+    <div className="space-y-6" data-testid="recv3-page">
+      <div>
+        <Summary read={read} rows={rows} />
+      </div>
+      <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={setFilter} customerHref={customerHref} />
+
+      {selected ? (
+        <section
+          aria-labelledby="recv3-detail-title"
+          className="grid gap-6 rounded-card border border-line bg-surface p-5 shadow-card lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
+          data-testid="recv3-selected"
         >
-          <span aria-hidden className={`size-1.5 shrink-0 rounded-pill ${r.headline_tone === "bad" ? "bg-bad-solid" : "bg-warn-solid"}`} />
-          {t(r.headline_tone === "bad" ? "biz.recv.pill.bad" : "biz.recv.pill.warn")}
-        </span>
+          <p role="status" aria-live="polite" className="sr-only" data-testid="recv3-announce">
+            {t("recv3.selected", { invoice: selected.invoice ?? selected.buyer_name ?? "" })}
+          </p>
+          <div key={selected.receivable_id} className="motion-swap min-w-0">
+            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={forBuyer?.payments?.sentence ?? null} />
+          </div>
+          <div key={`${selected.receivable_id}-aside`} className="motion-swap min-w-0">
+            <StressAside
+              row={selected}
+              exposure={forBuyer}
+              loading={Boolean(decisionId) && exposure.loading}
+              failed={Boolean(decisionId) && Boolean(exposure.error)}
+              onRetry={exposure.reload}
+              exploreHref={withContext("/cash", params, { customer: selected.buyer_id ?? null, invoice: selected.receivable_id }, selected.buyer_id ? { stress: `${selected.buyer_id}:${forBuyer?.stress?.delay_days ?? STRESS_DAYS}` } : {})}
+              customerHref={customerHref(selected)}
+            />
+          </div>
+        </section>
       ) : null}
-      <PageHeader section="recv" title={sentence ?? t("nav.receivables")} subtitle={sentence ? note : t("biz.recv.subtitle")} />
-      {error ? (
-        <ErrorState error={error} onRetry={() => { recon.reload(); home.reload(); }} />
-      ) : !data || !r ? (
-        <LoadingBlock rows={3} />
-      ) : (
-        <div className="space-y-7">
-          <section id="recv-summary" aria-label={t("biz.recv.facts")} data-testid="recv-summary">
-            {/* How fresh the summary is: the report's own "when", else the home read's. */}
-            <ReadWhen when={data.last_read_when ?? home.data?.cash.last_read_when} testId="recv-read-when" className="mb-2" />
-            <dl className="flex flex-wrap gap-y-4 border-y border-line py-4">
-              <Fact label={t("biz.recv.sum.outstanding")} caption={t("biz.recv.sum.count", { n: r.open_count })}>
-                <span data-testid="recv-outstanding">{r.open_total_display}</span>
-              </Fact>
-              <Fact
-                label={t("biz.recv.sum.overdue")}
-                caption={
-                  r.past_due.length ? (
-                    <span className="flex flex-wrap items-center gap-x-2">
-                      <span>{t("biz.recv.sum.overdue.n", { n: r.past_due.length })}</span>
-                      {invoices.length ? (
-                        // A tap on the Overdue fact shows the late invoices: the list below takes its Late filter and comes into view.
-                        <button
-                          type="button"
-                          className={`${textLinkClass} -ml-2`}
-                          data-testid="recv-overdue-show"
-                          onClick={() => {
-                            setFilter("late");
-                            document.getElementById("recv-open")?.scrollIntoView({ block: "start" });
-                          }}
-                        >
-                          {t("biz.recv.sum.overdue.show")}
-                        </button>
-                      ) : null}
-                    </span>
-                  ) : undefined
-                }
-              >
-                <span data-testid="recv-overdue" className={r.past_due.length ? "text-bad-fg" : ""}>
-                  {r.overdue_total_display}
-                </span>
-              </Fact>
-              <Fact
-                last
-                label={t("biz.recv.sum.next")}
-                caption={r.next_receipt ? <span data-testid="recv-next-hint">{t("biz.recv.sum.next.hint", { buyer: r.next_receipt.buyer_name, when: r.next_receipt.due_when })}</span> : undefined}
-              >
-                <span data-testid="recv-next-amount">{r.next_receipt ? r.next_receipt.face_display : "-"}</span>
-              </Fact>
-            </dl>
-            {r.open_count === 0 ? <p className="mt-3 text-sm text-ink-3" data-testid="recv-none">{t("recon.outstanding.empty")}</p> : null}
-          </section>
-
-          {/* The one raised surface: only while someone is late. */}
-          {someoneLate && chaseTarget ? (
-            <ActionBar aria-label={t("biz.chase.button")} data-testid="recv-top-action">
-              <div className="min-w-0 flex-[2_1_20rem]">
-                <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
-                {worth?.top_action_second && !worth.no_plan ? (
-                  <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="recv-top-action-second">
-                    {worth.top_action_second}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink">
-                    {name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)}
-                    <span className="ml-3 text-base font-bold text-bad-fg tabular-nums">
-                      {t("biz.recv.bar.overdue")} {r.overdue_total_display}
-                    </span>
-                    {r.past_due[0] ? <span className="ml-3 text-sm font-semibold text-ink-2">{daysLate(r.past_due[0].days_late, t)}</span> : null}
-                  </p>
-                )}
-              </div>
-              <ChasePayment top receivableId={chaseTarget} buyer={name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)} />
-            </ActionBar>
-          ) : null}
-
-          <PartialRead partial={home.data?.partial} onRetry={home.reload} />
-
-          {worthRead.error ? (
-            <div data-testid="recv-worth-failed">
-              <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
-            </div>
-          ) : null}
-
-          {invoices.length ? <WhoPaysWhen invoices={invoices} promised={data.promised} asOfDay={data.as_of_day} buyerName={name} isLate={isLate} dueSoonDays={DUE_SOON_DAYS} selected={picked} onSelect={pick} /> : null}
-
-          {invoices.length ? <ReceivablesTable invoices={invoices} asOfDay={data.as_of_day} buyerName={name} worth={worth} worthOf={worthOf} rank={rank} chase={chase} filter={filter} onFilter={setFilter} highlight={picked} /> : null}
-
-          {data.promised?.length ? (
-            <section id="recv-promised" aria-labelledby="recv-promised-title">
-              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-2">
-                <div>
-                  <h2 id="recv-promised-title" className="text-base font-extrabold text-ink">
-                    {t("biz.recv.promised")}
-                  </h2>
-                  <p className="text-xs text-ink-3">{t("biz.recv.promised.sub")}</p>
-                </div>
-                {data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : null}
-              </div>
-              <ul className="motion-rise divide-y divide-line">
-                {data.promised.map((p) => (
-                  <li
-                    key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`}
-                    id={`promised-${p.receivable_id}`}
-                    className={`flex scroll-mt-20 flex-wrap items-center justify-between gap-2 py-3 text-sm ${picked === `promised-${p.receivable_id}` ? "-mx-2 rounded-tile bg-brand-50 px-2" : ""}`}
-                    data-testid={`promised-${p.receivable_id}`}
-                    data-status={p.status}
-                  >
-                    <span className="min-w-0">
-                      <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
-                      <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold tabular-nums">{p.expected_display}</span>
-                      <Badge tone={p.status === "RECEIVED" ? "ok" : p.status === "AWAITED" ? "info" : "bad"}>{te("promstatus", p.status)}</Badge>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {data.receipts.length ? (
-            <section id="recv-receipts" aria-labelledby="recv-receipts-title">
-              <div className="mb-1 border-b border-line pb-2">
-                <h2 id="recv-receipts-title" className="text-base font-extrabold text-ink">
-                  {t("biz.recv.receipts")}
-                </h2>
-                <p className="text-xs text-ink-3">{t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}</p>
-              </div>
-              <ul className="divide-y divide-line">
-                {data.receipts.map((x) => (
-                  <li key={x.entry_hash} className="py-3 text-sm" data-testid={`receipt-${x.op_id}`}>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-semibold tabular-nums">{x.received_display}</span>
-                        <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>
-                      </span>
-                    </div>
-                    {/* A part-paid invoice: a short lead and the four named facts say it once; the long sentence waits behind Audit details. */}
-                    {x.remaining_display ? (
-                      <>
-                        <p className="mt-0.5 text-sm text-ink-2" data-testid={`receipt-lead-${x.op_id}`}>
-                          {t("biz.recv.partPaid", { buyer: name(x.counterparty_id), when: x.day !== null ? whenText(x.day, data.as_of_day, t) : "" })}
-                        </p>
-                        <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} windowText={x.window_state_text} />
-                      </>
-                    ) : (
-                      <p className="mt-0.5 text-xs text-ink-2">
-                        {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
-                        {x.detail_when ?? x.detail}
-                      </p>
-                    )}
-                    {/* The record ids (invoice, bank reference) are the audit level. */}
-                    <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
-                      {x.remaining_display ? <p className="mt-1 text-xs text-ink-2">{x.detail_when ?? x.detail}</p> : null}
-                      <p className="mt-1 text-xs text-ink-3">
-                        {x.receivable_id}
-                        {x.bank_reference ? (
-                          <span data-testid={`receipt-ref-${x.op_id}`}>
-                            {" · "}
-                            {t("recon.bankRef", { ref: x.bank_reference })}
-                          </span>
-                        ) : null}
-                      </p>
-                    </Disclosure>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-      )}
-    </>
+    </div>
   );
 }

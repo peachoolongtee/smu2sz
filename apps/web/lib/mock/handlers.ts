@@ -50,6 +50,8 @@ import type {
   PilotJournalView,
   PriceCurveView,
   EnvelopeView,
+  BuyerExposureView,
+  ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -67,6 +69,7 @@ import type {
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
+import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
 import approvalsSeed from "../../mocks/approvals_seed.json";
@@ -726,6 +729,28 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return home.mockHome(dealt, lang);
+}
+
+/** GET /receivables: the recording for this point of the story (lib/mock/receivables.ts). Owner only, as live. */
+export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return receivablesMock.mockReceivables(dealt, lang);
+}
+
+/** GET /decisions/{id}/exposure: the recorded exposure of the open offer's decision; any other decision answers 404 (null: no result in the aside). */
+export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  await delay();
+  try {
+    return await receivablesMock.mockDecisionExposure(decisionId, lang);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
 }
 
 export async function getClock(): Promise<ClockView> {

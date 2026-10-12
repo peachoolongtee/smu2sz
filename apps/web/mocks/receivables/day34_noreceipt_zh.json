@@ -1,0 +1,231 @@
+{
+  "day": 34,
+  "lang": "zh",
+  "state_version": 6,
+  "rows": [
+    {
+      "receivable_id": "RCV-A",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "status": "OPEN",
+      "due_day": 32,
+      "due_when": "2 天前",
+      "past_due": true,
+      "days_late": 2,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 42000000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 32,
+        "net_display": "¥420,000.00",
+        "net_short": "约 ¥420k",
+        "condition_text": "如果 Foshan 在到期日付款",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_text": "依据协议 FHR-2026-07：账期为自开票日起 45 天",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "这张发票没有约定提前付款"
+      },
+      "pending_counter": null,
+      "collection_state": "PROMISE_MISSED",
+      "collection_state_text": "承诺未兑现",
+      "collection_action": {
+        "primary": "CHASE",
+        "label": "催收付款",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "准备付款提醒"
+          },
+          {
+            "action": "VIEW_TERMS",
+            "label": "查看条款"
+          }
+        ]
+      },
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:2",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "status": "OPEN",
+      "due_day": 47,
+      "due_when": "13 天后",
+      "past_due": false,
+      "days_late": 0,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 42000000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 47,
+        "net_display": "¥420,000.00",
+        "net_short": "约 ¥420k",
+        "condition_text": "如果 Foshan 在到期日付款",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_text": "依据协议 FHR-2026-07：账期为自开票日起 45 天",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "这张发票没有约定提前付款"
+      },
+      "pending_counter": null,
+      "collection_state": "CURRENT",
+      "collection_state_text": "未到期",
+      "collection_action": {
+        "primary": "VIEW_TERMS",
+        "label": "查看条款",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "准备付款提醒"
+          }
+        ]
+      },
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    },
+    {
+      "receivable_id": "RI:BUYER-1:32",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "status": "OPEN",
+      "due_day": 77,
+      "due_when": "43 天后",
+      "past_due": false,
+      "days_late": 0,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "NONE",
+        "advance_fen": 0,
+        "charges_fen": 0,
+        "claim_fen": 0,
+        "net_fen": 42000000,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 0,
+        "period_days": 0,
+        "arrival_day": null,
+        "on_day": 77,
+        "net_display": "¥420,000.00",
+        "net_short": "约 ¥420k",
+        "condition_text": "如果 Foshan 在到期日付款",
+        "repays_text": null,
+        "financing_state_text": null,
+        "per_period_text": null,
+        "owed_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥0.00",
+        "charges_display": "¥0.00",
+        "claim_display": "¥0.00",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥0.00"
+      },
+      "financing_state": "NONE",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_text": "依据协议 FHR-2026-07：账期为自开票日起 45 天",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "这张发票没有约定提前付款"
+      },
+      "pending_counter": null,
+      "collection_state": "CURRENT",
+      "collection_state_text": "未到期",
+      "collection_action": {
+        "primary": "VIEW_TERMS",
+        "label": "查看条款",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "准备付款提醒"
+          }
+        ]
+      },
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    }
+  ],
+  "summary": {
+    "outstanding_total_fen": 126000000,
+    "outstanding_total_display": "¥1,260,000.00",
+    "next_expected": {
+      "when_text": "13 天后",
+      "due_day": 47,
+      "amount_fen": 42000000,
+      "amount_display": "¥420,000.00"
+    },
+    "net_total_fen": 126000000,
+    "net_total_display": "¥1,260,000.00",
+    "net_total_text": "如果每张发票都在到期日付款"
+  },
+  "last_read_when": "今天",
+  "last_read_day": 34,
+  "computed_in_seconds": 0
+}

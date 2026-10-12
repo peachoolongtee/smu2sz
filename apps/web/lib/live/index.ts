@@ -44,6 +44,8 @@ import type {
   PlanRequest,
   PilotJournalView,
   PriceCurveView,
+  BuyerExposureView,
+  ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -146,6 +148,11 @@ export const live = {
 
   /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
   getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
+  /** GET /receivables (owner only, no flag): the rows with what each invoice nets, who governs it and what to do next. Null on a server without the route (404), so the old page stands. */
+  getReceivables: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesRead>("GET", `/receivables?lang=${lang}`)),
+  /** GET /decisions/{id}/exposure (flag `exposure`): the buyer's late-payment test for a deal decision. Null when the feature is off or the decision names no buyer. */
+  getDecisionExposure: (decisionId: string, lang: "en" | "zh") =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/decisions/${enc(decisionId)}/exposure?lang=${lang}&spare=0`)),
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
   getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
 
