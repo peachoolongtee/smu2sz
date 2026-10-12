@@ -1,6 +1,10 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { filledBrand, resetBooks, sendCounter } from "./helpers";
+import recorded from "../mocks/offer_picture_ex01.json";
+
+/** The recorded picture's moments (the server's words and sentences), so the chips are asserted against what was recorded. */
+const MOMENTS = (recorded as { en: { moments: { word: string; text: string }[] } }).en.moments;
 
 /**
  * The Deals page's three paths on one chart (the offer as asked and the two replies), tied to three columns, with a day cursor you can step or play
@@ -156,7 +160,8 @@ test("the chips are the moments, in the server's order and words, the decisive o
   await expect(page.getByTestId("path-stops")).toHaveAttribute("role", "group");
   await expect(page.getByTestId("path-stops")).toHaveAccessibleName("Moments");
   // The chips are the server's words, never "In 47 days": today, each lowest point, the reserve crossings in either direction and the end of the window.
-  expect(await stops.allInnerTexts()).toEqual(["Today", "Lowest point", "Below the reserve", "Lowest point", "Back above the reserve", "Day 66"]);
+  expect(await stops.allInnerTexts()).toEqual(MOMENTS.map((m) => m.word));
+  expect(MOMENTS.map((m) => m.word)).toEqual(["Today", "Lowest, Option A and Option B", "Below the reserve", "Lowest, as asked", "Back above the reserve", "Day 66"]);
   // The decisive moment (the first the asked path is below the reserve) is selected first.
   await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-count")).toHaveText("3 of 6");
@@ -233,7 +238,7 @@ test("Play never starts by itself, steps one moment every two seconds, ends on t
   await expect(play).toHaveText("Pause");
   await expect(page.getByTestId("path-stop-0")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true", { timeout: 6000 });
-  await expect(page.getByTestId("path-announce")).toHaveText("Lowest point. On every path: Debt service −¥45k.");
+  await expect(page.getByTestId("path-announce")).toHaveText(`${MOMENTS[1].word}. ${MOMENTS[1].text}`);
   // Pause halts it where it is.
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "false");
@@ -379,7 +384,7 @@ test("hovering or focusing a moment chip previews it without changing the select
   await expect(page.getByTestId("path-announce")).toContainText("Below the reserve. On every path: Operating bill");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-announce")).toHaveText("Lowest point. On every path: Debt service −¥45k.");
+  await expect(page.getByTestId("path-announce")).toHaveText(`${MOMENTS[1].word}. ${MOMENTS[1].text}`);
 });
 
 test("keyboard: the arrow keys move between the chips, Enter keeps one, and Space plays or stops from the focused picture", async ({ page }) => {
