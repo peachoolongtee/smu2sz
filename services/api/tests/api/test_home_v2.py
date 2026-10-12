@@ -113,6 +113,9 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
         "title": "Secure ¥405,000 before payroll in 12 days.",
         "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · "
                 "cost ¥3,113.93 · no approval needed.",
+        "facts": [{"label": "Estimated cost", "value": "¥3,113.93"},
+                  {"label": "Funding", "value": "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"},
+                  {"label": "Approval", "value": "No approval needed"}],
         "primary": {"label": "Run the funding plan", "href": "/cash#cash-options"},
         "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN"}
     chart = v2["chart"]
@@ -152,7 +155,7 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
         "variant": "QUIET", "key": None, "tone": "ok", "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
-        "primary": None, "secondary": None, "control": None}
+        "facts": [], "primary": None, "secondary": None, "control": None}
     assert v2["chart"]["legend"] == [{"label": "Current books · the plan ran", "kind": "current"}]
     assert v2["chart"]["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "¥300,000", "minimum_display": "¥300,000",
@@ -402,3 +405,76 @@ def test_the_headroom_is_negative_below_the_minimum_and_zero_on_it() -> None:
         return home_v2._cash_available(c)["buffer"]  # type: ignore[arg-type,no-any-return]
 
     assert kpi(26_000_000)["headroom_text"] == "−¥40k" and kpi(30_000_000)["headroom_text"] == "¥0" and kpi(40_000_000)["headroom_text"] == "+¥100k"
+
+
+# ---------------------------------------------------------------- the series points carry their words
+
+
+def test_every_point_of_the_longest_window_has_when_and_display_and_the_lowest_is_the_kpi(api: TestClient) -> None:
+    _offer(api)
+    for moment in ("before", "after"):
+        if moment == "after":
+            _run_plan(api)
+        for lang in ("en", "zh"):
+            h = _home(api, lang)
+            cash = h["cash"]
+            lines = [cash["series"], cash["plan_series"], cash.get("counterfactual_series")]
+            assert [p["day"] for p in cash["series"]] == list(range(121))  # the longest window: 120 days from today
+            for series in (s for s in lines if s):
+                assert all(p["when"] and p["display"] for p in series)  # no point past day 32 (or any day) is left without its words
+            by_day = {p["day"]: p for p in cash["series"]}
+            assert by_day[0]["when"] == ("today" if lang == "en" else "今天") and by_day[120]["when"] == ("in 120 days" if lang == "en" else "120 天后")
+            assert by_day[100]["when"] == ("in 100 days" if lang == "en" else "100 天后")
+            lowest = min(cash["series"], key=lambda p: p["closing_fen"])
+            assert lowest["display"] == h["home_v2"]["kpis"]["lowest_ahead"]["value_display"]
+            assert by_day[0]["display"] == h["home_v2"]["kpis"]["cash_available"]["value_display"]  # the KPI's form, no cents on a round sum
+
+
+# ---------------------------------------------------------------- the action's facts are the sentence's own parts
+
+
+def _parts(text: str) -> list[str]:
+    """The sentence's parts, split at its separators: [what the plan is made of, cost?, approval]."""
+    return [part.strip() for part in text.split(" · ")]
+
+
+def test_the_plans_three_facts_are_the_action_sentences_own_words_on_day_zero(api: TestClient) -> None:
+    _offer(api)
+    action = _v2(api)["action"]
+    assert action["control"] == "RUN_PLAN"
+    assert [f["label"] for f in action["facts"]] == ["Estimated cost", "Funding", "Approval"]
+    cost, funding, approval = (f["value"] for f in action["facts"])
+    head, cost_part, approval_part = _parts(action["text"])
+    assert head.endswith(funding) and cost_part == f"cost {cost}" and approval_part == f"{approval.lower()}."
+    assert (cost, funding, approval) == ("¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
+                                         "No approval needed")
+
+
+def test_the_plans_facts_in_chinese(api: TestClient) -> None:
+    _offer(api)
+    action = _v2(api, "zh")["action"]
+    assert [f["label"] for f in action["facts"]] == ["预计成本", "融资", "批准"]
+    cost, funding, approval = (f["value"] for f in action["facts"])
+    head, cost_part, approval_part = _parts(action["text"])
+    assert head.endswith(funding) and cost_part == f"成本 {cost}" and approval_part == f"{approval}。"
+    assert (cost, approval) == ("¥3,113.93", "无需批准") and "计划中" in funding and english_leaks(action["facts"]) == []
+
+
+def test_the_facts_are_empty_when_the_action_has_no_plan(api: TestClient) -> None:
+    _offer(api)
+    _run_plan(api)
+    for lang in ("en", "zh"):
+        action = _v2(api, lang)["action"]
+        assert action["control"] is None and action["facts"] == []
+
+
+def test_the_approval_fact_says_when_the_owner_must_approve() -> None:
+    for lang, needed, not_needed in (("en", "Your approval is needed", "No approval needed"), ("zh", "需要您批准", "无需批准")):
+        for needs_owner, expected in ((True, needed), (False, not_needed)):
+            c = SimpleNamespace(lang=lang)
+            leg = {"operation_kind": "DRAW_FACILITY", "lands_when": "today" if lang == "en" else "今天", "amount_fen": 15_000_000}
+            a = {"needs_owner": needs_owner, "legs": [leg], "cost_total_display": None}
+            parts = home_v2._plan_parts(c, a)  # type: ignore[arg-type]
+            facts = home_v2._plan_facts(lang, parts)
+            assert facts[2]["value"] == expected and facts[0]["value"] == ("Not priced" if lang == "en" else "未计价")
+            assert " · 成本" not in home_v2._plan_sentence(lang, parts) and " · cost" not in home_v2._plan_sentence(lang, parts)
