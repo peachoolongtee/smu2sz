@@ -124,10 +124,29 @@ class Probe:
     plan_cost_fen: int | None  # FundingPlan.total_cost_fen of the verdict's committed plan
     recheck: str | None  # why the package would fail the counter re-check (None: it would pass)
     unlisted: tuple[Setting, ...] = ()  # the verifier's counters outside the levers' ranges: not read as settings, not probed
+    # the signed caps the package breaks, from the verifier's own violations: (code, the total it counts, the cap), in fen
+    caps: tuple[tuple[str, int, int], ...] = ()
 
     @property
     def approved(self) -> bool:
         return self.passes and self.recheck is None
+
+
+Authority = Literal["flow_may", "needs_owner", "over_your_limits"]
+
+
+def authority_of(p: Probe) -> Authority | None:
+    """Who may act on a package, in the three classes of the customer-economics brief (E.1), read from the verifier's
+    own fields and never computed: `flow_may` (Tier 1, ACCEPT, approved, nothing flagged), `needs_owner` (approved, and
+    Tier 2 or a flagged fix: an approved package FLOW cannot run alone today is the owner's too), `over_your_limits`
+    (financially safe, but over a cap the owner signed: `liquidity_only`, not passing, and a cap among its violations;
+    only a new signed mandate moves it). None: the package fails for some other reason and has no class."""
+    if p.approved:
+        alone = p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value
+        return "flow_may" if alone and not p.cure_needs_owner and not p.cure_cannot_run_today else "needs_owner"
+    if p.liquidity_only and not p.passes and p.caps:
+        return "over_your_limits"
+    return None
 
 
 @dataclass(frozen=True)
@@ -405,6 +424,8 @@ class _Verifier:
         passes = v.outcome in PASSING and not any(
             x.code == ViolationCode.RESERVE_BREACH and not x.curable for x in v.violations)
         flags = reserve.inputs if reserve is not None else {}
+        caps = tuple((x.code.value, int(x.inputs["total_fen"]), self._cap_of(x.code, x.inputs.get("counterparty_id")))
+                     for x in v.violations if x.code in CAP_CODES and "total_fen" in x.inputs)
         cur = self.cur
         read = [(self.norm(_setting_of(c, cur, face_of(self.ctx))), c.supplier_cost_fen) for c in v.counters]
         listed = [(c, cost) for c, cost in read if self.in_range(c)]
@@ -418,7 +439,14 @@ class _Verifier:
             counters=tuple(c for c, _ in listed), counter_costs_fen=tuple(cost for _, cost in listed),
             plan_cost_fen=v.plan.total_cost_fen if v.plan is not None else None,
             recheck=infeasibility(v, self.state) if v.outcome in PASSING else None,
-            unlisted=tuple(c for c, _ in read if not self.in_range(c)))
+            unlisted=tuple(c for c, _ in read if not self.in_range(c)), caps=caps)
+
+    def _cap_of(self, code: ViolationCode, buyer: str | None) -> int:
+        """The signed cap a cap violation counts against: the mandate's per-buyer cap, else its aggregate budget."""
+        m = self.mandate
+        if code == ViolationCode.PER_BUYER_CAP_EXCEEDED and buyer is not None and buyer in m.per_buyer_caps_fen:
+            return m.per_buyer_caps_fen[buyer]
+        return m.max_aggregate_forward_concession_fen
 
     def ok(self, s: Setting) -> bool:
         return self.quick(s).passes
@@ -839,6 +867,13 @@ class EnvelopePackage(Contract):
     counter_match: bool  # the verifier's own counters to the largest asks include this package
     plan_cost_fen: int | None
     summary: str  # the package on one line, its terms joined by " · ": "55-day terms · price up 0.25% · rebate 0.60%"
+    # who may act on it (`authority_of`): None for a package that fails for any other reason
+    authority: Authority | None = None
+    authority_words: str | None = None  # the class in words: "FLOW may do this on its own", ...
+    authority_sentence: str | None = None  # classes 2 and 3: what holds, and who decides (brief E.3)
+    cap_fen: int | None = None  # class 3: the signed cap the package breaks
+    cap_used_fen: int | None = None  # class 3: what the verifier counts against that cap
+    over_cap_by_fen: int | None = None  # class 3: by how much
 
 
 class EnvelopeLever(Contract):
@@ -880,6 +915,9 @@ class EnvelopeAnswer(Contract):
     reason: str
     money: str
     packages: list[EnvelopePackage]
+    # class 3, in a group of its own: the longest terms that keep your cash floor if the budget is ignored, over a cap you
+    # signed (never an approval: only a new signed mandate moves the cap)
+    over_your_limits: list[EnvelopePackage] = Field(default_factory=list)
     levers: list[EnvelopeLever]
     zone: list[ZoneEntry] = Field(default_factory=list)
     refused: str | None = None
@@ -1020,8 +1058,77 @@ def _lowest_price_words(z: ZoneRow, lang: str) -> str:
     return _pct(z.min_price_bp)
 
 
+_AUTHORITY_WORDS: dict[str, tuple[str, str]] = {
+    "flow_may": ("FLOW may do this on its own", "FLOW 可以自行处理"),
+    "needs_owner": ("within your limits; needs your approval", "在您的底线内；需要您批准"),
+    "over_your_limits": ("over a limit you signed", "超出您签署的上限"),
+}
+
+
+def _phrase(facts: EnvelopeFacts, s: Setting, lang: str) -> str:
+    """A package as the owner says it: "55-day terms with a 0.30% price rise", "55-day terms at today's price" (terms
+    alone, no price rise), "45-day terms with early payment of 0.85% on ¥257,200.00"."""
+    extras_en: list[str] = []
+    extras_zh: list[str] = []
+    if s.price > 0:
+        extras_en.append(f"a {_pct(s.price)} price rise")
+        extras_zh.append(f"加价 {_pct(s.price)}")
+    if s.discount > 0:
+        face = fmt_yuan(s.face if s.face is not None else facts.receivable_face_fen)
+        extras_en.append(f"early payment of {_pct(s.discount)} on {face}")
+        extras_zh.append(f"提前付款 {_pct(s.discount)}（金额 {face}）")
+    if s.rebate > 0:
+        extras_en.append(f"a {_pct(s.rebate)} rebate")
+        extras_zh.append(f"返利 {_pct(s.rebate)}")
+    if not extras_en:
+        return t(lang, f"{s.terms}-day terms at today's price", f"按现价给 {s.terms} 天账期")
+    joined = extras_en[0] if len(extras_en) == 1 else f"{', '.join(extras_en[:-1])} and {extras_en[-1]}"
+    return t(lang, f"{s.terms}-day terms with {joined}", f"{s.terms} 天账期并{'、'.join(extras_zh)}")
+
+
+def _what_needs_you(facts: EnvelopeFacts, p: Probe, lang: str) -> str:
+    """What FLOW cannot agree alone in a class-2 package: the longer terms first, as the verifier's tier rule reads it."""
+    s = p.setting
+    if s.terms > facts.current_terms:
+        return t(lang, "longer terms", "延长账期")
+    if s.rebate > 0:
+        return t(lang, "a rebate", "返利")
+    if s.price > 0:
+        return t(lang, "a price change", "调整价格")
+    return t(lang, "this early payment", "这笔提前付款")
+
+
+def _authority_sentence(facts: EnvelopeFacts, p: Probe, authority: Authority | None, lang: str) -> str | None:
+    phrase = _phrase(facts, p.setting, lang)
+    if authority == "needs_owner":
+        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but its fix cannot run alone
+            return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
+                           "It needs your approval.",
+                     f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+        what = _what_needs_you(facts, p, lang)
+        return t(lang, f"{phrase}: within your limits and your cash floor holds, but FLOW cannot agree {what} on its own. "
+                       "It needs your approval.",
+                 f"{phrase}：在您的底线内，现金底线也守得住，但 FLOW 不能自行同意{what}，需要您批准。")
+    if authority == "over_your_limits":
+        code, used, cap = p.caps[0]
+        tail = t(lang, " FLOW will not send it under the limits you signed; only you can decide, and raising the limit means "
+                       "signing a new mandate.",
+                 "在您签署的授权范围内，FLOW 不会发送此方案；只有您能决定，提高上限需要签署新的授权。")
+        if code == ViolationCode.PER_BUYER_CAP_EXCEEDED.value:
+            who = facts.buyer_name
+            return t(lang, f"{phrase}: your cash floor holds, but it uses {fmt_yuan(used)} of your {fmt_yuan(cap)} limit for "
+                           f"{who}.{tail}",
+                     f"{phrase}：现金底线守得住，但会占用您对{who}的上限中的 {fmt_yuan(used)}（上限为 {fmt_yuan(cap)}）。{tail}")
+        return t(lang, f"{phrase}: your cash floor holds, but it uses {fmt_yuan(used)} of your {fmt_yuan(cap)} budget for "
+                       f"what you give buyers.{tail}",
+                 f"{phrase}：现金底线守得住，但会占用您给买家让利预算中的 {fmt_yuan(used)}（预算为 {fmt_yuan(cap)}）。{tail}")
+    return None
+
+
 def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> EnvelopePackage:
     s = p.setting
+    authority = authority_of(p)
+    over = p.caps[0] if authority == "over_your_limits" else None
     breach = None
     if p.reserve_day is not None:
         breach = ReserveBreachView(day=p.reserve_day, when=when_text(p.reserve_day, facts.day, lang),
@@ -1035,7 +1142,20 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
         flags=_flags(p, lang), counter_match=match, plan_cost_fen=None if facts.no_plan else p.plan_cost_fen,
-        summary=_summary(s, lang))
+        summary=_summary(s, lang), authority=authority,
+        authority_words=t(lang, *_AUTHORITY_WORDS[authority]) if authority is not None else None,
+        authority_sentence=_authority_sentence(facts, p, authority, lang),
+        cap_fen=over[2] if over else None, cap_used_fen=over[1] if over else None,
+        over_cap_by_fen=over[1] - over[2] if over else None)
+
+
+def _over_your_limits(facts: EnvelopeFacts, lang: str) -> list[EnvelopePackage]:
+    """The class-3 group: the `terms_budget_ignored` maximum as one package, when it is over a cap you signed (when the
+    budget does not bind, the maximum is approved and there is nothing to list here)."""
+    m = _lever_of(facts, "terms_budget_ignored")
+    if m is None or m.at_max is None or authority_of(m.at_max) != "over_your_limits":
+        return []
+    return [_package(facts, m.at_max, lang)]
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -1247,7 +1367,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
     return EnvelopeAnswer(
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
         money=_money(facts, lang), packages=[_package(facts, c.probe, lang, c.counter_match) for c in facts.cells],
-        levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
+        over_your_limits=_over_your_limits(facts, lang), levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
         unlisted_counters=[_unlisted_sentence(c, lang) for c in facts.unlisted_counters],
         source_state_version=facts.source_state_version, evaluations=facts.evaluations,
         computed_in_seconds=round(facts.seconds, 3))
