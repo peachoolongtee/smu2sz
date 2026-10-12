@@ -478,3 +478,22 @@ def test_with_no_recommended_reply_there_is_no_strip(client, monkeypatch):
     _recheck_as(monkeypatch, outcome=Outcome.REJECT, violations=[])
     offer_picture._cache.clear()
     assert all(p["comparison"] is None for path in _paths(client, oid) for p in path["series"])
+
+
+# ---------------------------------------------------------------- what each line assumes
+
+
+def test_a_reply_with_no_admissible_plan_says_so_and_a_reply_that_needs_none_says_that(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    real = offer_picture.plan
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"admissible": False}))
+    offer_picture._cache.clear()
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert asked["scenario_assumption_text"] == "Assumes the buyer accepts this offer and FLOW takes no new funding."
+    for p in (opt_a, opt_b):
+        assert p["scenario_assumption_text"] == "Assumes the buyer accepts this reply; no funding plan is available within your mandate."
+    z = _paths(client, oid, "zh")
+    assert z[1]["scenario_assumption_text"] == "假设买方接受此回复；您的授权范围内没有可用的融资方案。"
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"admissible": True, "actions": [], "need_fen": 0}))
+    offer_picture._cache.clear()
+    assert _paths(client, oid)[1]["scenario_assumption_text"] == "Assumes the buyer accepts this reply; no new funding is needed."

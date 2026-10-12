@@ -393,3 +393,34 @@ def test_the_overviews_value_figure_and_the_context_say_the_same_thing_of_the_sa
         org_id=state.org_id, counterparty_id="BUYER-1", field="margin_bp", value_json="3000", provenance="OWNER_ENTERED",
         source_ref="test", entered_by="OWNER", entered_day=0, state_version=state.state_version))
     assert api.get("/customers/BUYER-1/overview").json()["figures"][0]["note"] == "a year, estimated contribution"
+
+
+# ---------------------------------------------------------------- the scenario assumption on every path (words batch 3)
+
+
+def test_each_path_states_what_its_line_assumes(api: TestClient) -> None:
+    offer_id = _offer(api)
+    paths = _paths(_read(api, offer_id))
+    assert paths["asked"]["scenario_assumption_text"] == "Assumes the buyer accepts this offer and FLOW takes no new funding."
+    assert paths["do_nothing"]["scenario_assumption_text"] == "The books as they stand, no new funding."
+    assert paths["A"]["scenario_assumption_text"] == (
+        "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower.")
+    assert paths["B"]["scenario_assumption_text"] == (
+        "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥90k credit-line draw today, ¥315k invoice financing in 3 days); "
+        "without the plan, cash falls lower.")
+    # the exposure read says what the picture says of the same path
+    pictured = {p["key"]: p["scenario_assumption_text"] for p in api.get(f"/offers/{offer_id}/picture").json()["paths"]}
+    assert all(paths[k]["scenario_assumption_text"] == pictured[paths[k]["key"]] for k in ("asked", "A", "B"))
+    zh = _paths(_read(api, offer_id, "zh"))
+    assert zh["asked"]["scenario_assumption_text"] == "假设买方接受此报价，且 FLOW 不新增融资。"
+    assert zh["do_nothing"]["scenario_assumption_text"] == "当前账目，未新增融资。"
+    assert zh["A"]["scenario_assumption_text"] == "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。"
+    assert zh["B"]["scenario_assumption_text"] == (
+        "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后））；没有该方案，现金会更低。")
+
+
+def test_before_the_offer_is_evaluated_the_asked_path_still_says_what_it_assumes(api: TestClient) -> None:
+    offer_id = str(api.post("/offers", json=EX01).json()["offer"]["offer_id"])
+    paths = _paths(_read(api, offer_id))
+    assert paths["asked"]["scenario_assumption_text"] == "Assumes the buyer accepts this offer and FLOW takes no new funding."
+    assert paths["do_nothing"]["scenario_assumption_text"] == "The books as they stand, no new funding."
