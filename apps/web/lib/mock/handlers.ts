@@ -1013,6 +1013,26 @@ type RecordedOverview = { view: CustomerOverviewView; backs: { query: CustomerCo
 /** Test hook, like WORTH_FAIL_KEY: set this sessionStorage key to "1" and the customer overview is the recording taken with the exposure read off. */
 export const EXPOSURE_OFF_KEY = "tl-mock-exposure-off";
 
+/** The server's own answer for a customer it does not hold: a 404 with the code the page reads. */
+function missingCustomer(id: string): ApiError {
+  return new ApiError(404, `There is no customer ${id} on the books.`, { code: "CUSTOMER_NOT_FOUND", message: `There is no customer ${id} on the books.` });
+}
+
+/**
+ * Test hook, an in-spec patch of the recorded read (the specs that need a field the recording does not carry, such as `partial` or a non-null `edit_href`,
+ * say so): set this sessionStorage key to a JSON object and its fields replace the recording's, as a shallow merge. Absent, the recording is served as recorded.
+ */
+export const OVERVIEW_PATCH_KEY = "tl-mock-overview-patch";
+
+function overviewPatch(): Partial<CustomerOverviewView> {
+  try {
+    const raw = typeof window === "undefined" ? null : window.sessionStorage.getItem(OVERVIEW_PATCH_KEY);
+    return raw ? (JSON.parse(raw) as Partial<CustomerOverviewView>) : {};
+  } catch {
+    return {};
+  }
+}
+
 function exposureOff(): boolean {
   try {
     return typeof window !== "undefined" && window.sessionStorage.getItem(EXPOSURE_OFF_KEY) === "1";
@@ -1039,16 +1059,17 @@ export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: Cu
     // The recording of the server with the exposure read switched off (it answers `exposure: null` and says why in `note`).
     const off = cast<Record<"en" | "zh", CustomerOverviewView>>((await import("../../mocks/customer_overview_exposure_off.json")).default);
     const view = clone(off[lang === "zh" ? "zh" : "en"]);
-    if (id !== view.customer_id) throw new ApiError(404, `There is no customer ${id} on the books.`);
+    if (id !== view.customer_id) throw missingCustomer(id);
     return view;
   }
   const all = cast<Record<OverviewMoment, Record<"en" | "zh", RecordedOverview>>>((await import("../../mocks/customer_overview.json")).default);
   const rec = all[overviewMoment()][lang === "zh" ? "zh" : "en"];
-  if (id !== rec.view.customer_id) throw new ApiError(404, `There is no customer ${id} on the books.`);
+  if (id !== rec.view.customer_id) throw missingCustomer(id);
   const same = (a: CustomerContext, b: CustomerContext) => (a.decision ?? null) === (b.decision ?? null) && (a.path ?? null) === (b.path ?? null) && (a.invoice ?? null) === (b.invoice ?? null);
   const asked = rec.backs.find((b) => same(b.query, ctx));
   const view = clone(rec.view);
-  return asked && view.context ? { ...view, context: { ...view.context, back: asked.back } } : view;
+  const shown = asked && view.context ? { ...view, context: { ...view.context, back: asked.back } } : view;
+  return { ...shown, ...overviewPatch() };
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

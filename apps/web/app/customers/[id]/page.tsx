@@ -36,8 +36,10 @@ function Customer() {
   const { id: raw } = useParams<{ id: string }>();
   const id = safeDecode(raw);
   const ctx = readContext(useSearchParams());
-  const read = useAsync(() => getCustomerOverview(id, lang, ctx), [id, lang, ctx.decision, ctx.path, ctx.invoice]);
-  const missing = read.error instanceof ApiError && read.error.status === 404;
+  // The read is keyed by what it was asked for; an answer for another customer, language or context (the previous read, kept while this one is on its way) is never shown.
+  const asked = JSON.stringify([id, lang, ctx.decision ?? null, ctx.path ?? null, ctx.invoice ?? null]);
+  const read = useAsync(async () => ({ asked, view: await getCustomerOverview(id, lang, ctx) }), [asked]);
+  const missing = read.error instanceof ApiError && read.error.status === 404 && (read.error.detail as { code?: string } | undefined)?.code === "CUSTOMER_NOT_FOUND";
 
   if (missing)
     return (
@@ -54,7 +56,6 @@ function Customer() {
       </div>
     );
   if (read.error) return <ErrorState error={read.error} onRetry={read.reload} />;
-  // Another customer's overview (the previous read, kept while this one is on its way) is never shown under this name.
-  if (!read.data || read.data.customer_id !== id) return <LoadingBlock rows={4} label={t("customer.loading")} />;
-  return <CustomerOverview view={read.data} onRetry={read.reload} />;
+  if (!read.data || read.data.asked !== asked) return <LoadingBlock rows={4} label={t("customer.loading")} />;
+  return <CustomerOverview view={read.data.view} onRetry={read.reload} />;
 }

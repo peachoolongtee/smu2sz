@@ -64,6 +64,8 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("¥5,460,000");
   await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("projected from your books");
   await expect(page.getByTestId("customer-economics-rows-gross_margin")).toContainText("assumed for the Demo, not confirmed by you");
+  // With nowhere to enter a fact (no `edit_href`) a row that only says "not entered yet" is left out: no dead ends.
+  await expect(page.getByTestId("customer-economics-rows-classification")).toHaveCount(0);
   await expect(page.getByTestId("customer-economics-note")).toContainText("None of this changes what FLOW may do on its own.");
   // The facts are editable only where the server gives the place (`edit_href` is null until the economics flag is on).
   await expect(page.getByTestId("customer-edit")).toHaveCount(0);
@@ -128,7 +130,7 @@ test("after the day-0 plan the financing is linked, in the server's words", asyn
   await expect(page.getByTestId("customer-exposure-rows-financing_then")).toContainText("runs 30 days longer");
 });
 
-test("the names on Receivables and Deals link to the overview carrying the decision, the path and the invoice from the URL", async ({ page }) => {
+test("the customer links on Receivables and Deals carry the context of the URL they are on (the decision, the path and the invoice)", async ({ page }) => {
   await checkedDeal(page);
   const query = await decisionQuery(page);
   const ctx = `decision=${encodeURIComponent(query.get("decision")!)}&path=${encodeURIComponent(query.get("path")!)}`;
@@ -149,7 +151,7 @@ test("the names on Receivables and Deals link to the overview carrying the decis
   await expect(page.getByTestId("customer-back")).toHaveText("Back to the Foshan deal");
 });
 
-test("Activity: the agreement's buyer is a link to the overview", async ({ page }) => {
+test("the customer link on Activity carries the context of the URL it is on", async ({ page }) => {
   await page.goto("/demo");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
@@ -191,18 +193,16 @@ test("in Chinese the page reads in Chinese with the same figures", async ({ page
   await scan(page, "/customers/BUYER-1 zh");
 });
 
-test("on a phone the primary is in the first screen and nothing scrolls sideways", async ({ page }) => {
+test("on a phone the figures and links fit, nothing scrolls sideways, and the links reach 44 px", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await checkedDeal(page);
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-decision-primary")).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  // The four figures sit two by two; each stays inside the screen.
   for (const key of ["value", "outstanding", "financing", "share"]) {
     const box = await page.getByTestId(`customer-figure-${key}`).boundingBox();
     expect(box && box.x >= 0 && box.x + box.width <= 390, key).toBeTruthy();
   }
-  // The links reach 44 px where a finger is the pointer.
   for (const name of ["Review the counter", "View the invoices", "Stress-test payment"]) {
     const box = await page.getByRole("link", { name, exact: true }).boundingBox();
     expect(box?.height ?? 0, name).toBeGreaterThanOrEqual(44);
@@ -210,19 +210,89 @@ test("on a phone the primary is in the first screen and nothing scrolls sideways
   await scan(page, "/customers/BUYER-1 phone");
 });
 
-test("the keyboard reaches the back link first, then the decision's links in order", async ({ page }) => {
+/** The primary, whole, above the phone's tab bar: the first screen holds the question and its one action (390 x 844, the unread offer and the read one, both languages). */
+for (const lang of ["en", "zh"] as const) {
+  for (const moment of ["offer_received", "offer_evaluated"] as const) {
+    test(`on a phone the primary is wholly in view above the tab bar: ${moment}, ${lang}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      if (moment === "offer_evaluated") await checkedDeal(page);
+      else {
+        await page.goto("/deals");
+        await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+        await expect(page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" })).toBeVisible();
+      }
+      await page.evaluate((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
+      await page.goto("/customers/BUYER-1");
+      const primary = page.getByTestId("customer-decision-primary");
+      await expect(primary).toBeVisible();
+      await expect(page.getByTestId("customer-decision")).toContainText(moment === "offer_received" ? (lang === "en" ? "One offer waits to be read" : "有一份报价等待阅读") : (lang === "en" ? "One commercial decision waits for you" : "有一项商务决定等待您处理"));
+      const box = (await primary.boundingBox())!;
+      const bar = (await page.getByTestId("tab-bar").boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height, "the primary ends above the tab bar").toBeLessThanOrEqual(bar.y);
+      expect(bar.y + bar.height).toBeLessThanOrEqual(844 + 1);
+    });
+  }
+}
+
+test("the keyboard, from the top of the page, reaches the back link, then the primary and the other two links in order", async ({ page }) => {
   await checkedDeal(page);
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-decision-primary")).toBeVisible();
-  await page.getByTestId("customer-back").focus();
-  await expect(page.getByTestId("customer-back")).toBeFocused();
   const order: string[] = [];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 40; i++) {
     await page.keyboard.press("Tab");
     const id = await page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
-    if (id) order.push(id);
+    if (id.startsWith("customer-")) order.push(id);
   }
-  expect(order.indexOf("customer-decision-primary")).toBeGreaterThanOrEqual(0);
-  expect(order.indexOf("customer-action-invoices")).toBeGreaterThan(order.indexOf("customer-decision-primary"));
-  expect(order.indexOf("customer-action-stress")).toBeGreaterThan(order.indexOf("customer-action-invoices"));
+  expect(order.slice(0, 4)).toEqual(["customer-back", "customer-decision-primary", "customer-action-invoices", "customer-action-stress"]);
+});
+
+/** In-spec patches of the recorded read (the mock's `tl-mock-overview-patch` key merges these fields over the recording): the fields the recording does not carry. */
+async function patched(page: Page, patch: object) {
+  await page.addInitScript((p) => sessionStorage.setItem("tl-mock-overview-patch", p), JSON.stringify(patch));
+}
+
+test("a partial read shows the existing notice with Retry, and the rest of the page stays", async ({ page }) => {
+  await patched(page, { partial: { missing: ["receivables"], missing_text: ["receivables"], text: "Part of this page could not be read just now." } });
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByTestId("partial-read")).toContainText("Part of this page could not be read just now.");
+  await expect(page.getByTestId("customer-figures")).toBeVisible();
+  await page.getByTestId("partial-retry").click();
+  await expect(page.getByTestId("partial-read")).toBeVisible();
+});
+
+test("with an edit place from the server, Edit these facts is a link and every fact row is shown", async ({ page }) => {
+  await patched(page, { edit_href: "/inputs?customer=BUYER-1" });
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByTestId("customer-edit")).toHaveText("Edit these facts");
+  await expect(page.getByTestId("customer-edit")).toHaveAttribute("href", "/inputs?customer=BUYER-1");
+  await expect(page.getByTestId("customer-economics-rows-classification")).toContainText("not entered yet");
+});
+
+test("a history row with a link says where it goes and opens it", async ({ page }) => {
+  await page.goto("/customers/BUYER-1");
+  const terms = page.getByTestId("customer-history-row").getByRole("link", { name: "The terms" });
+  await expect(terms).toHaveAttribute("href", "/documents");
+  await terms.click();
+  await expect(page).toHaveURL(/\/documents/);
+});
+
+test("a section the server did not send is not drawn, and the other panel takes the width", async ({ page }) => {
+  await patched(page, { exposure: null, note: null, history: [] });
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByTestId("customer-economics-rows")).toBeVisible();
+  await expect(page.locator("#customer-exposure")).toHaveCount(0);
+  await expect(page.locator("#customer-history")).toHaveCount(0);
+  const economics = (await page.locator("#customer-economics").boundingBox())!;
+  const figures = (await page.getByTestId("customer-figures").boundingBox())!;
+  expect(economics.width, "one panel spans the page").toBeGreaterThan(figures.width * 0.9);
+});
+
+test("the decision is a named region in both of its forms", async ({ page }) => {
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByRole("region", { name: "Commercial decision" })).toContainText("No commercial decision is waiting");
+  await checkedDeal(page);
+  await page.goto("/customers/BUYER-1");
+  await expect(page.getByRole("region", { name: "One commercial decision waits for you" })).toBeVisible();
 });

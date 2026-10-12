@@ -18,7 +18,7 @@ function Linked({ id, children, className, testId }: { id: string; children: Rea
 }
 
 /**
- * Every customer name in Deals, Receivables, Cash and Activity is this: a link to /customers/{id} whose href is `customerHref(id, ctx)`, `ctx` read
+ * Every customer name in Deals, Receivables and Activity is this: a link to /customers/{id} whose href is `customerHref(id, ctx)`, `ctx` read
  * from the URL the owner is on, so the overview's back link puts them where they were. The name is the server's string. While the URL is being
  * read (and in the static page) the plain name stands, so nothing shifts. `className` is added to the link (a row's own weight and size).
  */
