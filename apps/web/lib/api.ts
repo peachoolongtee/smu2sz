@@ -32,6 +32,9 @@ import type {
   ClockView,
   ContractFixture,
   CustomerOverviewView,
+  InputSaveRequest,
+  InputSaveResult,
+  InputSheetView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -361,4 +364,17 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
  */
 export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
   return isMock ? (await mock()).getCustomerOverview(id, lang, ctx) : (await live()).getCustomerOverview(id, lang, ctx);
+}
+
+/**
+ * GET /buyers/{id}/inputs: the owner's Inputs sheet for a customer (ticket #97). `ctx` carries the context the page was opened with; the
+ * server builds the back link from it. Every word and value display is the server's.
+ */
+export async function getBuyerInputs(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<InputSheetView> {
+  return isMock ? (await mock()).getBuyerInputs(id, lang, ctx) : (await live()).getBuyerInputs(id, lang, ctx);
+}
+
+/** POST /buyers/{id}/inputs (a buyer's fact) or POST /firm/inputs (`id` null: a firm row), one field, as the owner typed it. A 422 says why. */
+export async function saveInput(id: string | null, body: InputSaveRequest, lang: "en" | "zh"): Promise<InputSaveResult> {
+  return isMock ? (await mock()).saveInput(id, body, lang) : (await live()).saveInput(id, body, lang);
 }

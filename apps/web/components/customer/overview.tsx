@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from "@/components/icons";
 import { PartialRead } from "@/components/business/freshness";
 import { Card, ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { contextQuery, type CustomerContext } from "@/lib/customer-href";
 import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
 
 /** The colour a tone gives a figure or a value; a status is always said in the server's words as well, so colour is never the only channel. */
@@ -119,7 +120,7 @@ function shownEconomics(view: CustomerOverviewView): OverviewRow[] {
   return view.edit_href ? rows : rows.filter((r) => !NOT_ENTERED.has(r.value_display.trim()));
 }
 
-function Economics({ view }: { view: CustomerOverviewView }) {
+function Economics({ view, ctx }: { view: CustomerOverviewView; ctx: CustomerContext }) {
   const { t } = useI18n();
   const rows = shownEconomics(view);
   if (!rows.length) return null;
@@ -132,7 +133,7 @@ function Economics({ view }: { view: CustomerOverviewView }) {
           {view.edit_href && view.edit_label ? (
             <>
               {view.economics_note ? " " : null}
-              <Link href={view.edit_href} className={inlineLink} data-testid="customer-edit">
+              <Link href={withContext(view.edit_href, ctx)} className={inlineLink} data-testid="customer-edit">
                 {view.edit_label}
               </Link>
             </>
@@ -141,6 +142,12 @@ function Economics({ view }: { view: CustomerOverviewView }) {
       ) : null}
     </Card>
   );
+}
+
+/** A link that carries the context this page was opened with (`decision`, `path`, `invoice`), so the page it opens can find its way back. */
+function withContext(href: string, ctx: CustomerContext): string {
+  const query = contextQuery(ctx);
+  return query ? `${href}${href.includes("?") ? "&" : "?"}${query.slice(1)}` : href;
 }
 
 /** The exposure panel; while the read is off the server's `note` says why, in place of the rows. */
@@ -195,7 +202,7 @@ function History({ rows }: { rows: OverviewHistoryRow[] }) {
  * commercial decision (or the line that none waits, with the two other links), the economics and the exposure side by side, and the history. Each
  * section is drawn only when the server sent it. Every word, figure and link is the server's; the page decides nothing.
  */
-export function CustomerOverview({ view, onRetry }: { view: CustomerOverviewView; onRetry: () => void }) {
+export function CustomerOverview({ view, onRetry, ctx = {} }: { view: CustomerOverviewView; onRetry: () => void; ctx?: CustomerContext }) {
   const { t } = useI18n();
   const back = view.context?.back;
   return (
@@ -224,7 +231,7 @@ export function CustomerOverview({ view, onRetry }: { view: CustomerOverviewView
       ) : null}
       <Decision view={view} />
       <div className={`grid gap-x-10 gap-y-6 ${shownEconomics(view).length && (view.exposure || view.note) ? "lg:grid-cols-2" : ""}`}>
-        <Economics view={view} />
+        <Economics view={view} ctx={ctx} />
         <Exposure view={view} />
       </div>
       <History rows={view.history ?? []} />

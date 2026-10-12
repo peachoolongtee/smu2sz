@@ -29,6 +29,9 @@ import type {
   CapexView,
   ContractFixture,
   CustomerOverviewView,
+  InputSaveRequest,
+  InputSaveResult,
+  InputSheetView,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -1055,6 +1058,13 @@ function overviewMoment(): OverviewMoment {
  */
 export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
   await delay();
+  if (economicsOn() || inputsSaved()) {
+    // The recording taken with the customer economics on (`edit_href` set), before and after the owner saved a margin on the sheet.
+    const rec = await inputsRecording();
+    const view = clone((inputsSaved() ? rec.overview_after : rec.overview_before)[lang === "zh" ? "zh" : "en"]);
+    if (id !== view.customer_id) throw missingCustomer(id);
+    return { ...view, ...overviewPatch() };
+  }
   if (exposureOff()) {
     // The recording of the server with the exposure read switched off (it answers `exposure: null` and says why in `note`).
     const off = cast<Record<"en" | "zh", CustomerOverviewView>>((await import("../../mocks/customer_overview_exposure_off.json")).default);
@@ -1070,6 +1080,86 @@ export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: Cu
   const view = clone(rec.view);
   const shown = asked && view.context ? { ...view, context: { ...view.context, back: asked.back } } : view;
   return { ...shown, ...overviewPatch() };
+}
+
+// ------------------------------------------------------------------ the owner's Inputs sheet (ticket #97)
+
+/** Test hook: set to "1" and the customer overview is the recording taken with the customer economics on (its "Edit these facts" link set). */
+export const ECONOMICS_ON_KEY = "tl-mock-economics";
+/** Test hook: set to "1" and the sheet is the recording of a server with the economics fields refused (its notice, no form). */
+export const ECONOMICS_OFF_KEY = "tl-mock-economics-off";
+/** Mock state, not a hook: set once the recorded margin of 25% has been saved, so the sheet and the overview read as they were recorded after it. */
+export const INPUTS_SAVED_KEY = "tl-mock-inputs-saved";
+
+type Both<T> = Record<"en" | "zh", T>;
+type InputsRecording = {
+  opening: Both<InputSheetView>;
+  firm: Both<unknown>;
+  overview_before: Both<CustomerOverviewView>;
+  overview_after: Both<CustomerOverviewView>;
+  rejected: Both<{ status: number; detail: { code: string; field: string; reason: string; message: string } }>;
+  saved_margin: Both<InputSaveResult>;
+  after_margin: Both<InputSheetView>;
+};
+
+function sessionFlag(key: string): boolean {
+  try {
+    return typeof window !== "undefined" && window.sessionStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function economicsOn(): boolean {
+  return sessionFlag(ECONOMICS_ON_KEY);
+}
+
+function inputsSaved(): boolean {
+  return sessionFlag(INPUTS_SAVED_KEY);
+}
+
+async function inputsRecording(): Promise<InputsRecording> {
+  return cast<InputsRecording>((await import("../../mocks/buyer_inputs.json")).default);
+}
+
+/** GET /buyers/{id}/inputs: recorded for the demo's first buyer in both languages, before and after the owner saved a margin of 25%. */
+export async function getBuyerInputs(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<InputSheetView> {
+  void ctx;
+  await delay();
+  const key = lang === "zh" ? "zh" : "en";
+  if (sessionFlag(ECONOMICS_OFF_KEY)) {
+    const off = cast<Both<InputSheetView>>((await import("../../mocks/buyer_inputs_off.json")).default);
+    if (id !== off[key].buyer_id) throw missingCustomer(id);
+    return clone(off[key]);
+  }
+  const rec = await inputsRecording();
+  const view = clone((inputsSaved() ? rec.after_margin : rec.opening)[key]);
+  if (id !== view.buyer_id) throw missingCustomer(id);
+  return view;
+}
+
+/**
+ * POST /buyers/{id}/inputs: the mock holds what the server answered to the two saves it was recorded with, a margin of 25% (saved) and a
+ * margin of 150% (the 422 and its sentence). Anything else was not recorded and is refused with that said, never answered with made-up words.
+ */
+export async function saveInput(id: string | null, body: InputSaveRequest, lang: "en" | "zh"): Promise<InputSaveResult> {
+  await delay();
+  const key = lang === "zh" ? "zh" : "en";
+  const rec = await inputsRecording();
+  const text = body.value_text.trim();
+  if (id === "BUYER-1" && body.field === "margin_bp" && text === "25%") {
+    try {
+      window.sessionStorage.setItem(INPUTS_SAVED_KEY, "1");
+    } catch {
+      /* storage unavailable */
+    }
+    return clone(rec.saved_margin[key]);
+  }
+  if (id === "BUYER-1" && body.field === "margin_bp" && text === "150%") {
+    const r = rec.rejected[key];
+    throw new ApiError(r.status, r.detail.message, r.detail);
+  }
+  throw new ApiError(422, `The mock holds no recorded answer for ${body.field} = ${body.value_text}.`, { code: "NOT_RECORDED" });
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

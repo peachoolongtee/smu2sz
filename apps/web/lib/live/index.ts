@@ -25,6 +25,9 @@ import type {
   EnvelopeView,
   ContractFixture,
   CustomerOverviewView,
+  InputSaveRequest,
+  InputSaveResult,
+  InputSheetView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -216,6 +219,12 @@ export const live = {
   /** GET /customers/{id}/overview: one page's read; the context (`decision`, `path`, `invoice`) only builds the back link. */
   getCustomerOverview: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
     http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery(ctx)}`),
+
+  getBuyerInputs: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
+    http<InputSheetView>("GET", `/buyers/${enc(id)}/inputs?lang=${lang}${contextQuery(ctx)}`),
+
+  saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
+    http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),
 
   /** Owner action: close a counterparty's circuit breaker. The server checks X-Owner-Token. */
   resetCircuit: async (counterpartyId: string): Promise<{ status: string; message: string }> => {
