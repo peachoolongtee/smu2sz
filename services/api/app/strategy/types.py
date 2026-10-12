@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import Field, field_validator
 
-from app.domain.models import Bp, Contract, Day, Fen, FinancialState
+from app.domain.models import Bp, Contract, Day, Fen, FinancialState, FundingPlan
 from app.whatif.params import (
     DISCOUNT_MAX_BP,
     FACE_STEP_FEN,
@@ -90,4 +90,130 @@ class MarginalImpact(Contract):
     after_need_fen: Fen
 
 
-__all__ = ["CandidatePackage", "MarginalImpact", "ScenarioState"]
+# ---------------------------------------------------------------- capacity (map #88, ticket #96, brief section F)
+
+CapacityDimension = Literal[
+    "cash_buffer", "credit_line", "invoice_finance", "concession", "concession_buyer", "dscr_room", "leverage_room"]
+CapacityReading = Literal["TODAY", "AS_ISSUED"]
+
+
+class CapacityWindow(Contract):
+    """One dimension of capacity on one set of books, as a day series read down to its lowest point and back.
+
+    Money is integer fen and days are absolute. A negative figure is kept (`over_by`), never clamped. `today_fen` is the
+    figure on the books' first day; `lowest_fen` / `lowest_day` its lowest point (the first day it is reached);
+    `through_day` the last day of the run that stays at that low (a cash buffer: the run below the floor); `recovers_day`
+    the next day, when the figure rises, and `after_fen` the figure on that day (both None when it never does). A
+    figure that is a point value (the concession budget, a covenant month) has no recovery. `reason` is a code
+    (`capacity.reason_text` words it), never a sentence."""
+
+    dimension: CapacityDimension
+    facility_id: str | None
+    today_fen: Fen
+    after_fen: Fen | None
+    lowest_fen: Fen
+    lowest_day: Day
+    recovers_day: Day | None
+    through_day: Day
+    over_by: bool
+    reason: str | None = None
+    buyer_id: str | None = None  # `concession_buyer`: the buyer whose cap this is
+    reading: CapacityReading | None = None  # `invoice_finance`: TODAY (issued invoices) or AS_ISSUED (labelled)
+    month: int | None = None  # `dscr_room` / `leverage_room`: the worst month
+    recovery_assumed: bool = False  # the recovery rests on a discretionary repayment (ADR-0010 section 5)
+
+
+class CovenantRoom(Contract):
+    """The covenant room of one month, in money: how much more debt service (DSCR) or month-end debt (leverage) the
+    month could carry. `None`: the covenant has nothing to test that month (no debt service). Room >= 0 exactly when
+    the month has no DSCR / LEVERAGE breach."""
+
+    month: int
+    dscr_room_fen: Fen | None
+    leverage_room_fen: Fen
+
+
+class CapacitySnapshot(Contract):
+    """The five capacity dimensions on one set of books, on the CONSERVATIVE trajectory under the router's committed
+    plan (the cash buffer on the unfunded trajectory). `need_first_day` / `need_last_day` is the window in which cash is
+    below the floor without funding: the router draws today for a later need, so the plan-based series are read
+    beside it."""
+
+    day: Day
+    through_day: Day  # the last day of the series (the trajectory's end)
+    windows: list[CapacityWindow]
+    covenant_months: list[CovenantRoom] = Field(default_factory=list)
+    no_borrowing_reason: str | None = None  # a code, when `allow_new_borrowing` is false
+    plan_admissible: bool = True  # False: no admissible plan, the series are the unfunded ones
+    need_first_day: Day | None = None
+    need_last_day: Day | None = None
+
+
+class CapacityBeforeAfter(Contract):
+    """The snapshot for the books as they stand, and for the labelled copy with the package in force (None: no package)."""
+
+    before: CapacitySnapshot
+    after: CapacitySnapshot | None = None
+    label: str = ""
+
+
+SpareShape = Literal["S1"]
+SpareCriterion = Literal["R-TODAY", "R-AS-ISSUED"]
+
+
+class SpareCapacity(Contract):
+    """The additional working-capital need FLOW could still support (brief F.3): X*, the largest one-off payment of X today
+    (on a YUAN_STEP grid) for which the router still returns a plan that is admissible, needs no owner approval and can
+    run (today, or as issued). `x_star_fen` is None when today's books already have no such plan (`refused_text`)."""
+
+    shape: SpareShape
+    criterion: SpareCriterion
+    step_fen: Fen
+    x_star_fen: Fen | None
+    plan_at_x: FundingPlan | None
+    plan_next: FundingPlan | None  # the plan at X* + one step
+    binding_reason: str  # the router's own words for why the next step fails; "" when refused
+    shape_text: str  # the shape and criterion sentence, always printed with the figure
+    refused_text: str | None
+    ceiling_fen: Fen  # the largest X the search considered
+    evaluations: int  # router runs
+    scanned: bool  # a neighbour of the boundary disagreed and the grid was scanned
+    seconds: float
+
+
+# ---------------------------------------------------------------- the late-payment stress (brief G.3)
+
+
+class StressRow(Contract):
+    """One fixed delay of the buyer-wide stress: what the unfunded projection and the router's committed plan say about
+    the copy of the books in which the buyer pays every invoice `delay_days` late. A test, never a forecast."""
+
+    delay_days: int
+    lowest_fen: Fen
+    lowest_day: Day
+    breach_days: int
+    need_fen: Fen
+    plan_admissible: bool
+    plan_cost_fen: Fen | None
+    needs_owner: bool
+    executable_now: bool
+    first_breach_day: Day | None
+    assumption: str
+    funding_text: str
+
+
+__all__ = [
+    "CandidatePackage",
+    "CapacityBeforeAfter",
+    "CapacityDimension",
+    "CapacityReading",
+    "CapacitySnapshot",
+    "CapacityWindow",
+    "CovenantRoom",
+    "MarginalImpact",
+    "ScenarioState",
+    "SpareCapacity",
+    "SpareCriterion",
+    "SpareShape",
+    "StressRow",
+]
