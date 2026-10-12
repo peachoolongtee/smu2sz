@@ -76,6 +76,15 @@
 // and, against an API started WITHOUT FEATURE_EXPOSURE, `--overview --exposure-off` records customer_overview_exposure_off.json ({ en, zh }: the opening
 // books' overview with the exposure panel off and the server's note for it), which the mock serves while the spec's hook key is set.
 //
+// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of three
+// moments the mock chooses among (lib/mock/home-v2.ts), { en, zh } of GET /home (the full read, with its `home_v2` block), GET /worklist and GET /customers:
+//   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
+//   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
+//   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
+// The API needs FEATURE_HOME_V2=1 and the flags above:
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_HOME_V2=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
+//   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -91,7 +100,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -100,6 +109,7 @@ const STRATEGY = process.argv.includes("--strategy");
 const EXPOSURE = process.argv.includes("--exposure");
 const OVERVIEW = process.argv.includes("--overview");
 const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
+const HOME_V2 = process.argv.includes("--home-v2");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
@@ -418,6 +428,38 @@ if (OVERVIEW) {
   await live.demoReset();
   write("customer_overview.json", moments);
   console.log(`recorded customer_overview.json into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
+// --home-v2: the Home V2 reads at three moments and nothing else (see the header).
+if (HOME_V2) {
+  mkdirSync(join(OUT, "home_v2"), { recursive: true });
+  const reads = async () => {
+    const both = async (read) => ({ en: await inLang("en", () => read("en")), zh: await inLang("zh", () => read("zh")) });
+    const home = await both((lang) => live.getHome(lang));
+    if (!home.en.home_v2) throw new Error("the Home read carries no home_v2: start the API with FEATURE_HOME_V2=1");
+    const worklist = await both((lang) => live.getWorklist(lang));
+    const customers = await both((lang) => live.getCustomers(lang));
+    if (!worklist.en || !customers.en) throw new Error("GET /worklist or /customers is off: start the API with FEATURE_HOME_V2=1");
+    return { home, worklist, customers };
+  };
+  const keep = (point, got) => {
+    for (const kind of ["home", "worklist", "customers"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
+  };
+  await reset();
+  keep("day0", await reads());
+  await step("inbox").run();
+  await step("trajectory").run();
+  keep("offer", await reads());
+  // The day-0 plan, as the home's "Go ahead" runs it on the opening books.
+  await reset();
+  {
+    const a = (await live.getHome("en")).next_action;
+    await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
+    keep("after_fund", await reads());
+  }
+  await live.demoReset();
+  console.log(`recorded ${written.length} Home V2 files into ${join(OUT, "home_v2")} from ${API}`);
   process.exit(0);
 }
 
