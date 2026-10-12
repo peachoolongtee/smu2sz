@@ -28,6 +28,7 @@ import type {
   CapexRequest,
   CapexView,
   ContractFixture,
+  CustomerOverviewView,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -64,6 +65,7 @@ import type {
   WhatIfResult,
 } from "../types";
 
+import type { CustomerContext } from "../customer-href";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
@@ -983,6 +985,51 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
   return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+}
+
+/** Which recorded moment of the story the customer overview is read at: before the news day the opening books, with the package offer received or read, or after the day-0 plan ran; from the news day on, day 34, and day 34 once the cure is approved. */
+type OverviewMoment = "quiet" | "offer_received" | "offer_evaluated" | "after_fund" | "day34" | "day34_after";
+type RecordedOverview = { view: CustomerOverviewView; backs: { query: CustomerContext; back: { label: string; href: string } }[] };
+
+/** Test hook, like WORTH_FAIL_KEY: set this sessionStorage key to "1" and the customer overview is the recording taken with the exposure read off. */
+export const EXPOSURE_OFF_KEY = "tl-mock-exposure-off";
+
+function exposureOff(): boolean {
+  try {
+    return typeof window !== "undefined" && window.sessionStorage.getItem(EXPOSURE_OFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function overviewMoment(): OverviewMoment {
+  if (home.mockClock().day >= home.NEWS_DAY) return home.cureStage() === "approved" ? "day34_after" : "day34";
+  if (home.isFunded()) return "after_fund";
+  const stage = openOfferStage();
+  return stage === "evaluated" ? "offer_evaluated" : stage === "received" ? "offer_received" : "quiet";
+}
+
+/**
+ * GET /customers/{id}/overview: recorded for the demo's first buyer in both languages at each moment of the story. The server builds the back
+ * link from the query, so the recording holds the back link of each query the specs open it with (a deal, a deal and its path, an invoice); any
+ * other query gets the plain "Back to Deals" the server gives. Any other customer is unknown (404), as the server answers.
+ */
+export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
+  await delay();
+  if (exposureOff()) {
+    // The recording of the server with the exposure read switched off (it answers `exposure: null` and says why in `note`).
+    const off = cast<Record<"en" | "zh", CustomerOverviewView>>((await import("../../mocks/customer_overview_exposure_off.json")).default);
+    const view = clone(off[lang === "zh" ? "zh" : "en"]);
+    if (id !== view.customer_id) throw new ApiError(404, `There is no customer ${id} on the books.`);
+    return view;
+  }
+  const all = cast<Record<OverviewMoment, Record<"en" | "zh", RecordedOverview>>>((await import("../../mocks/customer_overview.json")).default);
+  const rec = all[overviewMoment()][lang === "zh" ? "zh" : "en"];
+  if (id !== rec.view.customer_id) throw new ApiError(404, `There is no customer ${id} on the books.`);
+  const same = (a: CustomerContext, b: CustomerContext) => (a.decision ?? null) === (b.decision ?? null) && (a.path ?? null) === (b.path ?? null) && (a.invoice ?? null) === (b.invoice ?? null);
+  const asked = rec.backs.find((b) => same(b.query, ctx));
+  const view = clone(rec.view);
+  return asked && view.context ? { ...view, context: { ...view.context, back: asked.back } } : view;
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

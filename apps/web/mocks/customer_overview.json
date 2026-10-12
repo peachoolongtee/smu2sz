@@ -1,0 +1,1828 @@
+{
+  "quiet": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥420,000",
+            "note": "due in 32 days, nothing overdue",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "None",
+            "note": "nothing is financed against Foshan's invoices",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "one open invoice; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥81,000 today",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥420,000",
+            "note": "32 天后到期，没有逾期",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "无",
+            "note": "没有以Foshan的发票做融资",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "1 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "60 天后降至 −¥250,000；有 65 天低于您的最低现金；¥550,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥81,000",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  },
+  "offer_received": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥420,000",
+            "note": "due in 32 days, nothing overdue",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "None",
+            "note": "nothing is financed against Foshan's invoices",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "one open invoice; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥81,000 today",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥420,000",
+            "note": "32 天后到期，没有逾期",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "无",
+            "note": "没有以Foshan的发票做融资",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "1 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "60 天后降至 −¥250,000；有 65 天低于您的最低现金；¥550,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥81,000",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  },
+  "offer_evaluated": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥420,000",
+            "note": "due in 32 days, nothing overdue",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "None",
+            "note": "nothing is financed against Foshan's invoices",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "one open invoice; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": {
+          "eyebrow": "One commercial decision waits for you",
+          "text": "Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. FLOW recommends countering with Option A, ¥3,027.77 once if accepted.",
+          "headline_short": "Counter instead of accepting as asked",
+          "authority_text": "FLOW can send it",
+          "primary": {
+            "label": "Review the counter",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
+          },
+          "secondary": [
+            {
+              "key": "invoices",
+              "label": "View the invoices",
+              "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+            },
+            {
+              "key": "stress",
+              "label": "Stress-test payment",
+              "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+            }
+          ]
+        },
+        "none_text": null,
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
+              "note": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.",
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "Today",
+            "text": "Asked for early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. Two replies are ready to send.",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          },
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21"
+          },
+          "back": {
+            "label": "Back to the Foshan deal",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          }
+        },
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21",
+            "path": "CTR-193394b6ba8b"
+          },
+          "back": {
+            "label": "Back to the Foshan deal",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
+          }
+        },
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 1,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥420,000",
+            "note": "32 天后到期，没有逾期",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "无",
+            "note": "没有以Foshan的发票做融资",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "1 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": {
+          "eyebrow": "有一项商务决定等待您处理",
+          "text": "Foshan要求：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价。",
+          "headline_short": "还价，不按对方要求接受",
+          "authority_text": "FLOW 可以直接发送",
+          "primary": {
+            "label": "查看还价",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
+          },
+          "secondary": [
+            {
+              "key": "invoices",
+              "label": "查看发票",
+              "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+            },
+            {
+              "key": "stress",
+              "label": "测试晚付的影响",
+              "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+            }
+          ]
+        },
+        "none_text": null,
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "60 天后降至 −¥250,000；有 65 天低于您的最低现金；¥550,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
+              "note": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。",
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "今天",
+            "text": "对方提出：提前结算 ¥420,000.00，折扣 1.20%、账期调整为 60 天和1.00% 的返利。两份回复已可发送。",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          },
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21"
+          },
+          "back": {
+            "label": "返回与Foshan的交易",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
+          }
+        },
+        {
+          "query": {
+            "decision": "deal:OFF-f806f79b6c21",
+            "path": "CTR-193394b6ba8b"
+          },
+          "back": {
+            "label": "返回与Foshan的交易",
+            "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
+          }
+        },
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  },
+  "after_fund": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥420,000",
+            "note": "due in 32 days, nothing overdue",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "¥255,000",
+            "note": "financing arranged, expected in 3 days",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "one open invoice; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "¥255,000 against the ¥420,000 invoice",
+              "note": "financing arranged, expected in 3 days; repaid from the receipt; about ¥163k then becomes available cash",
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "¥155,000 in 60 days; 15 days below your minimum; ¥145,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "financing_then",
+              "label": "The financing then",
+              "value_display": "runs 30 days longer; about ¥2,270 more in charges",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥0 today",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "Today",
+            "text": "¥255,000.00 of invoice financing drawn against the Foshan Home Retail Co. invoice. Funds arrive in 3 days. Financed through Invoice financing (onboarded platform).",
+            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan"
+          },
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 0,
+        "state_version": 3,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥420,000",
+            "note": "32 天后到期，没有逾期",
+            "tone": "neutral"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "¥255,000",
+            "note": "融资已安排，预计3 天后到账",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "1 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "¥255,000，以 ¥420,000 的发票做融资",
+              "note": "融资已安排，预计3 天后到账；由回款偿还；之后约有 ¥163k 成为可用现金",
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "60 天后降至 ¥155,000；有 15 天低于您的最低现金；¥145,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "financing_then",
+              "label": "届时的融资",
+              "value_display": "多持续 30 天；费用约增加 ¥2,270",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥0",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "今天",
+            "text": "已以Foshan Home Retail Co.的发票融资 ¥255,000.00。资金将于3 天后到账。通过Invoice financing (onboarded platform)融资。",
+            "href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan"
+          },
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  },
+  "day34": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 34,
+        "state_version": 7,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥1,002,800",
+            "note": "¥162,800 overdue; next due in 13 days",
+            "tone": "bad"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "None",
+            "note": "nothing is financed against Foshan's invoices",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "3 open invoices; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "none against this customer's invoices",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "−¥45,000 in 26 days; 35 days below your minimum; ¥345,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "none today",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "32 days ago",
+            "text": "Received ¥255,013.80 from Foshan Home Retail Co. Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+            "href": null
+          },
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 34,
+        "state_version": 7,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥1,002,800",
+            "note": "其中 ¥162,800 已逾期；下一笔13 天后到期",
+            "tone": "bad"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "无",
+            "note": "没有以Foshan的发票做融资",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "3 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "没有以该客户发票做的融资",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "26 天后降至 −¥45,000；有 35 天低于您的最低现金；¥345,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 无",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "32 天前",
+            "text": "已收到Foshan Home Retail Co.的 ¥255,013.80。按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+            "href": null
+          },
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  },
+  "day34_after": {
+    "en": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "en",
+        "day": 34,
+        "state_version": 8,
+        "summary_text": "What this relationship is worth, and what it puts at risk.",
+        "figures": [
+          {
+            "key": "value",
+            "label": "Relationship value",
+            "value_display": "Not known yet",
+            "note": "enter annual sales and gross margin to estimate it",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "Outstanding",
+            "value_display": "¥1,002,800",
+            "note": "¥162,800 overdue; next due in 13 days",
+            "tone": "bad"
+          },
+          {
+            "key": "financing",
+            "label": "Financing linked",
+            "value_display": "¥200,000",
+            "note": "financing arranged, expected in 3 days",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "Share of what you are owed",
+            "value_display": "100%",
+            "note": "3 open invoices; not its share of your sales",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "No commercial decision is waiting for you with Foshan.",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "View the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "Stress-test payment",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "Annual sales",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "Gross margin",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "Classed as",
+            "value_display": "not entered yet",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "None of this changes what FLOW may do on its own.",
+        "edit_label": "Edit these facts",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "Payment behaviour",
+              "value_display": "not enough history yet",
+              "note": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "Financing",
+              "value_display": "¥200,000 against the ¥420,000 invoice",
+              "note": "financing arranged, expected in 3 days; repaid from the receipt; about ¥218k then becomes available cash",
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "Paid 30 days late",
+              "value_display": "¥155,000 in 26 days; 30 days below your minimum; ¥145,000 uncovered",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "financing_then",
+              "label": "The financing then",
+              "value_display": "runs 30 days longer; about ¥1,780 more in charges",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "capacity",
+              "label": "Spare capacity",
+              "value_display": "¥0 today",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "The same figures as on the deal, on Receivables and on Cash: one comparison, read once."
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "Today",
+            "text": "You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
+            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7"
+          },
+          {
+            "when_text": "32 days ago",
+            "text": "Received ¥255,013.80 from Foshan Home Retail Co. Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+            "href": null
+          },
+          {
+            "when_text": "In force",
+            "text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date; early payment: none agreed on this invoice",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "Back to Deals",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "Back to the invoices",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    },
+    "zh": {
+      "view": {
+        "customer_id": "BUYER-1",
+        "name": "Foshan Home Retail Co.",
+        "lang": "zh",
+        "day": 34,
+        "state_version": 8,
+        "summary_text": "这段客户关系的价值，以及它带来的风险。",
+        "figures": [
+          {
+            "key": "value",
+            "label": "客户关系价值",
+            "value_display": "暂不清楚",
+            "note": "填写年销售额和毛利率后即可估算",
+            "tone": "neutral"
+          },
+          {
+            "key": "outstanding",
+            "label": "未收款",
+            "value_display": "¥1,002,800",
+            "note": "其中 ¥162,800 已逾期；下一笔13 天后到期",
+            "tone": "bad"
+          },
+          {
+            "key": "financing",
+            "label": "已关联的融资",
+            "value_display": "¥200,000",
+            "note": "融资已安排，预计3 天后到账",
+            "tone": "neutral"
+          },
+          {
+            "key": "share",
+            "label": "占您应收款的比例",
+            "value_display": "100%",
+            "note": "3 张未收发票；这不是其占您销售额的比例",
+            "tone": "warn"
+          }
+        ],
+        "decision": null,
+        "none_text": "目前没有需要您对Foshan作出的商务决定。",
+        "actions": [
+          {
+            "key": "invoices",
+            "label": "查看发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          },
+          {
+            "key": "stress",
+            "label": "测试晚付的影响",
+            "href": "/cash?stress=BUYER-1:30&invoice=RCV-A"
+          }
+        ],
+        "economics": [
+          {
+            "key": "annual_sales",
+            "label": "年销售额",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "gross_margin",
+            "label": "毛利率",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          },
+          {
+            "key": "classification",
+            "label": "客户分类",
+            "value_display": "尚未填写",
+            "note": null,
+            "tone": "neutral"
+          }
+        ],
+        "economics_note": "这些都不会改变 FLOW 可以自行处理的范围。",
+        "edit_label": "修改这些信息",
+        "edit_href": "/inputs?customer=BUYER-1",
+        "exposure": {
+          "rows": [
+            {
+              "key": "payments",
+              "label": "付款表现",
+              "value_display": "付款记录还不够",
+              "note": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+              "tone": "neutral"
+            },
+            {
+              "key": "financing",
+              "label": "融资",
+              "value_display": "¥200,000，以 ¥420,000 的发票做融资",
+              "note": "融资已安排，预计3 天后到账；由回款偿还；之后约有 ¥218k 成为可用现金",
+              "tone": "neutral"
+            },
+            {
+              "key": "stress",
+              "label": "晚付 30 天",
+              "value_display": "26 天后降至 ¥155,000；有 30 天低于您的最低现金；¥145,000 缺口无法覆盖",
+              "note": null,
+              "tone": "bad"
+            },
+            {
+              "key": "financing_then",
+              "label": "届时的融资",
+              "value_display": "多持续 30 天；费用约增加 ¥1,780",
+              "note": null,
+              "tone": "neutral"
+            },
+            {
+              "key": "capacity",
+              "label": "可用余量",
+              "value_display": "今天 ¥0",
+              "note": null,
+              "tone": "neutral"
+            }
+          ],
+          "same_figures_note": "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。"
+        },
+        "note": null,
+        "history": [
+          {
+            "when_text": "今天",
+            "text": "您已批准¥200,000.00 的发票融资。资金将于3 天后到账。",
+            "href": "/decisions/alert%3AALERT-RESERVE-42%3Av7"
+          },
+          {
+            "when_text": "32 天前",
+            "text": "已收到Foshan Home Retail Co.的 ¥255,013.80。按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+            "href": null
+          },
+          {
+            "when_text": "现行",
+            "text": "依据协议 FHR-2026-07：账期为自开票日起 45 天；提前付款：这张发票没有约定提前付款",
+            "href": "/documents"
+          }
+        ],
+        "context": {
+          "back": {
+            "label": "返回交易",
+            "href": "/deals"
+          }
+        }
+      },
+      "backs": [
+        {
+          "query": {
+            "invoice": "RCV-A"
+          },
+          "back": {
+            "label": "返回发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A"
+          }
+        }
+      ]
+    }
+  }
+}

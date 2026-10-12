@@ -35,8 +35,11 @@ export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approv
 /** A decision's record (`/decisions/{id}`) is an owner page opened from Home, Activity or an approval; it has no section of its own. */
 export const DECISION_ROUTE_PREFIX = "/decisions/";
 
+/** A customer's overview (`/customers/{id}`) is an owner page opened from a customer's name on Deals, Receivables, Cash and Activity; like a record it has no section of its own. */
+export const CUSTOMER_ROUTE_PREFIX = "/customers/";
+
 export function isBusinessRoute(pathname: string): boolean {
-  return (BUSINESS_ROUTES as readonly string[]).includes(pathname) || pathname.startsWith(DECISION_ROUTE_PREFIX);
+  return (BUSINESS_ROUTES as readonly string[]).includes(pathname) || pathname.startsWith(DECISION_ROUTE_PREFIX) || pathname.startsWith(CUSTOMER_ROUTE_PREFIX);
 }
 
 /** The engine views and the story page always show the Demo shell; a business route shows it only in Demo mode. */
