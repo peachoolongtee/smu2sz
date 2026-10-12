@@ -112,6 +112,12 @@ export function InvoiceList({
                   <div role="cell" className="min-w-0 text-sm text-ink">
                     <Label>{t("recv3.col.due")}</Label>
                     <span data-testid={`recv-due-${r.receivable_id}`}>{r.due_when}</span>
+                    {/* What the payment rests on, in the server's sentence (the same words the cash picture says). */}
+                    {r.basis_text ? (
+                      <span className="mt-0.5 block text-[13px] leading-snug text-ink-2" data-testid={`recv-basis-${r.receivable_id}`} data-basis={r.basis ?? undefined}>
+                        {r.basis_text}
+                      </span>
+                    ) : null}
                   </div>
                   <div role="cell" className="col-span-2 min-w-0 space-y-1 lg:col-span-1">
                     <Label>{t("recv3.col.financing")}</Label>

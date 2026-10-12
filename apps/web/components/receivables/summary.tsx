@@ -70,6 +70,12 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
           caption={<span className="block text-sm first-letter:uppercase">{summary.net_total_text}</span>}
         />
       </dl>
+      {/* Billing that is scheduled but not invoiced has no row (it is not owed yet): the server says so in one sentence. */}
+      {summary.scheduled_note ? (
+        <p className="text-sm text-ink-2" data-testid="recv3-scheduled-note">
+          {summary.scheduled_note}
+        </p>
+      ) : null}
     </>
   );
 }
