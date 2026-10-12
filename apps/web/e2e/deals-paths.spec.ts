@@ -461,7 +461,7 @@ test("keyboard: the arrow keys move between the chips, Enter keeps one, and Spac
   await expect(page.getByTestId("path-play")).toHaveAttribute("aria-pressed", "false");
 });
 
-test("a column shows its cost on one basis; Option B's net cost carries its two parts beside the net; a mixed cost is two lines, never a sum", async ({ page }) => {
+test("a column shows its cost on one basis; Option B's net cost carries its parts beside the net, the plan cost named as outside it; a mixed cost is two lines, never a sum", async ({ page }) => {
   await checked(page);
   // Option A: one figure, once.
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
@@ -470,9 +470,11 @@ test("a column shows its cost on one basis; Option B's net cost carries its two 
   await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
   await expect(page.getByTestId("path-col-basis-2")).toHaveText("net over 12 months");
   const rows = page.getByTestId("path-col-components-2").locator("> div");
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
   await expect(rows.nth(0)).toHaveText("Funding cost of the longer terms¥16,217.95");
   await expect(rows.nth(1)).toHaveText("Offset by the 0.30% price rise¥16,380.00");
+  // The plan that funds the shortfall is shown beside the net, named as outside it, so ¥0.00 never reads as "free".
+  await expect(rows.nth(2)).toHaveText("Funding plan for the shortfall (not in the net)¥3,706.46");
   // The asked path has both a one-off and a 12-month part: two figure lines, no single headline, so they never read as a sum.
   await expect(page.getByTestId("path-col-cost-0")).toHaveCount(0);
   await expect(page.getByTestId("path-col-parts-0").locator("> li")).toHaveCount(2);
