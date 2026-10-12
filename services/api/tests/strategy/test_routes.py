@@ -111,8 +111,9 @@ def test_the_envelope_route_answers_books_with_32_day_terms(rt, api):
     r = api.get(f"/buyers/{GOLDEN_BUYER}/envelope?zone=1", headers=OWNER)
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["refused"] is None and body["primary"].startswith("You can live with: ")
-    assert 32 in [z["terms_days"] for z in body["zone"]] and any(p["package"]["terms_days"] == 32 for p in body["packages"])
+    assert body["refused"] is None and body["primary"].startswith("At today's price: ") and "You can live with: " in body["primary"]
+    shown = [*body["packages"], *body["more"]]  # the card holds at most three (P6); the rest are behind the disclosure
+    assert 32 in [z["terms_days"] for z in body["zone"]] and any(p["package"]["terms_days"] == 32 for p in shown)
 
 
 # ---------------------------------------------------------------- the runtime lock and the answer cache

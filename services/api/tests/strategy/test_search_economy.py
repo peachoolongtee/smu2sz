@@ -130,7 +130,9 @@ def test_marginal_impact_is_the_same_with_the_books_read_beforehand(rt_day0: Run
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 7, 12])
-def test_the_terms_search_with_top_first_reads_the_same_maximum_in_fewer_runs(n: int) -> None:
+def test_the_terms_search_with_top_first_reads_the_same_maximum_in_at_most_four_runs(n: int) -> None:
+    """P5 (ticket #98): a passing top is checked by one middle probe and the neighbour below it, so a lever with no wall costs four
+    runs instead of two (fewer than the plain search on the 13-step terms range; the weekly scan guards the rest)."""
     values = [90 + 5 * i for i in range(n)]
     for boundary in range(-1, n):  # -1: nothing passes ... n-1: every value passes
         plain: list[int] = []
@@ -144,7 +146,9 @@ def test_the_terms_search_with_top_first_reads_the_same_maximum_in_fewer_runs(n:
         shortcut = E.last_true(values, partial(counting, quick), gallop=True, top_first=True)
         assert whole == shortcut, (n, boundary)
         if boundary == n - 1 and n > 1:
-            assert len(quick) == 2 and len(quick) <= len(plain)  # the first value and the top, and nothing past the top
+            assert len(quick) <= 4  # the first value, the top, the middle and the neighbour below the top, and nothing past the top
+            if n >= 12:
+                assert len(quick) < len(plain)
 
 
 def test_the_early_payment_search_from_the_bottom_reads_the_same_maximum(verifiers: Any) -> None:
