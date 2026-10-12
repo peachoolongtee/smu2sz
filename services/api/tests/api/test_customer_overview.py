@@ -397,14 +397,38 @@ def test_an_aggregate_buyer_has_no_share_of_its_own(api, rt):
 
 
 def test_an_overdue_invoice_is_named_in_the_outstanding_figure():
-    rows = [{"outstanding_fen": 10_000_000, "past_due": True, "due_when": "3 days ago"},
-            {"outstanding_fen": 32_000_000, "past_due": False, "due_when": "in 9 days"}]
+    rows = [{"outstanding_fen": 10_000_000, "past_due": True, "due_when": "3 days ago", "collection_state": "OVERDUE",
+             "collection_state_text": "Overdue"},
+            {"outstanding_fen": 32_000_000, "past_due": False, "due_when": "in 9 days", "collection_state": "CURRENT",
+             "collection_state_text": "Not due yet"}]
     en = overview._outstanding(SimpleNamespace(lang="en", rows=rows))
     zh = overview._outstanding(SimpleNamespace(lang="zh", rows=[{**rows[0], "due_when": "3 天前"}, {**rows[1], "due_when": "9 天后"}]))
     assert (en["value_display"], en["note"], en["tone"]) == ("¥420,000", "¥100,000 overdue; next due in 9 days", "bad")
+    assert (en["state"], en["state_text"]) == ("overdue", "Overdue")  # the worst of the rows' own collection states
     assert zh["note"] == "其中 ¥100,000 已逾期；下一笔9 天后到期"
     several = overview._outstanding(SimpleNamespace(lang="en", rows=rows[1:] * 2))
     assert several["note"] == "next due in 9 days, nothing overdue"
+    assert (several["state"], several["state_text"]) == ("current", "Not due yet")
+
+
+def _owed(state: str, text: str) -> dict[str, Any]:
+    return {"outstanding_fen": 1_000_000, "past_due": state in ("OVERDUE", "PROMISE_MISSED"), "due_when": "in 3 days",
+            "collection_state": state, "collection_state_text": text}
+
+
+@pytest.mark.parametrize(("states", "expected"), [
+    ([("CURRENT", "Not due yet"), ("DUE_SOON", "Due soon")], ("due_soon", "Due soon")),
+    ([("DUE_SOON", "Due soon"), ("OVERDUE", "Overdue"), ("CURRENT", "Not due yet")], ("overdue", "Overdue")),
+    ([("OVERDUE", "Overdue"), ("PROMISE_MISSED", "Promise missed")], ("promise_missed", "Promise missed")),
+])
+def test_the_outstanding_figures_state_is_the_worst_of_the_rows_own_collection_states(states, expected):
+    fig = overview._outstanding(SimpleNamespace(lang="en", rows=[_owed(*x) for x in states]))
+    assert (fig["state"], fig["state_text"]) == expected
+
+
+def test_nothing_owed_has_no_collection_state():
+    fig = overview._outstanding(SimpleNamespace(lang="en", rows=[]))
+    assert (fig["state"], fig["state_text"]) == ("none", "")
 
 
 # ---------------------------------------------------------------- the back link
@@ -781,3 +805,112 @@ def test_every_history_row_with_a_link_names_it_and_a_row_without_one_does_not(a
     zh = {x["link_label"] for x in _get(api, lang="zh")["history"]} - {None}
     assert zh <= {"记录", "协议", "条款", "该交易"} and "协议" in zh
     assert english_leaks(_get(api, lang="zh"), NAMES, raw_fields=[HREFS]) == []
+
+
+# ---------------------------------------------------------------- the state words (ticket #120)
+
+STATES = {"planned", "arranged", "received", "repaid", "current", "due_soon", "overdue", "promise_missed", "none"}
+FIELDS = ("state", "state_text")
+
+
+def _states(rows: list[dict[str, Any]]) -> dict[str, tuple[str, str]]:
+    return {r["key"]: (r["state"], r["state_text"]) for r in rows}
+
+
+def _land(api: TestClient, rt: Runtime, *, arrival_day: int = -2) -> None:
+    state = rt.store.get_state()
+    lot = next(x for x in state.lots if x.receivable_id == "RCV-A")
+    rt.store.put_state(state.model_copy(update={"lots": [FundingLot(**{**lot.model_dump(), "arrival_day": arrival_day, "settled": True})]}))
+    offer_picture._cache.clear()
+
+
+@pytest.mark.parametrize(("lang", "planned", "arranged", "received", "current"), [
+    ("en", "Planned", "Arranged", "Received", "Not due yet"),
+    ("zh", "计划中", "已安排", "已到账", "未到期"),
+])
+def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabulary(api, rt, lang, planned, arranged, received, current):
+    _before(api, rt)
+    b = _get(api, lang=lang)
+    assert _states(b["figures"]) == {"value": ("none", ""), "outstanding": ("current", current), "financing": ("planned", planned),
+                                     "share": ("none", "")}
+    assert _states(b["exposure"]["rows"])["financing"] == ("planned", planned)  # the plan is ready and has not run: nothing is financed yet
+    assert _fig(b, "financing")["value_display"] == ("None" if lang == "en" else "无")  # additive: the words stand as they were
+    _run_plan(api)
+    b = _get(api, lang=lang)
+    assert _states(b["figures"])["financing"] == ("arranged", arranged)
+    assert _states(b["exposure"]["rows"])["financing"] == ("arranged", arranged)
+    _land(api, rt)
+    b = _get(api, lang=lang)
+    assert _states(b["figures"])["financing"] == ("received", received)
+    assert _states(b["exposure"]["rows"])["financing"] == ("received", received)
+
+
+def test_the_state_words_are_the_receivable_rows_own(api, rt):
+    _after(api, rt)
+    b = _get(api)
+    row = api.get("/receivables").json()["rows"][0]
+    assert (_fig(b, "outstanding")["state"], _fig(b, "outstanding")["state_text"]) == (
+        row["collection_state"].lower(), row["collection_state_text"])
+    assert _fig(b, "financing")["state_text"] == row["net"]["financing_state_text"]
+    zh, zh_row = _get(api, lang="zh"), api.get("/receivables", params={"lang": "zh"}).json()["rows"][0]
+    assert _fig(zh, "financing")["state_text"] == zh_row["net"]["financing_state_text"]
+    assert _fig(zh, "outstanding")["state_text"] == zh_row["collection_state_text"]
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_every_figure_row_and_history_row_has_a_state_in_the_vocabulary(api, rt, lang):
+    _after(api, rt)
+    b = _get(api, lang=lang)
+    for row in [*b["figures"], *b["exposure"]["rows"], *b["history"]]:
+        assert all(k in row for k in FIELDS), row
+        assert row["state"] in STATES and (row["state"] == "none") == (row["state_text"] == ""), row
+    if lang == "zh":
+        assert english_leaks(b, NAMES, raw_fields=[HREFS]) == []
+
+
+def test_with_the_exposure_flag_off_the_figures_still_carry_their_states(api, rt, monkeypatch):
+    _after(api, rt)
+    monkeypatch.delenv("FEATURE_EXPOSURE")
+    b = _get(api)
+    assert b["exposure"] is None and _states(b["figures"])["financing"] == ("arranged", "Arranged")
+
+
+def test_a_buyer_with_no_financing_and_no_planned_leg_has_no_financing_state(api, rt):
+    _before(api, rt)
+    b = _get(api, "BUYER-2")
+    assert _states(b["figures"])["financing"] == ("none", "")
+    assert _states(b["exposure"]["rows"])["financing"] == ("none", "")
+
+
+def test_an_invoice_marked_financed_with_no_advance_on_record_has_no_state(api, rt):
+    _before(api, rt)
+    state = rt.store.get_state()
+    rcv = next(r for r in state.receivables if r.id == "RCV-A")
+    rt.store.put_state(state.model_copy(update={"receivables": [rcv.model_copy(update={"status": "FINANCED"})]}))
+    offer_picture._cache.clear()
+    b = _get(api)
+    assert _states(b["figures"])["financing"] == ("none", "") and _states(b["exposure"]["rows"])["financing"] == ("none", "")
+
+
+def test_a_financing_entry_in_the_history_carries_the_financing_state(api, rt):
+    _after(api, rt)
+    for lang, arranged in (("en", "Arranged"), ("zh", "已安排")):
+        rows = [x for x in _get(api, lang=lang)["history"] if x["state"] != "none"]
+        assert [(x["state"], x["state_text"]) for x in rows] == [("arranged", arranged)]
+        assert "¥255,000" in rows[0]["text"]
+    _land(api, rt)
+    assert [x["state"] for x in _get(api)["history"] if x["state"] != "none"] == ["received"]
+
+
+def test_a_receipt_row_carries_the_collection_state_of_an_invoice_still_to_collect_else_none(api, rt):
+    from tests.api.test_demo_bank_receipt import _deal
+
+    _deal(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    assert api.post("/demo/bank-receipt").status_code == 200
+    b = _get(api)
+    receipt = next(x for x in b["history"] if x["text"].startswith("The receipt of ¥"))
+    open_rows = {r["receivable_id"]: r for r in api.get("/receivables").json()["rows"]}
+    texts = {(r["collection_state"].lower(), r["collection_state_text"]) for r in open_rows.values()}
+    assert (receipt["state"], receipt["state_text"]) in texts | {("none", "")}  # the rows' own words, or none once collected
+    assert all(x["state"] == "none" for x in b["history"] if x is not receipt)
