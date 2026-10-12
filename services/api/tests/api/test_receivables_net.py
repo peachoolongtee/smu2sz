@@ -86,7 +86,7 @@ def test_the_unfinanced_row_in_english(client):
     assert summary["outstanding_total_display"] == "¥420,000.00" and summary["net_total_display"] == "¥420,000.00"
     assert summary["net_total_text"] == "if every invoice is paid on its due day"
     assert summary["next_expected"] == {"when_text": "in 32 days", "due_day": 32, "amount_fen": 42_000_000, "amount_display": "¥420,000.00",
-                                       "buyer_name": "Foshan Home Retail Co."}
+                                       "amount_short": "¥420k", "buyer_name": "Foshan Home Retail Co."}
 
 
 def test_the_row_in_chinese_has_the_same_figures_and_no_english(client):
@@ -299,3 +299,77 @@ def test_the_early_payment_sentence_without_a_day_and_with_nothing_left(client):
     undated = text(discount.model_copy(update={"effective_day": None}))
     assert undated["agreed"] is True and ", ;" not in undated["text"] and "off; the agreement lapses" in undated["text"]
     assert text(discount, early_paid=discount.base.amount_fen) == {"agreed": False, "text": "none agreed on this invoice"}
+
+
+def test_the_repays_note_carries_the_state_and_its_day_and_the_zh_per_period_reads_every_30_days_late(client):
+    for landed, en, zh in ((False, "arranged, expected in 3 days", "已安排，预计3 天后到账"), (True, "received 2 days ago", "已到账（2 天前）")):
+        _finance(client, landed=landed)
+        assert _row(client)["net"]["repays_note"] == en
+        row_zh = _row(client, "zh")["net"]
+        assert row_zh["repays_note"] == zh and row_zh["per_period_text"].startswith("每逾期 30 天约多 ")
+        assert "每晚" not in row_zh["per_period_text"]
+    client.post("/demo/reset", json={})
+    assert _row(client)["net"]["repays_note"] is None  # no financing, no note
+
+
+# ---------------------------------------------------------------- the summary counts and the page's two h1 lines, chosen by the server
+
+
+def _summary(client, lang: str = "en") -> dict[str, Any]:
+    body: dict[str, Any] = client.get("/receivables", params={"lang": lang}, headers=OWNER).json()
+    return body["summary"]
+
+
+def test_the_summary_counts_and_says_the_book_in_a_line(client):
+    client.post("/demo/reset", json={})
+    s = _summary(client)
+    assert (s["invoice_count"], s["overdue_count"], s["financed_count"]) == (1, 0, 0)
+    assert s["count_text"] == "1 invoice · nothing overdue" and s["repays_line"] is None and s["next_expected"]["amount_short"] == "¥420k"
+    assert _summary(client, "zh")["count_text"] == "1 张发票 · 没有逾期"
+
+
+def test_the_headlines_with_nothing_overdue_and_nothing_financed(client):
+    client.post("/demo/reset", json={})
+    s = _summary(client)
+    assert (s["headline"], s["headline_second"]) == ("¥420k expected from Foshan.", "About ¥420k becomes available at collection.")
+    zh = _summary(client, "zh")
+    assert (zh["headline"], zh["headline_second"]) == ("预计从 Foshan 收到 ¥420k。", "回款后约有 ¥420k 可供使用。")
+
+
+@pytest.mark.parametrize(("landed", "net", "state_en", "state_zh"), [(False, "¥163k", "arranged", "已安排的"),
+                                                                   (True, "¥160k", "received earlier", "此前已到账的")])
+def test_the_headlines_and_the_repays_line_when_financed(client, landed, net, state_en, state_zh):
+    repays = "¥257k" if not landed else "¥260k"  # the lender's claim at the due day: a landed advance has run longer
+    _finance(client, landed=landed)
+    s = _summary(client)
+    assert (s["financed_count"], s["headline"]) == (1, "¥420k expected from Foshan.")
+    assert s["headline_second"] == f"About {net} becomes available at collection, after the financing is repaid."
+    assert s["repays_line"] == f"{repays} of it repays the financing {state_en}, with its charges"
+    zh = _summary(client, "zh")
+    assert zh["repays_line"] == f"其中 {repays} 用于偿还{state_zh}融资及其费用" and zh["headline_second"] == f"回款后约有 {net} 可供使用，已扣除融资的还款。"
+
+
+def test_an_overdue_invoice_leads_the_first_line_and_the_second_keeps_the_net(client):
+    client.post("/demo/reset", json={})
+    get_runtime().day = 34
+    s = _summary(client)
+    assert (s["overdue_count"], s["count_text"]) == (1, "1 invoice · 1 overdue")
+    assert (s["headline"], s["headline_second"]) == ("¥420k from Foshan is 2 days overdue.", "About ¥420k becomes available at collection.")
+    assert _summary(client, "zh")["headline"] == "Foshan 的 ¥420k 已逾期 2 天。"
+
+
+def test_a_missed_promise_leads_the_first_line(client):
+    _walk(client, 34)
+    s = _summary(client)
+    assert s["headline"] == "Foshan missed its promise to pay ¥420k early." and s["overdue_count"] == 1
+    assert _summary(client, "zh")["headline"] == "Foshan 未按承诺提前支付 ¥420k。"
+
+
+def test_no_open_invoice_no_second_line(client):
+    client.post("/demo/reset", json={})
+    rt = get_runtime()
+    state = rt.store.get_state()
+    rt.store.put_state(state.model_copy(update={"receivables": []}))
+    s = _summary(client)
+    assert (s["invoice_count"], s["headline"], s["headline_second"], s["count_text"]) == (0, "Nothing is waiting to be collected.", None, "no open invoices")
+    assert s["next_expected"] is None and s["repays_line"] is None

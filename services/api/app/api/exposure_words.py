@@ -3,10 +3,19 @@
 Composed from reads that already exist, never a second copy of any of them: the offer picture's own paths (the cash line each path
 draws, its lowest point and the authority class the verifier gave it), the exposure block's concentration, the Customer overview's
 back link and contribution function, and `net_at_collection`. Read-only context: nothing here changes a verdict, a cap or what FLOW
-may do alone. Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence.
+may do alone.
 
-    path_words        per path of an offer: lowest_display, lowest_when, lowest_when_text, limit_word (WITHIN | EXCEEDED), limit_text,
-                      share_after_text; and the `do_nothing` path the picture does not draw
+`limit_word` is null, with `limit_text` null, when the picture gives a path no authority class (a reply it cannot draw or price, e.g. Option
+A once the plan has run, or an offer not yet evaluated) and for `do_nothing`, which agrees to nothing. `do_nothing` carries words only: in
+the exposure block its entries in `stress.paths`, `capacity` and `band.by_path` are explicit nulls, so a lookup by its key reads null.
+`share_after_text` is the buyer's share of what is owed once the path's cash from the buyer's open invoices has arrived (the day the path's own
+projection receives the last of them): the concentration function on the books with the invoices received by then settled; an invoice not yet
+issued is not owed. Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence.
+
+    deal_extras       worked out once with the cached exposure block (`app.strategy.exposure`, `deal_words=True`): `paths[*]` words and
+                      `customer_context`
+    path_words        per path of an offer: lowest_display, lowest_when, lowest_when_text, limit_word (WITHIN | EXCEEDED | null),
+                      limit_text, share_after_text; and the `do_nothing` path the picture does not draw
     customer_back     {label, href} back to the customer's page, built from the query (never echoed unless it names this buyer)
     net_later         what the buyer's open invoices leave the owner a month later than their due days, for the 30-day stress row
 """
@@ -19,6 +28,7 @@ from fractions import Fraction
 from typing import Any
 from urllib.parse import quote
 
+from app.api.customer_overview import customer_context
 from app.api.home import _lowest_ahead
 from app.api.offer_picture import (
     FLOW_MAY,
@@ -34,12 +44,14 @@ from app.decisions.identity import offer_id_of
 from app.domain.models import FinancialState, LedgerEventKind, Mandate, Mode
 from app.domain.money import fmt_yuan_about
 from app.financial import EngineError, project
+from app.strategy.concentration import concentration
+from app.strategy.exposure import DO_NOTHING
+from app.strategy.inputs import CustomerInputs
 from app.strategy.net import net_at_collection
 from app.strategy.words import buyer_short, share_text
 
 log = logging.getLogger("termsledger.decisions")
 
-DO_NOTHING = "do_nothing"
 _SAFE = re.compile(r"[A-Za-z0-9_.:\-]{1,80}")
 _OPEN = ("OPEN", "FINANCED")
 
@@ -95,12 +107,37 @@ def _limit(authority: str | None, lang: Lang) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _share_after(conc: dict[str, Any], qualifier: str | None, lang: Lang) -> str | None:
-    """The buyer's share of what is owed, with the path's receipt timing: none for a name that stands for many small customers or when
-    nothing is owed."""
-    if conc["is_aggregate"] or conc["ar_total_fen"] <= 0:
+def _received_by(state: FinancialState, traj: Any, today: int) -> dict[str, int]:
+    """The day each receivable open today is received on this line (the first receipt or early receipt that names it)."""
+    open_ids = {r.id for r in state.receivables if r.status in _OPEN and r.outstanding_fen > 0}
+    out: dict[str, int] = {}
+    for d in traj.days:
+        if d.day >= today:
+            for e in d.events:
+                if e.kind in (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT) and e.ref in open_ids:
+                    out.setdefault(e.ref, d.day)
+    return out
+
+
+def _share_after(books: Books, traj: Any | None, buyer: str, today: int, inputs: CustomerInputs, qualifier: str | None,
+                 lang: Lang) -> str | None:
+    """The buyer's share of what is owed after the path, with the path's receipt timing. With the path's projection (`traj`) the share is
+    the concentration function's on the books as they stand when the path has received the buyer's open invoices (the last such receipt's
+    day), with every invoice received by then settled; without one (the books as they stand) it is today's. None for a name that
+    stands for many small customers."""
+    state = books.state
+    day = today
+    if traj is not None:
+        received = _received_by(state, traj, today)
+        mine = [d for rid, d in received.items() if buyer_of_receivable(state, rid) == buyer]
+        day = max(mine, default=today)
+        settled = [r.model_copy(update={"status": "SETTLED", "settled_fen": r.face_fen}) if received.get(r.id, day + 1) <= day else r
+                   for r in state.receivables]
+        state = state.model_copy(update={"receivables": settled})
+    c = concentration(Books(state, ()), buyer, day, inputs, lang=lang)
+    if c.is_aggregate:
         return None
-    share = share_text(Fraction(conc["ar_buyer_fen"], conc["ar_total_fen"]), lang)
+    share = share_text(Fraction(c.ar_buyer_fen, c.ar_total_fen) if c.ar_total_fen > 0 else Fraction(0), lang)
     return share if qualifier is None else f"{share}{t(lang, ', ', '，')}{qualifier}"
 
 
@@ -108,12 +145,12 @@ _BLANK: dict[str, Any] = {"lowest_display": None, "lowest_when": None, "lowest_w
                           "share_after_text": None}
 
 
-def path_words(rt: Any, offer: Any, verdict: Any | None, books: Books, mandate: Mandate, day: int, lang: Lang,
-               conc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: Books, mandate: Mandate, day: int, lang: Lang,
+               inputs: CustomerInputs) -> dict[str, dict[str, Any]]:
     """The words of each path of the offer, by path key, plus `do_nothing` (the books as they stand, no reply sent). The lowest cash and
     the authority class are the offer picture's own (`cached_picture`, call under `rt.lock`); the timing is read from the same projection
     of the path's obligations. A path the picture does not draw has blank words. Empty when the books cannot be projected."""
-    state, floor, buyer = books.state, mandate.min_cash_fen, offer.counterparty_id
+    state, floor = books.state, mandate.min_cash_fen
     today = max(day, state.as_of_day)
     try:
         base = project(state, list(books.obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
@@ -124,18 +161,15 @@ def path_words(rt: Any, offer: Any, verdict: Any | None, books: Books, mandate: 
     base_points = [{"day": d.day, "closing_fen": d.closing_fen} for d in base.days if d.day >= today]
     base_low, base_low_day = _lowest_ahead(base, today)
     out: dict[str, dict[str, Any]] = {DO_NOTHING: {
-        "lowest_display": fmt_short(base_low), "lowest_when": when_text(base_low_day, today, lang), "lowest_when_text": _lowest_text(base_low, base_points, floor, lang),
-        "limit_word": "WITHIN", "limit_text": t(lang, "within", "在授权内"), "share_after_text": _share_after(conc, None, lang)}}
+        "lowest_display": fmt_short(base_low), "lowest_when": when_text(base_low_day, today, lang),
+        "lowest_when_text": _lowest_text(base_low, base_points, floor, lang),
+        "limit_word": None, "limit_text": None,  # it agrees to nothing: no authority class to state
+        "share_after_text": _share_after(books, None, buyer, today, inputs, None, lang)}}
     if verdict is None:  # not evaluated yet: the offer as asked has no package, so it is the books as they stand
-        out["asked"] = {**out[DO_NOTHING], "limit_word": None, "limit_text": None}
+        out["asked"] = {**out[DO_NOTHING]}
         return out
-    picture: dict[str, Any] | None = None
-    try:
-        pic = cached_picture(rt, offer.offer_id, lang)
-        picture = pic if pic.get("available") else None
-    except Exception:  # a supporting read: the paths then have no lowest or limit words
-        log.exception("the offer picture could not be read for the path words")
-    drawn = {p["key"]: p for p in (picture or {}).get("paths", [])}
+    pic = cached_picture(rt, offer_id, lang)
+    drawn = {p["key"]: p for p in (pic["paths"] if pic.get("available") else [])}
     packages = {"asked": list(verdict.bound_obligations), **{c.id: list(c.obligations) for c in verdict.counters}}
     for key, obligations in packages.items():
         p = drawn.get(key)
@@ -147,11 +181,27 @@ def path_words(rt: Any, offer: Any, verdict: Any | None, books: Books, mandate: 
         try:
             traj = project(state, books.with_(obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
             q = _qualifier(base_next, _next_invoice_day(state, traj, today, buyer), _early_day(state, traj, today, buyer), today, lang)
+            words["share_after_text"] = _share_after(books, traj, buyer, today, inputs, q, lang)
         except EngineError:
-            q = None
-        words["share_after_text"] = _share_after(conc, q, lang)
+            words["share_after_text"] = None
         out[key] = words
     return out
+
+
+def deal_extras(rt: Any, books: Books, mandate: Mandate, day: int, buyer_id: str, offer_id: str, verdict: Any | None, lang: Lang,
+                inputs: CustomerInputs, base: dict[str, Any]) -> dict[str, Any]:
+    """What the exposure assembly adds to its cached block for a deal (`deal_words=True`), from the books, picture and concentration it
+    already holds: the block's `paths` with their words and the `do_nothing` path, and `customer_context`. `do_nothing` has no figures in
+    `stress`, so its entry in `stress.paths` (and in every `stress.also` set) is an explicit null."""
+    today = max(day, books.state.as_of_day)
+    with rt.lock:  # the picture and the projections read together
+        words = path_words(rt, buyer_id, offer_id, verdict, books, mandate, day, lang, inputs)
+    stress = base["stress"]
+    stress["paths"][DO_NOTHING] = None
+    for extra in stress["also"]:
+        extra["paths"][DO_NOTHING] = None
+    return {"paths": with_path_words(base["paths"], words, lang),
+            "customer_context": customer_context(books.state, inputs, buyer_id, today, base["concentration"], lang)}
 
 
 def do_nothing_entry(lang: Lang) -> dict[str, Any]:
