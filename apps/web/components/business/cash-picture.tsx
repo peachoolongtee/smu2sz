@@ -18,7 +18,7 @@ import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
  * Labels that would overlap one already placed, a line or the edge of the plot are skipped; the chips below name every event.
  */
 export const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
-export const FONT = 12;
+export const FONT = 13;
 /** The window never shows fewer than this many days, nor more than the cap; past the last interesting day it keeps a few days of what follows. */
 const MIN_WINDOW = 30;
 const MAX_WINDOW = 60;

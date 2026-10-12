@@ -28,7 +28,7 @@ const C = {
   sky: "var(--color-chart-sky)",
 };
 const SLICES = [C.cash, C.deal, C.plan, C.sky, C.navy];
-const axisProps = { stroke: C.axis, fontSize: 12, tickLine: false } as const;
+const axisProps = { stroke: C.axis, fontSize: 13, tickLine: false } as const;
 
 /** The buyer-contract terms that move money or time, in the order an owner asks about them. */
 const BUYER_TILES: ContractFieldName[] = ["PRICE", "PAYMENT_TERMS", "EARLY_PAYMENT", "LATE_INTEREST", "INVOICING", "DURATION"];
@@ -180,7 +180,7 @@ function PictureBody({
               <Area type="stepAfter" dataKey="cash" stroke={C.cash} strokeWidth={2.5} fill="url(#pic-cash-fill)" isAnimationActive={false} />
               {!lender ? <Bar dataKey="deal" fill={C.deal} barSize={10} radius={[4, 4, 0, 0]} isAnimationActive={false} /> : null}
               {showPlan ? <Line type="stepAfter" dataKey="plan" stroke={C.plan} strokeWidth={2} strokeDasharray="8 5" dot={false} isAnimationActive={false} /> : null}
-              <ReferenceLine y={cash.floor_fen} stroke={C.reserve} strokeDasharray="6 4" label={{ value: t("pic.reserveLine", { amount: cash.floor_short }), position: "insideTopRight", fill: C.reserve, fontSize: 12 }} />
+              <ReferenceLine y={cash.floor_fen} stroke={C.reserve} strokeDasharray="6 4" label={{ value: t("pic.reserveLine", { amount: cash.floor_short }), position: "insideTopRight", fill: C.reserve, fontSize: 13 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

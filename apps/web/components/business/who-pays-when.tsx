@@ -14,7 +14,7 @@ import { daysLate, whenText } from "@/lib/when";
  * from the measured width, faded in once. Marks that would overlap stack vertically; a label that would touch another mark or label is dropped
  * (the row has it). The `*_fen` and day numbers only place and size a mark; every figure and word is the server's, or `biz.when.*`.
  */
-const FONT = 12;
+const FONT = 13;
 const AV = 11; // the avatar disc radius
 const LANE = 40;
 const PAD = { l: 20, r: 20, t: 34, b: 40 } as const;
