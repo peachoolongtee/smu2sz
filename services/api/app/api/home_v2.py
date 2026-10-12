@@ -12,7 +12,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           is pending; cash only when it lands) or NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
-                          company shows no filled primary here.
+                          company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
+                          approval), the very parts `action.text` is built from; empty when the action carries no funding plan.
     chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
                           `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none)
     links                 where the rest of the company's picture lives
@@ -24,7 +25,7 @@ funding KPI's eyebrow; `funding.state` PROPOSED is its code. A lot that has been
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, NamedTuple
 from urllib.parse import quote
 
 from app.api.financing_words import state_of, state_word
@@ -208,6 +209,37 @@ def _worklist_holds(c: HomeRead) -> int:
         return 0
 
 
+class _PlanParts(NamedTuple):
+    """The words a funding plan's action sentence is made of: `action.text` is built from them and `action.facts` lists them, so the two
+    cannot drift."""
+
+    within: str  # "within your signed limits" / "needs your approval because of its cost"
+    legs: str  # "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
+    cost: str | None  # the plan's cost word ("¥3,113.93"), None when the plan carries none
+    approval: str  # "no approval needed" / "your approval is needed"
+
+
+def _plan_parts(c: HomeRead, a: dict[str, Any]) -> _PlanParts:
+    lang = c.lang
+    within = (t(lang, "needs your approval because of its cost", "因其成本需要您批准") if a["needs_owner"]
+              else t(lang, "within your signed limits", "在您签署的授权内"))
+    approval = t(lang, "your approval is needed", "需要您批准") if a["needs_owner"] else t(lang, "no approval needed", "无需批准")
+    return _PlanParts(within, _legs_text(c, a), a.get("cost_total_display") or None, approval)
+
+
+def _plan_sentence(lang: str, p: _PlanParts) -> str:
+    return t(lang, f"FLOW's plan {p.within}: {p.legs}" + (f" · cost {p.cost}" if p.cost else "") + f" · {p.approval}.",
+             f"FLOW 的方案{p.within}：{p.legs}" + (f" · 成本 {p.cost}" if p.cost else "") + f" · {p.approval}。")
+
+
+def _plan_facts(lang: str, p: _PlanParts) -> list[dict[str, str]]:
+    """The plan's three facts, each the sentence's own part (the approval's first letter raised in English: it stands alone as a value)."""
+    approval = p.approval[:1].upper() + p.approval[1:] if lang == "en" else p.approval
+    return [{"label": t(lang, "Estimated cost", "预计成本"), "value": p.cost or t(lang, "Not priced", "未计价")},
+            {"label": t(lang, "Funding", "融资"), "value": p.legs},
+            {"label": t(lang, "Approval", "批准"), "value": approval}]
+
+
 def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
     lang, a = c.lang, c.action
     if a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
@@ -215,20 +247,16 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
         landing = any(leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen") for leg in a["legs"])
         if landing and a.get("receive_fen"):  # a plan that brings cash: say how much, before what, and what it is made of
             amount = whole(a["receive_fen"])
-            within = (t(lang, "needs your approval because of its cost", "因其成本需要您批准") if a["needs_owner"]
-                      else t(lang, "within your signed limits", "在您签署的授权内"))
-            approval = (t(lang, "your approval is needed", "需要您批准") if a["needs_owner"] else t(lang, "no approval needed", "无需批准"))
-            cost = a.get("cost_total_display")
+            plan = _plan_parts(c, a)
             title = t(lang, f"Secure {amount} before {_before_what(c)}.", f"请在{_before_what(c)}之前筹措 {amount}。")
-            text = t(lang, f"FLOW's plan {within}: {_legs_text(c, a)}" + (f" · cost {cost}" if cost else "") + f" · {approval}.",
-                     f"FLOW 的方案{within}：{_legs_text(c, a)}" + (f" · 成本 {cost}" if cost else "") + f" · {approval}。")
+            text, facts = _plan_sentence(lang, plan), _plan_facts(lang, plan)
         else:  # a step with no cash landing yet (an application for a facility): the action's own words, and who must act
             title = str(a.get("outcome_title") or a.get("title") or c.headline)
-            text = f"{c.headline}{_sp(lang)}{a.get('authority_text') or ''}".strip()
+            text, facts = f"{c.headline}{_sp(lang)}{a.get('authority_text') or ''}".strip(), []
         key = next((i["key"] for i in att["items"] if i["kind"] == "funding"), None) or (
             f"approval:{a['pending_approval_id']}" if waiting else None)
         return {"variant": "ACTION", "key": key, "tone": "bad" if c.breach_day is not None else "warn", "eyebrow": _breach_eyebrow(c),
-                "title": title, "text": text,
+                "title": title, "text": text, "facts": facts,
                 "primary": ({"label": t(lang, "Review the plan", "查看方案"), "href": f"/approvals#approval-{quote(str(a['pending_approval_id']), safe='')}"}
                             if waiting else {"label": t(lang, "Run the funding plan", "执行融资方案"), "href": "/cash#cash-options"}),
                 "secondary": {"label": t(lang, "Compare", "比较"), "href": "/cash#cash-options"},
@@ -237,13 +265,13 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
         waiting = bool(a.get("pending_approval_id"))
         return {"variant": "ACTION", "key": f"approval:{a['pending_approval_id']}" if waiting else None, "tone": "warn",
                 "eyebrow": _eyebrow(lang, "Next action", "下一步"), "title": str(a.get("outcome_title") or a.get("title")),
-                "text": f"{a.get('after') or ''}{_sp(lang)}{a.get('authority_text') or ''}".strip(),
+                "text": f"{a.get('after') or ''}{_sp(lang)}{a.get('authority_text') or ''}".strip(), "facts": [],
                 "primary": ({"label": t(lang, "Review the repayment", "查看还款"), "href": f"/approvals#approval-{quote(str(a['pending_approval_id']), safe='')}"}
                             if waiting else {"label": t(lang, "Run the repayment", "执行还款"), "href": "/cash#cash-options"}),
                 "secondary": {"label": t(lang, "Compare", "比较"), "href": "/cash#cash-options"},
                 "control": "APPROVE_PLAN" if waiting else "RUN_PLAN"}
     if c.breach_day is not None:  # the reserve is unsafe and there is no plan to run: say so, point to the options
-        return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note,
+        return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note, "facts": [],
                 "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
     n = _worklist_holds(c)
     held = (t(lang, f" Your worklist still holds {n} {'item' if n == 1 else 'items'} for you.", f"您的待办列表里还有 {n} 项等您处理。") if n else "")
@@ -251,7 +279,7 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
             "eyebrow": _eyebrow(lang, "Nothing needs you from the company side", "公司层面没有需要您处理的事项"),
             "title": (t(lang, "Your cash is covered on the plan that ran.", "按已执行的方案，您的现金是安全的。") if _plan_has_run(c.state)
                       else t(lang, "Your cash is covered.", "您的现金是安全的。")),
-            "text": _next_arrivals(c) + held, "primary": None, "secondary": None, "control": None}
+            "text": _next_arrivals(c) + held, "facts": [], "primary": None, "secondary": None, "control": None}
 
 
 # ---------------------------------------------------------------- the chart
