@@ -6,7 +6,7 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
 
     kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`)
     kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
-                          plan ready but not run, never a hypothetical. The proposed plan's effect is a hint line (`with_plan_hint`).
+                          plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`).
     kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
                           is pending; cash only when it lands) or NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
@@ -15,8 +15,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
     chart                 the scope the chart states, its legend (current / proposed / hypothetical) and the lowest point's inspector
     links                 where the rest of the company's picture lives
 
-The proposed plan is "proposed" in these words (the prototype's), as in the funding KPI's eyebrow; `funding.state` PROPOSED is the
-financing vocabulary's PLANNED. A lot that has been run is "arranged" until it lands and "received" once it has (`state_of`).
+A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
+funding KPI's eyebrow; `funding.state` PROPOSED is its code. A lot that has been run is "arranged" until it lands and "received" once it has (`state_of`).
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import quote
 
+from app.api.financing_words import state_of, state_word
 from app.api.home import _lowest_ahead
 from app.api.home_hybrid import (
     HomeRead,
@@ -45,6 +46,11 @@ from app.strategy import words as basis_words
 _LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
 _BASIS_WORD = {basis_words.OWED: ("owed", "应收"), basis_words.SCHEDULED: ("scheduled", "按计划"), basis_words.AGREED: ("agreed", "已约定"),
                basis_words.PENDING: ("pending", "待对方接受")}
+
+
+def _planned(lang: str) -> str:
+    """The word for a plan that is ready and has not run: the financing vocabulary's own (`state_of` PLANNED: "planned", "计划中")."""
+    return state_word(lang, state_of(None, planned=True))
 
 
 def _digit_gap(text: str) -> str:
@@ -124,7 +130,7 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
         note = " + ".join(t(lang, f"{_short(leg['amount_fen'])} {kinds[leg['operation_kind']]} {leg['lands_when']}",
                             f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}，{leg['lands_when']}") for leg in legs)
         who = t(lang, "approving", "批准") if c.waiting else t(lang, "running", "执行")
-        return {"state": "PROPOSED", "eyebrow": _eyebrow(lang, "Proposed funding", "建议的融资"), "value_display": whole(a["receive_fen"]),
+        return {"state": "PROPOSED", "eyebrow": t(lang, f"{_planned(lang).upper()} FUNDING", f"{_planned(lang)}的融资"), "value_display": whole(a["receive_fen"]),
                 "note": note, "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
     return {"state": "NONE", "eyebrow": _eyebrow(lang, "Funding", "融资"), "value_display": t(lang, "None", "无"),
             "note": funding_line["text"], "hint": None}
@@ -139,8 +145,8 @@ def _legs_text(c: HomeRead, a: dict[str, Any]) -> str:
     legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
     parts = [t(lang, f"{_short(leg['amount_fen'])} {kinds[leg['operation_kind']]} {leg['lands_when']}",
                f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}（{leg['lands_when']}）") for leg in legs]
-    proposed = t(lang, "both proposed" if len(parts) > 1 else "proposed", "均为建议" if len(parts) > 1 else "建议执行")
-    return t(lang, ", ".join(parts) + f", {proposed}", "、".join(parts) + f"，{proposed}")
+    planned = t(lang, f"both {_planned(lang)}" if len(parts) > 1 else _planned(lang), f"均为{_planned(lang)}" if len(parts) > 1 else _planned(lang))
+    return t(lang, ", ".join(parts) + f", {planned}", "、".join(parts) + f"，{planned}")
 
 
 def _before_what(c: HomeRead) -> str:
@@ -229,15 +235,15 @@ def _chart(c: HomeRead) -> dict[str, Any]:
     legend = [{"label": (t(lang, "Current books · the plan ran", "当前账目 · 方案已执行") if _plan_has_run(c.state)
                          else t(lang, "Current books · no new funding", "当前账目 · 未新增融资")), "kind": "current"}]
     if c.plan_traj is not None:
-        legend.append({"label": t(lang, "If FLOW's plan executes (proposed)", "如果 FLOW 的方案执行（建议）"), "kind": "proposed"})
+        legend.append({"label": t(lang, f"If FLOW's plan runs ({_planned(lang)})", f"如果 FLOW 的方案执行（{_planned(lang)}）"), "kind": "proposed"})
     low_fen, low_day = c.low
     gap = low_fen - floor
     if gap < 0:
         third = (t(lang, "Shortfall", "缺口"), whole(-gap))
         if c.plan_traj is not None:
             plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
-            note = t(lang, f"With FLOW's proposed plan: {whole(plan_fen)}, assuming it executes and the funds arrive as planned.",
-                     f"采用 FLOW 建议的方案：{whole(plan_fen)}，前提是方案执行且资金按计划到账。")
+            note = t(lang, f"With FLOW's plan ({_planned(lang)}): {whole(plan_fen)}, assuming it runs and the funds arrive as planned.",
+                     f"采用 FLOW 的方案（{_planned(lang)}）：{whole(plan_fen)}，前提是方案执行且资金按计划到账。")
         else:
             note = t(lang, "FLOW has no funding plan that closes this yet.", "FLOW 目前没有能补上这一缺口的融资方案。")
     else:

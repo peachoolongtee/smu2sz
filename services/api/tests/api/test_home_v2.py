@@ -99,7 +99,7 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "−¥105,000", "tone": "bad",
                                  "note": "¥405k below your minimum in 30 days · current books, no new funding",
                                  "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned."}
-    assert k["funding"] == {"state": "PROPOSED", "eyebrow": "PROPOSED FUNDING", "value_display": "¥405,000",
+    assert k["funding"] == {"state": "PROPOSED", "eyebrow": "PLANNED FUNDING", "value_display": "¥405,000",
                             "note": "¥150k credit line today + ¥255k invoice financing in 3 days",
                             "hint": "Conditional on you running the plan; not counted as cash."}
 
@@ -110,18 +110,18 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
     assert v2["action"] == {
         "variant": "ACTION", "key": "funding:ALERT-RESERVE-12", "tone": "bad", "eyebrow": "NEXT ACTION · WITHIN 12 DAYS",
         "title": "Secure ¥405,000 before payroll in 12 days.",
-        "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both proposed · "
+        "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · "
                 "cost ¥3,113.93 · no approval needed.",
         "primary": {"label": "Run the funding plan", "href": "/cash#cash-options"},
         "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN"}
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
-                               {"label": "If FLOW's plan executes (proposed)", "kind": "proposed"}]
+                               {"label": "If FLOW's plan runs (planned)", "kind": "proposed"}]
     assert chart["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "−¥105,000", "minimum_display": "¥300,000",
         "third_label": "Shortfall", "third_display": "¥405,000",
-        "note": "With FLOW's proposed plan: ¥300,000, assuming it executes and the funds arrive as planned."}
+        "note": "With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned."}
     assert chart["note"] == "Current books, nothing new assumed. The same figures as Cash & Funding."
     assert [link["label"] for link in v2["links"]] == ["Where the cash goes", "Facility headroom", "What you are owed, by when", "All deals"]
     assert [link["href"] for link in v2["links"]][2:] == ["/receivables", "/deals"]
@@ -186,6 +186,17 @@ def test_a_pending_deal_never_moves_a_kpi(api: TestClient) -> None:
     bare = _v2(api)["kpis"]
     _offer(api)  # the Foshan offer, and the counter FLOW would send: both hypothetical until the buyer accepts
     assert _v2(api)["kpis"] == bare
+
+
+def test_the_planned_word_is_the_financing_vocabularys_own(api: TestClient) -> None:
+    from app.api.financing_words import state_of, state_word
+
+    for lang in ("en", "zh"):
+        word = state_word(lang, state_of(None, planned=True))
+        v2 = _v2(api, lang)
+        assert word in v2["kpis"]["funding"]["eyebrow"].lower() and word in v2["chart"]["legend"][1]["label"] and word in v2["action"]["text"]
+        assert word in v2["chart"]["lowest_inspector"]["note"] and "propos" not in str(v2).lower().replace('"kind": "proposed"', "").replace("'proposed'", "")
+    assert (state_word("en", "PLANNED"), state_word("zh", "PLANNED")) == ("planned", "计划中")
 
 
 def test_the_plans_effect_is_only_ever_a_hint(api: TestClient) -> None:
@@ -271,11 +282,11 @@ def test_the_chinese_fields_before_the_plan(api: TestClient) -> None:
     assert (k["cash_available"]["eyebrow"], k["cash_available"]["note"]) == ("可用现金", "比您 ¥300k 的最低现金高 ¥100k")
     assert k["lowest_ahead"]["note"] == "比您的最低现金低 ¥405k（30 天后） · 当前账目，未新增融资"
     assert k["lowest_ahead"]["with_plan_hint"] == "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。"
-    assert (k["funding"]["eyebrow"], k["funding"]["hint"]) == ("建议的融资", "取决于您是否执行方案；不计入现金。")
+    assert (k["funding"]["eyebrow"], k["funding"]["hint"]) == ("计划中的融资", "取决于您是否执行方案；不计入现金。")
     assert zh["action"]["eyebrow"] == "下一步 · 12 天内" and zh["action"]["title"] == "请在工资（12 天后）之前筹措 ¥405,000。"
-    assert zh["action"]["text"] == ("FLOW 的方案在您签署的授权内：信用额度提款 ¥150k（今天）、发票融资 ¥255k（3 天后），均为建议 · 成本 ¥3,113.93 · 无需批准。")
+    assert zh["action"]["text"] == ("FLOW 的方案在您签署的授权内：信用额度提款 ¥150k（今天）、发票融资 ¥255k（3 天后），均为计划中 · 成本 ¥3,113.93 · 无需批准。")
     assert zh["chart"]["scope_title"] == "公司现金预测"
-    assert [x["label"] for x in zh["chart"]["legend"]] == ["当前账目 · 未新增融资", "如果 FLOW 的方案执行（建议）"]
+    assert [x["label"] for x in zh["chart"]["legend"]] == ["当前账目 · 未新增融资", "如果 FLOW 的方案执行（计划中）"]
     assert (zh["chart"]["lowest_inspector"]["third_label"], zh["chart"]["lowest_inspector"]["day_text"]) == ("缺口", "最低点 · 30 天后")
 
 
