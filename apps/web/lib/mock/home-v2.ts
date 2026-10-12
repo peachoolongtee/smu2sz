@@ -8,7 +8,7 @@
  * plan ran. At any other point of the story (a deal made, day 2, day 34 and later) there is no V2 recording, and the Home is the older one.
  */
 
-import type { CustomerOverviewView, CustomersView, ExposureView, FeaturesView, HomeView, WorklistView } from "../types";
+import type { CustomerOverviewView, CustomersView, ExposureView, FeaturesView, HomeView, OfferPictureView, WorklistView } from "../types";
 import { isFunded, isReceipted, mockClock, NEWS_DAY } from "./home";
 
 export const HOME_V2_KEY = "tl-mock-home-v2";
@@ -87,6 +87,13 @@ export async function mockFocus(point: Point | null, lang: "en" | "zh", id: stri
   if (!base) return null;
   const deal = sel.decision ? (rec.deals[sel.scenario ?? "none"] ?? null) : null;
   return clone<CustomerOverviewView>(deal && deal.customer_id === id && deal.context?.deal === sel.decision ? deal : base);
+}
+
+/** GET /offers/{id}/picture as the server answered it with FEATURE_HOME_V2 on (the package offer, read by FLOW): only while that offer is open on the books. */
+export async function mockDealPicture(point: Point | null, lang: "en" | "zh"): Promise<OfferPictureView | null> {
+  if (!homeV2On() || point !== "offer") return null;
+  const both = (await import("../../mocks/home_v2/picture_offer.json")).default as unknown as { en: OfferPictureView; zh: OfferPictureView };
+  return clone<OfferPictureView>(lang === "zh" ? both.zh : both.en);
 }
 
 export async function mockDealExposure(point: Point | null, lang: "en" | "zh"): Promise<ExposureView | null> {

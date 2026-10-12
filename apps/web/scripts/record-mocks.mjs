@@ -81,7 +81,7 @@
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
-// and, for the focus panels (slice 2), focus_<point>.json = { en, zh } of { customers: { <id>: GET /customers/<id>/overview }, deals: { none | asked | counter:0:
+// and, for the focus panels (slice 2; picture_offer.json = { en, zh } of GET /offers/<EX01>/picture, for the paths' words), focus_<point>.json = { en, zh } of { customers: { <id>: GET /customers/<id>/overview }, deals: { none | asked | counter:0:
 // the same read with the open decision and that scenario, so `context` echoes them } } (deals only at `offer`), and exposure_offer.json = { en, zh } of GET /offers/<EX01>/exposure?customer=.
 // The API needs FEATURE_HOME_V2=1 and the flags above:
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_HOME_V2=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
@@ -456,11 +456,13 @@ if (HOME_V2) {
     const exposure = decisionRow
       ? { en: await live.getDealExposure(decisionRow.key.slice("deal:".length), "en", decisionRow.customer_id), zh: await live.getDealExposure(decisionRow.key.slice("deal:".length), "zh", decisionRow.customer_id) }
       : null;
-    return { home, worklist, customers, focus, exposure };
+    const picture = decisionRow ? { en: await live.getOfferPicture(decisionRow.key.slice("deal:".length), "en"), zh: await live.getOfferPicture(decisionRow.key.slice("deal:".length), "zh") } : null;
+    return { home, worklist, customers, focus, exposure, picture };
   };
   const keep = (point, got) => {
     for (const kind of ["home", "worklist", "customers", "focus"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
     if (got.exposure) write("home_v2/exposure_offer.json", got.exposure);
+    if (got.picture) write("home_v2/picture_offer.json", got.picture);
   };
   await reset();
   keep("day0", await reads());

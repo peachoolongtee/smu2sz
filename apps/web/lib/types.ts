@@ -2486,6 +2486,9 @@ export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
+  /** The short figure and the day as a distance from today, on every point (Home V2's inspector says these and never a day number); absent from an older server. */
+  display?: string;
+  when?: string;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
@@ -2769,6 +2772,8 @@ export interface HomeV2Kpi {
 }
 
 export interface HomeV2Action {
+  /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
+  facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";
   key: string | null;
   tone: HomeTone;
@@ -2787,6 +2792,8 @@ export interface HomeV2Chart {
   legend: { label: string; kind: "current" | "planned" | "proposed" | "hypothetical" }[];
   /** What takes cash to its lowest point, in the server's words ("a loan repayment goes out"); null or absent while the server has none (the page then uses the rail's lowest event). */
   lowest?: { cause: string | null } | null;
+  /** The chart's title in a deal: the offer, the paths and the payment assumption, in the server's words; absent until the server sends it. */
+  scenario_title_text?: string | null;
   lowest_inspector: {
     day_text: string;
     projected_display: string;
@@ -2815,8 +2822,10 @@ export interface HomeV2 {
       with_plan_hint?: string | null;
       /** The plan's effect as a figure ("with plan", "¥300,000"), when the server sends it structured; until then `with_plan_hint` is the sentence. */
       with_plan?: { label: string; value_text: string } | null;
+      /** The note in a few words ("in 30 days · current books, no new funding"); absent until the server sends it (`note` then). */
+      short_note?: string | null;
     };
-    funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null };
+    funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null; /** "Ready to run" and its like, in the server's words. */ status_text?: string | null };
   };
   action: HomeV2Action;
   chart: HomeV2Chart;
@@ -2843,6 +2852,8 @@ export interface WorklistNeedsRow {
   status_text: string;
   consequence_text: string;
   owner: "NEEDS_YOU";
+  /** What tells this row from another with the same subject, in business words (an invoice, a scope); present only when two rows would read alike. */
+  differentiator_text?: string | null;
   severity: WorklistSeverity;
   deadline_day: Day | null;
   /** Said under the first row only: why it is first. */
@@ -3623,6 +3634,11 @@ export interface PicturePath {
   cost_components?: { label: string; display: string }[] | null;
   /** The assumption a reply's cash rests on (for example, the buyer accepting), as a short caption; null or absent for the asked path. */
   assumption_text?: string | null;
+  /** The evidence for who decides (why the verifier classed it so), and the reason this path is the recommended one; each absent until the server sends it. */
+  authority_reason_text?: string | null;
+  recommended_reason_text?: string | null;
+  /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
+  scenario_assumption_text?: string | null;
 }
 
 /** Who decides, in the verifier's three classes. */
@@ -3667,6 +3683,8 @@ export interface ExposureStressPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
+  display?: string;
+  when?: string;
 }
 
 /** The late-payment test for one path: the server's sentence, the lowest point and the series that draws it. Every word is the server's. */
@@ -3680,6 +3698,8 @@ export interface ExposureStress {
   lowest_short?: string | null;
   lowest_when?: string | null;
   first_breach_when?: string | null;
+  /** How long cash is below the minimum, in words ("below it for 65 days"); absent until the server sends it (`text` is the whole sentence). */
+  breach_days_text?: string | null;
   text?: string;
   funding_text?: string;
   assumption?: string;
@@ -3729,6 +3749,7 @@ export interface ExposurePathWords {
   limit_word?: string | null;
   limit_text?: string | null;
   share_after_text?: string | null;
+  scenario_assumption_text?: string | null;
 }
 
 /** What the aside says about the customer: the server's words (the contribution needs the economics inputs, so it can be absent). */

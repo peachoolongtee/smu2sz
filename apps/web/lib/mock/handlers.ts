@@ -782,6 +782,15 @@ export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { dec
   return view;
 }
 
+/** GET /offers/{id}/picture for Home V2's deal focus: Home V2's recording while the package offer is open; else absent (null). */
+export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promise<OfferPictureView | null> {
+  await delay();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
+  const view = await homeV2.mockDealPicture(homeV2Point(), lang);
+  return view ? { ...view, offer_id: offerId } : null;
+}
+
 /** GET /offers/{id}/exposure for Home V2's deal focus: the recording of the package offer's exposure while that offer is open on the books, else absent (null). */
 export async function getDealExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   await delay();

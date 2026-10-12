@@ -46,7 +46,7 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
   const onKey = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
-    const to = nextTabIndex(e.key, i, tabs);
+    const to = nextTabIndex(e.key, i, tabs.map(() => ({})));
     if (to === null) return;
     e.preventDefault();
     if (to !== i) onChange(tabs[to].value);

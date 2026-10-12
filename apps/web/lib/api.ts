@@ -324,6 +324,11 @@ export async function getDealExposure(offerId: string, lang: "en" | "zh", custom
   return isMock ? (await mock()).getDealExposure(offerId, lang) : (await live()).getDealExposure(offerId, lang, customer);
 }
 
+/** GET /offers/{id}/picture for Home V2's deal focus: the paths with their words (authority evidence, the scenario's assumption) and series. The deal's own mock is Home V2's recording. */
+export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promise<OfferPictureView | null> {
+  return isMock ? (await mock()).getDealPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang).catch(() => null);
+}
+
 /** GET /clock: the simulated day. */
 export async function getClock(): Promise<ClockView> {
   return isMock ? (await mock()).getClock() : (await live()).clock();
