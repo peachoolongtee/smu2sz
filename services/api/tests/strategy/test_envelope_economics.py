@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.customer_overview import share_of_year
 from app.api.runtime import Runtime, set_runtime
 from app.strategy.envelope import Economics, EnvelopeFacts, Probe, Setting, _economics_words
 from tests.api.conftest import english_leaks
@@ -128,12 +129,12 @@ def _probe(forward: int) -> Probe:
 
 FACTS = EnvelopeFacts("BUYER-1", "Foshan Home Retail Co.", 0, 1, False, None, 45, 42_000_000,
                       True, (), (), (), {}, None, None, False, 0, 0.0)
-YEAR = Economics(109_200_000, False, True, lambda fen: fen)
+YEAR = Economics(109_200_000, False, True, lambda fen: share_of_year(fen, 109_200_000))
 
 
 @pytest.mark.parametrize(("forward", "en", "zh"), [
     (40_000, "That is under 0.1% of the ¥1,092,000 a year we estimate Foshan's orders bring you in gross profit.",
-     "相当于我们估计Foshan Home Retail Co.订单每年为您带来的 ¥1,092,000 毛利的低于 0.1%。"),
+     "不到我们估计Foshan Home Retail Co.订单每年为您带来的 ¥1,092,000 毛利的 0.1%。"),
     (1_621_795, "That is about 1.5% of the ¥1,092,000 a year we estimate Foshan's orders bring you in gross profit.",
      "约相当于我们估计Foshan Home Retail Co.订单每年为您带来的 ¥1,092,000 毛利的 1.5%。"),
     (200_000_000, "That is more than all of the ¥1,092,000 a year we estimate Foshan's orders bring you in gross profit.",
@@ -147,10 +148,18 @@ def test_the_share_is_said_within_its_bounds(forward, en, zh):
 
 
 def test_the_basis_word_follows_the_margin_basis_and_no_year_says_nothing():
-    contribution = Economics(109_200_000, True, False, lambda fen: fen)
+    contribution = Economics(109_200_000, True, False, lambda fen: share_of_year(fen, 109_200_000))
     sentence, note = _economics_words(FACTS, _probe(1_621_795), contribution, "en")
-    assert sentence is not None and sentence.endswith("bring you in contribution.") and note == DEMO_NOTE_EN
-    assert _economics_words(FACTS, _probe(1_621_795), Economics(0, False, True, lambda fen: fen), "en") == (None, None)
+    assert sentence is not None and sentence.endswith("bring you in contribution.")
+    assert note == "the contribution margin is assumed for the Demo, not confirmed by you"
+    assert _economics_words(FACTS, _probe(1_621_795), contribution, "zh")[1] == "边际贡献率为演示而假设，尚未经您确认"
+    assert _economics_words(FACTS, _probe(1_621_795), Economics(0, False, True, lambda fen: share_of_year(fen, 0)), "en") == (None, None)
+
+
+def test_exactly_the_whole_year_is_not_more_than_all_of_it():
+    exactly = Economics(1_621_795, False, True, lambda fen: share_of_year(fen, 1_621_795))
+    assert _economics_words(FACTS, _probe(1_621_795), exactly, "en")[0] == (
+        "That is about 100% of the ¥16,218 a year we estimate Foshan's orders bring you in gross profit.")
     assert _economics_words(FACTS, _probe(0), YEAR, "en") == (None, None)
 
 

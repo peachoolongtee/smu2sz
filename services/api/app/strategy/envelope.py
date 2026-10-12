@@ -1226,10 +1226,13 @@ def _what_needs_you(facts: EnvelopeFacts, p: Probe, lang: str) -> str:
 def _authority_sentence(facts: EnvelopeFacts, p: Probe, authority: Authority | None, lang: str) -> str | None:
     phrase = _phrase(facts, p.setting, lang)
     if authority == "needs_owner":
-        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but its fix cannot run alone
-            return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
-                           "It needs your approval.",
-                     f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but the fix behind it is the owner's
+            if p.cure_cannot_run_today:
+                return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
+                               "It needs your approval.",
+                         f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+            return t(lang, f"{phrase}: within your limits, but the funding that keeps your cash floor needs your approval.",
+                     f"{phrase}：在您的底线内，但守住现金底线的资金安排需要您批准。")
         what = _what_needs_you(facts, p, lang)
         return t(lang, f"{phrase}: within your limits and your cash floor holds, but FLOW cannot agree {what} on its own. "
                        "It needs your approval.",
@@ -1277,23 +1280,22 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
 @dataclass(frozen=True)
 class Economics:
     """A year of the buyer's gross profit, as the Customer overview reads it (`customer_overview.year_held`, the one margin and
-    contribution function), and its 12-month scaling of a forward concession (`customer_overview.twelve_months_of`): composed by
-    the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
+    contribution function), and the share of that year a forward concession is (`customer_overview.share_of_year` over
+    `twelve_months_of`): composed by the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
 
     contribution_fen: int
     assumed: bool  # the margin is the Demo's default
     gross: bool  # the basis word: gross profit (default) or contribution
-    year_of: Callable[[int], int]  # a forward concession over the mandate's horizon, on a 12-month basis
+    share_of: Callable[[int], Fraction | None]  # a forward concession as a share of the year (`customer_overview.share_of_year`)
 
 
 def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) -> tuple[str | None, str | None]:
     """(the sentence, the note). The share is the verdict's own forward concession on a 12-month basis over a year's gross
     profit (brief C.2), at 1 dp with its bounds: "under 0.1%", and "more than 10 times" the year. None without a cost or a
     positive year."""
-    year = eco.year_of(p.forward_total_fen)
-    if year <= 0 or eco.contribution_fen <= 0:
+    ratio = eco.share_of(p.forward_total_fen)
+    if ratio is None:
         return None, None
-    ratio = Fraction(year, eco.contribution_fen)
     who_en, who_zh = buyer_short(facts.buyer_name), facts.buyer_name
     big = fmt_yuan_rounded(eco.contribution_fen)
     basis_en, basis_zh = ("gross profit", "毛利") if eco.gross else ("contribution", "边际贡献")
@@ -1301,13 +1303,14 @@ def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) 
     bring_zh = f"我们估计{who_zh}订单每年为您带来的 {big} {basis_zh}"
     if ratio > 10:
         sentence = t(lang, f"That is more than 10 times {bring_en}.", f"超过{bring_zh}的 10 倍。")
-    elif ratio >= 1:
+    elif ratio > 1:
         sentence = t(lang, f"That is more than all of {bring_en}.", f"超过{bring_zh}的全部。")
     else:
         share = share_text(ratio, lang)
-        sentence = (t(lang, f"That is {share} of {bring_en}.", f"相当于{bring_zh}的{share}。") if share.startswith(("under", "低于"))
+        sentence = (t(lang, f"That is {share} of {bring_en}.", f"不到{bring_zh}的 0.1%。") if share.startswith(("under", "低于"))
                     else t(lang, f"That is about {share} of {bring_en}.", f"约相当于{bring_zh}的 {share}。"))
-    note = t(lang, "the margin is assumed for the Demo, not confirmed by you", "毛利率为演示而假设，尚未经您确认")         if eco.assumed else None
+    rate_en, rate_zh = ("margin", "毛利率") if eco.gross else ("contribution margin", "边际贡献率")
+    note = t(lang, f"the {rate_en} is assumed for the Demo, not confirmed by you", f"{rate_zh}为演示而假设，尚未经您确认") if eco.assumed else None
     return sentence, note
 
 
@@ -1561,11 +1564,18 @@ def _ask_sentence(facts: EnvelopeFacts, ask: AskFacts, lang: str) -> str:
         p = _pct(lowest)
         if ask.at_rule is not None:
             rule = _pct(ask.at_rule.setting.price)
-            both = authority_of(found) == authority_of(ask.at_rule) == "needs_owner"
+            a, b = authority_of(found), authority_of(ask.at_rule)
+            if a == b == "needs_owner":
+                close = t(lang, " Either needs your approval.", "两者都需要您批准。")
+            elif a == b:
+                close = tail
+            else:  # the two differ in who may act: each is named
+                wa = t(lang, *_AUTHORITY_WORDS[a]) if a is not None else ""
+                wb = t(lang, *_AUTHORITY_WORDS[b]) if b is not None else ""
+                close = t(lang, f" At {p}: {wa}; at {rule}: {wb}.", f"加价 {p}：{wa}；加价 {rule}：{wb}。")
             return (t(lang, f"{n} days works if the price rises at least {p}; at {rule} the price rise pays for the longer terms "
                             "in full.",
-                      f"价格至少上调 {p}，即可接受 {n} 天账期；上调 {rule} 时，加价可完全抵消延长账期的成本。")
-                    + (t(lang, " Either needs your approval.", "两者都需要您批准。") if both else tail))
+                      f"价格至少上调 {p}，即可接受 {n} 天账期；上调 {rule} 时，加价可完全抵消延长账期的成本。") + close)
         if ask.rule_price_bp == lowest:
             return t(lang, f"{n} days works if the price rises {p}; at that price the price rise pays for the longer terms in full.",
                      f"价格上调 {p}，即可接受 {n} 天账期；该加价可完全抵消延长账期的成本。") + tail

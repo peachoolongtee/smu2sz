@@ -238,6 +238,14 @@ def _contribution_fen(r: _Basis) -> int | None:
     return round_half_up(Fraction(sales[0] * _margin(r).bp, 10_000))
 
 
+def share_of_year(year_fen: int, contribution_fen: int | None) -> Fraction | None:
+    """A cost on a 12-month basis as an exact share of a year's contribution: the one share every surface states (this page's open
+    request, the envelope's class-3 line). None without a cost or a positive year."""
+    if year_fen <= 0 or contribution_fen is None or contribution_fen <= 0:
+        return None
+    return Fraction(year_fen, contribution_fen)
+
+
 def twelve_months_of(forward_fen: int, horizon_days: int) -> int:
     """A forward concession counted over the mandate's horizon, on a 12-month basis (half-up to the fen): the one scaling the
     request's share of a year's contribution uses, here and on the envelope's economics line."""
@@ -321,8 +329,8 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
     if ask is not None:
         year, once = ask["year_fen"], ask["once_display"]
         label = t(lang, "The open request", "当前的请求")
-        if year > 0 and contribution is not None and contribution > 0:
-            ratio = Fraction(year, contribution)
+        ratio = share_of_year(year, contribution)
+        if ratio is not None:
             core = (t(lang, "more than the whole year's contribution", "超过其一整年的贡献") if ratio > 1
                     else t(lang, f"about {share_text(ratio, lang)} of it", f"约占其中的 {share_text(ratio, lang)}"))
             extra = t(lang, f", plus {once} once", f"，另加一次性 {once}") if once else ""
