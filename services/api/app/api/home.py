@@ -19,7 +19,6 @@ from typing import Any, ClassVar
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
-from app.api import home_hybrid
 from app.api.auth import require_owner
 from app.api.causality import Causality, forecast_of, mark_changed
 from app.api.decisions import Reconciled, decision_summary, load_context, remaining_links, remaining_task_view
@@ -1156,10 +1155,14 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}
                       for f in state.facilities if f.status.value == "COMMITTED" and f.limit_fen > 0]
+        # imported here, after this module is loaded: the hybrid reads this module's own helpers
+        from app.api import home_hybrid
+
+        status_text = _status_text(status, found, lang)
         try:  # the hybrid is a supporting read: the conclusion and the plan stand without it, and the home says so
             hybrid: dict[str, Any] = home_hybrid.build(home_hybrid.HomeRead(
                 rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
-                action=action, status=status, status_text=_status_text(status, found, lang), headline=headline or "", note=note or "",
+                action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
                 low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
                 changes=changes, record=record, open_decisions=open_decisions))
         except Exception:
@@ -1177,7 +1180,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "state_version": state.state_version,
         "lang": lang,
         "status": status,
-        "status_text": _status_text(status, found, lang),
+        "status_text": status_text,
         "headline": headline,
         "note": note,
         "worst": words["worst"],
