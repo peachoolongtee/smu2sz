@@ -4,7 +4,17 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.domain.money import Ratio, bp, fmt_yuan, fmt_yuan_about, gross_up_face, post, round_half_up, simple_interest, yuan
+from app.domain.money import (
+    Ratio,
+    bp,
+    fmt_yuan,
+    fmt_yuan_about,
+    gross_up_face,
+    post,
+    round_half_up,
+    simple_interest,
+    yuan,
+)
 
 
 def test_half_up_both_signs():
