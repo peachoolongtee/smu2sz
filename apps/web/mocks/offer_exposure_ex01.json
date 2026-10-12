@@ -19,7 +19,7 @@
         "lowest_when_text": "below it for 15 days",
         "limit_word": "EXCEEDED",
         "limit_text": "exceeded",
-        "share_after_text": "0%, for 15 days longer"
+        "share_after_text": "100%, for 15 days longer"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -30,7 +30,7 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "0%, paid 2 days after the offer"
+        "share_after_text": "100%, paid 2 days after the offer"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -41,7 +41,7 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "0%, for 10 days longer"
+        "share_after_text": "100%, for 10 days longer"
       },
       {
         "key": "do_nothing",
@@ -52,7 +52,7 @@
         "lowest_when_text": "below it for 20 days",
         "limit_word": null,
         "limit_text": null,
-        "share_after_text": "100%"
+        "share_after_text": "100%, until the due day"
       }
     ],
     "concentration": {
@@ -4134,7 +4134,7 @@
         "lowest_when_text": "低于最低现金 15 天",
         "limit_word": "EXCEEDED",
         "limit_text": "超出授权",
-        "share_after_text": "0%，多持续 15 天"
+        "share_after_text": "100%，多持续 15 天"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -4145,7 +4145,7 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "0%，报价后 2 天付款"
+        "share_after_text": "100%，报价后 2 天付款"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -4156,7 +4156,7 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "0%，多持续 10 天"
+        "share_after_text": "100%，多持续 10 天"
       },
       {
         "key": "do_nothing",
@@ -4167,7 +4167,7 @@
         "lowest_when_text": "低于最低现金 20 天",
         "limit_word": null,
         "limit_text": null,
-        "share_after_text": "100%"
+        "share_after_text": "100%，直到到期日"
       }
     ],
     "concentration": {
