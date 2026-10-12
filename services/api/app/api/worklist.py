@@ -7,8 +7,9 @@ Behind FEATURE_HOME_V2 (off: the standard 403 FEATURE_DISABLED), owner only, rea
 make; nothing is ranked, priced, projected or decided a second time:
 
     alert        the company cash alert (the Home read's own status, first breach and next action) when the reserve is unsafe or a cure
-                 waits, else null. It is counted nowhere ("an alert, not a queue item"); while it is up, the company plan's own approval (the
-                 Home's `next_action.pending_approval_id`) is the alert's and is not a row. Every other pending approval is a row.
+                 waits, else null. It is counted nowhere ("an alert, not a queue item"); while it is up, the approvals of the company
+                 plan (every leg of the plan the Home's `next_action` answers) are the alert's and are not rows. Every other pending
+                 approval, of another plan or a standalone operation, is a row.
     needs_you    decisions only a person can take, one row per decision: DECISION (an open offer waiting for the owner's reply, from the
                  decision record, one row per offer, with the offer picture's words for the cash consequence), APPROVAL (the Home's
                  pending approvals, less the company cash plan), COLLECTION (the receivable rows' `collection_state` OVERDUE or
@@ -308,15 +309,16 @@ def _deal_effect(pic: dict[str, Any] | None, floor: int, failed: bool, lang: Lan
     return severity, rec_breach, t(lang, "Accepting as asked does not take cash below your minimum.", "按对方要求接受，现金不会低于您的最低现金。")
 
 
-def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_approval: str | None) -> list[Row]:
-    """The pending approvals the Home already words, less the company cash plan's own (`plan_approval`, the alert's, given only while the
-    alert is up): every other approval is a row. Customer and deadline from the agreement the queued operation names, else from the invoice
+def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: str | None) -> list[Row]:
+    """The pending approvals the Home already words, less every approval of the company cash plan (all its legs: the queued operations of
+    the alert the plan answers, `alert:<id>:...`, given only while the alert is up): they belong to the alert. An approval of another plan
+    or a standalone operation is a row. Customer and deadline from the agreement the queued operation names, else from the invoice
     it names."""
     cards = {a["id"]: a for a in home.get("approvals") or []}
     out: list[Row] = []
     for rec in ctx.approvals:
         card = cards.get(rec.id)
-        if card is None or rec.id == plan_approval:
+        if card is None or (plan_alert is not None and (rec.op_id or "").startswith(f"alert:{plan_alert}:")):
             continue
         try:
             op = json.loads(rec.op_json)
@@ -514,8 +516,8 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, An
     alert = _alert(home, lang)
     deals = open_deals(ctx, lang)
     needs, waiting = _deal_rows(rt, ctx, lang, deals, partial)
-    plan_approval = (home.get("next_action") or {}).get("pending_approval_id") if alert is not None else None
-    needs += _approval_rows(home, ctx, lang, plan_approval)
+    plan_alert = (home.get("next_action") or {}).get("alert_id") if alert is not None else None
+    needs += _approval_rows(home, ctx, lang, plan_alert)
     _state, _today, body, rows_partial = read_rows(rt, lang)
     for name in rows_partial.missing:
         partial.add(name)

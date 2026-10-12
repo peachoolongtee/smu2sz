@@ -230,9 +230,9 @@ def test_the_plan_waiting_on_approval_is_the_alerts_and_not_a_row_of_needs_you(a
     assert w["alert"]["text"] == "Reserve unsafe in 12 days. The funding plan waits for your approval."
     approval = api.get("/home").json()["next_action"]["pending_approval_id"]
     assert w["alert"]["primary"] == {"label": "Review the plan", "href": f"/approvals#approval-{approval}"}
-    # the plan's own approval (`pending_approval_id`) is the alert's; the plan's other leg is a separate approval and is a row
-    assert approval == "APR-000001" and w["needs_you"][0]["key"] == "approval:APR-000002"
-    assert [i["kind"] for i in w["needs_you"]] == ["APPROVAL", "DECISION"] and "approval:APR-000001" not in {i["key"] for i in w["needs_you"]}
+    # both legs of the plan (APR-000001 and APR-000002) are the alert's: neither is a row
+    assert approval == "APR-000001" and {a["id"] for a in api.get("/home").json()["approvals"]} == {"APR-000001", "APR-000002"}
+    assert [i["kind"] for i in w["needs_you"]] == ["DECISION"]
     assert _get(api, "zh")["alert"]["text"] == "现金储备将在 12 天后变得不安全。融资方案正等待您批准。"
 
 
@@ -442,23 +442,24 @@ def test_an_agreement_waiting_for_approval_is_an_approval_row_with_its_deadline(
     assert not english_leaks(_get(api, "zh"), NAMES, raw_fields=[HREFS])
 
 
-def test_every_approval_but_the_company_plans_own_is_a_row_while_the_alert_is_up(api: TestClient) -> None:
+def test_every_leg_of_the_company_plan_is_the_alerts_and_an_unrelated_approval_stays_a_row(api: TestClient) -> None:
     from app.api.runtime import get_runtime
     from app.mandate.fixture import load_demo_owner_key
     from app.mandate.signing import sign
     from tests.api.test_time_semantics import _queue_counter
 
-    queued = _queue_counter(api, 1)  # a commercial approval first
+    queued = _queue_counter(api, 1)  # an unrelated approval first: an agreement with a buyer
     store = get_runtime().store
     store.put_mandate(sign(store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
     a = api.get("/home").json()["next_action"]
     api.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
-    plan = api.get("/home").json()["next_action"]["pending_approval_id"]
+    pending = {x["id"] for x in api.get("/home").json()["approvals"]}
+    plan = {"APR-000002", "APR-000003"}  # the two legs of the plan (the draw and the invoice financing), queued after the agreement
+    assert plan < pending and queued["row"]["id"] == "APR-000001"
     w = _get(api)
     assert w["alert"] is not None
-    keys = {i["key"] for i in w["needs_you"] if i["kind"] == "APPROVAL"}
-    assert f"approval:{queued['row']['id']}" in keys and f"approval:{plan}" not in keys
-    assert len(keys) == 2  # the agreement, and the plan's second leg
+    assert {i["key"] for i in w["needs_you"] if i["kind"] == "APPROVAL"} == {"approval:APR-000001"}
+    assert w["counts"]["needs_you"] == len(w["needs_you"])
 
 
 def test_a_contract_read_and_waiting_for_review_is_a_setup_row(api: TestClient) -> None:
