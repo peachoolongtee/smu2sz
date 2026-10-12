@@ -1,6 +1,7 @@
-"""GET /worklist: Home V2's right panel (design/home-v2 round 4 and 5, wave 1, the server half).
+"""GET /worklist and GET /customers: Home V2's right panel (design/home-v2 round 4 and 5, wave 1, the server half).
 
     GET /worklist?lang=en|zh&since_day=<n>
+    GET /customers?lang=en|zh
 
 Behind FEATURE_HOME_V2 (off: the standard 403 FEATURE_DISABLED), owner only, read-only. One composition of reads the other pages already
 make; nothing is ranked, priced, projected or decided a second time:
@@ -14,7 +15,8 @@ make; nothing is ranked, priced, projected or decided a second time:
                  PROMISE_MISSED, one row per buyer), SETUP (a buyer contract read and waiting for the owner's review).
     waiting      what FLOW waits for: BUYER_REPLY (an offer the buyer must clarify), SETTLEMENT (a funding lot arranged and not landed,
                  `financing_words.state_of` ARRANGED), PROMISE (an early payment a live agreement promised, still awaited).
-    customers    the buyers on the books, one row each (also `GET /customers`, the same function).
+    customers    the buyers on the books, one row each: `GET /customers` returns these same rows (one function) and `search_terms`
+                 (each customer's name and short name), for a page to filter the list it already holds.
     counts       counted from the rows above, never stored: needs_you, waiting, customers.
 
 Severity (documented, separate from who acts) is a word about the item's weight, from its authority class and its cash effect:
@@ -486,6 +488,7 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, An
         "counts": {"needs_you": len(needs_sorted), "waiting": len(waiting_sorted), "customers": len(customers)},
         "needs_you": [_needs_item(r, i == 0, since_day, lang) for i, r in enumerate(needs_sorted)],
         "waiting": waiting_sorted, "customers": customers,
+        "search_terms": [{"customer_id": c["customer_id"], "terms": [c["name"], c["short"]]} for c in customers],
         "partial": home.get("partial"),
     }, whole
 
@@ -512,6 +515,17 @@ def get_worklist(lang: Literal["en", "zh"] = Query("en"), since_day: int | None 
     with rt.lock:
         body = _cached(rt, lang, since_day)
     return displayed({k: body[k] for k in ("lang", "day", "state_version", "alert", "counts", "needs_you", "waiting", "customers", "partial")})
+
+
+@router.get("/customers")
+def get_customers(lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
+    """The customers of the worklist (the same rows), with the terms a page filters the list it already holds by."""
+    require_feature("home_v2")
+    rt = get_runtime()
+    with rt.lock:
+        body = _cached(rt, lang, None)
+    return displayed({"lang": lang, "day": body["day"], "state_version": body["state_version"], "customers": body["customers"],
+                      "search_terms": body["search_terms"], "partial": body["partial"]})
 
 
 __all__ = ["Row", "clear_cache", "order", "rank", "tier_of"]
