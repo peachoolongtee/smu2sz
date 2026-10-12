@@ -37,7 +37,7 @@ from app.funding import plan
 from app.funding.router import shared_runs
 from app.strategy.capacity import Package, books_with, resolve_package
 from app.strategy.types import MarginalImpact, ScenarioState, StressRow
-from app.strategy.words import invoice_label, invoice_labels, whole_yuan
+from app.strategy.words import buyer_short, invoice_label, invoice_labels, whole_yuan
 
 _OPEN = ("OPEN", "FINANCED")
 
@@ -442,6 +442,47 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
         assumption=" ".join([head, *notes]), source_state_version=state.state_version, day=max(day, today))
 
 
+def scenario_customer_loss(books: Books, buyer_id: str, day: int, *, lang: str = "en") -> ScenarioState:
+    """The buyer stops buying after today (a scenario, not a prediction; brief D.1 and D.3): a labelled copy of the books.
+
+    The buyer's recurring invoices end and its expected orders are taken off; every invoice already issued stays on the copy, owed
+    and paid as the books count it; booked concessions stay until released. No outflow carries a counterparty, so every cost is
+    kept and the copy removes receipts only: a cash figure "net of avoided costs" cannot be read from it, and the economic loss is
+    the gross profit the buyer's sales would have brought, not the cash. Removing an expected order changes no cash (the
+    projection books none from it). An unknown buyer, or one with nothing scheduled to stop, is refused (`ValueError`)."""
+    state = books.state
+    today = state.as_of_day
+    if not any(c.id == buyer_id for c in state.counterparties):
+        raise ValueError(f"{buyer_id} is not on the books")
+    name = party_name(state, buyer_id)
+    ended = [ri for ri in state.recurring_invoices if ri.counterparty_id == buyer_id]
+    orders = [o for o in state.expected_orders if o.counterparty_id == buyer_id]
+    if not ended and not orders:
+        raise ValueError(f"{name} has no recurring invoice or expected order to stop.")
+    scenario = state.model_copy(update={
+        "recurring_invoices": [ri for ri in state.recurring_invoices if ri.counterparty_id != buyer_id],
+        "expected_orders": [o for o in state.expected_orders if o.counterparty_id != buyer_id]})
+    owed = sorted((r for r in state.receivables if r.counterparty_id == buyer_id and r.status in _OPEN and r.outstanding_fen > 0),
+                  key=lambda r: (r.due_day, r.id))
+    who = buyer_short(name) if lang != "zh" else name
+    if owed:
+        total = whole_yuan(sum(r.outstanding_fen for r in owed))
+        dues_en = "; ".join(f"due {when_text(r.due_day, today, 'en')}" for r in owed)
+        dues_zh = "；".join(f"{when_text(r.due_day, today, 'zh')}到期" for r in owed)
+        kept = t(lang, f"the {total} already invoiced ({dues_en}) is still paid.", f"已开票的 {total}（{dues_zh}）仍会照付。")
+    else:
+        kept = t(lang, "nothing already invoiced is left to pay.", "没有已开票但尚未支付的款项。")
+    assumption = t(lang, f"Scenario assumes {who} stops buying from you after today; {kept} This is not a prediction.",
+                   f"本情景假设{who}从今天以后不再向您采购；{kept}这不是预测。")
+    return ScenarioState(state=scenario, label=t(lang, f"{who} stops buying", f"{who}停止采购"), assumption=assumption,
+                         source_state_version=state.state_version, day=max(day, today))
+
+
+def funding_text(r: Reading, lang: str) -> str:
+    """What the router says about a set of books, leading with the breach days and the shortfall (the stress's own words)."""
+    return _funding_text(r, lang)
+
+
 def _funding_text(r: Reading, lang: str) -> str:
     """What the router says about the stressed books, leading with the breach days and the shortfall."""
     if r.breach_days == 0:
@@ -485,5 +526,5 @@ def stress(books: Books, mandate: Mandate, buyer_id: str, delays: Sequence[int] 
     return rows
 
 
-__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "marginal_impact", "read_books", "scenario_inflow",
-           "scenario_paid_late", "scenario_received", "stress"]
+__all__ = ["DEFAULT_HORIZON_DAYS", "Reading", "funding_text", "marginal_impact", "read_books", "scenario_customer_loss",
+           "scenario_inflow", "scenario_paid_late", "scenario_received", "stress"]
