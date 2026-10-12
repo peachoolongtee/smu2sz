@@ -346,3 +346,43 @@ def test_a_recheck_that_raises_reads_as_no_verdict(client, monkeypatch):
     for p in (opt_a, opt_b):
         assert p["authority"] is None and p["sendable"] is False and p["recommended"] is False and p["needs_owner"] is False
         assert p["authority_text"] == "FLOW needs one more fact before it can price this"
+
+
+# ---------------------------------------------------------------- the evidence behind `decides_text`
+
+
+def test_each_path_carries_the_evidence_behind_who_decides_in_both_languages(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert asked["authority_reason_text"] is None  # the asked path is over a limit: nothing to list
+    assert opt_a["authority_reason_text"] == ("Terms stay at 45 days, no rebate. "
+                                              "The early-settlement offer at 0.85% is within the 1.50% limit you signed.")
+    assert opt_b["authority_reason_text"] == ("Payment terms 45 → 55 days. Price on future invoices +0.30%. "
+                                              "Your mandate lets FLOW send a counter on its own only when the terms stay as they are.")
+    z_asked, z_a, z_b = _paths(client, oid, "zh")
+    assert z_asked["authority_reason_text"] is None
+    assert z_a["authority_reason_text"] == "账期保持 45 天，无返利。0.85% 的提前结算方案在您签署的 1.50% 上限之内。"
+    assert z_b["authority_reason_text"] == "账期 45 → 55 天。今后发票的价格 +0.30%。您的授权只允许 FLOW 在条款保持不变时自行发送还价。"
+
+
+def test_the_evidence_figures_are_the_terms_columns_own(client):
+    oid, _ = _evaluated(client)
+    _, opt_a, opt_b = _paths(client, oid)
+    terms = {t["key"]: t for t in opt_b["terms"]}
+    assert terms["payment_terms"]["value_text"] == "55 days" and terms["payment_terms"]["instead_of_text"] == "instead of 60"
+    assert "45 → 55 days" in opt_b["authority_reason_text"] and terms["rebate_or_price"]["value_text"] == "0.30% price rise"
+    assert "0.30%" in opt_b["authority_reason_text"] and "0.85% off" in {t["key"]: t for t in opt_a["terms"]}["early_payment"]["value_text"]
+    assert "0.85%" in opt_a["authority_reason_text"] and "45 days" in {t["key"]: t for t in opt_a["terms"]}["payment_terms"]["value_text"]
+
+
+def test_the_rule_it_crosses_follows_the_rule_the_mandate_applied():
+    from app.domain.models import Tier
+
+    assert offer_picture._owner_rule(True, False, Tier.TIER_2, False) == "terms"
+    assert offer_picture._owner_rule(False, False, Tier.TIER_2, False) == "beyond_early_pay"
+    assert offer_picture._owner_rule(False, True, Tier.TIER_2, True) == "value"
+    assert offer_picture._owner_rule(False, True, Tier.TIER_1, True) == "plan"
+    assert offer_picture._owner_rule(False, True, Tier.TIER_1, False) == "recheck"
+    mandate = SimpleNamespace(tier2_single_commitment_fen=5_000_000)
+    assert offer_picture._rule_text("en", "value", mandate) == "Your mandate lets FLOW agree on its own only to a commitment of up to ¥50,000.00."
+    assert offer_picture._rule_text("zh", "plan", mandate) == "此回复所需的融资方案因其成本需要您批准。"
