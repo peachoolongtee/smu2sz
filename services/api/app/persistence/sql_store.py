@@ -695,6 +695,14 @@ class SqlLedgerStore:
         rows = self._read_all(cr, cr.c.row_id, cr.c.id == record_id)
         return ContractRecord.model_validate_json(rows[0].payload_json) if rows else None
 
+    def change_marker(self) -> tuple[int, int, int, int, int]:
+        with self._reading() as conn:
+            def count(table: Table, *where: Any) -> int:
+                return int(conn.execute(select(func.count()).select_from(table).where(*where)).scalar_one())
+
+            return (count(t.operations), count(t.verdicts), count(t.approvals),
+                    count(t.approvals, t.approvals.c.status != ApprovalStatus.PENDING.value), count(t.contract_records))
+
     def contract_records(self) -> list[ContractRecord]:
         cr = t.contract_records
         return [ContractRecord.model_validate_json(r.payload_json) for r in self._read_all(cr, cr.c.row_id)]
