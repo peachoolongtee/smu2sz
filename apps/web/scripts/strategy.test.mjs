@@ -170,7 +170,7 @@ test("the Deals card says it is the most the owner can give, labels the figure a
   assert.match(card, /<span className="text-ink-2">\{` · \$\{p\.flags\.join/);
   assert.match(card, /data-testid="envelope-caption"/);
   // The counters FLOW would make outside the ranges it checks are the server's sentences, a smaller line under the packages.
-  assert.match(card, /unlisted\.map\(\(sentence, i\) => \(\s*<p key=\{i\} className="mt-2 text-xs text-ink-2" data-testid="envelope-unlisted">/);
+  assert.match(card, /unlisted\.map\(\(sentence, i\) => \(\s*<p key=\{i\} className="mt-2 text-supporting text-ink-2" data-testid="envelope-unlisted">/);
   assert.match(card, /<Packages packages=\{e\.packages\} unlisted=\{e\.unlisted_counters\} \/>/);
   for (const name of ["envelope_day0", "envelope_day34", "envelope_day34_after"]) assert.ok(Array.isArray(recording(name).unlisted_counters), name);
 });
