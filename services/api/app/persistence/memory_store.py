@@ -310,6 +310,11 @@ class InMemoryLedgerStore:
         with self._lock:
             return list(self._contract_records.values())
 
+    def change_marker(self) -> tuple[int, int, int, int, int]:
+        with self._lock:
+            decided = sum(1 for a in self._approvals.values() if a.status != ApprovalStatus.PENDING)
+            return len(self._ops), len(self._verdicts), len(self._approvals), decided, len(self._contract_records)
+
     def contract_guard_rows(self) -> list[ContractGuardRow]:
         with self._lock:
             return [guard_row(r) for r in self._contract_records.values()]

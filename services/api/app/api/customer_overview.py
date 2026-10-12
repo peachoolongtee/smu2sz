@@ -10,14 +10,18 @@ One page's read, composed from reads the other pages already make; nothing is pr
     actions[2]      view the invoices; stress-test payment (the second only while the exposure flag is on)
     economics       the owner's inputs for the buyer (sales, margin, classification) and the two figures they give
     exposure        payment behaviour, financing, the 30-day late-payment stress, what the financing then costs, spare capacity:
-                    the exposure layer's own block (`app.strategy.exposure`); null, with `note`, while FEATURE_EXPOSURE is off
+                    the exposure layer's own block (`app.strategy.exposure`); null, with the top-level `note` (the field the page reads), while FEATURE_EXPOSURE is off
     history         the open offer, the buyer's entries in the log, the terms in force
     context.back    {label, href} built from the query: `decision` (+ `path`) back to /deals, `invoice` back to /receivables
 
 The sources are `inputs_from_store` (customer inputs and their provenance), `receivable_rows` (the net, the financing state, the
 agreement, the pending counter), `deal_offers.open_offers` and the offer picture (the recommended path, its cost and authority), the
 exposure layer (concentration, payments, stress, capacity) and the decision record's log. The only arithmetic is the owner's two
-products of their own inputs: a year's contribution (sales times margin) and the open request's cost as a share of it.
+products of their own inputs: a year's contribution (sales times margin) and the open request's cost as a share of it, on a 12-month
+basis. Annual sales are the owner's input when there is one, else projected from the books (the recurring schedule and the receivables
+still to be issued over the next 12 months: "projected from your books"); the margin is the Demo's assumed 20% on the Demo's own books until the owner
+enters one. A decision is `kind` counter, request or offer_received (a received offer not yet read: "Read the offer", no authority
+sentence). Each history row with an `href` carries its `link_label`. The page reads the top-level `note` for the exposure panel.
 
 Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence (hrefs carry them). The
 share of the buyer's sales is never stated unless the concentration holds it. Cached on the books, the mandate, the day, the
@@ -40,15 +44,24 @@ from app.api.auth import require_owner
 from app.api.deal_offers import open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
 from app.api.offer_picture import cached_picture
-from app.api.presentation import Lang, event_words, party_name, t, when_text
+from app.api.presentation import Lang, agreement_words, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
+from app.api.workspace import _months
 from app.books import current_books
 from app.config import get_settings
 from app.decisions.identity import deal_id, decision_id_for, offer_id_of
+from app.decisions.state import DealState
 from app.domain.models import CompiledOffer, FinancialState, OperationStatus, Verdict
-from app.domain.money import bp, fmt_pct, fmt_yuan_about, round_half_up
-from app.financial import EngineError
+from app.domain.money import (
+    bp,
+    fmt_pct,
+    fmt_yuan_about,
+    fmt_yuan_about_short,
+    fmt_yuan_rounded,
+    round_half_up,
+)
+from app.financial import EngineError, recurring_issue_days
 from app.operations.log import LoggedEntry
 from app.persistence.records import CustomerInputRecord, InputField
 from app.strategy import exposure as assembly
@@ -66,6 +79,7 @@ LOG_ROWS = 3  # the entries of the log the history shows, newest first (beside t
 _CACHE: AnswerCache[dict[str, Any]] = AnswerCache(CACHE_SIZE)
 _SAFE = re.compile(r"[A-Za-z0-9_.:\-]{1,80}")
 _CLASSES = {"NORMAL": ("Normal", "普通"), "IMPORTANT": ("Important", "重要"), "STRATEGIC": ("Strategic", "战略")}
+_AGREEMENTS = ("ACCEPT_OFFER", "RECORD_COMMITMENT")
 _SKIP_STATUS = (OperationStatus.DUPLICATE, OperationStatus.REFUSED)
 
 
@@ -75,6 +89,10 @@ def clear_cache() -> None:
 
 def _exposure_on() -> bool:
     return bool(get_settings().features.exposure)
+
+
+def _economics_on() -> bool:
+    return bool(get_settings().features.customer_economics)
 
 
 def _quoted(value: str) -> str:
@@ -107,9 +125,10 @@ class _Read:
     inputs: CustomerInputs
     ctx: Context
     offer: dict[str, Any] | None  # the buyer's open offer (`deal_offers.open_offer`)
+    offer_state: DealState | None  # the decision record's state of that offer
     verdict: Verdict | None
     picture: dict[str, Any] | None  # the offer picture, when it could be read
-    conc: Any  # strategy.types.Concentration
+    conc: dict[str, Any] | None  # the concentration (strategy.types.Concentration as the exposure block carries it); None when unreadable
     exposure: dict[str, Any] | None  # the exposure block, when the flag is on and it could be read
 
     @property
@@ -131,28 +150,52 @@ class _Read:
 # ---------------------------------------------------------------- economics (the owner's inputs and the two products of them)
 
 
+PROJECTION_DAYS = 365  # annual sales projected from the books look this far ahead
+
+
+def _projected_sales_fen(r: _Read) -> int | None:
+    """The buyer's sales over the next 12 months from the books, for when the owner has entered none: every invoice the buyer's recurring
+    schedule issues in the window (`recurring_issue_days`) and every receivable of the buyer still to be issued in it. An invoice issued
+    before today is past sales and not counted. None when the books schedule nothing for the buyer."""
+    lo, hi = r.today, r.today + PROJECTION_DAYS
+    total = sum(ri.face_fen * len(recurring_issue_days(ri, lo, hi)) for ri in r.state.recurring_invoices if ri.counterparty_id == r.buyer_id)
+    total += sum(x.face_fen for x in r.state.receivables if x.counterparty_id == r.buyer_id and lo <= x.issue_day < hi and x.status != "FAILED")
+    return total or None
+
+
+def _sales(r: _Read) -> tuple[int, CustomerInputRecord | None] | None:
+    """(annual sales in fen, the owner's row when it is theirs): the owner's input overrides; else the books' projection (no row)."""
+    rec = r.input(InputField.ANNUAL_SALES_FEN)
+    if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
+        return v, rec
+    projected = _projected_sales_fen(r)
+    return (projected, None) if projected is not None else None
+
+
+DEMO_SCENARIO = "golden_sme"
+DEMO_MARGIN_BP = 2000  # the Demo's assumed gross margin; never stored, never passed as the owner's, said so wherever it shows
+
+
+def _margin(r: _Read) -> tuple[int, CustomerInputRecord | None] | None:
+    """(margin in bp, the owner's row when it is theirs): the owner's input; else, on the Demo's own books, the Demo's assumption."""
+    rec = r.input(InputField.MARGIN_BP)
+    if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
+        return v, rec
+    return (DEMO_MARGIN_BP, None) if r.state.scenario == DEMO_SCENARIO else None
+
+
 def _contribution_fen(r: _Read) -> int | None:
-    """A year's contribution: the owner's annual sales times the owner's margin, half-up to the fen (ADR-0002). None unless both are held."""
-    sales, margin = r.input(InputField.ANNUAL_SALES_FEN), r.input(InputField.MARGIN_BP)
+    """A year's contribution: annual sales (the owner's, else the books' projection) times the margin on file, half-up to the fen
+    (ADR-0002). None unless both are held."""
+    sales, margin = _sales(r), _margin(r)
     if sales is None or margin is None:
         return None
-    s, m = value_of(sales), value_of(margin)
-    if not isinstance(s, int) or not isinstance(m, int) or isinstance(s, bool) or isinstance(m, bool):
-        return None
-    return round_half_up(Fraction(s * m, 10_000))
+    return round_half_up(Fraction(sales[0] * margin[0], 10_000))
 
 
 def _about_big(fen: int, lang: Lang) -> str:
-    """A year's figure at a glance: "about ¥1.09m" from a million, else the house's "about" rounding."""
-    yuan = round_half_up(Fraction(abs(fen), 100))
-    sign = "−" if fen < 0 else ""
-    if yuan >= 1_000_000:
-        return t(lang, f"about {sign}¥{round_half_up(Fraction(yuan, 10_000)) / 100:.2f}m", f"约 {sign}¥{round_half_up(Fraction(yuan, 10_000))} 万")
-    return t(lang, f"about {fmt_yuan_about(fen)}", f"约 {fmt_yuan_about(fen)}")
-
-
-def _about_whole(fen: int, lang: Lang) -> str:
-    return t(lang, f"about ¥{round_half_up(Fraction(fen, 100)):,}", f"约 ¥{round_half_up(Fraction(fen, 100)):,}")
+    """A year's figure at a glance: "about ¥1.09m" (one formatter, rounded once from the fen)."""
+    return t(lang, f"about {fmt_yuan_about_short(fen)}", f"约 {fmt_yuan_about_short(fen, zh=True)}")
 
 
 def _source(rec: CustomerInputRecord, lang: Lang) -> tuple[str, str]:
@@ -166,8 +209,17 @@ def _percent(value: int) -> str:
     return f"{value // 100}%" if value % 100 == 0 else fmt_pct(bp(value))
 
 
-def _cost_fen(r: _Read) -> int | None:
-    return r.verdict.forward_concession_total_fen if r.offer is not None and r.verdict is not None else None
+def _ask(r: _Read) -> dict[str, Any] | None:
+    """The open request on a 12-month basis, the offer picture's own: the verdict's forward concession over the mandate's horizon,
+    scaled to twelve months, with the one-off discount (the picture's display) beside it and never added. None without a request."""
+    if r.offer is None or r.verdict is None:
+        return None
+    forward = r.verdict.forward_concession_total_fen
+    months = _months(r.ctx.mandate.forward_concession_horizon_days)
+    year = round_half_up(Fraction(forward * 12, months)) if forward > 0 else 0
+    asked = next((p for p in (r.picture or {}).get("paths", []) if p["key"] == assembly.ASKED), None)
+    once = asked.get("cost_once_display") if asked is not None else None
+    return {"year_fen": year, "once_display": once} if year > 0 or once else None
 
 
 def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
@@ -178,38 +230,54 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
     def put(key: str, label: str, value: str, note: str | None, tone: str = "neutral") -> None:
         rows.append({"key": key, "label": label, "value_display": value, "note": note, "tone": tone})
 
-    sales, margin, klass = (r.input(InputField.ANNUAL_SALES_FEN), r.input(InputField.MARGIN_BP), r.input(InputField.CLASSIFICATION))
-    if sales is not None and isinstance(v := value_of(sales), int):
-        note, tone = _source(sales, lang)
-        put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(v), note, tone)
+    margin, klass = _margin(r), r.input(InputField.CLASSIFICATION)
+    sales = _sales(r)
+    if sales is not None and sales[1] is not None:
+        note, tone = _source(sales[1], lang)
+        put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(sales[0]), note, tone)
+    elif sales is not None:  # the owner entered none: the books' own schedule, said so
+        put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(sales[0]), t(lang, "projected from your books", "根据您的账目推算"))
     else:
         put("annual_sales", t(lang, "Annual sales", "年销售额"), missing, None)
-    if margin is not None and isinstance(v := value_of(margin), int):
-        note, tone = _source(margin, lang)
-        put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(v), note, tone)
+    if margin is not None:
+        demo = t(lang, "assumed for the Demo, not confirmed by you", "为演示而假设，尚未经您确认"), "warn"
+        note, tone = _source(margin[1], lang) if margin[1] is not None else demo
+        put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(margin[0]), note, tone)
     else:
         put("gross_margin", t(lang, "Gross margin", "毛利率"), missing, None)
     contribution = _contribution_fen(r)
-    cost = _cost_fen(r)
+    ask = _ask(r)
     if contribution is not None:
-        put("contribution", t(lang, "Contribution a year", "每年贡献"), _about_whole(contribution, lang),
+        put("contribution", t(lang, "Contribution a year", "每年贡献"), t(lang, f"about {fmt_yuan_rounded(contribution)}", f"约 {fmt_yuan_rounded(contribution)}"),
             t(lang, "under today's terms", "按现行条款"))
-        if cost is not None and contribution > 0:
-            put("open_request", t(lang, "The open request", "当前的请求"),
-                t(lang, f"about {share_text(Fraction(cost, contribution), lang)} of it as asked",
-                  f"按对方要求约占其中的 {share_text(Fraction(cost, contribution), lang)}"),
+    if ask is not None:
+        year, once = ask["year_fen"], ask["once_display"]
+        label = t(lang, "The open request", "当前的请求")
+        if year > 0 and contribution is not None and contribution > 0:
+            ratio = Fraction(year, contribution)
+            core = (t(lang, "more than the whole year's contribution", "超过其一整年的贡献") if ratio > 1
+                    else t(lang, f"about {share_text(ratio, lang)} of it", f"约占其中的 {share_text(ratio, lang)}"))
+            extra = t(lang, f", plus {once} once", f"，另加一次性 {once}") if once else ""
+            put("open_request", label, t(lang, f"{core} as asked, over 12 months{extra}", f"按对方要求，12 个月内{core}{extra}"),
                 t(lang, "the cost of keeping the same sales on softer terms, not profit gained",
                   "这是在更宽松的条款下保住同样销售额的成本，不是多赚的利润"))
+        elif year <= 0 and once:  # a one-off cost has no yearly share
+            put("open_request", label, t(lang, f"once, {once}", f"一次性 {once}"),
+                t(lang, "a one-off cost, so it has no share of a year", "这是一次性成本，因此不按年计算占比"))
     if klass is not None and isinstance(v := value_of(klass), str):
         en, zh = _CLASSES.get(v.strip().upper(), (v, v))
         put("classification", t(lang, "Classed as", "客户分类"), t(lang, en, zh), t(lang, "context only", "仅供参考"))
     else:
         put("classification", t(lang, "Classed as", "客户分类"), missing, None)
     never = t(lang, "None of this changes what FLOW may do on its own.", "这些都不会改变 FLOW 可以自行处理的范围。")
-    if contribution is not None and cost is not None:
-        note = t(lang, f"A customer worth {_about_big(contribution, lang).removeprefix('about ')} a year does not by itself justify "
-                       f"a {fmt_yuan_about(cost)} concession; the question is how much of that is at risk if you counter. {never}",
-                 f"一位每年价值{_about_big(contribution, lang).removeprefix('约 ')}的客户，本身并不足以说明值得做 {fmt_yuan_about(cost)} 的让步；"
+    if contribution is not None and ask is not None:
+        year, once = ask["year_fen"], ask["once_display"]
+        cost_en = f"a {fmt_yuan_about(year)} concession over 12 months" if year > 0 else f"a {once} one-off concession"
+        cost_zh = f"12 个月内 {fmt_yuan_about(year)} 的让步" if year > 0 else f"一次性 {once} 的让步"
+        worth = _about_big(contribution, lang)
+        note = t(lang, f"A customer worth {worth.removeprefix('about ')} a year does not by itself justify {cost_en}; the question is how "
+                       f"much of that is at risk if you counter. {never}",
+                 f"一位每年价值{worth.removeprefix('约 ')}的客户，本身并不足以说明值得做{cost_zh}；"
                  f"关键是如果您还价，其中有多少会面临风险。{never}")
     else:
         note = never
@@ -263,20 +331,24 @@ def _share(r: _Read) -> dict[str, Any]:
     lang = r.lang
     label = t(lang, "Share of what you are owed", "占您应收款的比例")
     c = r.conc
-    if c.is_aggregate:
-        return _figure("share", label, "—", c.aggregate_note or "")
-    if c.ar_total_fen <= 0:
+    if c is None:
+        return _figure("share", label, "—", t(lang, "could not be read just now", "暂时无法读取"))
+    if c["is_aggregate"]:
+        return _figure("share", label, "—", c["aggregate_note"] or "")
+    if c["ar_total_fen"] <= 0:
         return _figure("share", label, "—", t(lang, "nothing is owed to you", "目前没有应收款"))
     n = len(r.rows)
     count = t(lang, "no open invoice" if n == 0 else "one open invoice" if n == 1 else f"{n} open invoices",
               "没有未收发票" if n == 0 else f"{n} 张未收发票")
-    if c.annual_sales_share_bp is not None:  # only when the inputs hold it
-        tail = t(lang, f"{share_text(Fraction(c.annual_sales_share_bp, 10_000), lang)} of your sales",
-                 f"占您销售额的 {share_text(Fraction(c.annual_sales_share_bp, 10_000), lang)}")
+    if c.get("annual_sales_share_bp") is not None:  # only when the inputs hold it
+        tail = t(lang, f"{share_text(Fraction(c['annual_sales_share_bp'], 10_000), lang)} of your sales",
+                 f"占您销售额的 {share_text(Fraction(c['annual_sales_share_bp'], 10_000), lang)}")
     else:
         tail = t(lang, "not its share of your sales", "这不是其占您销售额的比例")
-    tone = "warn" if c.ar_share_bp is not None and c.ar_share_bp >= assembly.MATERIAL_SHARE_BP else "neutral"
-    return _figure("share", label, share_text(Fraction(c.ar_buyer_fen, c.ar_total_fen), lang), t(lang, f"{count}; {tail}", f"{count}；{tail}"), tone)
+    share = c.get("ar_share_bp")
+    tone = "warn" if share is not None and share >= assembly.MATERIAL_SHARE_BP else "neutral"
+    return _figure("share", label, share_text(Fraction(c["ar_buyer_fen"], c["ar_total_fen"]), lang),
+                   t(lang, f"{count}; {tail}", f"{count}；{tail}"), tone)
 
 
 def _value_figure(r: _Read, contribution: int | None) -> dict[str, Any]:
@@ -318,6 +390,13 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
     asks = offer["asks_text"]
     wants = (t(lang, f"{r.who} wants {asks}.", f"{r.who}要求：{asks}。") if asks
              else t(lang, f"{r.who} has made a request.", f"{r.who}提出了一项请求。"))
+    if r.offer_state == DealState.RECEIVED:  # received, not read yet: nothing to recommend and no authority to state
+        return {
+            "kind": "offer_received", "eyebrow": t(lang, "One offer waits to be read", "有一份报价等待阅读"),
+            "text": f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}",
+            "headline_short": None, "authority_text": None,
+            "primary": {"label": t(lang, "Read the offer", "阅读报价"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
+            "secondary": actions}, none
     rec = r.recommended
     if rec is not None and rec["kind"] == "reply":
         cost = rec["cost_display"]
@@ -332,9 +411,11 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
         short = offer["headline_short"] or offer["action_text"]
         body = t(lang, f"{wants} {short}.", f"{wants}{short}。")
         label = t(lang, "Review the request", "查看请求")
-        authority = (r.picture or {}).get("asked", {}).get("authority_text") if r.picture else None
+        asked = next((p for p in (r.picture or {}).get("paths", []) if p["key"] == assembly.ASKED), None)
+        authority = asked["authority_text"] if asked is not None else None
     path = f"&path={_quoted(r.lead)}" if rec is not None else ""
     return {
+        "kind": "counter" if rec is not None and rec["kind"] == "reply" else "request",
         "eyebrow": t(lang, "One commercial decision waits for you", "有一项商务决定等待您处理"),
         "text": body, "headline_short": offer["headline_short"], "authority_text": authority,
         "primary": {"label": label, "href": f"/deals?decision={_quoted(r.decision_id() or '')}{path}"},
@@ -472,6 +553,42 @@ def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str]) -
     return any(cid in message for cid in agreements)
 
 
+def _financing_event(r: _Read, e: LoggedEntry) -> str | None:
+    """An invoice-financing entry in the financing words' own state (arranged, received, repaid), never "drawn" for a lot whose cash
+    has not landed. None when the entry names no invoice the books know."""
+    lang = r.lang
+    rcv = next((x for x in r.state.receivables if x.id == (e.payload or {}).get("receivable_id")), None)
+    advance = (e.payload or {}).get("advance_fen")
+    if rcv is None or not isinstance(advance, int):
+        return None
+    lot = advance_lot(r.state, rcv)
+    words = financing_state_words(lang, lot, r.today, repaid=lot is None and rcv.status != "FINANCED")
+    amount, face = whole_yuan(advance), whole_yuan(rcv.face_fen)
+    if words["state"] == "NONE":
+        return t(lang, f"Invoice financing of {amount} was requested against the {face} invoice.",
+                 f"已就 {face} 的发票申请 {amount} 的融资。")
+    tail = words["text"].removeprefix(t(lang, "financing ", "融资"))
+    return t(lang, f"Invoice financing of {amount} against the {face} invoice: {tail}.", f"以 {face} 的发票做 {amount} 的融资：{tail}。")
+
+
+def _receipt_event(r: _Read, e: LoggedEntry) -> str | None:
+    """A receipt as the receipt: its amount and the invoice, never the bank's reference (an id has no place in a Business sentence)."""
+    lang = r.lang
+    p = e.payload or {}
+    rcv = next((x for x in r.state.receivables if x.id == p.get("receivable_id")), None)
+    amount = p.get("amount_fen")
+    if not isinstance(amount, int) or rcv is None:
+        return None
+    return t(lang, f"The receipt of {whole_yuan(amount)} against the {whole_yuan(rcv.face_fen)} invoice came in.",
+             f"已收到 {whole_yuan(amount)}，对应 {whole_yuan(rcv.face_fen)} 的发票。")
+
+
+def _agreement_event(r: _Read, e: LoggedEntry) -> str | None:
+    """An accepted offer as the agreement it booked (the Activity page's own words), found by the commitment its message names."""
+    cmt = next((c for c in r.ctx.commitments if c.id in (e.result.message or "") and c.counterparty_id == r.buyer_id), None)
+    return agreement_words(r.state, cmt.counterparty_id, cmt.forward_value_fen, r.lang) if cmt is not None else None
+
+
 def _history(r: _Read) -> list[dict[str, Any]]:
     lang = r.lang
     out: list[dict[str, Any]] = []
@@ -479,7 +596,7 @@ def _history(r: _Read) -> list[dict[str, Any]]:
         o = r.offer
         asked = (t(lang, f"Asked for {o['asks_text']}. ", f"对方提出：{o['asks_text']}。") if o["asks_text"] else "")
         out.append({"when_text": _up(o["received_when"] or when_text(r.today, r.today, lang)), "text": asked + o["action_text"],
-                    "href": f"/deals?decision={_quoted(r.decision_id() or '')}"})
+                    "href": f"/deals?decision={_quoted(r.decision_id() or '')}", "link_label": t(lang, "The deal", "该交易")})
     state, ctx = r.state, r.ctx
     rids = {x.id for x in state.receivables if x.counterparty_id == r.buyer_id}
     agreements = {c.id for c in ctx.commitments if c.counterparty_id == r.buyer_id}
@@ -493,30 +610,38 @@ def _history(r: _Read) -> list[dict[str, Any]]:
         words = event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                             approval_id=e.result.approval_id, day=e.day, today=r.today, lang=lang,
                             decided=e.result.approval_id in decided, agreements=names, window_live=False)
-        text = t(lang, " ", "").join(x.strip() for x in (words["event_text"], words["event_detail"]) if x)
+        text = (_financing_event(r, e) if e.kind == "SUBMIT_INVOICE_FOR_FINANCING"
+                else _receipt_event(r, e) if e.kind == "RECEIVE_PAYMENT"
+                else _agreement_event(r, e) if e.kind in _AGREEMENTS and e.result.status == OperationStatus.EXECUTED else None)
+        text = text or t(lang, " ", "").join(x.strip() for x in (words["event_text"], words["event_detail"]) if x)
         if not text:
             continue
         did = decision_id_for(e.payload, e.idempotency_key, ctx.commitments, approval_id=e.result.approval_id)
-        out.append({"when_text": _up(when_text(e.day, r.today, lang)), "text": text,
-                    "href": f"/decisions/{_quoted(did)}" if did is not None and did in known else None})
+        href = f"/decisions/{_quoted(did)}" if did is not None and did in known else None
+        agreement = e.kind in _AGREEMENTS
+        label = t(lang, "The agreement", "协议") if agreement else t(lang, "The record", "记录")
+        out.append({"when_text": _up(when_text(e.day, r.today, lang)), "text": text, "href": href,
+                    "link_label": label if href else None})
     if r.rows:
         g = r.rows[0]["governed_by"]
         out.append({"when_text": t(lang, "In force", "现行"),
                     "text": t(lang, f"{g['terms_text']}; early payment: {r.rows[0]['early_payment']['text']}",
                               f"{g['terms_text']}；提前付款：{r.rows[0]['early_payment']['text']}"),
-                    "href": "/documents" if g["contract_ref"] else None})
+                    "href": "/documents" if g["contract_ref"] else None,
+                    "link_label": t(lang, "The terms", "条款") if g["contract_ref"] else None})
     return out
 
 
 # ---------------------------------------------------------------- reading
 
 
-def _find_offer(rt: Runtime, ctx: Context, buyer_id: str, lang: Lang) -> tuple[dict[str, Any] | None, CompiledOffer | None, Verdict | None]:
+def _find_offer(rt: Runtime, ctx: Context, buyer_id: str, lang: Lang
+                ) -> tuple[dict[str, Any] | None, DealState | None, CompiledOffer | None, Verdict | None]:
     found = open_offers(ctx, lang).get(buyer_id)
     if found is None:
-        return None, None, None
+        return None, None, None, None
     offer = found[0]
-    return offer, rt.store.get_offer(offer["offer_id"]), latest_verdict_for(rt, offer["offer_id"])
+    return offer, found[1], rt.store.get_offer(offer["offer_id"]), latest_verdict_for(rt, offer["offer_id"])
 
 
 def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: str, verdict: Verdict | None, today: int,
@@ -533,14 +658,16 @@ def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: 
         return None
 
 
-def _build(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
-    state, today, body, _ = read_rows(rt, lang)
+def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool]:
+    """(the page, whether it is whole): a read that fell back (a supporting read that failed, `partial`) is returned but never cached."""
+    state, today, body, partial = read_rows(rt, lang)
     name = party_name(state, buyer_id)
     rows = [x for x in body["rows"] if x["buyer_id"] == buyer_id]
     inputs = inputs_from_store(rt.store)
     ctx = load_context(rt, found=[])
-    offer, compiled, verdict = _find_offer(rt, ctx, buyer_id, lang)
+    offer, offer_state, compiled, verdict = _find_offer(rt, ctx, buyer_id, lang)
     offer_id = offer["offer_id"] if offer is not None and compiled is not None else ""
+    whole = partial.view(lang) is None
     picture: dict[str, Any] | None = None
     if offer is not None and verdict is not None:
         try:
@@ -548,13 +675,23 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
             picture = pic if pic.get("available") else None
         except Exception:  # a supporting read: the decision then reads from the Deals read's own words
             log.exception("the offer picture could not be read for the customer overview")
+            whole = False
     exposure_block: dict[str, Any] | None = None
     if _exposure_on():
         exposure_block = _read_exposure(rt, state, buyer_id, offer_id, verdict if offer_id else None, today, lang, inputs)
-    held = tuple(c for c in rt.store.commitments() if c.offer_id != offer_id)
-    shares = concentration(current_books(state, held), buyer_id, rt.day, inputs, lang=lang)
+        whole = whole and exposure_block is not None
+    shares: dict[str, Any] | None
+    if exposure_block is not None:
+        shares = exposure_block["concentration"]
+    else:
+        try:
+            held = tuple(c for c in rt.store.commitments() if c.offer_id != offer_id)
+            shares = concentration(current_books(state, held), buyer_id, rt.day, inputs, lang=lang).model_dump(mode="json")
+        except EngineError:
+            log.exception("the concentration could not be read for the customer overview")
+            shares, whole = None, False
     r = _Read(rt=rt, lang=lang, state=state, today=today, buyer_id=buyer_id, name=name, who=buyer_short(name), rows=rows, inputs=inputs,
-              ctx=ctx, offer=offer, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block)
+              ctx=ctx, offer=offer, offer_state=offer_state, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block)
     econ_rows, econ_note = _economics(r)
     actions = _actions(r)
     decision, none_text = _decision(r, actions)
@@ -565,31 +702,40 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
         "figures": figures,
         "decision": decision, "none_text": none_text if decision is None else None, "actions": actions,
         "economics": econ_rows, "economics_note": econ_note,
-        "edit_label": t(lang, "Edit these facts", "修改这些信息"), "edit_href": f"/inputs?customer={_quoted(buyer_id)}",
+        # the inputs sheet is Phase 2 (FEATURE_CUSTOMER_ECONOMICS): until it is on there is nowhere to send the owner, and the label stays
+        "edit_label": t(lang, "Edit these facts", "修改这些信息"),
+        "edit_href": f"/inputs?customer={_quoted(buyer_id)}" if _economics_on() else None,
         "exposure": _exposure(r),
-        "note": _exposure_note(lang, exposure_block),
+        "note": _exposure_note(lang, exposure_block, shares is not None),
         "history": _history(r),
-    }
+        "partial": partial.view(lang),
+    }, whole
 
 
-def _exposure_note(lang: Lang, block: dict[str, Any] | None) -> str | None:
-    """Why `exposure` is null: the flag is off, or the books could not be read for it."""
-    if block is not None:
+def _exposure_note(lang: Lang, block: dict[str, Any] | None, shares_read: bool = True) -> str | None:
+    """Why `exposure` is null: the flag is off, or the books could not be read for it (or for the share beside it)."""
+    if block is not None and shares_read:
         return None
-    if not _exposure_on():
+    if shares_read and not _exposure_on():
         return t(lang, "Financial exposure is not switched on for this account, so payment behaviour, the late-payment test and spare "
                        "capacity are not shown.", "此账户未开启财务风险敞口功能，因此不显示付款表现、晚付测试和可用余量。")
     return t(lang, "The financial exposure could not be read just now.", "暂时无法读取财务风险敞口。")
 
 
 def _cached(rt: Runtime, buyer_id: str, lang: Lang) -> dict[str, Any]:
+    """The page for the buyer, cached on what it reads: the books, the mandate, the day, the commitments, the inputs, the flags, the
+    store's change marker (counts of log entries, verdicts, approvals, decisions and contract records) and the session's inbound
+    documents (an offer received and not yet evaluated surfaces through them). Nothing is loaded in full for the key."""
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
-    commitments = tuple(rt.store.commitments())
-    inputs = inputs_from_store(rt.store)
-    verdict_ids = "|".join(f"{v.id}" for v in rt.store.verdicts())
-    key = cache_key(state, mandate, max(rt.day, state.as_of_day), commitments, "customer-overview", buyer_id, lang, inputs.digest(),
-                    _exposure_on(), verdict_ids, len(rt.store.operations()), len(rt.store.approvals()), len(rt.store.contract_records()))
-    return _CACHE.get_or_compute(key, lambda: _build(rt, buyer_id, lang))
+    key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "customer-overview", buyer_id, lang,
+                    inputs_from_store(rt.store).digest(), _exposure_on(), _economics_on(), rt.store.change_marker(), tuple(rt.documents))
+    hit = _CACHE.get(key)
+    if hit is not None:
+        return hit
+    body, whole = _build(rt, buyer_id, lang)
+    if whole:
+        _CACHE.put(key, body)
+    return body
 
 
 # ---------------------------------------------------------------- the back link (built from the query, never cached)

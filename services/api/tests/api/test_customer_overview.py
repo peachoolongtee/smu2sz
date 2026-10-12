@@ -20,7 +20,7 @@ from app.api import customer_overview as overview
 from app.api import offer_picture
 from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
-from app.domain.models import FundingLot
+from app.domain.models import FundingLot, SourceDocument
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 from app.persistence.records import CustomerInputRecord
@@ -79,9 +79,7 @@ def _input(rt: Runtime, field: str, value: Any, provenance: str, by: str = "OWNE
 
 
 def _economics(rt: Runtime) -> None:
-    """The board's facts: ¥5.46m of sales projected from the books, a 20% margin the Demo assumed, a Normal customer."""
-    _input(rt, "annual_sales_fen", 546_000_000, "PROJECTED", by="FLOW")
-    _input(rt, "margin_bp", 2000, "ESTIMATED", by="DEMO")
+    """The board's facts: the page assumes the Demo's 20% margin and projects ¥5.46m of sales from the books; the owner says Normal."""
     _input(rt, "classification", "NORMAL", "OWNER_ENTERED")
 
 
@@ -145,14 +143,15 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
         ("Stress-test payment", "/cash?stress=BUYER-1:30&invoice=RCV-A")]
     assert d["secondary"] == b["actions"] and b["none_text"] is None
     assert [(r["key"], r["value_display"], r["note"], r["tone"]) for r in b["economics"]] == [
-        ("annual_sales", "¥5,460,000", "projected from your books' schedule, not yet happened", "neutral"),
+        ("annual_sales", "¥5,460,000", "projected from your books", "neutral"),
         ("gross_margin", "20%", "assumed for the Demo, not confirmed by you", "warn"),
         ("contribution", "about ¥1,092,000", "under today's terms", "neutral"),
-        ("open_request", "about 2.6% of it as asked", "the cost of keeping the same sales on softer terms, not profit gained", "neutral"),
+        ("open_request", "about 2.6% of it as asked, over 12 months, plus ¥5,040.00 once", "the cost of keeping the same sales on softer terms, not profit gained", "neutral"),
         ("classification", "Normal", "context only", "neutral")]
-    assert b["economics_note"] == ("A customer worth ¥1.09m a year does not by itself justify a ¥28,330 concession; the question is how "
+    assert b["economics_note"] == ("A customer worth ¥1.09m a year does not by itself justify a ¥28,330 concession over 12 months; the question is how "
                                    "much of that is at risk if you counter. None of this changes what FLOW may do on its own.")
-    assert (b["edit_label"], b["edit_href"]) == ("Edit these facts", "/inputs?customer=BUYER-1")
+    # the inputs sheet is Phase 2: the label stays, the link waits for FEATURE_CUSTOMER_ECONOMICS
+    assert (b["edit_label"], b["edit_href"], b["partial"]) == ("Edit these facts", None, None)
     assert b["note"] is None
 
 
@@ -201,7 +200,7 @@ def test_after_the_plan_the_financing_is_arranged_and_not_advanced(api, rt):
     assert r0["net"]["net_short"] == "about ¥163k" and r0["net"]["per_period_text"] == "about ¥2,270 more for every 30 days late"
     text = " ".join(x["text"] for x in b["history"])
     assert "advanced" not in text
-    assert any("¥255,000.00" in x["text"] and x["href"] and x["href"].startswith("/decisions/") for x in b["history"])
+    assert any("¥255,000 against" in x["text"] and x["href"] and x["href"].startswith("/decisions/") for x in b["history"])
 
 
 def test_a_landed_advance_is_received_and_the_figure_keeps_its_one_state(api, rt):
@@ -209,8 +208,7 @@ def test_a_landed_advance_is_received_and_the_figure_keeps_its_one_state(api, rt
     state = rt.store.get_state()
     lot = next(x for x in state.lots if x.receivable_id == "RCV-A")
     rt.store.put_state(state.model_copy(update={"lots": [FundingLot(**{**lot.model_dump(), "arrival_day": -2, "settled": True})]}))
-    overview.clear_cache()
-    offer_picture._cache.clear()
+    offer_picture._cache.clear()  # the picture is keyed by the state version, which put_state does not move
     f = _fig(_get(api), "financing")
     assert f["note"] == "financing received 2 days ago" and "arranged" not in f["note"]
 
@@ -239,20 +237,21 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert figures(en) == figures(zh)
     assert english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
     assert unchanged_words(en, zh, NAMES, raw_fields=[HREFS]) == []
-    assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109 万", "¥420,000", "无", "100%"]
+    assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109万", "¥420,000", "无", "100%"]
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "1 张未收发票；这不是其占您销售额的比例"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
     assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以直接发送"
     assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
     assert [r["value_display"] for r in zh["economics"][:3]] == ["¥5,460,000", "20%", "约 ¥1,092,000"]
-    assert zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
+    assert zh["economics"][0]["note"] == "根据您的账目推算" and zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
     assert zh["economics"][4]["value_display"] == "普通"
     assert "您" in zh["economics_note"]
     stress = _row(zh["exposure"]["rows"], "stress")
     assert stress["label"] == "晚付 30 天" and stress["value_display"].startswith("60 天后降至 −¥250,000；有 65 天低于您的最低现金")
     assert zh["history"][1]["text"].startswith("尚无已确认的协议；账期为自开票日起 45 天")
-    assert zh["context"]["back"]["label"] == "Back to Deals".replace("Back to Deals", "返回交易")
+    assert zh["context"]["back"]["label"] == "返回交易"
+    assert zh["economics"][3]["value_display"] == "按对方要求，12 个月内约占其中的 2.6%，另加一次性 ¥5,040.00"
 
 
 def test_the_chinese_page_after_the_plan_has_no_english_left(api, rt):
@@ -287,7 +286,6 @@ def test_with_the_exposure_flag_off_the_block_is_null_with_a_note(api, rt, monke
     _before(api, rt)
     on = _get(api)
     monkeypatch.delenv("FEATURE_EXPOSURE")
-    overview.clear_cache()
     off = _get(api)
     assert off["exposure"] is None
     assert off["note"] == ("Financial exposure is not switched on for this account, so payment behaviour, the late-payment test and "
@@ -327,13 +325,39 @@ def test_a_buyer_with_no_financing_says_none_and_never_a_state_word(api, rt):
     assert _row(b["exposure"]["rows"], "financing")["value_display"] == "none against this customer's invoices"
 
 
-def test_without_inputs_nothing_about_the_economics_is_invented(api, rt):
+def test_without_inputs_the_demo_buyer_is_projected_from_the_books_and_nothing_else_is_invented(api, rt):
     _offer(api)
-    b = _get(api)
-    assert b["figures"][0]["value_display"] == "Not known yet"
-    assert [(r["key"], r["value_display"], r["note"]) for r in b["economics"]] == [
-        ("annual_sales", "not entered yet", None), ("gross_margin", "not entered yet", None), ("classification", "not entered yet", None)]
-    assert b["economics_note"] == "None of this changes what FLOW may do on its own."  # no contribution, so no verdict on the concession
+    b = _get(api)  # no input of the owner's at all: the books schedule 13 invoices of ¥420,000 and the Demo assumes 20%
+    assert b["figures"][0]["value_display"] == "about ¥1.09m"
+    assert [(r["key"], r["value_display"], r["note"]) for r in b["economics"][:3]] == [
+        ("annual_sales", "¥5,460,000", "projected from your books"),
+        ("gross_margin", "20%", "assumed for the Demo, not confirmed by you"),
+        ("contribution", "about ¥1,092,000", "under today's terms")]
+    assert b["economics"][-1]["value_display"] == "not entered yet"  # no class is ever invented
+    other = _get(api, "BUYER-2")  # nothing scheduled: no sales to project, so no contribution (the Demo's margin is still said so)
+    assert other["figures"][0]["value_display"] == "Not known yet"
+    assert [(r["key"], r["value_display"], r["note"]) for r in other["economics"]] == [
+        ("annual_sales", "not entered yet", None), ("gross_margin", "20%", "assumed for the Demo, not confirmed by you"),
+        ("classification", "not entered yet", None)]
+    assert other["economics_note"] == "None of this changes what FLOW may do on its own."  # no contribution, so no verdict on the concession
+
+
+def test_the_owners_sales_override_the_projection_and_a_past_invoice_is_not_future_sales(rt):
+    def read(recurring: list[Any], receivables: list[Any], owner: int | None = None) -> Any:
+        held = {"annual_sales_fen": SimpleNamespace(field="annual_sales_fen", value_json=json.dumps(owner))} if owner is not None else {}
+        return SimpleNamespace(state=SimpleNamespace(recurring_invoices=recurring, receivables=receivables), today=10, buyer_id="B",
+                               input=lambda f: held.get(f.value))
+
+    every_30 = SimpleNamespace(counterparty_id="B", face_fen=100, every_days=30, next_issue_day=12)
+    other = SimpleNamespace(counterparty_id="C", face_fen=999, every_days=30, next_issue_day=12)
+    past = SimpleNamespace(counterparty_id="B", face_fen=7, issue_day=9, status="OPEN")  # issued yesterday: past sales
+    coming = SimpleNamespace(counterparty_id="B", face_fen=5, issue_day=40, status="OPEN")  # to be issued in the window
+    failed = SimpleNamespace(counterparty_id="B", face_fen=3, issue_day=40, status="FAILED")
+    beyond = SimpleNamespace(counterparty_id="B", face_fen=11, issue_day=10 + 365, status="OPEN")
+    assert overview._projected_sales_fen(read([every_30, other], [past, coming, failed, beyond])) == 13 * 100 + 5  # 12, 42, ... 372
+    assert overview._projected_sales_fen(read([], [past])) is None
+    assert overview._sales(read([every_30], [], owner=777)) == (777, read([], [], owner=777).input(overview.InputField.ANNUAL_SALES_FEN))
+    assert overview._sales(read([every_30], [])) == (1300, None)
 
 
 def test_a_margin_the_owner_entered_is_not_called_a_demo_assumption(api, rt):
@@ -342,7 +366,7 @@ def test_a_margin_the_owner_entered_is_not_called_a_demo_assumption(api, rt):
     _input(rt, "margin_bp", 1850, "OWNER_ENTERED")
     b = _get(api)
     sales, margin = b["economics"][:2]
-    assert (sales["note"], sales["tone"]) == ("from your accounts", "neutral")
+    assert (sales["note"], sales["tone"]) == ("from your accounts", "neutral")  # the owner's figure, not the projection
     assert (margin["value_display"], margin["note"], margin["tone"]) == ("18.50%", "entered by you", "neutral")
     assert _row(b["economics"], "contribution")["value_display"] == "about ¥1,010,100"
 
@@ -351,12 +375,12 @@ def test_the_share_of_sales_is_never_stated_unless_the_inputs_hold_it(api, rt):
     _before(api, rt)
     b = _get(api)
     shares = json.dumps([_fig(b, "share"), b["economics"], b["economics_note"]])
-    assert "not its share of your sales" in _fig(b, "share")["note"]
-    assert not re.search(r"of your sales(?!\")", _fig(b, "share")["note"].replace("not its share of your sales", ""))
+    assert _fig(b, "share")["note"] == "one open invoice; not its share of your sales"
     assert "% of your sales" not in shares and "share of sales" not in shares
     # the concentration holds one only when the inputs give every customer's sales; then, and only then, it is said
-    r = SimpleNamespace(lang="en", rows=[{"x": 1}], conc=SimpleNamespace(
-        is_aggregate=False, ar_total_fen=100, ar_buyer_fen=50, ar_share_bp=5000, annual_sales_share_bp=1234, aggregate_note=None))
+    r = SimpleNamespace(lang="en", rows=[{"x": 1}], conc={
+        "is_aggregate": False, "ar_total_fen": 100, "ar_buyer_fen": 50, "ar_share_bp": 5000, "annual_sales_share_bp": 1234,
+        "aggregate_note": None})
     assert overview._share(r)["note"] == "one open invoice; 12.3% of your sales"
 
 
@@ -461,3 +485,255 @@ def test_the_read_writes_nothing(api, rt):
     _get(api)
     _get(api, lang="zh")
     assert rt.store.get_state() == state and len(rt.store.operations()) == ops and len(rt.store.customer_inputs(None)) == inputs
+
+
+# ---------------------------------------------------------------- review: the accept branch, the key, the open request, the fallbacks
+
+
+def _built(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    calls: list[str] = []
+    real = overview._build
+    monkeypatch.setattr(overview, "_build", lambda *a, **k: (calls.append("built"), real(*a, **k))[1])
+    return calls
+
+
+def test_an_offer_FLOW_may_accept_carries_the_asked_paths_authority(api, rt):
+    from tests.api.test_offer_picture import _accepted
+
+    _accepted(api)
+    d = _get(api)["decision"]
+    assert d["headline_short"] == "Accept as asked"
+    assert d["authority_text"] == "FLOW can send it"
+    assert d["primary"]["label"] == "Review the request"
+    assert _get(api, lang="zh")["decision"]["authority_text"] == "FLOW 可以直接发送"
+
+
+def test_an_offer_received_and_not_yet_evaluated_moves_the_key(api, rt, monkeypatch):
+    calls = _built(monkeypatch)
+    assert _get(api)["decision"] is None and _get(api)["decision"] is None and calls == ["built"]
+    api.post("/offers", json=EX01)  # a document and a compiled offer: no verdict, no new state version, no log entry
+    after = _get(api)
+    assert calls == ["built", "built"]
+    d = after["decision"]
+    assert (d["kind"], d["eyebrow"], d["authority_text"], d["headline_short"]) == ("offer_received", "One offer waits to be read", None, None)
+    assert d["text"].endswith("FLOW has not read it yet.") and d["text"].startswith("Foshan wants early settlement")
+    assert (d["primary"]["label"], d["primary"]["href"].split("?")[0]) == ("Read the offer", "/deals")
+    zh = _get(api, lang="zh")["decision"]
+    assert (zh["eyebrow"], zh["primary"]["label"]) == ("有一份报价等待阅读", "阅读报价") and zh["authority_text"] is None
+
+
+def _op(rt: Runtime) -> None:
+    rt.store.append_operation("OP-TEST", "NOTE", "idem-test", json.dumps({"kind": "NOTE"}), json.dumps({"status": "EXECUTED", "message": "x"}))
+
+
+def _verdict(rt: Runtime) -> None:
+    v = rt.store.verdicts()[-1]
+    rt.store.put_verdict(v.model_copy(update={"id": "VER-second"}))
+
+
+def _approval(rt: Runtime) -> None:
+    rt.store.add_approval(json.dumps({"kind": "NOTE"}), "test")
+
+
+def _decide(rt: Runtime) -> None:
+    rt.store.decide_approval(rt.store.approvals()[0].id, True, "OWNER")
+
+
+def _document(rt: Runtime) -> None:
+    rt.documents["DOC-NEW"] = SourceDocument(doc_id="DOC-NEW", channel="chat", sender_id="BUYER-1", received_day=0, text="hello")
+
+
+@pytest.mark.parametrize("write", [_op, _verdict, _approval, _document])
+def test_the_key_moves_on_a_log_entry_a_verdict_an_approval_and_a_document(api, rt, monkeypatch, write):
+    _before(api, rt)
+    calls = _built(monkeypatch)
+    _get(api)
+    _get(api)
+    assert calls == ["built"]
+    version = rt.store.get_state().state_version
+    write(rt)
+    assert rt.store.get_state().state_version == version  # none of these moves the books
+    try:
+        _get(api)
+    except AssertionError:
+        pass  # a fixture row the read cannot parse is not the point: the key moved and the read was tried again
+    assert calls == ["built", "built"]
+
+
+def test_the_key_moves_when_an_approval_is_decided(api, rt, monkeypatch):
+    _before(api, rt)
+    _approval(rt)
+    calls = _built(monkeypatch)
+    _get(api)
+    _decide(rt)
+    _get(api)
+    assert calls == ["built", "built"]
+
+
+def test_a_hit_loads_no_whole_list(api, rt, monkeypatch):
+    _before(api, rt)
+    _get(api)
+    for name in ("operations", "verdicts", "approvals", "contract_records"):
+        monkeypatch.setattr(rt.store, name, lambda *a, **k: pytest.fail("the key must not load a whole list"))
+    assert _get(api)["name"] == "Foshan Home Retail Co."
+
+
+def _inputs(sales_yuan: int, margin_bp: int) -> Any:
+    def rec(field: str, value: int) -> Any:
+        return SimpleNamespace(field=field, value_json=json.dumps(value), entered_by="OWNER", provenance="OWNER_ENTERED")
+
+    held = {"annual_sales_fen": rec("annual_sales_fen", sales_yuan * 100), "margin_bp": rec("margin_bp", margin_bp)}
+    return lambda f: held.get(f.value)
+
+
+def _ask_read(*, forward_fen: int, once: str | None, horizon_days: int = 365, lang: str = "en", sales_yuan: int = 5_000_000) -> Any:
+    picture = {"paths": [{"key": "asked", "cost_once_display": once}]}
+    return SimpleNamespace(
+        lang=lang, state=SimpleNamespace(recurring_invoices=[], receivables=[], scenario=None), today=0, buyer_id="B", offer={"offer_id": "X"}, verdict=SimpleNamespace(forward_concession_total_fen=forward_fen), picture=picture,
+        ctx=SimpleNamespace(mandate=SimpleNamespace(forward_concession_horizon_days=horizon_days)), input=_inputs(sales_yuan, 2000))
+
+
+def _request(r: Any) -> dict[str, Any] | None:
+    rows, _ = overview._economics(r)
+    return next((x for x in rows if x["key"] == "open_request"), None)
+
+
+def test_a_concession_above_the_whole_years_contribution_is_said_in_words_not_capped_at_100_percent():
+    row = _request(_ask_read(forward_fen=350_000_000, once=None))  # ¥3.5m over 12 months against a ¥1m contribution
+    assert row is not None and row["value_display"] == "more than the whole year's contribution as asked, over 12 months"
+    zh = _request(_ask_read(forward_fen=350_000_000, once=None, lang="zh"))
+    assert zh is not None and zh["value_display"] == "按对方要求，12 个月内超过其一整年的贡献"
+    assert "100%" not in row["value_display"]
+
+
+def test_a_discount_only_request_is_a_one_off_with_no_share_and_no_zero_concession():
+    r = _ask_read(forward_fen=0, once="¥5,040.00")
+    row = _request(r)
+    assert row is not None and row["value_display"] == "once, ¥5,040.00" and "%" not in row["value_display"]
+    _, note = overview._economics(r)
+    assert "¥5,040.00 one-off concession" in note and "¥0" not in note
+
+
+def test_the_open_requests_share_is_on_a_twelve_month_basis_whatever_the_horizon():
+    year = _request(_ask_read(forward_fen=10_000_000, once=None))  # ¥100,000 over 12 months against ¥1m
+    half = _request(_ask_read(forward_fen=10_000_000, once=None, horizon_days=182))  # ¥100,000 over 6 months is ¥200,000 a year
+    assert year is not None and year["value_display"] == "about 10.0% of it as asked, over 12 months"
+    assert half is not None and half["value_display"] == "about 20.0% of it as asked, over 12 months"
+
+
+def test_no_request_no_row_and_no_share():
+    assert _request(_ask_read(forward_fen=0, once=None)) is None
+
+
+def test_a_book_that_cannot_be_projected_for_the_exposure_says_so_and_is_not_cached(api, rt, monkeypatch):
+    from app.financial import EngineError
+
+    _before(api, rt)
+    calls = _built(monkeypatch)
+
+    def broken(*a: Any, **k: Any) -> Any:
+        raise EngineError("no projection")
+
+    monkeypatch.setattr(assembly, "buyer_exposure", broken)
+    b = _get(api)
+    assert b["exposure"] is None and b["note"] == "The financial exposure could not be read just now."
+    assert [f["key"] for f in b["figures"]] == ["value", "outstanding", "financing", "share"]  # the rest of the page stands
+    zh = _get(api, lang="zh")
+    assert zh["note"] == "暂时无法读取财务风险敞口。"
+    _get(api)
+    assert calls == ["built", "built", "built"]  # a fallback is never cached
+
+
+def test_a_concentration_that_cannot_be_read_says_so_in_the_figure_and_the_note(api, rt, monkeypatch):
+    from app.financial import EngineError
+
+    _before(api, rt)
+    monkeypatch.delenv("FEATURE_EXPOSURE")
+
+    def broken(*a: Any, **k: Any) -> Any:
+        raise EngineError("no projection")
+
+    monkeypatch.setattr(overview, "concentration", broken)
+    b = _get(api)
+    share = _fig(b, "share")
+    assert (share["value_display"], share["note"]) == ("—", "could not be read just now")
+    assert b["note"] == "The financial exposure could not be read just now."
+
+
+def test_when_the_offer_picture_fails_the_decision_reads_from_the_deals_words_and_is_not_cached(api, rt, monkeypatch):
+    _before(api, rt)
+    calls = _built(monkeypatch)
+
+    def broken(*a: Any, **k: Any) -> Any:
+        raise RuntimeError("no picture")
+
+    monkeypatch.setattr(overview, "cached_picture", broken)
+    d = _get(api)["decision"]
+    assert d["text"].endswith("Counter instead of accepting as asked.") and d["primary"]["label"] == "Review the request"
+    assert "&path=" not in d["primary"]["href"] and d["authority_text"] is None
+    _get(api)
+    assert calls == ["built", "built"]
+
+
+def test_a_reconciliation_that_fails_is_named_in_partial_and_the_page_is_not_cached(api, rt, monkeypatch):
+    from app.api import receivables
+
+    _before(api, rt)
+    calls = _built(monkeypatch)
+
+    def broken(*a: Any, **k: Any) -> Any:
+        raise RuntimeError("no reconciliation")
+
+    monkeypatch.setattr(receivables, "reconcile", broken)
+    b = _get(api)
+    assert b["partial"]["missing"] == ["reconciliation"] and b["partial"]["text"].startswith("Some supporting facts could not be read")
+    assert _get(api, lang="zh")["partial"]["text"].startswith("部分辅助信息未能读取")
+    _get(api)
+    assert calls == ["built", "built", "built"]
+
+
+def test_the_edit_link_waits_for_phase_2(api, rt, monkeypatch):
+    _before(api, rt)
+    assert _get(api)["edit_href"] is None
+    monkeypatch.setenv("FEATURE_CUSTOMER_ECONOMICS", "1")
+    b = _get(api)
+    assert b["edit_href"] == "/inputs?customer=BUYER-1" and b["edit_label"] == "Edit these facts"
+
+
+def test_a_financing_entry_in_the_history_never_says_drawn_for_an_unlanded_lot(api, rt):
+    _after(api, rt)
+    text = next(x["text"] for x in _get(api)["history"] if "financing" in x["text"].lower())
+    assert text == "Invoice financing of ¥255,000 against the ¥420,000 invoice: arranged, expected in 3 days."
+    assert "drawn" not in text
+    zh = next(x["text"] for x in _get(api, lang="zh")["history"] if "融资" in x["text"])
+    assert zh == "以 ¥420,000 的发票做 ¥255,000 的融资：已安排，预计3 天后到账。"
+
+
+def test_a_receipt_in_the_history_is_the_receipt_and_never_the_banks_reference(api, rt):
+    from tests.api.test_demo_bank_receipt import _deal
+
+    _deal(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    assert api.post("/demo/bank-receipt").status_code == 200
+    for lang in ("en", "zh"):
+        history = _get(api, lang=lang)["history"]
+        text = " ".join(x["text"] for x in history)
+        assert "DEMO-RCPT" not in text and not RAW_ID.search(text), text
+    en = [x["text"] for x in _get(api)["history"]]
+    assert any(x.startswith("The receipt of ¥") and "invoice came in." in x for x in en)
+    assert any(x.startswith("已收到 ¥") for x in [x["text"] for x in _get(api, lang="zh")["history"]])
+
+
+def test_every_history_row_with_a_link_names_it_and_a_row_without_one_does_not(api, rt):
+    from tests.api.test_demo_bank_receipt import _deal
+
+    _deal(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    rows = _get(api)["history"]
+    assert rows and all((x["href"] is None) == (x["link_label"] is None) for x in rows)
+    labels = {x["link_label"] for x in rows} - {None}
+    assert labels <= {"The record", "The agreement", "The terms", "The deal"} and "The agreement" in labels
+    zh = {x["link_label"] for x in _get(api, lang="zh")["history"]} - {None}
+    assert zh <= {"记录", "协议", "条款", "该交易"} and "协议" in zh
+    assert english_leaks(_get(api, lang="zh"), NAMES, raw_fields=[HREFS]) == []
