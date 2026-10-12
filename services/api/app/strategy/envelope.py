@@ -47,7 +47,7 @@ from app.funding import NoPermanentSourceError, marginal_cost, plan
 from app.funding.router import shared_runs
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
-from app.strategy.words import DEMO_MARGIN_NOTE, whole_yuan, year_share_sentence
+from app.strategy.words import margin_note, whole_yuan, year_share_sentence
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
 from app.verifier.evaluate import _evaluate, _Router
@@ -1226,10 +1226,13 @@ def _what_needs_you(facts: EnvelopeFacts, p: Probe, lang: str) -> str:
 def _authority_sentence(facts: EnvelopeFacts, p: Probe, authority: Authority | None, lang: str) -> str | None:
     phrase = _phrase(facts, p.setting, lang)
     if authority == "needs_owner":
-        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but its fix cannot run alone
-            return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
-                           "It needs your approval.",
-                     f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but the fix behind it is the owner's
+            if p.cure_cannot_run_today:
+                return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
+                               "It needs your approval.",
+                         f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+            return t(lang, f"{phrase}: within your limits, but the funding that keeps your cash floor needs your approval.",
+                     f"{phrase}：在您的底线内，但守住现金底线的资金安排需要您批准。")
         what = _what_needs_you(facts, p, lang)
         return t(lang, f"{phrase}: within your limits and your cash floor holds, but FLOW cannot agree {what} on its own. "
                        "It needs your approval.",
@@ -1277,23 +1280,24 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
 @dataclass(frozen=True)
 class Economics:
     """A year of the buyer's gross profit, as the Customer overview reads it (`customer_overview.year_held`, the one margin and
-    contribution function), and its 12-month scaling of a forward concession (`customer_overview.twelve_months_of`): composed by
-    the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
+    contribution function), and the share of that year a forward concession is (`customer_overview.share_of_year` over
+    `twelve_months_of`): composed by the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
 
     contribution_fen: int
     assumed: bool  # the margin is the Demo's default
     gross: bool  # the basis word: gross profit (default) or contribution
-    year_of: Callable[[int], int]  # a forward concession over the mandate's horizon, on a 12-month basis
+    share_of: Callable[[int], Fraction | None]  # a forward concession as a share of the year (`customer_overview.share_of_year`)
 
 
 def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) -> tuple[str | None, str | None]:
-    """(the sentence, the note): the verdict's own forward concession on a 12-month basis over a year's gross profit
-    (`words.year_share_sentence`, the one sentence every surface says it with). None without a cost or a positive year."""
-    sentence = year_share_sentence(facts.buyer_name, eco.year_of(p.forward_total_fen), eco.contribution_fen, eco.gross,
-                                   "zh" if lang == "zh" else "en")
+    """(the sentence, the note): the verdict's own forward concession as a share of a year's gross profit (`share_of`, the
+    overview's `share_of_year`), said by `words.year_share_sentence`, the one sentence every surface says it with. None without a cost
+    or a positive year."""
+    lang_ = "zh" if lang == "zh" else "en"
+    sentence = year_share_sentence(facts.buyer_name, eco.share_of(p.forward_total_fen), eco.contribution_fen, eco.gross, lang_)
     if sentence is None:
         return None, None
-    return sentence, t(lang, *DEMO_MARGIN_NOTE) if eco.assumed else None
+    return sentence, margin_note(eco.gross, lang_) if eco.assumed else None
 
 
 def _over_your_limits(facts: EnvelopeFacts, lang: str, economics: Economics | None = None) -> list[EnvelopePackage]:
@@ -1546,11 +1550,18 @@ def _ask_sentence(facts: EnvelopeFacts, ask: AskFacts, lang: str) -> str:
         p = _pct(lowest)
         if ask.at_rule is not None:
             rule = _pct(ask.at_rule.setting.price)
-            both = authority_of(found) == authority_of(ask.at_rule) == "needs_owner"
+            a, b = authority_of(found), authority_of(ask.at_rule)
+            if a == b == "needs_owner":
+                close = t(lang, " Either needs your approval.", "两者都需要您批准。")
+            elif a == b:
+                close = tail
+            else:  # the two differ in who may act: each is named
+                wa = t(lang, *_AUTHORITY_WORDS[a]) if a is not None else ""
+                wb = t(lang, *_AUTHORITY_WORDS[b]) if b is not None else ""
+                close = t(lang, f" At {p}: {wa}; at {rule}: {wb}.", f"加价 {p}：{wa}；加价 {rule}：{wb}。")
             return (t(lang, f"{n} days works if the price rises at least {p}; at {rule} the price rise pays for the longer terms "
                             "in full.",
-                      f"价格至少上调 {p}，即可接受 {n} 天账期；上调 {rule} 时，加价可完全抵消延长账期的成本。")
-                    + (t(lang, " Either needs your approval.", "两者都需要您批准。") if both else tail))
+                      f"价格至少上调 {p}，即可接受 {n} 天账期；上调 {rule} 时，加价可完全抵消延长账期的成本。") + close)
         if ask.rule_price_bp == lowest:
             return t(lang, f"{n} days works if the price rises {p}; at that price the price rise pays for the longer terms in full.",
                      f"价格上调 {p}，即可接受 {n} 天账期；该加价可完全抵消延长账期的成本。") + tail

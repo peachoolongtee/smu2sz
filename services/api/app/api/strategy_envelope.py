@@ -18,7 +18,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.api.customer_overview import twelve_months_of, year_held
+from app.api.customer_overview import share_of_year, twelve_months_of, year_held
 from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.runtime import get_runtime
@@ -108,16 +108,18 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | Non
         try:
             asked = _ask_cache.get_or_compute(f"{key}|ask={ask}", ask_sweep)
             facts = replace(facts, evaluations=facts.evaluations + asked.evaluations, seconds=facts.seconds + asked.seconds)
-        except ValueError:  # an ask package off the levers' grids: the same refusal the whole sweep would have given
+        except ValueError:  # an ask package off the levers' grids: the ask alone is refused, the envelope stands
             log.warning("envelope ask for %s is outside the levers' ranges", buyer_id, exc_info=True)
-            facts, asked = out_of_range_facts(books, day=day, buyer_id=buyer_id), None
+            asked = AskFacts(ask, facts.current_terms, facts.receivable_face_fen, None, None, None, None, None, True, 0, 0.0,
+                             refusal="out_of_range")
     economics: Economics | None = None
     if inputs is not None and not facts.refused:  # the economics line, composed from the Customer overview's one function
         year = year_held(state, inputs, buyer_id, max(day, state.as_of_day))
         if year is not None:
             horizon = mandate.forward_concession_horizon_days
-            economics = Economics(year.contribution_fen, year.assumed, year.gross,
-                                  lambda fen: twelve_months_of(fen, horizon))
+            contribution = year.contribution_fen
+            economics = Economics(contribution, year.assumed, year.gross,
+                                  lambda fen: share_of_year(twelve_months_of(fen, horizon), contribution))
     answer = envelope_answer(facts, lang, asked, economics)
     return {**displayed(answer.model_dump(mode="json")), "state_version": state.state_version, "day": day,
             "computed_in_seconds": round(time.perf_counter() - started, 3)}

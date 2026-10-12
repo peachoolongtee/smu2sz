@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from fractions import Fraction
 from typing import Any
 
 from app.api.display import displayed
@@ -53,7 +54,7 @@ from app.strategy.impact import (
     scenario_paid_late,
 )
 from app.strategy.inputs import CustomerInputs
-from app.strategy.words import DEMO_MARGIN_NOTE, buyer_short, whole_yuan, year_share_sentence
+from app.strategy.words import buyer_short, margin_note, whole_yuan, year_share_sentence
 from app.verifier.evaluate import counter_recheck
 
 LATE_DELAYS = (0, 30)  # the 15-day row waits (owner's decision 11)
@@ -70,14 +71,14 @@ def clear_cache() -> None:
 
 @dataclass(frozen=True)
 class Year:
-    """A year of the buyer's gross profit as the Customer overview reads it (`customer_overview.year_held`) and its 12-month
-    scaling of a forward concession (`customer_overview.twelve_months_of`): composed by the route, never computed here."""
+    """A year of the buyer's gross profit as the Customer overview reads it (`customer_overview.year_held`) and the share of it a
+    forward concession is (`customer_overview.share_of_year` over `twelve_months_of`): composed by the route, never computed here."""
 
     contribution_fen: int
     sales_fen: int
     assumed: bool
     gross: bool
-    year_of: Callable[[int], int]
+    share_of: Callable[[int], Fraction | None]
 
 
 @dataclass(frozen=True)
@@ -243,8 +244,8 @@ def _context(row: _Row, figures: dict[str, Any], year: Year | None, name: str, l
     return {
         "label": t(lang, "Context, not a reason to say yes", "仅供参考，不是答应的理由"),
         "contribution_fen": year.contribution_fen,
-        "share_sentence": year_share_sentence(name, year.year_of(forward), year.contribution_fen, year.gross, lang_) if forward else None,
-        "note": t(lang, *DEMO_MARGIN_NOTE) if year.assumed else t(lang, "estimated", "估算"),
+        "share_sentence": year_share_sentence(name, year.share_of(forward), year.contribution_fen, year.gross, lang_) if forward else None,
+        "note": margin_note(year.gross, lang_) if year.assumed else t(lang, "estimated", "估算"),
     }
 
 

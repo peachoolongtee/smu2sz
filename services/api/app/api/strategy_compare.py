@@ -21,7 +21,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.api.customer_overview import twelve_months_of, year_held
+from app.api.customer_overview import share_of_year, twelve_months_of, year_held
 from app.api.decisions import latest_verdict_for
 from app.api.features import require_feature
 from app.api.runtime import Runtime, get_runtime
@@ -61,9 +61,9 @@ def _compare(rt: Runtime, offer: CompiledOffer, lang: Literal["en", "zh"], late:
     if get_settings().features.customer_economics:
         held_year = year_held(state, inputs, offer.counterparty_id, max(day, state.as_of_day))
         if held_year is not None:
-            horizon = mandate.forward_concession_horizon_days
-            year = comparator.Year(held_year.contribution_fen, held_year.sales_fen, held_year.assumed, held_year.gross,
-                                   lambda fen: twelve_months_of(fen, horizon))
+            horizon, contribution = mandate.forward_concession_horizon_days, held_year.contribution_fen
+            year = comparator.Year(contribution, held_year.sales_fen, held_year.assumed, held_year.gross,
+                                   lambda fen: share_of_year(twelve_months_of(fen, horizon), contribution))
     try:
         body = comparator.compare(rt, books, mandate, day, offer, verdict, held, inputs, lang=lang, late=late, year=year)
     except EngineError as exc:
