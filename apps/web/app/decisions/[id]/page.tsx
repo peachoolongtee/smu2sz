@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { QuoteBlock } from "@/components/approval-card";
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
 import { useI18n } from "@/lib/i18n";
@@ -34,7 +35,7 @@ function RecordBody({ d }: { d: DecisionView }) {
       <Card id="record-status" tone={tone === "bad" ? "bad" : tone === "warn" || d.residual || awaitsOwner ? "warn" : undefined}>
         <div className="flex flex-wrap items-center gap-3">
           <span data-testid="record-state" data-state={d.state} data-tone={tone}>
-            <StatePill tone={tone}>{d.state_text}</StatePill>
+            <StateWord tone={tone}>{d.state_text}</StateWord>
           </span>
           <p className="min-w-0 flex-1 basis-64 text-sm text-ink" data-testid="record-waiting">
             {d.waiting_for.text}

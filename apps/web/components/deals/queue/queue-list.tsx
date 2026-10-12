@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { AlertIcon, CheckIcon, ClockIcon, UserIcon } from "@/components/icons";
-import { StatePill, type Tone } from "@/components/ui";
+import { type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -101,7 +102,7 @@ export function QueueList({ tab, items, emptyText }: { tab: QueueTab; items: (Li
               </span>
               <span role="cell" className="min-w-0 justify-self-end lg:col-start-5 lg:row-start-1 lg:justify-self-start">
                 <span data-testid={it.statusState ? "deal-state-chip" : undefined} data-state={it.statusState ?? undefined}>
-                  <StatePill tone={it.statusTone} wrap={false} >{it.status}</StatePill>
+                  <StateWord tone={it.statusTone} wrap={false} >{it.status}</StateWord>
                 </span>
               </span>
               {/* On a phone the selected line gives its request to the detail right below (the ask sentence says it in full), which brings the primary up the screen. */}

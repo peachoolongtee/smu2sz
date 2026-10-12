@@ -134,7 +134,7 @@ export function InvoiceList({
                   <div role="cell" className="min-w-0">
                     <Label>{t("recv3.col.status")}</Label>
                     {stateKey(r.collection_state) ? (
-                      <StateWord state={stateKey(r.collection_state)!} variant="pill" testId={`recv-state-${r.receivable_id}`}>
+                      <StateWord state={stateKey(r.collection_state)!} testId={`recv-state-${r.receivable_id}`} wrap={false}>
                         {r.collection_state_text}
                       </StateWord>
                     ) : (

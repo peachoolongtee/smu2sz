@@ -5,7 +5,8 @@ import { useState, type ReactNode } from "react";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { BankIcon, SparkIcon, StoreIcon, UserIcon } from "@/components/icons";
 import { CustomerName } from "@/components/customer-link";
-import { StatePill } from "@/components/ui";
+import {  } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
@@ -251,9 +252,9 @@ export default function ActivityPage() {
                               <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                                 {decidedSince(o) && o.current_decision_state ? (
                                   // The request is history once the owner has decided: it wears where the decision stands today, not "Waiting for your approval".
-                                  <StatePill tone="neutral" testId="activity-request-state">
+                                  <StateWord tone="neutral" testId="activity-request-state">
                                     {o.current_decision_state}
-                                  </StatePill>
+                                  </StateWord>
                                 ) : (
                                   <OpStatusBadge status={o.status} />
                                 )}

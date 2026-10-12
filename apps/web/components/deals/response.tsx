@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
 import { authorityText, authorityTone } from "@/components/deals/path-columns";
 import { ActionBar } from "@/components/business/action-bar";
-import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, StatePill, textLinkClass } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
@@ -423,7 +424,7 @@ export function RecommendedResponse({
           </h2>
           {path.sendable ? (
             <p className="mt-1.5" data-testid="path-reply-decides" data-authority={path.authority ?? ""}>
-              <StatePill tone={tone}>{decides}</StatePill>
+              <StateWord tone={tone}>{decides}</StateWord>
             </p>
           ) : null}
         </div>

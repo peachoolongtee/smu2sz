@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ChasePayment } from "@/components/business/chase-payment";
-import { StatePill, textLinkClass } from "@/components/ui";
+import { textLinkClass } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import type { DictKey } from "@/lib/dictionary";
 import { dealProgress } from "@/lib/decision";
 import { useI18n } from "@/lib/i18n";
@@ -62,9 +63,9 @@ export function DealHeading({
     <header id="deal-recommendation-card" className="motion-reveal flex flex-col items-start gap-2.5 short:gap-2" data-testid="deal-heading">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {pill ? (
-          <StatePill tone={toneOf(open?.tone)} testId="deal-needs-you">
+          <StateWord tone={toneOf(open?.tone)} testId="deal-needs-you">
             {pill}
-          </StatePill>
+          </StateWord>
         ) : null}
         {/* The eyebrow says what the line is: where the deal stands once it has an outcome, FLOW's recommendation while there is one and no pill. */}
         {v && (outcome || !pill) ? (

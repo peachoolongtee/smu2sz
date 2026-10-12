@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { StageTrack } from "@/components/deals/stage-track";
 import { contractsOff } from "@/components/documents";
-import { ButtonLink, ErrorState, LoadingBlock, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { ButtonLink, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { getDeals } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
@@ -52,9 +53,9 @@ function DealRow({ deal }: { deal: DealView }) {
           <Avatar tone={toneFor(deal.counterparty_name)}>{initials(deal.counterparty_name)}</Avatar>
           <h3 className="break-words text-base font-extrabold text-ink">{deal.counterparty_name}</h3>
           {deal.needs_you_text ? (
-            <StatePill tone="warn" testId={`home-deal-needs-${deal.counterparty_id}`}>
+            <StateWord tone="warn" testId={`home-deal-needs-${deal.counterparty_id}`}>
               {deal.needs_you_text}
-            </StatePill>
+            </StateWord>
           ) : null}
           <span className="text-sm text-ink-3">{t("biz.homeDeals.received", { when: open.received_when })}</span>
         </div>
@@ -107,9 +108,9 @@ function DealRow({ deal }: { deal: DealView }) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="break-words text-base font-extrabold text-ink">{deal.counterparty_name}</h3>
             {deal.pills?.map((p) => (
-              <StatePill key={p.label} tone={toneOf(p.tone)}>
+              <StateWord key={p.label} tone={toneOf(p.tone)}>
                 {p.label}
-              </StatePill>
+              </StateWord>
             ))}
           </div>
           {meta ? <p className="break-words text-sm text-ink-3">{meta}</p> : null}

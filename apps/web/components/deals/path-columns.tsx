@@ -2,7 +2,8 @@
 
 import { useRef } from "react";
 import { HUE, hueOf, Swatch } from "@/components/deals/path-hue";
-import { StatePill, toggleClass, type Tone } from "@/components/ui";
+import { toggleClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { CounterEconomics, PathAuthority, PicturePath } from "@/lib/types";
 
@@ -86,7 +87,7 @@ export function PathColumns({
                 <Swatch hue={hueOf(p)} />
                 {p.label}
               </h3>
-              <StatePill tone={toneOfTag(p.tag_tone)}>{p.tag_text}</StatePill>
+              <StateWord tone={toneOfTag(p.tag_tone)}>{p.tag_text}</StateWord>
             </div>
             <div>
               {mixed ? (
@@ -152,7 +153,7 @@ export function PathColumns({
             ) : null}
             <div className="mt-auto space-y-2 border-t border-line pt-2.5">
               <p data-testid={`path-col-decides-${i}`} data-authority={p.authority ?? ""}>
-                <StatePill tone={tone}>{authorityText(p)}</StatePill>
+                <StateWord tone={tone}>{authorityText(p)}</StateWord>
               </p>
               <button
                 type="button"

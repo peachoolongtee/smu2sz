@@ -11,7 +11,8 @@ import { ParsedTerms } from "@/components/deals/asks";
 import { AllChecks, checkCount, EngineVerdictLine } from "@/components/deals/reasons";
 import { StageTrack } from "@/components/deals/stage-track";
 import { PlanCard } from "@/components/plan-card";
-import { Badge, Callout, Card, Formula, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Callout, Card, Formula, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, type OfferItem } from "@/lib/offer-items";
 import type { AdvancedKey, DealWorkspace, Displayed, Obligation, OfferView, OpenOffer, VerdictView } from "@/lib/types";
@@ -69,7 +70,7 @@ export function SelectedBuyer({
         </p>
         {state ? (
           <span data-testid="deal-state-chip" data-state={state.code}>
-            <StatePill tone={state.tone}>{state.text}</StatePill>
+            <StateWord tone={state.tone}>{state.text}</StateWord>
           </span>
         ) : null}
       </div>

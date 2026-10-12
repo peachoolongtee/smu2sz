@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, ErrorState, LoadingBlock, StatePill, type Tone } from "@/components/ui";
+import { Card, ErrorState, LoadingBlock, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { dealRecordId } from "@/lib/api";
 import { summaryFromRecord, type AgreementState, type ExecutionSummaryData } from "@/lib/execution-summary";
 import { useI18n } from "@/lib/i18n";
@@ -29,7 +30,7 @@ export function ExecutionSummary({ data }: { data: ExecutionSummaryData }) {
           <div className="min-w-0">
             <dt className="mb-1 text-supporting font-medium text-ink-3">{t("verdict.exec.agreement")}</dt>
             <dd data-testid="execution-agreement">
-              <StatePill tone={agreementTone[data.agreement]}>{data.agreement_text ?? te("execagree", "none")}</StatePill>
+              <StateWord tone={agreementTone[data.agreement]}>{data.agreement_text ?? te("execagree", "none")}</StateWord>
             </dd>
           </div>
           <div className="min-w-0">
@@ -46,9 +47,9 @@ export function ExecutionSummary({ data }: { data: ExecutionSummaryData }) {
                   {data.funding.map((f) => (
                     <li key={f.op_id} className="flex flex-wrap items-start gap-x-2 gap-y-1">
                       {f.status === "EXECUTED" ? (
-                        <StatePill tone={landed ? "ok" : "info"}>{landed ? t("deal.cashReceivedShort") : t("deal.requested")}</StatePill>
+                        <StateWord tone={landed ? "ok" : "info"}>{landed ? t("deal.cashReceivedShort") : t("deal.requested")}</StateWord>
                       ) : (
-                        <StatePill tone={opTone[f.status]}>{te("opstatus", f.status)}</StatePill>
+                        <StateWord tone={opTone[f.status]}>{te("opstatus", f.status)}</StateWord>
                       )}
                       <span className="min-w-0 flex-1 basis-64 break-words text-ink">{f.text || te("opkind", f.kind)}</span>
                     </li>

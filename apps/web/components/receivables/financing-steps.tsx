@@ -48,9 +48,14 @@ export function FinancingSteps({ state, testId }: { state: FinancingState | unde
             >
               {done ? <CheckIcon className="size-3" /> : null}
             </span>
-            <StateWord state={KEY[step]} variant="step" glyph={false} tone={done ? "ok" : current ? "info" : "neutral"} className="transition-colors duration-(--dur)">
-              {t(WORD[step])}
-            </StateWord>
+            {/* A step reached is its state's word, in the state's own tone (arranged is the blue it is on Home); a step still to come is not a state yet, so it is quiet text. */}
+            {i <= at ? (
+              <StateWord state={KEY[step]} variant="step" glyph={false} className="transition-colors duration-(--dur)">
+                {t(WORD[step])}
+              </StateWord>
+            ) : (
+              <span className="text-ink-3">{t(WORD[step])}</span>
+            )}
           </li>
         );
       })}

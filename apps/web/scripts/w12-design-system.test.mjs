@@ -59,16 +59,19 @@ test("SegmentedTabs badge: a number (zero too) or a word is shown, nothing else;
 });
 
 // ---------------------------------------------------------------- StateWord
-import { STATE_KEYS, STATE_LOOK, TONE_INK, TONE_MARK, stateKey } from "../components/ui/state-word-model.ts";
+import { STATE_KEYS, STATE_LOOK, TONE_GLYPH, TONE_INK, TONE_MARK, stateKey } from "../components/ui/state-word-model.ts";
 
-test("StateWord: the twelve states each have a tone and a glyph, and no two states look the same", () => {
+test("StateWord: the twelve states each have a tone and a glyph, and no two states share a glyph", () => {
   assert.deepEqual([...STATE_KEYS], ["planned", "arranged", "received", "repaid", "owed", "scheduled", "agreed", "pending", "current", "due_soon", "overdue", "promise_missed"]);
   for (const k of STATE_KEYS) {
     assert.ok(STATE_LOOK[k], k);
     assert.ok(TONE_INK[STATE_LOOK[k].tone] && TONE_MARK[STATE_LOOK[k].tone], k);
   }
-  const looks = STATE_KEYS.map((k) => `${STATE_LOOK[k].tone}/${STATE_LOOK[k].glyph}`);
-  assert.equal(new Set(looks).size, looks.length, looks.join(" "));
+  // Twelve states, twelve glyphs: a state is told by its mark and its word, never by its colour alone.
+  const glyphs = STATE_KEYS.map((k) => STATE_LOOK[k].glyph);
+  assert.equal(new Set(glyphs).size, glyphs.length, glyphs.join(" "));
+  // A status that is only a tone (an approval's result) has a mark per tone too.
+  assert.equal(new Set(Object.values(TONE_GLYPH)).size, 5);
 });
 
 test("StateWord: the tone of a collection state is the page's: overdue and a missed promise red, due soon amber, current green; the plan is blue, never green", () => {

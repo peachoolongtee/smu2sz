@@ -169,10 +169,10 @@ test("day 38: the financing has been received, the step moves on", async ({ page
   await expect(steps.locator('li[data-on="true"]')).toHaveText("Received");
   await expect(steps.locator('li[data-step="ARRANGED"]')).not.toHaveAttribute("data-on", "true");
   await expect(steps.locator('li[data-step="ARRANGED"] svg')).toHaveCount(1);
-  // Each step's word is a StateWord (#112): a step already passed is green, the current one blue, the one to come quiet.
-  await expect(steps.locator('li[data-step="ARRANGED"] [data-state="arranged"]')).toHaveAttribute("data-tone", "ok");
-  await expect(steps.locator('li[data-step="RECEIVED"] [data-state="received"]')).toHaveAttribute("data-tone", "info");
-  await expect(steps.locator('li[data-step="REPAID"] [data-state="repaid"]')).toHaveAttribute("data-tone", "neutral");
+  // A step reached is its state's StateWord in the state's own tone (arranged is the blue it is on Home, received the green); the step to come is quiet text, not a state yet.
+  await expect(steps.locator('li[data-step="ARRANGED"] [data-state="arranged"]')).toHaveAttribute("data-tone", "info");
+  await expect(steps.locator('li[data-step="RECEIVED"] [data-state="received"]')).toHaveAttribute("data-tone", "ok");
+  await expect(steps.locator('li[data-step="REPAID"] [data-state]')).toHaveCount(0);
 });
 
 test("day 34: the pills filter by the server's collection state, an empty pill is disabled, and the late invoice leads", async ({ page }) => {

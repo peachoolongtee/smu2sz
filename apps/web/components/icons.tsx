@@ -116,6 +116,23 @@ export const CheckCircleIcon = (p: P) => (
     <path d="M5.4 8.2l1.8 1.8 3.4-3.6" />
   </svg>
 );
+export const HourglassIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 2.5h7M4.5 13.5h7M5 2.5c0 3 3 3.5 3 5.5s-3 2.5-3 5.5M11 2.5c0 3-3 3.5-3 5.5s3 2.5 3 5.5" />
+  </svg>
+);
+export const DocumentIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 2h5.5L12.5 5v9H4z" />
+    <path d="M9.5 2v3h3M6 8.5h4.5M6 11h4.5" />
+  </svg>
+);
+export const TwoRingsIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="6" cy="8" r="3.6" />
+    <circle cx="10" cy="8" r="3.6" />
+  </svg>
+);
 export const ListIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8M2.5 4.5h.01M2.5 8h.01M2.5 11.5h.01" />

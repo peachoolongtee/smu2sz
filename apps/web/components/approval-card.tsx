@@ -4,7 +4,8 @@ import Link from "next/link";
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { CashPicture } from "@/components/business/cash-picture";
-import { Badge, Button, Callout, DecisionCard, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, Callout, DecisionCard, KeyValueList, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
 import { useNarrow } from "@/lib/use-narrow";
@@ -219,7 +220,7 @@ export function ApprovalCard({
     </div>
   ) : null;
 
-  const stateChip = stateText ? <StatePill tone={stateTone} testId={`approval-state-${a.id}`}>{stateText}</StatePill> : <Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>;
+  const stateChip = stateText ? <StateWord tone={stateTone} testId={`approval-state-${a.id}`}>{stateText}</StateWord> : <Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>;
   const headlineText = p?.headline ?? a.subject;
   // The sentence under the question says what the request is; when the Source and Invoice facts say it already, it is not said twice.
   const whatText = p?.facility_name && p?.invoice ? undefined : (p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`);

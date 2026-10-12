@@ -83,26 +83,6 @@ export function Badge({
   );
 }
 
-/** The mark that goes with a state's words, one per tone, so a state is never colour alone. */
-const toneGlyph: Record<Tone, string> = { ok: "✓", warn: "▲", bad: "■", info: "◆", brand: "◆", neutral: "○" };
-
-/**
- * A state as the server names it: the words, a glyph for the tone (never colour alone) and the tone the SERVER chose (`state_tone` /
- * `result_tone`; the browser never colours a state itself). 12 px, the same pill as `Badge`, with a mark of its own instead of the dot.
- */
-export function StatePill({ tone, children, testId, wrap = true, className = "" }: { tone: Tone; children: ReactNode; testId?: string; wrap?: boolean; className?: string }) {
-  return (
-    <span data-testid={testId} data-tone={tone}>
-      <Badge tone={tone} dot={false} wrap={wrap} className={className}>
-        <span aria-hidden className="text-supporting leading-none">
-          {toneGlyph[tone]}
-        </span>
-        {children}
-      </Badge>
-    </span>
-  );
-}
-
 /** A small tag that carries no status (a channel, a kind, a count): a Badge without the dot. Same pill, same tones. */
 export function Chip({ tone = "neutral", children, title, className = "", wrap }: { tone?: Tone; children: ReactNode; title?: string; className?: string; wrap?: boolean }) {
   return (

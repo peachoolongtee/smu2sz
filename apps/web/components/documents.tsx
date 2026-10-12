@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Chip, StatePill, type Tone } from "@/components/ui";
+import { Chip, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import type { AnnotationKind } from "@/lib/annotation-style";
 import { ApiError } from "@/lib/errors";
 import { useI18n, type I18n } from "@/lib/i18n";
@@ -97,7 +98,7 @@ export function DocStatusBadge({ doc }: { doc: Pick<DocumentSummary, "status" | 
   const tone: Tone = doc.status_tone ?? (doc.status === "PROPOSED" && doc.blocked ? "bad" : STATUS_TONE[doc.status]);
   return (
     <span className="flex flex-wrap gap-1.5" data-testid="doc-status" data-status={doc.status}>
-      <StatePill tone={tone}>{text}</StatePill>
+      <StateWord tone={tone}>{text}</StateWord>
       {doc.status === "PROPOSED" ? <Chip tone="info">{t("docs.aiLabel")}</Chip> : null}
     </span>
   );

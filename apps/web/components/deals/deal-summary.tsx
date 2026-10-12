@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
 import { StageTrack } from "@/components/deals/stage-track";
 import { DealHeading } from "@/components/documents";
-import { Callout, Chip, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Callout, Chip, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { DealTone, DealView } from "@/lib/types";
 import { whenText } from "@/lib/when";
@@ -110,9 +111,9 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
       {deal.pills?.length ? (
         <div className="flex flex-wrap gap-1.5" data-testid="deal-pills">
           {deal.pills.map((p) => (
-            <StatePill key={p.label} tone={toneOf(p.tone)}>
+            <StateWord key={p.label} tone={toneOf(p.tone)}>
               {p.label}
-            </StatePill>
+            </StateWord>
           ))}
         </div>
       ) : null}
@@ -276,9 +277,9 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
                         <td className={`${TD} whitespace-nowrap`}>{when(inv.due_when, inv.due_day)}</td>
                         <td className={`${TD} text-right`}>{inv.outstanding_display}</td>
                         <td className={TD}>
-                          <StatePill tone={toneOf(inv.tone)} wrap={false}>
+                          <StateWord tone={toneOf(inv.tone)} wrap={false}>
                             {inv.status_text}
-                          </StatePill>
+                          </StateWord>
                           {inv.notes.map((n) => (
                             <span key={n} className="block text-supporting text-ink-3">
                               {n}

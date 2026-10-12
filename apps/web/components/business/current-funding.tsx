@@ -1,6 +1,7 @@
 "use client";
 
-import { Badge, Card, StatePill } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { HomeView } from "@/lib/types";
 
@@ -51,9 +52,9 @@ export function CurrentFunding({ h }: { h: HomeView }) {
                 {f.name}
                 {/* The line's state in a word, only when it says something the figures below do not stress: at or over its limit. */}
                 {f.limit_fen && f.drawn_fen !== undefined && f.drawn_fen >= f.limit_fen ? (
-                  <StatePill tone={f.drawn_fen > f.limit_fen ? "bad" : "neutral"} testId="cash-line-state" wrap={false}>
+                  <StateWord tone={f.drawn_fen > f.limit_fen ? "bad" : "neutral"} testId="cash-line-state" wrap={false}>
                     {f.drawn_fen > f.limit_fen ? t("biz.cash.facility.over") : t("biz.cash.facility.full")}
-                  </StatePill>
+                  </StateWord>
                 ) : null}
               </dt>
               <dd className="tabular-nums text-ink">{t("biz.cash.facility.drawn", { drawn: f.drawn_display, available: f.available_display })}</dd>
