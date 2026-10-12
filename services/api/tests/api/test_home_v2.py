@@ -478,3 +478,52 @@ def test_the_approval_fact_says_when_the_owner_must_approve() -> None:
             facts = home_v2._plan_facts(lang, parts)
             assert facts[2]["value"] == expected and facts[0]["value"] == ("Not priced" if lang == "en" else "未计价")
             assert " · 成本" not in home_v2._plan_sentence(lang, parts) and " · cost" not in home_v2._plan_sentence(lang, parts)
+
+
+# ---------------------------------------------------------------- the chart's scenario title (words batch 3)
+
+
+def _deal(api: TestClient) -> str:
+    offer = api.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]
+    api.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
+    return f"deal:{offer['offer_id']}"
+
+
+def _title(api: TestClient, lang: str = "en", **query: str) -> str | None:
+    h = api.get("/home", params={"lang": lang, **query}).json()
+    assert h["partial"] is None
+    title: str | None = h["home_v2"]["chart"]["scenario_title_text"]
+    return title
+
+
+def test_the_chart_title_names_the_customer_the_subject_the_paths_and_the_scenario(api: TestClient) -> None:
+    decision = _deal(api)
+    assert _title(api, decision=decision) == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="expected") == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="late") == "Foshan · Payment terms · As they asked vs Option A · Foshan 30 days late"
+
+
+def test_the_chart_title_in_chinese_has_no_english(api: TestClient) -> None:
+    decision = _deal(api)
+    zh = _title(api, "zh", decision=decision)
+    assert zh == "Foshan · 付款账期 · 按对方要求 对比 方案 A · 预期收款"
+    assert _title(api, "zh", decision=decision, scenario="late") == "Foshan · 付款账期 · 按对方要求 对比 方案 A · Foshan晚付 30 天"
+    assert not english_leaks(zh, NAMES)
+
+
+def test_the_chart_title_is_null_without_a_decision_or_for_one_that_is_not_a_deal_here(api: TestClient) -> None:
+    decision = _deal(api)
+    assert _title(api) is None
+    assert _title(api, scenario="late") is None  # a scenario alone names no deal
+    assert _title(api, decision="deal:OFF-nothing") is None
+    assert _title(api, decision="funding:ALERT-RESERVE-12") is None
+    assert _title(api, decision=decision) is not None
+
+
+def test_the_chart_title_moves_no_figure(api: TestClient) -> None:
+    decision = _deal(api)
+    plain = _home(api)["home_v2"]
+    titled = api.get("/home", params={"decision": decision, "scenario": "late"}).json()["home_v2"]
+    plain["chart"].pop("scenario_title_text")
+    titled["chart"].pop("scenario_title_text")
+    assert plain == titled

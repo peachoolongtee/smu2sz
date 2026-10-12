@@ -98,6 +98,8 @@ class HomeRead:
     open_decisions: list[dict[str, Any]]
     basis: BasisReader | None = None  # what each receipt rests on, when it could be read
     partial: Any | None = None  # the home's `Partial`, for a supporting read that fails inside the hybrid
+    decision: str | None = None  # the deal decision the read was made for (`?decision=`), for the chart's scenario title
+    scenario: str | None = None  # the payment-timing scenario the read was made for (`?scenario=`): "late", else expected
 
     @property
     def state(self) -> FinancialState:

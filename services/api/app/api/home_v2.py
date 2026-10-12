@@ -15,7 +15,9 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
                           approval), the very parts `action.text` is built from; empty when the action carries no funding plan.
     chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
-                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none)
+                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none) and, on a read made with
+                          `?decision=` (and `?scenario=late`), `scenario_title_text` ("Foshan · Payment terms · As they asked vs Option A ·
+                          Expected payments"; null without a decision)
     links                 where the rest of the company's picture lives
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
@@ -42,10 +44,12 @@ from app.api.home_hybrid import (
     _sp,
     _tone,
 )
-from app.api.presentation import t, when_text, whole
+from app.api.presentation import party_name, t, when_text, whole
 from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
+from app.decisions.identity import offer_id_of
 from app.strategy import words as basis_words
+from app.strategy.payments import STRESS_DELAY_DAYS
 
 log = logging.getLogger("termsledger.decisions")
 _LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
@@ -318,9 +322,46 @@ def _chart(c: HomeRead, rail: list[dict[str, Any]] | None) -> dict[str, Any]:
             "lowest_inspector": {"day_text": t(lang, f"The lowest point · {when}", f"最低点 · {when}"),
                                  "projected_display": whole(low_fen), "minimum_display": whole(floor),
                                  "third_label": third[0], "third_display": third[1], "note": note},
-            "lowest": {"cause": _lowest_cause(rail)},
+            "lowest": {"cause": _lowest_cause(rail)}, "scenario_title_text": _scenario_title(c),
             "note": t(lang, "Current books, nothing new assumed. The same figures as Cash & Funding.",
                       "当前账目，没有假设任何新增事项。数字与现金与融资页一致。")}
+
+
+def _scenario_title(c: HomeRead) -> str | None:
+    """The chart's title for a deal read: "Foshan · Payment terms · As they asked vs Option A · Expected payments", the offer's own subject
+    words (the worklist row's), the offer picture's path labels (the asked path and the recommended reply) and the scenario's word. Null
+    without a decision, for a decision that is not a deal on the books, or when the deal has no picture to name paths from."""
+    if not c.decision:
+        return None
+    from fastapi import HTTPException
+
+    from app.api.offer_picture import cached_picture
+    from app.api.worklist import _topic
+
+    lang = c.lang
+    offer_id = offer_id_of(c.decision)
+    try:
+        offer = c.rt.store.get_offer(offer_id) if offer_id else None
+        if offer is None:
+            return None
+        who = basis_words.buyer_short(party_name(c.state, offer.counterparty_id))
+        pic = cached_picture(c.rt, offer.offer_id, lang)
+    except HTTPException:  # no verdict yet: there is no picture to name paths from
+        return None
+    except Exception:
+        log.exception("the offer picture could not be read for the Home V2 chart title")
+        if c.partial is not None:
+            c.partial.add("home_v2")
+        return None
+    paths = pic.get("paths") or []
+    if not pic.get("available") or not paths:
+        return None
+    asked = next((p for p in paths if p["kind"] == "asked"), paths[0])
+    reply = next((p for p in paths if p["kind"] == "reply" and p["recommended"]), None)
+    compare = t(lang, f"{asked['label']} vs {reply['label']}", f"{asked['label']} 对比 {reply['label']}") if reply is not None else asked["label"]
+    scenario = (t(lang, f"{who} {STRESS_DELAY_DAYS} days late", f"{who}晚付 {STRESS_DELAY_DAYS} 天") if c.scenario == "late"
+                else t(lang, "Expected payments", "预期收款"))
+    return f"{who} · {_topic(offer, lang)} · {compare} · {scenario}"
 
 
 def _links(c: HomeRead) -> list[dict[str, str]]:
