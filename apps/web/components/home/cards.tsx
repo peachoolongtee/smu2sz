@@ -1,0 +1,112 @@
+"use client";
+
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { ChevronRightIcon } from "@/components/icons";
+import { useI18n } from "@/lib/i18n";
+import type { HomeChangesCardRow, HomeDealsCardRow, HomeReceivablesCard } from "@/lib/types";
+
+/**
+ * One card of the row under the picture: unboxed on a hairline like the rest of Home (the one raised surface is the attention card), the whole card a link (the heading's link is stretched
+ * over it). A card is a place to go, not a place to act: nothing inside it is a button.
+ */
+function Card({ id, title, href, children }: { id: string; title: string; href: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="motion-reveal relative min-w-0 border-t border-line-strong pb-3 pt-3 hover:bg-subtle" data-testid={id}>
+      <h2 id={`${id}-title`} className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <Link href={href} className="flex items-center justify-between gap-2 after:absolute after:inset-0" data-testid={`${id}-link`}>
+          {title}
+          <ChevronRightIcon aria-hidden className="shrink-0 text-ink-3" />
+        </Link>
+      </h2>
+      <div className="mt-2.5">{children}</div>
+    </section>
+  );
+}
+
+/** Your deals: one line per deal, the buyer, the status word, what they ask and what FLOW recommends. No stages, no avatar, no badge. */
+export function DealsCard({ rows }: { rows: HomeDealsCardRow[] }) {
+  const { t } = useI18n();
+  const href = rows.length === 1 && rows[0].href ? rows[0].href : "/deals";
+  return (
+    <Card id="home-card-deals" title={t("biz.homeDeals.title")} href={href}>
+      {rows.length ? (
+        <ul className="divide-y divide-line">
+          {rows.map((r) => (
+            <li key={`${r.buyer}-${r.href ?? ""}`} className="py-2 first:pt-0 last:pb-0" data-testid="home-card-deal">
+              <p className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="min-w-0 break-words text-sm font-bold text-ink">{r.buyer}</span>
+                <span className="text-xs font-semibold text-ink-2">{r.status_text}</span>
+              </p>
+              {r.request_text ? <p className="text-sm text-ink-2">{r.request_text}</p> : null}
+              {r.recommendation_text ? <p className="text-sm text-ink">{r.recommendation_text}</p> : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-ink-3">{t("home.hy.deals.none")}</p>
+      )}
+    </Card>
+  );
+}
+
+/** Receivables: what is outstanding, what is overdue, what is expected next, and, in 12 px, how the financing touches that receipt. */
+export function ReceivablesCard({ card }: { card: HomeReceivablesCard }) {
+  const { t } = useI18n();
+  return (
+    <Card id="home-card-receivables" title={t("home.hy.recv")} href={card.href || "/receivables"}>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <dt className="text-xs font-semibold text-ink-3">{t("home.hy.recv.outstanding")}</dt>
+          <dd className="text-lg font-extrabold tabular-nums text-ink" data-testid="home-card-outstanding">
+            {card.outstanding_short}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-xs font-semibold text-ink-3">{t("home.hy.recv.overdue")}</dt>
+          <dd className="text-lg font-extrabold tabular-nums text-ink" data-testid="home-card-overdue">
+            {card.overdue_short}
+          </dd>
+        </div>
+        {card.next_text ? (
+          <div className="col-span-2 min-w-0">
+            <dt className="text-xs font-semibold text-ink-3">{t("home.hy.recv.next")}</dt>
+            <dd className="text-sm font-semibold text-ink" data-testid="home-card-next">
+              {card.next_text}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+      {card.financing_note ? (
+        <p className="mt-2 text-xs text-ink-3" data-testid="home-card-financing">
+          {card.financing_note}
+        </p>
+      ) : null}
+    </Card>
+  );
+}
+
+/** Recent changes: the latest ledger sentences, as the server worded them. */
+export function ChangesCard({ rows }: { rows: HomeChangesCardRow[] }) {
+  const { t } = useI18n();
+  return (
+    <Card id="home-card-changes" title={t("biz.recent")} href="/activity">
+      {rows.length ? (
+        <ul className="divide-y divide-line">
+          {rows.map((r, i) => {
+            const text = typeof r === "string" ? r : r.text;
+            const when = typeof r === "string" ? null : r.when;
+            return (
+              <li key={`${i}-${text}`} className="py-2 text-sm text-ink first:pt-0 last:pb-0" data-testid="home-card-change">
+                {text}
+                {when ? <span className="block text-xs text-ink-3">{when}</span> : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-sm text-ink-3">{t("home.hy.changes.none")}</p>
+      )}
+    </Card>
+  );
+}

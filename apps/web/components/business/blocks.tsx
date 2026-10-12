@@ -83,7 +83,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
 }
 
 /** Level 1 news: receipts, late payers, what ran, what waits, what landed. Server sentences, newest first; three show, the rest wait behind "Show more". */
-export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; sinceWhen?: string | null }) {
+export function ChangesBlock({ changes, sinceWhen, bare = false }: { changes: HomeChange[]; sinceWhen?: string | null; /** Inside a fold that already carries the title (Home's "What changed" under the cards): the list alone. */ bare?: boolean }) {
   const { t } = useI18n();
   const row = (c: HomeChange, i: number) => (
     <li key={`${c.day}-${c.seq}-${i}`}>
@@ -93,7 +93,7 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
   );
   const rest = changes.slice(CHANGES_SHOWN);
   return (
-    <Card flat id="home-changes" title={t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
+    <Card flat id="home-changes" title={bare ? undefined : t("biz.recent")} subtitle={sinceWhen ? t("biz.recent.since", { when: sinceWhen }) : t("biz.recent.week")} actions={<Link href="/activity" className={textLinkClass}>{t("biz.changes.open")}</Link>}>
       {changes.length === 0 ? (
         <p className="text-sm text-ink-3" data-testid="home-changes-empty">
           {t("biz.changes.none")}
@@ -108,6 +108,13 @@ export function ChangesBlock({ changes, sinceWhen }: { changes: HomeChange[]; si
           ) : null}
         </div>
       )}
+      {bare ? (
+        <p className="mt-2">
+          <Link href="/activity" className={`${textLinkClass} -ml-2`}>
+            {t("biz.changes.open")}
+          </Link>
+        </p>
+      ) : null}
     </Card>
   );
 }
@@ -161,30 +168,39 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
  * Warnings and the details. The warnings are "Also on your radar", one quiet row of items above the fold (nothing is shown when there are none);
  * the fold keeps the facilities and the debt readings, closed by default. What is on its way is said once, in the headline's lines.
  */
-export function DetailsBlock({ h }: { h: HomeView }) {
+export function DetailsBlock({ h, radarFold = false, afterRadar }: { h: HomeView; /** The warnings are a closed fold ("Also on your radar") instead of a section (Home under the cards). */ radarFold?: boolean; /** Another fold that sits between the warnings and the details (Home's "What changed"). */ afterRadar?: ReactNode }) {
   const { t } = useI18n();
+  const warnings = (
+    <ul className={`${radarFold ? "pt-1" : "mt-3"} flex flex-wrap gap-x-8 gap-y-3`}>
+      {h.warnings.map((w) => (
+        <li key={w.id} className="flex min-w-0 flex-[1_1_16rem] gap-3" data-testid={`home-warning-${w.kind}`}>
+          <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-tile bg-warn-bg text-warn-fg">
+            <AlertIcon width={16} height={16} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-bold text-ink">{w.title}</span>
+            <span className="block text-sm text-ink-2">{w.detail}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <>
-      {h.warnings.length ? (
+      {h.warnings.length && radarFold ? (
+        <Disclosure testId="home-radar" summary={t("biz.radar")} className="border-t border-line-strong pt-2">
+          {warnings}
+        </Disclosure>
+      ) : null}
+      {h.warnings.length && !radarFold ? (
         <section aria-labelledby="home-radar-title" className="motion-reveal" data-testid="home-radar">
           <h2 id="home-radar-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.radar")}
           </h2>
-          <ul className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
-            {h.warnings.map((w) => (
-              <li key={w.id} className="flex min-w-0 flex-[1_1_16rem] gap-3" data-testid={`home-warning-${w.kind}`}>
-                <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-tile bg-warn-bg text-warn-fg">
-                  <AlertIcon width={16} height={16} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold text-ink">{w.title}</span>
-                  <span className="block text-sm text-ink-2">{w.detail}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          {warnings}
         </section>
       ) : null}
+      {afterRadar}
       <Disclosure testId="home-details" summary={t("biz.details")} className="border-t border-line-strong pt-2">
       <div className="space-y-5">
         <section>

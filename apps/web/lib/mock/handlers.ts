@@ -725,7 +725,24 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return home.mockHome(dealt, lang);
+  return withHomePatch(home.mockHome(dealt, lang));
+}
+
+/**
+ * Temporary (until the Home hybrid fields are re-recorded): e2e/home-hybrid.spec.ts lays the new optional fields over the recorded home read through
+ * this session key. Unset, the read is exactly the recording. Nothing in a recording is edited; delete this with the spec's patch once the mocks are re-recorded.
+ */
+export const HOME_PATCH_KEY = "tl-mock-home-patch";
+function withHomePatch(view: HomeView): HomeView {
+  if (typeof window === "undefined") return view;
+  const raw = window.sessionStorage.getItem(HOME_PATCH_KEY);
+  if (!raw) return view;
+  try {
+    const patch = JSON.parse(raw) as Partial<HomeView>;
+    return { ...view, ...patch, cash: { ...view.cash, ...(patch.cash ?? {}) } };
+  } catch {
+    return view;
+  }
 }
 
 export async function getClock(): Promise<ClockView> {
