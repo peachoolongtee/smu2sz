@@ -30,6 +30,8 @@ import type {
   CapexView,
   ContractFixture,
   CustomerOverviewView,
+  CustomersView,
+  FeaturesView,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -68,12 +70,14 @@ import type {
   WhatIfControls,
   WhatIfParams,
   WhatIfResult,
+  WorklistView,
 } from "../types";
 
 import type { CustomerContext } from "../customer-href";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
+import * as homeV2 from "./home-v2";
 import * as receivablesMock from "./receivables";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
@@ -742,7 +746,42 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return withHomePatch(home.mockHome(dealt, lang, openOfferStage() === "evaluated"));
+  const counter = openOfferStage() === "evaluated";
+  const older = home.mockHome(dealt, lang, counter);
+  // Home V2: with its session key set, the recording taken with FEATURE_HOME_V2 for this point of the story (the older read otherwise).
+  return withHomePatch((await homeV2.mockHomeV2(homeV2.homeV2Point(dealt, counter), lang, older)) ?? older);
+}
+
+/** GET /health's switches: Home V2 is on while its session key is set (lib/mock/home-v2.ts). */
+export async function getFeatures(): Promise<FeaturesView> {
+  await delay();
+  return homeV2.mockFeatures();
+}
+
+/** The point of the story the Home V2 lists were recorded at. */
+function homeV2Point(): ReturnType<typeof homeV2.homeV2Point> {
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return homeV2.homeV2Point(dealt, openOfferStage() === "evaluated");
+}
+
+/** GET /worklist (Home V2): the recording for this point of the story; null (as a server with the flag off) without the session key or where none was taken. Owner only, as live. */
+export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  return homeV2.mockWorklist(homeV2Point(), lang);
+}
+
+/** GET /customers (Home V2): as the worklist. */
+export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  return homeV2.mockCustomers(homeV2Point(), lang);
 }
 
 /**

@@ -2757,6 +2757,140 @@ export interface HomeChangesCard {
   href?: string | null;
 }
 
+/**
+ * Home V2 (behind the server's FEATURE_HOME_V2): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
+ * server wrote in the language asked for; `*_fen` and `day` only place a mark. Absent when the flag is off: the page is then the older Home.
+ */
+export interface HomeV2Kpi {
+  eyebrow: string;
+  value_display: string;
+  note: string;
+  tone?: HomeTone;
+}
+
+export interface HomeV2Action {
+  variant: "ACTION" | "QUIET";
+  key: string | null;
+  tone: HomeTone;
+  eyebrow: string;
+  title: string;
+  text: string;
+  primary: { label: string; href: string } | null;
+  secondary: { label: string; href: string } | null;
+  /** RUN_PLAN: the confirm-and-run control; APPROVE_PLAN: the plan waits for the owner's approval; null: nothing to run from here. */
+  control: "RUN_PLAN" | "APPROVE_PLAN" | null;
+}
+
+export interface HomeV2Chart {
+  scope_title: string;
+  /** `proposed` is the server's word for the plan that is ready and has not run (drawn like `planned`). */
+  legend: { label: string; kind: "current" | "planned" | "proposed" | "hypothetical" }[];
+  lowest_inspector: {
+    day_text: string;
+    projected_display: string;
+    minimum_display: string;
+    third_label: string;
+    third_display: string;
+    note: string;
+  };
+  note: string;
+}
+
+export interface HomeV2 {
+  kpis: {
+    cash_available: HomeV2Kpi & { buffer: { min_fen: Fen; cash_fen: Fen; min_display: string; cash_display?: string } };
+    lowest_ahead: HomeV2Kpi & { with_plan_hint?: string | null };
+    funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null };
+  };
+  action: HomeV2Action;
+  chart: HomeV2Chart;
+  links: { label: string; href: string }[];
+}
+
+export type WorklistSeverity = "CRITICAL" | "CAUTION" | "NORMAL";
+
+export interface WorklistAlert {
+  key: string;
+  eyebrow: string;
+  text: string;
+  tone: HomeTone;
+  primary: { label: string; href: string };
+}
+
+/** A row of Needs you: a decision only a person can take. */
+export interface WorklistNeedsRow {
+  key: string;
+  kind: "DECISION" | "APPROVAL" | "COLLECTION" | "SETUP" | string;
+  customer_id: string | null;
+  customer_short: string | null;
+  subject_text: string;
+  status_text: string;
+  consequence_text: string;
+  owner: "NEEDS_YOU";
+  severity: WorklistSeverity;
+  deadline_day: Day | null;
+  /** Said under the first row only: why it is first. */
+  why_first_text: string | null;
+  href: string;
+  is_new: boolean;
+}
+
+/** A row of Waiting: what FLOW waits for (a buyer, a bank, a promise). */
+export interface WorklistWaitingRow {
+  key: string;
+  kind: "BUYER_REPLY" | "SETTLEMENT" | "PROMISE" | string;
+  customer_id: string | null;
+  subject_text: string;
+  status_text: string;
+  consequence_text: string;
+  since_day: Day | null;
+  expected_day: Day | null;
+  owner: "WAITING";
+  severity: WorklistSeverity;
+  href: string;
+}
+
+export interface WorklistCustomer {
+  customer_id: string;
+  short: string;
+  name: string;
+  negotiations_count: number;
+  needs_you_count: number;
+  outstanding_display: string;
+  share_text: string | null;
+  tone: HomeTone;
+  status_text: string;
+  detail_text: string;
+  href: string;
+}
+
+export interface WorklistView {
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  alert: WorklistAlert | null;
+  counts: { needs_you: number; waiting: number; customers: number };
+  needs_you: WorklistNeedsRow[];
+  waiting: WorklistWaitingRow[];
+  customers: WorklistCustomer[];
+  partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
+}
+
+/** GET /customers: the worklist's customers with the terms a page filters the list it already holds by. */
+export interface CustomersView {
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  customers: WorklistCustomer[];
+  search_terms: { customer_id: string; terms: string[] }[];
+  partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
+}
+
+/** GET /health's switches (the server's feature flags); a flag the server does not know is absent. */
+export interface FeaturesView {
+  home_v2?: boolean;
+}
+
 export interface HomeView {
   day: Day;
   state_version: number;
@@ -2879,6 +3013,8 @@ export interface HomeView {
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;
+  /** Home V2 (server flag FEATURE_HOME_V2): the three KPIs, the one action, the chart's scope and the links. Absent with the flag off, and the page is the older Home. */
+  home_v2?: HomeV2 | null;
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
