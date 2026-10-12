@@ -24,7 +24,8 @@ the page with no card; one picture where the data supports one; one raised surfa
 `lg`, in flow on a phone); everything else unboxed, small-caps captions and hairlines; the top bar is the canvas colour at 70% with
 blur, so it reads as frosted glass only when content passes under it; the sidebar is seamless with counts; headlines are Plus Jakarta
 Sans Variable, bundled with the app (`@fontsource-variable/plus-jakarta-sans`, about 27 KB for an English page, no font host).
-Three rules of the old guide changed on the owner's instruction and are rewritten there: the navy "deep block" is the Demo strip only;
+The mockups of the Deals page and of the callouts are `docs/design/deals-3-three-paths-mock.dc.html` and
+`what-moves-your-cash-callouts-mock.dc.html`. Three rules of the old guide changed on the owner's instruction and are rewritten there: the navy "deep block" is the Demo strip only;
 the chart's one line-draw is an allowed motion; a labelled chart fed by the server's series is not a sparkline.
 
 | Page | What it is now |
@@ -35,7 +36,7 @@ the chart's one line-draw is an allowed motion; a labelled chart fed by the serv
 | Approvals | The question as the heading; the pending approval as the raised card: three facts, why it needs you, the two cash lines (decline / approve) with the server's sentences as captions, the quote behind a fold |
 | Cash & funding | Headline; the picture first with a 30 / 60 / 120 switch; ways to cover the gap as a radio group with cost and coverage bars (choosing a row draws its line); the plan bar; funding sources with utilisation bars |
 | Documents, Limits, the decision record, What-if, Equipment | The same pattern, no change of content |
-| **Deals** | **Not redesigned.** Two layouts are mocked; the owner has not chosen (section 4) |
+| Deals | Built on 12 Oct after the owner chose ("Deals 1 with the three-column comparison", then the lead's "three paths on one chart"): the verdict as the heading; each ask with its cost bar and the total against the limit; **three paths on one chart** (the offer as asked and each reply, always drawn as ghosts; the picked one thick with a band and a subtitle that says what it means); six stops and Play that move a cursor, with each column showing its cash that day; three columns (cost, terms with "instead of", who decides); the reply in the bar, in flow |
 
 **Shared components.** `components/business/cash-picture.tsx` (plain SVG; baseline and alternative series, the server's axis, label
 placement by priority: lowest points, the reserve, line names, events; a label that would collide is skipped), `action-bar.tsx`,
@@ -74,6 +75,12 @@ Run by the lead on `int/ui-overhaul` (the tree merged into `dev`), one command a
 Not run in this session: `scripts/evaluate.py`, the language-boundary certification, the PostgreSQL concurrency cases (they are among the
 37 skipped) and `scripts/build_deliverables.py`; no engine figure moved, so the evidence under `services/api/evals` was not regenerated.
 
+**After the Deals page** (run on `int/deals`, the tree merged into `dev` last): backend 6,895 passed, 37 skipped; scenarios 49/49; the demo run
+exit 0; 259 attacks, 0 with harm; web typecheck, lint and build clean, unit 91; mock e2e 211 (221 with `E2E_STRATEGY=1`); live e2e 96 (104
+with the flag, run twice); no server error in any live log. The first run of this gate failed and was right to: the offer picture read
+answered 500 for an offer that could no longer be drawn (now `available: false` with a sentence), and the send confirmation was unmounted
+when the picture arrived (now a placeholder until it does). Both have regression tests.
+
 The EX01 evaluation benchmark (`tests/funding/test_benchmark.py`, 350 ms) fails on this machine at about 400 ms on `dev` before the
 overhaul and on the merged tree alike (measured twice each on a quiet machine): the known loose end of `docs/HANDOVER.md`, not a
 regression. `SKIP_PERF_BENCH=1` hides it.
@@ -81,10 +88,10 @@ regression. `SKIP_PERF_BENCH=1` hides it.
 ## 4. Outstanding
 
 **The owner**
-- **Choose the Deals layout**: "Deals 1 · Ask and answer" (the verdict as the headline, each ask with its cost, the picture, FLOW's
-  reply in the bar; the lead's recommendation), "Deals 2 · Side by side" (as asked, Option A, Option B as three columns), or Deals 1
-  with the three-column comparison in place of its "other reply" row. `GET /offers/{id}/picture` and `open_offer` already carry
-  what either needs. Until then the Deals page is the 12 Oct reskin's, in the new shell.
+- **"What moves your cash"**: the lead proposed replacing the chip row under the cash picture (Home and Cash) with callout pills joined to
+  their steps by leader lines, a flow strip of money in and out on the chart's own day axis, and one card that follows the focus (press a
+  pill, step, or Play). The mockup is `docs/design/what-moves-your-cash-callouts-mock.dc.html`; nothing is built until the owner says go. It
+  needs one small read addition (per movement: below the minimum or not, and a status sentence).
 - The owner items of handoff 08 section 3 stand (map #88's build, #104, the readers and interviewers, a Postgres run, fonts are now done).
 
 **Known and accepted, with the reason**
@@ -124,5 +131,5 @@ under `.claude/worktrees/` from spec files (kept beside each worktree, not commi
 ## 6. Kickoff text for the next session
 
 "Read `docs/handover/09_session_handoff_2026-10-12_ui_overhaul.md`, then `docs/HANDOVER.md` section 3 and `apps/web/DESIGN.md`'s last
-four sections. `dev` holds the A1 overhaul of every Business page except Deals. If the owner has chosen a Deals layout, specify it
-from the mockups and the reads named in section 2 and delegate it; otherwise continue with the outstanding list in section 4."
+sections. `dev` holds the A1 overhaul of every Business page, Deals included. Continue with the outstanding list in section 4; its first
+item is the owner's go on the callouts for "What moves your cash"."

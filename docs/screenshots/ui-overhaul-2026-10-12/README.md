@@ -10,5 +10,4 @@ States: `day0` (the Demo's first day), `offer-evaluated` (the buyer's offer read
 `decided`.
 
 Known in these captures: a Chinese page in mock mode shows English sentences on Cash, Home's deal rows and Receivables (those mock
-recordings are English only; the live app sends the language). The Deals page is the 12 October reskin in the new shell: its redesign
-waits for the owner's choice between the two mockups in `docs/design/`.
+recordings are English only; the live app sends the language). The `deals-*` files show the Deals page as rebuilt later the same day (no offer selected, the evaluated offer, Option A and "as asked" picked on the chart, the columns and the reply bar at the decisive day, the agreed state, a phone, and Chinese).
