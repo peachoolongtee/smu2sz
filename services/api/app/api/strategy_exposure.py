@@ -22,7 +22,9 @@ The buyer-keyed read (no deal needed): the same block for the buyer on the books
 what the Receivables aside and the Customer page read: `concentration`, `payments`, `stress` (its 30-day row carries `net_later_text`, what
 the buyer's open invoices leave the owner a month later, from `net_at_collection`), `capacity` ({before, spare}) and the band's sentences.
 Cached like the Customer overview (the books, the mandate, the day, the commitments, the buyer, the language, `spare`, the inputs, the
-store's change marker and the flag). With the flag off it answers 404 with a sentence.
+store's change marker and the flag). With the flag off it answers 404 with a sentence. When the query carries `customer`, `invoice` or
+`decision` (with `path`) the read also carries `context.back` {label, href}, built after the cache as the deal reads build theirs (the Cash
+page opened from a stress link goes back with it); a part that names another buyer is ignored.
 
 The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
 `limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
@@ -40,6 +42,7 @@ import logging
 import re
 import time
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -198,7 +201,9 @@ def _buyer_block(rt: Runtime, buyer_id: str, lang: Literal["en", "zh"], spare: b
 
 
 @router.get("/buyers/{buyer_id}/exposure")
-def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(1, ge=0, le=1)) -> dict[str, Any]:
+def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(1, ge=0, le=1),
+                       customer: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
+                       decision: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120)) -> dict[str, Any]:
     if not get_settings().features.exposure:  # this route answers 404 with a sentence, so a page without the feature reads "no exposure"
         raise _not_found("FEATURE_DISABLED", "Buyer exposure is switched off (FEATURE_EXPOSURE).")
     started = time.perf_counter()
@@ -213,4 +218,13 @@ def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), s
         body = _BUYER_CACHE.get_or_compute(key, lambda: displayed(_buyer_block(rt, buyer_id, lang, bool(spare))))
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
-    return {**body, "computed_in_seconds": round(time.perf_counter() - started, 3)}
+    out = {**body, "computed_in_seconds": round(time.perf_counter() - started, 3)}
+    if not (customer or invoice or decision):
+        return out
+    # `context.back`, built from the query after the cache (never cached): the Cash page opened from a stress link goes back the way the
+    # Deals reads do. A deal-only link is about this buyer; a part that names another buyer's is ignored, never echoed.
+    with rt.lock:
+        back = customer_back(rt, rt.store.get_state(), lang, customer=customer or buyer_id, invoice=invoice, decision=decision, path=path)
+    if back is None or not back["href"].startswith(f"/customers/{quote(buyer_id, safe='')}"):
+        return out
+    return {**out, "context": {"back": back}}

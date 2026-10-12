@@ -157,6 +157,22 @@ def test_it_is_cached_like_the_overview_and_a_change_reads_again(api: TestClient
     assert _buyer(api)["stress"]["now"]["net_later_text"] != first["stress"]["now"]["net_later_text"] and len(calls) == 4
 
 
+def test_the_back_link_is_built_from_the_query_after_the_cache(api: TestClient, rt: Runtime) -> None:
+    """The Cash page opened from a stress link (Receivables, the Customer page, a deal) goes back the way the deal reads do."""
+    assert "context" not in _buyer(api)
+    offer = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
+    deal = f"deal:{offer}"
+    plain = _buyer(api, customer="BUYER-1", invoice="RCV-A")
+    assert plain["context"]["back"] == {"label": "Back to Foshan", "href": "/customers/BUYER-1?invoice=RCV-A"}
+    path = _buyer(api, decision=deal, path="counter:0")["context"]["back"]
+    assert path["href"] == f"/customers/BUYER-1?decision=deal%3A{offer}&path=counter%3A0"
+    zh = _buyer(api, "zh", customer="BUYER-1")["context"]["back"]
+    assert zh["label"].startswith("返回") and zh["href"] == "/customers/BUYER-1"
+    assert "context" not in _buyer(api, customer="BUYER-2")  # another buyer's page is not this buyer's way back
+    assert _buyer(api, invoice="RCV-NOPE")["context"]["back"]["href"] == "/customers/BUYER-1"  # an invoice that is nobody's is never echoed
+    assert {k: v for k, v in plain.items() if k not in ("context", "computed_in_seconds")} == {k: v for k, v in _buyer(api).items() if k != "computed_in_seconds"}
+
+
 # ---------------------------------------------------------------- GET /receivables: the words the page dashed out
 
 

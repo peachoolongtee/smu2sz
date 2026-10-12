@@ -7,6 +7,7 @@
 import { sha256 } from "js-sha256";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
+import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
   ActRequest,
@@ -51,6 +52,8 @@ import type {
   PriceCurveView,
   EnvelopeView,
   ReceivablesWorthView,
+  BuyerExposureView,
+  ReceivablesRead,
   ReconciliationView,
   StateView,
   SubmitDocumentRequest,
@@ -66,6 +69,7 @@ import type {
 
 import * as documents from "./documents";
 import * as decisions from "./decisions";
+import * as cashStress from "./cash-stress";
 import * as home from "./home";
 import { pickByStory } from "./strategy-pick";
 import alertsJson from "../../mocks/alerts.json";
@@ -793,6 +797,18 @@ const priceCurveRecordings = () =>
 const worthRecordings = () => Promise.all([import("../../mocks/strategy/worth_day0.json"), import("../../mocks/strategy/worth_day34.json"), import("../../mocks/strategy/worth_day34_after.json")]);
 const envelopeRecordings = () =>
   Promise.all([import("../../mocks/strategy/envelope_day0.json"), import("../../mocks/strategy/envelope_day34.json"), import("../../mocks/strategy/envelope_day34_after.json")]);
+
+/** GET /receivables: the opening books' recording (lib/mock/cash-stress.ts). */
+export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  await delay();
+  return cashStress.mockReceivables(lang);
+}
+
+/** GET /buyers/{id}/exposure: the recording for BUYER-1; any other buyer is unknown (null, as the server's 404 reads). */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
+  await delay();
+  return cashStress.mockBuyerExposure(buyerId, lang, context);
+}
 
 /** GET /cash/price-curve. */
 export async function getPriceCurve(_lang: "en" | "zh"): Promise<PriceCurveView | null> {

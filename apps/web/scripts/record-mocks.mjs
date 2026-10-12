@@ -47,6 +47,8 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
+// buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -62,12 +64,13 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy] [--buyer-exposure]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
+const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -152,7 +155,7 @@ function normalise(name, value) {
       }
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
-  if (name.startsWith("strategy/")) out.computed_in_seconds = 0;
+  if (name.startsWith("strategy/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   return out;
@@ -234,6 +237,22 @@ async function reset() {
 const ops = {};
 const files = {};
 
+/** GET /buyers/BUYER-1/exposure (the late-payment test with no deal: the Receivables aside and the Cash page's stress link), in both languages. */
+async function buyerExposure(name) {
+  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+    const view = await live.getBuyerExposure("BUYER-1", lang);
+    if (!view) throw new Error("GET /buyers/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1 from a branch that carries it (feat/connected-words)");
+    files[`${name}${suffix}.json`] = view;
+  }
+}
+// --buyer-exposure: buyer_exposure[_zh].json and nothing else, on the opening books.
+if (BUYER_EXPOSURE) {
+  await live.demoReset();
+  await buyerExposure("buyer_exposure");
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} buyer-exposure files into ${OUT} from ${API}`);
+  process.exit(0);
+}
 // --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.
 if (STRATEGY) {
   const BUYER = "BUYER-1";
