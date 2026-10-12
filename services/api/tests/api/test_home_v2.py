@@ -98,10 +98,11 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
                                                             "cash_display": "¥400,000.00", "headroom_text": "+¥100k"}}
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "−¥105,000", "tone": "bad",
                                  "note": "¥405k below your minimum in 30 days · current books, no new funding",
+                                 "short_note": "¥405k shortfall in 30 days",
                                  "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
                                  "with_plan": {"label": "with plan", "value_text": "¥300,000"}}
     assert k["funding"] == {"state": "PROPOSED", "eyebrow": "PLANNED FUNDING", "value_display": "¥405,000",
-                            "note": "¥150k credit line today + ¥255k invoice financing in 3 days",
+                            "note": "¥150k credit line today + ¥255k invoice financing in 3 days", "status_text": "Ready to run",
                             "hint": "Conditional on you running the plan; not counted as cash."}
 
 
@@ -141,9 +142,11 @@ def test_after_the_plan_the_three_kpis(api: TestClient) -> None:
     assert (k["cash_available"]["value_display"], k["cash_available"]["note"]) == ("¥550,000", "¥250k above your ¥300k minimum")
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "¥300,000", "tone": "warn",
                                  "note": "reaches your minimum in 30 days · current books, the plan ran",
+                                 "short_note": "At your minimum in 30 days",
                                  "with_plan_hint": "No hypothetical applied.", "with_plan": None}
     assert k["funding"] == {"state": "ARRANGED", "eyebrow": "FUNDING ARRANGED", "value_display": "¥255,000 pending",
                             "note": "¥150k credit-line draw received today · ¥255k invoice financing expected in 3 days",
+                            "status_text": "Arranged",
                             "hint": "Counted as cash only when it lands."}
 
 
@@ -228,8 +231,10 @@ def test_a_plan_waiting_on_approval_says_so_and_points_at_the_approval(api: Test
     assert v2["action"]["key"] == f"approval:{approval}" and v2["action"]["primary"] == {"label": "Review the plan", "href": f"/approvals#approval-{approval}"}
     assert "needs your approval because of its cost" in v2["action"]["text"] and "your approval is needed" in v2["action"]["text"]
     assert v2["kpis"]["funding"]["state"] == "PROPOSED" and v2["kpis"]["funding"]["hint"] == "Conditional on you approving the plan; not counted as cash."
+    assert v2["kpis"]["funding"]["status_text"] == "Waiting for your approval"
     zh = _home(api, "zh")["home_v2"]
     assert zh["kpis"]["funding"]["hint"] == "取决于您是否批准方案；不计入现金。"
+    assert zh["kpis"]["funding"]["status_text"] == "等待您批准"
     assert zh["action"]["primary"]["label"] == "查看方案"
 
 
@@ -240,6 +245,7 @@ def test_a_step_with_no_cash_landing_yet_says_what_it_is_and_who_must_act(api: T
     assert v2["action"]["title"] == "Apply for ¥405,000.00 on Equipment lease"
     assert v2["action"]["text"] == "Your cash reserve becomes unsafe in 12 days. Needs your approval."
     assert v2["kpis"]["funding"]["state"] == "NONE" and v2["kpis"]["lowest_ahead"]["tone"] == "bad"
+    assert v2["kpis"]["funding"]["status_text"] is None and v2["kpis"]["lowest_ahead"]["short_note"] == "¥405k shortfall in 30 days"
     assert v2["chart"]["lowest_inspector"]["note"] == "FLOW has no funding plan that closes this yet."
     assert v2["chart"]["legend"] == [{"label": "Current books · no new funding", "kind": "current"}]
 
@@ -335,6 +341,7 @@ def test_the_chinese_fields_before_the_plan(api: TestClient) -> None:
     assert k["lowest_ahead"]["note"] == "比您的最低现金低 ¥405k（30 天后） · 当前账目，未新增融资"
     assert k["lowest_ahead"]["with_plan_hint"] == "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。"
     assert (k["funding"]["eyebrow"], k["funding"]["hint"]) == ("计划中的融资", "取决于您是否执行方案；不计入现金。")
+    assert (k["funding"]["status_text"], k["lowest_ahead"]["short_note"]) == ("可以执行", "30 天后缺口 ¥405k")
     assert zh["action"]["eyebrow"] == "下一步 · 12 天内" and zh["action"]["title"] == "请在工资（12 天后）之前筹措 ¥405,000。"
     assert zh["action"]["text"] == ("FLOW 的方案在您签署的授权内：信用额度提款 ¥150k（今天）、发票融资 ¥255k（3 天后），均为计划中 · 成本 ¥3,113.93 · 无需批准。")
     assert zh["chart"]["scope_title"] == "公司现金预测"
@@ -350,6 +357,7 @@ def test_the_chinese_fields_after_the_plan(api: TestClient) -> None:
     k = zh["kpis"]
     assert k["lowest_ahead"]["note"] == "30 天后达到您的最低现金 · 当前账目，方案已执行"
     assert (k["funding"]["eyebrow"], k["funding"]["value_display"]) == ("已安排的融资", "待到账 ¥255,000")
+    assert (k["funding"]["status_text"], k["lowest_ahead"]["short_note"]) == ("已安排", "30 天后正好是最低现金")
     assert k["funding"]["note"] == "¥150k 信用额度提款已到账（今天） · ¥255k 发票融资预计 3 天后到账"
     assert zh["action"]["variant"] == "QUIET" and zh["action"]["title"] == "按已执行的方案，您的现金是安全的。"
     assert zh["action"]["text"] == "接下来：¥255k 将于 3 天后到账；Foshan将于 32 天后支付 ¥420k（应收）。您的待办列表里还有 1 项等您处理。"
@@ -478,3 +486,52 @@ def test_the_approval_fact_says_when_the_owner_must_approve() -> None:
             facts = home_v2._plan_facts(lang, parts)
             assert facts[2]["value"] == expected and facts[0]["value"] == ("Not priced" if lang == "en" else "未计价")
             assert " · 成本" not in home_v2._plan_sentence(lang, parts) and " · cost" not in home_v2._plan_sentence(lang, parts)
+
+
+# ---------------------------------------------------------------- the chart's scenario title (words batch 3)
+
+
+def _deal(api: TestClient) -> str:
+    offer = api.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]
+    api.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
+    return f"deal:{offer['offer_id']}"
+
+
+def _title(api: TestClient, lang: str = "en", **query: str) -> str | None:
+    h = api.get("/home", params={"lang": lang, **query}).json()
+    assert h["partial"] is None
+    title: str | None = h["home_v2"]["chart"]["scenario_title_text"]
+    return title
+
+
+def test_the_chart_title_names_the_customer_the_subject_the_paths_and_the_scenario(api: TestClient) -> None:
+    decision = _deal(api)
+    assert _title(api, decision=decision) == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="expected") == "Foshan · Payment terms · As they asked vs Option A · Expected payments"
+    assert _title(api, decision=decision, scenario="late") == "Foshan · Payment terms · As they asked vs Option A · Foshan 30 days late"
+
+
+def test_the_chart_title_in_chinese_has_no_english(api: TestClient) -> None:
+    decision = _deal(api)
+    zh = _title(api, "zh", decision=decision)
+    assert zh == "Foshan · 付款账期 · 按对方要求 对比 方案 A · 预期收款"
+    assert _title(api, "zh", decision=decision, scenario="late") == "Foshan · 付款账期 · 按对方要求 对比 方案 A · Foshan晚付 30 天"
+    assert not english_leaks(zh, NAMES)
+
+
+def test_the_chart_title_is_null_without_a_decision_or_for_one_that_is_not_a_deal_here(api: TestClient) -> None:
+    decision = _deal(api)
+    assert _title(api) is None
+    assert _title(api, scenario="late") is None  # a scenario alone names no deal
+    assert _title(api, decision="deal:OFF-nothing") is None
+    assert _title(api, decision="funding:ALERT-RESERVE-12") is None
+    assert _title(api, decision=decision) is not None
+
+
+def test_the_chart_title_moves_no_figure(api: TestClient) -> None:
+    decision = _deal(api)
+    plain = _home(api)["home_v2"]
+    titled = api.get("/home", params={"decision": decision, "scenario": "late"}).json()["home_v2"]
+    plain["chart"].pop("scenario_title_text")
+    titled["chart"].pop("scenario_title_text")
+    assert plain == titled

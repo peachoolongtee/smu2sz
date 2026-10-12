@@ -16,7 +16,7 @@ import re
 from types import SimpleNamespace
 from typing import Any, ClassVar
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.alerts import Alert, AlertKind, Severity, alerts, reconcile
 from app.api.auth import require_owner
@@ -1107,13 +1107,16 @@ def _decision_record(rt: Any, lang: str, ctx: Any = None, partial: Partial | Non
 
 
 @router.get("/home")
-def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
-    return read_home(lang, since_day)
+def get_home(lang: str = "en", since_day: int | None = None, decision: str | None = Query(None, max_length=120),
+             scenario: str | None = Query(None, max_length=20)) -> dict[str, Any]:
+    return read_home(lang, since_day, decision=decision, scenario=scenario)
 
 
-def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True) -> dict[str, Any]:
+def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True, decision: str | None = None,
+              scenario: str | None = None) -> dict[str, Any]:
     """The Home read. `v2=False` leaves out the Home V2 fields even with FEATURE_HOME_V2 on: a caller that reads only the company's status,
-    plan and approvals (the worklist) neither pays for them nor depends on them."""
+    plan and approvals (the worklist) neither pays for them nor depends on them. `decision` (a deal decision id) and `scenario` ("late",
+    else expected) say which deal and payment timing the Home V2 chart is titled for (`home_v2.chart.scenario_title_text`); no figure moves."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
@@ -1198,7 +1201,8 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
                 rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
                 action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
                 low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
-                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial), v2=v2)
+                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial,
+                decision=decision, scenario=scenario), v2=v2)
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the home summary could not be built")
             partial.add("summary")

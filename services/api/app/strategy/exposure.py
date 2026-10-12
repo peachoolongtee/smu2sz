@@ -158,6 +158,17 @@ def stress_sentence(row: StressRow, name: str, today: int, floor_fen: int, lang:
                            f"；FLOW 已承诺的方案能以 {whole_yuan(row.plan_cost_fen or 0)} 覆盖 {whole_yuan(row.need_fen)} 的缺口{extra_zh}。")
 
 
+def breach_days_text(row: StressRow, floor_fen: int, lang: str) -> str:
+    """The row's days below the minimum as a short band ("Below your minimum for 15 days"), from the `breach_days` the stress already counts;
+    with none, where the lowest point sits against the minimum."""
+    n = row.breach_days
+    if n > 0:
+        return t(lang, f"Below your minimum for {n} {_pluralize(lang, n, 'day', 'days')}", f"低于您的最低现金 {n} 天")
+    if row.lowest_fen == floor_fen:
+        return t(lang, "At your minimum", "正好在您的最低现金")
+    return t(lang, "Above your minimum", "高于您的最低现金")
+
+
 def _stress_line(side: Books, mandate: Mandate, buyer_id: str, day: int, delay: int, lang: str) -> list[dict[str, Any]]:
     """The stressed line of the picture: the unfunded CONSERVATIVE closing cash of the copy in which the buyer pays every invoice
     `delay` days late, from today, shaped as the offer picture's series are."""
@@ -177,7 +188,8 @@ def _stress_row(books: Books, mandate: Mandate, buyer_id: str, day: int, commitm
     out.update(available=True, unavailable_text=None, series=_stress_line(side, mandate, buyer_id, day, delay, lang),
                lowest_short=fmt_short(row.lowest_fen), lowest_when=when_text(row.lowest_day, today, lang),
                first_breach_when=when_text(row.first_breach_day, today, lang) if row.first_breach_day is not None else None,
-               text=stress_sentence(row, name, today, mandate.min_cash_fen, lang), history_text=history)
+               text=stress_sentence(row, name, today, mandate.min_cash_fen, lang), history_text=history,
+               breach_days_text=breach_days_text(row, mandate.min_cash_fen, lang))
     return out
 
 
@@ -265,16 +277,16 @@ def _until(ba: CapacityBeforeAfter | None, today: int) -> int | None:
 
 
 def capacity_sentence(p: _Path, spare_fen: int | None, today_fen: int | None, until: int | None, lang: str) -> str:
-    """The band's capacity sentence: what the path leaves of the room for another payment, against today's."""
+    """The band's capacity sentence: the room for another payment the path leaves, with today's beside it. The path is named by the column
+    the sentence sits in, so it is not repeated here."""
     now = t(lang, "none", "无") if today_fen is None else whole_yuan(today_fen)
     if spare_fen is None:
-        return t(lang, f"{p.who_en} leaves no room for another payment that FLOW could cover without you; today {now}.",
-                 f"{p.who_zh}，没有 FLOW 能在无需您出面的情况下再支付一笔款项的余量；目前为 {now}。")
+        return t(lang, f"Room for another payment: none that FLOW could cover without you (today {now}).",
+                 f"再支付一笔款项的余量：没有 FLOW 能在无需您出面的情况下覆盖的余量（目前 {now}）。")
     fig = whole_yuan(spare_fen)
     wait_en = f" for the next {until} days" if spare_fen == 0 and until else ""
-    wait_zh = f"（未来 {until} 天内）" if spare_fen == 0 and until else ""
-    return t(lang, f"{p.who_en} leaves {fig} of room for another payment{wait_en}; today {now}.",
-             f"{p.who_zh}，再支付一笔款项的余量为 {fig}{wait_zh}；目前为 {now}。")
+    wait_zh = f"未来 {until} 天内；" if spare_fen == 0 and until else ""
+    return t(lang, f"Room for another payment: {fig}{wait_en} (today {now}).", f"再支付一笔款项的余量：{fig}（{wait_zh}目前 {now}）。")
 
 
 def _refused_text(p: _Path, today_s: SpareCapacity, lang: str) -> str:

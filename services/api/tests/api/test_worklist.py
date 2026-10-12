@@ -610,3 +610,43 @@ def test_a_facility_approval_row_is_a_chinese_sentence_around_the_facilitys_name
     assert item["subject_text"] == "从“Bank credit line”提款 ¥150,000.00"
     assert item["status_text"] == "已提交批准申请 · 需要您批准"
     assert not english_leaks(zh, [*NAMES, "Bank credit line"], raw_fields=[HREFS])
+
+
+# ---------------------------------------------------------------- the differentiator (words batch 3)
+
+
+def _ask_row(key: str, cid: str | None, subject: str, ask: str | None) -> worklist.Row:
+    return worklist.Row(key=key, kind="DECISION", customer_id=cid, customer_short="Foshan", subject=subject, status="", consequence="",
+                        severity=worklist.NORMAL, deadline_day=None, breach_day=None, href="/", ask=ask)
+
+
+def test_two_rows_of_one_customer_and_subject_say_what_separates_them(api: TestClient) -> None:
+    _offer(api, "EX01_PACKAGE")
+    _offer(api, "EX02_EARLY_1_5")
+    _offer(api, "EX03_AS_USUAL")
+    rows = _get(api)["needs_you"]
+    said = {r["subject_text"]: [] for r in rows}
+    for r in rows:
+        said[r["subject_text"]].append(r["differentiator_text"])
+    assert said["Foshan · Payment terms"] == [None]  # alone in its subject: nothing to separate
+    assert sorted(said["Foshan · Early-payment discount"]) == ["“Early pay at 1.5%”", "“pay this one early at 1.5%”"]
+
+
+def test_the_differentiator_is_the_buyers_own_words_in_both_languages(api: TestClient) -> None:
+    _offer(api, "EX02_EARLY_1_5")
+    _offer(api, "EX03_AS_USUAL")
+    en, zh = _get(api), _get(api, "zh")
+    assert figures(en) == figures(zh)
+    assert [r["differentiator_text"] for r in en["needs_you"]] == [r["differentiator_text"] for r in zh["needs_you"]]
+    assert all(r["differentiator_text"] for r in zh["needs_you"])
+    # the quoted phrase is the buyer's message, not FLOW's word: it is the one string of the zh read left in the buyer's language
+    assert not english_leaks(zh, NAMES, raw_fields=[HREFS, r".*differentiator_text"])
+
+
+def test_a_lone_row_or_one_with_no_phrase_or_a_phrase_said_twice_has_no_differentiator() -> None:
+    lone = worklist._differentiate([_ask_row("a", "B1", "Foshan · Offer", "x"), _ask_row("b", "B2", "Foshan · Offer", "y")])
+    assert [r.differentiator for r in lone] == [None, None]  # two customers: no clash
+    rows = worklist._differentiate([_ask_row("a", "B1", "S", "same"), _ask_row("b", "B1", "S", "same"), _ask_row("c", "B1", "S", None),
+                                    _ask_row("d", "B1", "S", "own")])
+    assert [r.differentiator for r in rows] == [None, None, None, "“own”"]
+    assert [r.differentiator for r in worklist._differentiate([_ask_row("a", None, "S", "p"), _ask_row("b", None, "S", "q")])] == [None, None]

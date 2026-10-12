@@ -103,7 +103,7 @@ def test_the_block_for_foshan_on_the_golden_books(api: TestClient) -> None:
 def test_the_spare_room_when_asked(api: TestClient) -> None:
     body = _buyer(api, spare=1)
     assert body["spare_read"] is True and body["capacity"]["spare"]["x_star_fen"] == 8_100_000
-    assert body["band"]["capacity"] == "Accepting as asked leaves ¥81,000 of room for another payment; today ¥81,000."
+    assert body["band"]["capacity"] == "Room for another payment: ¥81,000 (today ¥81,000)."
 
 
 def test_it_is_the_deals_own_figures(api: TestClient) -> None:

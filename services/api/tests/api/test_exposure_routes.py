@@ -173,10 +173,14 @@ def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id:
     assert [spare[k]["figure_short"] for k in ("asked", a, b)] == ["¥14k", "¥0", "¥62k"]
     assert spare[a]["today_short"] == "¥81k" and spare[a]["refused_text"] is None
     assert spare[a]["shape_text"].startswith("Counted as a one-off payment of X today") and spare[a]["binding_text"]
-    assert body["band"]["capacity"] == ("Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.")
-    assert body["band"]["by_path"]["asked"]["capacity"] == "Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000."
-    assert body["band"]["by_path"][b]["capacity"] == "Option B leaves ¥62,000 of room for another payment; today ¥81,000."
+    assert body["band"]["capacity"] == "Room for another payment: ¥0 for the next 31 days (today ¥81,000)."
+    assert body["band"]["by_path"]["asked"]["capacity"] == "Room for another payment: ¥14,000 (today ¥81,000)."
+    assert body["band"]["by_path"][b]["capacity"] == "Room for another payment: ¥62,000 (today ¥81,000)."
     assert body["band"]["stress"] == body["band"]["by_path"][a]["stress"] == option_a["text"]
+    # the stress band's days below the minimum, in words, on every path's row
+    asked_days = body["stress"]["paths"]["asked"]["breach_days"]
+    assert now["breach_days_text"] == option_a["breach_days_text"] == "Below your minimum for 65 days"
+    assert body["stress"]["paths"]["asked"]["breach_days_text"] == f"Below your minimum for {asked_days} days"
 
     # capacity before and after: the line has ¥13.80 left through day 31 under Option A
     cap = body["capacity"][a]
@@ -243,7 +247,7 @@ def test_the_response_leads_the_band_and_nothing_else_changes(api: TestClient, o
     first = api.get(f"/offers/{offer_id}/exposure?response=asked").json()
     second = api.get(f"/offers/{offer_id}/exposure?response=counter:1").json()
     assert first["lead"] == "asked" and second["lead"] == second["paths"][2]["key"]
-    assert first["band"]["capacity"].startswith("Accepting as asked") and second["band"]["capacity"].startswith("Option B")
+    assert "¥14,000" in first["band"]["capacity"] and "¥62,000" in second["band"]["capacity"]
     drop = {"response", "lead", "band", "computed_in_seconds"}
     assert {k: v for k, v in first.items() if k not in drop} == {k: v for k, v in second.items() if k not in drop}
     assert first["band"]["by_path"] == second["band"]["by_path"]
@@ -492,9 +496,10 @@ def test_the_chinese_read_of_the_whole_block_has_the_same_figures_and_no_english
     assert figures({k: v for k, v in en.items() if k not in drop}) == figures({k: v for k, v in zh.items() if k not in drop})
     assert english_leaks(zh, NAMES) == []
     assert unchanged_words(en, zh, NAMES) == []
-    assert zh["band"]["capacity"] == "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。"
+    assert zh["band"]["capacity"] == "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。"
     assert zh["band"]["stress"] == "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。"
-    assert zh["band"]["by_path"]["asked"]["capacity"] == "按对方要求接受后，再支付一笔款项的余量为 ¥14,000；目前为 ¥81,000。"
+    assert zh["band"]["by_path"]["asked"]["capacity"] == "再支付一笔款项的余量：¥14,000（目前 ¥81,000）。"
+    assert zh["stress"]["paths"][zh["lead"]]["breach_days_text"] == "低于您的最低现金 65 天"
     assert zh["flag"]["text"] == "Foshan占您应收款的 100%"
     line = next(w for w in zh["capacity"][zh["lead"]]["after"]["windows"] if w["dimension"] == "credit_line")
     assert (line["label"], line["through_when"], line["facility_name"]) == ("授信额度余量", "31 天后", "Bank credit line")
@@ -577,3 +582,18 @@ def test_both_deal_reads_echo_the_customer_the_deal_and_the_scenario_beside_the_
     # a bare read has no context at all (the contract before the echoes), and the buyer-keyed read has no deal to echo
     assert "context" not in api.get(f"/offers/{offer_id}/exposure").json()
     assert "context" not in api.get("/buyers/BUYER-1/exposure").json()
+
+
+def test_the_stress_band_says_its_days_below_the_minimum_or_where_the_lowest_point_sits() -> None:
+    from types import SimpleNamespace
+
+    from app.strategy.exposure import breach_days_text
+
+    row = lambda days, low: SimpleNamespace(breach_days=days, lowest_fen=low)
+    floor = 30_000_000
+    assert breach_days_text(row(15, 1), floor, "en") == "Below your minimum for 15 days"  # type: ignore[arg-type]
+    assert breach_days_text(row(1, 1), floor, "en") == "Below your minimum for 1 day"  # type: ignore[arg-type]
+    assert breach_days_text(row(0, floor), floor, "en") == "At your minimum"  # type: ignore[arg-type]
+    assert breach_days_text(row(0, floor + 1), floor, "en") == "Above your minimum"  # type: ignore[arg-type]
+    assert breach_days_text(row(15, 1), floor, "zh") == "低于您的最低现金 15 天"  # type: ignore[arg-type]
+    assert breach_days_text(row(0, floor), floor, "zh") == "正好在您的最低现金"  # type: ignore[arg-type]

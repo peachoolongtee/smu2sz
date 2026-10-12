@@ -9,13 +9,16 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
     kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
                           plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`) and, structured, `with_plan` {label, value_text} (null with no plan figure).
     kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
-                          is pending; cash only when it lands) or NONE
+                          is pending; cash only when it lands) or NONE. `status_text` is its one status word: "Ready to run" (control
+                          RUN_PLAN), "Waiting for your approval" (APPROVE_PLAN), "Arranged" (`state_of`, after the run), null for NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
                           approval), the very parts `action.text` is built from; empty when the action carries no funding plan.
     chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
-                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none)
+                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none) and, on a read made with
+                          `?decision=` (and `?scenario=late`), `scenario_title_text` ("Foshan · Payment terms · As they asked vs Option A ·
+                          Expected payments"; null without a decision)
     links                 where the rest of the company's picture lives
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
@@ -42,10 +45,12 @@ from app.api.home_hybrid import (
     _sp,
     _tone,
 )
-from app.api.presentation import t, when_text, whole
+from app.api.presentation import party_name, t, when_text, whole
+from app.decisions.identity import offer_id_of
 from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
 from app.strategy import words as basis_words
+from app.strategy.payments import STRESS_DELAY_DAYS
 
 log = logging.getLogger("termsledger.decisions")
 _LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
@@ -56,6 +61,10 @@ _BASIS_WORD = {basis_words.OWED: ("owed", "应收"), basis_words.SCHEDULED: ("sc
 def _planned(lang: str) -> str:
     """The word for a plan that is ready and has not run: the financing vocabulary's own (`state_of` PLANNED: "planned", "计划中")."""
     return state_word(lang, state_of(None, planned=True))
+
+
+def _cap(word: str) -> str:
+    return word[:1].upper() + word[1:]
 
 
 def _digit_gap(text: str) -> str:
@@ -91,10 +100,13 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
     gap = low_fen - floor
     if gap > 0:
         where = t(lang, f"{_short(gap)} above your minimum {when}", f"比您的最低现金高 {_short(gap)}（{when}）")
+        short = t(lang, f"{_short(gap)} above your minimum {when}", f"{when}高于最低现金 {_short(gap)}")
     elif gap == 0:
         where = t(lang, f"reaches your minimum {when}", f"{when}达到您的最低现金")
+        short = t(lang, f"At your minimum {when}", f"{when}正好是最低现金")
     else:
         where = t(lang, f"{_short(-gap)} below your minimum {when}", f"比您的最低现金低 {_short(-gap)}（{when}）")
+        short = t(lang, f"{_short(-gap)} shortfall {when}", f"{when}缺口 {_short(-gap)}")
     basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if _plan_has_run(c.state)
              else t(lang, "current books, no new funding", "当前账目，未新增融资"))
     if c.plan_traj is not None:
@@ -106,7 +118,7 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
         with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
+            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:
@@ -130,7 +142,7 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
         owed = whole(sum(lot.remaining_fen for lot in pending))
         return {"state": "ARRANGED", "eyebrow": _eyebrow(lang, "Funding arranged", "已安排的融资"),
                 "value_display": t(lang, f"{owed} pending", f"待到账 {owed}"), "note": " · ".join(parts),
-                "hint": t(lang, "Counted as cash only when it lands.", "到账后才计入现金。")}
+                "status_text": _cap(state_word(lang, "ARRANGED")), "hint": t(lang, "Counted as cash only when it lands.", "到账后才计入现金。")}
     if c.plan_traj is not None and a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
         legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
         kinds = {"DRAW_FACILITY": t(lang, "credit line", "信用额度"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
@@ -138,9 +150,11 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
                             f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}，{leg['lands_when']}") for leg in legs)
         who = t(lang, "approving", "批准") if c.waiting else t(lang, "running", "执行")
         return {"state": "PROPOSED", "eyebrow": t(lang, f"{_planned(lang).upper()} FUNDING", f"{_planned(lang)}的融资"), "value_display": whole(a["receive_fen"]),
-                "note": note, "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
+                "note": note, "status_text": (t(lang, "Waiting for your approval", "等待您批准") if c.waiting
+                                              else t(lang, "Ready to run", "可以执行")),
+                "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
     return {"state": "NONE", "eyebrow": _eyebrow(lang, "Funding", "融资"), "value_display": t(lang, "None", "无"),
-            "note": funding_line["text"], "hint": None}
+            "note": funding_line["text"], "status_text": None, "hint": None}
 
 
 # ---------------------------------------------------------------- the one next action
@@ -318,9 +332,46 @@ def _chart(c: HomeRead, rail: list[dict[str, Any]] | None) -> dict[str, Any]:
             "lowest_inspector": {"day_text": t(lang, f"The lowest point · {when}", f"最低点 · {when}"),
                                  "projected_display": whole(low_fen), "minimum_display": whole(floor),
                                  "third_label": third[0], "third_display": third[1], "note": note},
-            "lowest": {"cause": _lowest_cause(rail)},
+            "lowest": {"cause": _lowest_cause(rail)}, "scenario_title_text": _scenario_title(c),
             "note": t(lang, "Current books, nothing new assumed. The same figures as Cash & Funding.",
                       "当前账目，没有假设任何新增事项。数字与现金与融资页一致。")}
+
+
+def _scenario_title(c: HomeRead) -> str | None:
+    """The chart's title for a deal read: "Foshan · Payment terms · As they asked vs Option A · Expected payments", the offer's own subject
+    words (the worklist row's), the offer picture's path labels (the asked path and the recommended reply) and the scenario's word. Null
+    without a decision, for a decision that is not a deal on the books, or when the deal has no picture to name paths from."""
+    if not c.decision:
+        return None
+    from fastapi import HTTPException
+
+    from app.api.offer_picture import cached_picture
+    from app.api.worklist import _topic
+
+    lang = c.lang
+    offer_id = offer_id_of(c.decision)
+    try:
+        offer = c.rt.store.get_offer(offer_id) if offer_id else None
+        if offer is None:
+            return None
+        who = basis_words.buyer_short(party_name(c.state, offer.counterparty_id))
+        pic = cached_picture(c.rt, offer.offer_id, lang)
+    except HTTPException:  # no verdict yet: there is no picture to name paths from
+        return None
+    except Exception:
+        log.exception("the offer picture could not be read for the Home V2 chart title")
+        if c.partial is not None:
+            c.partial.add("home_v2")
+        return None
+    paths = pic.get("paths") or []
+    if not pic.get("available") or not paths:
+        return None
+    asked = next((p for p in paths if p["kind"] == "asked"), paths[0])
+    reply = next((p for p in paths if p["kind"] == "reply" and p["recommended"]), None)
+    compare = t(lang, f"{asked['label']} vs {reply['label']}", f"{asked['label']} 对比 {reply['label']}") if reply is not None else asked["label"]
+    scenario = (t(lang, f"{who} {STRESS_DELAY_DAYS} days late", f"{who}晚付 {STRESS_DELAY_DAYS} 天") if c.scenario == "late"
+                else t(lang, "Expected payments", "预期收款"))
+    return f"{who} · {_topic(offer, lang)} · {compare} · {scenario}"
 
 
 def _links(c: HomeRead) -> list[dict[str, str]]:
