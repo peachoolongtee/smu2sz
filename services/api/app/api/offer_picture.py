@@ -362,7 +362,7 @@ def _cost_basis(once: int, forward: int, months: int, net: bool, lang: str) -> t
     return fmt_yuan(0), say(lang, "nothing to pay", "无需付出成本")
 
 
-def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str) -> dict[str, Any]:
+def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str, plan_cost_fen: int = 0) -> dict[str, Any]:
     """One reply's cost on the common basis: the 12-month figure when the verifier gives one, else the one-off, with the basis said and
     the two kernel parts beside it (never added here). A reply whose net is the funding cost less a price offset carries both
     components, from the `dev` page's own `counter_economics`."""
@@ -383,6 +383,9 @@ def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str) -> dic
                            f"{_pct(price.rate_bp, absolute=True)} 提价的抵补")
                        if price is not None and price.rate_bp is not None and price.rate_bp > 0
                        else say(lang, "Offset by the price adjustment", "价格调整的抵补")), "display": eco["offset_display"]}]
+        if plan_cost_fen > 0:  # the router's plan that funds the shortfall on these terms: beside the net, which the verifier does not add it to
+            components.append({"label": say(lang, "Funding plan for the shortfall (not in the net)", "补足缺口的融资方案（不计入净额）"),
+                               "display": fmt_yuan(plan_cost_fen)})
     total, basis = _cost_basis(once, forward, months, bool(components), lang)
     return {"cost_total_display": total, "cost_basis_text": basis,
             "cost_once_display": fmt_yuan(once) if once > 0 else None,
@@ -409,7 +412,7 @@ def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable:
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
            breach: tuple[int, int] | None, replies: list[dict[str, Any]], trajs: dict[str, Any], flagged: set[str],
-           rechecked: dict[str, Any]) -> list[dict[str, Any]]:
+           rechecked: dict[str, Any], plan_costs: dict[str, int]) -> list[dict[str, Any]]:
     """One entry per line on the chart: the offer as asked, then each reply in the verdict's order, with every word its column says.
     Each figure and word is the verdict's, the workspace's or the executor's own (see the comment on each). `flagged` holds the ids of
     the replies whose funding plan needs the owner's approval; `rechecked` the verifier's verdict on each reply as an agreement."""
@@ -496,7 +499,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         paths.append(_path_entry(
             key=c.id, kind="reply", label=r["label"], recommended=recommended, sendable=sendable, needs_owner=needs_owner,
             tag=("recommended" if recommended else "approval" if needs_owner else "over" if r_authority == OVER_LIMIT else None), cost_display=fmt_yuan(c.supplier_cost_fen),
-            cost_note=_cost_note_reply(c, months, lang), cost=_reply_cost(c, state, mandate, months, lang),
+            cost_note=_cost_note_reply(c, months, lang), cost=_reply_cost(c, state, mandate, months, lang, plan_costs.get(c.id, 0)),
             terms=_terms_view(_term_rows(state, obligations, buyer, lang), asked_rows, lang),
             decides=_decides(lang, r_authority, r_text, sendable, needs_owner, terms_change), authority=r_authority,
             authority_text=r_text, assumption=say(lang, "If the buyer accepts this reply", "如果买方接受此回复"),
@@ -743,6 +746,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     replies = []
     trajs: dict[str, Any] = {}
     flagged: set[str] = set()  # the replies whose funding plan needs the owner's approval
+    plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
         label = option_label(c.label, lang)
@@ -756,6 +760,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                             "lowest_when": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
             continue
         trajs[c.id] = traj
+        plan_costs[c.id] = funding.total_cost_fen
         if funding.needs_owner_approval:
             flagged.add(c.id)
         if actions:
@@ -775,7 +780,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
-    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked)
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
     return {

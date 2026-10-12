@@ -114,9 +114,12 @@ def test_every_path_states_its_cost_on_a_basis_and_option_b_carries_its_componen
     assert economics["funding_cost_display"] == "¥16,217.95" and economics["offset_display"] == "¥16,380.00"
     assert opt_b["cost_display"] == "¥0.00" and opt_b["cost_basis_text"] == "net over 12 months"
     assert opt_b["cost_components"] == [{"label": "Funding cost of the longer terms", "display": economics["funding_cost_display"]},
-                                        {"label": "Offset by the 0.30% price rise", "display": economics["offset_display"]}]
+                                        {"label": "Offset by the 0.30% price rise", "display": economics["offset_display"]},
+                                        # the router's plan that funds the shortfall on these terms: beside the net, which the verifier does not add it to
+                                        {"label": "Funding plan for the shortfall (not in the net)", "display": "¥3,706.46"}]
+    assert "cost ¥3,706.46" in view["counters"][1]["formula"] and opt_b["cost_total_display"] == "¥0.00"
     zh = _paths(client, oid, "zh")[2]
-    assert [c["display"] for c in zh["cost_components"]] == ["¥16,217.95", "¥16,380.00"]
+    assert [c["display"] for c in zh["cost_components"]] == ["¥16,217.95", "¥16,380.00", "¥3,706.46"]
     assert [c["label"] for c in zh["cost_components"]] != [c["label"] for c in opt_b["cost_components"]]
     assert zh["cost_basis_text"] != opt_b["cost_basis_text"]
 
