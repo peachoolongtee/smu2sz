@@ -1,7 +1,8 @@
 """The Safe Deal Envelope route (flag `envelope`; docs/STRATEGY_MVP_BRIEF.md sections 4 and 5.2).
 
-GET /buyers/{buyer_id}/envelope?zone=0|1&lang=en|zh answers what the supplier can live with for one named buyer,
-as approved packages. Read-only and hypothetical: it never writes, logs an operation or stores a verdict. The sweep
+GET /buyers/{buyer_id}/envelope?zone=0|1&ask=T&lang=en|zh answers what the supplier can live with for one named buyer,
+as approved packages, and with `ask` what makes the buyer's asked terms T work (P4: the smallest price, else the early
+payment that does; read on demand and cached apart like the zone, 32 entries keyed by the sweep's key and T). Read-only and hypothetical: it never writes, logs an operation or stores a verdict. The sweep
 is language-neutral and cached (32 entries each for the sweep and for the zone table, by the books, the mandate, the day,
 the buyer and the commitments; the table is cached apart so that asking for it after a read without it adds only its own
 cost; one request computes a key while the others wait for it); the sentences are worded per request. The books are read
@@ -17,35 +18,44 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.api.customer_overview import share_of_year, twelve_months_of, year_held
 from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.runtime import get_runtime
 from app.books import books_from_store
+from app.config import get_settings
 from app.financial import EngineError
 from app.strategy.cache import CACHE_SIZE, AnswerCache, cache_key
 from app.strategy.envelope import (
+    AskFacts,
+    Economics,
     EnvelopeFacts,
     ZoneFacts,
     envelope_answer,
+    envelope_ask,
     envelope_facts,
     envelope_zone,
     out_of_range_facts,
 )
+from app.strategy.inputs import inputs_from_store
 
 router = APIRouter()
 log = logging.getLogger(__name__)
 
 _cache: AnswerCache[EnvelopeFacts] = AnswerCache(CACHE_SIZE)
 _zone_cache: AnswerCache[ZoneFacts] = AnswerCache(CACHE_SIZE)
+_ask_cache: AnswerCache[AskFacts] = AnswerCache(CACHE_SIZE)
 
 
 def clear_cache() -> None:
     _cache.clear()
     _zone_cache.clear()
+    _ask_cache.clear()
 
 
 @router.get("/buyers/{buyer_id}/envelope")
-def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
+def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | None = Query(None, ge=1, le=365),
+                 lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
     require_feature("envelope")
     started = time.perf_counter()
     rt = get_runtime()
@@ -54,6 +64,7 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), lang: Literal[
         mandate = rt.store.get_mandate()
         commitments = tuple(rt.store.commitments())
         day = rt.day
+        inputs = inputs_from_store(rt.store) if get_settings().features.customer_economics else None
     state = books.state
     if not any(c.id == buyer_id for c in state.counterparties):
         raise HTTPException(404, detail={"code": "BUYER_NOT_FOUND", "message": f"There is no buyer {buyer_id} on the books."})
@@ -84,6 +95,31 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), lang: Literal[
         except ValueError:  # a table row off the levers' grids: the same refusal the whole sweep would have given
             log.warning("envelope zone for %s is outside the levers' ranges", buyer_id, exc_info=True)
             facts = out_of_range_facts(books, day=day, buyer_id=buyer_id)
-    answer = envelope_answer(facts, lang)
+    asked: AskFacts | None = None
+    if ask is not None and not facts.refused:  # cached apart: the ask's searches are its own, read only when asked
+
+        def ask_sweep() -> AskFacts:
+            try:
+                return envelope_ask(books, mandate, day=day, buyer_id=buyer_id, trusted_owner_key_hex=rt.owner_key_hex,
+                                    terms=ask, commitments=commitments)
+            except EngineError as exc:
+                raise HTTPException(422, f"cannot project: {exc}") from None
+
+        try:
+            asked = _ask_cache.get_or_compute(f"{key}|ask={ask}", ask_sweep)
+            facts = replace(facts, evaluations=facts.evaluations + asked.evaluations, seconds=facts.seconds + asked.seconds)
+        except ValueError:  # an ask package off the levers' grids: the ask alone is refused, the envelope stands
+            log.warning("envelope ask for %s is outside the levers' ranges", buyer_id, exc_info=True)
+            asked = AskFacts(ask, facts.current_terms, facts.receivable_face_fen, None, None, None, None, None, True, 0, 0.0,
+                             refusal="out_of_range")
+    economics: Economics | None = None
+    if inputs is not None and not facts.refused:  # the economics line, composed from the Customer overview's one function
+        year = year_held(state, inputs, buyer_id, max(day, state.as_of_day))
+        if year is not None:
+            horizon = mandate.forward_concession_horizon_days
+            contribution = year.contribution_fen
+            economics = Economics(contribution, year.assumed, year.gross,
+                                  lambda fen: share_of_year(twelve_months_of(fen, horizon), contribution))
+    answer = envelope_answer(facts, lang, asked, economics)
     return {**displayed(answer.model_dump(mode="json")), "state_version": state.state_version, "day": day,
             "computed_in_seconds": round(time.perf_counter() - started, 3)}
