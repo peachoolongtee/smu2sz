@@ -50,13 +50,12 @@ from app.api.presentation import (
 from app.books import Books
 from app.decisions.identity import offer_id_of
 from app.domain.models import FinancialState, LedgerEventKind, Mandate, Mode
-from app.domain.money import fmt_yuan_about
 from app.financial import EngineError, project
 from app.strategy.concentration import concentration
 from app.strategy.exposure import DO_NOTHING
 from app.strategy.inputs import CustomerInputs
 from app.strategy.net import net_at_collection
-from app.strategy.words import buyer_short, share_text
+from app.strategy.words import buyer_short, net_later_text, share_text
 
 log = logging.getLogger("termsledger.decisions")
 
@@ -283,6 +282,4 @@ def net_later(state: FinancialState, buyer_id: str, today: int, delay: int, lang
     if not owed:
         return None
     total = sum(net_at_collection(state, r, max(today, r.due_day) + delay).net_fen for r in owed)
-    when = t(lang, "a month later", "一个月后") if delay == 30 else t(lang, f"{delay} days later", f"{delay} 天后")
-    return {"net_later_fen": total,
-            "net_later_text": t(lang, f"about {fmt_yuan_about(total)}, {when}", f"约 {fmt_yuan_about(total)}，{when}")}
+    return {"net_later_fen": total, "net_later_text": net_later_text(lang, total, delay)}

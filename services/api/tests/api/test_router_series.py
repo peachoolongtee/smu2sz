@@ -15,6 +15,9 @@ def test_the_recommended_row_draws_the_line_the_home_draws(client):
     client.post("/demo/reset", json={})
     rows = _rows(client)
     home = client.get("/home").json()["cash"]["plan_series"]
+    for point in home:  # the home's receipt events also say what they rest on (ticket #116); the router's rows do not
+        for event in point["events"]:
+            event.pop("basis", None), event.pop("basis_text", None)
     assert rows["router_optimum"]["role"] == "recommended" and rows["router_optimum"]["series"] == home
     assert rows["router_optimum"]["series_note"] is None
     assert set(rows["router_optimum"]["series"][0]) >= {"day", "closing_fen", "closing_display", "events", "net_fen", "net_display", "net_short"}
