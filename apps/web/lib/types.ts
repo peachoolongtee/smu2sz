@@ -3432,13 +3432,13 @@ export interface ExposureView {
   };
   payments: { sentence: string; insufficient: boolean };
   payments_note: string | null;
-  stress: { delay_days: number; now: ExposureStress; paths: Record<string, ExposureStress> };
-  capacity: Record<string, ExposureCapacity>;
+  stress: { delay_days: number; now: ExposureStress; paths: Record<string, ExposureStress | null> };
+  capacity: Record<string, ExposureCapacity | null>;
   /** Contribution, set only with the economics flag (phase 2); absent or null otherwise. */
   economics?: { annual_text?: string | null; contribution_display?: string | null; estimated?: boolean; sentence?: string | null; context_text?: string | null } | null;
   customer_context?: CustomerContextWords | null;
   flag: { material: boolean; text: string };
   /** The band's sentences: the concentration, then the stress and the capacity for the leading path and for every path. */
-  band: { concentration: string; stress: string; capacity: string | null; by_path: Record<string, { stress: string; capacity: string | null }> };
+  band: { concentration: string; stress: string; capacity: string | null; by_path: Record<string, { stress: string; capacity: string | null } | null> };
   day: Day;
 }

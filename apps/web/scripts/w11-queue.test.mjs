@@ -49,9 +49,10 @@ test("the exposure recording holds both languages, every path's sentences and no
     // The appended do-nothing path is words only (no band, stress or room entry); every path carries its table words; the aside has the customer's words.
     assert.equal(v.paths.at(-1).kind, "do_nothing");
     for (const p of v.paths) assert.ok(p.lowest_display && p.share_after_text, `${lang} ${p.key} has its table words`);
-    assert.equal(v.band.by_path.do_nothing, undefined);
-    assert.equal(v.stress.paths.do_nothing, undefined);
-    assert.equal(v.capacity.do_nothing, undefined);
+    // (the server keeps an explicit null for it in each map)
+    assert.ok(v.band.by_path.do_nothing == null);
+    assert.ok(v.stress.paths.do_nothing == null);
+    assert.ok(v.capacity.do_nothing == null);
     assert.ok(v.customer_context.owes_display && v.customer_context.profile_href);
     assert.ok(v.capacity.asked.spare.x_star_display);
   }

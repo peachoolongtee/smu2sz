@@ -19,7 +19,7 @@
         "lowest_when_text": "below it for 15 days",
         "limit_word": "EXCEEDED",
         "limit_text": "exceeded",
-        "share_after_text": "100%, for 15 days longer"
+        "share_after_text": "0%, for 15 days longer"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -30,7 +30,7 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "100%, paid 2 days after the offer"
+        "share_after_text": "0%, paid 2 days after the offer"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -41,7 +41,7 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "100%, for 10 days longer"
+        "share_after_text": "0%, for 10 days longer"
       },
       {
         "key": "do_nothing",
@@ -50,8 +50,8 @@
         "lowest_display": "−¥105k",
         "lowest_when": "in 30 days",
         "lowest_when_text": "below it for 20 days",
-        "limit_word": "WITHIN",
-        "limit_text": "within",
+        "limit_word": null,
+        "limit_text": null,
         "share_after_text": "100%"
       }
     ],
@@ -2639,7 +2639,8 @@
           "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
-        }
+        },
+        "do_nothing": null
       },
       "also": []
     },
@@ -4068,7 +4069,8 @@
           "step_display": "¥1,000.00",
           "ceiling_display": "¥600,000.00"
         }
-      }
+      },
+      "do_nothing": null
     },
     "economics": null,
     "loss": null,
@@ -4078,6 +4080,13 @@
       "text": "Foshan is 100% of what you are owed",
       "min_share_bp": 5000,
       "min_share_display": "50.00%"
+    },
+    "customer_context": {
+      "contribution_display": "about ¥1.09m",
+      "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
+      "owes_display": "¥420,000",
+      "share_text": "100%",
+      "profile_href": "/customers/BUYER-1"
     },
     "spare_read": true,
     "lead": "asked",
@@ -4097,15 +4106,9 @@
         "CTR-6b07cbf70441": {
           "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
           "capacity": "Option B leaves ¥62,000 of room for another payment; today ¥81,000."
-        }
+        },
+        "do_nothing": null
       }
-    },
-    "customer_context": {
-      "contribution_display": "about ¥1.09m",
-      "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
-      "owes_display": "¥420,000",
-      "share_text": "100%",
-      "profile_href": "/customers/BUYER-1"
     },
     "state_version": 1,
     "day": 0,
@@ -4131,7 +4134,7 @@
         "lowest_when_text": "低于最低现金 15 天",
         "limit_word": "EXCEEDED",
         "limit_text": "超出授权",
-        "share_after_text": "100%，多持续 15 天"
+        "share_after_text": "0%，多持续 15 天"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -4142,7 +4145,7 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "100%，报价后 2 天付款"
+        "share_after_text": "0%，报价后 2 天付款"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -4153,7 +4156,7 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "100%，多持续 10 天"
+        "share_after_text": "0%，多持续 10 天"
       },
       {
         "key": "do_nothing",
@@ -4162,8 +4165,8 @@
         "lowest_display": "−¥105k",
         "lowest_when": "30 天后",
         "lowest_when_text": "低于最低现金 20 天",
-        "limit_word": "WITHIN",
-        "limit_text": "在授权内",
+        "limit_word": null,
+        "limit_text": null,
         "share_after_text": "100%"
       }
     ],
@@ -6751,7 +6754,8 @@
           "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
-        }
+        },
+        "do_nothing": null
       },
       "also": []
     },
@@ -8180,7 +8184,8 @@
           "step_display": "¥1,000.00",
           "ceiling_display": "¥600,000.00"
         }
-      }
+      },
+      "do_nothing": null
     },
     "economics": null,
     "loss": null,
@@ -8190,6 +8195,13 @@
       "text": "Foshan占您应收款的 100%",
       "min_share_bp": 5000,
       "min_share_display": "50.00%"
+    },
+    "customer_context": {
+      "contribution_display": "约 ¥109万",
+      "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
+      "owes_display": "¥420,000",
+      "share_text": "100%",
+      "profile_href": "/customers/BUYER-1"
     },
     "spare_read": true,
     "lead": "asked",
@@ -8209,15 +8221,9 @@
         "CTR-6b07cbf70441": {
           "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
           "capacity": "采用方案 B 后，再支付一笔款项的余量为 ¥62,000；目前为 ¥81,000。"
-        }
+        },
+        "do_nothing": null
       }
-    },
-    "customer_context": {
-      "contribution_display": "约 ¥109万",
-      "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
-      "owes_display": "¥420,000",
-      "share_text": "100%",
-      "profile_href": "/customers/BUYER-1"
     },
     "state_version": 1,
     "day": 0,

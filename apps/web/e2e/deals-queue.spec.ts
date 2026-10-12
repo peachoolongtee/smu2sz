@@ -149,7 +149,9 @@ test("the comparison is closed by default; open it for seven rows with the serve
   for (const [w, i] of [[nothing, 1], [words("asked"), 2], [words(reply.key), 3]] as const) {
     await expect(page.getByTestId("queue-impact-lowest").locator("td").nth(i - 1)).toContainText(w.lowest_display);
     await expect(page.getByTestId("queue-impact-lowest").locator("td").nth(i - 1)).toContainText(w.lowest_when_text);
-    await expect(page.getByTestId("queue-impact-limit").locator("td").nth(i - 1)).toHaveText(w.limit_text);
+    // A null `limit_word` (the do-nothing path, or a reply the picture cannot price) is a dash, never a word of ours.
+    if (w.limit_word) await expect(page.getByTestId("queue-impact-limit").locator("td").nth(i - 1)).toHaveText(w.limit_text);
+    else await expect(page.getByTestId("queue-impact-limit").locator("td").nth(i - 1)).toContainText("—");
     await expect(page.getByTestId("queue-impact-share").locator("td").nth(i - 1)).toHaveText(w.share_after_text);
   }
   await expect(page.getByTestId("queue-impact-spare")).toContainText(exposureEn.capacity.asked.spare.today_display);
