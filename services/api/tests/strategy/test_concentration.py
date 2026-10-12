@@ -149,9 +149,9 @@ def test_day_29_is_in_the_30_day_window_day_30_is_out_and_an_overdue_invoice_nev
                 min_size=0, max_size=8))
 def test_p6_p7_shares_are_exact_bounded_sum_to_one_and_follow_the_open_ar(rows: list[tuple[int, int, int, str, int]]) -> None:
     receivables = []
-    for i, (b, face, settled_pct, status, due) in enumerate(rows):
+    for i, (who, face, settled_pct, status, due) in enumerate(rows):
         settled = face if status == "SETTLED" else face * min(settled_pct, 99) // 100
-        receivables.append(_rcv(i, BUYERS[b], face, due=due, settled=settled, status=status))
+        receivables.append(_rcv(i, BUYERS[who], face, due=due, settled=settled, status=status))
     books = _books(receivables)
     open_ = [r for r in receivables if r.status == "OPEN"]
     total = sum(r.outstanding_fen for r in open_)
@@ -175,7 +175,7 @@ def test_p6_p7_shares_are_exact_bounded_sum_to_one_and_follow_the_open_ar(rows: 
         due_shares.append(Fraction(mine_due, due_total) if due_total else None)
     for xs in (shares, due_shares):
         if xs[0] is not None:
-            assert sum(xs) == 1  # exact: nothing adjusted
+            assert sum((x for x in xs if x is not None), Fraction(0)) == 1  # exact: nothing adjusted
 
 
 @settings(max_examples=40, deadline=None)

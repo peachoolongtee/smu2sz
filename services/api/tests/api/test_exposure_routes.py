@@ -160,7 +160,12 @@ def test_the_owners_inputs_reach_the_block(api: TestClient, offer_id: str) -> No
 def test_one_computation_serves_every_repeat_and_both_ids(api: TestClient, offer_id: str, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
     real = route.concentration
-    monkeypatch.setattr(route, "concentration", lambda *a, **k: calls.append("c") or real(*a, **k))
+
+    def counted(*a: Any, **k: Any) -> Any:
+        calls.append("c")
+        return real(*a, **k)
+
+    monkeypatch.setattr(route, "concentration", counted)
     for url in (f"/offers/{offer_id}/exposure", f"/offers/{offer_id}/exposure", f"/decisions/deal:{offer_id}/exposure"):
         assert api.get(url).status_code == 200
     assert calls == ["c"]
@@ -177,7 +182,12 @@ def test_the_key_follows_the_books_the_day_and_the_commitments(api: TestClient, 
                                                               monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
     real = route.concentration
-    monkeypatch.setattr(route, "concentration", lambda *a, **k: calls.append("c") or real(*a, **k))
+
+    def counted(*a: Any, **k: Any) -> Any:
+        calls.append("c")
+        return real(*a, **k)
+
+    monkeypatch.setattr(route, "concentration", counted)
     api.get(f"/offers/{offer_id}/exposure")
     assert api.post("/clock/advance", json={"to_day": 3}).status_code == 200
     body = api.get(f"/offers/{offer_id}/exposure").json()
