@@ -160,7 +160,7 @@
               "key": "capacity",
               "label": "Spare capacity",
               "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.",
+              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -496,7 +496,7 @@
               "key": "capacity",
               "label": "Spare capacity",
               "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.",
+              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -693,7 +693,7 @@
               "key": "capacity",
               "label": "Spare capacity",
               "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.",
+              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -890,7 +890,7 @@
               "key": "capacity",
               "label": "Spare capacity",
               "value_display": "¥81,000 today; ¥0 if Foshan accepts Option A",
-              "note": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.",
+              "note": "Room for another payment: ¥0 for the next 31 days (today ¥81,000).",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1091,7 +1091,7 @@
               "key": "capacity",
               "label": "可用余量",
               "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。",
+              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1427,7 +1427,7 @@
               "key": "capacity",
               "label": "可用余量",
               "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。",
+              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1624,7 +1624,7 @@
               "key": "capacity",
               "label": "可用余量",
               "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。",
+              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""
@@ -1821,7 +1821,7 @@
               "key": "capacity",
               "label": "可用余量",
               "value_display": "今天 ¥81,000；如果Foshan接受方案 A，¥0",
-              "note": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。",
+              "note": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。",
               "tone": "neutral",
               "state": "none",
               "state_text": ""

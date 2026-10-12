@@ -791,6 +791,12 @@ export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promis
   return view ? { ...view, offer_id: offerId } : null;
 }
 
+/** The deal chart's title for Home V2: Home V2's recording while the package offer is open; else null. */
+export async function getDealTitle(lang: "en" | "zh"): Promise<string | null> {
+  await delay();
+  return homeV2.mockDealTitle(homeV2Point(), lang);
+}
+
 /** GET /offers/{id}/exposure for Home V2's deal focus: the recording of the package offer's exposure while that offer is open on the books, else absent (null). */
 export async function getDealExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   await delay();

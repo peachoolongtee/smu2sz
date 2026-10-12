@@ -25,7 +25,7 @@ export function CashBufferIndicator({ buffer, label }: { buffer: Buffer; label: 
   const clamp = (pos: number) => Math.min(Math.max(pos, 14), 86);
   return (
     <div role="img" aria-label={label} className="mt-3 max-w-[220px]" data-testid="home-buffer" data-min={min.toFixed(0)} data-cash={cash.toFixed(0)}>
-      <div className="relative h-5">
+      <div className="relative h-4 sm:h-5">
         {buffer.headroom_text ? (
           <span className="absolute -translate-x-1/2 whitespace-nowrap text-supporting font-bold text-ok-fg" style={{ left: `${clamp(cash)}%` }} data-testid="home-buffer-headroom">
             {buffer.headroom_text}
@@ -37,7 +37,7 @@ export function CashBufferIndicator({ buffer, label }: { buffer: Buffer; label: 
         <span className="absolute top-px h-3 w-0.5 rounded-pill bg-warn-solid" style={{ left: `${min}%` }} data-testid="home-buffer-min" />
         <span className="absolute top-0.5 size-2.5 -translate-x-1/2 rounded-pill bg-brand-600 ring-2 ring-surface" style={{ left: `${cash}%` }} data-testid="home-buffer-cash" />
       </div>
-      <div className="relative h-5">
+      <div className="relative h-4 sm:h-5">
         <span className="absolute -translate-x-1/2 whitespace-nowrap text-supporting text-warn-fg" style={{ left: `${clamp(min)}%` }} data-testid="home-buffer-min-text">
           {buffer.minimum_text ?? t("hv2.buffer.min", { amount: buffer.min_display })}
         </span>
@@ -98,6 +98,7 @@ export function CompanyStrip({ kpis }: { kpis: HomeV2["kpis"] }) {
         value={funding.value_display}
         tone={funded ? "plan" : "ink"}
         note={funding.note}
+        noteSm={!funding.status_text}
         info={funding.hint}
         infoLabel={t("hv2.metric.info", { label: t("hv2.metric.funding") })}
       >

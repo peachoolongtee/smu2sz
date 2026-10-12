@@ -19,7 +19,8 @@
         "lowest_when_text": "below it for 15 days",
         "limit_word": "EXCEEDED",
         "limit_text": "exceeded",
-        "share_after_text": "100%, for 15 days longer"
+        "share_after_text": "100%, for 15 days longer",
+        "scenario_assumption_text": "Assumes the buyer accepts this offer and FLOW takes no new funding."
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -30,7 +31,8 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "100%, paid 2 days after the offer"
+        "share_after_text": "100%, paid 2 days after the offer",
+        "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower."
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -41,7 +43,8 @@
         "lowest_when_text": "at your minimum",
         "limit_word": "WITHIN",
         "limit_text": "within",
-        "share_after_text": "100%, for 10 days longer"
+        "share_after_text": "100%, for 10 days longer",
+        "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥90k credit-line draw today, ¥315k invoice financing in 3 days); without the plan, cash falls lower."
       },
       {
         "key": "do_nothing",
@@ -52,7 +55,8 @@
         "lowest_when_text": "below it for 20 days",
         "limit_word": null,
         "limit_text": null,
-        "share_after_text": "100%, until the due day"
+        "share_after_text": "100%, until the due day",
+        "scenario_assumption_text": "The books as they stand, no new funding."
       }
     ],
     "concentration": {
@@ -746,6 +750,7 @@
         "first_breach_when": "in 12 days",
         "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "breach_days_text": "Below your minimum for 65 days",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -1377,6 +1382,7 @@
           "first_breach_when": "in 12 days",
           "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
           "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+          "breach_days_text": "Below your minimum for 80 days",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -2007,6 +2013,7 @@
           "first_breach_when": "in 12 days",
           "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
           "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+          "breach_days_text": "Below your minimum for 65 days",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -2637,6 +2644,7 @@
           "first_breach_when": "in 12 days",
           "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
           "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+          "breach_days_text": "Below your minimum for 75 days",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -3110,7 +3118,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 11,
-          "seconds": 0.183,
+          "seconds": 0.166,
           "shape_text": "Counted as a one-off payment of X today that does not come back within the horizon, without another facility or your approval, with every step one FLOW can run today.",
           "binding_text": "Invoice financing (onboarded platform): advance ¥1,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
           "refused_text": null,
@@ -3585,7 +3593,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 10,
-          "seconds": 0.205,
+          "seconds": 0.177,
           "shape_text": "Counted as a one-off payment of X today that does not come back within the horizon, without another facility or your approval, with every step one FLOW can run today.",
           "binding_text": "Invoice financing (onboarded platform): advance ¥1,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 47 days: the yearly cost of 15.49% is above the 15.00% limit you signed for funding without your approval (all charges on ¥1,000.00 held 42 days (from in 5 days to in 47 days), annualised = 15.49%)",
           "refused_text": null,
@@ -4060,7 +4068,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 11,
-          "seconds": 0.621,
+          "seconds": 0.584,
           "shape_text": "Counted as a one-off payment of X today that does not come back within the horizon, without another facility or your approval, with every step one FLOW can run today.",
           "binding_text": "Invoice financing (onboarded platform): advance ¥1,000.00 on the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days: the ¥420,000.00 invoice to Foshan Home Retail Co. due in 77 days is not an invoice the executor can finance today; it is issued in 32 days",
           "refused_text": null,
@@ -4093,26 +4101,26 @@
     "band": {
       "concentration": "Foshan is 100% of what you are owed today (¥420,000). No customer receipts are due in the next 30 days.",
       "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
-      "capacity": "Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000.",
+      "capacity": "Room for another payment: ¥14,000 (today ¥81,000).",
       "by_path": {
         "asked": {
           "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
-          "capacity": "Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000."
+          "capacity": "Room for another payment: ¥14,000 (today ¥81,000)."
         },
         "CTR-193394b6ba8b": {
           "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
-          "capacity": "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000."
+          "capacity": "Room for another payment: ¥0 for the next 31 days (today ¥81,000)."
         },
         "CTR-6b07cbf70441": {
           "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
-          "capacity": "Option B leaves ¥62,000 of room for another payment; today ¥81,000."
+          "capacity": "Room for another payment: ¥62,000 (today ¥81,000)."
         },
         "do_nothing": null
       }
     },
     "state_version": 1,
     "day": 0,
-    "computed_in_seconds": 2.008,
+    "computed_in_seconds": 1.884,
     "context": {
       "back": {
         "label": "Back to Foshan",
@@ -4143,7 +4151,8 @@
         "lowest_when_text": "低于最低现金 15 天",
         "limit_word": "EXCEEDED",
         "limit_text": "超出授权",
-        "share_after_text": "100%，多持续 15 天"
+        "share_after_text": "100%，多持续 15 天",
+        "scenario_assumption_text": "假设买方接受此报价，且 FLOW 不新增融资。"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -4154,7 +4163,8 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "100%，报价后 2 天付款"
+        "share_after_text": "100%，报价后 2 天付款",
+        "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -4165,7 +4175,8 @@
         "lowest_when_text": "恰为您的最低现金",
         "limit_word": "WITHIN",
         "limit_text": "在授权内",
-        "share_after_text": "100%，多持续 10 天"
+        "share_after_text": "100%，多持续 10 天",
+        "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后））；没有该方案，现金会更低。"
       },
       {
         "key": "do_nothing",
@@ -4176,7 +4187,8 @@
         "lowest_when_text": "低于最低现金 20 天",
         "limit_word": null,
         "limit_text": null,
-        "share_after_text": "100%，直到到期日"
+        "share_after_text": "100%，直到到期日",
+        "scenario_assumption_text": "当前账目，未新增融资。"
       }
     ],
     "concentration": {
@@ -4870,6 +4882,7 @@
         "first_breach_when": "12 天后",
         "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
         "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+        "breach_days_text": "低于您的最低现金 65 天",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -5501,6 +5514,7 @@
           "first_breach_when": "12 天后",
           "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
           "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+          "breach_days_text": "低于您的最低现金 80 天",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -6131,6 +6145,7 @@
           "first_breach_when": "12 天后",
           "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
           "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+          "breach_days_text": "低于您的最低现金 65 天",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -6761,6 +6776,7 @@
           "first_breach_when": "12 天后",
           "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
           "history_text": "FLOW 在过去 12 个月内没有Foshan的已完成付款，不足以判断Foshan通常如何付款。压力测试采用合同约定日期，并假设延迟 30 天。",
+          "breach_days_text": "低于您的最低现金 75 天",
           "lowest_display": "−¥250,000.00",
           "need_display": "¥550,000.00"
         },
@@ -7234,7 +7250,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 11,
-          "seconds": 0.183,
+          "seconds": 0.166,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
           "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）融资 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
           "refused_text": null,
@@ -7709,7 +7725,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 10,
-          "seconds": 0.205,
+          "seconds": 0.177,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
           "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（47 天后到期）融资 ¥1,000.00：年化成本 15.49% 高于您签署的无需批准融资上限 15.00%（¥1,000.00 计息 42 天（从5 天后到47 天后），年化 15.49%）",
           "refused_text": null,
@@ -8184,7 +8200,7 @@
           "criterion": "R-TODAY",
           "scanned": false,
           "evaluations": 11,
-          "seconds": 0.621,
+          "seconds": 0.584,
           "shape_text": "按一笔今天支付、且在预测期内不会收回的一次性付款 X计算，无需新增融资额度或您的批准，且每一步 FLOW 今天都能执行。",
           "binding_text": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）融资 ¥1,000.00：Foshan Home Retail Co. 的 ¥420,000.00 发票（77 天后到期）今天还不能融资；它将于32 天后开出",
           "refused_text": null,
@@ -8217,26 +8233,26 @@
     "band": {
       "concentration": "Foshan占您目前全部应收款的 100%（¥420,000）。未来 30 天内没有客户回款到期。",
       "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
-      "capacity": "按对方要求接受后，再支付一笔款项的余量为 ¥14,000；目前为 ¥81,000。",
+      "capacity": "再支付一笔款项的余量：¥14,000（目前 ¥81,000）。",
       "by_path": {
         "asked": {
           "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
-          "capacity": "按对方要求接受后，再支付一笔款项的余量为 ¥14,000；目前为 ¥81,000。"
+          "capacity": "再支付一笔款项的余量：¥14,000（目前 ¥81,000）。"
         },
         "CTR-193394b6ba8b": {
           "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
-          "capacity": "采用方案 A 后，再支付一笔款项的余量为 ¥0（未来 31 天内）；目前为 ¥81,000。"
+          "capacity": "再支付一笔款项的余量：¥0（未来 31 天内；目前 ¥81,000）。"
         },
         "CTR-6b07cbf70441": {
           "stress": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
-          "capacity": "采用方案 B 后，再支付一笔款项的余量为 ¥62,000；目前为 ¥81,000。"
+          "capacity": "再支付一笔款项的余量：¥62,000（目前 ¥81,000）。"
         },
         "do_nothing": null
       }
     },
     "state_version": 1,
     "day": 0,
-    "computed_in_seconds": 0.124,
+    "computed_in_seconds": 0.095,
     "context": {
       "back": {
         "label": "返回Foshan",

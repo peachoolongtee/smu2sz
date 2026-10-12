@@ -96,6 +96,13 @@ export async function mockDealPicture(point: Point | null, lang: "en" | "zh"): P
   return clone<OfferPictureView>(lang === "zh" ? both.zh : both.en);
 }
 
+/** The deal chart's title as the server worded it for the package offer's decision (null where it had none). */
+export async function mockDealTitle(point: Point | null, lang: "en" | "zh"): Promise<string | null> {
+  if (!homeV2On() || point !== "offer") return null;
+  const both = (await import("../../mocks/home_v2/deal_title_offer.json")).default as unknown as { en: string | null; zh: string | null };
+  return (lang === "zh" ? both.zh : both.en) ?? null;
+}
+
 export async function mockDealExposure(point: Point | null, lang: "en" | "zh"): Promise<ExposureView | null> {
   if (!homeV2On() || point !== "offer") return null;
   const both = (await import("../../mocks/home_v2/exposure_offer.json")).default as unknown as { en: ExposureView; zh: ExposureView };

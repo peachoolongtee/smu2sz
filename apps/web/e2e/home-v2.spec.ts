@@ -92,14 +92,14 @@ test("the header and the metric strip: the status sentence, 'Updated today', and
   const low = v2.kpis.lowest_ahead;
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveClass(/text-bad-fg/);
-  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.note);
-  await expect(page.getByTestId("home-kpi-lowest-note")).toContainText("current books, no new funding");
+  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.short_note ?? low.note);
   if (low.with_plan) await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveText(`${low.with_plan.label} ${low.with_plan.value_text}`);
   const fund = v2.kpis.funding;
   await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText("Funding plan");
   await expect(page.getByTestId("home-kpi-funding-value")).toHaveText("¥405,000");
   await expect(page.getByTestId("home-kpi-funding-value")).toHaveClass(/text-brand-600/);
   await expect(page.getByTestId("home-kpi-funding-note")).toHaveText(fund.note);
+  if (fund.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(fund.status_text);
   // The second sentence is behind the cell's info control, not on the page.
   const pop = page.getByTestId("hv2-metric-funding-pop");
   await expect(pop).toBeHidden();
@@ -593,7 +593,7 @@ test("zh parity: the strip, the recommendation, the worklist and the deal in Chi
   await expect(page.getByTestId("hv2-page-name")).toHaveText("首页");
   await expect(page.getByTestId("home-read-when")).toHaveText("今天更新");
   await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("现金余额");
-  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(v2.kpis.lowest_ahead.note);
+  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(v2.kpis.lowest_ahead.short_note ?? v2.kpis.lowest_ahead.note);
   await expect(page.getByTestId("home-kpi-funding-note")).toHaveText(v2.kpis.funding.note);
   await page.getByTestId("hv2-metric-funding-info").click();
   await expect(page.getByTestId("hv2-metric-funding-pop")).toHaveText(v2.kpis.funding.hint);

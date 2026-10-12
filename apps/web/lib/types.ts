@@ -2489,6 +2489,8 @@ export interface HomeSeriesPoint {
   /** The short figure and the day as a distance from today, on every point (Home V2's inspector says these and never a day number); absent from an older server. */
   display?: string;
   when?: string;
+  /** On a deal's picture series: the same day's figures for the request and the recommended reply, and the server's signed difference (never computed here). */
+  comparison?: { label: string; asked_display: string; recommended_display: string; difference_display: string } | null;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;

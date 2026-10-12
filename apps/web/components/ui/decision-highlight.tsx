@@ -23,10 +23,10 @@ export function DecisionHighlight({
 }) {
   return (
     <section aria-labelledby={labelId} data-testid={testId} className="motion-reveal min-w-0 rounded-decision bg-surface px-4 py-4 sm:px-7 sm:py-6">
-      <p className="text-supporting font-bold text-brand-700" data-testid="home-action-eyebrow">
+      <p className="text-supporting font-bold leading-4 text-brand-700 sm:leading-normal" data-testid="home-action-eyebrow">
         {eyebrow}
       </p>
-      <h2 id={labelId} className="mt-1.5 text-pretty font-display text-[19px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-[26px]" data-testid="home-action-title">
+      <h2 id={labelId} className="mt-1.5 text-pretty font-display text-[18px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-[26px]" data-testid="home-action-title">
         {title}
       </h2>
       {line ? (

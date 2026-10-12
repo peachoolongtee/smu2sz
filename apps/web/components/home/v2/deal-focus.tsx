@@ -9,8 +9,9 @@ import { ComparisonTable, type CompareColumn, type CompareRow } from "@/componen
 import { OpenSection } from "@/components/ui/open-section";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
+import { Disclosure } from "@/components/business/kit";
 import { Button, ButtonLink, ErrorState, LoadingBlock } from "@/components/ui";
-import { getCustomerFocus, getDealExposure, getDealPicture, getDeals } from "@/lib/api";
+import { getCustomerFocus, getDealExposure, getDealPicture, getDealTitle, getDeals } from "@/lib/api";
 import { customerHref } from "@/lib/customer-href";
 import { offerOfDecision } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
@@ -91,6 +92,7 @@ export function DealFocusPanel({
   const picture = useAsync(() => getDealPicture(offerId, lang), [offerId, lang]);
   const exposure = useAsync(() => getDealExposure(offerId, lang, customerId).catch(() => null), [offerId, customerId, lang]);
   const deals = useAsync(() => getDeals(lang).catch(() => null), [lang]);
+  const serverTitle = useAsync(() => getDealTitle(decision, lang), [decision, lang]);
   const v = overview.data;
   const settled = !overview.loading && v !== undefined;
   const gone = settled && v.context?.deal !== decision;
@@ -194,12 +196,14 @@ export function DealFocusPanel({
     const whenWord = pointAt(h.cash.series, day)?.when ?? moments.find((m) => m.day === day)?.word ?? moments.find((m) => m.day === day)?.label ?? "";
     const a = pointAt(seriesOf(asked), day);
     const o = pointAt(seriesOf(recommended), day);
-    const diff = moments.find((m) => m.day === day)?.values.find((x) => x.key === recommended?.key)?.vs_asked_short;
+    // The picture's own same-day comparison (the request, the recommended reply and the server's signed difference); until the server sends it, the two series' figures and the moment's difference.
+    const cmp = pointAt(late ? [] : (recommended?.series ?? []), day)?.comparison ?? null;
+    const diff = cmp?.difference_display ?? moments.find((m) => m.day === day)?.values.find((x) => x.key === recommended?.key)?.vs_asked_short;
     return {
       cells: [
         { key: "when", label: t("hv2.chart.when"), value: whenWord },
-        { key: "request", label: asked?.label ?? "", value: shown(a), tone: a && a.closing_fen < h.cash.floor_fen ? "bad" : undefined },
-        { key: "option", label: recommended?.label ?? "", value: shown(o), tone: "opt" },
+        { key: "request", label: asked?.label ?? "", value: cmp?.asked_display ?? shown(a), tone: a && a.closing_fen < h.cash.floor_fen ? "bad" : undefined },
+        { key: "option", label: recommended?.label ?? "", value: cmp?.recommended_display ?? shown(o), tone: "opt" },
         ...(diff ? [{ key: "diff", label: t("hv2.inspect.diff"), value: diff }] : []),
       ],
       events: (pointAt(h.cash.series, day)?.events ?? []).filter((e) => e.amount_fen !== 0).map((e) => ({ label: e.label_short ?? e.label, amount: e.amount_display })),
@@ -209,7 +213,7 @@ export function DealFocusPanel({
   // The deal's picture has its own window and axis (it reaches the day the request is lowest); the company's reserve and horizon are the same.
   const pic = picture.data;
   const dealCash: HomeView["cash"] = pic ? { ...h.cash, picture_days: pic.picture_days ?? h.cash.picture_days, axis: pic.axis ?? h.cash.axis, axes: null, events_rail_days: 0 } : h.cash;
-  const chartSubtitle = h.home_v2?.chart.scenario_title_text ?? `${title} · ${asked?.label ?? ""} · ${recommended?.label ?? ""} · ${timingWord}`;
+  const chartSubtitle = (late ? null : (serverTitle.data ?? h.home_v2?.chart.scenario_title_text)) ?? `${title} · ${asked?.label ?? ""} · ${recommended?.label ?? ""} · ${timingWord}`;
 
   const requestCost = asked && (asked.cost_forward_display || asked.cost_display) ? t("hv2.deal.request", { amount: asked.cost_forward_display ?? asked.cost_display, note: asked.cost_note }) : null;
   const recCost = recommended ? (recommended.cost_once_display ? t("dq.cost.once", { amount: recommended.cost_once_display, buyer }) : recommended.cost_total_display ? t("dq.cost.total", { amount: recommended.cost_total_display, basis: recommended.cost_basis_text ?? "", buyer }) : null) : null;
@@ -358,6 +362,19 @@ export function DealFocusPanel({
                     ))}
                   </ul>
                 </div>
+                <Disclosure summary={t("hv2.deal.impact")} testId="hv2-impact" className="mt-5 border-y border-line">
+                  <div className="space-y-3 pb-1 text-sm text-ink-2">
+                    {exposure.data?.band.concentration ? <p data-testid="hv2-impact-concentration">{exposure.data.band.concentration}</p> : null}
+                    {paths.map((p) => {
+                      const cap = exposure.data?.band.by_path[p.key]?.capacity;
+                      return cap ? (
+                        <p key={p.key} data-testid="hv2-impact-capacity">
+                          <b className="font-bold text-ink">{p.label}.</b> {cap}
+                        </p>
+                      ) : null;
+                    })}
+                  </div>
+                </Disclosure>
               </OpenSection>
             ) : null}
             {view.chart && lines.length ? (

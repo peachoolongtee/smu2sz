@@ -5654,6 +5654,7 @@
           "eyebrow": "LOWEST CASH AHEAD",
           "value_display": "−¥105,000",
           "note": "¥405k below your minimum in 30 days · current books, no new funding",
+          "short_note": "¥405k shortfall in 30 days",
           "tone": "bad",
           "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
           "with_plan": {
@@ -5666,6 +5667,7 @@
           "eyebrow": "PLANNED FUNDING",
           "value_display": "¥405,000",
           "note": "¥150k credit line today + ¥255k invoice financing in 3 days",
+          "status_text": "Ready to run",
           "hint": "Conditional on you running the plan; not counted as cash."
         }
       },
@@ -5723,6 +5725,7 @@
         "lowest": {
           "cause": "a loan repayment goes out"
         },
+        "scenario_title_text": null,
         "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
       },
       "links": [
@@ -11609,6 +11612,7 @@
           "eyebrow": "未来最低现金",
           "value_display": "−¥105,000",
           "note": "比您的最低现金低 ¥405k（30 天后） · 当前账目，未新增融资",
+          "short_note": "30 天后缺口 ¥405k",
           "tone": "bad",
           "with_plan_hint": "如果 FLOW 的方案执行：¥300,000，前提是资金按计划到账。",
           "with_plan": {
@@ -11621,6 +11625,7 @@
           "eyebrow": "计划中的融资",
           "value_display": "¥405,000",
           "note": "信用额度 ¥150k，今天 + 发票融资 ¥255k，3 天后",
+          "status_text": "可以执行",
           "hint": "取决于您是否执行方案；不计入现金。"
         }
       },
@@ -11678,6 +11683,7 @@
         "lowest": {
           "cause": "一笔贷款还款支出"
         },
+        "scenario_title_text": null,
         "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
       },
       "links": [

@@ -78,7 +78,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const hasWorklist = worklist.data !== null;
   return (
     <div aria-busy={loading} data-testid="home-v2" className="min-w-0">
-      <header className="motion-reveal mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1.5 sm:mb-6" data-testid="home-status" data-status={h.status}>
+      <header className="motion-reveal mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1.5 sm:mb-6" data-testid="home-status" data-status={h.status}>
         <p className="text-supporting font-bold text-ink-3" data-testid="hv2-page-name">
           {t("hv2.title")}
         </p>
@@ -87,7 +87,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
             {t("hv2.updated")}
           </p>
         ) : null}
-        <h1 className="col-span-2 flex items-baseline gap-2.5 font-display text-[21px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:gap-3 sm:text-[28px]" data-testid="hv2-headline">
+        <h1 className="col-span-2 flex items-baseline gap-2.5 font-display text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:gap-3 sm:text-[28px]" data-testid="hv2-headline">
           <span aria-hidden className={`size-2.5 shrink-0 -translate-y-0.5 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
           <span className="sr-only" data-testid="home-status-word">
             {cash.status_word ?? h.status_text}
@@ -97,7 +97,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       </header>
       <PartialRead partial={h.partial} onRetry={onRetry} />
       <div className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,7fr)_minmax(340px,3fr)] xl:items-start">
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-4 sm:space-y-6">
           <CompanyStrip kpis={v2.kpis} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} onBack={focusing ? () => clear("action") : undefined} />

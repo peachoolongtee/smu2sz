@@ -324,6 +324,15 @@ export async function getDealExposure(offerId: string, lang: "en" | "zh", custom
   return isMock ? (await mock()).getDealExposure(offerId, lang) : (await live()).getDealExposure(offerId, lang, customer);
 }
 
+/** The deal chart's title in the server's words (GET /home with the decision); null when it has none or cannot say. */
+export async function getDealTitle(decision: string, lang: "en" | "zh"): Promise<string | null> {
+  try {
+    return isMock ? (await mock()).getDealTitle(lang) : await (await live()).getDealTitle(decision, lang);
+  } catch {
+    return null;
+  }
+}
+
 /** GET /offers/{id}/picture for Home V2's deal focus: the paths with their words (authority evidence, the scenario's assumption) and series. The deal's own mock is Home V2's recording. */
 export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promise<OfferPictureView | null> {
   return isMock ? (await mock()).getDealPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang).catch(() => null);

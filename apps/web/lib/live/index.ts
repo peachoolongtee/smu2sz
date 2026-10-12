@@ -173,6 +173,9 @@ export const live = {
   /** GET /offers/{offer_id}/exposure for a Home V2 deal focus: the customer in the query asks for the echoed selections. Null when the feature is off or the offer is unknown. */
   getDealExposure: (offerId: string, lang: "en" | "zh", customer: string) =>
     nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}&customer=${enc(customer)}`)),
+  /** GET /home with a decision: the chart's title for that deal (`home_v2.chart.scenario_title_text`), null when the server has none. */
+  getDealTitle: async (decision: string, lang: "en" | "zh"): Promise<string | null> =>
+    (await http<HomeView>("GET", `/home?lang=${lang}&decision=${enc(decision)}`)).home_v2?.chart.scenario_title_text ?? null,
   /** GET /customers (flag `home_v2`): the same customers with the terms a page filters them by. Null when the flag is off or the route is absent. */
   getCustomers: (lang: "en" | "zh") => nullWhenOff(() => http<CustomersView>("GET", `/customers?lang=${lang}`)),
   getReconciliation: async (): Promise<ReconciliationView> => {

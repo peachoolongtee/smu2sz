@@ -4207,6 +4207,7 @@
           "eyebrow": "LOWEST CASH AHEAD",
           "value_display": "¥300,000",
           "note": "reaches your minimum in 30 days · current books, the plan ran",
+          "short_note": "At your minimum in 30 days",
           "tone": "warn",
           "with_plan_hint": "No hypothetical applied.",
           "with_plan": null
@@ -4216,6 +4217,7 @@
           "eyebrow": "FUNDING ARRANGED",
           "value_display": "¥255,000 pending",
           "note": "¥150k credit-line draw received today · ¥255k invoice financing expected in 3 days",
+          "status_text": "Arranged",
           "hint": "Counted as cash only when it lands."
         }
       },
@@ -4250,6 +4252,7 @@
         "lowest": {
           "cause": "a loan repayment goes out"
         },
+        "scenario_title_text": null,
         "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
       },
       "links": [
@@ -8641,6 +8644,7 @@
           "eyebrow": "未来最低现金",
           "value_display": "¥300,000",
           "note": "30 天后达到您的最低现金 · 当前账目，方案已执行",
+          "short_note": "30 天后正好是最低现金",
           "tone": "warn",
           "with_plan_hint": "未应用任何假设。",
           "with_plan": null
@@ -8650,6 +8654,7 @@
           "eyebrow": "已安排的融资",
           "value_display": "待到账 ¥255,000",
           "note": "¥150k 信用额度提款已到账（今天） · ¥255k 发票融资预计 3 天后到账",
+          "status_text": "已安排",
           "hint": "到账后才计入现金。"
         }
       },
@@ -8684,6 +8689,7 @@
         "lowest": {
           "cause": "一笔贷款还款支出"
         },
+        "scenario_title_text": null,
         "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
       },
       "links": [

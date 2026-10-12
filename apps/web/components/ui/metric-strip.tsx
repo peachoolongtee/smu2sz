@@ -31,6 +31,7 @@ export function Metric({
   value,
   tone = "ink",
   note,
+  noteSm = true,
   info,
   infoLabel,
   children,
@@ -43,6 +44,8 @@ export function Metric({
   value: string;
   tone?: MetricTone;
   note?: string | null;
+  /** Show the note on a phone too; false when the cell says the same elsewhere on that screen (the recommendation's facts) and a status line stands in. */
+  noteSm?: boolean;
   info?: string | null;
   infoLabel: string;
   children?: ReactNode;
@@ -63,7 +66,7 @@ export function Metric({
     <div
       ref={root}
       data-testid={testId ?? `hv2-metric-${id}`}
-      className="group relative min-w-0 py-3 pr-4 first:col-span-2 first:border-b first:border-line first:pl-0 max-md:nth-[3]:pl-3 md:border-l md:border-line md:px-5 md:py-5 md:first:col-span-1 md:first:border-b-0 md:first:border-l-0 md:first:pl-0"
+      className="group relative min-w-0 py-2.5 pr-4 sm:py-3 first:col-span-2 first:border-b first:border-line first:pl-0 max-md:nth-[3]:pl-3 md:border-l md:border-line md:px-5 md:py-5 md:first:col-span-1 md:first:border-b-0 md:first:border-l-0 md:first:pl-0"
     >
       <div className="flex items-center gap-1">
         <p id={`${uid}-label`} className="flex items-center gap-1.5 text-supporting font-bold text-ink-3" data-testid={`hv2-metric-${id}-label`}>
@@ -95,7 +98,7 @@ export function Metric({
         {value}
       </p>
       {note ? (
-        <p className="mt-1 text-pretty text-supporting text-ink-2 md:mt-1.5 md:text-sm" data-testid={`home-kpi-${id}-note`}>
+        <p className={`mt-1 text-pretty text-supporting text-ink-2 md:mt-1.5 md:text-sm ${noteSm ? "" : "max-md:hidden"}`} data-testid={`home-kpi-${id}-note`}>
           {note}
         </p>
       ) : null}

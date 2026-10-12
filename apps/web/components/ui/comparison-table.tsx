@@ -75,7 +75,7 @@ export function ComparisonTable({ caption, columns, rows, testId }: { caption: s
       </div>
       <div className="grid gap-3 lg:hidden" data-testid={`${testId}-stack`}>
         {columns.map((c, ci) => (
-          <section key={c.key} aria-label={c.head} className={`rounded-tile border px-4 py-3 ${c.recommended ? "border-info-line bg-brand-50/45" : "border-line"}`}>
+          <div key={c.key} className={`rounded-tile border px-4 py-3 ${c.recommended ? "border-info-line bg-brand-50/45" : "border-line"}`}>
             <h3 className="font-bold text-ink">
               {c.head}
               {c.tag ? <span className="mt-0.5 block text-supporting font-bold">{c.tag}</span> : null}
@@ -89,7 +89,7 @@ export function ComparisonTable({ caption, columns, rows, testId }: { caption: s
                 </div>
               ))}
             </dl>
-          </section>
+          </div>
         ))}
       </div>
     </div>
