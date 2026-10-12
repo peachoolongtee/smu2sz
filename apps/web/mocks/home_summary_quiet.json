@@ -1548,6 +1548,8 @@
         "when": "in 2 days",
         "kind": "receipt",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 25720000,
         "amount_short": "+¥257k",
         "net_short": "+¥255k",
@@ -1557,6 +1559,24 @@
         "room_after_short": "¥505k above your minimum",
         "tone": "ok",
         "explain": "Foshan pays ¥257k. Cash rises from ¥550k to ¥805k, ¥505k above your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥550k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥805k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥505k"
+          }
+        ],
         "amount_display": "¥257,200.00",
         "cash_after_display": "¥805,000.00",
         "room_after_display": "¥505,000.00"
@@ -1567,6 +1587,8 @@
         "when": "in 12 days",
         "kind": "payroll",
         "label": "payroll is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -34000000,
         "amount_short": "−¥340k",
         "net_short": "−¥340k",
@@ -1576,6 +1598,24 @@
         "room_after_short": "¥165k above your minimum",
         "tone": "ok",
         "explain": "Cash falls from ¥805k to ¥465k. Your minimum is ¥300k, so ¥165k of room remains.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥805k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥465k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥165k"
+          }
+        ],
         "amount_display": "−¥340,000.00",
         "cash_after_display": "¥465,000.00",
         "room_after_display": "¥165,000.00"
@@ -1586,6 +1626,8 @@
         "when": "in 20 days",
         "kind": "supplier",
         "label": "a supplier payment goes out",
+        "note": null,
+        "planned": false,
         "amount_fen": -12000000,
         "amount_short": "−¥120k",
         "net_short": "−¥120k",
@@ -1595,6 +1637,24 @@
         "room_after_short": "¥45k above your minimum",
         "tone": "ok",
         "explain": "Cash falls from ¥465k to ¥345k. Your minimum is ¥300k, so ¥45k of room remains. Without the financing plan, the supplier payment would have taken cash to ¥195k, below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥465k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥345k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥45k"
+          }
+        ],
         "amount_display": "−¥120,000.00",
         "cash_after_display": "¥345,000.00",
         "room_after_display": "¥45,000.00"
@@ -1604,7 +1664,9 @@
         "day": 30,
         "when": "in 30 days",
         "kind": "lowest",
-        "label": "cash is at its lowest",
+        "label": "a loan repayment goes out",
+        "note": "cash at its lowest, ¥300k, at your minimum",
+        "planned": false,
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
@@ -1614,6 +1676,24 @@
         "room_after_short": "¥0 above your minimum",
         "tone": "warn",
         "explain": "This is the lowest point on your cash line: ¥300k, ¥0 above your minimum. Debt service of ¥45k takes cash from ¥345k to ¥300k. Without the financing plan, the lowest point would have been ¥150k in 30 days.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥345k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥300k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "−¥45,000.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -1624,6 +1704,8 @@
         "when": "in 32 days",
         "kind": "receipt",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 16280000,
         "amount_short": "+¥163k",
         "net_short": "+¥12k",
@@ -1633,6 +1715,24 @@
         "room_after_short": "¥12k above your minimum",
         "tone": "ok",
         "explain": "Foshan pays ¥163k. ¥151k of it repays the Bank credit line. Cash rises from ¥300k to ¥312k, ¥12k above your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥312k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥12k"
+          }
+        ],
         "amount_display": "¥162,800.00",
         "cash_after_display": "¥311,972.23",
         "room_after_display": "¥11,972.23"
@@ -2847,6 +2947,7 @@
       }
     ],
     "counterfactual_label": "without FLOW's financing plan (a comparison, not a choice you still have)",
+    "plan_line_label": "With FLOW's plan",
     "cash_display": "¥549,986.20",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",
