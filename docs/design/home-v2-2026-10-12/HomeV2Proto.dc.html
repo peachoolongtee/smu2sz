@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>FLOW Home V2 prototype</title><script src="./support.js"></script></head><body><x-dc><helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet"><style>
+body{margin:0}a{color:#0368e9;text-decoration:none}button{font-family:inherit;cursor:pointer}
+h1,h2,h3,.display{font-family:'Plus Jakarta Sans','Lato','Inter','PingFang SC',system-ui,sans-serif}
+.page{background:#f7f8fa;color:#24324a;font-family:'Lato','Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid #e6e9ef;background:#fff}
+.top h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.wrap{display:grid;grid-template-columns:minmax(0,1.55fr) 360px;gap:20px;padding:20px 32px 36px;max-width:1280px;margin:0 auto;box-sizing:border-box}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:#fff;border:1px solid #e6e9ef;border-radius:14px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5a6577}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.kpi{padding:16px 20px}.kpi+.kpi{border-left:1px solid #e6e9ef}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-.025em;margin-top:6px;line-height:1.1}.kpi .n{font-size:13px;color:#5a6577;margin-top:6px}
+.buf{position:relative;height:18px;margin-top:10px}.buf .l{position:absolute;left:0;right:0;top:8px;height:2px;background:#e6e9ef}
+.buf .m{position:absolute;top:3px;width:2px;height:12px;background:#c9a24a}.buf .p{position:absolute;top:4px;width:10px;height:10px;border-radius:50%;background:#0368e9;border:2px solid #fff;box-shadow:0 0 0 1px #0368e9}
+.buf .t{position:absolute;top:-2px;font-size:10px;color:#82490a;transform:translateX(-50%)}
+.sec{padding:14px 20px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.btn{display:inline-flex;align-items:center;border:0;border-radius:10px;min-height:40px;padding:0 14px;font-size:14px;font-weight:800;background:#0368e9;color:#fff;white-space:nowrap}
+.btn2{display:inline-flex;align-items:center;border-radius:10px;min-height:40px;padding:0 14px;font-size:14px;font-weight:700;background:#fff;color:#24324a;border:1px solid #c9d0db;white-space:nowrap}
+.tabs{display:flex;gap:4px;padding:0 16px 10px}.tabs button{border:0;background:transparent;border-radius:8px;padding:6px 10px;font-size:13px;color:#4d5767}.tabs button[aria-selected=true]{background:#eff4fb;color:#0048a5;font-weight:800;box-shadow:inset 0 -2px 0 #0368e9}
+.wl{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-top:1px solid #f0f2f5;width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-bottom:0;font-size:13px;color:#24324a}
+.wl.on{background:#eff4fb;box-shadow:inset 3px 0 0 #0368e9}.wl .t{font-weight:700;font-size:14px}.wl .s{color:#4d5767;margin-top:2px}.wl .i{color:#5a6577;margin-top:2px;font-size:12px}
+.crumb{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5a6577}.crumb a,.crumb button{color:#0048a5;background:none;border:0;padding:0;font:inherit;letter-spacing:inherit}
+.tag{font-size:11px;font-weight:800;letter-spacing:.06em;color:#82490a;border:1px solid #ecd092;border-radius:6px;padding:2px 6px}
+.seg{display:inline-flex;border:1px solid #e6e9ef;border-radius:9px;overflow:hidden}.seg button{border:0;background:#fff;padding:6px 10px;font-size:12px;color:#4d5767}.seg button[aria-pressed=true]{background:#eff4fb;color:#0048a5;font-weight:800}
+.deal{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #f0f2f5}
+.warn{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border:1px solid #f1b9b2;background:#fdecea;border-radius:10px;font-size:13px}
+.leg{display:flex;gap:14px;font-size:12px;color:#5a6577;align-items:center}.sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.hint{font-size:12px;color:#5a6577}
+</style></helmet>
+<div class="page">
+<div class="top"><div style="display:flex;align-items:baseline;gap:16px"><h1>Home</h1><span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#5a6577"><span class="dot" style="background:{{ statusColor }}"></span><b style="color:#24324a">{{ statusWord }}</b> · Read today</span></div>
+<div style="display:flex;gap:10px;align-items:center;font-size:12px;color:#5a6577"><span>Prototype controls:</span><span class="seg"><button onClick="{{ setPre }}" aria-pressed="{{ isPre }}">Before the plan runs</button><button onClick="{{ setPost }}" aria-pressed="{{ isPost }}">After the plan ran</button></span></div></div>
+<div class="wrap"><div class="col">
+<div class="card kpis" aria-label="Your company">
+<div class="kpi"><div class="eyebrow">CASH AVAILABLE</div><div class="v display">{{ cashV }}</div><div class="n">{{ cashN }}</div><div class="buf"><div class="l"></div><div class="m" style="left:{{ bufMin }}%"></div><span class="t" style="left:{{ bufMin }}%">min ¥300k</span><div class="p" style="left:{{ bufPos }}%"></div></div></div>
+<div class="kpi"><div class="eyebrow">LOWEST CASH AHEAD</div><div class="v display" style="color:{{ lowColor }}">{{ lowV }}</div><div class="n">{{ lowN }}</div><div class="hint" style="margin-top:6px">{{ lowHint }}</div></div>
+<div class="kpi"><div class="eyebrow">NEXT CASH EVENT</div><div class="v display">{{ nextV }}</div><div class="n">{{ nextN }}</div><div class="hint" style="margin-top:6px">{{ nextHint }}</div></div>
+</div>
+<sc-if value="{{ showWarn }}" hint-placeholder-val="{{ false }}"><div class="warn"><span><b>Company cash: reserve unsafe in 12 days.</b> This stays here while you look at a customer.</span><button class="btn" onClick="{{ goOverview }}" style="min-height:34px">Back to the action</button></div></sc-if>
+<sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+<div class="card sec row" style="border-color:{{ actionBorder }}"><div><span class="eyebrow" style="color:{{ actionColor }}">{{ actionEyebrow }}</span><div style="font-size:15px;font-weight:700;margin-top:4px">{{ actionTitle }}</div><div style="font-size:13px;color:#4d5767;margin-top:2px">{{ actionText }}</div></div><sc-if value="{{ isPre }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:8px"><button class="btn">Run the funding plan</button><button class="btn2">Compare</button></div></sc-if></div>
+</sc-if>
+<sc-if value="{{ isCustomer }}" hint-placeholder-val="{{ false }}">
+<div class="card sec" style="display:flex;flex-direction:column;gap:10px"><div class="crumb"><button onClick="{{ goOverview }}">ALL BUSINESS</button> › FOSHAN HOME RETAIL</div>
+<div class="row"><div><h2 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-.025em">Foshan Home Retail Co.</h2><div style="font-size:13px;color:#4d5767;margin-top:4px">2 open negotiations · ¥420,000 outstanding, due in 32 days · estimated contribution about ¥1.09m a year (20% Demo margin) · 100% of what you are owed</div></div><a href="#" style="font-size:13px;font-weight:700;white-space:nowrap">Customer overview ›</a></div>
+<div class="eyebrow" style="margin-top:4px">DEALS REQUIRING ATTENTION · 2</div>
+<div class="deal"><div><div style="font-weight:700">60-day payment terms + 1% rebate request</div><div class="hint">FLOW recommends countering with Option A · estimated cost ¥3,027.77 once · reply needed</div></div><button class="btn2" onClick="{{ goDeal }}">Open the decision ›</button></div>
+<div class="deal"><div><div style="font-weight:700">New volume agreement, proposed terms</div><div class="hint">Awaiting your review · FLOW has read the terms; no recommendation yet</div></div><button class="btn2">Review the terms ›</button></div>
+<div class="eyebrow" style="margin-top:8px">IMPACT ON COMPANY CASH</div>
+<div style="font-size:13px;color:#4d5767">Foshan's ¥420,000 receipt on day 32 is the largest inflow in the window. ¥255,000 of invoice financing {{ finWord }} against it; about ¥163k becomes available cash at collection. <a href="#" onClick="{{ toggleLate }}">{{ lateLink }}</a></div>
+<sc-if value="{{ lateOn }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;border:1px solid #ecd092;border-radius:10px;padding:10px 12px"><span class="tag">HYPOTHETICAL</span> If Foshan pays 30 days late: cash <b style="color:#a3241a">−¥250,000</b> on 30 Nov, 65 days below your minimum, ¥550,000 uncovered; the financing runs 30 days longer, about ¥1,870 more in charges. <a href="#">Explore in Cash ›</a></div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ isDeal }}" hint-placeholder-val="{{ false }}">
+<div class="card sec" style="display:flex;flex-direction:column;gap:10px"><div class="crumb"><button onClick="{{ goOverview }}">ALL BUSINESS</button> › <button onClick="{{ goCustomer }}">FOSHAN</button> › PAYMENT TERMS REQUEST</div>
+<div class="row"><div><h2 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-.025em">Foshan: counter recommended.</h2><div style="font-size:13px;color:#4d5767;margin-top:4px">Foshan wants 60-day terms, a 1% rebate and 1.2% early settlement.</div></div><span class="tag" style="color:#82490a">NEEDS YOUR REPLY</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px"><div style="border:1px solid #e6e9ef;border-radius:10px;padding:10px 12px"><div class="eyebrow">AS ASKED</div><div style="font-weight:700;margin-top:4px">¥28,326.92 over 12 months</div><div class="hint">over your ¥5,000 limit · cash below the minimum for 15 days</div></div><div style="border:1px solid #b9d4f6;border-radius:10px;padding:10px 12px;background:#f3f8ff"><div class="eyebrow" style="color:#0048a5">FLOW RECOMMENDS · OPTION A</div><div style="font-weight:700;margin-top:4px">¥3,027.77 once, if Foshan accepts</div><div class="hint">keep 45 days · 0.85% early settlement on ¥257,200 · within your mandate</div></div></div>
+<div class="row" style="justify-content:flex-start;gap:10px"><button class="btn">Review and send the counter</button><button class="btn2">Compare alternatives</button><a href="#" style="font-size:13px;font-weight:700;margin-left:6px">Open the full deal ›</a></div>
+</div>
+</sc-if>
+<div class="card sec" style="display:flex;flex-direction:column;gap:8px"><div class="row"><div><div class="eyebrow">{{ chartTitle }}</div><div class="leg" style="margin-top:6px">{{ legend1 }}<sc-if value="{{ isDeal }}" hint-placeholder-val="{{ false }}"><span class="seg" style="margin-left:6px"><button onClick="{{ scCur }}" aria-pressed="{{ isCur }}">Current books</button><button onClick="{{ scAsk }}" aria-pressed="{{ isAsk }}">If accepted as asked</button><button onClick="{{ scA }}" aria-pressed="{{ isA }}">If Foshan accepts Option A</button></span></sc-if></div></div><span class="hint">36 · 60 · 120</span></div>
+<svg viewBox="0 0 760 170" role="img" aria-label="{{ chartAria }}" style="width:100%;height:auto;display:block">
+<line x1="16" x2="744" y1="{{ yMin }}" y2="{{ yMin }}" stroke="#c9a24a" stroke-dasharray="4 4" stroke-width="1.5"/><text x="742" y="{{ yMinT }}" font-size="11" fill="#82490a" text-anchor="end">your minimum ¥300k</text>
+<sc-if value="{{ showShade }}" hint-placeholder-val="{{ false }}"><path d="{{ shade }}" fill="#fdecea"/></sc-if>
+<sc-if value="{{ showGrey }}" hint-placeholder-val="{{ false }}"><path d="{{ grey }}" fill="none" stroke="#b7bfcc" stroke-width="1.5" stroke-dasharray="3 3"/></sc-if>
+<sc-if value="{{ showHyp }}" hint-placeholder-val="{{ false }}"><path d="{{ hyp }}" fill="none" stroke="#0368e9" stroke-width="2" stroke-dasharray="6 4" opacity=".55"/></sc-if>
+<path d="{{ main }}" fill="none" stroke="{{ mainColor }}" stroke-width="2"/>
+<circle cx="{{ lx }}" cy="{{ ly }}" r="5" fill="#fff" stroke="{{ lcolor }}" stroke-width="2"/>
+<sc-if value="{{ showHi }}" hint-placeholder-val="{{ false }}"><circle cx="{{ hx }}" cy="{{ hy }}" r="7" fill="none" stroke="#0368e9" stroke-width="2"/><text x="{{ hx }}" y="{{ hyT }}" font-size="11" fill="#0048a5" text-anchor="middle">Foshan pays ¥420k</text></sc-if>
+<text x="{{ cx }}" y="22" font-size="12" font-weight="700" fill="{{ lcolor }}">{{ cause }}</text>
+<text x="16" y="166" font-size="11" fill="#5a6577">today</text><text x="280" y="166" font-size="11" fill="#5a6577" text-anchor="middle">in 12 days</text><text x="546" y="166" font-size="11" fill="#5a6577" text-anchor="middle">in 30 days</text><text x="744" y="166" font-size="11" fill="#5a6577" text-anchor="end">in 36 days</text>
+</svg>
+<div class="row hint"><span>{{ chartNote }}</span><a href="#">Full timeline in Cash &amp; Funding ›</a></div></div>
+<sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}"><div class="card sec" style="display:flex;font-size:13px"><a href="#" style="padding-right:16px;border-right:1px solid #e6e9ef">Where the cash goes ›</a><a href="#" style="padding:0 16px;border-right:1px solid #e6e9ef">Facility headroom ›</a><a href="#" style="padding:0 16px;border-right:1px solid #e6e9ef">What you are owed, by when ›</a><a href="#" style="padding-left:16px">All deals ›</a></div></sc-if>
+</div>
+<aside class="card" style="align-self:start;padding:14px 0 6px"><div class="eyebrow" style="padding:0 16px 8px">YOUR WORKLIST</div>
+<div class="tabs" role="tablist"><button role="tab" onClick="{{ tabNeeds }}" aria-selected="{{ tNeeds }}">Needs you 3</button><button role="tab" onClick="{{ tabWait }}" aria-selected="{{ tWait }}">Waiting 2</button><button role="tab" onClick="{{ tabCust }}" aria-selected="{{ tCust }}">Customers 4</button></div>
+<div style="padding:0 16px 8px"><div class="hint" style="border:1px solid #e6e9ef;border-radius:8px;padding:7px 10px">⌕ Search customers or deals</div></div>
+<sc-if value="{{ showNeeds }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ isPre }}" hint-placeholder-val="{{ true }}"><button class="wl" onClick="{{ goOverview }}"><span class="dot" style="background:#d9534a;margin-top:5px"></span><div><div class="t">Your company · reserve unsafe in 12 days</div><div class="s">Funding plan ready · run or compare</div><div class="i">Why first: cash falls below your minimum before any other item matters.</div></div></button></sc-if>
+<button class="wl {{ rowFoshanOn }}" onClick="{{ goDeal }}"><span class="dot" style="background:#c9a24a;margin-top:5px"></span><div><div class="t">Foshan Home Retail · 60-day terms + rebate</div><div class="s">Counter recommended · reply needed</div><div class="i">Cash impact: as asked, below your minimum for 15 days.</div></div></button>
+<button class="wl"><span class="dot" style="background:#d9534a;margin-top:5px"></span><div><div class="t">Shenzhen Fixtures · ¥180k overdue (illustrative)</div><div class="s">Collection action needed · FLOW has the request drafted</div><div class="i">Cash impact: without it, the reserve is breached in 3 days.</div></div></button>
+<button class="wl"><span class="dot" style="background:#c9a24a;margin-top:5px"></span><div><div class="t">Foshan Home Retail · new volume agreement</div><div class="s">Review the proposed terms</div><div class="i">Cash impact: none until agreed.</div></div></button>
+<div class="wl" style="border-top:1px solid #e6e9ef"><a href="#" style="font-size:13px;font-weight:700">All deals ›</a></div>
+</sc-if>
+<sc-if value="{{ showWait }}" hint-placeholder-val="{{ false }}">
+<div class="wl"><span class="dot" style="background:#9aa3b2;margin-top:5px"></span><div><div class="t">Dongguan Office Supplies · 2% discount counter sent (illustrative)</div><div class="s">Awaiting the buyer's reply · sent 2 days ago</div><div class="i">Nothing to resend.</div></div></div>
+<div class="wl"><span class="dot" style="background:#9aa3b2;margin-top:5px"></span><div><div class="t">Invoice financing ¥255k · {{ finWord }}</div><div class="s">{{ finWait }}</div><div class="i">Not counted as cash until it lands.</div></div></div>
+</sc-if>
+<sc-if value="{{ showCust }}" hint-placeholder-val="{{ false }}">
+<button class="wl {{ rowCustOn }}" onClick="{{ goCustomer }}"><span class="dot" style="background:#c9a24a;margin-top:5px"></span><div><div class="t">Foshan Home Retail Co.</div><div class="s">2 decisions need you · owes ¥420k · 100% of what you are owed</div></div></button>
+<div class="wl"><span class="dot" style="background:#9aa3b2;margin-top:5px"></span><div><div class="t">Dongguan Office Supplies Ltd.</div><div class="s">1 waiting on the buyer · no invoice open</div></div></div>
+<div class="wl"><span class="dot" style="background:#d9534a;margin-top:5px"></span><div><div class="t">Shenzhen Fixtures (illustrative)</div><div class="s">¥180k overdue · 1 decision needs you</div></div></div>
+<div class="wl"><span class="dot" style="background:#9aa3b2;margin-top:5px"></span><div><div class="t">Zhuhai Interiors (illustrative)</div><div class="s">Blocked · contract missing</div></div></div>
+</sc-if>
+</aside>
+</div></div>
+</x-dc><script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { view: 'overview', tab: 'needs', pre: true, sc: 'cur', late: false }; }
+renderVals() {
+const s = this.state || {}; const pre = s.pre !== false; const view = s.view || 'overview'; const tab = s.tab || 'needs';
+const W=760, H=170, lo=-180, hi=980; const y=v=>H-22-(v-lo)/(hi-lo)*(H-40); const xs=[...Array(12)].map((_,i)=>16+i*(W-32)/11);
+const P=(vals)=>'M'+vals.map((v,i)=>xs[i].toFixed(0)+','+y(v).toFixed(0)).join(' L');
+const none=[400,400,400,400,60,60,-60,-60,-105,-105,315,315], plan=[400,550,805,805,465,465,345,345,300,300,312,312], post=[550,805,805,805,465,465,345,345,300,300,312,312];
+const asked=[400,550,805,805,465,465,345,345,265,265,265,265], optA=[400,657,912,912,572,572,452,452,407,407,407,407];
+const sc = view==='deal' ? (s.sc||'cur') : 'cur';
+let main = pre ? none : post, mainColor = pre ? '#a3241a' : '#0368e9', grey=null, hyp=null, showShade=pre, cause='', chartTitle='COMPANY CASH FORECAST', note='Current books. The same figures as Cash & Funding.', legend1='';
+if (pre) { cause='Payroll in 12 days takes cash to ¥60k, then −¥105k'; legend1='<span><i class="sw" style="background:#a3241a"></i>Current books (nothing run)</span><span><i class="sw" style="background:#b7bfcc"></i>If you run FLOW\'s plan</span>'; grey=P(plan); }
+else { cause='Lowest ¥300k in 30 days, at your minimum'; legend1='<span><i class="sw" style="background:#0368e9"></i>Current books, with the plan that ran</span>'; }
+if (view==='customer') { chartTitle='COMPANY CASH FORECAST · FOSHAN EXPOSURE'; note='The company forecast, with Foshan\'s receipt highlighted. No hypothetical applied.'; }
+if (view==='deal') { chartTitle="IMPACT OF FOSHAN'S PROPOSED TERMS"; if (sc==='ask') { hyp=P(asked); note='Dashed: if accepted as asked (hypothetical). Lowest ¥265k, below your minimum for 15 days.'; } else if (sc==='a') { hyp=P(optA); note='Dashed: if Foshan accepts Option A (hypothetical). ¥257,200 paid 2 days after the offer.'; } else { note='Current books. Pick a scenario to compare.'; } }
+const lowVals = main; const li = lowVals.indexOf(Math.min(...lowVals));
+const shade = showShade ? ('M'+none.map((v,i)=>xs[i].toFixed(0)+','+Math.max(y(v),y(300)).toFixed(0)).join(' L')+' L'+xs[11].toFixed(0)+','+y(300).toFixed(0)+' L'+xs[0].toFixed(0)+','+y(300).toFixed(0)+' Z') : '';
+const statusColor = pre ? '#d9534a' : '#12907f', statusWord = pre ? 'Reserve unsafe in 12 days' : 'Covered';
+const v = {
+ isPre: pre, isPost: !pre, setPre: ()=>this.setState({pre:true}), setPost: ()=>this.setState({pre:false}),
+ statusColor, statusWord,
+ cashV: pre ? '¥400,000' : '¥550,000', cashN: pre ? '¥100k above your ¥300k minimum' : '¥250k above your ¥300k minimum', bufMin: 60, bufPos: pre ? 72 : 88,
+ lowV: pre ? '−¥105,000' : '¥300,000', lowColor: pre ? '#a3241a' : '#82490a', lowN: pre ? '¥405k below your minimum in 30 days · current books, nothing run' : 'reaches your minimum in 30 days · with the plan that ran', lowHint: pre ? "FLOW's plan, if you run it, keeps it at ¥300k." : 'No hypothetical applied.',
+ nextV: pre ? '+¥150k proposed' : '+¥255k', nextN: pre ? 'credit-line draw today, if you run the plan' : 'invoice financing arranged · expected in 3 days', nextHint: pre ? 'Then ¥255k invoice financing in 3 days, also proposed.' : 'Then Foshan pays ¥420k in 32 days (owed).',
+ showWarn: pre && view!=='overview', isOverview: view==='overview', isCustomer: view==='customer', isDeal: view==='deal',
+ goOverview: ()=>this.setState({view:'overview'}), goCustomer: ()=>this.setState({view:'customer', tab:'customers'}), goDeal: ()=>this.setState({view:'deal', tab:'needs', sc:'cur'}),
+ actionBorder: pre ? '#f1b9b2' : '#e6e9ef', actionColor: pre ? '#a3241a' : '#0a6b5f', actionEyebrow: pre ? 'NEXT ACTION · WITHIN 12 DAYS' : 'NOTHING NEEDS YOU FROM THE COMPANY SIDE',
+ actionTitle: pre ? 'Secure ¥405,000 before payroll in 12 days.' : 'Your cash is covered on the plan that ran.', actionText: pre ? "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both proposed · cost ¥3,113.93 · no approval needed." : 'Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days. The worklist still holds 2 commercial decisions.',
+ chartTitle, legend1, chartNote: note, chartAria: chartTitle,
+ yMin: y(300).toFixed(0), yMinT: (y(300)-5).toFixed(0), showShade, shade, showGrey: !!grey, grey: grey||'', showHyp: !!hyp, hyp: hyp||'', main: P(main), mainColor,
+ lx: xs[li].toFixed(0), ly: y(lowVals[li]).toFixed(0), lcolor: pre ? '#a3241a' : '#c9a24a', cx: (xs[4]+6).toFixed(0), cause,
+ showHi: view==='customer', hx: xs[11].toFixed(0), hy: y(main[11]).toFixed(0), hyT: (y(main[11])-12).toFixed(0),
+ scCur: ()=>this.setState({sc:'cur'}), scAsk: ()=>this.setState({sc:'ask'}), scA: ()=>this.setState({sc:'a'}), isCur: String(sc==='cur'), isAsk: String(sc==='ask'), isA: String(sc==='a'),
+ tabNeeds: ()=>this.setState({tab:'needs'}), tabWait: ()=>this.setState({tab:'wait'}), tabCust: ()=>this.setState({tab:'customers'}), tNeeds: String(tab==='needs'), tWait: String(tab==='wait'), tCust: String(tab==='customers'), showNeeds: tab==='needs', showWait: tab==='wait', showCust: tab==='customers',
+ rowFoshanOn: view==='deal' ? 'on' : '', rowCustOn: view==='customer' ? 'on' : '',
+ finWord: pre ? 'proposed' : 'arranged', finWait: pre ? 'Not yet run · lands 3 days after you run the plan' : 'Submitted · settlement expected in 3 days',
+ toggleLate: ()=>this.setState({late: !s.late}), lateOn: !!s.late, lateLink: s.late ? 'Hide the late-payment test' : 'Test a late payment ▾',
+};
+return v;
+}
+}
+</script></body></html>
