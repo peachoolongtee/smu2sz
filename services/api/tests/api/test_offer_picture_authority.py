@@ -59,7 +59,7 @@ def test_an_early_payment_on_a_named_invoice_within_the_threshold_is_flow_may(cl
 
 
 def test_a_reply_whose_funding_plan_needs_the_owner_reads_needs_owner(client, monkeypatch):
-    oid, view = _evaluated(client)
+    oid, _ = _evaluated(client)
     real = offer_picture.plan
     monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"needs_owner_approval": True}))
     offer_picture._cache.clear()
@@ -77,7 +77,7 @@ def test_a_past_due_buyer_makes_the_verifier_ask_for_the_owner(client, monkeypat
     evaluate = importlib.import_module("app.verifier.evaluate")  # the package re-exports a function of the same name
     monkeypatch.setattr(evaluate, "_buyer_past_due", lambda *a, **k: [("RCV-A", 3, 25_720_000)])
     offer_picture._cache.clear()
-    asked, opt_a, opt_b = _paths(client, oid)
+    _, opt_a, opt_b = _paths(client, oid)
     assert _authority(opt_a) == ("needs_owner", NEEDS) and opt_a["needs_owner"] is True and _authority(opt_b)[0] == "needs_owner"
 
 
@@ -191,7 +191,7 @@ def test_a_hard_reject_with_no_counter_is_not_called_a_mandate_breach(client, mo
 
 @pytest.mark.parametrize("outcome", [Outcome.NEEDS_OWNER_APPROVAL, Outcome.ACCEPT])
 def test_an_accepted_asked_path_follows_the_tier_and_the_plan_flag(client, monkeypatch, outcome):
-    oid, view = _evaluated(client)
+    oid, _ = _evaluated(client)
     tier = Tier.TIER_2 if outcome == Outcome.NEEDS_OWNER_APPROVAL else Tier.TIER_1
     (asked,) = _with_verdict(client, monkeypatch, oid, outcome=outcome, violations=[], counters=[], required_tier=tier)
     assert asked["authority"] == ("needs_owner" if outcome == Outcome.NEEDS_OWNER_APPROVAL else "flow_may")
@@ -237,7 +237,7 @@ def test_an_unprojectable_reply_is_said_plainly_and_never_recommended(client, mo
     offer_picture._cache.clear()
     calls.clear()
     pic = client.get(f"/offers/{oid}/picture").json()
-    asked, opt_a, opt_b = pic["paths"]
+    _, opt_a, opt_b = pic["paths"]
     for p in (opt_a, opt_b):
         assert p["series"] is None and p["sendable"] is False and p["recommended"] is False and p["tag_text"] is None
         assert p["authority"] is None and p["authority_text"] == "FLOW cannot draw this reply on today's books"
