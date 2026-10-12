@@ -57,7 +57,7 @@ export function Disclosure({
 }) {
   const head = summaryClass ?? `flex min-h-10 touch:min-h-11 cursor-pointer list-none items-center gap-2 rounded-pill text-sm font-medium [&::-webkit-details-marker]:hidden ${deep ? "text-on-deep" : card ? "px-4 py-3 font-semibold text-ink" : "text-brand-700"}`;
   return (
-    <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal rounded-card border border-line bg-surface shadow-card" : ""} ${className}`}>
+    <details open={defaultOpen || undefined} data-testid={testId} className={`group ${card ? "motion-reveal card-standard" : ""} ${className}`}>
       <summary className={head}>
         {bare ? (
           summary

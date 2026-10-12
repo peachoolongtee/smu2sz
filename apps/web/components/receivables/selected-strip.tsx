@@ -1,5 +1,6 @@
 "use client";
 
+import { SelectedCard } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { ReceivableRow } from "@/lib/types";
 import { ActionButton, actionsOf } from "./actions";
@@ -12,7 +13,7 @@ export function SelectedStrip({ row, customerHref }: { row: ReceivableRow; custo
   const { t } = useI18n();
   const first = actionsOf(row)[0];
   return (
-    <section aria-label={t("recv3.strip.label")} className="space-y-3 rounded-card border border-line bg-surface p-4 shadow-card" data-testid="recv3-strip" data-receivable={row.receivable_id}>
+    <SelectedCard aria-label={t("recv3.strip.label")} className="space-y-3 p-4" data-testid="recv3-strip" data-receivable={row.receivable_id}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className="min-w-0 flex-1 break-words text-sm font-semibold text-ink" data-testid="recv3-strip-invoice">
           <span className="first-letter:uppercase">{row.invoice ?? row.buyer_name}</span>
@@ -28,6 +29,6 @@ export function SelectedStrip({ row, customerHref }: { row: ReceivableRow; custo
           <ActionButton row={row} action={first} primary scope="strip-" customerHref={customerHref} testId="recv3-strip-action" />
         </div>
       ) : null}
-    </section>
+    </SelectedCard>
   );
 }

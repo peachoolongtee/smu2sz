@@ -32,7 +32,7 @@
   --color-canvas: #f5f7fb;
   --color-surface: #ffffff;
   --color-subtle: #eff3f8;
-  --color-line: #e6eaf0;
+  --color-line: #e6e9ef;
   --color-line-strong: #d3d9e2; /* dividers between dense rows: decoration, not a boundary that must be seen */
   --color-line-ui: #768399; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.4:1 on subtle */
 
@@ -94,7 +94,7 @@
   --color-chart-reserve: #a3241a;
   --color-chart-danger: #fdecea;
   --color-chart-worst: #b7791f;
-  --color-chart-grid: #e6eaf0;
+  --color-chart-grid: #e6e9ef;
   --color-chart-axis: #5a6577;
   /* The deal picture's series hues (the chart hues): turquoise, purple, sky, navy. Never a status. */
   --color-chart-teal: #38d0c7;
@@ -107,7 +107,9 @@
   --color-focus: #0368e9;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.5:1: the ring turns white inside it */
 
-  /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
+  /* Shadows: a standard card rests on a hairline alone (no shadow); a decision card takes --shadow-decision; a lifted row, tile or option takes one
+     step; a sheet or menu takes the pop. --shadow-card is the one-pixel edge under a segmented pill (it is not a card's shadow). */
+  --shadow-decision: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.06);
   --shadow-card: 0 1px 2px rgb(36 50 74 / 0.05), 0 6px 14px -10px rgb(36 50 74 / 0.12);
   --shadow-lift: 0 2px 4px rgb(36 50 74 / 0.06), 0 12px 22px -14px rgb(36 50 74 / 0.22);
   --shadow-pop: 0 4px 8px rgb(36 50 74 / 0.06), 0 18px 36px -12px rgb(36 50 74 / 0.24);
@@ -117,6 +119,7 @@
   /* One radius scale: 8 px controls (buttons, toggles, fields), 14 px cards, 10 px inner tiles and rows, and a pill for badges, chips, avatars and the segmented track. */
   --radius-pill: 9999px;
   --radius-card: 14px;
+  --radius-decision: 16px;
   --radius-tile: 10px;
   --radius-control: 8px;
 
@@ -373,6 +376,27 @@ input[type="radio"] {
   /* A sliding thumb or indicator: it moves by transform only. */
   .motion-slide {
     transition: transform var(--dur) var(--ease-ui);
+  }
+
+  /* The three card types (components/ui.tsx: Card, DecisionCard, SelectedCard), one class each. A standard card is a hairline and nothing
+     else; a decision card is raised on one soft shadow and carries the page's one strong action; a selected card is the tinted card
+     with the 3 px accent rule (the choice the detail beside it is about). */
+  .card-standard {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .card-decision {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-decision);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-decision);
+  }
+  .card-selected {
+    border: 1px solid var(--color-brand-100);
+    border-left: 3px solid var(--color-brand-600);
+    border-radius: var(--radius-card);
+    background: var(--color-brand-50);
   }
 
   /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the

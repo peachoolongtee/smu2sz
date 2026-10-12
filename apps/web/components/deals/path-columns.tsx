@@ -79,7 +79,7 @@ export function PathColumns({
             // Keyboard focus lights the line too; a tap that happens to focus the button does not (it would leave the other lines dimmed).
             onFocus={(e) => e.target.matches(":focus-visible") && onHover(p.key)}
             onBlur={() => onHover(null)}
-            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-card border-2 bg-surface p-3.5 transition-[border-color,box-shadow] duration-(--dur) ease-ui ${on ? `${hue.border} shadow-card` : "border-line"}`}
+            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-card border-2 bg-surface p-3.5 transition-colors duration-(--dur) ease-ui ${on ? `${hue.border}` : "border-line"}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-ink">

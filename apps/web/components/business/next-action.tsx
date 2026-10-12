@@ -267,7 +267,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
   }
 
   return (
-    <section aria-labelledby="home-action-title" className="rounded-card border border-line bg-surface p-4 shadow-card short:p-3" data-testid="home-next-action" data-alert={a.alert_id}>
+    <section aria-labelledby="home-action-title" className="card-standard p-4 short:p-3" data-testid="home-next-action" data-alert={a.alert_id}>
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
       <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}

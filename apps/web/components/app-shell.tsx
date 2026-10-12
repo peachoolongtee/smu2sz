@@ -350,7 +350,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <Tour />
       <Backdrop />
-      <header className="sticky top-0 z-30 bg-canvas/70 backdrop-blur-md backdrop-saturate-150">
+      <header className="sticky top-0 z-30 bg-canvas">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">

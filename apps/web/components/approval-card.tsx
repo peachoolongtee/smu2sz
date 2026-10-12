@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { CashPicture } from "@/components/business/cash-picture";
-import { Badge, Button, Callout, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Button, Callout, DecisionCard, KeyValueList, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
 import { useNarrow } from "@/lib/use-narrow";
@@ -340,11 +340,11 @@ export function ApprovalCard({
     );
     const picture = cash && p?.series_if_declined?.length && p?.series_if_approved?.length ? <ApprovalPicture a={a} cash={cash} after={afterText} decline={declineText} /> : null;
     return (
-      <section
+      <DecisionCard
         id={`approval-${a.id}`}
         aria-labelledby={headlineInPage ? undefined : `approval-${a.id}-title`}
         aria-label={headlineInPage ? headlineText : undefined}
-        className="motion-reveal min-w-0 space-y-4 rounded-card border border-line-strong bg-surface/84 p-5 shadow-pop backdrop-blur-[18px] backdrop-saturate-150 max-sm:p-4"
+        className="space-y-4 p-5 max-sm:p-4"
         data-testid={`approval-card-${a.id}`}
         data-status={a.status}
       >
@@ -396,7 +396,7 @@ export function ApprovalCard({
         {narrow ? null : decide}
         {recordLink}
         {auditFold}
-      </section>
+      </DecisionCard>
     );
   }
 

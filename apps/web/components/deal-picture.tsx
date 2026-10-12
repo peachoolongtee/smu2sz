@@ -80,7 +80,7 @@ export function DealPicture({ doc }: { doc: DocumentView }) {
       {tiles.length ? (
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" data-testid="deal-picture-terms">
           {tiles.map((x) => (
-            <div key={x.key} className="min-w-0 rounded-tile border border-line bg-surface p-4 shadow-card">
+            <div key={x.key} className="min-w-0 rounded-tile border border-line bg-surface p-4">
               <dt className="text-xs font-bold uppercase tracking-wide text-ink-3">{x.label}</dt>
               <dd className={`mt-1.5 break-words text-base font-bold leading-snug ${x.value ? "text-ink" : "text-ink-3"}`}>{x.value ?? t("pic.notInContract")}</dd>
             </div>
@@ -152,7 +152,7 @@ function PictureBody({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       {/* Cash position */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-cash">
+      <figure className="card-standard min-w-0 p-5" data-testid="deal-picture-cash">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.cash")}</h3>
           <p className="mt-0.5 text-xs text-ink-3">{t(lender ? "pic.cash.lender" : "pic.cash.sub", { n: span, name })}</p>
@@ -193,7 +193,7 @@ function PictureBody({
       </figure>
 
       {/* Cash you can reach */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card" data-testid="deal-picture-reach">
+      <figure className="card-standard min-w-0 p-5" data-testid="deal-picture-reach">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.reach")}</h3>
           <p className="mt-0.5 text-xs text-ink-3">{t("pic.reach.sub")}</p>
@@ -231,7 +231,7 @@ function PictureBody({
       </figure>
 
       {/* Loans and credit lines */}
-      <figure className="min-w-0 rounded-card border border-line bg-surface p-5 shadow-card lg:col-span-2" data-testid="deal-picture-loans">
+      <figure className="card-standard min-w-0 p-5 lg:col-span-2" data-testid="deal-picture-loans">
         <figcaption>
           <h3 className="text-base font-bold text-ink">{t("pic.loans")}</h3>
           <p className="mt-0.5 text-xs text-ink-3">{t("pic.loans.sub")}</p>

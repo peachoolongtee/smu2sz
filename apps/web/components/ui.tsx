@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useState, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError, isTimeout } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
@@ -147,6 +147,10 @@ export function PageHeader({
   );
 }
 
+/**
+ * The standard card: a 14 px radius, a hairline and no shadow, the rest of the page's content in a box. Its siblings are `DecisionCard` (the one
+ * raised card, with the strong action) and `SelectedCard` (the tinted card of the choice being read); the three and when to use which are in DESIGN.md.
+ */
 export function Card({
   title,
   subtitle,
@@ -193,7 +197,7 @@ export function Card({
     <section
       id={id}
       aria-labelledby={labelledBy ?? (title && id ? `${id}-title` : undefined)}
-      className={`motion-reveal min-w-0 rounded-card border bg-surface shadow-card ${border} ${className}`}
+      className={`motion-reveal card-standard min-w-0 ${border} ${className}`}
     >
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4">
@@ -207,6 +211,36 @@ export function Card({
         </div>
       ) : null}
       <div className={title ? "px-5 pb-5 pt-3" : "p-5"}>{children}</div>
+    </section>
+  );
+}
+
+/**
+ * The decision card: the one raised card of a page (a 16 px radius, one soft shadow), for what the owner is asked to decide. It carries one strong action,
+ * the `action` slot (the page's one filled button, at the end of the row); everything else in it is read, not pressed. Solid white: no frost, no blur.
+ * `ActionBar` (the sticky variant) and the approval card are made of it.
+ */
+export function DecisionCard({ action, children, className = "", ...rest }: HTMLAttributes<HTMLElement> & { action?: ReactNode }) {
+  return (
+    <section {...rest} className={`motion-reveal card-decision min-w-0 ${className}`}>
+      {children}
+      {action ? (
+        <div data-slot="action" className="flex flex-wrap items-center gap-2">
+          {action}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * The selected card: the brand tint with a 3 px accent rule on the left, for the one item whose detail the page is showing (the chosen invoice).
+ * A card the owner can choose among says so by this and by `aria-current`/`aria-selected` in its parent; the tint is never a status.
+ */
+export function SelectedCard({ children, className = "", ...rest }: HTMLAttributes<HTMLElement>) {
+  return (
+    <section {...rest} className={`card-selected min-w-0 ${className}`}>
+      {children}
     </section>
   );
 }
@@ -409,7 +443,7 @@ export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (
-      <div role="status" className="motion-reveal rounded-card border border-line bg-surface p-5 text-center shadow-card" data-testid="signin-needed">
+      <div role="status" className="motion-reveal card-standard p-5 text-center" data-testid="signin-needed">
         <p className="font-semibold text-ink">{t("auth.signinToSee")}</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{error.status === 401 ? t("auth.signinToSee.body") : t("auth.signinToSee.forbidden")}</p>
         <Button className="mt-3" variant="primary" onClick={() => requestSignIn("required")}>

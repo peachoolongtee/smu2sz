@@ -65,7 +65,7 @@ export function InvoiceList({
           {rows.length === 0 ? t("recv3.list.empty") : t("biz.recv.filter.none")}
         </p>
       ) : (
-        <div role="table" aria-label={t("recv3.list.label")} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+        <div role="table" aria-label={t("recv3.list.label")} className="card-standard overflow-hidden">
           <div role="rowgroup">
             <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
               <span role="columnheader">{t("recv3.col.customer")}</span>

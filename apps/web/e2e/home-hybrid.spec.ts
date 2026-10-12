@@ -814,6 +814,8 @@ test("a phone (390 x 844), Chinese: the effect table and the planned rows stay i
 
 test("axe: no serious or critical finding on the hybrid Home, in both scenarios, at 1440 and at 390", async ({ page }) => {
   const scan = async (label: string) => {
+    // Under reduced motion a fold's opacity still eases (#112): read the settled colours.
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
     const result = await new AxeBuilder({ page }).analyze();
     const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), label).toEqual([]);

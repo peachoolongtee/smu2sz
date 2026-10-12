@@ -73,3 +73,37 @@ test("reduced motion: one transition per token keeps only opacity, at its own to
     expect((await probe(page, token)).property, `${token} with no preference`).toBe("transform");
   }
 });
+
+test("three card types: a standard card has a hairline and no shadow, the decision card one soft shadow and no frost, the selected card the tint and a 3 px rule", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("home-next-action").first()).toBeVisible({ timeout: 15_000 });
+  const styles = await page.evaluate(() => {
+    const read = (el: Element) => {
+      const s = getComputedStyle(el);
+      return { shadow: s.boxShadow, radius: s.borderTopLeftRadius, border: s.borderTopWidth, borderColor: s.borderTopColor, bg: s.backgroundColor, left: s.borderLeftWidth, leftColor: s.borderLeftColor, blur: s.backdropFilter };
+    };
+    const probe = (cls: string) => {
+      const el = document.createElement("div");
+      el.className = cls;
+      document.body.append(el);
+      const out = read(el);
+      el.remove();
+      return out;
+    };
+    const live = document.querySelector('[data-testid="home-next-action"]');
+    return { standard: probe("card-standard"), decision: probe("card-decision"), selected: probe("card-selected"), live: live ? read(live) : null };
+  });
+  expect(styles.standard.shadow).toBe("none");
+  expect(styles.standard.radius).toBe("14px");
+  expect(styles.standard.borderColor).toBe("rgb(230, 233, 239)");
+  expect(styles.decision.radius).toBe("16px");
+  expect(styles.decision.shadow).toContain("rgba(16, 24, 40, 0.06) 0px 1px 2px");
+  expect(styles.decision.shadow).toContain("rgba(16, 24, 40, 0.06) 0px 8px 24px");
+  expect(styles.selected.bg).toBe("rgb(230, 241, 255)");
+  expect(styles.selected.left).toBe("3px");
+  expect(styles.selected.leftColor).toBe("rgb(3, 104, 233)");
+  // The attention card on Home is the decision card: solid, one soft shadow, no frost.
+  expect(styles.live?.shadow).toBe(styles.decision.shadow);
+  expect(styles.live?.blur).toBe("none");
+  expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
+});
