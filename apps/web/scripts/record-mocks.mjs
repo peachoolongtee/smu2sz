@@ -58,6 +58,15 @@
 // and, against an API started WITHOUT FEATURE_EXPOSURE, `--overview --exposure-off` records customer_overview_exposure_off.json ({ en, zh }: the opening
 // books' overview with the exposure panel off and the server's note for it), which the mock serves while the spec's hook key is set.
 //
+// --inputs records ONLY apps/web/mocks/buyer_inputs.json and exits (the owner's Inputs sheet, ticket #97): { en, zh } of the opening sheet
+// (GET /buyers/BUYER-1/inputs, and again with the deal's `decision` for its back link), the firm read (GET /firm/inputs), the overview
+// before and after, the 422 a margin of 150% gets, the answer to saving a margin of 25% (POST /buyers/BUYER-1/inputs, `value_text`), and
+// the sheet after that save. The API needs FEATURE_EXPOSURE=1 FEATURE_CUSTOMER_ECONOMICS=1 and the other flags as above:
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_CUSTOMER_ECONOMICS=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8197
+//   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
+// and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet
+// with the economics fields refused and the server's sentence for it), which the mock serves while the spec's hook key is set.
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -80,6 +89,7 @@ const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
 const OVERVIEW = process.argv.includes("--overview");
+const INPUTS = process.argv.includes("--inputs");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -283,6 +293,51 @@ if (STRATEGY) {
   await live.demoReset();
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} strategy files into ${join(OUT, "strategy")} from ${API}`);
+  process.exit(0);
+}
+
+// --inputs: the owner's Inputs sheet for the demo's first buyer and nothing else (see the header).
+if (INPUTS) {
+  const BUYER = "BUYER-1";
+  const both = async (read) => ({ en: await read("en"), zh: await read("zh") });
+  if (process.argv.includes("--economics-off")) {
+    await reset();
+    const off = await both((lang) => live.getBuyerInputs(BUYER, lang));
+    if (off.en.economics_on !== false) throw new Error("the economics fields are on: start the API without FEATURE_CUSTOMER_ECONOMICS");
+    await live.demoReset();
+    write("buyer_inputs_off.json", off);
+    console.log(`recorded buyer_inputs_off.json into ${OUT} from ${API}`);
+    process.exit(0);
+  }
+  const refused = async (lang) => {
+    try {
+      await live.saveInput(BUYER, { field: "margin_bp", value_text: "150%", provenance: "OWNER_ENTERED" }, lang);
+    } catch (e) {
+      if (e?.status === 422) return { status: 422, detail: e.detail };
+      throw e;
+    }
+    throw new Error("a margin of 150% was accepted: the sheet needs the API to refuse it");
+  };
+  await reset();
+  const out = {};
+  out.opening = await both((lang) => live.getBuyerInputs(BUYER, lang));
+  if (!out.opening.en.economics_on) throw new Error("the economics fields are off: start the API with FEATURE_CUSTOMER_ECONOMICS=1");
+  out.firm = await both(async (lang) => {
+    const r = await fetch(`${API}/firm/inputs?lang=${lang}`, { headers: { "X-Owner-Token": OWNER_TOKEN } });
+    if (!r.ok) throw new Error(`GET /firm/inputs answered ${r.status}`);
+    return r.json();
+  });
+  out.overview_before = await both((lang) => live.getCustomerOverview(BUYER, lang));
+  out.rejected = await both(refused);
+  out.saved_margin = await both(async (lang) => {
+    await reset();
+    return live.saveInput(BUYER, { field: "margin_bp", value_text: "25%", provenance: "OWNER_ENTERED" }, lang);
+  });
+  out.after_margin = await both((lang) => live.getBuyerInputs(BUYER, lang));
+  out.overview_after = await both((lang) => live.getCustomerOverview(BUYER, lang));
+  await live.demoReset();
+  write("buyer_inputs.json", out);
+  console.log(`recorded buyer_inputs.json into ${OUT} from ${API}`);
   process.exit(0);
 }
 
