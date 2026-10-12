@@ -576,9 +576,17 @@ def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
         return "plan comparison"
     if b & {ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED.value, ViolationCode.MAX_APR_EXCEEDED.value}:
         return "the mandate's price ceiling"
-    if ignore_caps and b:
-        return "forward budget" if ViolationCode.AGG_CONCESSION_EXCEEDED.value in b else "buyer cap"
+    if b & COVENANT_CODES:
+        return "covenant"
+    if b & FUNDING_CODES:
+        return "funding"
+    # any other code is not named: with the caps ignored a cap is never the wall, and an unknown code is never called one
     return None
+
+
+COVENANT_CODES = frozenset(c.value for c in (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH,
+                                             ViolationCode.CLEAN_DOWN_BREACH))
+FUNDING_CODES = frozenset(c.value for c in (ViolationCode.UNCOMMITTED_FACILITY, ViolationCode.LEAD_TIME_TOO_LONG))
 
 
 def _maximum(v: _Verifier, lever: str, key: str, unit: Literal["days", "bp"], found: Found, make: Callable[[int], Setting],
@@ -670,7 +678,8 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
 
 
 def _price_at(v: _Verifier, terms: int) -> Callable[[int], bool]:
-    return lambda p: v.ok(Setting(terms, price=p))
+    """The zone's test: a price counts only when the package passes its own re-check too (`approved`, not `passes`)."""
+    return lambda p: v.approved(Setting(terms, price=p))
 
 
 def _zone(v: _Verifier) -> list[ZoneRow]:
@@ -688,17 +697,18 @@ def _whole_at(v: _Verifier, terms: int, price: int) -> Callable[[int], bool]:
 
 
 def _cell(v: _Verifier, base: Setting, keep_failures: bool, price_hint: int | None = None) -> Probe | None:
-    """The package of one terms value and early-pay variant: the smallest price that passes, then the largest rebate
-    that still passes at that price (one whole verifier evaluation). A failing cell shows the verifier's answer at the
-    largest price, and only when `keep_failures`."""
+    """The package of one terms value and early-pay variant: the smallest price that is approved (passes and passes its
+    own re-check), then the largest rebate still approved at that price (one whole verifier evaluation). A failing cell
+    shows the verifier's answer at the largest price, and only when `keep_failures` (the full grid)."""
     r = v.ranges
-    fp = first_true(r.price, lambda p: v.ok(base._replace(price=p)), hint=price_hint, hint_steps=1)
+    fp = first_true(r.price, lambda p: v.approved(base._replace(price=p)), hint=price_hint, hint_steps=1)
     if fp.value is None:
         return v.probe(base._replace(price=r.price[-1], rebate=0)) if keep_failures else None
     priced = base._replace(price=fp.value)
-    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
+    fr = last_true(r.rebate, lambda x: v.approved(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
                    hint_steps=1 if price_hint is not None else 2)
-    return v.probe(priced._replace(rebate=fr.value or 0))
+    p = v.probe(priced._replace(rebate=fr.value or 0))
+    return p if p.approved or keep_failures else None
 
 
 def _grid(v: _Verifier, early_counter: list[tuple[Setting, int | None]], whole_standalone: int | None,
@@ -727,7 +737,7 @@ def _grid(v: _Verifier, early_counter: list[tuple[Setting, int | None]], whole_s
             p = _cell(v, base, full_grid, hint)
             if p is None:
                 continue
-            if hint is None and p.passes:
+            if hint is None and p.approved:
                 hint = p.setting.price
             if p.setting not in seen:
                 seen.add(p.setting)
@@ -935,6 +945,8 @@ _WALL_TEXT = {
     "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
     "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
     "the mandate's price ceiling": ("your price ceiling", "您的价格上限"),
+    "covenant": ("your loan covenants", "您的贷款契约"),
+    "funding": ("funding that can arrive in time", "能及时到位的资金"),
 }
 _WALL_WORDS = {
     "forward budget": ("your budget for what you give buyers", "您给买家让利的预算"),
@@ -943,6 +955,8 @@ _WALL_WORDS = {
     "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
     "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
     "the mandate's price ceiling": ("the price ceiling in your mandate", "您授权中的价格上限"),
+    "covenant": ("your loan covenants", "您的贷款契约"),
+    "funding": ("funding that can arrive in time", "能及时到位的资金"),
 }
 _LEVER_LABEL = {
     "terms_alone": ("Longest payment terms on their own", "仅延长账期时的最长账期"),
