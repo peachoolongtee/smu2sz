@@ -30,6 +30,7 @@ from app.api.presentation import (
     series_axis,
 )
 from app.api.presentation import t as say
+from app.api.presentation import whole
 from app.api.runtime import get_runtime
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
@@ -521,6 +522,29 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
     return paths
 
 
+def _signed_whole(fen: int) -> str:
+    """A difference with its sign in the KPIs' money form: "+¥422,012.23", "−¥1,000", "¥0" (the signed form of `home_hybrid._signed`, at
+    the precision of the two figures it sits between)."""
+    return "¥0" if fen == 0 else (f"+{whole(fen)}" if fen > 0 else whole(fen))
+
+
+def _same_day_comparison(paths: list[dict[str, Any]], lang: str) -> None:
+    """The inspector's strip for each day, on every point of every path's series: the offer as asked beside the recommended reply and what
+    separates them, from the two series the read already carries (the same objects the chart draws). `comparison` is null where there is no
+    recommended reply (the offer as asked, or nothing sendable, is recommended) or where either path has no point that day."""
+    asked = next((p for p in paths if p["kind"] == "asked"), None)
+    reply = next((p for p in paths if p["kind"] == "reply" and p["recommended"]), None)
+    a_by_day = {pt["day"]: pt for pt in (asked or {}).get("series") or []}
+    r_by_day = {pt["day"]: pt for pt in (reply or {}).get("series") or []}
+    label = say(lang, "Same day", "同一天")
+    for p in paths:
+        for pt in p["series"] or []:
+            a, r = a_by_day.get(pt["day"]), r_by_day.get(pt["day"])
+            pt["comparison"] = (None if a is None or r is None else
+                                {"label": label, "asked_display": a["closing_display"], "recommended_display": r["closing_display"],
+                                 "difference_display": _signed_whole(r["closing_fen"] - a["closing_fen"])})
+
+
 # ---------------------------------------------------------------- the moments: the days where looking is worth it, with every path's cash
 
 _MAX_MOMENTS = 6
@@ -792,6 +816,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
     paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs)
+    _same_day_comparison(paths, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
     return {

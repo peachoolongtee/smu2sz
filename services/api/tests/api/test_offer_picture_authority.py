@@ -432,3 +432,49 @@ def test_the_recommendation_that_falls_to_the_next_reply_carries_the_reason(clie
     _, opt_a, opt_b = _paths(client, oid)
     assert opt_a["recommended_reason_text"] is None
     assert opt_b["recommended_reason_text"] == "Recommended because it is the first counter within your mandate; it needs your approval."
+
+
+# ---------------------------------------------------------------- the same-day comparison on every point
+
+
+def _point(path, day):
+    return next(p for p in path["series"] if p["day"] == day)
+
+
+def test_every_point_carries_the_same_day_strip_of_the_asked_path_and_the_recommended_reply(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, opt_b = _paths(client, oid)
+    low_day = min(asked["series"], key=lambda p: (p["closing_fen"], p["day"]))["day"]
+    assert low_day == 60
+    for path in (asked, opt_a, opt_b):  # the strip is the day's, whichever line the point is on
+        assert _point(path, low_day)["comparison"] == {"label": "Same day", "asked_display": "¥164,960.00",
+                                                       "recommended_display": "¥586,972.23", "difference_display": "+¥422,012.23"}
+        # day 0: Option A's own funding plan draws the credit line today (the asked path takes no new funding)
+        assert _point(path, 0)["comparison"] == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
+                                                 "recommended_display": _point(opt_a, 0)["closing_display"],
+                                                 "difference_display": "+¥149,986.20"}
+    assert all(p["comparison"] is not None for p in asked["series"])
+    zh = _paths(client, oid, "zh")
+    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,012.23"
+
+
+def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing_to_compare(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, _ = _paths(client, oid)
+    for pt in asked["series"]:
+        mine = next((q for q in opt_a["series"] if q["day"] == pt["day"]), None)
+        c = pt["comparison"]
+        if mine is None:
+            assert c is None
+            continue
+        assert (c["asked_display"], c["recommended_display"]) == (pt["closing_display"], mine["closing_display"])
+        diff = mine["closing_fen"] - pt["closing_fen"]
+        assert c["difference_display"].lstrip("+−") == ("¥0" if diff == 0 else c["difference_display"].lstrip("+−"))
+        assert (diff == 0) == (c["difference_display"] == "¥0") and (diff < 0) == c["difference_display"].startswith("−")
+
+
+def test_with_no_recommended_reply_there_is_no_strip(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    _recheck_as(monkeypatch, outcome=Outcome.REJECT, violations=[])
+    offer_picture._cache.clear()
+    assert all(p["comparison"] is None for path in _paths(client, oid) for p in path["series"])
