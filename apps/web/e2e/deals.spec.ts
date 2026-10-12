@@ -126,35 +126,22 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
     "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
     "Accepted as asked, cash would fall below your minimum in 47 days.",
   ]);
-  const breach = page.getByTestId("deal-fact-cash");
-  await expect(breach).toContainText("First reserve breach");
-  await expect(breach).toContainText("in 47 days");
-  await expect(breach).toContainText("Cash falls to ¥209,960.00");
-  const worst = page.getByTestId("deal-fact-worst");
-  await expect(worst).toContainText("Worst point");
-  await expect(worst).toContainText("¥164,960.00");
-  await expect(worst).toContainText("in 60 days");
-  // The three numbers are about the offer as the buyer asked for it, and the page says so.
-  await expect(page.getByTestId("deal-if-accept")).toHaveText("If you accept the offer as asked:");
+  // The two cash facts of the offer as asked (first breach, worst point) are the chart's now: the asked path's column and the decisive stop say them.
+  await expect(page.getByTestId("deal-fact-cash")).toHaveCount(0);
+  await expect(page.getByTestId("path-moment")).toContainText("In 47 days");
+  await expect(page.getByTestId("path-col-cash-0")).toContainText("¥209,960.00");
   await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
   // No engine count or code at level 1.
   await expect(page.locator("body")).not.toContainText("failed,");
   await expect(page.locator("#deal-recommendation-card")).not.toContainText("REJECT");
 
-  // The recommended response: Option A with its cost; Option B behind "Compare", with its net economic cost and both parts.
+  // The reply: three paths on one chart, the recommended reply picked first; Option B is a column away, with its cost and its note.
   const response = page.locator("#counters");
-  await expect(response.getByTestId("deal-option-Option-A")).toContainText("Recommended");
-  await expect(response.getByTestId("deal-option-Option-A").getByTestId("deal-option-cost")).toHaveText("¥3,027.77");
-  await expect(response.getByTestId("deal-option-Option-B")).toHaveCount(0);
-  await response.getByTestId("deal-compare").click();
-  const b = response.getByTestId("deal-option-Option-B");
-  await expect(b).toContainText("Net economic cost");
-  await expect(b.getByTestId("deal-option-cost")).toContainText("¥0");
-  await expect(b).toContainText("¥16,217.95");
-  await expect(b).toContainText("¥16,380.00");
-  await expect(b).not.toContainText("¥0.00");
-  await response.getByTestId("deal-compare").click();
-  await expect(response.getByTestId("deal-option-Option-B")).toHaveCount(0);
+  await expect(page.getByTestId("path-col-1")).toContainText("FLOW recommends");
+  await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
+  await expect(page.getByTestId("path-col-2")).toContainText("the price rise pays for the longer terms");
+  await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
+  await expect(page.getByTestId("path-col-2")).not.toContainText("CTR-");
 
   // With the check done there is no Action left to take on this card: the response carries the page's one filled call ("Send this counter").
   await expect(next).toHaveCount(0);
@@ -200,7 +187,8 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.locator("#commitments")).toHaveCount(0);
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   // (the strategy build adds its "Before they ask" card to the page)
-  expect(height).toBeLessThanOrEqual(2 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
+  // (the three paths, their chart and their columns make it about three screens; the disclosures stay closed)
+  expect(height).toBeLessThanOrEqual(3 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // Reading the same message again costs nothing: it is shown, not read twice.
   await page.getByTestId("inbox-back").click();
@@ -234,38 +222,34 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("deal-left")).toContainText("Waiting for Foshan Home Retail Co. to pay");
   await page.getByTestId("inbox-back").click();
   await expect(inbox.getByTestId("inbox-msg-EX01").getByTestId("inbox-msg-status")).toHaveCount(0); // the message being read says "Showing below"
-  await expect(response.getByTestId("deal-option-Option-A")).toHaveCount(0);
+  await expect(page.getByTestId("deal-paths")).toHaveCount(0);
   // No band: an agreement in force is said by the chip and the Agreements card.
   await expect(page.getByTestId("next-step")).toHaveCount(0);
 });
 
-test("without the strategy flag, Compare is the response card's own state: it is closed again after reading another message and coming back", async ({ page }) => {
-  // With the flag on the page keeps the state (so "Before they ask" can open Option B), which is what e2e/strategy.spec.ts covers.
-  test.skip(process.env.E2E_STRATEGY === "1", "the strategy build keeps the compare state on the page");
+test("the picked path is the page's own state: reading another message and coming back starts on the recommended reply again", async ({ page }) => {
   await page.goto("/deals");
   const inbox = page.getByTestId("inbox-list");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  const response = page.locator("#counters");
-  await response.getByTestId("deal-compare").click();
-  await expect(response.getByTestId("deal-option-Option-B")).toBeVisible();
-  // Read the other message of the thread: the response card is gone until it is checked.
+  await page.getByTestId("path-col-pick-2").click();
+  await expect(page.getByTestId("path-reply")).toContainText("Option B");
+  // Read the other message of the thread: the paths are gone until it is checked.
   await page.getByTestId("inbox-back").click();
   await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
   await inbox.getByTestId("inbox-msg-EX01B").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await expect(page.locator("#deal-selected")).toBeVisible();
   await expect(page.locator("#counters")).toHaveCount(0);
-  // Back to the first: its response card starts closed, as it always did.
+  // Back to the first: its paths start on the recommended reply, as they always did.
   await page.getByTestId("inbox-back").click();
   await expect(inbox.getByTestId("inbox-msg-EX01B")).toHaveAttribute("aria-current", "true");
   const earlier = page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first();
   if (await inbox.getByTestId("inbox-msg-EX01").isHidden()) await earlier.click();
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
-  await expect(page.locator("#counters").getByTestId("deal-option-Option-A")).toBeVisible();
-  await expect(page.locator("#counters").getByTestId("deal-option-Option-B")).toHaveCount(0);
-  await expect(page.locator("#counters").getByTestId("deal-compare")).toContainText("Compare");
+  await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("path-reply")).toContainText("Option A");
 });
 
 test("Business mode never shows a sender the books have not vouched for, not even while they load", async ({ page }) => {

@@ -3073,4 +3073,62 @@ export interface OfferPictureView {
   horizon_days: number;
   /** The y axis of the lines; absent from an older server. */
   axis?: PictureAxis | null;
+  /** One entry per line on the chart: the offer as asked, then each reply, in the server's order. Absent from an older server (the page then shows the counter cards). */
+  paths?: PicturePath[];
+  /** At most six days, ascending, where the paths are worth comparing; each carries every path's cash that day. */
+  moments?: PictureMoment[];
+  /** The window the axis and the lines cover, in days from today. */
+  picture_days?: number;
+}
+
+/** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
+export interface PathTerm {
+  key: string;
+  label: string;
+  value_text: string;
+  instead_of_text: string | null;
+}
+
+/** One path on the offer's picture. `key` is "asked" or a counter's id (never shown); every word is the server's. */
+export interface PicturePath {
+  key: string;
+  kind: "asked" | "reply";
+  label: string;
+  recommended: boolean;
+  sendable: boolean;
+  needs_owner: boolean;
+  tag_text: string;
+  tag_tone: DealTone;
+  cost_display: string;
+  cost_note: string;
+  terms: PathTerm[];
+  decides_text: string;
+  /** The sentence the reply says to the buyer; null for a path that cannot be sent. */
+  reply_text: string | null;
+  series: HomeSeriesPoint[] | null;
+  lowest_fen: Fen | null;
+  lowest_short: string | null;
+  lowest_when: string | null;
+  first_breach_when: string | null;
+  /** What the path does against the asked one (or, for the asked one, against the minimum), as the band's label; null when there is nothing to say. */
+  band_text: string | null;
+}
+
+/** Every path's closing cash on one moment's day. */
+export interface MomentValue {
+  key: string;
+  closing_fen: Fen;
+  closing_display: string;
+  below_floor: boolean;
+  note: string | null;
+}
+
+/** A day worth stopping on: `day` is absolute (like the series points' `day`), the words are the server's. */
+export interface PictureMoment {
+  day: Day;
+  label: string;
+  title: string;
+  decisive: boolean;
+  text: string;
+  values: MomentValue[];
 }

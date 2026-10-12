@@ -101,6 +101,8 @@
   --color-chart-purple: #9b5fff;
   --color-chart-sky: #9bc7ff;
   --color-chart-navy: #24324a;
+  /* The third series on the Deals paths chart (the asked path is `bad`, the recommended reply `ok`): a deep purple, 8:1 on white, never a status. */
+  --color-series-c: #5b2bbf;
 
   --color-focus: #0368e9;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.5:1: the ring turns white inside it */

@@ -2226,6 +2226,21 @@ export const en = {
   "biz.activity.rail": "What happened, newest first",
   // ---- Deals A1
   "biz.deals.askCost": "What they ask, and what each costs you",
+  "biz.deals.paths.title": "Your cash on each path",
+  "biz.deals.paths.sub": "Pick a path to light it up. Step through the days to see where they part.",
+  "biz.deals.paths.alt": "Your cash on each path, day by day. {paths}",
+  "biz.deals.paths.step": "Step through",
+  "biz.deals.paths.play": "Play the comparison",
+  "biz.deals.paths.stop": "Stop",
+  "biz.deals.paths.group": "Choose which path to show on the chart",
+  "biz.deals.paths.cost": "Cost to you",
+  "biz.deals.paths.cash": "Cash · {when}",
+  "biz.deals.paths.show": "Show this path",
+  "biz.deals.paths.showing": "Showing on the chart",
+  "biz.deals.reply.eyebrow": "Your reply · {label}",
+  "biz.deals.reply.approveFirst": "Your reply · {label} · you approve first",
+  "biz.deals.reply.cannot": "Not a reply you can send",
+  "biz.deals.reply.back": "Back to {label}",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -4450,4 +4465,19 @@ export const zh: Record<DictKey, string> = {
   "biz.activity.rail": "发生的事，最新在前",
   // ---- Deals A1
   "biz.deals.askCost": "对方的要求，以及每一项让你付出什么",
+  "biz.deals.paths.title": "每条路径下你的现金",
+  "biz.deals.paths.sub": "选一条路径让它亮起来。逐日查看它们在哪里分开。",
+  "biz.deals.paths.alt": "每条路径下你的现金，逐日。{paths}",
+  "biz.deals.paths.step": "逐日查看",
+  "biz.deals.paths.play": "播放对比",
+  "biz.deals.paths.stop": "停止",
+  "biz.deals.paths.group": "选择要显示在图上的路径",
+  "biz.deals.paths.cost": "你的成本",
+  "biz.deals.paths.cash": "现金 · {when}",
+  "biz.deals.paths.show": "显示这条路径",
+  "biz.deals.paths.showing": "已显示在图上",
+  "biz.deals.reply.eyebrow": "你的回复 · {label}",
+  "biz.deals.reply.approveFirst": "你的回复 · {label} · 需你先批准",
+  "biz.deals.reply.cannot": "这不是你能发送的回复",
+  "biz.deals.reply.back": "回到 {label}",
 };

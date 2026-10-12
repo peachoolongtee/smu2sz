@@ -9,13 +9,13 @@ import { isAgreed } from "@/components/deals/deal-summary";
 import { contractsOff } from "@/components/documents";
 import { DealHeading } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
-import { RecommendedResponse } from "@/components/deals/response";
+import { PathsSection, pathsUsable } from "@/components/deals/paths-section";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { dealRecordId, getClock, getDeals, getLedger, getState, submitOffer } from "@/lib/api";
+import { dealRecordId, getClock, getDeals, getLedger, getOfferPicture, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
@@ -131,6 +131,12 @@ export default function DealsPage() {
   const obligations = items.flatMap((i) => (i.group === "obligation" ? [i.obligation] : []));
   // The verdict's bound obligations carry the terms delta ("45 → 60 days"); before the check, the compiled offer's.
   const asks = v?.bound_obligations?.length ? v.bound_obligations : obligations;
+  // The offer's picture (one line per path, the moments where they part): null when the server has none for this offer (an older API, another offer).
+  const pictureRead = useAsync(
+    () => (offer && v ? getOfferPicture(offer.offer.offer_id, lang).catch(() => null) : Promise.resolve(null)),
+    [offer?.offer.offer_id, v?.id, v?.state_version, lang],
+  );
+  const picture = pictureRead.data;
   const inboxOpen = !offer || inboxFor === offer.offer.offer_id;
   // The deals read's row for this offer: FLOW's read of it (`open_offer`), the five stages and the pill's words. Null once the offer is no longer open.
   const dealRow = offer ? (dealsView.data?.deals.find((d) => d.open_offer?.offer_id === offer.offer.offer_id) ?? null) : null;
@@ -270,15 +276,17 @@ export default function DealsPage() {
     );
     if (STRATEGY_MVP) dealParts.before = <BeforeTheyAsk key="before" buyerId={offer.offer.counterparty_id} />;
     if (v && ws) {
-      dealParts.why = <WorkspaceWhy key="why" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} />;
+      dealParts.why = <WorkspaceWhy key="why" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} facts={!pathsUsable(picture, cur.negotiation, v)} />;
       dealParts.priced_response = (
-        <RecommendedResponse
+        <PathsSection
           key="response"
           v={v}
           offerId={offer.offer.offer_id}
           today={today}
           mode={mode}
           negotiation={cur.negotiation}
+          picture={picture}
+          pictureLoading={pictureRead.loading}
           {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (on: boolean) => setCompareFor(on ? offer.offer.offer_id : null) } : {})}
         />
       );
