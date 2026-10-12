@@ -641,7 +641,7 @@ test("Home: a cure that cannot restore the reserve leaves a remaining task with 
   // The invoice link lands on that invoice's row once the page has loaded.
   await page.goto("/");
   await page.locator("#home-remaining").getByRole("link", { name: /^Open the .* invoice/ }).click();
-  await expect(page).toHaveURL(/\/receivables#/);
+  await expect(page).toHaveURL(/\/receivables(\?[^#]*)?#/);
   const id = decodeURIComponent(new URL(page.url()).hash.slice(1));
   const row = page.locator(`[id="${id}"]:visible`);
   await expect(row).toHaveCount(1);

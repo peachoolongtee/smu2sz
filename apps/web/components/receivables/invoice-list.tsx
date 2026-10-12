@@ -14,7 +14,7 @@ const COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0
  * The invoices as one table on a desktop and one card each on a phone: the filter pills by the server's collection state (a pill with nothing in it is
  * disabled, never hidden), then a row per invoice: the customer (a link to its page, carrying the context), what is outstanding, the due day in the
  * server's words, the financing with its three steps, the net to the owner and the state word. A row is chosen with one stretched button (its amount),
- * so the customer link stays a link; the chosen row is `aria-current`. The server's order is kept; the filter only hides rows.
+ * so the customer link stays a link; the chosen row is `aria-current`. The server's order is kept; the filter only hides rows. The chosen row carries a 3 px left rule as well as the tint (a selection is never colour alone).
  */
 export function InvoiceList({
   rows,
@@ -44,19 +44,19 @@ export function InvoiceList({
     <section aria-label={t("recv3.list.label")} className="space-y-3" data-testid="recv3-list">
       <div role="group" aria-label={t("biz.recv.filter.label")} className="flex flex-wrap gap-1.5" data-testid="recv-filters">
         {pills.map((p) => {
-          const n = rows.filter((r) => inFilter(r, p.id)).length;
+          // A pill with nothing behind it is disabled (not counted for the owner: the page shows no number the server did not write).
+          const empty = p.id !== "all" && !rows.some((r) => inFilter(r, p.id));
           return (
             <button
               key={p.id}
               type="button"
               aria-pressed={filter === p.id}
-              disabled={p.id !== "all" && n === 0}
+              disabled={empty}
               onClick={() => onFilter(p.id)}
               className={toggleClass(filter === p.id, "md")}
               data-testid={`recv-filter-${p.id}`}
             >
               {p.label}
-              <span className="tabular-nums text-ink-3">{n}</span>
             </button>
           );
         })}
@@ -69,7 +69,7 @@ export function InvoiceList({
       ) : (
         <div role="table" aria-label={t("recv3.list.label")} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           <div role="rowgroup">
-            <div role="row" className={`hidden gap-x-4 border-b border-line-strong bg-subtle px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
+            <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
               <span role="columnheader">{t("recv3.col.customer")}</span>
               <span role="columnheader">{t("recv3.col.outstanding")}</span>
               <span role="columnheader">{t("recv3.col.due")}</span>
@@ -90,11 +90,11 @@ export function InvoiceList({
                   data-testid={`recv-${r.receivable_id}`}
                   data-selected={selected ? "true" : undefined}
                   data-state={r.collection_state}
-                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "bg-brand-50" : "hover:bg-subtle"} transition-colors duration-200`}
+                  className={`relative grid scroll-mt-20 grid-cols-2 items-start gap-x-4 gap-y-3 border-l-[3px] px-4 py-3 has-[button:focus-visible]:outline has-[button:focus-visible]:outline-2 has-[button:focus-visible]:-outline-offset-2 has-[button:focus-visible]:outline-focus lg:items-center ${COLS} ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:bg-subtle"} transition-colors duration-200`}
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                    <Link prefetch={false} href={customerHref(r)} className="relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700 underline-offset-2 hover:underline" data-testid={`recv-customer-${r.receivable_id}`}>
+                    <Link prefetch={false} href={customerHref(r)} className="hit relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700 underline-offset-2 hover:underline" data-testid={`recv-customer-${r.receivable_id}`}>
                       {buyer}
                     </Link>
                   </div>

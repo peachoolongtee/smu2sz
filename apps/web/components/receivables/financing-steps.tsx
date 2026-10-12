@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
 import type { DictKey } from "@/lib/dictionary";
 import type { FinancingState } from "@/lib/types";
@@ -36,7 +37,14 @@ export function FinancingSteps({ state, testId }: { state: FinancingState | unde
             data-on={current ? "true" : undefined}
             className={`inline-flex items-center gap-1.5 text-sm transition-colors duration-200 ${current ? (done ? "font-bold text-ok-fg" : "font-bold text-brand-700") : done ? "text-ok-fg" : "text-ink-3"}`}
           >
-            <span aria-hidden className={`size-2 shrink-0 rounded-full transition-colors duration-200 ${done ? "bg-ok-solid" : current ? "bg-brand-600" : "border border-line-ui bg-surface"}`} />
+            <span
+              aria-hidden
+              className={`grid size-4 shrink-0 place-items-center rounded-full transition-colors duration-200 ${
+                done ? "bg-ok-solid text-white" : current ? "bg-brand-600 ring-2 ring-brand-600 ring-offset-2 ring-offset-surface" : "border border-line-ui bg-surface"
+              }`}
+            >
+              {done ? <CheckIcon className="size-3" /> : null}
+            </span>
             {t(WORD[step])}
           </li>
         );

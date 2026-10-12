@@ -12,6 +12,15 @@ import type { BuyerExposureView, ReceivablesRead } from "../types";
 import { mockClock, receivablesPoint, type ReceivablesPoint } from "./home";
 
 export const RECEIVABLES_OFFER_KEY = "tl-mock-receivables-offer";
+/**
+ * Test hook for what the demo path cannot reach (an unrecorded financing, a missed promise, a partial read): set to a JSON object
+ * `{ "partial": {...}, "summary": {...}, "rows": { "<receivable id>": { ...fields merged into that row, objects merged deep } } }` and the recorded
+ * read is returned with it applied. A spec that uses it says so: it is a temporary in-spec patch of a recorded read until the server's fields are recorded.
+ */
+export const RECEIVABLES_PATCH_KEY = "tl-mock-receivables-patch";
+/** Test hooks: "1" makes GET /receivables fail (503), and "1" on the second key makes GET /reconciliation fail, so the pages' failure states can be seen offline. */
+export const RECEIVABLES_FAIL_KEY = "tl-mock-receivables-fail";
+export const RECONCILIATION_FAIL_KEY = "tl-mock-reconciliation-fail";
 /** Test hook: set to "1" and GET /receivables is absent (a server without the route), so the Receivables page keeps the reads it had. */
 export const RECEIVABLES_ABSENT_KEY = "tl-mock-receivables-absent";
 
@@ -48,7 +57,7 @@ const zh: Record<ReceivablesPoint | "offer", Loader> = {
   offer: () => import("../../mocks/receivables/offer_zh.json"),
 };
 
-function hook(key: string): boolean {
+export function hook(key: string): boolean {
   if (typeof window === "undefined") return false;
   try {
     return window.sessionStorage.getItem(key) === "1";
@@ -57,13 +66,40 @@ function hook(key: string): boolean {
   }
 }
 
+function merge(base: unknown, patch: unknown): unknown {
+  if (patch && typeof patch === "object" && !Array.isArray(patch) && base && typeof base === "object" && !Array.isArray(base)) {
+    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const [k, v] of Object.entries(patch)) out[k] = merge(out[k], v);
+    return out;
+  }
+  return patch;
+}
+
+function patched(read: ReceivablesRead): ReceivablesRead {
+  if (typeof window === "undefined") return read;
+  let raw: string | null = null;
+  try {
+    raw = window.sessionStorage.getItem(RECEIVABLES_PATCH_KEY);
+  } catch {
+    /* no storage: no patch */
+  }
+  if (!raw) return read;
+  const patch = JSON.parse(raw) as { partial?: unknown; summary?: unknown; rows?: Record<string, unknown> };
+  const out = { ...read } as Record<string, unknown>;
+  if (patch.partial !== undefined) out.partial = patch.partial;
+  if (patch.summary) out.summary = merge(read.summary, patch.summary);
+  if (patch.rows) out.rows = (read.rows ?? []).map((r) => (patch.rows![r.receivable_id] ? merge(r, patch.rows![r.receivable_id]) : r));
+  return out as ReceivablesRead;
+}
+
 /** GET /receivables for this point of the story. */
 export async function mockReceivables(dealt: boolean, lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  if (hook(RECEIVABLES_FAIL_KEY)) throw new ApiError(503, "The receivables are unavailable");
   if (hook(RECEIVABLES_ABSENT_KEY)) return null;
   const point = receivablesPoint(dealt);
   const key = hook(RECEIVABLES_OFFER_KEY) && point === "day0" ? "offer" : point;
   const recorded = (await (lang === "zh" ? zh : en)[key]()).default;
-  return { ...clone<ReceivablesRead>(recorded), day: mockClock().day };
+  return patched({ ...clone<ReceivablesRead>(recorded), day: mockClock().day });
 }
 
 /** GET /buyers/{id}/exposure: BUYER-1's recording, taken on the opening books and on day 34's; any other buyer has none (null, as the server's 404 reads). */

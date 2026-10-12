@@ -74,6 +74,19 @@ async function nullWhenOff<T>(read: () => Promise<T>): Promise<T | null> {
   }
 }
 
+/**
+ * A route the server does not have: FastAPI's own `{"detail": "Not Found"}` 404, which no handler of ours raises (every 404 of ours carries a code or a
+ * sentence). Only this is "the server has no such read"; any other 404, a refusal or a failure is an error the page must show, not a reason to fall back.
+ */
+async function nullWhenRouteAbsent<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404 && e.detail === "Not Found") return null;
+    throw e;
+  }
+}
+
 /** /negotiate returns the executor's raw results; the ledger view adds who asked and a one-line summary. */
 function asOperationView(o: Record<string, unknown>): OperationView {
   return {
@@ -149,7 +162,7 @@ export const live = {
   /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
   getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
   /** GET /receivables (owner only, no flag): the rows with what each invoice nets, who governs it and what to do next. Null on a server without the route (404), so the old page stands. */
-  getReceivables: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesRead>("GET", `/receivables?lang=${lang}`)),
+  getReceivables: (lang: "en" | "zh") => nullWhenRouteAbsent(() => http<ReceivablesRead>("GET", `/receivables?lang=${lang}`)),
   /** GET /decisions/{id}/exposure (flag `exposure`): the buyer's late-payment test for a deal decision. Null when the feature is off or the decision names no buyer. */
   getDecisionExposure: (decisionId: string, lang: "en" | "zh") =>
     nullWhenOff(() => http<BuyerExposureView>("GET", `/decisions/${enc(decisionId)}/exposure?lang=${lang}&spare=0`)),

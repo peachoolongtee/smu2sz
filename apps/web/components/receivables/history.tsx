@@ -18,12 +18,12 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
     <>
     {data.promised?.length ? (
       <section id="recv-promised" aria-labelledby="recv-promised-title">
-        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-2">
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 border-b border-line-strong pb-2">
           <div>
-            <h2 id="recv-promised-title" className="text-base font-extrabold text-ink">
+            <h2 id="recv-promised-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {t("biz.recv.promised")}
             </h2>
-            <p className="text-xs text-ink-3">{t("biz.recv.promised.sub")}</p>
+            <p className="text-sm text-ink-3">{t("biz.recv.promised.sub")}</p>
           </div>
           {data.lapsed_promises ? <Badge tone="bad">{`${t("recon.lapsed")}: ${data.lapsed_promises}`}</Badge> : null}
         </div>
@@ -38,7 +38,7 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
             >
               <span className="min-w-0">
                 <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
-                <span className="block text-xs text-ink-2">{p.detail_when ?? p.detail}</span>
+                <span className="block text-sm text-ink-2">{p.detail_when ?? p.detail}</span>
               </span>
               <span className="flex items-center gap-2">
                 <span className="font-semibold tabular-nums">{p.expected_display}</span>
@@ -52,11 +52,11 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
 
     {data.receipts.length ? (
       <section id="recv-receipts" aria-labelledby="recv-receipts-title">
-        <div className="mb-1 border-b border-line pb-2">
-          <h2 id="recv-receipts-title" className="text-base font-extrabold text-ink">
+        <div className="mb-1 border-b border-line-strong pb-2">
+          <h2 id="recv-receipts-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.recv.receipts")}
           </h2>
-          <p className="text-xs text-ink-3">{t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}</p>
+          <p className="text-sm text-ink-3">{t("biz.recv.receipts.sub", { matched: data.matched, flagged: data.flagged })}</p>
         </div>
         <ul className="divide-y divide-line">
           {data.receipts.map((x) => (
@@ -77,15 +77,15 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
                   <ReceiptFacts facts={x} testId={`receipt-facts-${x.op_id}`} windowText={x.window_state_text} />
                 </>
               ) : (
-                <p className="mt-0.5 text-xs text-ink-2">
+                <p className="mt-0.5 text-sm text-ink-2">
                   {x.day !== null ? `${whenText(x.day, data.as_of_day, t)} · ` : ""}
                   {x.detail_when ?? x.detail}
                 </p>
               )}
               {/* The record ids (invoice, bank reference) are the audit level. */}
               <Disclosure className="mt-1" testId={`receipt-audit-${x.op_id}`} summary={t("biz.auditDetails")}>
-                {x.remaining_display ? <p className="mt-1 text-xs text-ink-2">{x.detail_when ?? x.detail}</p> : null}
-                <p className="mt-1 text-xs text-ink-3">
+                {x.remaining_display ? <p className="mt-1 text-sm text-ink-2">{x.detail_when ?? x.detail}</p> : null}
+                <p className="mt-1 text-sm text-ink-3">
                   {x.receivable_id}
                   {x.bank_reference ? (
                     <span data-testid={`receipt-ref-${x.op_id}`}>

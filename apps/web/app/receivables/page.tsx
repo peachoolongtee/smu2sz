@@ -1,26 +1,30 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { PartialRead } from "@/components/business/freshness";
+import { PromisedAndReceived } from "@/components/receivables/history";
 import { InvoiceDetail } from "@/components/receivables/invoice-detail";
 import { InvoiceList } from "@/components/receivables/invoice-list";
+import { SelectedStrip } from "@/components/receivables/selected-strip";
 import { inFilter, type RecvFilter } from "@/components/receivables/state";
 import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside";
 import { Summary } from "@/components/receivables/summary";
-import { PartialRead } from "@/components/business/freshness";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
-import { PromisedAndReceived } from "@/components/receivables/history";
 import { getBuyerExposure, getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { withContext } from "@/lib/receivables-context";
 import type { BuyerExposureView, ReceivableRow, ReceivablesRead } from "@/lib/types";
+import { useNarrow } from "@/lib/use-narrow";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useAsync } from "@/lib/use-async";
 import { LegacyReceivables } from "./legacy";
 
 /**
  * Receivables in three layers (map #110): what customers owe you, what each invoice nets once its financing is repaid, and what to do about it.
- * It reads `GET /receivables?lang=`; a server without that route (null) keeps the page of before (`legacy.tsx`), and each section renders only when its
- * field is present. The chosen invoice is in the address (`?invoice=`) beside the shared context (`customer`, `decision`, `path`), and nowhere else.
+ * It reads `GET /receivables?lang=`; a server that has no such route (the adapter answers null for FastAPI's own "Not Found" only) keeps the page of before
+ * (`legacy.tsx`), and each section renders only when its field is present. Any other failure is an error the page shows with a Retry; it never falls back
+ * silently. The chosen invoice is in the address (`?invoice=`) beside the shared context (`customer`, `decision`, `path`), and nowhere else.
  */
 export default function ReceivablesPage() {
   return (
@@ -33,10 +37,11 @@ export default function ReceivablesPage() {
 function Receivables() {
   const { t, lang } = useI18n();
   const read = useAsync(() => getReceivables(lang), [lang]);
+  const head = <PageHeader title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />;
   if (read.error) {
     return (
       <>
-        <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+        {head}
         <ErrorState error={read.error} onRetry={read.reload} />
       </>
     );
@@ -44,13 +49,22 @@ function Receivables() {
   if (read.data === undefined) {
     return (
       <>
-        <PageHeader section="recv" title={t("nav.receivables")} subtitle={t("biz.recv.subtitle")} />
+        {head}
         <LoadingBlock rows={3} />
       </>
     );
   }
   // The server has no GET /receivables yet: the page of before.
-  if (read.data === null || !Array.isArray(read.data.rows)) return <LegacyReceivables />;
+  if (read.data === null) return <LegacyReceivables />;
+  // An answer with no rows array is a broken answer, not an absent route.
+  if (!Array.isArray(read.data.rows)) {
+    return (
+      <>
+        {head}
+        <ErrorState error={t("recv3.read.invalid")} onRetry={read.reload} />
+      </>
+    );
+  }
   return <Layers read={read.data} reload={read.reload} />;
 }
 
@@ -58,17 +72,40 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   const { t, lang } = useI18n();
   const router = useRouter();
   const params = useSearchParams();
+  const narrow = useNarrow();
+  const reduced = useReducedMotion();
   const rows = read.rows ?? [];
   const [filter, setFilter] = useState<RecvFilter>("all");
+  const detailRef = useRef<HTMLElement>(null);
+  const [scrollTo, setScrollTo] = useState(0);
   const invoiceParam = params.get("invoice");
   const shown = rows.filter((r) => inFilter(r, filter));
-  const selected: ReceivableRow | null = rows.find((r) => r.receivable_id === invoiceParam) ?? shown[0] ?? rows[0] ?? null;
+  // The chosen invoice is the address's; when the filter hides it the first visible one takes its place (none: the detail is hidden).
+  const chosen = rows.find((r) => r.receivable_id === invoiceParam) ?? null;
+  const selected: ReceivableRow | null = chosen && shown.includes(chosen) ? chosen : (shown[0] ?? null);
 
-  const select = (id: string) => {
+  const choose = (id: string | null) => {
     const q = new URLSearchParams(params.toString());
-    q.set("invoice", id);
-    router.replace(`/receivables?${q.toString()}`, { scroll: false });
+    if (id) q.set("invoice", id);
+    else q.delete("invoice");
+    const qs = q.toString();
+    router.replace(qs ? `/receivables?${qs}` : "/receivables", { scroll: false });
   };
+  const select = (id: string) => {
+    choose(id);
+    // On a phone the detail is far below the card that was tapped: bring it into view.
+    if (narrow) setScrollTo((n) => n + 1);
+  };
+  const applyFilter = (next: RecvFilter) => {
+    setFilter(next);
+    const visible = rows.filter((r) => inFilter(r, next));
+    if (!chosen || !visible.includes(chosen)) choose(visible[0]?.receivable_id ?? null);
+  };
+  useEffect(() => {
+    if (scrollTo > 0) detailRef.current?.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
+    // Only a new selection scrolls.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollTo]);
 
   // A link such as /receivables#RI:BUYER-1:2 (the home's remaining task) chooses that invoice and brings its row into view.
   useEffect(() => {
@@ -94,8 +131,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   const exposure = deal ? dealRead : buyerRead;
   const view = deal ?? forBuyer(buyerRead.data);
 
-  // What was promised early and what arrived, under the layers: the reconciliation read, as the page has always shown it. If it cannot be read
-  // the page stands without it (the server's own `partial` says so for the rows' side); nothing is shown in its place.
+  // What was promised early and what arrived, under the layers: the reconciliation read, as the page has always shown it. A failed read says so with a Retry.
   const recon = useAsync(getReconciliation, [lang]);
   const books = useAsync(getState, []);
   const nameOf = (id: string | null) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? rows.find((r) => r.buyer_id === id)?.buyer_name ?? id ?? "";
@@ -111,19 +147,21 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         <Summary read={read} rows={rows} />
       </div>
       <PartialRead partial={read.partial} onRetry={reload} />
-      <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={setFilter} customerHref={customerHref} />
+      {narrow && selected ? <SelectedStrip row={selected} customerHref={customerHref(selected)} /> : null}
+      <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={applyFilter} customerHref={customerHref} />
 
       {selected ? (
         <section
-          aria-labelledby="recv3-detail-title"
-          className="grid gap-6 rounded-card border border-line bg-surface p-5 shadow-card lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
+          ref={detailRef}
+          aria-labelledby="recv3-detail-eyebrow"
+          className="grid scroll-mt-20 gap-6 rounded-card border border-line bg-surface p-5 shadow-card lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8"
           data-testid="recv3-selected"
         >
           <p role="status" aria-live="polite" className="sr-only" data-testid="recv3-announce">
             {t("recv3.selected", { invoice: selected.invoice ?? selected.buyer_name ?? "" })}
           </p>
           <div key={selected.receivable_id} className="motion-swap min-w-0">
-            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={view?.payments?.sentence ?? null} />
+            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={view?.payments?.sentence ?? null} primaryHere={!narrow} />
           </div>
           <div key={`${selected.receivable_id}-aside`} className="motion-swap min-w-0">
             <StressAside
@@ -139,7 +177,11 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
         </section>
       ) : null}
 
-      {recon.data ? (
+      {recon.error ? (
+        <div data-testid="recv3-history-failed">
+          <ErrorState error={recon.error} onRetry={recon.reload} />
+        </div>
+      ) : recon.data ? (
         <div className="space-y-7" data-testid="recv3-history-sections">
           <PromisedAndReceived data={recon.data} name={nameOf} />
         </div>

@@ -2,23 +2,25 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChasePayment } from "@/components/business/chase-payment";
 import { ButtonLink } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { CollectionActionKind, ReceivableRow } from "@/lib/types";
+import type { ReceivableRow } from "@/lib/types";
+import { ActionButton, actionsOf } from "./actions";
 import { isFinanced } from "./state";
 
 /**
- * The chosen invoice, which replaces in place: the eyebrow with the customer link, the condition as the heading, the breakdown from the invoice to the
- * cash at collection, the recourse sentence the server writes when the receipt would fall short, who governs the invoice, the early payment and the
- * payment history, then the actions in the server's order (`collection_action.primary` first, the others after it). Every figure and sentence is the
- * server's; the dictionary supplies the labels and the glue words. The browser adds up nothing: each line of the breakdown is a field of its own.
+ * The chosen invoice, which replaces in place: the eyebrow with the customer link, the condition as the heading (or, for an invoice marked financed with no
+ * financing on record, the server's sentence saying so in place of the net), the breakdown from the invoice to the cash (the repayment line is the server's
+ * `repays_note`, with the financing's state and day), the recourse sentence, who governs the invoice, the early payment and the payment history, then the
+ * actions in the server's order. The first action is the page's one filled primary (`primaryHere`: on a phone it is in the strip above the list instead).
+ * Every figure and sentence is the server's; the dictionary supplies the labels and glue. The browser adds up nothing.
  */
 export function InvoiceDetail({
   row,
   customerHref,
   dealHref,
   history,
+  primaryHere,
 }: {
   row: ReceivableRow;
   customerHref: string;
@@ -26,23 +28,24 @@ export function InvoiceDetail({
   dealHref: string | null;
   /** The buyer's payment history in the server's words (from the exposure read), when it has been read for this buyer. */
   history: string | null;
+  primaryHere: boolean;
 }) {
   const { t } = useI18n();
   const net = row.net ?? {};
   const buyer = row.buyer_name ?? "";
   const financed = isFinanced(row);
-  const actions: { action: CollectionActionKind; label: string }[] = row.collection_action?.primary
-    ? [{ action: row.collection_action.primary, label: row.collection_action.label ?? "" }, ...(row.collection_action.others ?? [])]
-    : [];
+  const actions = actionsOf(row);
+  // The reminder about a payment that has not been missed is only for an invoice that is not yet late: once it is overdue the first action is Chase payment.
+  const showNote = row.collection_state === "CURRENT" || row.collection_state === "DUE_SOON";
 
   return (
     <div className="min-w-0 space-y-4" data-testid="recv3-detail" data-receivable={row.receivable_id}>
-      <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+      <p id="recv3-detail-eyebrow" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
         {t("recv3.detail.eyebrow")}
         {buyer ? (
           <>
             {" · "}
-            <Link prefetch={false} href={customerHref} className="rounded-pill font-extrabold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-detail-customer">
+            <Link prefetch={false} href={customerHref} className="hit relative rounded-pill font-extrabold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-detail-customer">
               {buyer} ›
             </Link>
           </>
@@ -67,7 +70,7 @@ export function InvoiceDetail({
               <Line
                 less
                 label={t("recv3.bd.repays")}
-                note={net.financing_state_text ? <span data-testid="recv3-bd-state">{net.financing_state_text}</span> : undefined}
+                note={row.repays_note ?? net.financing_state_text ? <span data-testid="recv3-bd-state">{row.repays_note ?? net.financing_state_text}</span> : undefined}
                 value={net.advance_display}
                 testId="recv3-bd-advance"
               />
@@ -76,12 +79,6 @@ export function InvoiceDetail({
           ) : null}
           <Line total label={t("recv3.bd.net")} value={net.net_display} testId="recv3-bd-net" />
         </dl>
-      ) : null}
-      {net.repays_text ? (
-        <p className="text-sm text-ink-2" data-testid="recv3-repays">
-          {net.repays_text}
-          {financed ? t("recv3.sub.end") : ""}
-        </p>
       ) : null}
       {financed && row.recourse_text ? (
         <p className="text-sm text-ink-2" data-testid="recv3-recourse">
@@ -95,7 +92,7 @@ export function InvoiceDetail({
       ) : null}
 
       <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[max-content_minmax(0,1fr)]" data-testid="recv3-facts">
-        {row.governed_by?.terms_text ? <Fact label={row.governed_by.terms_label ?? t("recv3.facts.terms")} testId="recv3-terms">{row.governed_by.terms_text}</Fact> : null}
+        {row.governed_by?.terms_text ? <Fact label={t("recv3.facts.terms")} testId="recv3-terms">{row.governed_by.terms_text}</Fact> : null}
         {row.early_payment?.text ? (
           <Fact label={t("recv3.facts.early")} testId="recv3-early">
             <span className="first-letter:uppercase">{row.early_payment.text}</span>
@@ -103,7 +100,7 @@ export function InvoiceDetail({
               <>
                 <span className="font-normal text-ink-3"> · </span>
                 {dealHref ? (
-                  <Link prefetch={false} href={dealHref} className="font-normal text-brand-700 underline underline-offset-2" data-testid="recv3-counter">
+                  <Link prefetch={false} href={dealHref} className="hit relative font-normal text-brand-700 underline underline-offset-2" data-testid="recv3-counter">
                     {row.pending_counter.text}
                   </Link>
                 ) : (
@@ -119,24 +116,18 @@ export function InvoiceDetail({
       {actions.length || row.financing_href ? (
         <div className="space-y-2">
           <div role="group" aria-label={t("recv3.actions")} className="flex flex-wrap gap-2" data-testid="recv3-actions">
-            {actions.map((a, i) =>
-              a.action === "VIEW_TERMS" ? (
-                <ButtonLink prefetch={false} key={a.action} href={customerHref} className="min-h-11" data-testid={`recv3-action-${a.action}`} data-order={i}>
-                  {a.label}
-                </ButtonLink>
-              ) : (
-                <span key={a.action} className="contents" data-testid={`recv3-action-${a.action}`} data-order={i}>
-                  <ChasePayment receivableId={row.receivable_id} buyer={buyer} label={a.label} size="md" scope={`detail-${a.action}-`} className="min-h-11" />
-                </span>
-              ),
-            )}
+            {actions.map((action, i) => (
+              <span key={action} className="contents" data-testid={`recv3-action-${action}`} data-order={i}>
+                <ActionButton row={row} action={action} primary={primaryHere && i === 0} scope="detail-" customerHref={customerHref} />
+              </span>
+            ))}
             {row.financing_href ? (
               <ButtonLink prefetch={false} href={row.financing_href} className="min-h-11" data-testid="recv3-action-financing">
                 {t("recv3.actions.financing")}
               </ButtonLink>
             ) : null}
           </div>
-          <p className="text-sm text-ink-3">{t("recv3.actions.note", { chase: t("biz.chase.button") })}</p>
+          {showNote ? <p className="text-sm text-ink-3" data-testid="recv3-actions-note">{t("recv3.actions.note", { chase: t("biz.chase.button") })}</p> : null}
         </div>
       ) : null}
     </div>

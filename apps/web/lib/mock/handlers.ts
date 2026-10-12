@@ -891,6 +891,7 @@ export async function getChase(receivableId: string, lang: "en" | "zh"): Promise
 
 export async function getReconciliation(): Promise<ReconciliationView> {
   await delay();
+  if (receivablesMock.hook(receivablesMock.RECONCILIATION_FAIL_KEY)) throw new ApiError(503, "The reconciliation is unavailable");
   return clone(cast<ReconciliationView>(home.mockReconciliation() ?? reconciliationJson));
 }
 

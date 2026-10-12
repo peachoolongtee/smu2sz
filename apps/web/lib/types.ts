@@ -1925,6 +1925,8 @@ export interface ReceivableRow {
   recourse_text?: string;
   /** The record of the executed financing request for this invoice; null when there is none to open. */
   financing_href?: string | null;
+  /** The repayment line of the breakdown with the financing's state and day ("Repays the financing, arranged today, expected in 3 days"). */
+  repays_note?: string | null;
   buyer_id?: string;
   buyer_name?: string;
   /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
@@ -1953,9 +1955,18 @@ export interface ReceivablesRead {
   rows?: ReceivableRow[];
   summary?: {
     outstanding_total_display?: string;
-    next_expected?: { when_text?: string; amount_display?: string; /** "Foshan Home Retail Co.", or several names in one sentence. */ buyer_name?: string } | null;
+    next_expected?: { when_text?: string; amount_display?: string; amount_short?: string; /** "Foshan Home Retail Co.", or several names in one sentence. */ buyer_name?: string } | null;
     /** What the financing against these invoices still stands at. */
     financing_total_display?: string;
+    /** The counts, written by the server (never added up here): the open invoices, those overdue, those financed, and "1 invoice · nothing overdue". */
+    invoice_count?: number;
+    overdue_count?: number;
+    financed_count?: number;
+    count_text?: string;
+    /** The h1's second line, when the server writes it ("About ¥163k becomes available at collection, after the financing is repaid."). */
+    repays_line?: string | null;
+    /** The h1's first line while something is overdue, when the server writes it. */
+    h1_overdue?: string | null;
     net_total_display?: string;
     /** "if every invoice is paid on its due day" */
     net_total_text?: string;
@@ -1970,6 +1981,8 @@ export interface BuyerStressRow {
   /** "−¥250k" and "in 60 days" */
   lowest_short?: string;
   lowest_when?: string;
+  /** "in 12 days": present when cash falls below the minimum on the late path, null when it does not. */
+  first_breach_when?: string | null;
   /** "about ¥160,940, a month later": what the buyer's open invoices leave the owner a month after the late day. */
   net_later_text?: string | null;
   /** "Cash is below your minimum on 65 days. No committed plan covers the ¥550,000.00 shortfall..." */
@@ -1983,7 +1996,9 @@ export interface BuyerExposureView {
   decision_id?: string;
   buyer_id?: string;
   buyer_name?: string;
-  concentration?: { sentence?: string; ar_text?: string };
+  /** "Foshan", when the server sends the short name. */
+  buyer_short?: string;
+  concentration?: { buyer_name?: string; sentence?: string; ar_text?: string };
   payments?: { sentence?: string };
   stress?: { delay_days?: number; now?: BuyerStressRow };
 }

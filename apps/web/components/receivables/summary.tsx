@@ -7,40 +7,36 @@ import { isFinanced, isLate, statusTone } from "./state";
 
 /**
  * The top of the page, from the server's own strings: the status (a dot and a word, "read today"), the answer in two lines (what is expected and from
- * whom, then what becomes available at collection once the financing is repaid), one sentence under it, and the three plain cards. A line renders only
- * when the server sent what it needs; the only words added here are the dictionary's. Nothing is added up or rounded: the first row's `net_short` stands
- * for the whole only when there is one row, else the summary's own total.
+ * whom; what becomes available at collection once the financing is repaid, only while an invoice is financed) and the three plain cards. The repayment is
+ * said once here and once in the selected invoice's breakdown, nowhere else. A line renders only when the server sent what it needs; the only words added
+ * here are the dictionary's. Nothing is counted, added up, rounded or picked from a row: the counts are the summary's `count_text`, the second line is the
+ * server's `repays_line` when it sends one (else the dictionary's sentence around the summary's own net total).
  */
 export function Summary({ read, rows }: { read: ReceivablesRead; rows: ReceivableRow[] }) {
   const { t } = useI18n();
   const summary = read.summary ?? {};
-  const late = rows.filter(isLate).length;
   const tone = statusTone(rows);
+  const late = rows.some(isLate);
   const next = summary.next_expected;
-  // The server names the buyer behind "next expected". Its short amount is the row's when that row is the only one due that day; else the summary's own figure.
-  const buyer = next?.buyer_name;
-  const lead = rows.find((r) => !r.past_due);
-  const alone = lead ? rows.filter((r) => !r.past_due && r.due_when === lead.due_when).length === 1 : false;
-  const amount = (alone ? lead?.amount_short : undefined) ?? next?.amount_display;
-  const financed = rows.find(isFinanced);
-  const net = rows.length === 1 ? (rows[0].net_short ?? rows[0].net?.net_short) : summary.net_total_display;
-  const line1 = amount && buyer ? t("recv3.h1.expected", { amount, buyer }) : rows.length ? t("recv3.h1.expected.none") : null;
-  const line2 = financed && net ? t("recv3.h1.net", { net }) : null;
-  const repays = financed?.net?.repays_text;
+  const amount = next?.amount_short ?? next?.amount_display;
+  const financed = summary.financed_count !== undefined ? summary.financed_count > 0 : rows.some(isFinanced);
+  // While something is overdue the server's own sentence leads, when it sends one; the overdue state is the status word and the first card meanwhile.
+  const line1 =
+    late && summary.h1_overdue
+      ? summary.h1_overdue
+      : amount && next?.buyer_name
+        ? t("recv3.h1.expected", { amount, buyer: next.buyer_name })
+        : rows.length
+          ? t("recv3.h1.expected.none")
+          : null;
+  const line2 = financed ? (summary.repays_line ?? (summary.net_total_display ? t("recv3.h1.net", { net: summary.net_total_display }) : null)) : null;
 
   const title = (
-    <>
+    <span className="block leading-tight">
       {line1 ? <span className="block" data-testid="recv3-h1-expected">{line1}</span> : t("nav.receivables")}
-      {line2 ? <span className="block first-letter:uppercase" data-testid="recv3-h1-net">{line2}</span> : null}
-    </>
+      {line2 ? <span className="mt-1 block first-letter:uppercase" data-testid="recv3-h1-net">{line2}</span> : null}
+    </span>
   );
-  const sub =
-    rows.length === 0 ? undefined : (
-      <span data-testid="recv3-sub">
-        {late > 0 ? t("recv3.sub.late", { n: late }) : t("recv3.sub.clear")}
-        {repays ? <> {repays}{t("recv3.sub.notLost")}</> : null}
-      </span>
-    );
   const dot = tone === "bad" ? "bg-bad-solid" : tone === "warn" ? "bg-warn-solid" : "bg-ok-solid";
   const word = tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-ok-fg";
 
@@ -56,22 +52,23 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
           </>
         ) : null}
       </p>
-      <PageHeader section="recv" title={title} subtitle={sub} />
+      <PageHeader title={title} />
 
       <dl className="grid gap-3 sm:grid-cols-3" aria-label={t("biz.recv.facts")} data-testid="recv3-cards">
         <Stat
           size="lg"
+          tone={late ? "bad" : "neutral"}
           label={t("recv3.card.owe")}
           value={summary.outstanding_total_display ?? "-"}
           testId="recv3-owe"
-          caption={<span className="text-sm">{rows.length ? (late > 0 ? t("recv3.card.owe.late", { n: rows.length, late }) : t("recv3.card.owe.clear", { n: rows.length })) : t("recv3.list.empty")}</span>}
+          caption={summary.count_text ? <span className="text-sm" data-testid="recv3-count">{summary.count_text}</span> : undefined}
         />
         <Stat
           size="lg"
           label={t("recv3.card.next")}
           value={<span className="first-letter:uppercase">{next?.when_text ?? "-"}</span>}
           testId="recv3-next"
-          caption={<span className="text-sm">{next?.amount_display && buyer ? t("recv3.card.next.sub", { amount: next.amount_display, buyer }) : t("recv3.card.next.none")}</span>}
+          caption={<span className="text-sm">{next?.amount_display && next.buyer_name ? t("recv3.card.next.sub", { amount: next.amount_display, buyer: next.buyer_name }) : t("recv3.card.next.none")}</span>}
         />
         <Stat
           size="lg"
@@ -79,19 +76,9 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
           label={t("recv3.card.net")}
           value={summary.net_total_display ?? "-"}
           testId="recv3-net"
-          caption={
-            <>
-              <span className="block text-sm first-letter:uppercase">{summary.net_total_text}</span>
-              {financed && summary.financing_total_display ? (
-                <span className="block text-sm" data-testid="recv3-net-financing">
-                  {t("recv3.card.net.financing", { amount: summary.financing_total_display })}
-                </span>
-              ) : null}
-            </>
-          }
+          caption={<span className="block text-sm first-letter:uppercase">{summary.net_total_text}</span>}
         />
       </dl>
     </>
   );
 }
-

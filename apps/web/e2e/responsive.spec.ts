@@ -147,7 +147,9 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
         const h = document.elementFromPoint(x, y);
         return !h || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight || el.contains(h) || h.contains(el);
       };
-      return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
+      // On Receivables the links are checked too (every customer name is a link that carries its own 44 px hit area).
+      const links = location.pathname === "/receivables" ? ", main a" : "";
+      return Array.from(document.querySelectorAll(`header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a${links}`))
         .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
         .filter((el) => {
           // Measured where a finger would meet it: scrolled to the middle of the window, clear of the fixed tab bar.

@@ -13,7 +13,7 @@ export const STRESS_DAYS = 30;
 /**
  * "If {buyer} pays 30 days late": a test, not a forecast. The sentence about the test is the dictionary's; the result is the server's own strings from
  * the buyer exposure read (cash at its lowest and when, how long below the minimum and what no plan covers, what this financing costs more), shown only
- * when that read exists for this buyer. The one primary of the page opens Cash with the series loaded, carrying the buyer, the invoice and the context;
+ * when that read exists for this buyer. The secondary "Explore the cash impact" opens Cash with the series loaded, carrying the buyer, the invoice and the context;
  * a note says coming back keeps the selection. The concentration line closes the aside with the link to the customer.
  * Loading keeps the room (`aria-busy`), a failed read says so with a Retry, and no read at all (no deal in context, the feature off) is no result and no error.
  */
@@ -35,8 +35,11 @@ export function StressAside({
   customerHref: string;
 }) {
   const { t } = useI18n();
-  const buyer = row.buyer_name ?? "";
+  // The short name ("Foshan") is the server's, from the same buyer read; the invoice's own name stands until that read is in.
+  const buyer = exposure?.buyer_short ?? exposure?.concentration?.buyer_name ?? row.buyer_name ?? "";
   const now = exposure?.stress?.now;
+  // Cash falling below the minimum on the late path is the server's `first_breach_when`: when it names a day, the result is a breach and speaks in the bad tone.
+  const breach = Boolean(now?.first_breach_when);
   const days = exposure?.stress?.delay_days ?? STRESS_DAYS;
   const concentration = exposure?.concentration?.ar_text ?? exposure?.concentration?.sentence;
 
@@ -67,18 +70,13 @@ export function StressAside({
           <>
             <dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-sm" data-testid="recv3-stress-result">
               {now.lowest_short && now.lowest_when ? (
-                <Result label={t("recv3.stress.cash")} testId="recv3-stress-cash" strong>
+                <Result label={t("recv3.stress.cash")} testId="recv3-stress-cash" strong bad={breach}>
                   {t("recv3.stress.cash.value", { amount: now.lowest_short, when: now.lowest_when })}
                 </Result>
               ) : null}
               {now.funding_text ? (
-                <Result label={t("recv3.stress.minimum")} testId="recv3-stress-minimum">
+                <Result label={t("recv3.stress.minimum")} testId="recv3-stress-minimum" bad={breach}>
                   {now.funding_text}
-                </Result>
-              ) : null}
-              {row.net?.per_period_text ? (
-                <Result label={t("recv3.stress.financing")} testId="recv3-stress-financing">
-                  <span className="first-letter:uppercase">{row.net.per_period_text}</span>
                 </Result>
               ) : null}
               {now.net_later_text ? (
@@ -94,16 +92,9 @@ export function StressAside({
             ) : null}
           </>
         )
-      ) : row.net?.per_period_text ? (
-        // No deal in context, so no test result; what a late month costs on this financing is the invoice's own field.
-        <dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-sm" data-testid="recv3-stress-result">
-          <Result label={t("recv3.stress.financing")} testId="recv3-stress-financing">
-            <span className="first-letter:uppercase">{row.net.per_period_text}</span>
-          </Result>
-        </dl>
       ) : null}
 
-      <ButtonLink prefetch={false} href={exploreHref} variant="primary" className="min-h-11 self-start" data-testid="recv3-explore">
+      <ButtonLink prefetch={false} href={exploreHref} variant="secondary" className="min-h-11 self-start" data-testid="recv3-explore">
         {t("recv3.stress.explore")}
       </ButtonLink>
       <p className="text-sm text-ink-3">{t("recv3.stress.keeps", { buyer })}</p>
@@ -111,13 +102,13 @@ export function StressAside({
       {concentration ? (
         <p className="border-t border-line pt-3 text-sm text-ink-3" data-testid="recv3-concentration">
           {concentration}{" "}
-          <Link prefetch={false} href={customerHref} className="font-bold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-concentration-link">
+          <Link prefetch={false} href={customerHref} className="hit relative font-bold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-concentration-link">
             {t("recv3.stress.customer")} ›
           </Link>
         </p>
       ) : (
         <p className="border-t border-line pt-3 text-sm">
-          <Link prefetch={false} href={customerHref} className="font-bold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-concentration-link">
+          <Link prefetch={false} href={customerHref} className="hit relative font-bold text-brand-700 underline-offset-2 hover:underline" data-testid="recv3-concentration-link">
             {t("recv3.stress.customer")} ›
           </Link>
         </p>
@@ -126,11 +117,11 @@ export function StressAside({
   );
 }
 
-function Result({ label, children, strong = false, testId }: { label: string; children: ReactNode; strong?: boolean; testId?: string }) {
+function Result({ label, children, strong = false, bad = false, testId }: { label: string; children: ReactNode; strong?: boolean; bad?: boolean; testId?: string }) {
   return (
     <>
       <dt className="text-ink-3">{label}</dt>
-      <dd className={`min-w-0 break-words tabular-nums text-ink ${strong ? "font-display font-extrabold" : "font-semibold"}`} data-testid={testId}>
+      <dd className={`min-w-0 break-words tabular-nums ${bad ? "text-bad-fg" : "text-ink"} ${strong ? "font-display font-extrabold" : "font-semibold"}`} data-testid={testId}>
         {children}
       </dd>
     </>
