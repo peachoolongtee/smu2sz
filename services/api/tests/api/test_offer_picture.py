@@ -276,3 +276,62 @@ def test_paths_and_moments_change_nothing(client):
     first = client.get(f"/offers/{oid}/picture").json()
     assert client.get(f"/offers/{oid}/picture").json() == first and snapshot() == before
     assert rt.store.get_verdict(view["id"]).id == first["verdict_id"]
+
+
+# ---------------------------------------------------------------- an offer the books can no longer draw is answered, never a 500
+
+BANK = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
+UNAVAILABLE = "This offer can no longer be drawn on today's books: the days it named have passed or the invoice has changed since."
+
+
+def _snapshot(client, oid, view):
+    rt = get_runtime()
+    ops = rt.store.operations()
+    return (rt.store.get_state().state_version, len(ops), ops[-1].entry_hash if ops else None, rt.store.get_verdict(view["id"]).id)
+
+
+def _assert_unavailable(client, oid, view):
+    before = _snapshot(client, oid, view)
+    r = client.get(f"/offers/{oid}/picture")
+    assert r.status_code == 200
+    pic = r.json()
+    assert pic["available"] is False and pic["unavailable_text"] == UNAVAILABLE
+    assert pic["paths"] == [] and pic["moments"] == [] and pic["replies"] == []
+    assert pic["asked"] is None and pic["axis"] is None and pic["picture_days"] is None
+    assert pic["offer_id"] == oid and pic["verdict_id"] == view["id"] and pic["floor_short"] == "¥300k" and pic["horizon_days"] == 120
+    zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"})
+    assert zh.status_code == 200 and zh.json()["available"] is False
+    assert zh.json()["unavailable_text"] != UNAVAILABLE and zh.json()["unavailable_text"]
+    for p in (pic, zh.json()):
+        assert not CODES.search(p["unavailable_text"]) and not re.search(r"\bday \d", p["unavailable_text"])
+    assert _snapshot(client, oid, view) == before
+
+
+def test_an_offer_whose_days_have_passed_is_answered_as_unavailable(client):
+    for day in (7, 38):
+        oid, view = _evaluated(client)
+        assert client.get(f"/offers/{oid}/picture").json()["available"] is True
+        assert client.post("/clock/advance", json={"to_day": day}).status_code == 200
+        _assert_unavailable(client, oid, view)
+
+
+def test_an_offer_whose_invoice_was_part_settled_since_is_answered_as_unavailable(client):
+    oid, view = _evaluated(client)
+    version = client.get("/mandate").json()["mandate"]["version"]
+    r = client.post("/operations", headers=BANK, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "rc-1", "idempotency_key": "rc-1", "mandate_version": version, "requested_by": "SYSTEM",
+        "receivable_id": "RCV-A", "amount_fen": 25_720_000, "bank_reference": "BANK-1"})
+    assert r.json()["result"]["status"] == "EXECUTED"
+    _assert_unavailable(client, oid, view)
+
+
+def test_no_other_state_of_the_books_makes_the_picture_fail(client):
+    oid, _ = _accepted(client)
+    assert client.get(f"/offers/{oid}/picture").json()["available"] is True
+    client.post("/clock/advance", json={"to_day": 34})
+    assert client.get(f"/offers/{oid}/picture").status_code == 200
+    oid, _ = _evaluated(client)
+    client.post(f"/negotiate/{oid}", json={"buyer_profile": "cooperative"})
+    assert client.get(f"/offers/{oid}/picture").status_code == 200
+    client.post("/clock/advance", json={"to_day": 34})
+    assert client.get(f"/offers/{oid}/picture").status_code == 200
