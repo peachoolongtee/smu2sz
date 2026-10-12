@@ -1884,6 +1884,124 @@ export interface ReceivableWorth {
   hypothetical: true;
 }
 
+// ------------------------------------------------------------------ GET /receivables (map #88, ticket #107): Receivables in three layers
+// Every field is optional: a section renders only when the server sends it, the old page being the fallback. Every word and figure is the
+// server's string; the browser compares and computes none of them.
+
+export type FinancingState = "ARRANGED" | "RECEIVED" | "REPAID" | "NONE";
+export type CollectionState = "CURRENT" | "DUE_SOON" | "OVERDUE" | "PROMISE_MISSED";
+export type CollectionActionKind = "VIEW_TERMS" | "PREPARE_REMINDER" | "CHASE";
+
+/** What one invoice leaves the owner if it is paid on the due day, with the server's words for it. */
+export interface ReceivableNet {
+  net_display?: string;
+  /** "about ¥163k" */
+  net_short?: string;
+  /** "if Foshan pays on the due day" */
+  condition_text?: string;
+  /** "¥257,186.08 repays the financing received 29 days earlier, with its charges"; null without financing. */
+  repays_text?: string | null;
+  /** The financing's state and day for the breakdown's repayment line ("arranged, expected in 3 days"). */
+  repays_note?: string | null;
+  /** "about ¥1,870 more for every 30 days late"; null when a late day adds nothing. */
+  per_period_text?: string | null;
+  /** What the receipt leaves owed by the owner when it falls short; null otherwise. */
+  owed_text?: string | null;
+  /** The invoice is marked financed but no financing is on record: shown in place of the net, whose figures are then before any financing. */
+  financing_unrecorded?: boolean;
+  unrecorded_text?: string | null;
+  /** Arranged / Received / Repaid; null without financing. */
+  financing_state_text?: string | null;
+  claim_display?: string;
+  charges_display?: string;
+  advance_display?: string;
+}
+
+export interface ReceivableRow {
+  receivable_id: string;
+  /** The outstanding at a glance ("¥420k"). */
+  amount_short?: string;
+  /** "about ¥163k": also on the row itself. */
+  net_short?: string;
+  /** The standing sentence about a receipt that falls short ("If the receipt falls short, what is left is owed by you."). */
+  recourse_text?: string;
+  /** The record of the executed financing request for this invoice; null when there is none to open. */
+  financing_href?: string | null;
+  buyer_id?: string;
+  buyer_name?: string;
+  /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
+  invoice?: string;
+  outstanding_display?: string;
+  face_display?: string;
+  due_when?: string;
+  past_due?: boolean;
+  net?: ReceivableNet;
+  financing_state?: FinancingState;
+  governed_by?: { terms_label?: string; terms_text?: string; contract_ref?: string | null };
+  early_payment?: { agreed?: boolean; text?: string };
+  pending_counter?: { decision_id?: string; text?: string } | null;
+  collection_state?: CollectionState;
+  collection_state_text?: string;
+  collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+}
+
+export interface ReceivablesRead {
+  day?: Day;
+  lang?: "en" | "zh";
+  state_version?: number;
+  last_read_when?: string | null;
+  /** Supporting reads the server could not make (the reconciliation): the rows stand without them and the page says so. */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
+  rows?: ReceivableRow[];
+  summary?: {
+    outstanding_total_display?: string;
+    next_expected?: { when_text?: string; amount_display?: string; amount_short?: string; /** "Foshan Home Retail Co.", or several names in one sentence. */ buyer_name?: string } | null;
+    /** What the financing against these invoices still stands at. */
+    financing_total_display?: string;
+    /** The counts, written by the server (never added up here): the open invoices, those overdue, those financed, and "1 invoice · nothing overdue". */
+    invoice_count?: number;
+    overdue_count?: number;
+    financed_count?: number;
+    count_text?: string;
+    /** The page's two heading lines, chosen and written by the server ("¥420k expected from Foshan." and "About ¥163k becomes available at collection, after the financing is repaid."); the second is null when there is nothing to add. */
+    headline?: string | null;
+    headline_second?: string | null;
+    net_total_display?: string;
+    /** "if every invoice is paid on its due day" */
+    net_total_text?: string;
+  };
+}
+
+/** The late-payment test of one buyer (GET /decisions/{id}/exposure, flag `exposure`): only what the Receivables aside reads. */
+export interface BuyerStressRow {
+  delay_days?: number;
+  available?: boolean;
+  unavailable_text?: string | null;
+  /** "−¥250k" and "in 60 days" */
+  lowest_short?: string;
+  lowest_when?: string;
+  /** "in 12 days": present when cash falls below the minimum on the late path, null when it does not. */
+  first_breach_when?: string | null;
+  /** "about ¥160,940, a month later": what the buyer's open invoices leave the owner a month after the late day. */
+  net_later_text?: string | null;
+  /** "Cash is below your minimum on 65 days. No committed plan covers the ¥550,000.00 shortfall..." */
+  funding_text?: string;
+  text?: string;
+  assumption?: string;
+}
+
+/** GET /buyers/{id}/exposure and GET /decisions/{id}/exposure (flag `exposure`): the buyer's concentration, payment history and late-payment test. */
+export interface BuyerExposureView {
+  decision_id?: string;
+  buyer_id?: string;
+  buyer_name?: string;
+  /** "Foshan", when the server sends the short name. */
+  buyer_short?: string;
+  concentration?: { buyer_name?: string; sentence?: string; ar_text?: string };
+  payments?: { sentence?: string };
+  stress?: { delay_days?: number; now?: BuyerStressRow };
+}
+
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */
 export interface ReceivablesWorthView {
   rows: ReceivableWorth[];

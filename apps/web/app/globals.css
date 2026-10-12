@@ -282,6 +282,11 @@ input[type="radio"] {
     animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
   }
 
+  /* One thing replacing another in place (the chosen invoice's detail): the same arrival at the base duration, 200 ms. */
+  .motion-swap {
+    animation: biz-reveal var(--dur) var(--ease-out) backwards;
+  }
+
   /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
   .motion-rise > * {
     animation: biz-rise var(--dur-slow) var(--ease-out) backwards;

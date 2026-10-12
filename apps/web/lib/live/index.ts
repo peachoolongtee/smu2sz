@@ -46,6 +46,8 @@ import type {
   PlanRequest,
   PilotJournalView,
   PriceCurveView,
+  BuyerExposureView,
+  ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -70,6 +72,19 @@ async function nullWhenOff<T>(read: () => Promise<T>): Promise<T | null> {
     return await read();
   } catch (e) {
     if (e instanceof ApiError && (e.status === 404 || (e.status === 403 && /FEATURE_DISABLED/.test(JSON.stringify(e.detail ?? e.message))))) return null;
+    throw e;
+  }
+}
+
+/**
+ * A route the server does not have: FastAPI's own `{"detail": "Not Found"}` 404, which no handler of ours raises (every 404 of ours carries a code or a
+ * sentence). Only this is "the server has no such read"; any other 404, a refusal or a failure is an error the page must show, not a reason to fall back.
+ */
+async function nullWhenRouteAbsent<T>(read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404 && e.detail === "Not Found") return null;
     throw e;
   }
 }
@@ -148,6 +163,14 @@ export const live = {
 
   /** GET /cash/price-curve (flag `price_curve`). Null when the feature is off or absent. */
   getPriceCurve: (lang: "en" | "zh") => nullWhenOff(() => http<PriceCurveView>("GET", `/cash/price-curve?lang=${lang}`)),
+  /** GET /receivables (owner only, no flag): the rows with what each invoice nets, who governs it and what to do next. Null on a server without the route (404), so the old page stands. */
+  getReceivables: (lang: "en" | "zh") => nullWhenRouteAbsent(() => http<ReceivablesRead>("GET", `/receivables?lang=${lang}`)),
+  /** GET /decisions/{id}/exposure (flag `exposure`): the buyer's late-payment test for a deal decision. Null when the feature is off or the decision names no buyer. */
+  getDecisionExposure: (decisionId: string, lang: "en" | "zh") =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/decisions/${enc(decisionId)}/exposure?lang=${lang}&spare=0`)),
+  /** GET /buyers/{id}/exposure (flag `exposure`). Null when the feature is off (404) or the buyer is unknown. */
+  getBuyerExposure: (buyerId: string, lang: "en" | "zh") =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/buyers/${enc(buyerId)}/exposure?lang=${lang}&spare=0`)),
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
   getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
 
