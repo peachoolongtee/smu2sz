@@ -144,10 +144,10 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
 def _terms_view(rows: dict[str, tuple[str, str]], asked_rows: dict[str, tuple[str, str]] | None, lang: str) -> list[dict[str, Any]]:
     out = []
     for key, en, zh in _TERM_ROWS:
-        value = rows[key][0]
-        differs = asked_rows is not None and value != asked_rows[key][0]
-        out.append({"key": key, "label": say(lang, en, zh), "value_text": value,
-                    "instead_of_text": say(lang, f"instead of {asked_rows[key][1]}", f"而非 {asked_rows[key][1]}") if differs else None})
+        value, instead = rows[key][0], None
+        if asked_rows is not None and value != asked_rows[key][0]:
+            instead = say(lang, f"instead of {asked_rows[key][1]}", f"而非 {asked_rows[key][1]}")
+        out.append({"key": key, "label": say(lang, en, zh), "value_text": value, "instead_of_text": instead})
     return out
 
 
@@ -328,7 +328,10 @@ def _moment_text(lang: str, events: dict[str, list[str]], below: list[str], name
         else:
             who = _names(lang, [names[k] for k in below])
             parts.append(say(lang, f"{who}, cash is below your minimum.", f"{who}的现金低于您的最低现金储备。"))
-    return " ".join(parts) if parts else say(lang, "No cash moves on any path.", "各路径都没有现金变动。")
+    if not parts:
+        return (say(lang, "No cash moves on any path.", "各路径都没有现金变动。") if len(keys) > 1
+                else say(lang, "No cash moves.", "当天没有现金变动。"))
+    return " ".join(parts)
 
 
 def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: int, lang: str) -> list[dict[str, Any]]:
