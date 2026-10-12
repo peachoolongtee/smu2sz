@@ -3712,6 +3712,11 @@
         "tag_tone": "bad",
         "cost_display": "¥28,326.92",
         "cost_note": "over 12 months, plus ¥5,040.00 once",
+        "cost_total_display": "¥28,326.92",
+        "cost_basis_text": "over 12 months, plus ¥5,040.00 once",
+        "cost_once_display": "¥5,040.00",
+        "cost_forward_display": "¥28,326.92",
+        "cost_components": [],
         "terms": [
           {
             "key": "payment_terms",
@@ -3733,6 +3738,9 @@
           }
         ],
         "decides_text": "Cannot be accepted within your signed limits.",
+        "authority": "over_limit",
+        "authority_text": "Over a limit you signed: only a new mandate changes that",
+        "assumption_text": null,
         "reply_text": null,
         "series": [
           {
@@ -4940,6 +4948,11 @@
         "tag_tone": "info",
         "cost_display": "¥3,027.77",
         "cost_note": "once; nothing ongoing",
+        "cost_total_display": "¥3,027.77",
+        "cost_basis_text": "once, nothing ongoing",
+        "cost_once_display": "¥3,027.77",
+        "cost_forward_display": null,
+        "cost_components": [],
         "terms": [
           {
             "key": "payment_terms",
@@ -4961,6 +4974,9 @@
           }
         ],
         "decides_text": "FLOW can send it. Your approval is not needed.",
+        "authority": "flow_may",
+        "authority_text": "FLOW can send it",
+        "assumption_text": "If the buyer accepts this reply",
         "reply_text": "Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.",
         "series": [
           {
@@ -6210,6 +6226,20 @@
         "tag_tone": "warn",
         "cost_display": "¥0.00",
         "cost_note": "the price rise pays for the longer terms",
+        "cost_total_display": "¥0.00",
+        "cost_basis_text": "net over 12 months",
+        "cost_once_display": null,
+        "cost_forward_display": null,
+        "cost_components": [
+          {
+            "label": "Funding cost of the longer terms",
+            "display": "¥16,217.95"
+          },
+          {
+            "label": "Offset by the 0.30% price rise",
+            "display": "¥16,380.00"
+          }
+        ],
         "terms": [
           {
             "key": "payment_terms",
@@ -6231,6 +6261,9 @@
           }
         ],
         "decides_text": "It changes your terms, so you approve it first.",
+        "authority": "needs_owner",
+        "authority_text": "Needs your approval",
+        "assumption_text": "If the buyer accepts this reply",
         "reply_text": "55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.",
         "series": [
           {
@@ -7493,180 +7526,357 @@
         "label": "Today",
         "title": "Today",
         "decisive": false,
-        "text": "Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k.",
+        "kind": "today",
+        "kinds": [
+          "today",
+          "paths_part"
+        ],
+        "word": "Today",
+        "text": "Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. Who decides: Option A: FLOW can send it; Option B: needs your approval.",
         "values": [
           {
             "key": "asked",
             "closing_fen": 40000000,
             "closing_display": "¥400,000.00",
+            "closing_short": "¥400k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 54998620,
             "closing_display": "¥549,986.20",
+            "closing_short": "¥550k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 14998620,
+            "vs_asked_short": "+¥150k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 49000000,
             "closing_display": "¥490,000.00",
+            "closing_short": "¥490k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 9000000,
+            "vs_asked_short": "+¥90k",
+            "vs_asked_tone": "ok"
           }
-        ]
-      },
-      {
-        "day": 2,
-        "label": "In 2 days",
-        "title": "In 2 days",
-        "decisive": false,
-        "text": "As asked: Early payment from Foshan Home Retail Co. ¥420k; Early-payment discount −¥5k. Option A: Early payment from Foshan Home Retail Co. ¥257k; Early-payment discount −¥2k.",
-        "values": [
-          {
-            "key": "asked",
-            "closing_fen": 81496000,
-            "closing_display": "¥814,960.00",
-            "below_floor": false,
-            "note": null
-          },
-          {
-            "key": "CTR-193394b6ba8b",
-            "closing_fen": 80500000,
-            "closing_display": "¥805,000.00",
-            "below_floor": false,
-            "note": null
-          },
-          {
-            "key": "CTR-6b07cbf70441",
-            "closing_fen": 49000000,
-            "closing_display": "¥490,000.00",
-            "below_floor": false,
-            "note": null
-          }
-        ]
+        ],
+        "events_text": {
+          "asked": [],
+          "CTR-193394b6ba8b": [
+            "Credit line draw ¥149,986.20"
+          ],
+          "CTR-6b07cbf70441": [
+            "Credit line draw ¥90,000.00"
+          ]
+        }
       },
       {
         "day": 30,
         "label": "In 30 days",
         "title": "In 30 days",
         "decisive": false,
+        "kind": "lowest",
+        "kinds": [
+          "lowest"
+        ],
+        "word": "Lowest point",
         "text": "On every path: Debt service −¥45k.",
         "values": [
           {
             "key": "asked",
             "closing_fen": 30996000,
             "closing_display": "¥309,960.00",
+            "closing_short": "¥310k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 30000000,
             "closing_display": "¥300,000.00",
+            "closing_short": "¥300k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": -996000,
+            "vs_asked_short": "−¥10k",
+            "vs_asked_tone": "bad"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 30000000,
             "closing_display": "¥300,000.00",
+            "closing_short": "¥300k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": -996000,
+            "vs_asked_short": "−¥10k",
+            "vs_asked_tone": "bad"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "Debt service −¥45,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "Debt service −¥45,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "Debt service −¥45,000.00"
+          ]
+        }
       },
       {
         "day": 47,
         "label": "In 47 days",
         "title": "In 47 days",
         "decisive": true,
+        "kind": "reserve_cross",
+        "kinds": [
+          "reserve_cross",
+          "invoice_due"
+        ],
+        "word": "Below the reserve",
         "text": "On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. As asked, cash is below your minimum.",
         "values": [
           {
             "key": "asked",
             "closing_fen": 20996000,
             "closing_display": "¥209,960.00",
+            "closing_short": "¥210k",
             "below_floor": true,
-            "note": "Below your minimum"
+            "tone": "bad",
+            "note": "Below your minimum",
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 63197223,
             "closing_display": "¥631,972.23",
+            "closing_short": "¥632k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42201223,
+            "vs_asked_short": "+¥422k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 30219305,
             "closing_display": "¥302,193.05",
+            "closing_short": "¥302k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 9223305,
+            "vs_asked_short": "+¥92k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "Operating bill −¥100,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "Receipt from Foshan Home Retail Co. ¥420,000.00",
+            "Operating bill −¥100,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "Operating bill −¥100,000.00"
+          ]
+        }
       },
       {
         "day": 60,
         "label": "In 60 days",
         "title": "In 60 days",
         "decisive": false,
+        "kind": "lowest",
+        "kinds": [
+          "lowest"
+        ],
+        "word": "Lowest point",
         "text": "On every path: Debt service −¥45k. As asked, cash is below your minimum.",
         "values": [
           {
             "key": "asked",
             "closing_fen": 16496000,
             "closing_display": "¥164,960.00",
+            "closing_short": "¥165k",
             "below_floor": true,
-            "note": "Below your minimum"
+            "tone": "bad",
+            "note": "Below your minimum",
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 58697223,
             "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42201223,
+            "vs_asked_short": "+¥422k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 58755354,
             "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42259354,
+            "vs_asked_short": "+¥423k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "Debt service −¥45,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "Debt service −¥45,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "Debt service −¥45,000.00"
+          ]
+        }
       },
       {
         "day": 62,
         "label": "In 62 days",
         "title": "In 62 days",
         "decisive": false,
+        "kind": "reserve_cross",
+        "kinds": [
+          "reserve_cross"
+        ],
+        "word": "Back above the reserve",
         "text": "As asked: Receipt from Foshan Home Retail Co. ¥420k.",
         "values": [
           {
             "key": "asked",
             "closing_fen": 58496000,
             "closing_display": "¥584,960.00",
+            "closing_short": "¥585k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 58697223,
             "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 201223,
+            "vs_asked_short": "+¥2k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 58755354,
             "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 259354,
+            "vs_asked_short": "+¥3k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "Receipt from Foshan Home Retail Co. ¥420,000.00"
+          ],
+          "CTR-193394b6ba8b": [],
+          "CTR-6b07cbf70441": []
+        }
+      },
+      {
+        "day": 66,
+        "label": "In 66 days",
+        "title": "In 66 days",
+        "decisive": false,
+        "kind": "end",
+        "kinds": [
+          "end"
+        ],
+        "word": "Day 66",
+        "text": "No cash moves on any path.",
+        "values": [
+          {
+            "key": "asked",
+            "closing_fen": 58496000,
+            "closing_display": "¥584,960.00",
+            "closing_short": "¥585k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
+          },
+          {
+            "key": "CTR-193394b6ba8b",
+            "closing_fen": 58697223,
+            "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 201223,
+            "vs_asked_short": "+¥2k",
+            "vs_asked_tone": "ok"
+          },
+          {
+            "key": "CTR-6b07cbf70441",
+            "closing_fen": 58755354,
+            "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 259354,
+            "vs_asked_short": "+¥3k",
+            "vs_asked_tone": "ok"
+          }
+        ],
+        "events_text": {
+          "asked": [],
+          "CTR-193394b6ba8b": [],
+          "CTR-6b07cbf70441": []
+        }
       }
     ],
     "picture_days": 66,
@@ -11417,6 +11627,11 @@
         "tag_tone": "bad",
         "cost_display": "¥28,326.92",
         "cost_note": "12 个月内，另加一次性 ¥5,040.00",
+        "cost_total_display": "¥28,326.92",
+        "cost_basis_text": "12 个月内，另加一次性 ¥5,040.00",
+        "cost_once_display": "¥5,040.00",
+        "cost_forward_display": "¥28,326.92",
+        "cost_components": [],
         "terms": [
           {
             "key": "payment_terms",
@@ -11438,6 +11653,9 @@
           }
         ],
         "decides_text": "在您已签署的授权内无法接受。",
+        "authority": "over_limit",
+        "authority_text": "超出您签署的上限：只有签署新的授权才能改变",
+        "assumption_text": null,
         "reply_text": null,
         "series": [
           {
@@ -12645,6 +12863,11 @@
         "tag_tone": "info",
         "cost_display": "¥3,027.77",
         "cost_note": "一次性；之后无持续成本",
+        "cost_total_display": "¥3,027.77",
+        "cost_basis_text": "一次性，之后无持续成本",
+        "cost_once_display": "¥3,027.77",
+        "cost_forward_display": null,
+        "cost_components": [],
         "terms": [
           {
             "key": "payment_terms",
@@ -12666,6 +12889,9 @@
           }
         ],
         "decides_text": "FLOW 可以发送。无需您批准。",
+        "authority": "flow_may",
+        "authority_text": "FLOW 可以直接发送",
+        "assumption_text": "如果买方接受此回复",
         "reply_text": "账期保持 45 天，无返利。我们接受对本发票最多 ¥257,200 提前结算，折扣 0.85%，付款期限：2 天内。",
         "series": [
           {
@@ -13915,6 +14141,20 @@
         "tag_tone": "warn",
         "cost_display": "¥0.00",
         "cost_note": "提价抵补了延长账期的成本",
+        "cost_total_display": "¥0.00",
+        "cost_basis_text": "12 个月内的净额",
+        "cost_once_display": null,
+        "cost_forward_display": null,
+        "cost_components": [
+          {
+            "label": "延长账期的融资成本",
+            "display": "¥16,217.95"
+          },
+          {
+            "label": "0.30% 提价的抵补",
+            "display": "¥16,380.00"
+          }
+        ],
         "terms": [
           {
             "key": "payment_terms",
@@ -13936,6 +14176,9 @@
           }
         ],
         "decides_text": "它会改变您的条款，需要您先批准。",
+        "authority": "needs_owner",
+        "authority_text": "需要您批准",
+        "assumption_text": "如果买方接受此回复",
         "reply_text": "接受 55 天账期，并对今后的发票给予 0.30% 的价格调整，无返利。",
         "series": [
           {
@@ -15198,180 +15441,357 @@
         "label": "今天",
         "title": "今天",
         "decisive": false,
-        "text": "方案 A：信用额度提款 ¥150k。 方案 B：信用额度提款 ¥90k。",
+        "kind": "today",
+        "kinds": [
+          "today",
+          "paths_part"
+        ],
+        "word": "今天",
+        "text": "方案 A：信用额度提款 ¥150k。 方案 B：信用额度提款 ¥90k。 由谁决定：方案 A：FLOW 可以直接发送；方案 B：需要您批准。",
         "values": [
           {
             "key": "asked",
             "closing_fen": 40000000,
             "closing_display": "¥400,000.00",
+            "closing_short": "¥400k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 54998620,
             "closing_display": "¥549,986.20",
+            "closing_short": "¥550k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 14998620,
+            "vs_asked_short": "+¥150k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 49000000,
             "closing_display": "¥490,000.00",
+            "closing_short": "¥490k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 9000000,
+            "vs_asked_short": "+¥90k",
+            "vs_asked_tone": "ok"
           }
-        ]
-      },
-      {
-        "day": 2,
-        "label": "2 天后",
-        "title": "2 天后",
-        "decisive": false,
-        "text": "按对方要求：来自Foshan Home Retail Co.的提前付款 ¥420k；提前付款折扣 −¥5k。 方案 A：来自Foshan Home Retail Co.的提前付款 ¥257k；提前付款折扣 −¥2k。",
-        "values": [
-          {
-            "key": "asked",
-            "closing_fen": 81496000,
-            "closing_display": "¥814,960.00",
-            "below_floor": false,
-            "note": null
-          },
-          {
-            "key": "CTR-193394b6ba8b",
-            "closing_fen": 80500000,
-            "closing_display": "¥805,000.00",
-            "below_floor": false,
-            "note": null
-          },
-          {
-            "key": "CTR-6b07cbf70441",
-            "closing_fen": 49000000,
-            "closing_display": "¥490,000.00",
-            "below_floor": false,
-            "note": null
-          }
-        ]
+        ],
+        "events_text": {
+          "asked": [],
+          "CTR-193394b6ba8b": [
+            "信用额度提款 ¥149,986.20"
+          ],
+          "CTR-6b07cbf70441": [
+            "信用额度提款 ¥90,000.00"
+          ]
+        }
       },
       {
         "day": 30,
         "label": "30 天后",
         "title": "30 天后",
         "decisive": false,
+        "kind": "lowest",
+        "kinds": [
+          "lowest"
+        ],
+        "word": "最低点",
         "text": "每条路径都有：债务还款 −¥45k。",
         "values": [
           {
             "key": "asked",
             "closing_fen": 30996000,
             "closing_display": "¥309,960.00",
+            "closing_short": "¥310k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 30000000,
             "closing_display": "¥300,000.00",
+            "closing_short": "¥300k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": -996000,
+            "vs_asked_short": "−¥10k",
+            "vs_asked_tone": "bad"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 30000000,
             "closing_display": "¥300,000.00",
+            "closing_short": "¥300k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": -996000,
+            "vs_asked_short": "−¥10k",
+            "vs_asked_tone": "bad"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "债务还款 −¥45,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "债务还款 −¥45,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "债务还款 −¥45,000.00"
+          ]
+        }
       },
       {
         "day": 47,
         "label": "47 天后",
         "title": "47 天后",
         "decisive": true,
+        "kind": "reserve_cross",
+        "kinds": [
+          "reserve_cross",
+          "invoice_due"
+        ],
+        "word": "低于储备",
         "text": "每条路径都有：Operating bill −¥100k。 方案 A：来自Foshan Home Retail Co.的收款 ¥420k。 按对方要求的现金低于您的最低现金储备。",
         "values": [
           {
             "key": "asked",
             "closing_fen": 20996000,
             "closing_display": "¥209,960.00",
+            "closing_short": "¥210k",
             "below_floor": true,
-            "note": "低于您的最低现金储备"
+            "tone": "bad",
+            "note": "低于您的最低现金储备",
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 63197223,
             "closing_display": "¥631,972.23",
+            "closing_short": "¥632k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42201223,
+            "vs_asked_short": "+¥422k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 30219305,
             "closing_display": "¥302,193.05",
+            "closing_short": "¥302k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 9223305,
+            "vs_asked_short": "+¥92k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "Operating bill −¥100,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "来自Foshan Home Retail Co.的收款 ¥420,000.00",
+            "Operating bill −¥100,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "Operating bill −¥100,000.00"
+          ]
+        }
       },
       {
         "day": 60,
         "label": "60 天后",
         "title": "60 天后",
         "decisive": false,
+        "kind": "lowest",
+        "kinds": [
+          "lowest"
+        ],
+        "word": "最低点",
         "text": "每条路径都有：债务还款 −¥45k。 按对方要求的现金低于您的最低现金储备。",
         "values": [
           {
             "key": "asked",
             "closing_fen": 16496000,
             "closing_display": "¥164,960.00",
+            "closing_short": "¥165k",
             "below_floor": true,
-            "note": "低于您的最低现金储备"
+            "tone": "bad",
+            "note": "低于您的最低现金储备",
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 58697223,
             "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42201223,
+            "vs_asked_short": "+¥422k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 58755354,
             "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 42259354,
+            "vs_asked_short": "+¥423k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "债务还款 −¥45,000.00"
+          ],
+          "CTR-193394b6ba8b": [
+            "债务还款 −¥45,000.00"
+          ],
+          "CTR-6b07cbf70441": [
+            "债务还款 −¥45,000.00"
+          ]
+        }
       },
       {
         "day": 62,
         "label": "62 天后",
         "title": "62 天后",
         "decisive": false,
+        "kind": "reserve_cross",
+        "kinds": [
+          "reserve_cross"
+        ],
+        "word": "回到储备之上",
         "text": "按对方要求：来自Foshan Home Retail Co.的收款 ¥420k。",
         "values": [
           {
             "key": "asked",
             "closing_fen": 58496000,
             "closing_display": "¥584,960.00",
+            "closing_short": "¥585k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
           },
           {
             "key": "CTR-193394b6ba8b",
             "closing_fen": 58697223,
             "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 201223,
+            "vs_asked_short": "+¥2k",
+            "vs_asked_tone": "ok"
           },
           {
             "key": "CTR-6b07cbf70441",
             "closing_fen": 58755354,
             "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
             "below_floor": false,
-            "note": null
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 259354,
+            "vs_asked_short": "+¥3k",
+            "vs_asked_tone": "ok"
           }
-        ]
+        ],
+        "events_text": {
+          "asked": [
+            "来自Foshan Home Retail Co.的收款 ¥420,000.00"
+          ],
+          "CTR-193394b6ba8b": [],
+          "CTR-6b07cbf70441": []
+        }
+      },
+      {
+        "day": 66,
+        "label": "66 天后",
+        "title": "66 天后",
+        "decisive": false,
+        "kind": "end",
+        "kinds": [
+          "end"
+        ],
+        "word": "第 66 天",
+        "text": "各路径都没有现金变动。",
+        "values": [
+          {
+            "key": "asked",
+            "closing_fen": 58496000,
+            "closing_display": "¥584,960.00",
+            "closing_short": "¥585k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": null,
+            "vs_asked_short": null,
+            "vs_asked_tone": null
+          },
+          {
+            "key": "CTR-193394b6ba8b",
+            "closing_fen": 58697223,
+            "closing_display": "¥586,972.23",
+            "closing_short": "¥587k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 201223,
+            "vs_asked_short": "+¥2k",
+            "vs_asked_tone": "ok"
+          },
+          {
+            "key": "CTR-6b07cbf70441",
+            "closing_fen": 58755354,
+            "closing_display": "¥587,553.54",
+            "closing_short": "¥588k",
+            "below_floor": false,
+            "tone": "neutral",
+            "note": null,
+            "vs_asked_fen": 259354,
+            "vs_asked_short": "+¥3k",
+            "vs_asked_tone": "ok"
+          }
+        ],
+        "events_text": {
+          "asked": [],
+          "CTR-193394b6ba8b": [],
+          "CTR-6b07cbf70441": []
+        }
       }
     ],
     "picture_days": 66,
