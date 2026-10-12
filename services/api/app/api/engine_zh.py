@@ -18,6 +18,8 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Sequence
 
+from app.api.financing_words import state_word
+
 Rule = tuple["re.Pattern[str]", Callable[["re.Match[str]"], str]]
 
 MISSES: set[str] = set()  # sentences with Latin words that no template knew (the tests and the report read it)
@@ -219,7 +221,9 @@ def _drew(m: re.Match[str]) -> str:
 
 @rule(rf"Advance (?P<amt>{M}) on (?P<inv>{INV}) from (?P<fac>{N}) (?P<w>{WHEN}){_LANDS}")
 def _advance(m: re.Match[str]) -> str:
-    return f"已于{when_zh(m['w'])}以{inv(m['inv'])}从{m['fac']}预支 {m['amt']}" + _landing(m)
+    # one vocabulary for the financing (app.api.financing_words): an advance whose cash lands later is ARRANGED, not "advanced"
+    word = state_word("zh", "ARRANGED" if m["lw"] else "RECEIVED")
+    return f"已于{when_zh(m['w'])}以{inv(m['inv'])}从{m['fac']}申请融资 {m['amt']}（融资{word}）" + _landing(m)
 
 
 @rule(rf"Repaid (?P<amt>{M}) on (?P<fac>{N}) with interest (?P<int>{M}) \((?P<parts>.+)\)")
@@ -250,7 +254,7 @@ def _repay_exceeds(m: re.Match[str]) -> str:
 
 @rule(rf"Advance (?P<amt>{M}) exceeds (?P<bp>\d+)bp of (?P<inv>{INV})'s outstanding (?P<out>{M})")
 def _advance_exceeds(m: re.Match[str]) -> str:
-    return f"预支 {m['amt']} 超过{inv(m['inv'])}未收金额 {m['out']} 的 {m['bp']} 个基点"
+    return f"融资 {m['amt']} 超过{inv(m['inv'])}未收金额 {m['out']} 的 {m['bp']} 个基点"
 
 
 @rule(rf"(?P<a>{AGR}) and (?P<b>{AGR}) both cover receivable (?P<inv>{INV}); the owner must revoke (?P<c>{AGR}) first")
@@ -309,7 +313,7 @@ def _window_ended(m: re.Match[str]) -> str:
 
 @rule(rf"repaid advance (?P<p>{M}) \+ interest (?P<i>{M}) \+ fee (?P<f>{M}) \((?P<d>\d+) days billed as (?P<n>\d+) whole period\(s\)\) to (?P<fac>{N})")
 def _repaid_advance(m: re.Match[str]) -> str:
-    return f"已偿还预支本金 {m['p']}、利息 {m['i']}、费用 {m['f']}（{m['d']} 天按 {m['n']} 个整期计费），付给{m['fac']}"
+    return f"已偿还融资本金 {m['p']}、利息 {m['i']}、费用 {m['f']}（{m['d']} 天按 {m['n']} 个整期计费），付给{m['fac']}"
 
 
 @rule(rf"Clock moved from (?P<a>{WHEN}) to (?P<b>{WHEN}): (?P<items>.+)")
@@ -380,7 +384,7 @@ def _leg_with_reason(m: re.Match[str]) -> str:
 
 @rule(rf"Advance on (?P<inv>{INV}), (?P<fac>{N})")
 def _label_advance(m: re.Match[str]) -> str:
-    return f"{m['fac']}以{inv(m['inv'])}预支"
+    return f"{m['fac']}以{inv(m['inv'])}融资"
 
 
 # approval reasons the executor writes for what is not a rate above the ceiling
@@ -600,7 +604,7 @@ def _no_dated(m: re.Match[str]) -> str:
 
 @rule(r"The financing advance falls due with it")
 def _advance_due(m: re.Match[str]) -> str:
-    return "融资预支款也随之到期"
+    return "融资款也随之到期"
 
 
 @rule(rf"Early payment on (?P<inv>{INV}) did not arrive")
@@ -792,7 +796,7 @@ def _cost_draw(m: re.Match[str]) -> str:
 
 @rule(rf"(?P<fac>{N}): advance (?P<amt>{M}) on (?P<inv>{INV})(?P<tag> \(expected\))?")
 def _cost_advance(m: re.Match[str]) -> str:
-    return f"{m['fac']}：以{inv(m['inv'])}预支 {m['amt']}" + ("（预期）" if m["tag"] else "")
+    return f"{m['fac']}：以{inv(m['inv'])}融资 {m['amt']}" + ("（预期）" if m["tag"] else "")
 
 
 @rule(rf"(?P<fac>{N}): early payment on (?P<amt>{M}) face of (?P<inv>{INV}) at (?P<r>{PCT})(?P<tag> \(expected\))?")
@@ -895,7 +899,7 @@ def _label_fee(m: re.Match[str]) -> str:
 
 @rule(rf"Repay advance on (?P<inv>{INV})")
 def _label_repay_advance(m: re.Match[str]) -> str:
-    return f"偿还{inv(m['inv'])}的预支款"
+    return f"偿还{inv(m['inv'])}的融资款"
 
 
 @rule(rf"Receipt (?P<inv>{INV}) from (?P<buyer>{N})")

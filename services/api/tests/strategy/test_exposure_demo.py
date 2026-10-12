@@ -12,7 +12,7 @@ from __future__ import annotations
 from app.strategy.capacity import spare_capacity
 from app.strategy.impact import stress
 
-from .exposure_books import ASKED, OPTION_A, OPTION_B, OWNER_KEY, golden
+from .exposure_books import ASKED, OPTION_A, OPTION_B, OWNER_KEY, financed_golden, golden
 
 FOSHAN = "BUYER-1"
 
@@ -24,6 +24,15 @@ def test_foshan_thirty_days_late_has_no_admissible_committed_plan():
     assert row.breach_days == 65  # 65 days below the minimum (20 on the contractual terms)
     assert row.need_fen == 55_000_000  # a ¥550,000 need
     assert row.plan_admissible is False and row.plan_cost_fen is None  # no admissible committed plan
+
+
+def test_the_unfinanced_demo_figures_do_not_move_when_a_financed_invoice_is_modelled():
+    """Ticket #107: a financed invoice is now stressed too. The Demo's day-0 books finance nothing, so the figures above stand
+    unchanged; the same stress on the books with RCV-A's advance arranged (ARRANGED, landing on day 3) has the lender paid
+    out of the late receipt, with the extra period's charges, and reads:"""
+    row = stress(financed_golden(False), golden()[1], FOSHAN, (30,), 0, ())[0]
+    assert (row.lowest_fen, row.lowest_day, row.breach_days, row.need_fen) == (500_000, 60, 57, 29_500_000)
+    assert row.plan_admissible is False
 
 
 def test_the_additional_need_flow_could_still_support():

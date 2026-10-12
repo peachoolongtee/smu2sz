@@ -23,6 +23,7 @@ from app.api.auth import require_owner
 from app.api.causality import Causality, forecast_of, mark_changed
 from app.api.decisions import Reconciled, decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
+from app.api.financing_words import financing_state_words
 from app.api.presentation import (
     COMMERCIAL_KINDS,
     RECOMMENDED_PLAN_KEY,
@@ -67,6 +68,7 @@ from app.domain.models import (
     FinancialState,
     FundingAction,
     FundingActionKind,
+    FundingLot,
     FundingPlan,
     LedgerEventKind,
     Mandate,
@@ -1031,6 +1033,12 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
             **_receivables_headline(past_due, nxt, today, lang, no_plan, len(rows))}
 
 
+def _financing_fields(lot: FundingLot, today: int, lang: str) -> dict[str, str]:
+    """The lot's financing state in the one vocabulary (ARRANGED / RECEIVED / REPAID, `app.api.financing_words`)."""
+    words = financing_state_words(lang, lot, today)
+    return {"financing_state": words["state"], "financing_state_text": words["text"]}
+
+
 def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] | None:
     lots = [lot for lot in ensure_lots(state).lots if not lot.settled]
     if not lots:
@@ -1039,6 +1047,7 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
     return {"total_display": fmt_yuan(total), "lots": [
         {"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.remaining_fen),
          "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang),
+         **_financing_fields(lot, today, lang),
          "headline": t(lang, f"{fmt_short(lot.remaining_fen)} funding arriving {when_text(lot.arrival_day, today, lang)}",
                        f"{fmt_short(lot.remaining_fen)} 资金将于{when_text(lot.arrival_day, today, lang)}到账")}
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}

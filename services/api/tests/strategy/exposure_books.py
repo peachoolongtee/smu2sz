@@ -9,7 +9,7 @@ from functools import cache
 
 from app.books import Books, current_books
 from app.domain.fixtures import load_scenario
-from app.domain.models import FinancialState, Mandate
+from app.domain.models import FinancialState, FundingLot, Mandate
 from app.mandate.fixture import demo_owner_public_key_hex, load_signed_mandate
 from app.strategy.types import CandidatePackage
 
@@ -40,3 +40,19 @@ def golden() -> tuple[Books, Mandate]:
     """The golden books on day 0 with the golden mandate signed by the demo owner key (the verifier needs the signature)."""
     books, _ = scenario_books("golden_sme")
     return books, load_signed_mandate()
+
+
+def financed_golden(landed: bool, *, outstanding_fen: int = 42_000_000) -> Books:
+    """The golden books with RCV-A financed (ticket #107): a ¥255,000 advance on FAC-IF, landed already (RECEIVED, day -2) or
+    arranged and arriving on day 3 (ARRANGED). `outstanding_fen` below the face leaves the rest as already received."""
+    books, _ = golden()
+    state = books.state
+    rcv = next(r for r in state.receivables if r.id == "RCV-A")
+    lot = FundingLot(id="LOT-IF", facility_id="FAC-IF", principal_fen=25_500_000, remaining_fen=25_500_000,
+                     request_day=-5 if landed else 0, arrival_day=-2 if landed else 3, receivable_id="RCV-A", settled=landed)
+    financed = state.model_copy(update={
+        "receivables": [rcv.model_copy(update={"status": "FINANCED", "advance_fen": 25_500_000, "advance_facility_id": "FAC-IF",
+                                              "settled_fen": rcv.face_fen - outstanding_fen})],
+        "facilities": [f.model_copy(update={"drawn_fen": 25_500_000}) if f.id == "FAC-IF" else f for f in state.facilities],
+        "lots": [lot]})
+    return Books(state=financed, obligations=())

@@ -88,6 +88,18 @@ def fmt_yuan_short(fen: int) -> str:
     return f"{sign}¥{thousands:,}k"
 
 
+def fmt_yuan_about(fen: int) -> str:
+    """A figure for "about ¥1,870": half-up to the whole yuan under ¥100, to ¥10 under ¥100,000 and to the thousand
+    ("¥163k") from there. For a sentence that says "about"; never for a cost or a ledger figure."""
+    sign = "−" if fen < 0 else ""
+    size = abs(fen)
+    if size >= 100_000 * FEN_PER_YUAN:
+        return fmt_yuan_short(fen)
+    step = 1 if size < 100 * FEN_PER_YUAN else 10
+    rounded = (size + step * FEN_PER_YUAN // 2) // (step * FEN_PER_YUAN) * step
+    return f"{sign}¥{rounded:,}"
+
+
 def fmt_pct(x: Fraction, places: int = 2) -> str:
     """Exact fraction to a half-up percentage string: 0.108417 -> '10.84%'."""
     scaled = round_half_up(x * 100 * 10**places)

@@ -83,7 +83,7 @@ def test_a_plan_with_several_legs_keeps_each_legs_reason_and_figures():
     out = _zh(text)
     assert out == (
         "Bank credit line：提款 ¥150,000.00，预计32 天后还款：年化成本 6.40% 高于您签署的无需批准融资上限 5.00%（单利 6.4%）；"
-        "Invoice financing (onboarded platform)：以发票 RCV-A预支 ¥255,000.00：年化成本 11.22% 高于您签署的无需批准融资上限 5.00%"
+        "Invoice financing (onboarded platform)：以发票 RCV-A融资 ¥255,000.00：年化成本 11.22% 高于您签署的无需批准融资上限 5.00%"
         "（¥255,000.00 计息 29 天（从3 天后到32 天后），年化 11.22%）")
     for figure in ("¥150,000.00", "¥255,000.00", "6.40%", "11.22%", "5.00%"):
         assert figure in out
