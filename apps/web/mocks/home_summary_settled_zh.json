@@ -1483,7 +1483,9 @@
         "day": 42,
         "when": "4 天后",
         "kind": "lowest",
-        "label": "现金降到最低点",
+        "label": "发放工资",
+        "note": "现金降到最低，¥300k，正好是您的最低现金",
+        "planned": false,
         "amount_fen": -20000000,
         "amount_short": "−¥200k",
         "net_short": "−¥200k",
@@ -1493,6 +1495,24 @@
         "room_after_short": "比您的最低现金高 ¥0",
         "tone": "warn",
         "explain": "这是您现金线上的最低点：¥300k，比您的最低现金高 ¥0。工资 ¥200k 使现金从 ¥500k 降至 ¥300k。如果没有融资方案，最低点会是4 天后的 −¥50k。",
+        "effect_rows": [
+          {
+            "label": "此前现金",
+            "display": "¥500k"
+          },
+          {
+            "label": "此后现金",
+            "display": "¥300k"
+          },
+          {
+            "label": "最低现金储备",
+            "display": "¥300k"
+          },
+          {
+            "label": "高于储备的现金",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "−¥200,000.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -1503,6 +1523,8 @@
         "when": "9 天后",
         "kind": "receipt",
         "label": "Foshan Home Retail Co.付款",
+        "note": null,
+        "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
         "net_short": "+¥118k",
@@ -1512,6 +1534,24 @@
         "room_after_short": "比您的最低现金高 ¥118k",
         "tone": "ok",
         "explain": "Foshan Home Retail Co.支付 ¥420k，其中 ¥202k 用于偿还发票融资，剩余 ¥218k。现金从 ¥300k 升至 ¥418k，比您的最低现金高 ¥118k。",
+        "effect_rows": [
+          {
+            "label": "此前现金",
+            "display": "¥300k"
+          },
+          {
+            "label": "此后现金",
+            "display": "¥418k"
+          },
+          {
+            "label": "最低现金储备",
+            "display": "¥300k"
+          },
+          {
+            "label": "高于储备的现金",
+            "display": "¥118k"
+          }
+        ],
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥418,217.81",
         "room_after_display": "¥118,217.81"
@@ -1522,6 +1562,8 @@
         "when": "22 天后",
         "kind": "debt",
         "label": "支付债务还款",
+        "note": null,
+        "planned": false,
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
@@ -1531,6 +1573,24 @@
         "room_after_short": "比您的最低现金高 ¥73k",
         "tone": "ok",
         "explain": "现金从 ¥418k 降至 ¥373k。您的最低现金是 ¥300k，所以还有 ¥73k 的余量。如果没有融资方案，债务还款会使现金降至 ¥225k，低于您的最低现金。",
+        "effect_rows": [
+          {
+            "label": "此前现金",
+            "display": "¥418k"
+          },
+          {
+            "label": "此后现金",
+            "display": "¥373k"
+          },
+          {
+            "label": "最低现金储备",
+            "display": "¥300k"
+          },
+          {
+            "label": "高于储备的现金",
+            "display": "¥73k"
+          }
+        ],
         "amount_display": "−¥45,000.00",
         "cash_after_display": "¥373,217.81",
         "room_after_display": "¥73,217.81"
@@ -2719,6 +2779,7 @@
       }
     ],
     "counterfactual_label": "没有 FLOW 融资方案的情形（仅供对比，不是您还能选择的做法）",
+    "plan_line_label": "采用 FLOW 的方案",
     "cash_display": "¥500,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",

@@ -1,0 +1,111 @@
+{
+  "day": 0,
+  "lang": "en",
+  "state_version": 3,
+  "rows": [
+    {
+      "receivable_id": "RCV-A",
+      "buyer_id": "BUYER-1",
+      "buyer_name": "Foshan Home Retail Co.",
+      "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
+      "face_fen": 42000000,
+      "outstanding_fen": 42000000,
+      "amount_short": "¥420k",
+      "status": "FINANCED",
+      "due_day": 32,
+      "due_when": "in 32 days",
+      "past_due": false,
+      "days_late": 0,
+      "net": {
+        "face_fen": 42000000,
+        "outstanding_fen": 42000000,
+        "financing_state": "ARRANGED",
+        "advance_fen": 25500000,
+        "charges_fen": 227229,
+        "claim_fen": 25727229,
+        "net_fen": 16272771,
+        "owed_by_owner_fen": 0,
+        "per_period_more_fen": 227230,
+        "period_days": 30,
+        "arrival_day": 3,
+        "on_day": 32,
+        "financing_unrecorded": false,
+        "net_display": "¥162,727.71",
+        "net_short": "about ¥163k",
+        "condition_text": "if Foshan pays on the due day",
+        "repays_text": "¥257,272.29 repays the financing arranged, expected in 3 days, with its charges",
+        "financing_state_text": "Arranged",
+        "repays_note": "arranged, expected in 3 days",
+        "per_period_text": "about ¥2,270 more for every 30 days late",
+        "owed_text": null,
+        "unrecorded_text": null,
+        "face_display": "¥420,000.00",
+        "outstanding_display": "¥420,000.00",
+        "advance_display": "¥255,000.00",
+        "charges_display": "¥2,272.29",
+        "claim_display": "¥257,272.29",
+        "owed_by_owner_display": "¥0.00",
+        "per_period_more_display": "¥2,272.30"
+      },
+      "net_short": "about ¥163k",
+      "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "financing_state": "ARRANGED",
+      "governed_by": {
+        "contract_ref": "FHR-2026-07",
+        "terms_days": 45,
+        "rebate_bp": 0,
+        "terms_label": "Payment terms",
+        "terms_text": "Agreement FHR-2026-07: payment is due 45 days from the invoice date",
+        "rebate_display": "0.00%"
+      },
+      "early_payment": {
+        "agreed": false,
+        "text": "none agreed on this invoice"
+      },
+      "pending_counter": null,
+      "collection_state": "CURRENT",
+      "collection_state_text": "Not due yet",
+      "collection_action": {
+        "primary": "VIEW_TERMS",
+        "label": "View terms",
+        "others": [
+          {
+            "action": "PREPARE_REMINDER",
+            "label": "Prepare reminder"
+          }
+        ]
+      },
+      "financing_href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
+      "face_display": "¥420,000.00",
+      "outstanding_display": "¥420,000.00"
+    }
+  ],
+  "summary": {
+    "outstanding_total_fen": 42000000,
+    "outstanding_total_display": "¥420,000.00",
+    "next_expected": {
+      "when_text": "in 32 days",
+      "due_day": 32,
+      "amount_fen": 42000000,
+      "amount_display": "¥420,000.00",
+      "amount_short": "¥420k",
+      "buyer_name": "Foshan Home Retail Co."
+    },
+    "invoice_count": 1,
+    "overdue_count": 0,
+    "financed_count": 1,
+    "count_text": "1 invoice · nothing overdue",
+    "repays_line": "¥257k of it repays the financing arranged, with its charges",
+    "financing_total_fen": 25500000,
+    "financing_total_display": "¥255,000.00",
+    "net_total_fen": 16272771,
+    "net_total_display": "¥162,727.71",
+    "net_total_text": "if every invoice is paid on its due day",
+    "headline": "¥420k expected from Foshan.",
+    "headline_second": "About ¥163k becomes available at collection, after the financing is repaid."
+  },
+  "partial": null,
+  "last_read_when": "today",
+  "last_read_day": 0,
+  "computed_in_seconds": 0
+}

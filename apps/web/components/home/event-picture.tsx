@@ -4,7 +4,7 @@ import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { HomeRailEvent, HomeSeriesPoint, HomeView } from "@/lib/types";
+import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 /**
@@ -54,7 +54,19 @@ export function eventPictureReady(h: HomeView): boolean {
   return Boolean(h.cash.events_rail?.length && line?.some((p) => p.day >= h.day));
 }
 
-export function EventPicture({ h }: { h: HomeView }) {
+/**
+ * A late-payment test the page read itself (the Cash page's stress link: `GET /buyers/{id}/exposure`), drawn in place of the home's own `cash.stress`: the
+ * same stressed line, switch and panel. `sentence` is the server's stress sentence for the panel and `lines` the sentences that follow it (the net a month
+ * later, the financing's charges); `startLate` opens the picture on the late scenario.
+ */
+export interface LateRead {
+  stress: HomeStress;
+  sentence: string;
+  lines?: string[];
+  startLate?: boolean;
+}
+
+export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const hintId = useId();
@@ -69,14 +81,15 @@ export function EventPicture({ h }: { h: HomeView }) {
   // The chosen event is kept by its key, so a re-read that reorders or drops events never moves the choice to another one.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [preview, setPreview] = useState<number | null>(null);
-  const [scenario, setScenario] = useState<"expected" | "late">("expected");
+  const [scenario, setScenario] = useState<"expected" | "late">(lateRead?.startLate ? "late" : "expected");
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
   const [focused, setFocused] = useState(false);
 
   const n = rail.length;
   // The switch needs the server's stress, its series and the delay it is about; without any of them there is no scenario to offer.
-  const stress = cash.stress_available && cash.stress?.series?.length && cash.stress.delay_days ? cash.stress : null;
+  const own = lateRead ? lateRead.stress : cash.stress_available ? cash.stress : null;
+  const stress = own?.series?.length && own.delay_days ? own : null;
   if (scenario === "late" && stress === null) setScenario("expected");
   const late = scenario === "late" && stress !== null;
   const chosen = Math.max(rail.findIndex((e) => e.key === selectedKey), 0);
@@ -88,7 +101,7 @@ export function EventPicture({ h }: { h: HomeView }) {
   // (the books without the whole plan, or without any action) and exists only with its label: no series, no legend entry.
   const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
   const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
-  const planName = cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected");
+  const planName = cash.plan_line_label || (cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected"));
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
@@ -192,6 +205,8 @@ export function EventPicture({ h }: { h: HomeView }) {
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
+  // The last label is anchored to the right edge: the one before it gives way when the two would touch (the widened late picture only; Home's axis is as it was).
+  if (lateRead && ticks.length > 2 && ticks[ticks.length - 1] === end && ((end - ticks[ticks.length - 2]) / last) * (pr - pl) < 96) ticks.splice(ticks.length - 2, 1);
   const reserveText = t("biz.picture.reserve", { amount: cash.floor_short });
 
   // ---- pointing
@@ -231,9 +246,6 @@ export function EventPicture({ h }: { h: HomeView }) {
   };
 
   const panelTitle = late ? lateName : event ? `${event.label}, ${event.when}` : "";
-  const lowestLine = stress ? t("home.hy.stress.lowest", { amount: stress.lowest_short, when: stress.lowest_when }) : "";
-  const breachLine = stress && stress.breach_days > 0 ? t("home.hy.stress.breach", { n: stress.breach_days }) : "";
-  const needLine = stress && stress.breach_days > 0 && stress.need_short ? t("home.hy.stress.need", { amount: stress.need_short }) : "";
 
   return (
     <section aria-labelledby="home-picture-title" className="space-y-3" data-testid="home-event-picture" data-scenario={late ? "late" : "expected"} data-window={windowDays}>
@@ -452,8 +464,13 @@ export function EventPicture({ h }: { h: HomeView }) {
                   {stress.assumption_text}
                 </p>
                 <p className="text-[0.9375rem] font-medium text-ink" data-testid="stress-sentence">
-                  {[lowestLine, breachLine, needLine, stress.plan_text].filter(Boolean).join(" ")}
+                  {lateRead ? lateRead.sentence : [stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
                 </p>
+                {lateRead?.lines?.map((line, i) => (
+                  <p key={i} className="text-[0.9375rem] text-ink-2" data-testid="stress-line">
+                    {line}
+                  </p>
+                ))}
               </div>
             ) : event ? (
               <div className="space-y-1.5">
@@ -461,6 +478,20 @@ export function EventPicture({ h }: { h: HomeView }) {
                   <span className="tabular-nums">{shown + 1}.</span>
                   <span className="first-letter:uppercase">{panelTitle}</span>
                 </h3>
+                {event.effect_rows?.length ? (
+                  <table className="w-full max-w-sm text-sm tabular-nums" data-testid="rail-effect">
+                    <tbody>
+                      {event.effect_rows.map((r, ri) => (
+                        <tr key={ri} className="border-b border-line last:border-b-0" data-testid="rail-effect-row">
+                          <th scope="row" className="py-1 pr-4 text-left font-normal text-ink-2">
+                            {r.label}
+                          </th>
+                          <td className="py-1 text-right font-bold text-ink">{r.display}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
                 <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="rail-explain">
                   {event.explain}
                 </p>
@@ -503,14 +534,22 @@ export function EventPicture({ h }: { h: HomeView }) {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="min-w-0 break-words text-sm font-semibold text-ink first-letter:uppercase">{e.label}</span>
-                        <span className="shrink-0 text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
-                          {e.amount_short}
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
+                            {e.amount_short}
+                          </span>
+                          {/* A landing that only the plan would bring: the financing state word, quietly (a word, never a badge). */}
+                          {e.planned ? (
+                            <span className="block text-xs font-medium text-ink-3" data-testid={`rail-planned-${i}`}>
+                              {t("home.hy.planned")}
+                            </span>
+                          ) : null}
                         </span>
                       </span>
                       <span className="block text-xs text-ink-3">{e.when}</span>
-                      {lowest && e.room_after_short ? (
+                      {lowest && (e.note || e.room_after_short) ? (
                         <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
-                          {e.room_after_short}
+                          {e.note || e.room_after_short}
                         </span>
                       ) : null}
                     </span>

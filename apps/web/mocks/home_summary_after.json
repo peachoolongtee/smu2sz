@@ -1507,6 +1507,8 @@
         "when": "today",
         "kind": "lowest",
         "label": "cash is at its lowest",
+        "note": "cash at its lowest, ¥300k, at your minimum",
+        "planned": false,
         "amount_fen": 0,
         "amount_short": "¥0",
         "net_short": "¥0",
@@ -1516,6 +1518,24 @@
         "room_after_short": "¥0 above your minimum",
         "tone": "warn",
         "explain": "This is the lowest point on your cash line: ¥300k, ¥0 above your minimum. Without the financing plan, the lowest point would have been −¥50k in 8 days.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥300k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "¥0.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -1526,6 +1546,8 @@
         "when": "in 3 days",
         "kind": "landing",
         "label": "invoice financing arrives",
+        "note": null,
+        "planned": false,
         "amount_fen": 20000000,
         "amount_short": "+¥200k",
         "net_short": "+¥200k",
@@ -1535,6 +1557,24 @@
         "room_after_short": "¥200k above your minimum",
         "tone": "ok",
         "explain": "Cash rises from ¥300k to ¥500k. Your minimum is ¥300k, so ¥200k of room remains.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥500k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥200k"
+          }
+        ],
         "amount_display": "¥200,000.00",
         "cash_after_display": "¥500,000.00",
         "room_after_display": "¥200,000.00"
@@ -1545,6 +1585,8 @@
         "when": "in 8 days",
         "kind": "payroll",
         "label": "payroll is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -20000000,
         "amount_short": "−¥200k",
         "net_short": "−¥200k",
@@ -1554,6 +1596,24 @@
         "room_after_short": "¥0 above your minimum",
         "tone": "warn",
         "explain": "Cash falls from ¥500k to ¥300k. Your minimum is ¥300k, so there is no room left. Without the financing plan, payroll would have taken cash to −¥50k, below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥500k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥300k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "−¥200,000.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -1564,6 +1624,8 @@
         "when": "in 13 days",
         "kind": "receipt",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
         "net_short": "+¥118k",
@@ -1573,6 +1635,24 @@
         "room_after_short": "¥118k above your minimum",
         "tone": "ok",
         "explain": "Foshan pays ¥420k, and ¥202k of it repays the invoice financing, leaving ¥218k. Cash rises from ¥300k to ¥418k, ¥118k above your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥418k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥118k"
+          }
+        ],
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥418,217.81",
         "room_after_display": "¥118,217.81"
@@ -1583,6 +1663,8 @@
         "when": "in 26 days",
         "kind": "debt",
         "label": "debt service is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
@@ -1592,6 +1674,24 @@
         "room_after_short": "¥73k above your minimum",
         "tone": "ok",
         "explain": "Cash falls from ¥418k to ¥373k. Your minimum is ¥300k, so ¥73k of room remains. Without the financing plan, debt service would have taken cash to ¥225k, below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥418k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥373k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥73k"
+          }
+        ],
         "amount_display": "−¥45,000.00",
         "cash_after_display": "¥373,217.81",
         "room_after_display": "¥73,217.81"
@@ -2780,6 +2880,7 @@
       }
     ],
     "counterfactual_label": "without FLOW's financing plan (a comparison, not a choice you still have)",
+    "plan_line_label": "With FLOW's plan",
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥300,000.00",
@@ -2823,8 +2924,8 @@
         "title": "¥200k of funding from Invoice financing arrives in 3 days.",
         "facts": [
           {
-            "label": "Arrives",
-            "value": "in 3 days",
+            "label": "Invoice financing",
+            "value": "¥200k in 3 days (arranged)",
             "tone": "neutral"
           },
           {

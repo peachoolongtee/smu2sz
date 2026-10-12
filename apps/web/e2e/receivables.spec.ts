@@ -2,6 +2,9 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 /**
+ * The Receivables page of before (the fallback while the server has no GET /receivables; the page on that read is e2e/receivables-layers.spec.ts).
+ * Every test here sets the mock's "route absent" hook so it keeps covering the reads the fallback uses.
+ *
  * The Business Receivables page in mock mode: the summary first (outstanding, overdue, the next payment, all server strings
  * from GET /home), then the invoices with late rows first, then the early payments and the payments received only when
  * there are any. No standing empty panels.
@@ -12,6 +15,7 @@ test.beforeEach(async ({ context }, testInfo) => {
   await context.addInitScript(() => {
     try {
       sessionStorage.setItem("tl-owner-auth", JSON.stringify({ token: "mock-owner" }));
+      sessionStorage.setItem("tl-mock-receivables-absent", "1");
     } catch {
       /* storage unavailable */
     }

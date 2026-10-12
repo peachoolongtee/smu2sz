@@ -108,6 +108,7 @@ test.describe("desktop", () => {
   });
 
   test("Receivables day 0: the ranking note, a worth cell and an action cell for the open invoice; nothing brand-filled", async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the ranking table is the page of before (the fallback)
     await page.goto("/receivables");
     await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
     await expect(page.getByTestId("recv-ranking-note")).toContainText("Ranked by what collecting each saves you");
@@ -126,6 +127,7 @@ test.describe("desktop", () => {
   });
 
   test("Receivables: when the collections ranking cannot be read the page says so and Retry brings the ranking back", async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the ranking table is the page of before (the fallback)
     test.skip(test.info().project.name === "live", "the failure is the mock's test hook");
     await page.addInitScript(() => sessionStorage.setItem("tl-mock-worth-fail", "1"));
     await page.goto("/receivables");
@@ -140,6 +142,7 @@ test.describe("desktop", () => {
   });
 
   test("Receivables day 34: the late invoice leads with Call now, and the existing columns and ids are intact", async ({ page, request }) => {
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the ranking table is the page of before (the fallback)
     await advanceTo34(page, request);
     await page.goto("/receivables");
     const rows = page.locator("#recv-open tbody tr:not([data-group])");
@@ -319,6 +322,7 @@ test.describe("phone", () => {
   });
 
   test("Receivables day 34: each list row carries the action pill, what it is worth and the sentence", async ({ page, request }) => {
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-absent", "1")); // the ranking table is the page of before (the fallback)
     await advanceTo34(page, request);
     await page.goto("/receivables");
     const list = page.getByTestId("recv-open-list");

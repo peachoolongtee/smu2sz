@@ -11,6 +11,7 @@
 
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
+import type { CustomerContext } from "./customer-href";
 import type {
   ActRequest,
   AlertActResult,
@@ -23,6 +24,7 @@ import type {
   BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  BuyerExposureView,
   ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
@@ -30,6 +32,7 @@ import type {
   CapexView,
   ClockView,
   ContractFixture,
+  CustomerOverviewView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -55,6 +58,7 @@ import type {
   ExposureView,
   PilotJournalView,
   PriceCurveView,
+  ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -204,6 +208,41 @@ export async function getChase(receivableId: string, lang: "en" | "zh"): Promise
  */
 export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView | null> {
   return isMock ? (await mock()).getPriceCurve(lang) : (await live()).getPriceCurve(lang);
+}
+
+/**
+ * GET /receivables?lang=: the receivable rows with the net each invoice leaves, who governs it and what to do next, and the summary
+ * (owner only, no flag). Resolves to null on a server without the route, so the Receivables page keeps its old reads.
+ */
+export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  return isMock ? (await mock()).getReceivables(lang) : (await live()).getReceivables(lang);
+}
+
+/** The page context a read carries so the server can write the way back (`context.back`): the same four keys the connected pages share in the address. */
+export interface ExposureContext {
+  customer?: string | null;
+  invoice?: string | null;
+  decision?: string | null;
+  path?: string | null;
+  /** The page that sent the owner (`deal`, `invoice` or `customer`); the server's back link follows it when the other parts support it. */
+  from?: "deal" | "invoice" | "customer" | null;
+}
+
+/**
+ * GET /decisions/{id}/exposure (flag `exposure`): what a deal does to the exposure to its buyer, of which the Receivables aside reads the
+ * 30-day late-payment test, the concentration and the payment history. Null when the feature is off or the decision names no buyer.
+ */
+export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  return isMock ? (await mock()).getDecisionExposure(decisionId, lang) : (await live()).getDecisionExposure(decisionId, lang);
+}
+
+/**
+ * GET /buyers/{id}/exposure?lang= (flag `exposure`): the buyer's concentration, payment history and 30-day late-payment test on the books as they
+ * stand, with no deal needed. Null when the feature is off or the buyer is unknown. The spare-capacity search is not asked for (`spare=0`).
+ * With a `context` the read also carries `context.back` (where the page the owner came from is).
+ */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
+  return isMock ? (await mock()).getBuyerExposure(buyerId, lang, context) : (await live()).getBuyerExposure(buyerId, lang, context);
 }
 
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
@@ -360,4 +399,13 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 /** GET /offers/{offer_id}/picture?lang=: the cash line of an offer as asked and of each reply FLOW has ready. Display only. */
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
   return isMock ? (await mock()).getOfferPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang);
+}
+
+/**
+ * GET /customers/{id}/overview: what a buyer is worth to the owner and what it puts at risk, in one read composed from the reads the other
+ * pages make. `ctx` is the context the page was opened with (`decision`, `path`, `invoice` from the URL); the server builds the back link
+ * from it. A 404 means the books hold no such customer.
+ */
+export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
+  return isMock ? (await mock()).getCustomerOverview(id, lang, ctx) : (await live()).getCustomerOverview(id, lang, ctx);
 }

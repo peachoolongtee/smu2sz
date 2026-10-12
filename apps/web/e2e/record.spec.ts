@@ -277,7 +277,7 @@ test("Home carries the remaining task, with the routes it names, after a cure th
   // The invoice link lands on that invoice: the page scrolls it into view once the data has loaded.
   await page.goBack();
   await page.locator("#home-remaining").getByRole("link", { name: /^Open the .* invoice/ }).click();
-  await expect(page).toHaveURL(/\/receivables#/);
+  await expect(page).toHaveURL(/\/receivables(\?[^#]*)?#/);
   const id = decodeURIComponent(new URL(page.url()).hash.slice(1));
   const row = page.locator(`[id="${id}"]:visible`);
   await expect(row).toHaveCount(1);
