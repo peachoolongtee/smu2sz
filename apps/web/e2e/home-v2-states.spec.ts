@@ -166,16 +166,22 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-status-word")).toHaveText(h.cash.status_word ?? "");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", h.status);
   for (const [id, k] of [["cash", v2.kpis.cash_available], ["lowest", v2.kpis.lowest_ahead], ["funding", v2.kpis.funding]] as const) {
-    await expect(page.getByTestId(`home-kpi-${id}-eyebrow`)).toHaveText(k.eyebrow);
+    await expect(page.getByTestId(`hv2-metric-${id}-label`)).toHaveText(label(lang, `hv2.metric.${id}` as keyof typeof en));
     await expect(page.getByTestId(`home-kpi-${id}-value`)).toHaveText(k.value_display);
     if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(page.getByTestId("home-buffer-headroom")).toHaveText(v2.kpis.cash_available.buffer.headroom_text);
-    else await expect(page.getByTestId(`home-kpi-${id}-note`)).toHaveText(k.note);
+    // The note is the read's (the short one when the server sends it); on a phone the funding cell leaves it to the recommendation's facts once its status line stands in.
+    const note = page.getByTestId(`home-kpi-${id}-note`);
+    if (id === "lowest") await expect(note).toHaveText(v2.kpis.lowest_ahead.short_note ?? k.note);
+    else if (id === "funding" && v2.kpis.funding.status_text && (page.viewportSize()?.width ?? 1440) < 768) await expect(note).toBeHidden();
+    else await expect(note).toHaveText(k.note);
   }
+  if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
+  await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
+  for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action-facts")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
-  await expect(page.locator(".card-decision")).toHaveCount(filled);
 }
 
 /** The worklist's words: the alert, the counts, and every row of every tab, in the read's order, each of its shape. */
@@ -191,14 +197,14 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
     await expect(scope.getByTestId(`home-tab-${tab}-badge`)).toHaveText(String(read.counts[tab]));
     expect(rows.length).toBe(read.counts[tab]);
   }
-  await expect(scope.getByTestId("home-tab-needs_you-badge")).toHaveAttribute("data-tone", read.counts.needs_you > 0 ? "alert" : "neutral");
   for (const [tab, rows] of tabs) {
     await scope.getByTestId(`home-tab-${tab}`).click();
     await expect(scope.getByTestId(`home-tab-${tab}`)).toHaveAttribute("aria-selected", "true");
     const el = scope.getByTestId("home-worklist-row");
     if (rows.length === 0) {
       await expect(el).toHaveCount(0);
-      await expect(scope.getByTestId("home-worklist-empty")).toHaveText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
+      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
       continue;
     }
     await expect(el).toHaveCount(rows.length);
@@ -213,10 +219,13 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
       await expect(li).toHaveAttribute("data-kind", r.kind);
       await expect(li).toHaveAttribute("data-owner", r.owner);
       for (const word of [r.subject_text, r.status_text, r.consequence_text]) await expect(li).toContainText(word);
-      await expect(li.getByTestId("home-row-severity")).toHaveAttribute("data-severity", r.severity);
-      if (tab === "needs_you" && i === 0 && r.why_first_text) await expect(scope.getByTestId("home-why-first")).toHaveText(r.why_first_text);
+      // A normal row says nothing about severity; a caution or a critical one wears its dot and its word.
+      if (r.severity === "NORMAL") await expect(li.getByTestId("home-row-severity")).toHaveCount(0);
+      else await expect(li.getByTestId("home-row-severity")).toHaveAttribute("data-severity", r.severity);
+      if (r.differentiator_text) await expect(li.getByTestId("hv2-row-qualifier")).toContainText(r.differentiator_text);
     }
-    await expect(scope.getByTestId("home-why-first")).toHaveCount(tab === "needs_you" && rows[0] && "why_first_text" in rows[0] && rows[0].why_first_text ? 1 : 0);
+    // The reason a row is first is in its focus, not in the list.
+    await expect(scope.getByTestId("home-why-first")).toHaveCount(0);
   }
 }
 
@@ -264,8 +273,8 @@ for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
         await expect(scope.getByTestId("home-worklist-row")).toHaveCount(s.needs.length);
       }
       if (s.name.startsWith("06a")) expect(w.needs_you[0].customer_id).toBeNull();
-      if (s.name.startsWith("06b")) await expect(page.getByTestId("home-action-text")).toHaveText(reads.home[lang].home_v2!.action.text);
-      if (s.name.startsWith("07")) await expect(page.getByTestId("home-kpi-funding-eyebrow")).toHaveText(reads.home[lang].home_v2!.kpis.funding.eyebrow);
+      if (s.name.startsWith("06b")) for (const f of reads.home[lang].home_v2!.action.facts ?? [reads.home[lang].home_v2!.action]) await expect(page.getByTestId("hv2-action")).toContainText("value" in f ? f.value : f.text);
+      if (s.name.startsWith("07")) await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText(label(lang, "hv2.metric.funding"));
     });
   });
 }
@@ -318,7 +327,7 @@ test(STATES[13].name, async ({ request, context }) => {
     await expect(working).toHaveCount(0, { timeout: 8000 });
     // Answered: the headline is the overview read's, and no money was worked out by the page while it waited.
     const focus = await get<{ decision: { headline_short: string; primary: { label: string } } }>(request, `/customers/BUYER-1/overview?lang=${lang}&decision=${encodeURIComponent(row.key)}`);
-    await expect(page.getByTestId("focus-title")).toHaveText(focus.decision.headline_short);
+    await expect(page.getByTestId("focus-title")).toHaveText(reads.work[lang].needs_you[0].subject_text);
     await expect(page.getByTestId("deal-primary")).toHaveText(focus.decision.primary.label);
     await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "current");
   }, "/", { company: false });
