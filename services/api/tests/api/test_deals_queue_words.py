@@ -167,13 +167,13 @@ def test_an_offer_flow_may_accept_is_within(api: TestClient) -> None:
 def test_the_share_after_the_path_says_how_the_payment_moves(api: TestClient) -> None:
     offer_id = _offer(api)
     paths = _paths(_read(api, offer_id))
-    # today Foshan is all of what is owed; after each path the invoice is paid (Option A and as asked 2 days after the offer, Option B on
-    # its due day) and, with no invoice not yet issued counted, nothing is owed by Foshan then: the share is recomputed, not copied
+    # the share while the invoice stays open: today's (the concentration's own), with each path's timing as the qualifier
     assert _read(api, offer_id)["concentration"]["ar_share_bp"] == 10_000
-    assert paths["do_nothing"]["share_after_text"] == "100%"  # the books as they stand: today's share
-    assert paths["A"]["share_after_text"] == "0%, paid 2 days after the offer"
-    assert paths["asked"]["share_after_text"] == "0%, for 15 days longer"  # the terms to 60 days: its next invoice owed 15 days longer
-    assert paths["B"]["share_after_text"] == "0%, for 10 days longer"
+    assert paths["do_nothing"]["share_after_text"] == "100%, until the due day"
+    assert paths["asked"]["share_after_text"] == "100%, for 15 days longer"  # the terms to 60 days: its next invoice owed 15 days longer
+    assert paths["A"]["share_after_text"] == "100%, paid 2 days after the offer"
+    assert paths["B"]["share_after_text"] == "100%, for 10 days longer"
+    assert len({p["share_after_text"] for p in paths.values()}) == 4  # the qualifiers differ per path
 
 
 def test_before_the_offer_is_evaluated_only_the_books_as_they_stand_have_words(api: TestClient) -> None:
@@ -189,8 +189,8 @@ def test_the_chinese_words_are_the_same_figures_in_chinese(api: TestClient) -> N
     assert {k: (v["lowest_display"], v["limit_word"]) for k, v in en.items()} == {k: (v["lowest_display"], v["limit_word"]) for k, v in zh.items()}
     assert zh["asked"]["lowest_when_text"] == "低于最低现金 15 天" and zh["A"]["lowest_when_text"] == "恰为您的最低现金"
     assert (zh["asked"]["limit_text"], zh["A"]["limit_text"]) == ("超出授权", "在授权内")
-    assert zh["asked"]["share_after_text"] == "0%，多持续 15 天" and zh["A"]["share_after_text"] == "0%，报价后 2 天付款"
-    assert zh["do_nothing"]["share_after_text"] == "100%"
+    assert zh["asked"]["share_after_text"] == "100%，多持续 15 天" and zh["A"]["share_after_text"] == "100%，报价后 2 天付款"
+    assert zh["do_nothing"]["share_after_text"] == "100%，直到到期日"
     assert zh["do_nothing"]["label"] == "不采取行动"
 
 

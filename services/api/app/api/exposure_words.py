@@ -8,9 +8,9 @@ may do alone.
 `limit_word` is null, with `limit_text` null, when the picture gives a path no authority class (a reply it cannot draw or price, e.g. Option
 A once the plan has run, or an offer not yet evaluated) and for `do_nothing`, which agrees to nothing. `do_nothing` carries words only: in
 the exposure block its entries in `stress.paths`, `capacity` and `band.by_path` are explicit nulls, so a lookup by its key reads null.
-`share_after_text` is the buyer's share of what is owed once the path's cash from the buyer's open invoices has arrived (the day the path's own
-projection receives the last of them): the concentration function on the books with the invoices received by then settled; an invoice not yet
-issued is not owed. Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence.
+`share_after_text` is the buyer's share of what is owed WHILE its invoice stays open under the path (today's share from the concentration
+function, no invoice not yet issued counted), with the path's timing as the qualifier: "for 15 days longer" when the terms put its next
+invoice later, "paid 2 days after the offer" for an early payment, else "until the due day". Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence.
 
     deal_extras       worked out once with the cached exposure block (`app.strategy.exposure`, `deal_words=True`): `paths[*]` words and
                       `customer_context`
@@ -107,37 +107,17 @@ def _limit(authority: str | None, lang: Lang) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _received_by(state: FinancialState, traj: Any, today: int) -> dict[str, int]:
-    """The day each receivable open today is received on this line (the first receipt or early receipt that names it)."""
-    open_ids = {r.id for r in state.receivables if r.status in _OPEN and r.outstanding_fen > 0}
-    out: dict[str, int] = {}
-    for d in traj.days:
-        if d.day >= today:
-            for e in d.events:
-                if e.kind in (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT) and e.ref in open_ids:
-                    out.setdefault(e.ref, d.day)
-    return out
-
-
-def _share_after(books: Books, traj: Any | None, buyer: str, today: int, inputs: CustomerInputs, qualifier: str | None,
-                 lang: Lang) -> str | None:
-    """The buyer's share of what is owed after the path, with the path's receipt timing. With the path's projection (`traj`) the share is
-    the concentration function's on the books as they stand when the path has received the buyer's open invoices (the last such receipt's
-    day), with every invoice received by then settled; without one (the books as they stand) it is today's. None for a name that
-    stands for many small customers."""
-    state = books.state
-    day = today
-    if traj is not None:
-        received = _received_by(state, traj, today)
-        mine = [d for rid, d in received.items() if buyer_of_receivable(state, rid) == buyer]
-        day = max(mine, default=today)
-        settled = [r.model_copy(update={"status": "SETTLED", "settled_fen": r.face_fen}) if received.get(r.id, day + 1) <= day else r
-                   for r in state.receivables]
-        state = state.model_copy(update={"receivables": settled})
-    c = concentration(Books(state, ()), buyer, day, inputs, lang=lang)
-    if c.is_aggregate:
+def _share_after(books: Books, buyer: str, today: int, inputs: CustomerInputs, qualifier: str | None, lang: Lang) -> str | None:
+    """The buyer's share of what is owed WHILE its invoices stay open under the path: today's share (the concentration function on the books
+    as they stand, no invoice not yet issued counted), with the path's timing as the qualifier ("for 15 days longer", "paid 2 days after the
+    offer"), else "until the due day" when the buyer owes something. None for a name that stands for many small customers or when nothing
+    is owed."""
+    c = concentration(books, buyer, today, inputs, lang=lang)
+    if c.is_aggregate or c.ar_total_fen <= 0:
         return None
-    share = share_text(Fraction(c.ar_buyer_fen, c.ar_total_fen) if c.ar_total_fen > 0 else Fraction(0), lang)
+    share = share_text(Fraction(c.ar_buyer_fen, c.ar_total_fen), lang)
+    if qualifier is None and c.ar_buyer_fen > 0:
+        qualifier = t(lang, "until the due day", "直到到期日")
     return share if qualifier is None else f"{share}{t(lang, ', ', '，')}{qualifier}"
 
 
@@ -164,7 +144,7 @@ def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: B
         "lowest_display": fmt_short(base_low), "lowest_when": when_text(base_low_day, today, lang),
         "lowest_when_text": _lowest_text(base_low, base_points, floor, lang),
         "limit_word": None, "limit_text": None,  # it agrees to nothing: no authority class to state
-        "share_after_text": _share_after(books, None, buyer, today, inputs, None, lang)}}
+        "share_after_text": _share_after(books, buyer, today, inputs, None, lang)}}
     if verdict is None:  # not evaluated yet: the offer as asked has no package, so it is the books as they stand
         out["asked"] = {**out[DO_NOTHING]}
         return out
@@ -181,7 +161,7 @@ def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: B
         try:
             traj = project(state, books.with_(obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
             q = _qualifier(base_next, _next_invoice_day(state, traj, today, buyer), _early_day(state, traj, today, buyer), today, lang)
-            words["share_after_text"] = _share_after(books, traj, buyer, today, inputs, q, lang)
+            words["share_after_text"] = _share_after(books, buyer, today, inputs, q, lang)
         except EngineError:
             words["share_after_text"] = None
         out[key] = words
