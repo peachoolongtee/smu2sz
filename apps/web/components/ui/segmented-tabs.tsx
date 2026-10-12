@@ -43,6 +43,7 @@ export function SegmentedTabs<T extends string | number>({
   tabs,
   stretch = false,
   scroll = false,
+  compact = false,
   className = "",
   testId,
 }: {
@@ -55,6 +56,8 @@ export function SegmentedTabs<T extends string | number>({
   stretch?: boolean;
   /** Keep every label on one line and let the track scroll sideways where it does not fit (the queue's four tabs on a phone). */
   scroll?: boolean;
+  /** The small size for a control that sits on a page's content, not at its head: 32 px tall, radius 10, a thin `line-strong` border, a white selected pill with its own border and no shadow, 13 px labels (Home V2's window and scenario). */
+  compact?: boolean;
   className?: string;
   testId?: string;
 }) {
@@ -130,12 +133,12 @@ export function SegmentedTabs<T extends string | number>({
         ref={track}
         role="tablist"
         aria-label={label}
-        className={`seg-track relative flex rounded-pill border border-line-ui bg-track p-0.5 ${scroll ? "w-max min-w-full" : stretch ? "w-full" : "w-fit max-w-full"}`}
+        className={`seg-track relative flex border bg-track p-0.5 ${compact ? "rounded-tile border-line-strong" : "rounded-pill border-line-ui"} ${scroll ? "w-max min-w-full" : stretch ? "w-full" : "w-fit max-w-full"}`}
       >
         <span
           ref={pill}
           aria-hidden
-          className={`pointer-events-none absolute inset-y-0.5 left-0 rounded-pill border border-line bg-surface shadow-pill ${reduced ? "" : "transition-[transform,width] duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
+          className={`pointer-events-none absolute inset-y-0.5 left-0 border bg-surface ${compact ? "rounded-control border-line-strong" : "rounded-pill border-line shadow-pill"} ${reduced ? "" : "transition-[transform,width] duration-(--dur-fast) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
         />
         {tabs.map((o, i) => {
           const on = i === selected;
@@ -149,7 +152,7 @@ export function SegmentedTabs<T extends string | number>({
               data-testid={o.testId}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`seg-tab relative z-10 flex min-h-11 min-w-0 max-w-72 flex-auto cursor-pointer items-center justify-center gap-2 rounded-pill border border-transparent px-3 text-center text-sm leading-tight transition-colors duration-(--dur-fast) disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 ${scroll ? "whitespace-nowrap" : ""} ${
+              className={`seg-tab relative z-10 flex min-w-0 max-w-72 flex-auto cursor-pointer items-center justify-center gap-2 border border-transparent px-3 text-center leading-tight transition-colors duration-(--dur-fast) disabled:cursor-not-allowed disabled:opacity-50 ${compact ? "h-6.5 rounded-control text-supporting" : "min-h-11 rounded-pill text-sm sm:px-4"} ${scroll ? "whitespace-nowrap" : ""} ${
                 on ? `font-extrabold text-ink ${pill ? "border-transparent" : "border-line bg-surface shadow-pill"}` : "border-transparent font-semibold text-ink-2 enabled:hover:text-ink"
               }`}
             >
