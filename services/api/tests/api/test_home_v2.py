@@ -350,3 +350,32 @@ def test_the_chinese_fields_after_the_plan(api: TestClient) -> None:
     assert zh["action"]["variant"] == "QUIET" and zh["action"]["title"] == "按已执行的方案，您的现金是安全的。"
     assert zh["action"]["text"] == "接下来：¥255k 将于 3 天后到账；Foshan将于 32 天后支付 ¥420k（应收）。您的待办列表里还有 1 项等您处理。"
     assert zh["chart"]["legend"] == [{"label": "当前账目 · 方案已执行", "kind": "current"}]
+
+
+# ---------------------------------------------------------------- what makes the lowest point the lowest
+
+
+def _cause(api: TestClient, lang: str = "en") -> tuple[str | None, str]:
+    """(`home_v2.chart.lowest.cause`, the label of the rail's lowest row)."""
+    h = _home(api, lang)
+    row = next(r for r in h["cash"]["events_rail"] if r["kind"] == "lowest")
+    assert h["home_v2"]["chart"]["lowest"].keys() == {"cause"}
+    cause: str | None = h["home_v2"]["chart"]["lowest"]["cause"]
+    return cause, row["label"]
+
+
+def test_the_lowest_cause_is_the_rails_lowest_row_named_by_its_cause_on_day_zero_and_after_the_plan(api: TestClient) -> None:
+    # the hybrid names the debt service (a loan repayment) as what takes the Demo company to its lowest point, with or without the plan
+    assert _cause(api) == ("a loan repayment goes out",) * 2 and _cause(api, "zh") == ("一笔贷款还款支出",) * 2
+    _offer(api)
+    assert _cause(api) == ("a loan repayment goes out",) * 2
+    _run_plan(api)
+    assert _cause(api) == ("a loan repayment goes out",) * 2 and _cause(api, "zh") == ("一笔贷款还款支出",) * 2
+
+
+def test_the_lowest_cause_is_null_when_the_hybrid_names_none() -> None:
+    assert home_v2._lowest_cause(None) is None and home_v2._lowest_cause([]) is None
+    assert home_v2._lowest_cause([{"kind": "payroll", "label": "payroll is paid", "amount_fen": -1}]) is None
+    row = {"kind": "lowest", "label": "cash is at its lowest", "amount_fen": 0}  # the rail's fallback row: no event behind it
+    assert home_v2._lowest_cause([row]) is None
+    assert home_v2._lowest_cause([{**row, "label": "payroll is paid", "amount_fen": -1}]) == "payroll is paid"

@@ -12,7 +12,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here.
-    chart                 the scope the chart states, its legend (current / planned / hypothetical) and the lowest point's inspector
+    chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
+                          `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none)
     links                 where the rest of the company's picture lives
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
@@ -253,7 +254,14 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------- the chart
 
 
-def _chart(c: HomeRead) -> dict[str, Any]:
+def _lowest_cause(rail: list[dict[str, Any]] | None) -> str | None:
+    """What makes the lowest point the lowest: the label of the rail's lowest row, which the hybrid names by its cause (`_cause_label`),
+    word for word. A lowest row with no event behind it (the fallback "cash is at its lowest") names no cause: None."""
+    row = next((r for r in rail or [] if r["kind"] == "lowest"), None)
+    return str(row["label"]) if row is not None and row["amount_fen"] else None
+
+
+def _chart(c: HomeRead, rail: list[dict[str, Any]] | None) -> dict[str, Any]:
     lang, floor = c.lang, c.floor
     legend = [{"label": (t(lang, "Current books · the plan ran", "当前账目 · 方案已执行") if _plan_has_run(c.state)
                          else t(lang, "Current books · no new funding", "当前账目 · 未新增融资")), "kind": "current"}]
@@ -279,6 +287,7 @@ def _chart(c: HomeRead) -> dict[str, Any]:
             "lowest_inspector": {"day_text": t(lang, f"The lowest point · {when}", f"最低点 · {when}"),
                                  "projected_display": whole(low_fen), "minimum_display": whole(floor),
                                  "third_label": third[0], "third_display": third[1], "note": note},
+            "lowest": {"cause": _lowest_cause(rail)},
             "note": t(lang, "Current books, nothing new assumed. The same figures as Cash & Funding.",
                       "当前账目，没有假设任何新增事项。数字与现金与融资页一致。")}
 
@@ -291,10 +300,10 @@ def _links(c: HomeRead) -> list[dict[str, str]]:
             {"label": t(lang, "All deals", "全部交易"), "href": "/deals"}]
 
 
-def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any]) -> dict[str, Any]:
-    """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links."""
+def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any], rail: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links. `rail` is the cash block's events rail."""
     return {"kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
-            "action": _action(c, att), "chart": _chart(c), "links": _links(c)}
+            "action": _action(c, att), "chart": _chart(c, rail), "links": _links(c)}
 
 
 __all__ = ["build"]
