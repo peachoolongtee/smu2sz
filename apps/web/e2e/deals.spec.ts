@@ -87,8 +87,20 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
 
   // The workspace in the page's order: the verdict (the heading), the priced response (the bar), the picture and its columns, who and where, what they ask with
   // what each costs, why it matters (folded).
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.");
-  await expect(page.getByTestId("deal-action")).toHaveText("Two replies are ready to send.");
+  // The heading is the server's short verdict (`headline_short`) with the figures in the quiet line beneath (`headline_note`); a server that sends neither (an older
+  // one, and today's mocks) gives the whole sentence as the heading and "Two replies are ready to send." as the line.
+  await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
+  await expect(page.getByTestId("deal-action")).toBeVisible();
+  const heading = (await page.getByTestId("deal-recommendation").innerText()).trim();
+  if (heading.startsWith("Don't accept as asked:")) {
+    expect(heading).toBe("Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.");
+    await expect(page.getByTestId("deal-action")).toHaveText("Two replies are ready to send.");
+  } else {
+    expect(heading.split(/\s+/).length).toBeLessThanOrEqual(8);
+    expect(heading).not.toMatch(/[¥\d]/);
+    await expect(page.getByTestId("deal-action")).toContainText("¥28,326.92");
+    await expect(page.getByTestId("deal-action")).toContainText("¥5,000.00");
+  }
   await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
   // The verdict is the page's one heading.
   await expect(page.locator("h1")).toHaveCount(1);
@@ -305,7 +317,7 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   const inbox = page.getByTestId("inbox-list");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // The demo's negotiation panel runs a buyer who refuses (Demo views; the Business page only sends to a buyer who accepts).
   await page.goto("/verdict");
   await page.getByLabel("Buyer refuses every counter").check();

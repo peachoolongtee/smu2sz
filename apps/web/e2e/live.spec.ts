@@ -653,7 +653,7 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
   await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // Every sentence below is the server's: the asks, the lines, the reasons.
   await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("The buyer may pay early and take 1.20% off the ¥420,000.00 invoice");
   await expect(page.getByTestId("deal-impact-immediate").getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
