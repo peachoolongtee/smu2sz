@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { initials, toneFor, type AvatarTone } from "@/components/business/kit";
-import { CustomerName } from "@/components/customer-link";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, PromisedReceipt } from "@/lib/types";
 import { daysLate, whenText } from "@/lib/when";
@@ -29,8 +28,6 @@ interface Mark {
   state: State;
   r: number;
   buyer: string;
-  /** The buyer's id, so the name in the table is the link to their overview. */
-  buyerId: string | null;
   amount: string;
   when: string;
   late: string | null;
@@ -132,7 +129,6 @@ export function WhoPaysWhen({
         state: late ? "late" : soon ? "soon" : "later",
         r: radius(o.face_fen),
         buyer: buyerName(o.counterparty_id),
-        buyerId: o.counterparty_id,
         amount: o.face_display,
         when: whenText(o.due_day, asOfDay, t),
         late: late ? daysLate(Math.max(0, asOfDay - o.due_day), t) : null,
@@ -148,7 +144,6 @@ export function WhoPaysWhen({
       state: "promised",
       r: radius(p.face_fen),
       buyer: buyerName(p.counterparty_id),
-      buyerId: p.counterparty_id,
       amount: p.expected_display,
       when: whenText(p.promised_day, asOfDay, t),
       late: null,
@@ -304,9 +299,7 @@ export function WhoPaysWhen({
               .sort((a, b) => a.day - b.day)
               .map((m) => (
                 <tr key={m.id}>
-                  <th scope="row">
-                    <CustomerName id={m.buyerId}>{m.buyer}</CustomerName>
-                  </th>
+                  <th scope="row">{m.buyer}</th>
                   <td>{m.amount}</td>
                   <td>{m.when}</td>
                   <td>{stateWord(m)}</td>
