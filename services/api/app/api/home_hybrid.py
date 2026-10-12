@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
+from app.api.financing_words import State, state_of, state_word
 from app.api.home import _lowest_ahead, _series
 from app.api.presentation import (
     buyer_of_receivable,
@@ -361,11 +362,13 @@ def _event_kind(e: Any) -> str:
     return _flow_kind(e.label, e.amount_fen)
 
 
-def _label(kind: str, e: Any, c: HomeRead) -> str:
+def _label(kind: str, e: Any, c: HomeRead, planned: bool = False) -> str:
     lang, state = c.lang, c.state
     if kind == "landing":
         what = (t(lang, "invoice financing", "发票融资") if e.kind == LedgerEventKind.ADVANCE
                 else t(lang, f"the {_source(facility_name(state, e.ref), lang)} draw", f"{_source(facility_name(state, e.ref), lang)}提款"))
+        if planned:  # the plan has not run: nothing arrives unless the owner runs it
+            return t(lang, f"{what} would arrive, if you run the plan", f"{what}将到账，前提是您执行方案")
         return t(lang, f"{what} arrives", f"{what}到账")
     if kind == "payroll":
         return t(lang, "payroll is paid", "发放工资")
@@ -385,6 +388,29 @@ def _label(kind: str, e: Any, c: HomeRead) -> str:
         return t(lang, "a supplier payment goes out", "支付供应商款项")
     name = in_language(in_words(state, e.label.split(" (")[0].split(", ")[0]), lang, state) or ""
     return t(lang, f"{name.lower()} is paid", f"支付{name}")
+
+
+def _cause_label(kind: str, e: Any, c: HomeRead, planned: bool) -> str:
+    """What the lowest point's row names: the event that causes it, in its own words."""
+    if kind == "debt":
+        return t(c.lang, "a loan repayment goes out", "一笔贷款还款支出")
+    return _label(kind, e, c, planned)
+
+
+def _lowest_note(c: HomeRead, after: int) -> str:
+    """"cash at its lowest, ¥300k, at your minimum": the one figure the lowest point has, and where it stands against the minimum."""
+    where = (t(c.lang, "at your minimum", "正好是您的最低现金") if after == c.floor else room_text(after, c.floor, c.lang))
+    return t(c.lang, f"cash at its lowest, {_short(after)}, {where}", f"现金降到最低，{_short(after)}，{where}")
+
+
+def _effect_rows(c: HomeRead, d: Any) -> list[dict[str, str]]:
+    """The day's effect as a table, from the figures the paragraph uses: cash before, cash after, the minimum, and the room above it."""
+    gap = d.closing_fen - c.floor
+    return [{"label": t(c.lang, "Cash before", "此前现金"), "display": _short(d.opening_fen)},
+            {"label": t(c.lang, "Cash after", "此后现金"), "display": _short(d.closing_fen)},
+            {"label": t(c.lang, "Minimum reserve", "最低现金储备"), "display": _short(c.floor)},
+            {"label": (t(c.lang, "Cash above reserve", "高于储备的现金") if gap >= 0 else t(c.lang, "Cash below reserve", "低于储备的现金")),
+             "display": _short(abs(gap))}]
 
 
 def _noun(kind: str, lang: str) -> str:
@@ -503,27 +529,35 @@ def _rail(c: HomeRead, line: Any, grey: Any | None, grey_kind: str) -> list[dict
             weights[d.day] = abs(main.amount_fen)
     chosen = sorted(sorted(weights, key=lambda day: (-weights[day], day))[:MAX_RAIL - 1] + [low_day])
     grey_close = {d.day: d.closing_fen for d in grey.days} if grey is not None else {}
+    # what the plan ready (not run) adds to the books: its landings are only planned
+    already = {(d.day, e.kind, e.ref, e.amount_fen) for d in c.traj.days for e in d.events} if c.plan_traj is not None else set()
     out: list[dict[str, Any]] = []
     for day_no in chosen:
         d = by_day[day_no]
         main = _main_event(d.events)
         kind = _event_kind(main) if main is not None else None
         net = sum(e.amount_fen for e in d.events)
+        planned = bool(main is not None and kind == "landing" and (d.day, main.kind, main.ref, main.amount_fen) not in already
+                       and c.plan_traj is not None)
+        note = None
         if day_no == low_day:
             event_kind = "lowest"
-            label = t(c.lang, "cash is at its lowest", "现金降到最低点")
+            # the row names the event that causes the low, with its amount; the low itself is the note, never a second number
+            label = (_cause_label(kind, main, c, planned) if main is not None and kind is not None
+                     else t(c.lang, "cash is at its lowest", "现金降到最低点"))
+            note = _lowest_note(c, d.closing_fen)
             explain = _lowest_explain(c, d, main, kind, grey, grey_kind)
         else:
             assert main is not None and kind is not None
             event_kind = kind
-            label = _label(kind, main, c)
+            label = _label(kind, main, c, planned)
             explain = _explain(c, d, kind, main, grey_close, grey_kind)
         out.append({"key": f"day-{day_no}", "day": day_no, "when": when_text(day_no, c.today, c.lang), "kind": event_kind,
-                    "label": label, "amount_fen": main.amount_fen if main is not None else 0,
+                    "label": label, "note": note, "planned": planned, "amount_fen": main.amount_fen if main is not None else 0,
                     "amount_short": _signed(main.amount_fen) if main is not None else "¥0", "net_short": _signed(net),
                     "cash_after_fen": d.closing_fen, "cash_after_short": _short(d.closing_fen),
                     "room_after_fen": d.closing_fen - c.floor, "room_after_short": room_text(d.closing_fen, c.floor, c.lang),
-                    "tone": _tone(d.closing_fen, c.floor), "explain": explain})
+                    "tone": _tone(d.closing_fen, c.floor), "explain": explain, "effect_rows": _effect_rows(c, d)})
     return out
 
 
@@ -605,6 +639,10 @@ def cash_block(c: HomeRead, stress_buyer: str | None) -> dict[str, Any]:
                      "没有 FLOW 融资方案的情形（仅供对比，不是您还能选择的做法）"),
             "proposed": t(c.lang, "without the plan FLOW proposes (a comparison)", "不采用 FLOW 建议方案的情形（仅供对比）"),
             "nothing": t(c.lang, "if you did nothing", "如果您什么都不做")}[grey_kind]
+    if c.plan_traj is not None:  # the plan line's legend: until its operations execute it is a question, then it is the executed plan
+        out["plan_line_label"] = t(c.lang, "If you run FLOW's plan", "如果您执行 FLOW 的方案")
+    elif _plan_has_run(c.state):
+        out["plan_line_label"] = t(c.lang, "With FLOW's plan", "采用 FLOW 的方案")
     if stress is not None:
         out["stress"] = stress
     return out
@@ -841,7 +879,7 @@ def funding_line(c: HomeRead) -> dict[str, Any]:
 
 def _item(key: str, kind: str, eyebrow: str, title: str, facts: list[dict[str, Any]], primary: tuple[str, str],
           secondary: tuple[str, str]) -> dict[str, Any]:
-    return {"key": key, "kind": kind, "eyebrow": eyebrow, "title": title, "facts": facts[:3],
+    return {"key": key, "kind": kind, "eyebrow": eyebrow, "title": title, "facts": facts[:5],
             "primary": {"label": primary[0], "href": primary[1]}, "secondary": {"label": secondary[0], "href": secondary[1]}}
 
 
@@ -898,6 +936,15 @@ def _deal_item(c: HomeRead, d: _Deal, count: int) -> dict[str, Any]:
                  (t(lang, "Why this?", "为什么？"), _link(deal_id(d.offer_id))))
 
 
+def _leg_fact(c: HomeRead, operation_kind: str, facility: str, amount_fen: int, when: str, state: State) -> dict[str, Any]:
+    """"¥150k today (planned)": one leg of the plan, its amount, when it lands, and the state word (`financing_words`)."""
+    lang = c.lang
+    name = {"DRAW_FACILITY": t(lang, "Credit line draw", "信用额度提款"),
+            "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "Invoice financing", "发票融资")}.get(operation_kind, _source(facility, lang))
+    word = state_word(lang, state)
+    return _fact(name, t(lang, f"{_short(amount_fen)} {when} ({word})", f"{_short(amount_fen)}，{when}（{word}）"))
+
+
 def _funding_item(c: HomeRead) -> dict[str, Any] | None:
     a = c.action
     if a is None or a["kind"] != "RESERVE_BREACH_AHEAD" or a.get("pending_approval_id"):
@@ -907,8 +954,8 @@ def _funding_item(c: HomeRead) -> dict[str, Any] | None:
     title = c.headline + _sp(c.lang) + (t(lang, f"FLOW recommends securing {receive} of funding.", f"FLOW 建议筹措 {receive} 资金。") if receive
                                 else t(lang, "FLOW has a plan ready.", "FLOW 已准备好方案。"))
     facts = [_fact(t(lang, "Estimated cost", "预计成本"), str(a.get("cost_total_display")), "neutral")] if a.get("cost_total_display") else []
-    if a.get("lands_when"):
-        facts.append(_fact(t(lang, "Funds arrive", "资金到账"), str(a["lands_when"]), "neutral"))
+    for leg in a["legs"]:  # one fact per leg: what lands when, in the state word the financing is said in everywhere
+        facts.append(_leg_fact(c, leg["operation_kind"], leg["facility_name"], leg["amount_fen"] or 0, leg["lands_when"], "PLANNED"))
     facts.append(_fact(t(lang, "Authority", "授权"),
                        t(lang, "needs your approval", "需要您批准") if a["needs_owner"] else t(lang, "within your signed limits", "在您签署的授权内"),
                        "warn" if a["needs_owner"] else "ok"))
@@ -969,7 +1016,8 @@ def _landing_items(c: HomeRead) -> list[dict[str, Any]]:
         when, amount = when_text(lot.arrival_day, c.today, lang), _short(lot.remaining_fen)
         source = _source(facility_name(c.state, lot.facility_id), lang)
         title = t(lang, f"{amount} of funding from {source} arrives {when}.", f"来自{source}的 {amount} 资金将于{when}到账。")
-        facts = [_fact(t(lang, "Arrives", "到账时间"), when), _fact(t(lang, "From", "来源"), source)]
+        facts = [_leg_fact(c, "SUBMIT_INVOICE_FOR_FINANCING" if lot.receivable_id else "DRAW_FACILITY", source, lot.remaining_fen, when,
+                           state_of(lot)), _fact(t(lang, "From", "来源"), source)]
         out.append(_item(f"landing:{lot.id}", "landing",
                          t(lang, "1 funding landing is pending" if len(lots) == 1 else f"{len(lots)} funding landings are pending",
                            f"{len(lots)} 笔融资待到账"), title, facts,

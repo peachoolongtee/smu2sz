@@ -174,7 +174,8 @@ def test_the_foshan_deal_is_the_primary_once_the_plan_has_run(client):
     assert deal["secondary"] == {"label": "Why this?", "href": "/decisions/deal%3A" + deal["key"].removeprefix("deal:")}
     landing = att["items"][1]
     assert landing["title"] == "¥255k of funding from Invoice financing arrives in 3 days."
-    assert [f["value"] for f in landing["facts"]] == ["in 3 days", "Invoice financing"]
+    assert [(f["label"], f["value"]) for f in landing["facts"]] == [("Invoice financing", "¥255k in 3 days (arranged)"),
+                                                                   ("From", "Invoice financing")]
     assert att["none_text"] == "No urgent action required."
 
 
@@ -185,7 +186,8 @@ def test_the_funding_recommendation_leads_while_cash_is_unsafe_and_the_deal_foll
     funding, deal = att["items"]
     assert funding["title"] == "Your cash reserve becomes unsafe in 12 days. FLOW recommends securing ¥405k of funding."
     assert [(f["label"], f["value"], f["tone"]) for f in funding["facts"]] == [
-        ("Estimated cost", "¥3,113.93", "neutral"), ("Funds arrive", "in 3 days", "neutral"), ("Authority", "within your signed limits", "ok")]
+        ("Estimated cost", "¥3,113.93", "neutral"), ("Credit line draw", "¥150k today (planned)", "neutral"),
+        ("Invoice financing", "¥255k in 3 days (planned)", "neutral"), ("Authority", "within your signed limits", "ok")]
     assert funding["primary"]["href"] == "/cash#cash-options"
     # the deal reads from the picture the Deals page draws: Option A, once, ¥3,027.77
     assert deal["title"].endswith("FLOW recommends countering with Option A.")
@@ -663,3 +665,70 @@ def test_the_existing_fields_are_all_still_there(client):
     for key in ("series", "plan_series", "axis", "axes", "picture_days", "in_transit", "funding_lots", "lowest_short", "headroom_short"):
         assert key in h["cash"]
     assert h["receivables"]["open_total_display"] == "¥420,000.00" and h["receivables"]["open_total_fen"] == 42_000_000
+
+
+# ---------------------------------------------------------------- ticket #111: the truth of the plan on the Home
+
+
+def _rail_by_day(h: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    return {e["day"]: e for e in h["cash"]["events_rail"]}
+
+
+def test_before_the_plan_runs_its_landings_are_planned_and_say_so(client):
+    by = _rail_by_day(_before(client))
+    assert (by[0]["kind"], by[0]["planned"], by[0]["label"]) == ("landing", True, "the Bank credit line draw would arrive, if you run the plan")
+    assert (by[3]["kind"], by[3]["planned"], by[3]["label"]) == ("landing", True, "invoice financing would arrive, if you run the plan")
+    assert not any(e["planned"] for d, e in by.items() if d not in (0, 3))
+
+
+def test_after_the_plan_runs_the_executed_words_stand(client):
+    by = _rail_by_day(_after(client))
+    assert by[3]["label"] == "invoice financing arrives" and not any(e["planned"] for e in by.values())
+
+
+def test_the_plan_lines_legend_is_a_question_until_the_operations_run(client):
+    assert _before(client)["cash"]["plan_line_label"] == "If you run FLOW's plan"
+    client.post("/demo/reset", json={})
+    assert _after(client)["cash"]["plan_line_label"] == "With FLOW's plan"
+    rt = get_runtime()
+    client.post("/demo/reset", json={})
+    rt.store.put_state(rt.store.get_state().model_copy(update={"cash_fen": 5_000_000_00}))
+    assert "plan_line_label" not in client.get("/home").json()["cash"]  # no plan, nothing to name
+
+
+@pytest.mark.parametrize("plan", [False, True])
+def test_the_lowest_row_names_the_repayment_and_notes_the_low(client, plan):
+    h = _after(client) if plan else _before(client)
+    low = _rail_by_day(h)[30]
+    assert (low["kind"], low["label"], low["amount_short"]) == ("lowest", "a loan repayment goes out", "−¥45k")
+    assert low["note"] == "cash at its lowest, ¥300k, at your minimum"
+    assert low["cash_after_short"] == "¥300k"  # the low is the note's figure; the amount is the repayment's
+    assert all(e["note"] is None for e in h["cash"]["events_rail"] if e["kind"] != "lowest")
+
+
+@pytest.mark.parametrize("plan", [False, True])
+def test_every_rail_event_has_its_effect_table(client, plan):
+    h = _after(client) if plan else _before(client)
+    rows = _rail_by_day(h)[12]["effect_rows"]
+    assert rows == [{"label": "Cash before", "display": "¥805k"}, {"label": "Cash after", "display": "¥465k"},
+                    {"label": "Minimum reserve", "display": "¥300k"}, {"label": "Cash above reserve", "display": "¥165k"}]
+    for e in h["cash"]["events_rail"]:  # the table is the paragraph's own figures
+        assert e["effect_rows"][1]["display"] == e["cash_after_short"] and e["explain"]
+    assert _rail_by_day(h)[30]["effect_rows"][3] == {"label": "Cash above reserve", "display": "¥0"}
+
+
+def test_the_words_of_the_plan_in_chinese(client):
+    _offer(client)
+    zh = client.get("/home", params={"lang": "zh"}).json()
+    by = _rail_by_day(zh)
+    assert by[3]["label"] == "发票融资将到账，前提是您执行方案" and by[3]["planned"] is True
+    assert by[30]["label"] == "一笔贷款还款支出" and by[30]["note"] == "现金降到最低，¥300k，正好是您的最低现金"
+    assert zh["cash"]["plan_line_label"] == "如果您执行 FLOW 的方案"
+    funding = zh["attention"]["items"][0]
+    assert [f["value"] for f in funding["facts"][1:3]] == ["¥150k，今天（计划中）", "¥255k，3 天后（计划中）"]
+    assert [r["label"] for r in by[12]["effect_rows"]] == ["此前现金", "此后现金", "最低现金储备", "高于储备的现金"]
+    _run_plan(client)
+    zh = client.get("/home", params={"lang": "zh"}).json()
+    assert zh["cash"]["plan_line_label"] == "采用 FLOW 的方案"
+    landing = next(i for i in zh["attention"]["items"] if i["kind"] == "landing")
+    assert landing["facts"][0]["value"] == "¥255k，3 天后（已安排）"

@@ -1,5 +1,6 @@
 """The three words for an invoice-financing advance, said one way everywhere (map #88, ticket #107; the owner's rule of 12 Oct).
 
+    PLANNED   no operation has run yet: the plan is only ready (the Home before "Go ahead")
     ARRANGED  the lot exists, its cash has not landed        "Never the word advanced for an unlanded lot"
     RECEIVED  the cash has landed: it is in the account from that day
     REPAID    a receipt cleared the claim
@@ -17,10 +18,11 @@ from typing import Literal
 
 from app.domain.models import FundingLot
 
-State = Literal["ARRANGED", "RECEIVED", "REPAID", "NONE"]
+State = Literal["PLANNED", "ARRANGED", "RECEIVED", "REPAID", "NONE"]
 
 _WORD: dict[State, tuple[str, str]] = {
     "NONE": ("", ""),
+    "PLANNED": ("planned", "计划中"),
     "ARRANGED": ("arranged", "已安排"),
     "RECEIVED": ("received", "已到账"),
     "REPAID": ("repaid", "已还清"),
