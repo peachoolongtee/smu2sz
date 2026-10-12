@@ -13,7 +13,7 @@ import receivablesZh from "../mocks/receivables/day0_zh.json";
  * Every sentence below is read from the recordings (mocks/buyer_exposure[_zh].json, GET /buyers/BUYER-1/exposure, and mocks/receivables/day0[_zh].json).
  * Three things have no recording and are laid over the recorded read through the mock's session keys (lib/mock/cash-stress.ts), as a temporary in-spec
  * patch until the lead re-records them: `context.back` (the recording was taken without the page context; the labels and addresses here are what
- * GET /buyers/{id}/exposure?customer=&invoice=&decision=&path= answers, services/api/tests/api/test_buyer_exposure.py), the feature switched off
+ * GET /buyers/{id}/exposure?customer=&invoice=&decision=&path= answers for each origin, pinned in services/api/tests/api/test_buyer_exposure.py), the feature switched off
  * (the read answers null) or failing (503), and the invoice's financing charges (`net.per_period_text`, which the opening books' invoice has none of).
  */
 const EXPOSURE_KEY = "tl-mock-buyer-exposure";
@@ -21,14 +21,14 @@ const RECEIVABLES_PATCH_KEY = "tl-mock-receivables-patch";
 
 const DEAL = "deal:OFF-1";
 const ORIGINS = {
-  // Receivables: the selected invoice and its buyer.
-  receivables: { query: "stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1", back: { label: "Back to Foshan", href: "/customers/BUYER-1?invoice=RCV-A" } },
-  // The Customer page: the buyer alone.
+  // Receivables: the selected invoice and its buyer; back to the invoice.
+  receivables: { query: "stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1", back: { label: "Back to the invoice", href: "/receivables?invoice=RCV-A&customer=BUYER-1" } },
+  // The Customer page: the buyer alone; back to the Customer page.
   customer: { query: "stress=BUYER-1:30&customer=BUYER-1", back: { label: "Back to Foshan", href: "/customers/BUYER-1" } },
-  // The Deals queue: the deal and its path.
+  // The Deals queue: the deal and its path; back to the deal.
   deals: {
     query: `stress=BUYER-1:30&customer=BUYER-1&decision=${encodeURIComponent(DEAL)}&path=counter%3A0`,
-    back: { label: "Back to Foshan", href: `/customers/BUYER-1?decision=${encodeURIComponent(DEAL)}&path=counter%3A0` },
+    back: { label: "Back to the Foshan deal", href: `/deals?decision=${encodeURIComponent(DEAL)}&path=counter%3A0&customer=BUYER-1` },
   },
 } as const;
 
@@ -74,8 +74,7 @@ for (const [origin, { query, back: b }] of Object.entries(ORIGINS)) {
     // The server's sentences: the assumption, the lowest point, the days under the minimum and what no plan covers, and the net a month later.
     await expect(page.getByTestId("stress-assumption")).toHaveText(now.assumption);
     const sentence = page.getByTestId("stress-sentence");
-    await expect(sentence).toContainText(`Cash would fall to ${now.lowest_short} ${now.lowest_when}.`);
-    await expect(sentence).toContainText(now.funding_text);
+    await expect(sentence).toHaveText(`${now.text} ${now.funding_text}`);
     await expect(page.getByTestId("stress-line")).toHaveText([`What the buyer's open invoices would leave you: ${now.net_later_text}.`]);
     // The way back is the server's, exactly.
     const link = page.getByTestId("cash-stress-back");
@@ -182,14 +181,13 @@ test("the stressed page has no accessibility violations", async ({ page }) => {
 });
 
 test("Chinese: the switch, the sentences, the invoice and the way back are the server's Chinese", async ({ page }) => {
-  const b = { label: "返回Foshan", href: "/customers/BUYER-1?invoice=RCV-A" };
+  const b = { label: "返回发票", href: "/receivables?invoice=RCV-A&customer=BUYER-1" };
   await open(page, ORIGINS.receivables.query, { lang: "zh", exposure: back(b) });
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
   await expect(page.getByTestId("home-scenario-late")).toHaveText(`${buyerZh.concentration.buyer_name}晚付 30 天`);
   await expect(page.getByTestId("home-scenario-expected")).toHaveText("按预期收款");
   await expect(page.getByTestId("stress-assumption")).toHaveText(nowZh.assumption);
-  await expect(page.getByTestId("stress-sentence")).toContainText(`${nowZh.lowest_when}现金将降至 ${nowZh.lowest_short}。`);
-  await expect(page.getByTestId("stress-sentence")).toContainText(nowZh.funding_text);
+  await expect(page.getByTestId("stress-sentence")).toHaveText(`${nowZh.text} ${nowZh.funding_text}`);
   await expect(page.getByTestId("stress-line")).toHaveText([`该买方的未结发票会留给您：${nowZh.net_later_text}。`]);
   await expect(page.getByTestId("cash-stress-invoice")).toHaveText(`关于${rowZh.invoice}：如果买方晚付，您的现金会怎样。`);
   await expect(page.getByTestId("cash-stress-back")).toHaveText(b.label);

@@ -24,8 +24,8 @@ const WINDOWS = [60, 120] as const;
 type T = ReturnType<typeof useI18n>["t"];
 
 /**
- * The picture's late-payment scenario from the buyer's exposure read: its series, the delay, the server's assumption and the stress sentence (the lowest
- * point and when, then the server's own sentence on days under the minimum, what no plan covers and the plan), then what the buyer's open invoices leave a
+ * The picture's late-payment scenario from the buyer's exposure read: its series, the delay, the server's assumption and the stress sentence (the server's
+ * `text` and `funding_text`: the lowest point and when, the days under the minimum, what no facility covers and the plan), then what the buyer's open invoices leave a
  * month later and the invoice's financing charges when it has them. Every word is the server's or the dictionary's; the day numbers only size the window.
  * Null when the read has no test to draw (unavailable, or no series).
  */
@@ -33,8 +33,8 @@ export function lateReadOf(view: BuyerExposureView, row: ReceivableRow | null | 
   const now = view.stress?.now;
   if (!now || now.available === false || !now.series?.length || !now.lowest_short || !now.lowest_when) return null;
   const buyer = view.buyer_short ?? view.concentration?.buyer_name ?? view.buyer_name ?? "";
-  const lowest = t("home.hy.stress.lowest", { amount: now.lowest_short, when: now.lowest_when });
-  const sentence = [lowest, now.funding_text ?? now.text].filter(Boolean).join(" ");
+  // The stress sentence is the server's two: `text` (the lowest point and when, the days under the minimum, what no facility covers) and `funding_text` (the plan).
+  const sentence = [now.text, now.funding_text].filter(Boolean).join(" ");
   const span = Math.max((now.lowest_day ?? 0) - (view.day ?? 0), 0) + 7;
   const lines = [now.net_later_text ? t("cash.stress.later", { net: now.net_later_text }) : "", row?.net?.per_period_text ? t("cash.stress.charges", { text: row.net.per_period_text }) : ""].filter(Boolean);
   return {

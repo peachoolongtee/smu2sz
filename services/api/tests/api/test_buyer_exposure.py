@@ -157,20 +157,28 @@ def test_it_is_cached_like_the_overview_and_a_change_reads_again(api: TestClient
     assert _buyer(api)["stress"]["now"]["net_later_text"] != first["stress"]["now"]["net_later_text"] and len(calls) == 4
 
 
-def test_the_back_link_is_built_from_the_query_after_the_cache(api: TestClient, rt: Runtime) -> None:
-    """The Cash page opened from a stress link (Receivables, the Customer page, a deal) goes back the way the deal reads do."""
+def test_the_back_link_follows_the_origin_and_is_built_after_the_cache(api: TestClient) -> None:
+    """The Cash page opened from a stress link goes back to where the owner came from: the deal, the invoice, or the customer."""
     assert "context" not in _buyer(api)
     offer = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
-    deal = f"deal:{offer}"
-    plain = _buyer(api, customer="BUYER-1", invoice="RCV-A")
-    assert plain["context"]["back"] == {"label": "Back to Foshan", "href": "/customers/BUYER-1?invoice=RCV-A"}
-    path = _buyer(api, decision=deal, path="counter:0")["context"]["back"]
-    assert path["href"] == f"/customers/BUYER-1?decision=deal%3A{offer}&path=counter%3A0"
-    zh = _buyer(api, "zh", customer="BUYER-1")["context"]["back"]
-    assert zh["label"].startswith("返回") and zh["href"] == "/customers/BUYER-1"
-    assert "context" not in _buyer(api, customer="BUYER-2")  # another buyer's page is not this buyer's way back
-    assert _buyer(api, invoice="RCV-NOPE")["context"]["back"]["href"] == "/customers/BUYER-1"  # an invoice that is nobody's is never echoed
-    assert {k: v for k, v in plain.items() if k not in ("context", "computed_in_seconds")} == {k: v for k, v in _buyer(api).items() if k != "computed_in_seconds"}
+    deal = f"deal%3A{offer}"
+    # a deal (with its path): back to the deal, whatever else the query carries
+    for extra in ({}, {"invoice": "RCV-A"}):
+        back = _buyer(api, customer="BUYER-1", decision=f"deal:{offer}", path="counter:0", **extra)["context"]["back"]
+        assert back == {"label": "Back to the Foshan deal", "href": f"/deals?decision={deal}&path=counter%3A0&customer=BUYER-1"}
+    assert _buyer(api, "zh", customer="BUYER-1", decision=f"deal:{offer}")["context"]["back"] == {"label": "返回与Foshan的交易", "href": f"/deals?decision={deal}&customer=BUYER-1"}
+    # an invoice and no deal: back to Receivables with it selected
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-A")["context"]["back"] == {"label": "Back to the invoice", "href": "/receivables?invoice=RCV-A&customer=BUYER-1"}
+    assert _buyer(api, "zh", invoice="RCV-A")["context"]["back"] == {"label": "返回发票", "href": "/receivables?invoice=RCV-A&customer=BUYER-1"}
+    # the customer alone: back to the Customer page
+    assert _buyer(api, customer="BUYER-1")["context"]["back"] == {"label": "Back to Foshan", "href": "/customers/BUYER-1"}
+    assert _buyer(api, "zh", customer="BUYER-1")["context"]["back"] == {"label": "返回Foshan", "href": "/customers/BUYER-1"}
+    # another buyer's page, a deal or invoice that is nobody's: nothing to go back to, and nothing echoed
+    for query in ({"customer": "BUYER-2"}, {"invoice": "RCV-NOPE"}, {"decision": "deal:OFF-nope"}, {"customer": "BUYER-2", "invoice": "RCV-NOPE"}):
+        assert "context" not in _buyer(api, **query)
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-NOPE")["context"]["back"]["href"] == "/customers/BUYER-1"
+    plain = _buyer(api)
+    assert {k: v for k, v in _buyer(api, customer="BUYER-1").items() if k not in ("context", "computed_in_seconds")} == {k: v for k, v in plain.items() if k != "computed_in_seconds"}
 
 
 # ---------------------------------------------------------------- GET /receivables: the words the page dashed out

@@ -43,6 +43,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.auth import require_owner
 from app.api.deal_offers import open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
+from app.api.exposure_words import deal_back_label
 from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
 from app.api.presentation import Lang, agreement_words, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
@@ -832,7 +833,7 @@ def _back(rt: Runtime, state: FinancialState, buyer_id: str, who: str, lang: Lan
     offer = rt.store.get_offer(offer_id) if offer_id else None
     if offer is not None and offer.counterparty_id == buyer_id:
         tail = f"&path={_quoted(path)}" if path and _SAFE.fullmatch(path) else ""
-        return {"label": t(lang, f"Back to the {who} deal", f"返回与{who}的交易"), "href": f"/deals?decision={_quoted(decision or '')}{tail}"}
+        return {"label": deal_back_label(lang, who), "href": f"/deals?decision={_quoted(decision or '')}{tail}"}
     if invoice and any(x.id == invoice and x.counterparty_id == buyer_id for x in state.receivables):
         return {"label": t(lang, "Back to the invoices", "返回发票"),
                 "href": f"/receivables?customer={_quoted(buyer_id)}&invoice={_quoted(invoice)}"}

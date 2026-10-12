@@ -23,8 +23,9 @@ what the Receivables aside and the Customer page read: `concentration`, `payment
 the buyer's open invoices leave the owner a month later, from `net_at_collection`), `capacity` ({before, spare}) and the band's sentences.
 Cached like the Customer overview (the books, the mandate, the day, the commitments, the buyer, the language, `spare`, the inputs, the
 store's change marker and the flag). With the flag off it answers 404 with a sentence. When the query carries `customer`, `invoice` or
-`decision` (with `path`) the read also carries `context.back` {label, href}, built after the cache as the deal reads build theirs (the Cash
-page opened from a stress link goes back with it); a part that names another buyer is ignored.
+`decision` (with `path`) the read also carries `context.back` {label, href}, built after the cache and following the origin: a `decision`
+back to the deal (`/deals?decision=&path=&customer=`), else an `invoice` back to Receivables (`/receivables?invoice=&customer=`), else
+`customer` back to the Customer page (`app.api.exposure_words.origin_back`); a part that names another buyer is ignored.
 
 The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
 `limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
@@ -42,14 +43,13 @@ import logging
 import re
 import time
 from typing import Any, Literal
-from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.customer_overview import customer_context
 from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
-from app.api.exposure_words import customer_back, net_later, path_words, with_path_words
+from app.api.exposure_words import customer_back, net_later, origin_back, path_words, with_path_words
 from app.api.features import require_feature
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
@@ -221,10 +221,10 @@ def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), s
     out = {**body, "computed_in_seconds": round(time.perf_counter() - started, 3)}
     if not (customer or invoice or decision):
         return out
-    # `context.back`, built from the query after the cache (never cached): the Cash page opened from a stress link goes back the way the
-    # Deals reads do. A deal-only link is about this buyer; a part that names another buyer's is ignored, never echoed.
+    # `context.back`, built from the query after the cache (never cached) and following the origin: the deal, the invoice in Receivables or the
+    # Customer page (`exposure_words.origin_back`). A part that names another buyer's is ignored, never echoed.
     with rt.lock:
-        back = customer_back(rt, rt.store.get_state(), lang, customer=customer or buyer_id, invoice=invoice, decision=decision, path=path)
-    if back is None or not back["href"].startswith(f"/customers/{quote(buyer_id, safe='')}"):
+        back = origin_back(rt, rt.store.get_state(), lang, buyer_id, customer=customer, invoice=invoice, decision=decision, path=path)
+    if back is None:
         return out
     return {**out, "context": {"back": back}}
