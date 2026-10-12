@@ -73,13 +73,17 @@ def test_flag_off_is_a_404_with_a_sentence(api: TestClient, monkeypatch: pytest.
     monkeypatch.delenv("FEATURE_EXPOSURE", raising=False)
     r = api.get("/buyers/BUYER-1/exposure")
     assert r.status_code == 404
-    assert r.json()["detail"] == {"code": "FEATURE_DISABLED", "message": "Buyer exposure is switched off (FEATURE_EXPOSURE)."}
+    assert r.json()["detail"] == {"code": "FEATURE_DISABLED", "feature": "exposure", "message": "Buyer exposure is switched off (FEATURE_EXPOSURE)."}
+    zh = api.get("/buyers/BUYER-1/exposure", params={"lang": "zh"})
+    assert zh.status_code == 404 and zh.json()["detail"]["message"] == "买家风险敞口功能尚未开启（FEATURE_EXPOSURE）。"
 
 
 def test_an_unknown_buyer_or_a_name_that_is_not_a_buyer_is_a_404(api: TestClient) -> None:
     for name in ("BUYER-9", "FAC-IF", "nonsense"):
         r = api.get(f"/buyers/{name}/exposure")
         assert r.status_code == 404 and r.json()["detail"]["code"] == "BUYER_NOT_FOUND", name
+        assert name not in r.json()["detail"]["message"]  # the id in the path is never echoed
+    assert api.get("/buyers/BUYER-9/exposure", params={"lang": "zh"}).json()["detail"]["message"] == "您的账目中没有这位客户。"
     assert api.get("/buyers/BUYER-1/exposure", params={"lang": "fr"}).status_code == 422
 
 
@@ -209,3 +213,10 @@ def test_the_receivables_words_have_no_english_in_chinese_and_no_id(api: TestCli
              "total": body["summary"]["financing_total_display"]}
     assert not english_leaks(words, NAMES), english_leaks(words, NAMES)
     assert "RCV-" not in str(words) and "BUYER-" not in str(words)
+
+
+def test_a_buyer_with_no_open_invoice_has_null_net_later(api: TestClient) -> None:
+    body = api.get("/buyers/BUYER-2/exposure", params={"spare": 0}).json()  # Dongguan owes nothing and is billed nothing
+    assert body["stress"]["now"]["available"] is False
+    assert "net_later_text" in body["stress"]["now"] and body["stress"]["now"]["net_later_text"] is None
+    assert body["stress"]["now"]["net_later_fen"] is None and "net_later_display" not in body["stress"]["now"]

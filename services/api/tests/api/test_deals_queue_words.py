@@ -133,7 +133,18 @@ def test_the_words_after_the_plan_has_run(api: TestClient) -> None:
     assert (paths["asked"]["lowest_display"], paths["asked"]["lowest_when_text"]) == ("¥313k", "above your minimum")
     assert (paths["B"]["lowest_display"], paths["B"]["lowest_when_text"]) == ("¥300k", "at your minimum")
     assert (paths["do_nothing"]["lowest_display"], paths["do_nothing"]["lowest_when_text"]) == ("¥300k", "at your minimum")
-    assert paths["do_nothing"]["limit_word"] == "WITHIN"
+    assert paths["do_nothing"]["limit_word"] is None
+
+
+def test_a_reply_the_picture_cannot_price_has_a_null_limit_word(api: TestClient) -> None:
+    offer_id = _offer(api)
+    _run_plan(api)  # Option A can no longer be drawn on the books once the invoice is financed
+    pictured = {p["key"]: p for p in api.get(f"/offers/{offer_id}/picture").json()["paths"]}
+    a = _paths(_read(api, offer_id))["A"]
+    assert pictured[a["key"]]["authority"] is None
+    assert (a["limit_word"], a["limit_text"]) == (None, None) and a["lowest_display"] == "¥310k"  # the words that can be said still are
+    zh = _paths(_read(api, offer_id, "zh"))["A"]
+    assert (zh["limit_word"], zh["limit_text"]) == (None, None)
 
 
 def test_the_limit_word_follows_the_authority_class(api: TestClient) -> None:
@@ -142,7 +153,7 @@ def test_the_limit_word_follows_the_authority_class(api: TestClient) -> None:
     assert (paths["asked"]["limit_word"], paths["asked"]["limit_text"]) == ("EXCEEDED", "exceeded")  # a cap violation: over a limit you signed
     assert (paths["A"]["limit_word"], paths["A"]["limit_text"]) == ("WITHIN", "within")  # FLOW may send it
     assert (paths["B"]["limit_word"], paths["B"]["limit_text"]) == ("WITHIN", "within")  # needs your approval, still inside the signed limits
-    assert (paths["do_nothing"]["limit_word"], paths["do_nothing"]["limit_text"]) == ("WITHIN", "within")
+    assert (paths["do_nothing"]["limit_word"], paths["do_nothing"]["limit_text"]) == (None, None)  # it agrees to nothing
     pictured = {p["key"]: p["authority"] for p in api.get(f"/offers/{offer_id}/picture").json()["paths"]}
     assert [pictured[paths[k]["key"]] for k in ("asked", "A", "B")] == ["over_limit", "flow_may", "needs_owner"]
 
@@ -156,11 +167,13 @@ def test_an_offer_flow_may_accept_is_within(api: TestClient) -> None:
 def test_the_share_after_the_path_says_how_the_payment_moves(api: TestClient) -> None:
     offer_id = _offer(api)
     paths = _paths(_read(api, offer_id))
-    assert paths["asked"]["share_after_text"] == "100%, for 15 days longer"  # the terms to 60 days: owed 15 days longer
-    assert paths["A"]["share_after_text"] == "100%, paid 2 days after the offer"
-    assert paths["B"]["share_after_text"] == "100%, for 10 days longer"
-    assert paths["do_nothing"]["share_after_text"] == "100%"
-    assert _read(api, offer_id)["concentration"]["ar_share_bp"] == 10_000  # the share is the concentration's own
+    # today Foshan is all of what is owed; after each path the invoice is paid (Option A and as asked 2 days after the offer, Option B on
+    # its due day) and, with no invoice not yet issued counted, nothing is owed by Foshan then: the share is recomputed, not copied
+    assert _read(api, offer_id)["concentration"]["ar_share_bp"] == 10_000
+    assert paths["do_nothing"]["share_after_text"] == "100%"  # the books as they stand: today's share
+    assert paths["A"]["share_after_text"] == "0%, paid 2 days after the offer"
+    assert paths["asked"]["share_after_text"] == "0%, for 15 days longer"  # the terms to 60 days: its next invoice owed 15 days longer
+    assert paths["B"]["share_after_text"] == "0%, for 10 days longer"
 
 
 def test_before_the_offer_is_evaluated_only_the_books_as_they_stand_have_words(api: TestClient) -> None:
@@ -176,7 +189,8 @@ def test_the_chinese_words_are_the_same_figures_in_chinese(api: TestClient) -> N
     assert {k: (v["lowest_display"], v["limit_word"]) for k, v in en.items()} == {k: (v["lowest_display"], v["limit_word"]) for k, v in zh.items()}
     assert zh["asked"]["lowest_when_text"] == "低于最低现金 15 天" and zh["A"]["lowest_when_text"] == "恰为您的最低现金"
     assert (zh["asked"]["limit_text"], zh["A"]["limit_text"]) == ("超出授权", "在授权内")
-    assert zh["asked"]["share_after_text"] == "100%，多持续 15 天" and zh["A"]["share_after_text"] == "100%，报价后 2 天付款"
+    assert zh["asked"]["share_after_text"] == "0%，多持续 15 天" and zh["A"]["share_after_text"] == "0%，报价后 2 天付款"
+    assert zh["do_nothing"]["share_after_text"] == "100%"
     assert zh["do_nothing"]["label"] == "不采取行动"
 
 
@@ -323,3 +337,59 @@ def test_the_overview_decision_reads_the_sentence(api: TestClient) -> None:
     assert d["authority_text"] == "FLOW can send this counter without your approval."
     zh = api.get("/customers/BUYER-1/overview", params={"lang": "zh"}).json()["decision"]
     assert zh["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
+
+
+# ---------------------------------------------------------------- the do_nothing path carries words only
+
+
+def test_do_nothing_has_explicit_null_entries_in_the_keyed_maps(api: TestClient) -> None:
+    offer_id = _offer(api)
+    for body in (_read(api, offer_id), api.get(f"/decisions/deal:{offer_id}/exposure").json()):
+        assert body["band"]["by_path"]["do_nothing"] is None and "do_nothing" in body["band"]["by_path"]
+        assert "do_nothing" in body["capacity"] and body["capacity"]["do_nothing"] is None
+        assert "do_nothing" in body["stress"]["paths"] and body["stress"]["paths"]["do_nothing"] is None
+        assert all(extra["paths"]["do_nothing"] is None for extra in body["stress"]["also"])
+        assert all(body["band"]["by_path"][p["key"]] is not None for p in body["paths"] if p["kind"] != "do_nothing")
+
+
+def test_the_words_are_worked_out_once_with_the_cached_block(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.api import exposure_words as words
+
+    offer_id = _offer(api)
+    calls: list[str] = []
+    real = words.deal_extras
+    monkeypatch.setattr(words, "deal_extras", lambda *a, **k: (calls.append("words"), real(*a, **k))[1])
+    first = _read(api, offer_id)
+    second = _read(api, offer_id)
+    assert calls == ["words"] and first["paths"] == second["paths"] and first["customer_context"] == second["customer_context"]
+    _read(api, offer_id, "zh")
+    assert calls == ["words", "words"]  # another language is another block
+
+
+# ---------------------------------------------------------------- one predicate for "assumed for the Demo"
+
+
+def test_a_margin_the_demo_entered_is_assumed_like_no_margin_at_all(rt: Runtime) -> None:
+    from app.strategy.inputs import inputs_from_rows
+
+    state = rt.store.get_state()
+    row = CustomerInputRecord(org_id=state.org_id, counterparty_id="BUYER-1", field="margin_bp", value_json="1500", provenance="ESTIMATED",
+                              source_ref="Demo assumption", entered_by="DEMO", entered_day=0, state_version=1)
+    m = overview._margin(_held(state, inputs_from_rows([row])))
+    assert (m.bp, m.assumed, m.provenance) == (1500, True, "DEMO") and m.record is row
+    ctx = overview.customer_context(state, inputs_from_rows([row]), "BUYER-1", 0, None, "en")
+    assert ctx["contribution_note"].endswith("margin assumed for the Demo, not confirmed by you")
+
+
+def test_the_overviews_value_figure_and_the_context_say_the_same_thing_of_the_same_number(api: TestClient, rt: Runtime) -> None:
+    offer_id = _offer(api)
+    figure = api.get("/customers/BUYER-1/overview").json()["figures"][0]
+    ctx = _read(api, offer_id)["customer_context"]
+    assert figure["value_display"] == ctx["contribution_display"]
+    assert figure["note"] == "a year, estimated contribution; margin assumed for the Demo, not confirmed by you"
+    assert figure["note"].endswith(ctx["contribution_note"].split("; ")[1])
+    state = rt.store.get_state()
+    rt.store.add_customer_input(CustomerInputRecord(
+        org_id=state.org_id, counterparty_id="BUYER-1", field="margin_bp", value_json="3000", provenance="OWNER_ENTERED",
+        source_ref="test", entered_by="OWNER", entered_day=0, state_version=state.state_version))
+    assert api.get("/customers/BUYER-1/overview").json()["figures"][0]["note"] == "a year, estimated contribution"

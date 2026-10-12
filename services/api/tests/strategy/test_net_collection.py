@@ -138,7 +138,7 @@ def test_the_words_in_chinese_carry_the_same_figures():
     assert zh["net_display"] == en["net_display"]
     assert zh["condition_text"] == "如果 Foshan 在到期日付款" and zh["financing_state_text"] == "已到账"
     assert fmt_yuan(net.claim_fen) in zh["repays_text"] and "34 天前到账的融资及其费用" in zh["repays_text"]
-    assert zh["net_short"] == f"约 {fmt_yuan_about(net.net_fen)}" and zh["per_period_text"].startswith("每晚 30 天")
+    assert zh["net_short"] == f"约 {fmt_yuan_about(net.net_fen)}" and zh["per_period_text"].startswith("每逾期 30 天约多 ")
 
 
 @pytest.mark.parametrize(("lang", "words"), [("en", ("arranged", "received", "repaid")), ("zh", ("已安排", "已到账", "已还清"))])

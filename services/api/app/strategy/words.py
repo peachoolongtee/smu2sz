@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from fractions import Fraction
 
-from app.api.financing_words import financing_state_words, state_word
+from app.api.financing_words import financing_state_words, state_phrase, state_word
 from app.api.presentation import Lang, invoice_due_day, invoice_words, t, when_text
 from app.domain.models import FinancialState
 from app.domain.money import fmt_pct, fmt_yuan, fmt_yuan_about, round_half_up
@@ -85,6 +85,8 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
     repays_text          "¥257,186.08 repays the financing received 29 days earlier, with its charges" (ARRANGED: "... the
                          financing arranged, expected in 3 days, with its charges"); None without financing
     financing_state_text one of Arranged / Received / Repaid (never mixed); None without financing
+    repays_note          the state and its day for the breakdown's "repays the financing" row: "arranged, expected in 3 days",
+                         "received 2 days ago", "repaid" (the word from `state_of`); None without financing
     per_period_text      "about ¥1,870 more for every 30 days late"; None when a late day adds nothing
     owed_text            what the receipt leaves owed by the owner, when it falls short of the claim; else None
     unrecorded_text      says so when the invoice is marked financed but no advance is on record; else None
@@ -116,7 +118,7 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
     per = None
     if net.per_period_more_fen > 0 and net.period_days > 0:
         per = t(lang, f"about {fmt_yuan_about(net.per_period_more_fen)} more for every {net.period_days} days late",
-                f"每晚 {net.period_days} 天，费用约增加 {fmt_yuan_about(net.per_period_more_fen)}")
+                f"每逾期 {net.period_days} 天约多 {fmt_yuan_about(net.per_period_more_fen)}")
     word = state_word(lang, state) or None
     unrecorded = (t(lang, "This invoice is marked as financed but no financing is on record, so the net shown is before any financing.",
                     "这张发票已标记为融资，但没有融资记录，所以所示净额未扣除任何融资。") if net.financing_unrecorded else None)
@@ -125,6 +127,7 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
         "net_short": t(lang, f"about {fmt_yuan_about(net.net_fen)}", f"约 {fmt_yuan_about(net.net_fen)}"),
         "condition_text": condition, "repays_text": repays,
         "financing_state_text": (word[:1].upper() + word[1:]) if word is not None and lang != "zh" else word,
+        "repays_note": state_phrase(lang, state, net.arrival_day, today) if state != "NONE" else None,
         "per_period_text": per, "owed_text": owed, "unrecorded_text": unrecorded}
 
 
