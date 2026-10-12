@@ -34,7 +34,7 @@ def _stages(state: DealState, lang: str) -> list[dict[str, str]]:
             for i, (key, en, zh) in enumerate(_STAGES)]
 
 
-def _read_text(ds: Any, action: str, cost: str, window: str, limit: str, over: bool, lang: str) -> str:
+def _read_text(ds: Any, action: str, cost: str, window: tuple[str, str], limit: str, over: bool, lang: str) -> str:
     cost_en, cost_zh = f"it would cost {cost} {window[0]}", f"成本将为{cost}（{window[1]}）"
     rel_en, rel_zh = (f"above your {limit} limit", f"高于您 {limit} 的上限") if over else (f"within your {limit} limit", f"在您 {limit} 的上限内")
     if action == "cannot":
