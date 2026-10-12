@@ -49,7 +49,7 @@ test("the sheet: three facts and the delay, each with where it came from, the ch
   // classification: context only, said by the server; choosing one shows that choice's own note
   await expect(page.getByTestId("inputs-class-note")).toHaveText(row(en, "classification").note as string);
   await page.getByTestId("inputs-class-STRATEGIC").click();
-  await expect(page.getByTestId("inputs-class-STRATEGIC")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("inputs-class-STRATEGIC")).toHaveAttribute("aria-selected", "true");
   const strategic = en.fields.find((f) => f.key === "classification")!.options.find((o) => o.value === "STRATEGIC")!;
   await expect(page.getByTestId("inputs-class-note")).toHaveText(strategic.note);
   await expect(page.getByTestId("inputs-vat-note")).toHaveText(en.vat_note as string);
