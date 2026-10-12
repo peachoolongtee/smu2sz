@@ -389,3 +389,111 @@ def test_the_rule_it_crosses_follows_the_rule_the_mandate_applied():
     mandate = SimpleNamespace(tier2_single_commitment_fen=5_000_000)
     assert offer_picture._rule_text("en", "value", mandate) == "Your mandate lets FLOW agree on its own only to a commitment of up to ¥50,000.00."
     assert offer_picture._rule_text("zh", "plan", mandate) == "此回复所需的融资方案因其成本需要您批准。"
+
+
+# ---------------------------------------------------------------- why the recommended path is recommended
+
+
+def test_only_the_recommended_path_says_why_and_by_the_rule_the_engine_applies(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended"] is True
+    assert opt_a["recommended_reason_text"] == "Recommended because FLOW can send it within your mandate without your approval."
+    assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
+    z_asked, z_a, z_b = _paths(client, oid, "zh")
+    assert z_a["recommended_reason_text"] == "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。"
+    assert z_asked["recommended_reason_text"] is None and z_b["recommended_reason_text"] is None
+    assert "cost" not in opt_a["recommended_reason_text"] and "成本" not in z_a["recommended_reason_text"]
+
+
+def test_a_recommendation_that_needs_the_owner_says_so(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    real = offer_picture.plan
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"needs_owner_approval": True}))
+    offer_picture._cache.clear()
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended"] is True and opt_a["needs_owner"] is True
+    assert opt_a["recommended_reason_text"] == "Recommended because it is the first counter within your mandate; it needs your approval."
+    assert asked["recommended_reason_text"] is None and opt_b["recommended_reason_text"] is None
+    assert _paths(client, oid, "zh")[1]["recommended_reason_text"] == "推荐原因：它是您授权范围内的第一个还价；需要您批准。"
+
+
+def test_the_recommendation_that_falls_to_the_next_reply_carries_the_reason(client, monkeypatch):
+    oid, view = _evaluated(client)
+    first = view["counters"][0]["id"]
+    real = offer_picture.counter_recheck
+
+    def recheck(*a, **k):
+        check = real(*a, **k)
+        return lambda c: check(c).model_copy(update={"outcome": Outcome.NO_VERDICT}) if c.id == first else check(c)
+
+    monkeypatch.setattr(offer_picture, "counter_recheck", recheck)
+    offer_picture._cache.clear()
+    _, opt_a, opt_b = _paths(client, oid)
+    assert opt_a["recommended_reason_text"] is None
+    assert opt_b["recommended_reason_text"] == "Recommended because it is the first counter within your mandate; it needs your approval."
+
+
+# ---------------------------------------------------------------- the same-day comparison on every point
+
+
+def _point(path, day):
+    return next(p for p in path["series"] if p["day"] == day)
+
+
+def test_every_point_carries_the_same_day_strip_of_the_asked_path_and_the_recommended_reply(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, opt_b = _paths(client, oid)
+    low_day = min(asked["series"], key=lambda p: (p["closing_fen"], p["day"]))["day"]
+    assert low_day == 60
+    for path in (asked, opt_a, opt_b):  # the strip is the day's, whichever line the point is on
+        assert _point(path, low_day)["comparison"] == {"label": "Same day", "asked_display": "¥164,960.00",
+                                                       "recommended_display": "¥586,972.23", "difference_display": "+¥422,012.23"}
+        # day 0: Option A's own funding plan draws the credit line today (the asked path takes no new funding)
+        assert _point(path, 0)["comparison"] == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
+                                                 "recommended_display": _point(opt_a, 0)["closing_display"],
+                                                 "difference_display": "+¥149,986.20"}
+    assert all(p["comparison"] is not None for p in asked["series"])
+    zh = _paths(client, oid, "zh")
+    assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,012.23"
+
+
+def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing_to_compare(client):
+    oid, _ = _evaluated(client)
+    asked, opt_a, _ = _paths(client, oid)
+    for pt in asked["series"]:
+        mine = next((q for q in opt_a["series"] if q["day"] == pt["day"]), None)
+        c = pt["comparison"]
+        if mine is None:
+            assert c is None
+            continue
+        assert (c["asked_display"], c["recommended_display"]) == (pt["closing_display"], mine["closing_display"])
+        diff = mine["closing_fen"] - pt["closing_fen"]
+        assert c["difference_display"].lstrip("+−") == ("¥0" if diff == 0 else c["difference_display"].lstrip("+−"))
+        assert (diff == 0) == (c["difference_display"] == "¥0") and (diff < 0) == c["difference_display"].startswith("−")
+
+
+def test_with_no_recommended_reply_there_is_no_strip(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    _recheck_as(monkeypatch, outcome=Outcome.REJECT, violations=[])
+    offer_picture._cache.clear()
+    assert all(p["comparison"] is None for path in _paths(client, oid) for p in path["series"])
+
+
+# ---------------------------------------------------------------- what each line assumes
+
+
+def test_a_reply_with_no_admissible_plan_says_so_and_a_reply_that_needs_none_says_that(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    real = offer_picture.plan
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"admissible": False}))
+    offer_picture._cache.clear()
+    asked, opt_a, opt_b = _paths(client, oid)
+    assert asked["scenario_assumption_text"] == "Assumes the buyer accepts this offer and FLOW takes no new funding."
+    for p in (opt_a, opt_b):
+        assert p["scenario_assumption_text"] == "Assumes the buyer accepts this reply; no funding plan is available within your mandate."
+    z = _paths(client, oid, "zh")
+    assert z[1]["scenario_assumption_text"] == "假设买方接受此回复；您的授权范围内没有可用的融资方案。"
+    monkeypatch.setattr(offer_picture, "plan", lambda *a, **k: real(*a, **k).model_copy(update={"admissible": True, "actions": [], "need_fen": 0}))
+    offer_picture._cache.clear()
+    assert _paths(client, oid)[1]["scenario_assumption_text"] == "Assumes the buyer accepts this reply; no new funding is needed."

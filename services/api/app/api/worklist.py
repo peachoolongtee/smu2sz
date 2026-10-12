@@ -14,6 +14,9 @@ make; nothing is ranked, priced, projected or decided a second time:
                  decision record, one row per offer, with the offer picture's words for the cash consequence), APPROVAL (the Home's
                  pending approvals, less the company cash plan), COLLECTION (the receivable rows' `collection_state` OVERDUE or
                  PROMISE_MISSED, one row per buyer), SETUP (a buyer contract read and waiting for the owner's review).
+                 `differentiator_text` is null unless two rows of the same customer share a subject; then, for a DECISION, the buyer's own
+                 phrase for its ask in quotes (the first source span of the obligation the subject names), null for a row whose phrase is
+                 not its own in the group. No invoice reference is carried by a row, and no number is made up for it.
     waiting      what FLOW waits for: BUYER_REPLY (an offer the buyer must clarify), SETTLEMENT (a funding lot arranged and not landed,
                  `financing_words.state_of` ARRANGED), PROMISE (an early payment a live agreement promised, still awaited).
     customers    the buyers on the books, one row each: `GET /customers` returns these same rows (one function) and `search_terms`
@@ -56,7 +59,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Literal
 from urllib.parse import quote
 
@@ -142,6 +145,8 @@ class Row:
     breach_day: int | None
     href: str
     since: int | None = None  # the day it arrived, for `is_new`
+    ask: str | None = None  # a DECISION's ask in the buyer's own words (the first span of the obligation its subject names), never worded here
+    differentiator: str | None = None  # what separates it from another row of the same customer and subject (`_differentiate`)
 
 
 def tier_of(kind: str, severity: str, breach_day: int | None, deadline_day: int | None) -> int:
@@ -181,7 +186,7 @@ def _needs_item(row: Row, first: bool, since_day: int | None, lang: Lang) -> dic
     tier = tier_of(row.kind, row.severity, row.breach_day, row.deadline_day)
     return {"key": row.key, "kind": row.kind, "customer_id": row.customer_id, "customer_short": row.customer_short,
             "subject_text": row.subject, "status_text": row.status, "consequence_text": row.consequence, "owner": NEEDS_YOU,
-            "severity": row.severity, "deadline_day": row.deadline_day, "why_first_text": t(lang, *_WHY[tier]) if first else None,
+            "severity": row.severity, "deadline_day": row.deadline_day, "differentiator_text": row.differentiator, "why_first_text": t(lang, *_WHY[tier]) if first else None,
             "href": row.href, "is_new": since_day is not None and row.since is not None and row.since > since_day}
 
 
@@ -193,10 +198,36 @@ def _focus(customer_id: str, deal: str | None = None) -> str:
     return f"/?customer={quote(customer_id, safe='')}" + (f"&deal={quote(deal, safe='')}" if deal else "")
 
 
+def _asks(offer: Any) -> list[Any]:
+    """The obligations the buyer asked for (a claimed prior concession is not an ask), the first of them first."""
+    return sorted((o for o in offer.obligations if o.type != ObligationType.CLAIMED_PRIOR_CONCESSION), key=lambda o: _ASK_ORDER.get(o.type, 9))
+
+
 def _topic(offer: Any, lang: Lang) -> str:
     """What the buyer asked about, in a word or two: the first of its asks ("Payment terms")."""
-    kinds = sorted((o.type for o in offer.obligations if o.type != ObligationType.CLAIMED_PRIOR_CONCESSION), key=lambda k: _ASK_ORDER.get(k, 9))
-    return t(lang, *_TOPIC.get(kinds[0], ("Offer", "报价"))) if kinds else t(lang, "Offer", "报价")
+    asks = _asks(offer)
+    return t(lang, *_TOPIC.get(asks[0].type, ("Offer", "报价"))) if asks else t(lang, "Offer", "报价")
+
+
+def _ask_phrase(offer: Any) -> str | None:
+    """The first ask in the buyer's own words (the first source span of its obligation), None when it quotes nothing."""
+    asks = _asks(offer)
+    if not asks or not asks[0].spans:
+        return None
+    return " ".join(asks[0].spans[0].text.split()) or None
+
+
+def _differentiate(rows: list[Row]) -> list[Row]:
+    """Rows of one customer that share a subject say what separates them: the ask's own phrase in quotes. A row whose phrase is not its own
+    in the group (the same words twice) or that has none stays null: nothing here makes up a word, and no figure is written."""
+    out: list[Row] = []
+    for r in rows:
+        group = [x for x in rows if r.customer_id is not None and (x.customer_id, x.subject) == (r.customer_id, r.subject)]
+        if len(group) < 2:
+            group = []
+        own = r.ask is not None and sum(1 for x in group if x.ask == r.ask) == 1
+        out.append(replace(r, differentiator=f"“{r.ask}”" if own else None))
+    return out
 
 
 def _days(n: int, lang: Lang) -> str:
@@ -249,7 +280,7 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
         severity, breach, consequence = _deal_effect(pic, floor, failed, lang)
         needs.append(Row(key=f"deal:{view['offer_id']}", kind="DECISION", customer_id=cid, customer_short=who, subject=subject,
                          status=_deal_status(st, pic, lang), consequence=consequence, severity=severity, deadline_day=breach,
-                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])), since=offer.received_day))
+                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])), since=offer.received_day, ask=_ask_phrase(offer)))
     return needs, waits
 
 
@@ -527,7 +558,7 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, An
     needs += _collection_rows(body["rows"], home["cash"].get("first_breach_day") is not None, lang)
     needs += _setup_rows(rt, ctx, lang)
     waiting += _settlement_rows(ctx, lang) + _promise_rows(ctx, lang)
-    needs_sorted = order(needs)
+    needs_sorted = order(_differentiate(needs))
     waiting_sorted = _order_waiting(waiting)
     negotiations: dict[str, int] = {}
     for _view, _st, ds in deals:

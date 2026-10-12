@@ -28,12 +28,23 @@ from app.api.presentation import (
     option_label,
     party_name,
     series_axis,
+    when_text,
+    whole,
 )
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
-from app.domain.models import Actor, LedgerEventKind, Mode, ObligationType, Outcome, RecordCommitment, Tier
+from app.domain.models import (
+    Actor,
+    FundingActionKind,
+    LedgerEventKind,
+    Mode,
+    ObligationType,
+    Outcome,
+    RecordCommitment,
+    Tier,
+)
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import plan
@@ -398,21 +409,66 @@ def _below_band(series: list[dict[str, Any]], floor: int, breach_day: int, lang:
             else say(lang, "Below your minimum to the end of the forecast", "到预测期结束前一直低于您的最低现金储备"))
 
 
+def _recommended_reason(lang: str, needs_owner: bool) -> str:
+    """Why this reply is the recommended one, by the rule `_paths` applies (the first reply FLOW could send, in the verdict's order: one
+    FLOW may send alone, else the first that needs the owner). Nothing about cost: cost is not what picks it."""
+    if needs_owner:
+        return say(lang, "Recommended because it is the first counter within your mandate; it needs your approval.",
+                   "推荐原因：它是您授权范围内的第一个还价；需要您批准。")
+    return say(lang, "Recommended because FLOW can send it within your mandate without your approval.",
+               "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。")
+
+
+_LANDING_KINDS = {FundingActionKind.DRAW: ("credit-line draw", "信用额度提款"), FundingActionKind.FINANCE_INVOICE: ("invoice financing", "发票融资")}
+
+
+def _plan_legs(actions: list[Any], today: int, lang: str) -> str:
+    """A funding plan's legs that bring cash in, in the Home's words ("¥150k credit-line draw today, ¥255k invoice financing in 3 days"):
+    each leg's own amount and landing day (the router's `lands_day`, else the day it is requested), the short money form, no figure made here."""
+    parts = []
+    for a in actions:
+        if a.kind not in _LANDING_KINDS:
+            continue
+        what = say(lang, *_LANDING_KINDS[a.kind])
+        when = when_text(a.lands_day if a.lands_day is not None else a.day, today, lang)
+        parts.append(say(lang, f"{fmt_short(a.amount_fen)} {what} {when}", f"{what} {fmt_short(a.amount_fen)}（{when}）"))
+    return say(lang, ", ", "、").join(parts)
+
+
+def _scenario_assumption(lang: str, kind: str, legs: str | None, *, funded: bool, projected: bool = True) -> str:
+    """What a path's line assumes, the sentence a chart states beside it: the offer as asked takes no new funding; a reply is drawn as if
+    the buyer accepts it and with the funding plan the router found for it (its legs), or without one when none is admissible."""
+    if kind == "asked":
+        return say(lang, "Assumes the buyer accepts this offer and FLOW takes no new funding.", "假设买方接受此报价，且 FLOW 不新增融资。")
+    if not projected:
+        return say(lang, "Assumes the buyer accepts this reply; FLOW cannot draw its cash on today's books.",
+                   "假设买方接受此回复；FLOW 无法按今天的账目绘制其现金。")
+    if legs:
+        return say(lang, f"Assumes the buyer accepts this reply and FLOW's funding plan runs ({legs}); without the plan, cash falls lower.",
+                   f"假设买方接受此回复，且 FLOW 的融资方案得以执行（{legs}）；没有该方案，现金会更低。")
+    if funded:
+        return say(lang, "Assumes the buyer accepts this reply; no funding plan is available within your mandate.",
+                   "假设买方接受此回复；您的授权范围内没有可用的融资方案。")
+    return say(lang, "Assumes the buyer accepts this reply; no new funding is needed.", "假设买方接受此回复；无需新增融资。")
+
+
 def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable: bool, needs_owner: bool, tag: str | None,
                 cost_display: str, cost_note: str, cost: dict[str, Any], terms: list[dict[str, Any]], decides: str,
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
-                lang: str, reason: str | None = None) -> dict[str, Any]:
+                lang: str, reason: str | None = None, recommended_reason: str | None = None,
+                scenario_assumption: str | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
-            "decides_text": decides, "authority_reason_text": reason, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
+            "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason,
+            "scenario_assumption_text": scenario_assumption, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
             "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band}
 
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
            breach: tuple[int, int] | None, replies: list[dict[str, Any]], trajs: dict[str, Any], flagged: set[str],
-           rechecked: dict[str, Any], plan_costs: dict[str, int]) -> list[dict[str, Any]]:
+           rechecked: dict[str, Any], plan_costs: dict[str, int], assumed: dict[str, str]) -> list[dict[str, Any]]:
     """One entry per line on the chart: the offer as asked, then each reply in the verdict's order, with every word its column says.
     Each figure and word is the verdict's, the workspace's or the executor's own (see the comment on each). `flagged` holds the ids of
     the replies whose funding plan needs the owner's approval; `rechecked` the verifier's verdict on each reply as an agreement."""
@@ -450,7 +506,8 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
                                                                      lengthens_terms(bound)),
         authority=authority, authority_text=authority_text, assumption=None, reply_text=None, series=asked_view["series"],
         low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
-        breach_when=asked_view["first_breach_when"], band=band, lang=lang)]
+        breach_when=asked_view["first_breach_when"], band=band, lang=lang,
+        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False))]
 
     by_id = {r["counter_id"]: r for r in replies}
     who: dict[str, tuple[str | None, str, bool, str]] = {}  # per reply: (authority, its words, whether the owner decides, the rule that says so)
@@ -506,8 +563,33 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
             reply_text=business_text(state, c.text, rt.day, lang),
             series=r["series"], low={k: r[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
             breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang,
-            reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate)))
+            reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate),
+            recommended_reason=_recommended_reason(lang, needs_owner) if recommended else None,
+            scenario_assumption=assumed[c.id]))
     return paths
+
+
+def _signed_whole(fen: int) -> str:
+    """A difference with its sign in the KPIs' money form: "+¥422,012.23", "−¥1,000", "¥0" (the signed form of `home_hybrid._signed`, at
+    the precision of the two figures it sits between)."""
+    return "¥0" if fen == 0 else (f"+{whole(fen)}" if fen > 0 else whole(fen))
+
+
+def _same_day_comparison(paths: list[dict[str, Any]], lang: str) -> None:
+    """The inspector's strip for each day, on every point of every path's series: the offer as asked beside the recommended reply and what
+    separates them, from the two series the read already carries (the same objects the chart draws). `comparison` is null where there is no
+    recommended reply (the offer as asked, or nothing sendable, is recommended) or where either path has no point that day."""
+    asked = next((p for p in paths if p["kind"] == "asked"), None)
+    reply = next((p for p in paths if p["kind"] == "reply" and p["recommended"]), None)
+    a_by_day = {pt["day"]: pt for pt in (asked or {}).get("series") or []}
+    r_by_day = {pt["day"]: pt for pt in (reply or {}).get("series") or []}
+    label = say(lang, "Same day", "同一天")
+    for p in paths:
+        for pt in p["series"] or []:
+            a, r = a_by_day.get(pt["day"]), r_by_day.get(pt["day"])
+            pt["comparison"] = (None if a is None or r is None else
+                                {"label": label, "asked_display": a["closing_display"], "recommended_display": r["closing_display"],
+                                 "difference_display": _signed_whole(r["closing_fen"] - a["closing_fen"])})
 
 
 # ---------------------------------------------------------------- the moments: the days where looking is worth it, with every path's cash
@@ -747,6 +829,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     trajs: dict[str, Any] = {}
     flagged: set[str] = set()  # the replies whose funding plan needs the owner's approval
     plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
+    assumed: dict[str, str] = {}  # each reply's scenario assumption: the legs of its own funding plan, or why it has none
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
         label = option_label(c.label, lang)
@@ -756,11 +839,13 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
             actions = list(funding.actions) if funding.admissible else []
             traj = project(books.state, with_counter, actions, Mode.CONSERVATIVE, mandate.horizon_days, floor)
         except EngineError:
+            assumed[c.id] = _scenario_assumption(lang, "reply", None, funded=True, projected=False)
             replies.append({"counter_id": c.id, "label": label, "series": None, "lowest_fen": None, "lowest_short": None,
                             "lowest_when": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
             continue
         trajs[c.id] = traj
         plan_costs[c.id] = funding.total_cost_fen
+        assumed[c.id] = _scenario_assumption(lang, "reply", _plan_legs(actions, today, lang), funded=funding.need_fen != 0)
         if funding.needs_owner_approval:
             flagged.add(c.id)
         if actions:
@@ -780,7 +865,8 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
-    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs)
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed)
+    _same_day_comparison(paths, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
     return {

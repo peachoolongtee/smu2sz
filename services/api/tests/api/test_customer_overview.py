@@ -167,7 +167,7 @@ def test_before_the_plan_the_exposure_rows_are_the_exposure_layers_own(api, rt):
     assert (rows[2]["label"], rows[2]["value_display"], rows[2]["tone"]) == (
         "Paid 30 days late", "−¥250,000 in 60 days; 65 days below your minimum; ¥550,000 uncovered", "bad")
     assert (rows[3]["value_display"], rows[3]["note"]) == (
-        "¥81,000 today; ¥0 if Foshan accepts Option A", "Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000.")
+        "¥81,000 today; ¥0 if Foshan accepts Option A", "Room for another payment: ¥0 for the next 31 days (today ¥81,000).")
     assert b["exposure"]["same_figures_note"].startswith("The same figures as on the deal")
     # the numbers are the deal's own: the exposure route says the same of the recommended path
     ex = api.get(f"/offers/{offer_id}/exposure", params={"lang": "en", "response": "counter:0"}).json()

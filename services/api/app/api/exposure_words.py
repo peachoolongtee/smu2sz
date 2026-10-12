@@ -15,7 +15,7 @@ invoice later, "paid 2 days after the offer" for an early payment, else "until t
     deal_extras       worked out once with the cached exposure block (`app.strategy.exposure`, `deal_words=True`): `paths[*]` words and
                       `customer_context`
     path_words        per path of an offer: lowest_display, lowest_when, lowest_when_text, limit_word (WITHIN | EXCEEDED | null),
-                      limit_text, share_after_text; and the `do_nothing` path the picture does not draw
+                      limit_text, share_after_text, scenario_assumption_text (the picture's own sentence for the path; "The books as they stand, no new funding." for `do_nothing`); and the `do_nothing` path the picture does not draw
     customer_back     {label, href} back to the customer's page, built from the query (never echoed unless it names this buyer)
     net_later         what the buyer's open invoices leave the owner a month later than their due days, for the 30-day stress row
 """
@@ -129,7 +129,7 @@ def _share_after(books: Books, buyer: str, today: int, inputs: CustomerInputs, q
 
 
 _BLANK: dict[str, Any] = {"lowest_display": None, "lowest_when": None, "lowest_when_text": None, "limit_word": None, "limit_text": None,
-                          "share_after_text": None}
+                          "share_after_text": None, "scenario_assumption_text": None}
 
 
 def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: Books, mandate: Mandate, day: int, lang: Lang,
@@ -151,9 +151,11 @@ def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: B
         "lowest_display": fmt_short(base_low), "lowest_when": when_text(base_low_day, today, lang),
         "lowest_when_text": _lowest_text(base_low, base_points, floor, lang),
         "limit_word": None, "limit_text": None,  # it agrees to nothing: no authority class to state
-        "share_after_text": _share_after(books, buyer, today, inputs, None, lang)}}
+        "share_after_text": _share_after(books, buyer, today, inputs, None, lang),
+        "scenario_assumption_text": t(lang, "The books as they stand, no new funding.", "当前账目，未新增融资。")}}
     if verdict is None:  # not evaluated yet: the offer as asked has no package, so it is the books as they stand
-        out["asked"] = {**out[DO_NOTHING]}
+        out["asked"] = {**out[DO_NOTHING], "scenario_assumption_text": t(lang, "Assumes the buyer accepts this offer and FLOW takes no new funding.",
+                                                                          "假设买方接受此报价，且 FLOW 不新增融资。")}
         return out
     pic = cached_picture(rt, offer_id, lang)
     drawn = {p["key"]: p for p in (pic["paths"] if pic.get("available") else [])}
@@ -164,6 +166,7 @@ def path_words(rt: Any, buyer: str, offer_id: str, verdict: Any | None, books: B
         if p is not None and p.get("series") and p.get("lowest_fen") is not None:
             words.update(lowest_display=p["lowest_short"], lowest_when=p["lowest_when"],
                          lowest_when_text=_lowest_text(p["lowest_fen"], p["series"], floor, lang))
+        words["scenario_assumption_text"] = p.get("scenario_assumption_text") if p is not None else None
         words["limit_word"], words["limit_text"] = _limit(p["authority"] if p is not None else None, lang)
         try:
             traj = project(state, books.with_(obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
