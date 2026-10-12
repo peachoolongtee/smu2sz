@@ -80,6 +80,8 @@
         ]
       },
       "financing_href": null,
+      "basis": "OWED",
+      "basis_text": "应收：47 天前开票，已逾期 2 天",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥162,800.00"
     },
@@ -156,6 +158,8 @@
         ]
       },
       "financing_href": "/decisions/alert%3AALERT-RESERVE-42%3Av7",
+      "basis": "OWED",
+      "basis_text": "应收：32 天前开票，13 天后到期",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     },
@@ -232,6 +236,8 @@
         ]
       },
       "financing_href": null,
+      "basis": "OWED",
+      "basis_text": "应收：2 天前开票，43 天后到期",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -258,7 +264,8 @@
     "net_total_display": "¥801,017.81",
     "net_total_text": "如果每张发票都在到期日付款（已逾期的则今天付款）",
     "headline": "Foshan 的 ¥163k 已逾期 2 天。",
-    "headline_second": "全部回款后约有 ¥801k 可供使用，已扣除融资的还款。"
+    "headline_second": "全部回款后约有 ¥801k 可供使用，已扣除融资的还款。",
+    "scheduled_note": "另有 ¥420,000 计划于 28 天后开票；目前尚未应收"
   },
   "partial": null,
   "last_read_when": "今天",

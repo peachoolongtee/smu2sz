@@ -78,7 +78,9 @@
             "label_short": "Receipt",
             "amount_fen": 25720000,
             "amount_display": "¥257,200.00",
-            "amount_short": "¥257k"
+            "amount_short": "¥257k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           },
           {
             "kind": "DISCOUNT",
@@ -86,7 +88,9 @@
             "label_short": "Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "amount_fen": -218620,
             "amount_display": "−¥2,186.20",
-            "amount_short": "−¥2k"
+            "amount_short": "−¥2k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           }
         ],
         "net_fen": 25501380,
@@ -392,7 +396,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 16280000,
             "amount_display": "¥162,800.00",
-            "amount_short": "¥163k"
+            "amount_short": "¥163k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           },
           {
             "kind": "INTEREST",
@@ -552,7 +558,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           },
           {
             "kind": "FLOW",
@@ -848,7 +856,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1136,7 +1146,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1547,6 +1559,8 @@
         "day": 2,
         "when": "in 2 days",
         "kind": "receipt",
+        "basis": "AGREED",
+        "basis_text": "under the agreement made today",
         "label": "Foshan pays",
         "note": null,
         "planned": false,
@@ -1586,6 +1600,8 @@
         "day": 12,
         "when": "in 12 days",
         "kind": "payroll",
+        "basis": null,
+        "basis_text": null,
         "label": "payroll is paid",
         "note": null,
         "planned": false,
@@ -1625,6 +1641,8 @@
         "day": 20,
         "when": "in 20 days",
         "kind": "supplier",
+        "basis": null,
+        "basis_text": null,
         "label": "a supplier payment goes out",
         "note": null,
         "planned": false,
@@ -1664,6 +1682,8 @@
         "day": 30,
         "when": "in 30 days",
         "kind": "lowest",
+        "basis": null,
+        "basis_text": null,
         "label": "a loan repayment goes out",
         "note": "cash at its lowest, ¥300k, at your minimum",
         "planned": false,
@@ -1703,6 +1723,8 @@
         "day": 32,
         "when": "in 32 days",
         "kind": "receipt",
+        "basis": "AGREED",
+        "basis_text": "under the agreement made today",
         "label": "Foshan pays",
         "note": null,
         "planned": false,
@@ -1770,7 +1792,9 @@
             "label_short": "Receipt",
             "amount_fen": 25720000,
             "amount_display": "¥257,200.00",
-            "amount_short": "¥257k"
+            "amount_short": "¥257k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           },
           {
             "kind": "DISCOUNT",
@@ -1778,7 +1802,9 @@
             "label_short": "Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days",
             "amount_fen": -218620,
             "amount_display": "−¥2,186.20",
-            "amount_short": "−¥2k"
+            "amount_short": "−¥2k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           }
         ],
         "net_fen": 25501380,
@@ -2084,7 +2110,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 16280000,
             "amount_display": "¥162,800.00",
-            "amount_short": "¥163k"
+            "amount_short": "¥163k",
+            "basis": "AGREED",
+            "basis_text": "under the agreement made today"
           }
         ],
         "net_fen": 16280000,
@@ -2228,7 +2256,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           },
           {
             "kind": "FLOW",
@@ -2524,7 +2554,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -2812,7 +2844,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,

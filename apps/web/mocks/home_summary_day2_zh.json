@@ -357,7 +357,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 16280000,
             "amount_display": "¥162,800.00",
-            "amount_short": "¥163k"
+            "amount_short": "¥163k",
+            "basis": "OWED",
+            "basis_text": "应收：15 天前开票，30 天后到期"
           },
           {
             "kind": "INTEREST",
@@ -517,7 +519,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           },
           {
             "kind": "FLOW",
@@ -813,7 +817,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           }
         ],
         "net_fen": 42000000,
@@ -1101,7 +1107,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           }
         ],
         "net_fen": 42000000,
@@ -1489,9 +1497,9 @@
     "status_word": "安全，但余量不多",
     "status_tone": "warn",
     "headline_conditional": "按当前方案，您的现金是安全的。",
-    "headline_note": "未来 120 天现金都不低于您 ¥300k 的最低现金，前提是Foshan Home Retail Co.将于30 天后付款（按计划）。28 天后会触及最低现金。",
+    "headline_note": "未来 120 天现金都不低于您 ¥300k 的最低现金，前提是Foshan将于30 天后付款（按计划）。28 天后会触及最低现金。",
     "assumptions": [
-      "Foshan Home Retail Co.将于30 天后按计划支付 ¥163k。",
+      "Foshan将于30 天后按计划支付 ¥163k。",
       "已录入的工资、供应商和债务还款按计划支付。"
     ],
     "facts": [
@@ -1520,7 +1528,7 @@
         "tone": "neutral",
         "value_fen": 16280000,
         "value_short": "¥163k",
-        "note": "Foshan Home Retail Co.，30 天后",
+        "note": "Foshan，30 天后",
         "value_display": "¥162,800.00"
       }
     ],
@@ -1530,6 +1538,8 @@
         "day": 12,
         "when": "10 天后",
         "kind": "payroll",
+        "basis": null,
+        "basis_text": null,
         "label": "发放工资",
         "note": null,
         "planned": false,
@@ -1569,6 +1579,8 @@
         "day": 20,
         "when": "18 天后",
         "kind": "supplier",
+        "basis": null,
+        "basis_text": null,
         "label": "支付供应商款项",
         "note": null,
         "planned": false,
@@ -1608,6 +1620,8 @@
         "day": 30,
         "when": "28 天后",
         "kind": "lowest",
+        "basis": null,
+        "basis_text": null,
         "label": "一笔贷款还款支出",
         "note": "现金降到最低，¥300k，正好是您的最低现金",
         "planned": false,
@@ -1647,7 +1661,9 @@
         "day": 32,
         "when": "30 天后",
         "kind": "receipt",
-        "label": "Foshan Home Retail Co.付款",
+        "basis": "OWED",
+        "basis_text": "应收：15 天前开票，30 天后到期",
+        "label": "Foshan付款",
         "note": null,
         "planned": false,
         "amount_fen": 16280000,
@@ -1658,7 +1674,7 @@
         "room_after_fen": 1197223,
         "room_after_short": "比您的最低现金高 ¥12k",
         "tone": "ok",
-        "explain": "Foshan Home Retail Co.支付 ¥163k。其中 ¥151k 用于偿还Bank credit line。现金从 ¥300k 升至 ¥312k，比您的最低现金高 ¥12k。",
+        "explain": "Foshan支付 ¥163k。其中 ¥151k 用于偿还Bank credit line。现金从 ¥300k 升至 ¥312k，比您的最低现金高 ¥12k。",
         "effect_rows": [
           {
             "label": "此前现金",
@@ -1993,7 +2009,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 16280000,
             "amount_display": "¥162,800.00",
-            "amount_short": "¥163k"
+            "amount_short": "¥163k",
+            "basis": "OWED",
+            "basis_text": "应收：15 天前开票，30 天后到期"
           }
         ],
         "net_fen": 16280000,
@@ -2137,7 +2155,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           },
           {
             "kind": "FLOW",
@@ -2433,7 +2453,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           }
         ],
         "net_fen": 42000000,
@@ -2721,7 +2743,9 @@
             "label_short": "来自Foshan Home Retail Co.的收款",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "按计划：尚未开票"
           }
         ],
         "net_fen": 42000000,
@@ -2905,7 +2929,7 @@
   "receivables_card": {
     "outstanding_short": "¥163k",
     "overdue_short": "¥0",
-    "next_text": "Foshan Home Retail Co.，30 天后 ¥163k",
+    "next_text": "Foshan，30 天后 ¥163k",
     "financing_note": null,
     "href": "/receivables"
   },

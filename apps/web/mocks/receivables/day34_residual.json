@@ -80,6 +80,8 @@
         ]
       },
       "financing_href": null,
+      "basis": "OWED",
+      "basis_text": "owed: invoiced 51 days ago, overdue by 6 days",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     },
@@ -156,6 +158,8 @@
         ]
       },
       "financing_href": "/decisions/alert%3AALERT-RESERVE-34%3Av6",
+      "basis": "OWED",
+      "basis_text": "owed: invoiced 36 days ago, due in 9 days",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     },
@@ -232,6 +236,8 @@
         ]
       },
       "financing_href": null,
+      "basis": "OWED",
+      "basis_text": "owed: invoiced 6 days ago, due in 39 days",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -258,7 +264,8 @@
     "net_total_display": "¥1,103,604.88",
     "net_total_text": "if every invoice is paid on its due day, or today for one already late",
     "headline": "Foshan missed its promise to pay ¥420k early.",
-    "headline_second": "About ¥1,104k becomes available once every invoice is collected, after the financing is repaid."
+    "headline_second": "About ¥1,104k becomes available once every invoice is collected, after the financing is repaid.",
+    "scheduled_note": "¥420,000 more is scheduled to be invoiced in 24 days; it is not owed yet"
   },
   "partial": null,
   "last_read_when": "today",
