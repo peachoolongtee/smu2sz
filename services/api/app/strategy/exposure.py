@@ -395,11 +395,19 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
     Cached by the books, the mandate, the day, the commitments, the buyer, the verdict, the language and the inputs in force, with
     single-flight; `response` is not part of the key. `EngineError` when the books cannot be projected; `ValueError` for a
     `response` that names no path."""
+    return buyer_exposure(rt, books, mandate, day, offer.counterparty_id, offer.offer_id, verdict, lang, commitments, inputs,
+                          response=response, spare=spare)
+
+
+def buyer_exposure(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id: str, offer_id: str, verdict: Verdict | None,
+                   lang: str, commitments: Sequence[Commitment], inputs: CustomerInputs, *, response: str = ASKED,
+                   spare: bool = True) -> dict[str, Any]:
+    """`exposure` for a buyer by id: `offer_id` is "" and `verdict` None for a buyer with no open offer (the one asked path then has no
+    package, and its stress, capacity and concentration are those of the books as they stand). Same cache, same rules."""
     lang = "zh" if lang == "zh" else "en"
     lead = lead_key(verdict, response)
-    buyer_id = offer.counterparty_id
     key = cache_key(books.state, mandate, day, commitments, "exposure", "|".join(o.model_dump_json() for o in books.obligations),
-                    buyer_id, lang, inputs.digest(), verdict.id if verdict is not None else "", offer.offer_id)
+                    buyer_id, lang, inputs.digest(), verdict.id if verdict is not None else "", offer_id)
 
     def compute() -> dict[str, Any]:
         return _compute_base(rt, books, mandate, day, buyer_id, verdict, lang, commitments, inputs)
@@ -431,5 +439,5 @@ def exposure(rt: Source, books: Books, mandate: Mandate, day: int, offer: Compil
     return displayed(body)
 
 
-__all__ = ["ASKED", "MATERIAL_SHARE_BP", "STRESS_DELAY_DAYS", "Source", "capacity_sentence", "clear_cache", "concentration", "exposure",
+__all__ = ["ASKED", "MATERIAL_SHARE_BP", "STRESS_DELAY_DAYS", "Source", "buyer_exposure", "capacity_sentence", "clear_cache", "concentration", "exposure",
            "extra_delays", "lead_key", "payment_behaviour", "stress_sentence", "window_row"]

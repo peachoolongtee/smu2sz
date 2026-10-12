@@ -16,7 +16,7 @@ from app.alerts import reconcile
 from app.alerts.models import PromiseStatus
 from app.api.auth import require_owner
 from app.api.display import displayed
-from app.api.presentation import last_read
+from app.api.presentation import Lang, last_read
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import CommitmentStatus, DocumentKind, DocumentStatus
@@ -38,29 +38,36 @@ def _contract_refs(records: list[Any]) -> dict[str, str]:
     return out
 
 
+def read_rows(rt: Any, lang: Lang) -> tuple[Any, int, dict[str, Any]]:
+    """(state, today, body) of the receivable rows and their summary (call under `rt.lock`; the route and the customer overview share it).
+    422 when the books cannot be projected."""
+    state, store = rt.store.get_state(), rt.store
+    today = max(rt.day, state.as_of_day)
+    commitments = store.commitments()
+    try:
+        books = current_books(state, commitments)
+    except EngineError as exc:
+        raise HTTPException(422, f"cannot project: {exc}") from None
+    report = reconcile(store, day=today)
+    missed = frozenset(p.receivable_id for p in report.promised if p.status == PromiseStatus.LAPSED)
+    taken = {c.offer_id for c in commitments if c.status != CommitmentStatus.REVOKED}
+    latest = {}
+    for v in store.verdicts():  # the last verdict stored for each offer, newest offer first
+        latest[v.offer_id] = v
+    open_offers = []
+    for offer_id, verdict in reversed(list(latest.items())):
+        offer = store.get_offer(offer_id)
+        if offer is not None and offer_id not in taken:
+            open_offers.append(OpenOffer(offer_id, offer.counterparty_id, verdict))
+    refs = _contract_refs(store.contract_records())
+    body = receivable_rows(state, today, lang, books=books, commitments=commitments, promise_missed=missed,
+                           open_offers=open_offers, contract_refs=refs)
+    return state, today, body
+
+
 @router.get("/receivables")
 def get_receivables(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
-        state, store = rt.store.get_state(), rt.store
-        today = max(rt.day, state.as_of_day)
-        commitments = store.commitments()
-        try:
-            books = current_books(state, commitments)
-        except EngineError as exc:
-            raise HTTPException(422, f"cannot project: {exc}") from None
-        report = reconcile(store, day=today)
-        missed = frozenset(p.receivable_id for p in report.promised if p.status == PromiseStatus.LAPSED)
-        taken = {c.offer_id for c in commitments if c.status != CommitmentStatus.REVOKED}
-        latest = {}
-        for v in store.verdicts():  # the last verdict stored for each offer, newest offer first
-            latest[v.offer_id] = v
-        open_offers = []
-        for offer_id, verdict in reversed(list(latest.items())):
-            offer = store.get_offer(offer_id)
-            if offer is not None and offer_id not in taken:
-                open_offers.append(OpenOffer(offer_id, offer.counterparty_id, verdict))
-        refs = _contract_refs(store.contract_records())
-        body = receivable_rows(state, today, lang, books=books, commitments=commitments, promise_missed=missed,
-                               open_offers=open_offers, contract_refs=refs)
+        state, today, body = read_rows(rt, lang)
     return displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, **last_read(today, lang)})
