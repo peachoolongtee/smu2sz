@@ -33,6 +33,17 @@ def _no_fallback(caplog):
     assert not [r for r in caplog.records if "could not be built" in r.getMessage()], "the hybrid fell back"
 
 
+@pytest.fixture(autouse=True)
+def _fresh_pictures():
+    """The offer picture is cached by state version, day and offer; a test that moves the books by hand must not leave its picture to the
+    next test that reaches the same key."""
+    from app.api import offer_picture
+
+    offer_picture._cache.clear()
+    yield
+    offer_picture._cache.clear()
+
+
 def _offer(client) -> str:
     offer = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]
     client.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
@@ -186,8 +197,10 @@ def test_the_funding_recommendation_leads_while_cash_is_unsafe_and_the_deal_foll
     funding, deal = att["items"]
     assert funding["title"] == "Your cash reserve becomes unsafe in 12 days. FLOW recommends securing ¥405k of funding."
     assert [(f["label"], f["value"], f["tone"]) for f in funding["facts"]] == [
-        ("Estimated cost", "¥3,113.93", "neutral"), ("Credit line draw", "¥150k today (planned)", "neutral"),
-        ("Invoice financing", "¥255k in 3 days (planned)", "neutral"), ("Authority", "within your signed limits", "ok")]
+        ("Estimated cost", "¥3,113.93", "neutral"), ("Funds arrive", "in 3 days", "neutral"),
+        ("Credit line draw", "¥150k today (planned)", "neutral"), ("Invoice financing", "¥255k in 3 days (planned)", "neutral"),
+        ("Authority", "within your signed limits", "ok")]
+    assert funding["facts"][1]["value"] == h["next_action"]["lands_when"]  # the plain landing fact the page pins (`next-action-lands`)
     assert funding["primary"]["href"] == "/cash#cash-options"
     # the deal reads from the picture the Deals page draws: Option A, once, ¥3,027.77
     assert deal["title"].endswith("FLOW recommends countering with Option A.")
@@ -725,10 +738,113 @@ def test_the_words_of_the_plan_in_chinese(client):
     assert by[30]["label"] == "一笔贷款还款支出" and by[30]["note"] == "现金降到最低，¥300k，正好是您的最低现金"
     assert zh["cash"]["plan_line_label"] == "如果您执行 FLOW 的方案"
     funding = zh["attention"]["items"][0]
-    assert [f["value"] for f in funding["facts"][1:3]] == ["¥150k，今天（计划中）", "¥255k，3 天后（计划中）"]
+    assert [f["value"] for f in funding["facts"][2:4]] == ["¥150k，今天（计划中）", "¥255k，3 天后（计划中）"]
     assert [r["label"] for r in by[12]["effect_rows"]] == ["此前现金", "此后现金", "最低现金储备", "高于储备的现金"]
     _run_plan(client)
     zh = client.get("/home", params={"lang": "zh"}).json()
     assert zh["cash"]["plan_line_label"] == "采用 FLOW 的方案"
     landing = next(i for i in zh["attention"]["items"] if i["kind"] == "landing")
     assert landing["facts"][0]["value"] == "¥255k，3 天后（已安排）"
+
+
+# ---------------------------------------------------------------- ticket #111, review: legs, the cause of the low, counted landings, approval, partial runs
+
+
+def _action(*legs):
+    return {"kind": "RESERVE_BREACH_AHEAD", "alert_id": "A1", "receive_short": "¥405k", "cost_total_display": "¥10.00", "lands_when": "in 3 days",
+            "needs_owner": False, "legs": list(legs)}
+
+
+def _leg(kind, amount, when, facility="Bank credit line"):
+    return {"operation_kind": kind, "facility_name": facility, "amount_fen": amount, "lands_when": when}
+
+
+def test_only_the_legs_that_land_get_a_fact_and_authority_stays_last():
+    c = SimpleNamespace(lang="en", headline="H.", action=_action(
+        _leg("DRAW_FACILITY", 15_000_000, "today"), _leg("SUBMIT_INVOICE_FOR_FINANCING", 25_500_000, "in 3 days", "Invoice financing (x)"),
+        _leg("APPLY_FOR_FACILITY", None, None, "Equipment lease"), _leg("REPAY_FACILITY", 5_000_000, None)))
+    facts = home_hybrid._funding_item(c)["facts"]
+    assert [(f["label"], f["value"]) for f in facts] == [
+        ("Estimated cost", "¥10.00"), ("Funds arrive", "in 3 days"), ("Credit line draw", "¥150k today (planned)"),
+        ("Invoice financing", "¥255k in 3 days (planned)"), ("Authority", "within your signed limits")]
+    assert not any("None" in f["value"] or "¥0 " in f["value"] for f in facts)
+
+
+def test_an_apply_and_a_repay_leg_alone_leave_the_plain_facts_only():
+    c = SimpleNamespace(lang="en", headline="H.", action={**_action(_leg("APPLY_FOR_FACILITY", None, None), _leg("REPAY_FACILITY", 1, None)),
+                                                          "lands_when": None})
+    assert [f["label"] for f in home_hybrid._funding_item(c)["facts"]] == ["Estimated cost", "Authority"]
+
+
+def test_the_lowest_row_names_the_largest_outflow_not_a_receipt_that_day():
+    from app.domain.models import LedgerEventKind as K
+
+    ev = lambda kind, fen, ref, label: SimpleNamespace(kind=kind, amount_fen=fen, ref=ref, label=label)
+    day = [ev(K.RECEIPT, 42_000_000, "RCV-A", "Receipt"), ev(K.FLOW, -34_000_000, None, "Payroll"), ev(K.FLOW, -4_500_000, None, "Debt service"),
+           ev(K.INTEREST, -90_000_000, "FAC-IF", "Interest")]
+    assert home_hybrid._main_event(day).label == "Receipt"  # the other rows are named by their largest move
+    assert home_hybrid._cause_event(day).label == "Payroll"  # the low is caused by an outflow; charges never name a day
+    assert home_hybrid._cause_event([ev(K.DRAW, 5, "FAC-LINE", "D"), ev(K.ADVANCE, 9, "FAC-IF", "A")]).label == "A"  # no outflow: the largest
+
+
+def _fake_read(line_events, base_events, lang="en"):
+    state = get_runtime().store.get_state()
+    day = lambda n, ev, op, cl: SimpleNamespace(day=n, opening_fen=op, closing_fen=cl, events=ev)
+    line = SimpleNamespace(days=[day(0, [], 500, 500), day(3, line_events, 500, 700), day(5, [], 700, 650)])
+    base = SimpleNamespace(days=[day(0, [], 500, 500), day(3, base_events, 500, 600), day(5, [], 600, 550)])
+    return SimpleNamespace(state=state, lang=lang, today=0, picture_days=30, floor=300, plan_traj=line, traj=base, waiting=False), line
+
+
+def test_two_identical_landings_are_counted_as_two():
+    from app.domain.models import LedgerEventKind as K
+
+    one = SimpleNamespace(kind=K.ADVANCE, amount_fen=100, ref="FAC-IF", label="Advance")
+    c, line = _fake_read([one, one], [one])  # the books hold one such landing already; the plan adds the second
+    row = next(e for e in home_hybrid._rail(c, line, None, "none") if e["day"] == 3)
+    assert row["planned"] is True
+    c, line = _fake_read([one, one], [one, one])  # the books hold both: nothing here is the plan's
+    assert next(e for e in home_hybrid._rail(c, line, None, "none") if e["day"] == 3)["planned"] is False
+
+
+def test_a_plan_waiting_on_approval_says_approve_not_run(client):
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+
+    rt = get_runtime()
+    _offer(client)
+    rt.store.put_mandate(sign(rt.store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    a = client.get("/home").json()["next_action"]
+    client.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
+    h = client.get("/home").json()
+    assert h["next_action"]["pending_approval_id"] and h["cash"]["plan_line_label"] == "If you approve FLOW's plan"
+    by = _rail_by_day(h)
+    assert by[3]["label"] == "invoice financing would arrive, if you approve the plan" and by[3]["planned"] is True
+    zh = client.get("/home", params={"lang": "zh"}).json()
+    assert zh["cash"]["plan_line_label"] == "如果您批准 FLOW 的方案"
+    assert _rail_by_day(zh)[3]["label"] == "发票融资将到账，前提是您批准方案"
+
+
+def test_a_plan_run_in_part_plans_only_the_leg_that_has_not_run(client):
+    _offer(client)
+    rt = get_runtime()
+    op = {"kind": "DRAW_FACILITY", "op_id": "d1", "idempotency_key": "d1", "mandate_version": rt.store.get_mandate().version,
+          "requested_by": "AGENT", "facility_id": "FAC-LINE", "amount_fen": 15_000_000}
+    assert client.post("/operations", json=op).json()["result"]["status"] == "EXECUTED"
+    h = client.get("/home").json()
+    by = _rail_by_day(h)
+    assert 0 not in by  # the draw is in the cash already: no row says it would arrive
+    assert (by[3]["planned"], by[3]["label"]) == (True, "invoice financing would arrive, if you run the plan")
+    assert all(not e["planned"] for d, e in by.items() if d != 3)
+    assert h["cash"]["plan_line_label"] == "If you run FLOW's plan"
+    funding = h["attention"]["items"][0]
+    assert [f["label"] for f in funding["facts"]] == ["Estimated cost", "Funds arrive", "Invoice financing", "Authority"]
+
+
+def test_the_planned_state_is_only_a_legs_never_a_lots():
+    from app.api.financing_words import state_of
+    from app.domain.models import FundingLot
+
+    lot = FundingLot(id="L", facility_id="F", principal_fen=10, remaining_fen=10, request_day=0, arrival_day=3)
+    assert state_of(None, planned=True) == "PLANNED" and state_of(None) == "NONE"
+    assert state_of(lot, planned=True) == "ARRANGED"  # a lot is arranged, received or repaid, whatever the caller says
+    assert state_of(lot.model_copy(update={"settled": True}), planned=True) == "RECEIVED"
