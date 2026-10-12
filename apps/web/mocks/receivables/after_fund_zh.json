@@ -76,6 +76,8 @@
         ]
       },
       "financing_href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
+      "basis": "OWED",
+      "basis_text": "应收：13 天前开票，32 天后到期",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -102,7 +104,8 @@
     "net_total_display": "¥162,727.71",
     "net_total_text": "如果每张发票都在到期日付款",
     "headline": "预计从 Foshan 收到 ¥420k。",
-    "headline_second": "回款后约有 ¥163k 可供使用，已扣除融资的还款。"
+    "headline_second": "回款后约有 ¥163k 可供使用，已扣除融资的还款。",
+    "scheduled_note": "另有 ¥420,000 计划于 2 天后开票；目前尚未应收"
   },
   "partial": null,
   "last_read_when": "今天",

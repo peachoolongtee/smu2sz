@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
+import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
@@ -15,6 +16,9 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
  * returns to the chosen one. Pointing at the plot moves the dotted cursor with the pointer and shows the lines' figures; leaving returns the cursor
  * to the chosen event. The late-payment scenario draws the server's stress series dashed red in place of the plan line, replaces the panel with the
  * server's assumption and the stress sentence, and widens the window to the days the server says it needs; switching back restores everything.
+ * While a reply to the buyer's offer waits (`cash.pending`) its path is a third line, dashed in the brand colour at 60% and named in the legend, with the server's
+ * sentence for the dashed line under the picture and the receipts it would move listed beneath; it is never the plan line, and the late scenario leaves it out.
+ * A receipt says what it rests on (`basis_text`) in its rail row and in the tooltip; a scheduled one is a grey mark and a quieter word.
  *
  * Every word and figure is a string the server sent; `*_fen` and `day` numbers only place a mark (INVARIANT 13).
  */
@@ -28,10 +32,11 @@ const MARK: Record<Mark, { line: string; ink: string; solid: string; chip: strin
   red: { line: "stroke-bad-solid", ink: "fill-bad-fg", solid: "fill-bad-fg stroke-bad-fg", chip: "border-bad-solid text-bad-fg bg-surface", chipOn: "border-bad-fg bg-bad-fg text-surface" },
 };
 
-/** The mark's tone from the server's kind and tone: the lowest point amber, landings and receipts green, the rest grey; red only where the server says cash is under the minimum. */
+/** The mark's tone from the server's kind and tone: the lowest point amber, landings and receipts green (a scheduled receipt, not yet invoiced, grey), the rest grey; red only where the server says cash is under the minimum. */
 function markOf(e: HomeRailEvent): Mark {
   if (e.tone === "bad") return "red";
   if (e.kind === "lowest") return "amber";
+  if (e.kind === "receipt" && e.basis === "SCHEDULED") return "grey";
   return e.kind === "landing" || e.kind === "receipt" ? "green" : "grey";
 }
 
@@ -105,6 +110,9 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
+  // The buyer's reply as an alternative: drawn only with its series and its label, and never in the late scenario (that line is the stressed plan).
+  const pending = !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
+  const pendingSeries = pending?.series ?? null;
 
   // ---- the window: the server's picture window, 60 and 120 days; the late scenario widens it to the days the server says it needs
   const base = cash.picture_days || 30;
@@ -119,17 +127,18 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
 
   const mainPts = mainSeries.filter((p) => p.day >= today);
   if (!mainPts.length) return null;
-  const lastData = Math.max(today + 1, ...[mainSeries, counterSeries ?? []].map((s) => s[s.length - 1]?.day ?? today));
+  const lastData = Math.max(today + 1, ...[mainSeries, counterSeries ?? [], pendingSeries ?? []].map((s) => s[s.length - 1]?.day ?? today));
   const end = Math.min(today + windowDays, lastData, today + (cash.horizon_days || windowDays));
   const last = Math.max(end - today, 1);
   const mainSegs = segments(mainPts, end);
   const counterSegs = counterSeries ? segments(counterSeries.filter((p) => p.day >= today), end) : null;
+  const pendingSegs = pendingSeries ? segments(pendingSeries.filter((p) => p.day >= today), end) : null;
   const planSegs = late ? segments(planSeries.filter((p) => p.day >= today), end) : mainSegs;
 
   // ---- the scale: the server's axis for this window (widened only for what is drawn)
   const axis = cash.axes?.[String(windowDays)] ?? cash.axis ?? null;
   const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
-  const levels = [floor, ...mainSegs.map((s) => s.v), ...(counterSegs ?? []).map((s) => s.v)];
+  const levels = [floor, ...mainSegs.map((s) => s.v), ...(counterSegs ?? []).map((s) => s.v), ...(pendingSegs ?? []).map((s) => s.v)];
   const lo = Math.min(...levels, ...(axisOk ? [] : [0]));
   const hi = Math.max(...levels);
   const yLo = axisOk && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
@@ -191,6 +200,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   const dots = cursorDay === null ? [] : [
     { key: "main", y: yOf(valueAt(mainSegs, cursorDay)), cls: late ? "fill-bad-solid" : "fill-brand-600" },
     ...(counterSegs ? [{ key: "counter", y: yOf(valueAt(counterSegs, cursorDay)), cls: "fill-ink-3" }] : []),
+    ...(pendingSegs ? [{ key: "pending", y: yOf(valueAt(pendingSegs, cursorDay)), cls: "fill-brand-600/60" }] : []),
   ];
 
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -233,9 +243,14 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
   const tipEvent = tipAt ? rail.find((e) => e.day === tipAt.day) : undefined;
   const flip = tipAt ? tipAt.x > W * 0.55 : false;
   const lines = [
-    { key: "main", name: late ? lateName : planName, series: mainSeries, dash: late ? "dashed" : "solid", swatch: late ? "stroke-bad-solid" : "stroke-brand-600" },
-    ...(counterSeries ? [{ key: "counter", name: counterName, series: counterSeries, dash: "dashed", swatch: "stroke-ink-3" }] : []),
+    { key: "main", name: late ? lateName : planName, series: mainSeries, dash: late ? "dashed" : "solid", swatch: late ? "stroke-bad-solid" : "stroke-brand-600", opacity: 1 },
+    ...(counterSeries ? [{ key: "counter", name: counterName, series: counterSeries, dash: "dashed", swatch: "stroke-ink-3", opacity: 1 }] : []),
+    ...(pending && pendingSeries ? [{ key: "pending", name: pending.label ?? "", series: pendingSeries, dash: "dashed", swatch: "stroke-brand-600", opacity: 0.6 }] : []),
   ];
+  // The receipts the reply would move, in the server's words; listed under the picture beside the sentence that says what dashed means.
+  const pendingRows: BasisRow[] = (pending?.receipt_rows ?? []).flatMap((r, i) =>
+    r.basis_text ? [{ key: `${r.day}-${r.kind}-${i}`, label: r.label_short ?? "", amount: r.amount_short, when: r.when, text: r.basis_text, basis: r.basis }] : [],
+  );
 
   const onRailKey = (e: React.KeyboardEvent<HTMLElement>, i: number) => {
     const by = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
@@ -287,7 +302,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
             {lines.map((l) => (
               <li key={l.key} className="flex items-center gap-2" data-testid={`home-legend-${l.key}`}>
                 <svg width="22" height="8" aria-hidden className="shrink-0">
-                  <line x1="1" x2="21" y1="4" y2="4" strokeWidth={l.key === "main" ? 3 : 2} strokeLinecap={l.dash === "dashed" ? "butt" : "round"} strokeDasharray={l.dash === "dashed" ? (l.key === "main" ? "6 3" : "4 3") : undefined} className={l.swatch} />
+                  <line x1="1" x2="21" y1="4" y2="4" strokeWidth={l.key === "main" ? 3 : 2} strokeLinecap={l.dash === "dashed" ? "butt" : "round"} strokeDasharray={l.dash === "dashed" ? (l.key === "main" ? "6 3" : "4 3") : undefined} opacity={l.opacity} className={l.swatch} />
                 </svg>
                 {l.name}
               </li>
@@ -353,6 +368,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                 ) : null}
 
                 {counterSegs ? <path data-testid="home-line-counter" d={pathOf(counterSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={2} className="stroke-ink-3" opacity={0.9} /> : null}
+                {pendingSegs ? <path data-testid="home-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} /> : null}
                 <path
                   data-testid={late ? "home-line-late" : "home-line-plan"}
                   d={pathOf(mainSegs)}
@@ -409,11 +425,16 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                     <span className="first-letter:uppercase">{tipEvent.label}</span>, {tipEvent.when}
                   </p>
                 ) : null}
+                {tipEvent?.basis_text ? (
+                  <p className="mt-0.5 text-[13px] leading-snug text-ink-2" data-testid="home-tooltip-basis">
+                    {tipEvent.basis_text}
+                  </p>
+                ) : null}
                 {lines.map((l) => (
                   <p key={l.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
                       <svg width="14" height="6" aria-hidden className="shrink-0">
-                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} className={l.swatch} />
+                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} opacity={l.opacity} className={l.swatch} />
                       </svg>
                       <span className="truncate">{l.name}</span>
                     </span>
@@ -423,6 +444,14 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
               </div>
             ) : null}
           </div>
+
+          {/* What solid and dashed mean, in the server's sentence, and the receipts the dashed line would move. Present only while a reply waits for the buyer. */}
+          {pending && cash.receipts_legend_text ? (
+            <p className="text-[13px] leading-snug text-ink-2" data-testid="home-receipts-legend">
+              {cash.receipts_legend_text}
+            </p>
+          ) : null}
+          {pending ? <BasisRows rows={pendingRows} label={pending.label ?? ""} pending testId="home-pending-rows" /> : null}
 
           {/* The same picture as a table, for a screen reader and anyone who prefers numbers: each key event and the lines' cash that day. */}
           <div className="sr-only">
@@ -547,6 +576,12 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
                         </span>
                       </span>
                       <span className="block text-xs text-ink-3">{e.when}</span>
+                      {/* What the receipt rests on, in the server's sentence; a scheduled one (not invoiced yet) is a shade quieter. */}
+                      {e.basis_text ? (
+                        <span className={`mt-0.5 block text-[13px] leading-snug ${e.basis === "SCHEDULED" ? "text-ink-3" : "text-ink-2"}`} data-testid={`rail-basis-${i}`} data-basis={e.basis ?? undefined}>
+                          {e.basis_text}
+                        </span>
+                      ) : null}
                       {lowest && (e.note || e.room_after_short) ? (
                         <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
                           {e.note || e.room_after_short}

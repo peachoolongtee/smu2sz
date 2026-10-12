@@ -742,7 +742,7 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return withHomePatch(home.mockHome(dealt, lang));
+  return withHomePatch(home.mockHome(dealt, lang, openOfferStage() === "evaluated"));
 }
 
 /**

@@ -48,6 +48,8 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
+// home_summary_day0_counter[_zh].json is GET /home on the opening books with the package offer read and no reply sent (cash.pending and its legend; ticket #116).
+//
 // --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
 // FLOW has read it, on the opening books. One read carries every path (the sentences of every path are in `band.by_path`), so there is no per-response file. The API needs
 // FEATURE_EXPOSURE=1 (and FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 as above):
@@ -59,6 +61,9 @@
 // exposure of that deal's decision (the aside's late-payment test). buyer_exposure[_zh] and buyer_exposure_day34[_zh] are GET /buyers/BUYER-1/exposure on
 // the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
 // buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
+//
+// --no-exposure skips the three exposure reads (buyer_exposure*, exposure_offer*): run it against an API WITHOUT FEATURE_EXPOSURE to record the home reads the specs
+// expect (stress_available false); run again with the flag on for the exposure files and the receivables reads, and keep each run's own files.
 //
 // --overview records ONLY apps/web/mocks/customer_overview.json and exits (GET /customers/BUYER-1/overview, ticket #108): for each moment the
 // mock chooses among (lib/mock/handlers.ts overviewMoment), { en, zh } of { view, backs }, where `backs` holds the back link the server builds for
@@ -95,6 +100,7 @@ const STRATEGY = process.argv.includes("--strategy");
 const EXPOSURE = process.argv.includes("--exposure");
 const OVERVIEW = process.argv.includes("--overview");
 const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
+const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -263,6 +269,7 @@ const files = {};
 mkdirSync(join(OUT, "receivables"), { recursive: true });
 /** GET /buyers/BUYER-1/exposure (the aside's late-payment test with no deal), in both languages, at the opening books and at day 34. */
 async function buyerExposure(name) {
+  if (NO_EXPOSURE) return; // the home is recorded with the exposure flag off (its stress is then absent, as the specs expect); the exposure files come from a run with it on
   for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
     const view = await live.getBuyerExposure("BUYER-1", lang);
     if (!view) throw new Error("GET /buyers/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1 from a branch that carries it (feat/connected-words)");
@@ -565,8 +572,12 @@ await reset();
   const read = await live.submitOffer({ fixture_id: "EX01_PACKAGE" });
   await live.evaluateOffer(read.offer.offer_id, "EX01_PACKAGE");
   await recvRead("offer");
+  // The home with the counter ready (the offer read, no reply sent): the pending alternative, drawn dashed (ticket #116). The mock serves it while the package offer is evaluated and unanswered.
+  files["home_summary_day0_counter.json"] = await live.getHome("en");
+  files["home_summary_day0_counter_zh.json"] = await live.getHome("zh");
+  if (!files["home_summary_day0_counter.json"].cash.pending?.receipt_rows?.length) throw new Error("the ready counter should reach the home as cash.pending: the API has changed");
   if (!files["receivables/offer.json"].rows.some((r) => r.pending_counter?.decision_id)) throw new Error("the open offer's counter should reach the invoice row as pending_counter: the API has changed");
-  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+  for (const [suffix, lang] of NO_EXPOSURE ? [] : [["", "en"], ["_zh", "zh"]]) {
     const exposure = await live.getDecisionExposure(dealId(read.offer.offer_id), lang);
     if (!exposure) throw new Error("GET /decisions/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1");
     files[`receivables/exposure_offer${suffix}.json`] = exposure;

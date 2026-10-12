@@ -19,7 +19,7 @@
       "lowest_when_text": "below it for 15 days",
       "limit_word": "EXCEEDED",
       "limit_text": "exceeded",
-      "share_after_text": "0%, for 15 days longer"
+      "share_after_text": "100%, for 15 days longer"
     },
     {
       "key": "CTR-193394b6ba8b",
@@ -30,7 +30,7 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "0%, paid 2 days after the offer"
+      "share_after_text": "100%, paid 2 days after the offer"
     },
     {
       "key": "CTR-6b07cbf70441",
@@ -41,7 +41,7 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "0%, for 10 days longer"
+      "share_after_text": "100%, for 10 days longer"
     },
     {
       "key": "do_nothing",
@@ -52,7 +52,7 @@
       "lowest_when_text": "below it for 20 days",
       "limit_word": null,
       "limit_text": null,
-      "share_after_text": "100%"
+      "share_after_text": "100%, until the due day"
     }
   ],
   "concentration": {

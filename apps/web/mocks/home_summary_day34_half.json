@@ -189,7 +189,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -485,7 +487,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -789,7 +793,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1077,7 +1083,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1394,7 +1402,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -1714,7 +1724,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -2018,7 +2030,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -2306,7 +2320,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -2702,6 +2718,8 @@
         "day": 37,
         "when": "in 3 days",
         "kind": "landing",
+        "basis": null,
+        "basis_text": null,
         "label": "invoice financing would arrive, if you run the plan",
         "note": null,
         "planned": true,
@@ -2741,6 +2759,8 @@
         "day": 42,
         "when": "in 8 days",
         "kind": "lowest",
+        "basis": null,
+        "basis_text": null,
         "label": "payroll is paid",
         "note": "cash at its lowest, ¥0, ¥300k below your minimum",
         "planned": false,
@@ -2780,6 +2800,8 @@
         "day": 47,
         "when": "in 13 days",
         "kind": "receipt",
+        "basis": "OWED",
+        "basis_text": "owed: invoiced 32 days ago, due in 13 days",
         "label": "Foshan pays",
         "note": null,
         "planned": false,
@@ -2819,6 +2841,8 @@
         "day": 60,
         "when": "in 26 days",
         "kind": "debt",
+        "basis": null,
+        "basis_text": null,
         "label": "debt service is paid",
         "note": null,
         "planned": false,
@@ -2858,6 +2882,8 @@
         "day": 77,
         "when": "in 43 days",
         "kind": "receipt",
+        "basis": "OWED",
+        "basis_text": "owed: invoiced 2 days ago, due in 43 days",
         "label": "Foshan pays",
         "note": null,
         "planned": false,
@@ -3033,7 +3059,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -3329,7 +3357,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -3633,7 +3663,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -3921,7 +3953,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,

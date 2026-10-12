@@ -1936,6 +1936,9 @@ export interface ReceivableRow {
   outstanding_display?: string;
   face_display?: string;
   due_when?: string;
+  /** What the payment rests on and the server's sentence for it ("owed: invoiced 13 days ago, due in 32 days"), the same words the cash picture says. */
+  basis?: ReceiptBasis | null;
+  basis_text?: string | null;
   past_due?: boolean;
   net?: ReceivableNet;
   financing_state?: FinancingState;
@@ -1968,6 +1971,8 @@ export interface ReceivablesRead {
     /** The page's two heading lines, chosen and written by the server ("¥420k expected from Foshan." and "About ¥163k becomes available at collection, after the financing is repaid."); the second is null when there is nothing to add. */
     headline?: string | null;
     headline_second?: string | null;
+    /** "¥420,000 more is scheduled to be invoiced in 2 days; it is not owed yet": billing that is not a receivable yet, so it has no row. Absent when there is none. */
+    scheduled_note?: string | null;
     net_total_display?: string;
     /** "if every invoice is paid on its due day" */
     net_total_text?: string;
@@ -2449,12 +2454,39 @@ export interface PictureAxis {
   max_display?: string;
 }
 
+/**
+ * What a receipt rests on, as the server read the books (ticket #116): OWED (an issued invoice under the terms in force), SCHEDULED (a recurring billing not yet
+ * invoiced), AGREED (timing or amount from a recorded agreement) or PENDING (only if the buyer accepts the reply). The words are `basis_text`; the code only
+ * chooses how a mark or a row is drawn.
+ */
+export type ReceiptBasis = "OWED" | "SCHEDULED" | "AGREED" | "PENDING";
+
+/** The buyer's reply as an alternative to the plan: the picture's own series for that path (drawn dashed, never as the plan line) and the receipts it moves. */
+export interface HomePending {
+  /** "If Foshan accepts Option A" */
+  label?: string | null;
+  series?: HomeSeriesPoint[] | null;
+  receipt_rows?: {
+    day: Day;
+    /** "in 2 days" */
+    when?: string;
+    kind: string;
+    label_short?: string;
+    amount_fen?: Fen;
+    amount_short?: string;
+    amount_display?: string;
+    basis?: ReceiptBasis | null;
+    /** "if Foshan accepts Option A: ¥257,200 paid 2 days after the offer" */
+    basis_text?: string | null;
+  }[];
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
-  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string }[];
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
   net_display?: string;
@@ -2624,6 +2656,9 @@ export interface HomeRailEvent {
   note?: string | null;
   /** A landing the plan would bring if the owner runs it (the plan has not run): said with the financing state word, never as a fact. */
   planned?: boolean;
+  /** On a receipt: what it rests on, and the server's sentence for it ("owed: invoiced 13 days ago, due in 32 days"). Absent or null on any other event. */
+  basis?: ReceiptBasis | null;
+  basis_text?: string | null;
   /** The day's effect as a table, from the figures the paragraph uses (cash before, cash after, the minimum, the room), label and figure as the server wrote them. */
   effect_rows?: { label: string; display: string }[];
 }
@@ -2774,6 +2809,9 @@ export interface HomeView {
     /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
     series: HomeSeriesPoint[];
     plan_series: HomeSeriesPoint[] | null;
+    /** While a reply to the buyer's offer waits to be accepted: that path as an alternative (never the plan), and the sentence that says what solid and dashed mean. Absent otherwise. */
+    pending?: HomePending | null;
+    receipts_legend_text?: string | null;
     /** The picture's y axis (range and labelled ticks), how many days it shows and its title ("Your cash, next 36 days"); absent from an older server. */
     axis?: PictureAxis | null;
     /** The same axis for each window the picture can show, keyed by days as a string ("30", "60", "120" and the picture's own). */

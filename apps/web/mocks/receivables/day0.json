@@ -76,6 +76,8 @@
         ]
       },
       "financing_href": null,
+      "basis": "OWED",
+      "basis_text": "owed: invoiced 13 days ago, due in 32 days",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -102,7 +104,8 @@
     "net_total_display": "¥420,000.00",
     "net_total_text": "if every invoice is paid on its due day",
     "headline": "¥420k expected from Foshan.",
-    "headline_second": "About ¥420k becomes available at collection."
+    "headline_second": "About ¥420k becomes available at collection.",
+    "scheduled_note": "¥420,000 more is scheduled to be invoiced in 2 days; it is not owed yet"
   },
   "partial": null,
   "last_read_when": "today",
