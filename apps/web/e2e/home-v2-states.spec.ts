@@ -253,7 +253,10 @@ async function look(context: BrowserContext, reads: Reads, s: State, extra?: (pa
 test.beforeEach(async ({ request }, testInfo) => {
   test.skip(testInfo.project.name !== "live", "live-only: the real API with FEATURE_HOME_V2 on");
   const health = await (await request.get(`${API}/health`)).json();
-  expect(health.features.home_v2, "the API under test must run with FEATURE_HOME_V2=1 (the config sets it for this spec)").toBe(true);
+  // The flag is set when this spec is named or E2E_HOME_V2=1 (playwright.config.ts): there it must be on, and a missing flag fails. In a whole-project run the API keeps the older Home and this spec has nothing to hold.
+  const flagged = process.env.E2E_HOME_V2 === "1" || process.argv.some((arg) => arg.includes("home-v2-states"));
+  if (!flagged) test.skip(!health.features.home_v2, "FEATURE_HOME_V2 is off on this API; run `e2e/home-v2-states.spec.ts --project=live` to set it");
+  else expect(health.features.home_v2, "the API under test must run with FEATURE_HOME_V2=1 (the config sets it for this spec)").toBe(true);
 });
 
 for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
