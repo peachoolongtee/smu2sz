@@ -19,8 +19,8 @@ agreement, the pending counter), `deal_offers.open_offers` and the offer picture
 exposure layer (concentration, payments, stress, capacity) and the decision record's log. The only arithmetic is the owner's two
 products of their own inputs: a year's contribution (sales times margin) and the open request's cost as a share of it, on a 12-month
 basis. Annual sales are the owner's input when there is one, else projected from the books (the recurring schedule and the receivables
-still to be issued over the next 12 months: "projected from your books"); the margin is the Demo's assumed 20% on the Demo's own books until the owner
-enters one. A decision is `kind` counter, request or offer_received (a received offer not yet read: "Read the offer", no authority
+still to be issued over the next 12 months: "projected from your books"); the margin is the Demo's assumed default (`config.DEMO_GROSS_MARGIN_BP`, provenance DEMO, whatever the books are called) until the owner
+enters one; one function reads it for this page and for the exposure routes' `customer_context`. A decision is `kind` counter, request or offer_received (a received offer not yet read: "Read the offer", no authority
 sentence). Each history row with an `href` carries its `link_label`. The page reads the top-level `note` for the exposure panel.
 
 Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence (hrefs carry them). The
@@ -35,7 +35,7 @@ import logging
 import re
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -43,13 +43,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.auth import require_owner
 from app.api.deal_offers import open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
-from app.api.offer_picture import cached_picture
+from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
 from app.api.presentation import Lang, agreement_words, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
 from app.api.workspace import _months
 from app.books import current_books
-from app.config import get_settings
+from app.config import DEMO_GROSS_MARGIN_BP, get_settings
 from app.decisions.identity import deal_id, decision_id_for, offer_id_of
 from app.decisions.state import DealState
 from app.domain.models import CompiledOffer, FinancialState, OperationStatus, Verdict
@@ -153,7 +153,33 @@ class _Read:
 PROJECTION_DAYS = 365  # annual sales projected from the books look this far ahead
 
 
-def _projected_sales_fen(r: _Read) -> int | None:
+class _Basis(Protocol):
+    """What a year's contribution is worked out from: the books, the day, the buyer and the owner's inputs. `_Read` is one;
+    `Held` (the exposure routes' customer context) is the other."""
+
+    @property
+    def state(self) -> FinancialState: ...
+    @property
+    def today(self) -> int: ...
+    @property
+    def buyer_id(self) -> str: ...
+    def input(self, f: InputField) -> CustomerInputRecord | None: ...
+
+
+@dataclass(frozen=True)
+class Held:
+    """The buyer's basis outside the overview's own read: just the books, the day, the buyer and the inputs in force."""
+
+    state: FinancialState
+    today: int
+    buyer_id: str
+    inputs: CustomerInputs
+
+    def input(self, f: InputField) -> CustomerInputRecord | None:
+        return self.inputs.latest.get((self.buyer_id, f.value))
+
+
+def _projected_sales_fen(r: _Basis) -> int | None:
     """The buyer's sales over the next 12 months from the books, for when the owner has entered none: every invoice the buyer's recurring
     schedule issues in the window (`recurring_issue_days`) and every receivable of the buyer still to be issued in it. An invoice issued
     before today is past sales and not counted. None when the books schedule nothing for the buyer."""
@@ -163,7 +189,7 @@ def _projected_sales_fen(r: _Read) -> int | None:
     return total or None
 
 
-def _sales(r: _Read) -> tuple[int, CustomerInputRecord | None] | None:
+def _sales(r: _Basis) -> tuple[int, CustomerInputRecord | None] | None:
     """(annual sales in fen, the owner's row when it is theirs): the owner's input overrides; else the books' projection (no row)."""
     rec = r.input(InputField.ANNUAL_SALES_FEN)
     if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
@@ -172,25 +198,43 @@ def _sales(r: _Read) -> tuple[int, CustomerInputRecord | None] | None:
     return (projected, None) if projected is not None else None
 
 
-DEMO_SCENARIO = "golden_sme"
-DEMO_MARGIN_BP = 2000  # the Demo's assumed gross margin; never stored, never passed as the owner's, said so wherever it shows
+DEMO_PROVENANCE = "DEMO"  # the provenance of the default margin: never stored, never passed as the owner's
 
 
-def _margin(r: _Read) -> tuple[int, CustomerInputRecord | None] | None:
-    """(margin in bp, the owner's row when it is theirs): the owner's input; else, on the Demo's own books, the Demo's assumption."""
+@dataclass(frozen=True)
+class Margin:
+    """The gross margin held for a buyer. `record` is the row in force (the owner's or the Demo seed's); None means no row exists and the
+    Demo's default stands, with provenance DEMO."""
+
+    bp: int
+    record: CustomerInputRecord | None
+    provenance: str
+
+    @property
+    def assumed(self) -> bool:
+        return self.record is None
+
+
+def _margin(r: _Basis) -> Margin:
+    """The one place the margin is read, for the overview, its economics rows and the exposure routes' customer context: the row in
+    force when there is one, else the Demo's default margin (`config.DEMO_GROSS_MARGIN_BP`) whatever the books are called."""
     rec = r.input(InputField.MARGIN_BP)
     if rec is not None and isinstance(v := value_of(rec), int) and not isinstance(v, bool):
-        return v, rec
-    return (DEMO_MARGIN_BP, None) if r.state.scenario == DEMO_SCENARIO else None
+        return Margin(v, rec, rec.provenance)
+    return Margin(DEMO_GROSS_MARGIN_BP, None, DEMO_PROVENANCE)
 
 
-def _contribution_fen(r: _Read) -> int | None:
-    """A year's contribution: annual sales (the owner's, else the books' projection) times the margin on file, half-up to the fen
-    (ADR-0002). None unless both are held."""
-    sales, margin = _sales(r), _margin(r)
-    if sales is None or margin is None:
+def _demo_words(lang: Lang) -> str:
+    return t(lang, "assumed for the Demo, not confirmed by you", "为演示而假设，尚未经您确认")
+
+
+def _contribution_fen(r: _Basis) -> int | None:
+    """A year's contribution: annual sales (the owner's, else the books' projection) times the margin (the owner's, else the Demo's
+    default), half-up to the fen (ADR-0002). None unless sales are held."""
+    sales = _sales(r)
+    if sales is None:
         return None
-    return round_half_up(Fraction(sales[0] * margin[0], 10_000))
+    return round_half_up(Fraction(sales[0] * _margin(r).bp, 10_000))
 
 
 def _about_big(fen: int, lang: Lang) -> str:
@@ -201,7 +245,7 @@ def _about_big(fen: int, lang: Lang) -> str:
 def _source(rec: CustomerInputRecord, lang: Lang) -> tuple[str, str]:
     """(the words for where a fact came from, their tone): the Demo's own assumption is said so and is never passed as the owner's."""
     if rec.entered_by == DEMO_ENTERED_BY:
-        return t(lang, "assumed for the Demo, not confirmed by you", "为演示而假设，尚未经您确认"), "warn"
+        return _demo_words(lang), "warn"
     return provenance_words(rec.provenance, lang), "neutral"
 
 
@@ -227,8 +271,10 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
     rows: list[dict[str, Any]] = []
     missing = t(lang, "not entered yet", "尚未填写")
 
-    def put(key: str, label: str, value: str, note: str | None, tone: str = "neutral") -> None:
-        rows.append({"key": key, "label": label, "value_display": value, "note": note, "tone": tone})
+    def put(key: str, label: str, value: str, note: str | None, tone: str = "neutral", entered: bool = True) -> None:
+        """`entered`: the row holds a value (the owner's input, the books' projection or the Demo's default), false for "not entered yet",
+        so the page never matches the string."""
+        rows.append({"key": key, "label": label, "value_display": value, "note": note, "tone": tone, "entered": entered})
 
     margin, klass = _margin(r), r.input(InputField.CLASSIFICATION)
     sales = _sales(r)
@@ -238,13 +284,9 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
     elif sales is not None:  # the owner entered none: the books' own schedule, said so
         put("annual_sales", t(lang, "Annual sales", "年销售额"), whole_yuan(sales[0]), t(lang, "projected from your books", "根据您的账目推算"))
     else:
-        put("annual_sales", t(lang, "Annual sales", "年销售额"), missing, None)
-    if margin is not None:
-        demo = t(lang, "assumed for the Demo, not confirmed by you", "为演示而假设，尚未经您确认"), "warn"
-        note, tone = _source(margin[1], lang) if margin[1] is not None else demo
-        put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(margin[0]), note, tone)
-    else:
-        put("gross_margin", t(lang, "Gross margin", "毛利率"), missing, None)
+        put("annual_sales", t(lang, "Annual sales", "年销售额"), missing, None, entered=False)
+    note, tone = (_demo_words(lang), "warn") if margin.record is None else _source(margin.record, lang)
+    put("gross_margin", t(lang, "Gross margin", "毛利率"), _percent(margin.bp), note, tone)
     contribution = _contribution_fen(r)
     ask = _ask(r)
     if contribution is not None:
@@ -268,7 +310,7 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
         en, zh = _CLASSES.get(v.strip().upper(), (v, v))
         put("classification", t(lang, "Classed as", "客户分类"), t(lang, en, zh), t(lang, "context only", "仅供参考"))
     else:
-        put("classification", t(lang, "Classed as", "客户分类"), missing, None)
+        put("classification", t(lang, "Classed as", "客户分类"), missing, None, entered=False)
     never = t(lang, "None of this changes what FLOW may do on its own.", "这些都不会改变 FLOW 可以自行处理的范围。")
     if contribution is not None and ask is not None:
         year, once = ask["year_fen"], ask["once_display"]
@@ -360,6 +402,30 @@ def _value_figure(r: _Read, contribution: int | None) -> dict[str, Any]:
     return _figure("value", label, _about_big(contribution, lang), t(lang, "a year, estimated contribution", "每年，估算的贡献"))
 
 
+def customer_context(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int, conc: dict[str, Any] | None,
+                     lang: Lang) -> dict[str, Any]:
+    """Why this customer matters, in the words of the Customer page's own figures, for the exposure routes (`customer_context`): a year's
+    contribution (`_contribution_fen`, the one function, with the Demo-margin qualifier while the margin is the Demo's default), what the
+    buyer owes now, its share of what you are owed (from the concentration block `conc`; none for a name that stands for many small
+    customers) and the way to its page. A word the books cannot support is None."""
+    held = Held(state, today, buyer_id, inputs)
+    contribution = _contribution_fen(held)
+    note: str | None = None
+    if contribution is not None:
+        note = t(lang, "a year, estimated", "每年，估算")
+        if _margin(held).assumed:
+            note += t(lang, f"; margin {_demo_words(lang)}", f"；毛利率{_demo_words(lang)}")
+    owed = conc is not None and not conc["is_aggregate"]
+    return {
+        "contribution_display": _about_big(contribution, lang) if contribution is not None else None,
+        "contribution_note": note,
+        "owes_display": whole_yuan(conc["ar_buyer_fen"]) if conc is not None and owed else None,
+        "share_text": (share_text(Fraction(conc["ar_buyer_fen"], conc["ar_total_fen"]), lang)
+                       if conc is not None and owed and conc["ar_total_fen"] > 0 else None),
+        "profile_href": f"/customers/{_quoted(buyer_id)}",
+    }
+
+
 # ---------------------------------------------------------------- the decision and the actions
 
 
@@ -379,6 +445,23 @@ def _actions(r: _Read) -> list[dict[str, str]]:
         stress = f"/cash?stress={_quoted(r.buyer_id)}:{assembly.STRESS_DELAY_DAYS}" + (f"&invoice={_quoted(invoice)}" if invoice else "")
         out.append({"key": "stress", "label": t(lang, "Stress-test payment", "测试晚付的影响"), "href": stress})
     return out
+
+
+def _authority_sentence(path: dict[str, Any], subject: Literal["counter", "request"], lang: Lang) -> str | None:
+    """Who decides, as a sentence that stands alone, from the deal picture's own authority class for the path (never a second rule). A path
+    with no class (unpriced, not drawn) keeps the picture's words."""
+    sentences = {
+        ("counter", FLOW_MAY): ("FLOW can send this counter without your approval.", "FLOW 可以在无需您批准的情况下发送这份还价。"),
+        ("counter", NEEDS_OWNER): ("This counter needs your approval before it is sent.", "这份还价需要您批准后才能发送。"),
+        ("counter", OVER_LIMIT): ("This counter is over a limit you signed: only a new mandate changes that.",
+                                  "这份还价超出您签署的上限：只有签署新的授权才能改变。"),
+        ("request", FLOW_MAY): ("FLOW can accept this request without your approval.", "FLOW 可以在无需您批准的情况下接受这项请求。"),
+        ("request", NEEDS_OWNER): ("This request needs your approval before FLOW accepts it.", "这项请求需要您批准后 FLOW 才能接受。"),
+        ("request", OVER_LIMIT): ("This request is over a limit you signed: only a new mandate changes that.",
+                                  "这项请求超出您签署的上限：只有签署新的授权才能改变。"),
+    }
+    pair = sentences.get((subject, str(path.get("authority"))))
+    return t(lang, *pair) if pair is not None else path.get("authority_text")
 
 
 def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
@@ -406,13 +489,13 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
             how = t(lang, f"{rec['label']} ({cost}; {rec['cost_note']})", f"{rec['label']}（{cost}；{rec['cost_note']}）")
         body = t(lang, f"{wants} FLOW recommends countering with {how}.", f"{wants}FLOW 建议以{how}还价。")
         label = t(lang, "Review the counter", "查看还价")
-        authority = rec["authority_text"]
+        authority = _authority_sentence(rec, "counter", r.lang)
     else:
         short = offer["headline_short"] or offer["action_text"]
         body = t(lang, f"{wants} {short}.", f"{wants}{short}。")
         label = t(lang, "Review the request", "查看请求")
         asked = next((p for p in (r.picture or {}).get("paths", []) if p["key"] == assembly.ASKED), None)
-        authority = asked["authority_text"] if asked is not None else None
+        authority = _authority_sentence(asked, "request", r.lang) if asked is not None else None
     path = f"&path={_quoted(r.lead)}" if rec is not None else ""
     return {
         "kind": "counter" if rec is not None and rec["kind"] == "reply" else "request",

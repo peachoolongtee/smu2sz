@@ -133,7 +133,7 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert d["eyebrow"] == "One commercial decision waits for you"
     assert d["text"] == ("Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. "
                          "FLOW recommends countering with Option A, ¥3,027.77 once if accepted.")
-    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting as asked", "FLOW can send it")
+    assert (d["headline_short"], d["authority_text"]) == ("Counter instead of accepting as asked", "FLOW can send this counter without your approval.")
     picture = api.get(f"/offers/{offer_id}/picture").json()
     recommended = next(p for p in picture["paths"] if p["recommended"])
     assert d["primary"] == {"label": "Review the counter",
@@ -241,7 +241,7 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
     assert zh["figures"][3]["note"] == "1 张未收发票；这不是其占您销售额的比例"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
-    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以直接发送"
+    assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
     assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
     assert [r["value_display"] for r in zh["economics"][:3]] == ["¥5,460,000", "20%", "约 ¥1,092,000"]
     assert zh["economics"][0]["note"] == "根据您的账目推算" and zh["economics"][1]["note"] == "为演示而假设，尚未经您确认"
@@ -340,6 +340,11 @@ def test_without_inputs_the_demo_buyer_is_projected_from_the_books_and_nothing_e
         ("annual_sales", "not entered yet", None), ("gross_margin", "20%", "assumed for the Demo, not confirmed by you"),
         ("classification", "not entered yet", None)]
     assert other["economics_note"] == "None of this changes what FLOW may do on its own."  # no contribution, so no verdict on the concession
+    # every row says whether it holds a value, so the page never matches the string "not entered yet"
+    assert {r["key"]: r["entered"] for r in b["economics"]} == {"annual_sales": True, "gross_margin": True, "contribution": True,
+                                                                  "open_request": True, "classification": False}
+    assert {r["key"]: r["entered"] for r in other["economics"]} == {"annual_sales": False, "gross_margin": True, "classification": False}
+    assert all((r["value_display"] == "not entered yet") == (not r["entered"]) for r in b["economics"] + other["economics"])
 
 
 def test_the_owners_sales_override_the_projection_and_a_past_invoice_is_not_future_sales(rt):
@@ -503,9 +508,9 @@ def test_an_offer_FLOW_may_accept_carries_the_asked_paths_authority(api, rt):
     _accepted(api)
     d = _get(api)["decision"]
     assert d["headline_short"] == "Accept as asked"
-    assert d["authority_text"] == "FLOW can send it"
+    assert d["authority_text"] == "FLOW can accept this request without your approval."
     assert d["primary"]["label"] == "Review the request"
-    assert _get(api, lang="zh")["decision"]["authority_text"] == "FLOW 可以直接发送"
+    assert _get(api, lang="zh")["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下接受这项请求。"
 
 
 def test_an_offer_received_and_not_yet_evaluated_moves_the_key(api, rt, monkeypatch):

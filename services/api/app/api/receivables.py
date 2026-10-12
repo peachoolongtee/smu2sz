@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any, Literal
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -90,10 +91,38 @@ def read_rows(rt: Any, lang: Lang) -> tuple[Any, int, dict[str, Any], Partial]:
     return state, today, body, partial
 
 
+def _financing_links(rt: Any, rows: list[dict[str, Any]], partial: Partial) -> None:
+    """`financing_href` on each row: the decision record of the executed financing request for its invoice (the page the Activity and the
+    Customer overview link to), else None (no financing, or no record the owner can open). Call under `rt.lock`."""
+    for row in rows:
+        row["financing_href"] = None
+    wanted = {row["receivable_id"]: row for row in rows if row["financing_state"] != "NONE"}
+    if not wanted:
+        return
+    from app.api.decisions import load_context
+    from app.decisions.identity import decision_id_for
+    from app.domain.models import OperationStatus
+
+    try:
+        ctx = load_context(rt, found=[])
+        known = ctx.states()
+        for e in ctx.entries:  # in log order: the latest request for an invoice stands
+            rid = (e.payload or {}).get("receivable_id")
+            if e.kind != "SUBMIT_INVOICE_FOR_FINANCING" or e.result.status != OperationStatus.EXECUTED or rid not in wanted:
+                continue
+            did = decision_id_for(e.payload, e.idempotency_key, ctx.commitments, approval_id=e.result.approval_id)
+            if did is not None and did in known:
+                wanted[rid]["financing_href"] = f"/decisions/{quote(did, safe='')}"
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the decision record could not be read for the financing links")
+        partial.add("decision_record")
+
+
 @router.get("/receivables")
 def get_receivables(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state, today, body, partial = read_rows(rt, lang)
+        _financing_links(rt, body["rows"], partial)
     return displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, "partial": partial.view(lang),
                       **last_read(today, lang)})
