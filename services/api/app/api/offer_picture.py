@@ -698,24 +698,29 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     }
 
 
+def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
+    """The picture of an offer, cached per state version (call under `rt.lock`; the route and the Home's deals read share it)."""
+    state = rt.store.get_state()
+    verdict = latest_verdict_for(rt, offer_id)
+    key = (state.state_version, rt.day, offer_id, verdict.id if verdict else None, rt.store.get_mandate().version, lang,
+           tuple(c.id + c.status.value for c in rt.store.commitments()))
+    with _lock:
+        hit = _cache.get(key)
+        if hit is not None:
+            _cache.move_to_end(key)
+            return hit
+    out = build(rt, offer_id, lang)
+    with _lock:
+        _cache[key] = out
+        while len(_cache) > _CACHE_SIZE:
+            _cache.popitem(last=False)
+    return out
+
+
 @router.get("/offers/{offer_id}/picture")
 def get_picture(offer_id: str, lang: str = "en") -> dict[str, Any]:
     """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
-        state = rt.store.get_state()
-        verdict = latest_verdict_for(rt, offer_id)
-        key = (state.state_version, rt.day, offer_id, verdict.id if verdict else None, rt.store.get_mandate().version, lang,
-               tuple(c.id + c.status.value for c in rt.store.commitments()))
-        with _lock:
-            hit = _cache.get(key)
-            if hit is not None:
-                _cache.move_to_end(key)
-                return hit
-        out = build(rt, offer_id, lang)
-        with _lock:
-            _cache[key] = out
-            while len(_cache) > _CACHE_SIZE:
-                _cache.popitem(last=False)
-        return out
+        return cached_picture(rt, offer_id, lang)
