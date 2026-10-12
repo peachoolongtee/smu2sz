@@ -16,7 +16,7 @@ export function ExposureBand({ exposure, pick }: { exposure: ExposureView; pick:
   const buyer = exposure.concentration.buyer_name;
   const lead = exposure.band.by_path[pick];
   const caps = exposure.capacity[pick];
-  const windows = caps?.available ? caps.after.windows : [];
+  const windows = caps?.available && caps.after ? caps.after.windows : [];
   const tiles = [
     { key: "concentration", label: t("dq.band.concentration"), text: exposure.band.concentration, tone: exposure.flag.material ? "warn" : "neutral", note: null as string | null },
     { key: "late", label: t("dq.band.late", { n: exposure.stress.delay_days }), text: lead?.stress ?? null, tone: "neutral", note: exposure.payments_note ?? exposure.payments.sentence },

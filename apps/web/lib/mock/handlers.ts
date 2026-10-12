@@ -813,9 +813,17 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   return zone ? view : { ...view, zone: [] };
 }
 
+/** Test hook, like PICTURE_SLOW_KEY: set this sessionStorage key to "1" and GET /offers/{id}/exposure answers as a server with FEATURE_EXPOSURE off (absent), so the current Deals page can be seen. */
+export const EXPOSURE_OFF_KEY = "tl-mock-exposure-off";
+
 /** GET /offers/{id}/exposure: recorded for the package offer, in both languages; any other offer has none (null, as a server with the feature off). */
 export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   await delay();
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(EXPOSURE_OFF_KEY) === "1") return null;
+  } catch {
+    /* storage unavailable */
+  }
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
   const rec = cast<Record<"en" | "zh", ExposureView>>((await import("../../mocks/offer_exposure_ex01.json")).default);

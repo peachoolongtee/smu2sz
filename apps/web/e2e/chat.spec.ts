@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { DEMO_TOKEN } from "./fixtures";
-import { resetBooks } from "./helpers";
+import { resetBooks, verdictHeading } from "./helpers";
 
 /**
  * /chat (POST /nl). Runs in both projects: mock replays replies recorded from the real API, live calls the
@@ -376,7 +376,7 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
 
   await page.getByTestId("chat-open").click();
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });

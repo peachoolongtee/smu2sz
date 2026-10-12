@@ -34,10 +34,6 @@ const strategy = process.env.E2E_STRATEGY === "1";
 const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
 const strategyApi: Record<string, string> = strategy ? { FEATURE_ENVELOPE: "1", FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
 
-// The Deals decision queue is a build-time flag on the web app (NEXT_PUBLIC_DEALS_QUEUE=1, its own dist dir): E2E_QUEUE=1 builds that app so e2e/deals-queue.spec.ts sees it.
-const queue = process.env.E2E_QUEUE === "1";
-const queueWeb: Record<string, string> = queue ? { NEXT_PUBLIC_DEALS_QUEUE: "1" } : {};
-
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
 
 export default defineConfig({
@@ -87,9 +83,8 @@ export default defineConfig({
             env: {
               NEXT_PUBLIC_API_MODE: "mock",
               NEXT_PUBLIC_MOCK_LATENCY_MS: "10",
-              NEXT_DIST_DIR: queue ? ".next-e2e-mock-queue" : strategy ? ".next-e2e-mock-strategy" : ".next-e2e-mock",
+              NEXT_DIST_DIR: strategy ? ".next-e2e-mock-strategy" : ".next-e2e-mock",
               ...strategyWeb,
-              ...queueWeb,
             },
           },
         ]
@@ -108,7 +103,8 @@ export default defineConfig({
                   timeout: 120_000,
                   // A server already on :8000 could hold state from a previous run or point at a real database.
                   reuseExistingServer: false,
-                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, ...strategyApi },
+                  // FEATURE_EXPOSURE: the Deals page is the decision queue once the open offer has its exposure read.
+                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
                 },
               ]),
           {

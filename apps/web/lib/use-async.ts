@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEALS_QUEUE, STRATEGY_MVP } from "./config";
+import { STRATEGY_MVP } from "./config";
 import { useDemo } from "./demo-store";
 
 export interface AsyncState<T> {
@@ -59,6 +59,3 @@ function useIdle<T>(_load: () => Promise<T>, _deps: readonly unknown[]): AsyncSt
  * fetched, set or re-rendered; with it on this is `useAsync`.
  */
 export const useStrategyAsync: typeof useAsync = STRATEGY_MVP ? useAsync : useIdle;
-
-/** `useAsync` for the Deals queue's reads (the exposure read): the same build-time choice as above, on DEALS_QUEUE. */
-export const useQueueAsync: typeof useAsync = DEALS_QUEUE ? useAsync : useIdle;

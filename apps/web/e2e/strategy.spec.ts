@@ -75,12 +75,12 @@ async function advanceTo34(page: Page, request: APIRequestContext) {
 async function openEx01(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toBeVisible();
+  await expect(page.getByTestId("queue-ask")).toBeVisible();
 }
 
 /** The ids of the Deals sections that matter, in page order. */
 async function sectionOrder(page: Page): Promise<string[]> {
-  return page.evaluate(() => [...document.querySelectorAll("#deal-ask, #deal-envelope, #deal-recommendation-card")].map((el) => el.id));
+  return page.evaluate(() => [...document.querySelectorAll("[data-testid=queue-heading], [data-testid=queue-ask], #deal-envelope")].map((el) => el.id || el.getAttribute("data-testid") || ""));
 }
 
 test.describe("desktop", () => {
@@ -194,13 +194,13 @@ test.describe("desktop", () => {
     await expect(card).toContainText("Estimate");
     await expect(card).not.toContainText("Hypothetical");
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
-    // The heading is the page's first section from the moment an offer is open (the server's sentence about it); the card sits right after the ask section.
-    expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
+    // The heading is the detail's first section from the moment an offer is open (the server's sentence about it), then the ask; the card sits at the end of the detail, after the comparison.
+    expect(await sectionOrder(page)).toEqual(["queue-heading", "queue-ask", "deal-envelope"]);
 
     await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-    await expect(page.getByTestId("deal-recommendation")).toBeVisible();
-    // The verdict is the heading; the card sits right after the ask section.
-    expect(await sectionOrder(page)).toEqual(["deal-recommendation-card", "deal-ask", "deal-envelope"]);
+    await expect(page.getByTestId("queue-heading")).toBeVisible();
+    // The verdict is the heading; the card sits at the end of the detail.
+    expect(await sectionOrder(page)).toEqual(["queue-heading", "queue-ask", "deal-envelope"]);
 
     // Details: the levers (six), the approved packages and, where the server gave it, the terms-and-price zone.
     await expect(card.getByTestId("envelope-levers")).toBeHidden();
@@ -245,16 +245,17 @@ test.describe("desktop", () => {
     await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
     await expect(card.getByTestId("envelope-open-b")).toHaveCount(0);
     await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByTestId("path-reply")).toContainText("Option A");
+    await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
     await page.getByTestId("path-col-pick-2").click();
     await expect(page.getByTestId("path-col-pick-2")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByTestId("path-reply")).toContainText("Option B");
+    await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
     await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
     expect(await filledBrand(page)).toBe(1);
+    await page.getByTestId("queue-review-open").click();
     await expect(page.getByTestId("deal-send-Option-B")).toHaveClass(/bg-brand-600/);
     // ... and the recommended path comes back with its column.
     await page.getByTestId("path-col-pick-1").click();
-    await expect(page.getByTestId("path-reply")).toContainText("Option A");
+    await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
   });
 
   test("Deals: the details open and close from the keyboard", async ({ page }) => {
@@ -352,7 +353,7 @@ test.describe("phone", () => {
     await expect(card.getByTestId("envelope-levers").locator("table")).toBeHidden();
     await expect(card.getByTestId("envelope-packages")).toBeVisible();
     await page.getByTestId("path-col-pick-2").click();
-    await expect(page.getByTestId("path-reply")).toContainText("Option B");
+    await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
   });

@@ -10,10 +10,9 @@ import { filledBrand, resetBooks } from "./helpers";
  * with the exposure band, and the comparison behind one fold. Every sentence and figure is the server's (the recorded deals read, the offer picture
  * and the exposure read); the spec reads them from the recordings and compares what the page says.
  *
- * Gated like strategy.spec.ts: the queue exists only in a build with NEXT_PUBLIC_DEALS_QUEUE=1 and a server that has the exposure read, so it runs
- * only with E2E_QUEUE=1. Run (mock): E2E_QUEUE=1 E2E_PORT=3193 E2E_TARGET=mock pnpm exec playwright test e2e/deals-queue.spec.ts
+ * No client flag decides the page: the queue renders when the open offer's exposure read is present (the server's FEATURE_EXPOSURE; the mock carries the recording).
+ * The last test strips the read in-spec and asserts the current page renders. Run (mock): E2E_TARGET=mock pnpm exec playwright test e2e/deals-queue.spec.ts
  */
-test.skip(process.env.E2E_QUEUE !== "1", "set E2E_QUEUE=1 (the build flag NEXT_PUBLIC_DEALS_QUEUE=1)");
 
 const rec = (name: string) => JSON.parse(readFileSync(join(process.cwd(), "mocks", name), "utf8"));
 const deals = rec("deals_day0_evaluated.json");
@@ -225,8 +224,10 @@ test("a phone: tiles scroll sideways, the primary is in the first screens, nothi
   const row = await page.getByTestId("queue-row").first().boundingBox();
   expect(row!.height).toBeLessThan(120); // two lines per row
   await expect(page.getByTestId("queue-review-open")).toBeVisible();
+  // The one filled primary ends in the first screen and above the tab bar (390 x 844).
   const box = (await page.getByTestId("queue-review-open").boundingBox())!;
-  console.log("review button bottom", box.y + box.height);
+  const bar = (await page.getByTestId("tab-bar").boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(bar.y);
   expect(box.y + box.height).toBeLessThanOrEqual(844);
 });
 
@@ -240,4 +241,17 @@ test("axe finds nothing serious or critical on the queue, with the comparison an
   expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+test("with the exposure read stripped the current Deals page renders exactly: no queue, the verdict heading, the reply bar and the paths", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-exposure-off", "1"));
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("deal-recommendation")).toContainText(open.headline_short);
+  await expect(page.getByTestId("path-reply")).toBeVisible();
+  await expect(page.getByTestId("deal-paths")).toBeVisible();
+  for (const id of ["queue-tabs", "queue-list", "queue-detail", "queue-aside", "exposure-band", "stress-toggle", "queue-compare"]) await expect(page.getByTestId(id)).toHaveCount(0);
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.locator("h1")).toHaveText(open.headline_short);
 });

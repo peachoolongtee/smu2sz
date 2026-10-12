@@ -25,12 +25,6 @@ export const DEMO_OWNER_TOKEN: string = process.env.NEXT_PUBLIC_DEMO === "1" ? "
 export const STRATEGY_MVP: boolean = process.env.NEXT_PUBLIC_STRATEGY_MVP === "1";
 
 /**
- * Build-time flag for the Deals decision queue (ticket #109). Unset: the Deals page is the page it was and the exposure read is never asked for. Set, the page becomes
- * the queue once the open offer has an exposure read (the API route is separately flagged, FEATURE_EXPOSURE).
- */
-export const DEALS_QUEUE: boolean = process.env.NEXT_PUBLIC_DEALS_QUEUE === "1";
-
-/**
  * Demo builds only: the API's published buyer channel keys (X-Counterparty-Key). The server maps a key to the
  * buyer it belongs to; a buyer turn without one is only a proposal, which the API never books. A real
  * deployment leaves this empty: each buyer's own system holds its key.

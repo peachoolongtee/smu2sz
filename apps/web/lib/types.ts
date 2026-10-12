@@ -3229,8 +3229,8 @@ export interface ExposureSpare {
 export interface ExposureCapacity {
   available: boolean;
   unavailable_text: string | null;
-  before: { windows: ExposureWindow[] };
-  after: { windows: ExposureWindow[] };
+  before: { windows: ExposureWindow[] } | null;
+  after: { windows: ExposureWindow[] } | null;
   spare: ExposureSpare | null;
 }
 

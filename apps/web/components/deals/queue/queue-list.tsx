@@ -60,10 +60,10 @@ export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, num
               e.preventDefault();
               move(i, by);
             }}
-            className={`motion-press flex min-h-14 shrink-0 flex-col items-start justify-center rounded-card border px-4 py-2 text-left transition-colors duration-(--dur) max-sm:min-h-11 max-sm:flex-row max-sm:items-center max-sm:gap-2.5 max-sm:rounded-pill max-sm:px-3.5 max-sm:py-1 touch:min-h-11 sm:touch:min-h-14 ${on ? "border-brand-600 bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
+            className={`motion-press flex min-h-14 shrink-0 flex-col items-start justify-center rounded-card border px-4 py-2 text-left transition-colors duration-(--dur) max-sm:min-h-11 max-sm:flex-row max-sm:items-center max-sm:gap-2.5 max-sm:rounded-pill max-sm:px-3.5 max-sm:py-1 short:min-h-11 short:flex-row short:items-center short:gap-2.5 short:py-1 touch:min-h-11 sm:touch:min-h-14 ${on ? "border-brand-600 bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
           >
             <span className={`${eyebrowCls} ${k === "needs" ? "text-warn-fg" : "text-ink-3"}`}>{t(`dq.tab.${k}` as DictKey)}</span>
-            <span className="font-display text-xl font-extrabold tabular-nums text-ink max-sm:text-base" data-testid={`queue-count-${k}`}>
+            <span className="font-display text-xl font-extrabold tabular-nums text-ink max-sm:text-base short:text-base" data-testid={`queue-count-${k}`}>
               {counts[k]}
             </span>
           </button>
@@ -81,7 +81,7 @@ export function QueueList({ tab, items, onSelect, emptyText }: { tab: QueueTab; 
   return (
     <section id="dq-list" role="tabpanel" aria-labelledby={`dq-tab-${tab}`} className="overflow-hidden rounded-card border border-line bg-surface" data-testid="queue-list">
       <div role="table" aria-label={t("dq.list")}>
-        <div role="row" className={`hidden gap-3 border-b border-line px-4 py-2.5 lg:grid ${COLS} ${eyebrowCls} text-ink-3`}>
+        <div role="row" className={`hidden gap-3 border-b border-line px-4 py-2.5 lg:grid short:sr-only ${COLS} ${eyebrowCls} text-ink-3`}>
           {(["customer", "request", "cost", "rec", "status"] as const).map((c) => (
             <span key={c} role="columnheader">
               {t(`dq.col.${c}` as DictKey)}
@@ -103,7 +103,7 @@ export function QueueList({ tab, items, onSelect, emptyText }: { tab: QueueTab; 
               onClick={(e) => {
                 if (it.offerId && !(e.target as HTMLElement).closest("a,button")) onSelect(it.offerId);
               }}
-              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-line px-4 py-3 text-sm first:border-t-0 lg:gap-3 ${COLS} ${it.offerId ? "cursor-pointer" : ""} ${it.selected ? "border-l-[3px] border-l-brand-600 bg-brand-50/60" : "hover:bg-subtle"} transition-colors duration-(--dur)`}
+              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 border-t border-line px-4 py-2 text-sm sm:py-3 first:border-t-0 lg:gap-3 ${COLS} ${it.offerId ? "cursor-pointer" : ""} ${it.selected ? "border-l-[3px] border-l-brand-600 bg-brand-50/60" : "hover:bg-subtle"} transition-colors duration-(--dur)`}
             >
               <span role="cell" className="min-w-0 font-bold lg:col-auto">
                 <Link href={it.customerHref} className="break-words text-ink underline-offset-2 hover:text-brand-700 hover:underline focus-visible:underline" data-testid="queue-customer">

@@ -82,7 +82,7 @@ export function QueueHead({
 /** The detail and its aside side by side from `lg` (the detail first); below it the aside follows the detail. The detail replaces itself in place on a selection. */
 export function QueueBody({ detail, aside, offerKey }: { detail: ReactNode; aside: ReactNode; offerKey: string }) {
   return (
-    <section key={offerKey} className="motion-reveal grid gap-x-7 gap-y-6 max-sm:p-0 sm:rounded-card sm:border sm:border-line sm:bg-surface sm:p-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]" data-testid="queue-body">
+    <section key={offerKey} className="motion-reveal grid gap-x-7 gap-y-6 max-sm:p-0 sm:rounded-card sm:border sm:border-line sm:bg-surface sm:p-6 short:p-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]" data-testid="queue-body">
       {detail}
       {aside}
     </section>
