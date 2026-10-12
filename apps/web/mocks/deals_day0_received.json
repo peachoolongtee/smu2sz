@@ -359,6 +359,7 @@
         "action_text": "FLOW has not read it yet.",
         "cost_display": null,
         "cost_window_text": null,
+        "limit_fen": 500000,
         "limit_display": "¥5,000.00",
         "over_limit": false,
         "replies_ready": 0,

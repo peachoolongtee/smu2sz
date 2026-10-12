@@ -36,6 +36,7 @@ test("a decision's record: one h1, the waiting approval's review link is the one
   await expect(page.getByTestId("home-day")).toContainText("34");
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
+  await expect(page.getByTestId("alert-waiting-ALERT-RESERVE-42")).toBeVisible(); // the request has been answered before the page is left
   await page.goto("/decisions/" + encodeURIComponent("alert:ALERT-RESERVE-42:v7"));
   await expect(page.getByTestId("record-review")).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
