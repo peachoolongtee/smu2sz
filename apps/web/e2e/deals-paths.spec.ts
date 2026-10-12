@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { filledBrand, resetBooks } from "./helpers";
+import { filledBrand, resetBooks, sendCounter } from "./helpers";
 
 /**
  * The Deals page's three paths on one chart (the offer as asked and the two replies), tied to three columns, with a day cursor you can step or play
@@ -128,6 +128,10 @@ test("Play steps through the moments and ends on the last stop; Stop halts it", 
 });
 
 test("the send from the bar still records the agreement", async ({ page }) => {
+  const agreedAt = { on: false, pictureRequests: 0 };
+  page.on("request", (r) => {
+    if (agreedAt.on && /\/offers\/[^/]+\/picture/.test(r.url())) agreedAt.pictureRequests += 1;
+  });
   await checked(page);
   const bar = page.getByTestId("path-reply");
   await bar.getByTestId("deal-send").click();
@@ -135,6 +139,10 @@ test("the send from the bar still records the agreement", async ({ page }) => {
   await bar.getByTestId("deal-send-confirm").click();
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
+  // Once the deal has an outcome the page no longer asks for the offer's picture (live: a real request; the mock answers in the browser).
+  agreedAt.on = true;
+  await page.waitForTimeout(1500);
+  expect(agreedAt.pictureRequests, "no picture read after the deal is agreed").toBe(0);
   // The picture and its columns give way to the answer.
   await expect(page.getByTestId("deal-paths")).toHaveCount(0);
   await expect(page.locator("#commitments")).toContainText("0.85% off");
@@ -185,4 +193,46 @@ test("in Chinese the paths, the stops and the reply read in Chinese", async ({ p
   await expect(page.getByTestId("path-reply")).toContainText("你的回复");
   await expect(page.getByTestId("path-col-0")).toContainText(/[一-鿿]/);
   await expect(page.locator("h1")).toHaveCount(1);
+});
+
+test("the send and its confirmation are clicked the moment they appear, three times in a row, and never lose the click to a re-render", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  for (let i = 0; i < 3; i++) {
+    await resetBooks(request);
+    await page.goto("/");
+    await page.evaluate(() => sessionStorage.clear());
+    await page.goto("/deals");
+    await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+    await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+    // No wait for the chart: the reply area is a placeholder until the picture is read, then the bar; the send is clicked as soon as it is there.
+    await sendCounter(page.getByTestId("path-reply"));
+    await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A", { timeout: 15_000 });
+  }
+});
+
+test("while the picture is on its way the reply area is a placeholder, never the counter cards; then the paths and the bar arrive and stay", async ({ page }) => {
+  if (test.info().project.name === "live") {
+    await page.route("**/offers/*/picture*", async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.continue();
+    });
+  } else {
+    await page.addInitScript(() => sessionStorage.setItem("tl-mock-picture-slow", "1500"));
+  }
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await expect(page.getByTestId("paths-loading")).toBeVisible();
+  await expect(page.getByTestId("deal-recommendation")).toBeVisible();
+  // Neither the counter cards nor a send control exist while it loads.
+  await expect(page.locator("#counters")).toHaveCount(0);
+  await expect(page.getByTestId("deal-send")).toHaveCount(0);
+  await expect(page.getByTestId("deal-option-Option-A")).toHaveCount(0);
+  await expect(page.getByTestId("path-reply")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("paths-loading")).toHaveCount(0);
+  // The bar keeps its identity when the stop or the pick changes: an open confirmation survives a stop.
+  await page.getByTestId("path-reply").getByTestId("deal-send").click();
+  await expect(page.getByTestId("deal-send-confirm-box")).toBeVisible();
+  await page.getByTestId("path-stop-0").click();
+  await expect(page.getByTestId("deal-send-confirm-box")).toBeVisible();
 });

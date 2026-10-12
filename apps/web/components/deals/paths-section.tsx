@@ -11,7 +11,7 @@ import type { NegotiationView, OfferPictureView, PictureMoment, PicturePath, Ver
 
 /** True when the picture carries paths and there is a reply to make (no outcome yet, at least one counter). */
 export function pathsUsable(picture: OfferPictureView | null | undefined, negotiation: NegotiationView | null, v: VerdictView): boolean {
-  return Boolean(picture?.paths?.length && !negotiation && v.counters.length > 0);
+  return Boolean(picture && picture.available !== false && picture.paths?.length && !negotiation && v.counters.length > 0);
 }
 
 /**
@@ -20,7 +20,7 @@ export function pathsUsable(picture: OfferPictureView | null | undefined, negoti
  * decisive moment is the first stop. The page reads the picture (it also decides whether the cash facts are said by the chart). Once the buyer has answered, or when the server sent no paths (an older API) or no picture, the card is the
  * present one (`RecommendedResponse`): the outcome, or the counter cards. Every word is the server's.
  */
-export function PathsSection({ picture, pictureLoading, ...props }: { v: VerdictView; offerId: string; today: number; mode: Mode; negotiation: NegotiationView | null; compareOpen?: boolean; onCompareChange?: (open: boolean) => void; /** The offer's picture read (null when it could not be read or an older server has none), and whether it is still loading. */ picture: OfferPictureView | null | undefined; pictureLoading: boolean }) {
+export function PathsSection({ picture, ...props }: { v: VerdictView; offerId: string; today: number; mode: Mode; negotiation: NegotiationView | null; compareOpen?: boolean; onCompareChange?: (open: boolean) => void; /** The offer's picture read: undefined while it is on its way, null when it was not asked for, failed or an older server has none. */ picture: OfferPictureView | null | undefined }) {
   const { t } = useI18n();
   const { negotiation, compareOpen } = props;
   const paths = useMemo(() => picture?.paths ?? [], [picture]);
@@ -56,10 +56,27 @@ export function PathsSection({ picture, pictureLoading, ...props }: { v: Verdict
   );
 
   const usable = pathsUsable(picture, negotiation, props.v);
+  // While the read is on its way the reply area is a quiet placeholder, never the counter cards (an owner who opened a send there would lose it when the paths arrive).
+  if (!negotiation && props.v.counters.length > 0 && picture === undefined) {
+    return (
+      <div data-testid="paths-loading">
+        <LoadingBlock rows={3} />
+      </div>
+    );
+  }
   if (!usable) {
-    // The outcome, the counter cards, or nothing to compare: the present card. While the picture is still loading the page shows a block, not a flash of cards.
-    if (!negotiation && props.v.counters.length > 0 && pictureLoading && picture === undefined) return <LoadingBlock rows={3} />;
-    return <RecommendedResponse {...props} />;
+    // The outcome, the counter cards, or nothing to compare (an older server, a failed read, an offer that can no longer be drawn): the present card, with the server's sentence when it gave one.
+    const unavailable = picture && picture.available === false ? picture.unavailable_text : null;
+    return (
+      <>
+        {unavailable ? (
+          <p className="mb-3 text-sm text-ink-3" data-testid="paths-unavailable">
+            {unavailable}
+          </p>
+        ) : null}
+        <RecommendedResponse {...props} />
+      </>
+    );
   }
   const full = picture as OfferPictureView & { paths: PicturePath[]; moments: PictureMoment[] };
   return (

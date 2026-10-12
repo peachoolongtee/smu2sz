@@ -3079,6 +3079,9 @@ export interface OfferPictureView {
   moments?: PictureMoment[];
   /** The window the axis and the lines cover, in days from today. */
   picture_days?: number;
+  /** False when the offer can no longer be drawn (the answer is then 200 with empty paths and moments and `unavailable_text`); absent from an older server. */
+  available?: boolean;
+  unavailable_text?: string | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */

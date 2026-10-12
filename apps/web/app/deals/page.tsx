@@ -21,7 +21,7 @@ import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
-import type { VerdictView } from "@/lib/types";
+import type { OfferPictureView, VerdictView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useNarrow } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
@@ -131,16 +131,20 @@ export default function DealsPage() {
   const obligations = items.flatMap((i) => (i.group === "obligation" ? [i.obligation] : []));
   // The verdict's bound obligations carry the terms delta ("45 → 60 days"); before the check, the compiled offer's.
   const asks = v?.bound_obligations?.length ? v.bound_obligations : obligations;
-  // The offer's picture (one line per path, the moments where they part): null when the server has none for this offer (an older API, another offer).
-  const pictureRead = useAsync(
-    () => (offer && v ? getOfferPicture(offer.offer.offer_id, lang).catch(() => null) : Promise.resolve(null)),
-    [offer?.offer.offer_id, v?.id, v?.state_version, lang],
-  );
-  const picture = pictureRead.data;
   const inboxOpen = !offer || inboxFor === offer.offer.offer_id;
   // The deals read's row for this offer: FLOW's read of it (`open_offer`), the five stages and the pill's words. Null once the offer is no longer open.
   const dealRow = offer ? (dealsView.data?.deals.find((d) => d.open_offer?.offer_id === offer.offer.offer_id) ?? null) : null;
   const open = dealRow?.open_offer ?? null;
+  // The offer's picture (one line per path, the moments where they part) is asked for only while the offer is open and checked: a deal that has an outcome, or an
+  // offer not yet checked, does not need it. The read is keyed by the offer: another offer's picture is never shown, and a refetch (the books moved) keeps the one
+  // on screen until the new one arrives, so the reply area never remounts. `undefined` is "on its way".
+  const pictureOfferId = offer?.offer.offer_id ?? null;
+  const wantPicture = Boolean(pictureOfferId && v && open && !cur.negotiation && !progress?.reached);
+  const pictureRead = useAsync(
+    async () => ({ offerId: pictureOfferId, asked: wantPicture, picture: wantPicture && pictureOfferId ? await getOfferPicture(pictureOfferId, lang).catch(() => null) : null }),
+    [pictureOfferId, wantPicture, v?.id, v?.state_version, lang],
+  );
+  const picture: OfferPictureView | null | undefined = !wantPicture ? null : pictureRead.data?.offerId === pictureOfferId && pictureRead.data.asked ? pictureRead.data.picture : undefined;
 
   // The one Action, read from the page's own state (it decides nothing): check the offer, or where the deal stands. A counter to send carries
   // its own primary action in the priced response, so the Action then has nothing to add.
@@ -286,7 +290,6 @@ export default function DealsPage() {
           mode={mode}
           negotiation={cur.negotiation}
           picture={picture}
-          pictureLoading={pictureRead.loading}
           {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (on: boolean) => setCompareFor(on ? offer.offer.offer_id : null) } : {})}
         />
       );

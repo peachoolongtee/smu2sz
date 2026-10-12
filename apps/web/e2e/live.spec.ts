@@ -526,6 +526,11 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   page.on("request", (r) => {
     if (r.method() === "POST" && /\/negotiate\//.test(r.url())) sends.push(r.postDataJSON());
   });
+  // The offer's picture is read while the offer is open and never again once the deal has an outcome.
+  const pictures: string[] = [];
+  page.on("request", (r) => {
+    if (/\/offers\/[^/]+\/picture/.test(r.url())) pictures.push(r.url());
+  });
   await checkedDeal(page);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toContainText("Counter recommended");
@@ -540,6 +545,9 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   await expect(steps).toHaveAttribute("data-state", "AGREED");
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Agreed");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
+  expect(pictures.length, "the picture was read while the offer was open").toBeGreaterThan(0);
+  await page.waitForTimeout(1000);
+  const readsWhenAgreed = pictures.length;
   // The record knows what was sent.
   await page.goto("/ledger");
   const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
@@ -550,15 +558,22 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   await page.goto("/deals");
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
   await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
+  expect(pictures.length, "no picture read once the deal is agreed").toBe(readsWhenAgreed);
   await post("/demo/reset", {});
 });
 
 test("Deals: with no receipt on day 2 the line says the early payment did not arrive, and the agreement stays listed", async ({ page, request }) => {
   const post = ownerPost(request);
   await post("/demo/reset", {});
+  const pictures: string[] = [];
+  page.on("request", (r) => {
+    if (/\/offers\/[^/]+\/picture/.test(r.url())) pictures.push(r.url());
+  });
   await checkedDeal(page);
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
+  await page.waitForTimeout(1000);
+  const readsWhenAgreed = pictures.length;
   await dayTwoToDay34(request, "none", post);
   await page.goto("/deals");
   const steps = page.getByTestId("deal-state-chip");
@@ -568,6 +583,7 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
   await expect(page.getByTestId("deal-recommendation")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments")).toContainText("Agreement expired");
+  expect(pictures.length, "no picture read on a later day either").toBe(readsWhenAgreed);
   // The same record is on the Activity page's rows, and the Demo verdict page's summary says what ran.
   await page.goto("/verdict");
   await expect(page.getByTestId("execution-agreement")).toContainText("Early payment did not arrive");
