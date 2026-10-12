@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home V2 refined 2</title>
+<!-- Home V2 visual reference, second pass (the owner's second review, 08_second_review_and_lead_decisions.md, 13 Oct 2026).
+     Every money, date and status word below was read from the running API (localhost:8188, Demo day 0, offers EX01_PACKAGE,
+     EX02_EARLY_1_5, EX03_AS_USUAL evaluated): GET /home, /worklist, /customers, /offers/{id}, /offers/{id}/picture,
+     /offers/{id}/exposure and the evaluate response, lang=en. Labels with no money or date inside are dictionary words.
+     States: ?state=default | deal | compare | phone.  &shot=1 hides the reviewer's switch.  &sheet=1 opens the phone worklist sheet. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* tokens from apps/web/app/globals.css (@theme static); no new hue */
+  --font-sans:"Lato","Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif;
+  --font-display:"Plus Jakarta Sans","Lato","Inter",ui-sans-serif,system-ui,sans-serif;
+  --color-canvas:#f5f7fb; --color-surface:#ffffff; --color-subtle:#eff3f8; --color-line:#e6e9ef; --color-line-strong:#d3d9e2; --color-line-ui:#768399; --color-track:#eef1f5;
+  --color-ink:#24324a; --color-ink-2:#4d5767; --color-ink-3:#5a6577;
+  --color-brand-50:#e6f1ff; --color-brand-100:#d0e5ff; --color-brand-600:#0368e9; --color-brand-700:#0048a5;
+  --color-ok-fg:#0a6b5f; --color-ok-solid:#12907f;
+  --color-warn-fg:#82490a; --color-warn-solid:#b7791f;
+  --color-bad-fg:#a3241a; --color-bad-bg:#fdecea; --color-bad-solid:#d2362a;
+  --color-info-fg:#0048a5; --color-info-line:#bcd8fd; --color-info-solid:#0472ff;
+  --color-chart-base:#0472ff; --color-chart-reserve:#a3241a; --color-chart-danger:#fdecea; --color-chart-grid:#e6e9ef; --color-chart-axis:#5a6577;
+  --shadow-pop:0 4px 8px rgb(36 50 74 / .06),0 18px 36px -12px rgb(36 50 74 / .24);
+  --shadow-up:0 -4px 12px rgb(36 50 74 / .08);
+  --radius-pill:9999px; --radius-decision:16px; --radius-card:14px; --radius-tile:10px; --radius-control:8px;
+  --ease-ui:cubic-bezier(.2,0,0,1); --ease-select:cubic-bezier(.25,1,.5,1);
+  --dur-fast:140ms; --dur:220ms; --dur-scenario:300ms;
+  --nav-w:200px; --pad:32px; --section:32px;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-size-adjust:100%}
+body{margin:0;font-size:15px;line-height:1.5;background:var(--color-surface)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--color-brand-600);outline-offset:2px;border-radius:6px}
+.num{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.arrow{font-family:var(--font-display);font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.dot.bad{background:var(--color-bad-solid)} .dot.warn{background:var(--color-warn-solid)} .dot.ok{background:var(--color-ok-solid)}
+
+/* ---------- type roles: Label → Number → Interpretation → Action ---------- */
+.lbl{font-size:13px;line-height:18px;font-weight:700;color:var(--color-ink-3);margin:0}
+.eyebrow{font-size:13px;line-height:18px;font-weight:700;color:var(--color-brand-700);margin:0 0 6px}
+.h-section{font-family:var(--font-display);font-weight:800;font-size:18px;line-height:24px;letter-spacing:-.01em;margin:0}
+.interp{font-size:14px;line-height:20px;color:var(--color-ink-2);margin:0}
+.meta{font-size:13px;line-height:18px;color:var(--color-ink-3)}
+
+/* ---------- ActionGroup: one filled primary per page; every decision level keeps a real button ---------- */
+.ag{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn{height:40px;padding:0 16px;border-radius:var(--radius-control);display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:14px;line-height:1;white-space:nowrap;border:1px solid transparent;transition:background var(--dur-fast) var(--ease-ui),border-color var(--dur-fast) var(--ease-ui),color var(--dur-fast) var(--ease-ui)}
+.btn.filled{background:var(--color-brand-600);color:#fff;font-weight:900}
+.btn.filled:hover{background:var(--color-brand-700)}
+.btn.outline{background:var(--color-surface);border-color:var(--color-line-strong);color:var(--color-ink)}
+.btn.outline:hover{border-color:var(--color-line-ui);background:var(--color-canvas)}
+.btn.outline[aria-expanded=true]{background:var(--color-subtle);border-color:var(--color-line-ui)}
+.btn.sm{height:32px;padding:0 12px;font-size:13px}
+.btn .chev{width:14px;height:14px;transition:transform var(--dur) var(--ease-ui)}
+.btn[aria-expanded=true] .chev{transform:rotate(180deg)}
+.link{color:var(--color-brand-700);font-weight:700;white-space:nowrap;font-size:14px}
+.link:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- SegmentedTabs compact: radius 10, 32 px, thin border, white selected, no shadow ---------- */
+.seg{position:relative;display:inline-flex;height:32px;padding:2px;border:1px solid var(--color-line-strong);background:var(--color-track);border-radius:10px;flex:none}
+.seg .pill{position:absolute;top:2px;bottom:2px;left:0;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-line-strong);transition:transform var(--dur-fast) var(--ease-select),width var(--dur-fast) var(--ease-select)}
+.seg button{position:relative;z-index:1;height:26px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--color-ink-2);white-space:nowrap}
+.seg button:hover{color:var(--color-ink)}
+.seg button[aria-selected=true]{font-weight:700;color:var(--color-ink)}
+.seg.quiet button{color:var(--color-ink-3)}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:var(--nav-w) minmax(0,1fr);min-height:100dvh}
+.nav{background:var(--color-canvas);padding:22px 14px 20px}
+.nav-in{position:sticky;top:22px;display:flex;flex-direction:column;gap:2px;height:calc(100dvh - 42px)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px}
+.brand-mark{width:28px;height:28px;border-radius:var(--radius-control);background:var(--color-brand-600);display:grid;place-items:center;flex:none}
+.brand-name{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--radius-control);font-size:14px;font-weight:700;color:var(--color-ink-2);white-space:nowrap}
+.nav a:hover{color:var(--color-ink);background:var(--color-subtle)}
+.nav a[aria-current]{background:var(--color-surface);color:var(--color-ink);box-shadow:0 0 0 1px var(--color-line)}
+.nav a[aria-current] svg{color:var(--color-brand-600)}
+.nav svg{width:16px;height:16px;flex:none}
+.nav-foot{margin-top:auto;padding:0 8px;display:grid;gap:14px}
+.nav-note{font-size:13px;line-height:18px;color:var(--color-ink-3);margin:0}
+.ask{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:var(--radius-pill);border:1px solid var(--color-line-strong);background:var(--color-surface);font-weight:700;font-size:14px;width:max-content}
+.ask svg{width:16px;height:16px;color:var(--color-brand-600)}
+
+.main{padding:24px var(--pad) 56px;min-width:0}
+
+/* ---------- header: context left, controls right ---------- */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px}
+.page{font-size:13px;line-height:18px;font-weight:700;color:var(--color-ink-3);margin:0 0 6px}
+.headline{font-family:var(--font-display);font-weight:800;font-size:28px;line-height:1.2;letter-spacing:-.02em;margin:0;display:flex;align-items:baseline;gap:12px}
+.headline .dot{transform:translateY(-5px)}
+.top-right{display:flex;align-items:center;gap:12px;flex:none;padding-top:2px}
+.fresh{font-size:13px;color:var(--color-ink-3);white-space:nowrap}
+.account{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 8px 0 4px;border-radius:var(--radius-control);font-size:14px;font-weight:700;color:var(--color-ink)}
+.account:hover{background:var(--color-subtle)}
+.account .av{width:26px;height:26px;border-radius:50%;background:var(--color-brand-50);color:var(--color-brand-700);display:grid;place-items:center}
+.account .av svg{width:15px;height:15px}
+.account .chev{width:14px;height:14px;color:var(--color-ink-3)}
+.vr{width:1px;height:20px;background:var(--color-line)}
+
+.work{display:grid;grid-template-columns:minmax(0,7fr) minmax(340px,3fr);gap:0 40px;align-items:start}
+.col{min-width:0}
+.section{padding-top:var(--section);margin-top:var(--section);border-top:1px solid var(--color-line)}
+
+/* ---------- MetricStrip ---------- */
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}
+.metric{padding:18px 22px 20px;position:relative;min-width:0}
+.metric+.metric{border-left:1px solid var(--color-line)}
+.metric:first-child{padding-left:0}
+.metric-head{display:flex;align-items:center;gap:4px}
+.info{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--color-ink-3)}
+.info:hover,.info[aria-expanded=true]{color:var(--color-brand-600);background:var(--color-brand-50)}
+.info svg{width:14px;height:14px}
+.value{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;font-weight:700;font-size:32px;line-height:1.1;letter-spacing:-.02em;margin:8px 0 6px;white-space:nowrap}
+.value.bad{color:var(--color-bad-fg)} .value.plan{color:var(--color-brand-600)}
+.sub2{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:13px;color:var(--color-ink-3)}
+.sub2 b{font-family:var(--font-display);font-weight:700;color:var(--color-ink-2);font-variant-numeric:tabular-nums}
+.buffer{position:relative;height:14px;margin:10px 0 0;max-width:220px}
+.buffer .track{position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:var(--color-line)}
+.buffer .fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:var(--color-ink-3)}
+.buffer .min{position:absolute;top:1px;width:2px;height:12px;background:var(--color-warn-solid);border-radius:1px}
+.buffer .cash{position:absolute;top:2px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--color-brand-600);box-shadow:0 0 0 2px var(--color-surface)}
+.sw{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.sw svg{width:14px;height:14px;flex:none}
+.sw.ok{color:var(--color-ok-fg)} .sw.ok svg{color:var(--color-ok-solid)}
+.sw.bad{color:var(--color-bad-fg)} .sw.bad svg{color:var(--color-bad-solid)}
+.sw.warn{color:var(--color-warn-fg)} .sw.warn svg{color:var(--color-warn-solid)}
+.sw.info{color:var(--color-info-fg)} .sw.info svg{color:var(--color-info-solid)}
+.pop{position:absolute;z-index:20;top:44px;left:12px;width:300px;background:var(--color-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-pop);padding:14px 16px;font-size:14px;line-height:20px;color:var(--color-ink-2);opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity var(--dur) var(--ease-ui),transform var(--dur) var(--ease-ui)}
+.metric:first-child .pop{left:-4px}
+.pop.open{opacity:1;transform:none;pointer-events:auto}
+.pop h4{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--color-ink)}
+.pop ul{margin:0;padding-left:18px}
+
+/* ---------- DecisionHighlight (compact) ---------- */
+.rec{margin-top:24px;background:var(--color-canvas);border-radius:var(--radius-card);padding:20px 24px 22px}
+.rec-title{font-family:var(--font-display);font-weight:800;font-size:22px;line-height:1.25;letter-spacing:-.02em;margin:0}
+.rec .interp{margin-top:6px}
+.facts3{display:grid;grid-template-columns:auto minmax(0,1.6fr) auto;gap:0;margin:16px 0 18px;padding:12px 0 0;border-top:1px solid var(--color-line-strong)}
+.facts3 div{min-width:0;padding-right:24px}
+.facts3 div+div{padding-left:24px;border-left:1px solid var(--color-line-strong)}
+.facts3 dt{font-size:13px;line-height:18px;color:var(--color-ink-3);margin:0 0 2px}
+.facts3 dd{margin:0;font-size:14px;line-height:20px;font-weight:700;color:var(--color-ink)}
+.facts3 dd.num{font-size:15px}
+
+/* the business-health band (deal focus): keeps a real, outlined button */
+.health{display:none;margin-top:20px;align-items:center;gap:16px;padding:12px 12px 12px 16px;background:var(--color-canvas);border-radius:12px}
+.health .h-text{min-width:0;flex:1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.health .h-text b{color:var(--color-ink);font-weight:700}
+.health .h-text .dot{transform:translateY(-1px)}
+.health .h-cost{font-size:13px;color:var(--color-ink-3);white-space:nowrap}
+.health .h-cost .num{color:var(--color-ink-2);font-weight:700}
+
+/* ---------- Decision preview (deal focus) ---------- */
+.deal{display:none}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-ink-3);margin:0 0 14px}
+.crumbs button{color:var(--color-brand-700);font-weight:700}
+.dp-title{font-family:var(--font-display);font-weight:800;font-size:24px;line-height:1.2;letter-spacing:-.02em;margin:4px 0 0}
+.who{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:6px 0 0;font-size:14px;color:var(--color-ink-2)}
+.ask-line{margin:14px 0 0;font-size:15px;line-height:22px;color:var(--color-ink);max-width:68ch}
+.ask-line .lbl{display:block;margin-bottom:2px}
+.dp-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin:8px 0 18px;padding:0;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}
+.dp-facts>div{padding:14px 20px 14px 0;min-width:0}
+.dp-facts>div+div{padding-left:20px;border-left:1px solid var(--color-line)}
+.dp-facts dt{display:flex;align-items:center;gap:10px;font-size:13px;line-height:18px;font-weight:700;color:var(--color-ink-3)}
+.dp-facts dd{margin:8px 0 0}
+.dp-facts .big{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:24px;line-height:1.15;letter-spacing:-.01em}
+.dp-facts .big.bad{color:var(--color-bad-fg)}
+.dp-facts .reason{display:block;font-size:13px;line-height:18px;color:var(--color-ink-2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-line-strong)}
+.dp-facts .scope{display:block;font-size:13px;line-height:18px;color:var(--color-ink-2);margin-top:2px}
+
+.conseq{margin-top:28px;padding-top:24px;border-top:1px solid var(--color-line)}
+.assume{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px}
+.assume .lbl{color:var(--color-ink-2)}
+.assume-note{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--color-ink-3)}
+.cq-rows{margin:14px 0 0;padding:0;list-style:none;border-top:1px solid var(--color-line);transition:opacity var(--dur-scenario) var(--ease-ui)}
+.cq-rows li{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(0,.9fr) minmax(0,1.6fr);align-items:baseline;gap:16px;padding:12px 0;border-bottom:1px solid var(--color-line)}
+.cq-rows .path{font-size:14px;font-weight:700;color:var(--color-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cq-rows .path .tag{font-size:13px;font-weight:700}
+.cq-rows .v{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:18px}
+.cq-rows .v small{font-family:var(--font-sans);font-weight:400;font-size:13px;color:var(--color-ink-3);margin-left:6px}
+.cq-rows .v.bad{color:var(--color-bad-fg)}
+.fading{opacity:.15}
+.after-cq{margin-top:14px}
+
+/* ---------- ComparisonTable ---------- */
+.cmp{display:none;margin-top:14px}
+.cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;transition:opacity var(--dur-scenario) var(--ease-ui)}
+.ctable{width:100%;min-width:600px;border-collapse:separate;border-spacing:0;font-size:14px;line-height:20px;table-layout:fixed}
+.ctable col.rh{width:150px}
+.ctable th,.ctable td{text-align:left;vertical-align:top;padding:11px 14px;border-bottom:1px solid var(--color-line)}
+.ctable thead th{padding:10px 14px 10px;font-weight:700;font-size:14px;color:var(--color-ink);border-bottom:1px solid var(--color-line-strong);vertical-align:bottom}
+.ctable thead th .t{display:block;font-size:13px;font-weight:700;margin-top:2px}
+.ctable tbody th{font-size:13px;font-weight:700;color:var(--color-ink-3);padding-left:0;position:sticky;left:0;background:var(--color-surface);z-index:1}
+.ctable thead th:first-child{padding-left:0;position:sticky;left:0;background:var(--color-surface);z-index:1}
+.ctable .rec-col{background:color-mix(in srgb,var(--color-brand-50) 45%,transparent);box-shadow:inset 1px 0 0 var(--color-info-line),inset -1px 0 0 var(--color-info-line)}
+.ctable thead .rec-col{background:var(--color-brand-50);box-shadow:inset 0 2px 0 var(--color-brand-600),inset 1px 0 0 var(--color-info-line),inset -1px 0 0 var(--color-info-line);border-radius:8px 8px 0 0}
+.ctable tbody tr:last-child .rec-col{box-shadow:inset 1px 0 0 var(--color-info-line),inset -1px 0 0 var(--color-info-line),inset 0 -1px 0 var(--color-info-line)}
+.cv{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;line-height:22px;color:var(--color-ink);display:block}
+.cv.bad{color:var(--color-bad-fg)}
+.cs{display:block;font-size:13px;line-height:18px;color:var(--color-ink-3)}
+.cs.scope{color:var(--color-ink-2)}
+.pair{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.comp{margin:6px 0 0;padding:6px 0 0;border-top:1px dashed var(--color-line-strong);font-size:13px;line-height:18px;color:var(--color-ink-2)}
+.comp div{display:flex;justify-content:space-between;gap:8px}
+.comp span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell-changed{animation:none}
+.cstack{display:none}
+.why{margin-top:22px}
+.why ul{list-style:none;margin:8px 0 0;padding:0}
+.why li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:6px 0;font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.why .ev-row{display:flex;gap:8px;align-items:flex-start}
+.ev-g{width:14px;height:14px;flex:none;margin-top:3px}.ev-g.ok{color:var(--color-ok-solid)}.ev-g.warn{color:var(--color-warn-solid)}.ev-g.bad{color:var(--color-bad-solid)}
+.why li b{color:var(--color-ink);font-weight:700}
+.why-links{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px}
+details.fold{margin-top:20px;border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line)}
+details.fold summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;height:48px;font-weight:700;font-size:14px}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary svg{width:16px;height:16px;color:var(--color-ink-3);transition:transform var(--dur) var(--ease-ui)}
+details.fold[open] summary svg{transform:rotate(180deg)}
+.fold-body{padding:0 0 14px;display:grid;gap:12px}
+.fold-body dl{margin:0;display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px 14px;font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.fold-body dt{font-size:13px;font-weight:700;color:var(--color-ink-3)}
+.fold-body dd{margin:0}
+
+/* ---------- CashPreview ---------- */
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.chart-scope{margin:4px 0 0;font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.chart-scope b{color:var(--color-ink);font-weight:700}
+.legend{display:flex;gap:8px 20px;flex-wrap:wrap;margin:12px 0 0;font-size:13px;color:var(--color-ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.25px solid var(--color-chart-base)}
+.legend i.below{border-top-color:var(--color-bad-solid)}
+.legend i.plan{border-top:2px dashed var(--color-ink-3)}
+.legend i.opt{border-top:2px dashed var(--color-brand-600)}
+.legend i.res{border-top:1.25px solid var(--color-chart-reserve)}
+.legend em{font-style:normal;color:var(--color-ink-3)}
+.legend em::before{content:"· "}
+.chart-wrap{position:relative;margin-top:6px}
+.chart-wrap svg{display:block;width:100%;overflow:visible}
+.chart-wrap text{font-family:var(--font-sans);font-size:13px;fill:var(--color-chart-axis)}
+/* the inspector strip: fixed under the chart, never over the line */
+.inspect{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,1fr));border-top:1px solid var(--color-line-strong);border-bottom:1px solid var(--color-line);margin-top:4px}
+.inspect>div{padding:10px 16px 12px 0;min-width:0}
+.inspect>div+div{padding-left:16px;border-left:1px solid var(--color-line)}
+.inspect .k{font-size:13px;line-height:18px;color:var(--color-ink-3)}
+.inspect .v{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inspect .v.bad{color:var(--color-bad-fg)} .inspect .v.plan{color:var(--color-ink-2)} .inspect .v.opt{color:var(--color-brand-700)}
+.inspect .v.when{font-family:var(--font-sans);font-size:15px;white-space:normal;line-height:22px}
+.inspect-ev{display:flex;gap:4px 8px;flex-wrap:wrap;padding:8px 0 0;font-size:13px;line-height:18px;color:var(--color-ink-2);min-height:26px}
+.inspect-ev span.amt{font-variant-numeric:tabular-nums;color:var(--color-ink);font-weight:700}
+.chart-foot{display:flex;justify-content:space-between;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-top:16px}
+.chart-foot .meta{flex:1;min-width:200px}
+.links{display:flex;flex-wrap:wrap;gap:8px 24px}
+
+/* ---------- WorklistRows (inbox) ---------- */
+.inbox{border-left:1px solid var(--color-line);padding-left:28px;min-width:0;position:sticky;top:24px}
+.inbox-head h2{font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:-.01em;margin:0}
+.alert{margin:14px 0 0;padding:2px 0 2px 12px;border-left:2px solid var(--color-bad-solid);font-size:14px;line-height:20px;color:var(--color-ink-2)}
+.alert b{color:var(--color-ink);font-weight:700}
+.utabs{position:relative;display:flex;gap:22px;margin-top:18px;border-bottom:1px solid var(--color-line)}
+.utabs button{height:38px;font-size:14px;font-weight:700;color:var(--color-ink-3);display:inline-flex;align-items:center;gap:6px}
+.utabs button:hover,.utabs button[aria-selected=true]{color:var(--color-ink)}
+.utabs .n{font-size:13px;font-weight:700;color:var(--color-ink-3);font-variant-numeric:tabular-nums}
+.utabs button[aria-selected=true] .n{color:var(--color-ink-2)}
+.utabs .bar{position:absolute;bottom:-1px;left:0;height:2px;background:var(--color-ink);border-radius:2px;transition:transform var(--dur) var(--ease-select),width var(--dur) var(--ease-select)}
+.search{display:flex;align-items:center;gap:8px;height:38px;margin:10px 0 6px;padding:0 2px;border-bottom:1px solid var(--color-line);color:var(--color-ink-3)}
+.search svg{width:16px;height:16px;flex:none}
+.search input{border:0;outline:0;font:inherit;font-size:14px;color:var(--color-ink);background:transparent;width:100%;height:100%}
+.search input::placeholder{color:var(--color-ink-3)}
+.rows{list-style:none;margin:0;padding:0}
+.row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;padding:12px 12px 12px 14px;margin:0 -12px 0 -14px;border-radius:var(--radius-tile);cursor:pointer;transition:background var(--dur-fast) var(--ease-ui)}
+.row+.row::before{content:"";position:absolute;left:14px;right:12px;top:0;border-top:1px solid var(--color-line)}
+.row:hover{background:var(--color-canvas)}
+.row[aria-selected=true]{background:var(--color-brand-50)}
+.row[aria-selected=true]::after{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:2px;background:var(--color-brand-600)}
+.row[aria-selected=true]::before,.row[aria-selected=true]+.row::before{border-color:transparent}
+.row:focus-visible{outline:2px solid var(--color-brand-600);outline-offset:0;border-radius:var(--radius-tile)}
+.row .subj{font-size:15px;font-weight:700;line-height:21px;color:var(--color-ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .qual{grid-column:1;font-size:13px;line-height:18px;color:var(--color-ink-3);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:-1px}
+.row .st{font-size:13px;line-height:19px;color:var(--color-ink-2);grid-column:1}
+.row .cq{font-size:13px;line-height:19px;color:var(--color-ink-3);grid-column:1}
+.row .sev{grid-column:2;grid-row:1;align-self:center}
+.empty{padding:32px 0 24px}
+.empty h3{font-family:var(--font-display);font-weight:700;font-size:16px;margin:0 0 4px}
+.empty p{margin:0;font-size:14px;color:var(--color-ink-3)}
+.inbox-foot{margin-top:14px}
+
+body[data-state=deal] .rec,body[data-state=compare] .rec{display:none}
+body[data-state=deal] .health,body[data-state=compare] .health{display:flex}
+body[data-state=deal] .deal,body[data-state=compare] .deal{display:block}
+body[data-state=compare] .cmp{display:block}
+body[data-state=compare] .cq-rows,body[data-state=compare] .after-cq{display:none}
+
+/* reviewer's switch: not part of the design */
+.rev{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;gap:4px;padding:4px;border-radius:var(--radius-pill);background:var(--color-ink);box-shadow:var(--shadow-pop)}
+.rev a{color:#fff;font-size:13px;font-weight:700;padding:6px 12px;border-radius:var(--radius-pill)}
+.rev a.on{background:#fff;color:var(--color-ink)}
+body.shot .rev{display:none}
+
+.tabbar,.m-top,.sheet-peek,.scrim,.sheet-head{display:none}
+
+/* ---------- laptop: the sidebar collapses to icons (DESIGN.md §Sidebar), the comparison keeps its four columns ---------- */
+@media (min-width:1024px) and (max-width:1366px){
+  :root{--nav-w:72px}
+  .nav{padding:22px 12px}
+  .brand{padding:0 6px 22px}
+  .brand-name,.nav a .t,.nav-note{display:none}
+  .nav a{justify-content:center;padding:0}
+  .ask{width:44px;padding:0;justify-content:center}.ask .t{display:none}
+  .facts3{grid-template-columns:auto minmax(0,1fr) auto}
+}
+
+/* ---------- phone ---------- */
+@media (max-width:1023px){
+  :root{--pad:20px;--section:28px}
+  .app{grid-template-columns:1fr}
+  .nav{display:none}
+  .main{padding:0 var(--pad) 150px}
+  .m-top{display:flex;align-items:center;justify-content:space-between;height:56px;margin:0 calc(-1 * var(--pad)) 4px;padding:0 var(--pad)}
+  .m-top .brand{padding:0}
+  .m-top .right{display:flex;gap:6px;align-items:center}
+  .m-top .account{padding:0 4px}
+  .m-top .account .t,.m-top .account .chev{display:none}
+  .top{display:block;margin-bottom:16px}
+  .top-right{display:none}
+  .headline{font-size:22px;line-height:1.25;gap:10px}
+  .headline .dot{transform:translateY(-3px)}
+  .page{margin-bottom:4px}
+  .fresh-m{font-weight:400}
+  .fresh-m::before{content:" · "}
+  .rec .interp{display:none}
+  .metric:nth-child(3) .interp{display:none}
+  .metric:nth-child(n+2) .sub2{margin-top:4px}
+  .headline{font-size:21px!important}
+  .work{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric{padding:12px 0 14px}
+  .metric:first-child{grid-column:1 / -1;border-bottom:1px solid var(--color-line);display:grid;grid-template-columns:auto 1fr;align-items:end;column-gap:16px}
+  .metric:first-child .metric-head{grid-column:1 / -1}
+  .metric:first-child .value{grid-row:2;margin-bottom:2px}
+  .metric:first-child .interp{grid-row:2;grid-column:2;padding-bottom:4px}
+  .metric:first-child .buffer-wrap{grid-column:1 / -1}
+  .metric:nth-child(2){border-left:0;padding-right:12px}
+  .metric:nth-child(3){padding-left:12px}
+  .value{font-size:28px;margin:4px 0 4px}
+  .metric:nth-child(n+2) .value{font-size:22px}
+  .interp{font-size:13px;line-height:18px}
+  .pop{width:calc(100vw - 40px);left:0!important}
+  .metric:nth-child(3) .pop{left:auto!important;right:0}
+  .rec{padding:16px 16px 16px;margin-top:16px}
+  .rec-title{font-size:19px}
+  .facts3{grid-template-columns:1fr 1fr;gap:10px 0;margin:12px 0 14px}
+  .facts3 div:nth-child(2){grid-column:1 / -1;grid-row:2;padding-left:0;border-left:0;padding-top:0}
+  .facts3 div:nth-child(3){padding-left:16px}
+  .facts3 dd{font-size:13px;line-height:18px}
+  .ag .btn{flex:1 1 auto}
+  .health{flex-wrap:wrap;padding:12px 14px}
+  .health{flex-wrap:nowrap;align-items:flex-end;gap:12px}
+  .health .h-text{gap:2px 8px}
+  .health .ag .btn{flex:none;height:36px}
+  .dp-title{font-size:21px}
+  .dp-facts{grid-template-columns:1fr}
+  .dp-facts>div{padding:12px 0}
+  .dp-facts>div+div{padding-left:0;border-left:0;border-top:1px solid var(--color-line)}
+  .cq-rows li{grid-template-columns:1fr auto;gap:2px 12px}
+  .cq-rows li .i{grid-column:1 / -1}
+  .assume .seg{width:100%}
+  .assume .seg button{flex:1}
+  /* the comparison stacks: one block per response, the recommended one first-tinted */
+  .cmp-scroll{display:none}
+  .cstack{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+  .why li{grid-template-columns:1fr;gap:0}
+  .fold-body dl{grid-template-columns:1fr}
+  .inspect{grid-template-columns:1fr 1fr}
+  .inspect>div:nth-child(3){padding-left:0;border-left:0;border-top:1px solid var(--color-line)}
+  .inspect>div:nth-child(4){border-top:1px solid var(--color-line)}
+  /* the worklist is a bottom sheet */
+  .inbox{position:fixed;top:auto;left:0;right:0;bottom:calc(61px + env(safe-area-inset-bottom));z-index:40;border:0;padding:0 var(--pad);background:var(--color-surface);border-radius:16px 16px 0 0;box-shadow:var(--shadow-up);max-height:56px;overflow:hidden;transition:max-height var(--dur) var(--ease-ui)}
+  .inbox>:not(.sheet-head){visibility:hidden}
+  body.sheet-open .inbox{max-height:calc(100% - 140px);overflow:auto;padding-bottom:16px}
+  body.sheet-open .inbox>*{visibility:visible}
+  body.sheet-open .inbox .inbox-head{display:none}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;height:56px;position:sticky;top:0;background:var(--color-surface);z-index:2}
+  .sheet-head::before{content:"";position:absolute;left:50%;top:6px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--color-line-strong)}
+  .sheet-head h2{font-family:var(--font-display);font-weight:800;font-size:17px;margin:0;display:flex;gap:8px;align-items:baseline}
+  .sheet-head .n{font-family:var(--font-sans);font-size:14px;font-weight:700;color:var(--color-ink-3)}
+  .sheet-head svg{width:18px;height:18px;color:var(--color-ink-3);transition:transform var(--dur) var(--ease-ui)}
+  body.sheet-open .sheet-head svg{transform:rotate(180deg)}
+  .inbox-head{display:none}
+  .alert{margin-top:0}
+  .scrim{display:block;position:fixed;inset:0;z-index:39;background:rgb(36 50 74 / .32);opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease-ui)}
+  body.sheet-open .scrim{opacity:1;pointer-events:auto}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--color-surface);border-top:1px solid var(--color-line);padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  .tabbar a{display:grid;justify-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--color-ink-3)}
+  .tabbar a[aria-current]{color:var(--color-brand-600)}
+  .tabbar svg{width:20px;height:20px}
+  .rev{bottom:150px}
+  .links{gap:10px 20px}
+}
+@media (min-width:1024px){ .fresh-m{display:none} }
+
+/* the phone board (?state=phone at desktop width) */
+.board{display:none}
+body[data-state=phone] .app,body[data-state=phone] .tabbar{display:none}
+body[data-state=phone] .board{display:flex;gap:32px;padding:32px;align-items:flex-start;background:var(--color-canvas);min-height:100dvh;overflow-x:auto}
+.board figure{margin:0;flex:none}
+.board figcaption{font-size:13px;font-weight:700;color:var(--color-ink-2);margin:0 0 8px}
+.board iframe{width:390px;height:844px;border:1px solid var(--color-line-strong);border-radius:20px;background:#fff;display:block}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-property:opacity!important;animation:none!important}
+  .seg .pill,.utabs .bar,.inbox{transition:none!important}
+}
+</style>
+</head>
+<body data-state="default">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-deals" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+  <symbol id="i-recv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-act" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.01"/></symbol>
+  <symbol id="i-ringdot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-dashring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3.2 2.6"><circle cx="12" cy="12" r="8"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 4-5.2 7-5.2s5.8 1.6 7 5.2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="nav" aria-label="Main">
+    <div class="nav-in">
+      <div class="brand"><span class="brand-mark"><svg width="16" height="16"><use href="#i-shield"/></svg></span><span class="brand-name">FLOW 流</span></div>
+      <a href="#" aria-current="page" aria-label="Home"><svg><use href="#i-home"/></svg><span class="t">Home</span></a>
+      <a href="#" aria-label="Deals"><svg><use href="#i-deals"/></svg><span class="t">Deals</span></a>
+      <a href="#" aria-label="Cash &amp; funding"><svg><use href="#i-cash"/></svg><span class="t">Cash &amp; funding</span></a>
+      <a href="#" aria-label="Receivables"><svg><use href="#i-recv"/></svg><span class="t">Receivables</span></a>
+      <a href="#" aria-label="Activity"><svg><use href="#i-act"/></svg><span class="t">Activity</span></a>
+      <div class="nav-foot">
+        <p class="nav-note">A simulated company: the lenders, the buyer and the bank feed are simulated. No real funds move.</p>
+        <button class="ask" type="button" aria-label="Ask FLOW"><svg><use href="#i-ask"/></svg><span class="t">Ask FLOW</span></button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="m-top">
+      <div class="brand"><span class="brand-mark"><svg width="16" height="16"><use href="#i-shield"/></svg></span><span class="brand-name">FLOW 流</span></div>
+      <div class="right"><div class="seg quiet mode-m" role="tablist" aria-label="Mode"><span class="pill" aria-hidden="true"></span></div>
+        <button class="account" type="button" aria-label="Account: Owner"><span class="av"><svg><use href="#i-user"/></svg></span><span class="t">Owner</span></button></div>
+    </div>
+
+    <header class="top">
+      <div>
+        <p class="page">Home<span class="fresh-m" id="fresh-m"></span></p>
+        <h1 class="headline"><span class="dot" id="hl-dot" aria-hidden="true"></span><span><span class="sr" id="hl-sr"></span><span id="hl"></span></span></h1>
+      </div>
+      <div class="top-right">
+        <span class="fresh" id="fresh"></span>
+        <span class="vr" aria-hidden="true"></span>
+        <div class="seg quiet" role="tablist" aria-label="Mode" id="mode"><span class="pill" aria-hidden="true"></span></div>
+        <button class="account" type="button" aria-haspopup="menu" aria-label="Account: Owner"><span class="av"><svg><use href="#i-user"/></svg></span><span class="t">Owner</span><svg class="chev"><use href="#i-chev"/></svg></button>
+      </div>
+    </header>
+
+    <div class="work">
+      <div class="col">
+        <section class="metrics" aria-label="Your company" id="metrics"></section>
+        <section class="rec" id="rec" aria-labelledby="rec-title"></section>
+        <section class="health" id="health" aria-label="Company cash"></section>
+        <section class="deal section" id="deal" aria-labelledby="deal-title"></section>
+
+        <section class="section" id="chart-sec" aria-labelledby="chart-title">
+          <div class="chart-head">
+            <div><h2 class="h-section" id="chart-title"></h2><p class="chart-scope" id="chart-scope"></p></div>
+            <div class="seg" role="tablist" aria-label="Days shown" id="win-tabs"><span class="pill" aria-hidden="true"></span></div>
+          </div>
+          <div class="legend" id="legend"></div>
+          <div class="chart-wrap" id="chart-wrap"><svg id="chart" role="img"></svg></div>
+          <div class="inspect" id="inspect" aria-live="polite"></div>
+          <div class="inspect-ev" id="inspect-ev"></div>
+          <div class="chart-foot" id="chart-foot"></div>
+        </section>
+
+        <nav class="section links" aria-label="Where the rest of the picture lives" id="links"></nav>
+      </div>
+
+      <aside class="inbox" id="worklist" aria-labelledby="wl-title">
+        <button class="sheet-head" type="button" id="sheet-head" aria-expanded="false" aria-controls="worklist"><h2><span>Your worklist</span><span class="n" id="sheet-n"></span></h2><svg><use href="#i-chev"/></svg></button>
+        <div class="inbox-head"><h2 id="wl-title">Your worklist</h2></div>
+        <div class="alert" id="wl-alert"></div>
+        <div class="utabs" role="tablist" aria-label="Worklist views" id="wl-tabs"><span class="bar" aria-hidden="true"></span></div>
+        <label class="search"><svg><use href="#i-search"/></svg><span class="sr">Search customers or deals</span><input id="wl-q" type="search" placeholder="Search customers or deals"></label>
+        <div id="wl-panel" role="tabpanel"></div>
+        <div class="inbox-foot"><a class="link" href="#">All deals <span class="arrow" aria-hidden="true">→</span></a></div>
+      </aside>
+    </div>
+  </main>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<nav class="tabbar" aria-label="Main">
+  <a href="#" aria-current="page"><svg><use href="#i-home"/></svg>Home</a>
+  <a href="#"><svg><use href="#i-deals"/></svg>Deals</a>
+  <a href="#"><svg><use href="#i-cash"/></svg>Cash</a>
+  <a href="#"><svg><use href="#i-recv"/></svg>Receivables</a>
+  <a href="#"><svg><use href="#i-act"/></svg>Activity</a>
+</nav>
+
+<div class="board" id="board"></div>
+
+<div class="rev" aria-label="Reviewer: state">
+  <a href="?state=default" data-s="default">a · Default</a>
+  <a href="?state=deal" data-s="deal">b · Deal preview</a>
+  <a href="?state=compare" data-s="compare">c · Compare</a>
+  <a href="?state=phone" data-s="phone">d · Phone</a>
+</div>
+
+<script>
+/* ===== The reads, verbatim (GET /home home_v2 + cash, /worklist, /offers/OFF-f806f79b6c21 + /picture + /exposure, the evaluate response; lang=en, Demo day 0) ===== */
+const DATA = {"home":{"status_word":"Action needed","status_tone":"bad","headline":"Your cash reserve becomes unsafe in 12 days.","headline_note":"Cash falls to ¥60k, ¥240k below your ¥300k minimum cash reserve.","last_read_when":"today","plan_note":"A funding plan is ready, within your signed limits. No approval is needed.","assumptions":["Foshan pays ¥420k in 32 days, as scheduled.","The scheduled payroll, supplier and debt payments are paid as entered."],"basis":"Expected invoice payments at their due dates and committed funding; overdue payments are excluded; assumed line repayment in 32 days.","kpis":{"cash_available":{"eyebrow":"CASH AVAILABLE","value_display":"¥400,000","note":"¥100k above your ¥300k minimum","tone":"ok","buffer":{"min_fen":30000000,"cash_fen":40000000,"min_display":"¥300k","headroom_text":"+¥100k","cash_display":"¥400,000.00"}},"lowest_ahead":{"eyebrow":"LOWEST CASH AHEAD","value_display":"−¥105,000","note":"¥405k below your minimum in 30 days · current books, no new funding","tone":"bad","with_plan_hint":"If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.","with_plan":{"label":"with plan","value_text":"¥300,000"}},"funding":{"state":"PROPOSED","eyebrow":"PLANNED FUNDING","value_display":"¥405,000","note":"¥150k credit line today + ¥255k invoice financing in 3 days","hint":"Conditional on you running the plan; not counted as cash."}},"action":{"variant":"ACTION","key":"funding:ALERT-RESERVE-12","tone":"bad","eyebrow":"NEXT ACTION · WITHIN 12 DAYS","title":"Secure ¥405,000 before payroll in 12 days.","text":"FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · cost ¥3,113.93 · no approval needed.","primary":{"label":"Run the funding plan","href":"/cash#cash-options"},"secondary":{"label":"Compare","href":"/cash#cash-options"},"control":"RUN_PLAN"},"chart":{"scope_title":"COMPANY CASH FORECAST","legend":[{"label":"Current books · no new funding","kind":"current"},{"label":"If FLOW's plan runs (planned)","kind":"planned"}],"lowest_inspector":{"day_text":"The lowest point · in 30 days","projected_display":"−¥105,000","minimum_display":"¥300,000","third_label":"Shortfall","third_display":"¥405,000","note":"With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned."},"lowest":{"cause":"a loan repayment goes out"},"note":"Current books, nothing new assumed. The same figures as Cash & Funding."},"links":[{"label":"Where the cash goes","href":"/cash#where-the-cash-goes"},{"label":"Facility headroom","href":"/cash#facility-headroom"},{"label":"What you are owed, by when","href":"/receivables"},{"label":"All deals","href":"/deals"}],"floor":300000.0,"floor_display":"¥300,000.00","floor_short":"¥300k","series":[[0,400000.0,"¥400,000.00",[]],[12,60000.0,"¥60,000.00",[["Payroll","−¥340,000.00"]]],[20,-60000.0,"−¥60,000.00",[["Supplier payment","−¥120,000.00"]]],[30,-105000.0,"−¥105,000.00",[["Debt service","−¥45,000.00"]]],[32,315000.0,"¥315,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[47,635000.0,"¥635,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Operating bill","−¥100,000.00"]]],[60,590000.0,"¥590,000.00",[["Debt service","−¥45,000.00"]]],[77,1010000.0,"¥1,010,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[90,965000.0,"¥965,000.00",[["Debt service","−¥45,000.00"]]],[107,1385000.0,"¥1,385,000.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[120,1340000.0,"¥1,340,000.00",[["Debt service","−¥45,000.00"]]]],"plan_series":[[0,550000.0,"¥550,000.00",[["Credit line draw","¥150,000.00"]]],[3,805000.0,"¥805,000.00",[["Invoice financing lands","¥255,000.00"]]],[12,465000.0,"¥465,000.00",[["Payroll","−¥340,000.00"]]],[20,345000.0,"¥345,000.00",[["Supplier payment","−¥120,000.00"]]],[30,300000.0,"¥300,000.00",[["Debt service","−¥45,000.00"]]],[32,311886.07,"¥311,886.07",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Interest","−¥841.64"],["Repayment","−¥150,000.00"],["Interest","−¥1,634.79"],["Fee","−¥637.50"],["Repayment","−¥255,000.00"]]],[47,631886.07,"¥631,886.07",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Operating bill","−¥100,000.00"]]],[60,586886.07,"¥586,886.07",[["Debt service","−¥45,000.00"]]],[77,1006886.07,"¥1,006,886.07",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[90,961886.07,"¥961,886.07",[["Debt service","−¥45,000.00"]]],[107,1381886.07,"¥1,381,886.07",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[120,1336886.07,"¥1,336,886.07",[["Debt service","−¥45,000.00"]]]],"axes":{"30":{"min":-200000.0,"max":1000000.0,"ticks":[[-200000.0,"−¥200k"],[0.0,"¥0"],[200000.0,"¥200k"],[400000.0,"¥400k"],[600000.0,"¥600k"],[800000.0,"¥800k"],[1000000.0,"¥1,000k"]]},"36":{"min":-200000.0,"max":1000000.0,"ticks":[[-200000.0,"−¥200k"],[0.0,"¥0"],[200000.0,"¥200k"],[400000.0,"¥400k"],[600000.0,"¥600k"],[800000.0,"¥800k"],[1000000.0,"¥1,000k"]]},"60":{"min":-200000.0,"max":1000000.0,"ticks":[[-200000.0,"−¥200k"],[0.0,"¥0"],[200000.0,"¥200k"],[400000.0,"¥400k"],[600000.0,"¥600k"],[800000.0,"¥800k"],[1000000.0,"¥1,000k"]]},"120":{"min":-500000.0,"max":1500000.0,"ticks":[[-500000.0,"−¥500k"],[0.0,"¥0"],[500000.0,"¥500k"],[1000000.0,"¥1,000k"],[1500000.0,"¥1,500k"]]}},"when":{"0":"today","3":"in 3 days","12":"in 12 days","20":"in 20 days","30":"in 30 days","32":"in 32 days"},"lowest_day":30},"worklist":{"lang":"en","day":0,"state_version":1,"alert":{"key":"company-cash","eyebrow":"Company cash","text":"Reserve unsafe in 12 days. A funding plan is ready.","tone":"bad","primary":{"label":"Run or compare","href":"/"}},"counts":{"needs_you":3,"waiting":0,"customers":2},"needs_you":[{"key":"deal:OFF-f806f79b6c21","kind":"DECISION","customer_id":"BUYER-1","customer_short":"Foshan","subject_text":"Foshan · Payment terms","status_text":"Counter ready · Reply needed","consequence_text":"As asked: below your minimum for 15 days.","owner":"NEEDS_YOU","severity":"CAUTION","deadline_day":null,"why_first_text":"Why first: it has the largest effect on your cash.","href":"/?customer=BUYER-1&deal=deal%3AOFF-f806f79b6c21","is_new":false},{"key":"deal:OFF-39cabafae4ee","kind":"DECISION","customer_id":"BUYER-1","customer_short":"Foshan","subject_text":"Foshan · Early-payment discount","status_text":"Counter ready · Reply needed","consequence_text":"Accepting as asked does not take cash below your minimum.","owner":"NEEDS_YOU","severity":"NORMAL","deadline_day":null,"why_first_text":null,"href":"/?customer=BUYER-1&deal=deal%3AOFF-39cabafae4ee","is_new":false},{"key":"deal:OFF-4f6bf9834d4d","kind":"DECISION","customer_id":"BUYER-1","customer_short":"Foshan","subject_text":"Foshan · Early-payment discount","status_text":"Counter ready · Reply needed","consequence_text":"Accepting as asked does not take cash below your minimum.","owner":"NEEDS_YOU","severity":"NORMAL","deadline_day":null,"why_first_text":null,"href":"/?customer=BUYER-1&deal=deal%3AOFF-4f6bf9834d4d","is_new":false}],"waiting":[],"customers":[{"customer_id":"BUYER-1","short":"Foshan","name":"Foshan Home Retail Co.","negotiations_count":3,"needs_you_count":3,"outstanding_display":"¥420,000","share_text":"100% of what you are owed","tone":"warn","status_text":"3 open negotiations · 3 need you","detail_text":"¥420,000 outstanding · 100% of what you are owed","href":"/?customer=BUYER-1"},{"customer_id":"BUYER-2","short":"Dongguan","name":"Dongguan Office Supplies Ltd.","negotiations_count":0,"needs_you_count":0,"outstanding_display":"¥0","share_text":null,"tone":"neutral","status_text":"Nothing open","detail_text":"¥0 outstanding","href":"/?customer=BUYER-2"}],"partial":null},"deal":{"subject":"Foshan · Payment terms","key":"deal:OFF-f806f79b6c21","buyer_name":"Foshan Home Retail Co.","ask_text":"We'll settle the ¥420k early at 1.2% if you extend our standard terms to 60 days going forward and give us 1% off next quarter.","recommends":"Counter recommended","why_it_matters":{"text":"The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit. Accepted as asked, cash would fall below your minimum in 47 days.","reasons":["The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.","Accepted as asked, cash would fall below your minimum in 47 days."]},"customer_context":{"contribution_display":"about ¥1.09m","contribution_note":"a year, estimated; margin assumed for the Demo, not confirmed by you","owes_display":"¥420,000","share_text":"100%","profile_href":"/customers/BUYER-1"},"paths":[{"key":"asked","kind":"asked","label":"As they asked","recommended":false,"sendable":false,"needs_owner":false,"tag_text":"Over your limit","tag_tone":"bad","cost_display":"¥28,326.92","cost_note":"over 12 months, plus ¥5,040.00 once","cost_total_display":null,"cost_basis_text":"two parts: once, and over 12 months","cost_once_display":"¥5,040.00","cost_forward_display":"¥28,326.92","cost_components":[],"terms":[{"key":"payment_terms","label":"Payment terms","value_text":"60 days","instead_of_text":null},{"key":"early_payment","label":"Early payment","value_text":"1.20% off ¥420,000.00","instead_of_text":null},{"key":"rebate_or_price","label":"Rebate or price","value_text":"1.00% rebate","instead_of_text":null}],"decides_text":"Cannot be accepted within your signed limits.","authority":"over_limit","authority_text":"Over a limit you signed: only a new mandate changes that","assumption_text":null,"reply_text":null,"lowest_fen":16496000,"lowest_short":"¥165k","lowest_when":"in 60 days","first_breach_when":"in 47 days","band_text":"Below your minimum for 15 days"},{"key":"CTR-193394b6ba8b","kind":"reply","label":"Option A","recommended":true,"sendable":true,"needs_owner":false,"tag_text":"FLOW recommends","tag_tone":"info","cost_display":"¥3,027.77","cost_note":"once; nothing ongoing","cost_total_display":"¥3,027.77","cost_basis_text":"once, nothing ongoing","cost_once_display":"¥3,027.77","cost_forward_display":null,"cost_components":[],"terms":[{"key":"payment_terms","label":"Payment terms","value_text":"45 days","instead_of_text":"instead of 60"},{"key":"early_payment","label":"Early payment","value_text":"0.85% off ¥257,200.00","instead_of_text":"instead of 1.20% off ¥420,000.00"},{"key":"rebate_or_price","label":"Rebate or price","value_text":"None","instead_of_text":"instead of a 1.00% rebate"}],"decides_text":"FLOW can send it. Your approval is not needed.","authority":"flow_may","authority_text":"FLOW can send it","assumption_text":"If the buyer accepts this reply","reply_text":"Terms stay at 45 days, no rebate. We will accept early settlement on up to ¥257,200 of this invoice at 0.85%, paid within 2 days.","lowest_fen":30000000,"lowest_short":"¥300k","lowest_when":"in 30 days","first_breach_when":null,"band_text":"The next invoice is paid 15 days sooner than as asked"},{"key":"CTR-6b07cbf70441","kind":"reply","label":"Option B","recommended":false,"sendable":true,"needs_owner":true,"tag_text":"Needs your approval","tag_tone":"warn","cost_display":"¥0.00","cost_note":"the price rise pays for the longer terms","cost_total_display":"¥0.00","cost_basis_text":"net over 12 months","cost_once_display":null,"cost_forward_display":null,"cost_components":[{"label":"Funding cost of the longer terms","display":"¥16,217.95"},{"label":"Offset by the 0.30% price rise","display":"¥16,380.00"}],"terms":[{"key":"payment_terms","label":"Payment terms","value_text":"55 days","instead_of_text":"instead of 60"},{"key":"early_payment","label":"Early payment","value_text":"None","instead_of_text":"instead of 1.20% off ¥420,000.00"},{"key":"rebate_or_price","label":"Rebate or price","value_text":"0.30% price rise","instead_of_text":"instead of a 1.00% rebate"}],"decides_text":"It changes your terms, so you approve it first.","authority":"needs_owner","authority_text":"Needs your approval","assumption_text":"If the buyer accepts this reply","reply_text":"55-day terms accepted with a 0.30% price adjustment on future invoices, no rebate.","lowest_fen":30000000,"lowest_short":"¥300k","lowest_when":"in 30 days","first_breach_when":null,"band_text":"The next invoice is paid 5 days sooner than as asked"}],"series":{"asked":[[0,400000.0,"¥400,000.00",[]],[2,814960.0,"¥814,960.00",[["Early payment from Foshan Home Retail Co.","¥420,000.00"],["Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days","−¥5,040.00"]]],[12,474960.0,"¥474,960.00",[["Payroll","−¥340,000.00"]]],[20,354960.0,"¥354,960.00",[["Supplier payment","−¥120,000.00"]]],[30,309960.0,"¥309,960.00",[["Debt service","−¥45,000.00"]]],[47,209960.0,"¥209,960.00",[["Operating bill","−¥100,000.00"]]],[60,164960.0,"¥164,960.00",[["Debt service","−¥45,000.00"]]],[62,584960.0,"¥584,960.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[90,539960.0,"¥539,960.00",[["Debt service","−¥45,000.00"]]],[92,959960.0,"¥959,960.00",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[120,914960.0,"¥914,960.00",[["Debt service","−¥45,000.00"]]]],"CTR-193394b6ba8b":[[0,549986.2,"¥549,986.20",[["Credit line draw","¥149,986.20"]]],[2,805000.0,"¥805,000.00",[["Early payment from Foshan Home Retail Co.","¥257,200.00"],["Discount on early settlement of the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days","−¥2,186.20"]]],[12,465000.0,"¥465,000.00",[["Payroll","−¥340,000.00"]]],[20,345000.0,"¥345,000.00",[["Supplier payment","−¥120,000.00"]]],[30,300000.0,"¥300,000.00",[["Debt service","−¥45,000.00"]]],[32,311972.23,"¥311,972.23",[["Receipt from Foshan Home Retail Co.","¥162,800.00"],["Interest","−¥841.57"],["Repayment","−¥149,986.20"]]],[47,631972.23,"¥631,972.23",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Operating bill","−¥100,000.00"]]],[60,586972.23,"¥586,972.23",[["Debt service","−¥45,000.00"]]],[77,1006972.23,"¥1,006,972.23",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[90,961972.23,"¥961,972.23",[["Debt service","−¥45,000.00"]]],[107,1381972.23,"¥1,381,972.23",[["Receipt from Foshan Home Retail Co.","¥420,000.00"]]],[120,1336972.23,"¥1,336,972.23",[["Debt service","−¥45,000.00"]]]],"CTR-6b07cbf70441":[[0,490000.0,"¥490,000.00",[["Credit line draw","¥90,000.00"]]],[3,805000.0,"¥805,000.00",[["Invoice financing lands","¥315,000.00"]]],[12,465000.0,"¥465,000.00",[["Payroll","−¥340,000.00"]]],[20,345000.0,"¥345,000.00",[["Supplier payment","−¥120,000.00"]]],[30,300000.0,"¥300,000.00",[["Debt service","−¥45,000.00"]]],[32,402193.05,"¥402,193.05",[["Receipt from Foshan Home Retail Co.","¥420,000.00"],["Interest","−¥2,019.45"],["Fee","−¥787.50"],["Repayment","−¥315,000.00"]]],[47,302193.05,"¥302,193.05",[["Operating bill","−¥100,000.00"]]],[57,632553.54,"¥632,553.54",[["Receipt from Foshan Home Retail Co.","¥421,260.00"],["Interest","−¥899.51"],["Repayment","−¥90,000.00"]]],[60,587553.54,"¥587,553.54",[["Debt service","−¥45,000.00"]]],[87,1008813.54,"¥1,008,813.54",[["Receipt from Foshan Home Retail Co.","¥421,260.00"]]],[90,963813.54,"¥963,813.54",[["Debt service","−¥45,000.00"]]],[117,1385073.54,"¥1,385,073.54",[["Receipt from Foshan Home Retail Co.","¥421,260.00"]]],[120,1340073.54,"¥1,340,073.54",[["Debt service","−¥45,000.00"]]]]},"exposure_paths":[{"key":"asked","kind":"asked","label":"As they asked","lowest_display":"¥165k","lowest_when":"in 60 days","lowest_when_text":"below it for 15 days","limit_word":"EXCEEDED","limit_text":"exceeded","share_after_text":"100%, for 15 days longer"},{"key":"CTR-193394b6ba8b","kind":"reply","label":"Option A","lowest_display":"¥300k","lowest_when":"in 30 days","lowest_when_text":"at your minimum","limit_word":"WITHIN","limit_text":"within","share_after_text":"100%, paid 2 days after the offer"},{"key":"CTR-6b07cbf70441","kind":"reply","label":"Option B","lowest_display":"¥300k","lowest_when":"in 30 days","lowest_when_text":"at your minimum","limit_word":"WITHIN","limit_text":"within","share_after_text":"100%, for 10 days longer"},{"key":"do_nothing","kind":"do_nothing","label":"Do nothing","lowest_display":"−¥105k","lowest_when":"in 30 days","lowest_when_text":"below it for 20 days","limit_word":null,"limit_text":null,"share_after_text":"100%, until the due day"}],"stress":{"asked":{"lowest_short":"−¥250k","lowest_when":"in 60 days","text":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.","first_breach_when":"in 12 days"},"CTR-193394b6ba8b":{"lowest_short":"−¥250k","lowest_when":"in 60 days","text":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.","first_breach_when":"in 12 days"},"CTR-6b07cbf70441":{"lowest_short":"−¥250k","lowest_when":"in 60 days","text":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.","first_breach_when":"in 12 days"},"do_nothing":null},"stress_series":{"asked":[[0,400000.0,"¥400,000.00",[]],[12,60000.0,"¥60,000.00",[]],[20,-60000.0,"−¥60,000.00",[]],[30,-105000.0,"−¥105,000.00",[]],[47,-205000.0,"−¥205,000.00",[]],[60,-250000.0,"−¥250,000.00",[]],[62,170000.0,"¥170,000.00",[]],[90,125000.0,"¥125,000.00",[]],[92,545000.0,"¥545,000.00",[]],[120,500000.0,"¥500,000.00",[]]],"CTR-193394b6ba8b":[[0,400000.0,"¥400,000.00",[]],[12,60000.0,"¥60,000.00",[]],[20,-60000.0,"−¥60,000.00",[]],[30,-105000.0,"−¥105,000.00",[]],[47,-205000.0,"−¥205,000.00",[]],[60,-250000.0,"−¥250,000.00",[]],[62,170000.0,"¥170,000.00",[]],[77,590000.0,"¥590,000.00",[]],[90,545000.0,"¥545,000.00",[]],[107,965000.0,"¥965,000.00",[]],[120,920000.0,"¥920,000.00",[]]],"CTR-6b07cbf70441":[[0,400000.0,"¥400,000.00",[]],[12,60000.0,"¥60,000.00",[]],[20,-60000.0,"−¥60,000.00",[]],[30,-105000.0,"−¥105,000.00",[]],[47,-205000.0,"−¥205,000.00",[]],[60,-250000.0,"−¥250,000.00",[]],[62,170000.0,"¥170,000.00",[]],[87,591260.0,"¥591,260.00",[]],[90,546260.0,"¥546,260.00",[]],[117,967520.0,"¥967,520.00",[]],[120,922520.0,"¥922,520.00",[]]]},"capacity":{"asked":{"stress":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.","capacity":"Accepting as asked leaves ¥14,000 of room for another payment; today ¥81,000."},"CTR-193394b6ba8b":{"stress":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.","capacity":"Option A leaves ¥0 of room for another payment for the next 31 days; today ¥81,000."},"CTR-6b07cbf70441":{"stress":"Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.","capacity":"Option B leaves ¥62,000 of room for another payment; today ¥81,000."},"do_nothing":null},"concentration":"Foshan is 100% of what you are owed today (¥420,000). No customer receipts are due in the next 30 days.","picture_axis":{"min":0.0,"max":1000000.0,"ticks":[[0.0,"¥0"],[200000.0,"¥200k"],[400000.0,"¥400k"],[600000.0,"¥600k"],[800000.0,"¥800k"],[1000000.0,"¥1,000k"]]},"picture_days":66,"send_scope_lines":["Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)","Draws ¥149,986.20 on the Bank credit line today","Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"]},"differentiators":{"OFF-4f6bf9834d4d":"pay this one early at 1.5%","OFF-39cabafae4ee":"Same arrangement as usual"}};
+
+/* ===== dictionary labels (no money or date inside; en) ===== */
+const T = {
+  home: "Home", updated: "Updated today", owner: "Owner", modes: ["Business", "Demo"],
+  cash: "Cash balance", lowest: "Lowest projected cash", funding: "Funding plan", ready: "Ready to run",
+  recommends: "FLOW recommends", cost: "Estimated cost", timing: "Funding timing", authority: "Authority",
+  run: "Review & run funding", compareFunding: "Compare funding options",
+  reviewPlan: "Review plan", reviewCounter: "Review counter", compareResponses: "Compare responses", viewCustomer: "View customer",
+  buyerAsks: "The buyer asks", impact: "Estimated economic impact", consequence: "Financial consequence",
+  assumption: "Payment timing assumption", assumptionNote: "Changes the lowest projected cash below and the cash chart.",
+  scenarios: ["Expected payments", "Foshan 30 days late"], explore: "Explore comparison",
+  terms: "Terms", commercial: "Commercial change", lowestCash: "Lowest projected cash", limits: "Within limits",
+  why: "Why FLOW recommends", detailed: "Detailed economics", cashImpact: "Cash impact", finImpact: "Financial impact",
+  capacity: "Payment capacity", concentration: "Customer concentration", back: "Your company",
+  chartTitle: "Company cash forecast", conditional: "conditional on execution", below: "Below minimum reserve",
+  compareCash: "Compare cash outcomes", full: "Full timeline in Cash & Funding", onThatDay: "On that day,",
+  when: "When", projected: "Projected cash", withPlan: "If FLOW's plan runs", minimum: "Minimum reserve",
+  vs: "vs", today: "Today", inDays: (n) => `in ${n} days`,
+};
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const params = new URLSearchParams(location.search);
+const STATES = ["default", "deal", "compare", "phone"];
+let STATE = STATES.includes(params.get("state")) ? params.get("state") : "default";
+if (params.get("shot")) document.body.classList.add("shot");
+document.body.dataset.state = STATE;
+document.querySelectorAll(".rev a").forEach((a) => a.classList.toggle("on", a.dataset.s === STATE));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const H = DATA.home, WL = DATA.worklist, D = DATA.deal, K = H.kpis;
+const sw = (tone, glyph, text) => `<span class="sw ${tone}"><svg aria-hidden="true"><use href="#i-${glyph}"/></svg>${esc(text)}</span>`;
+
+/* ===== the phone board ===== */
+if (STATE === "phone") {
+  const base = location.pathname;
+  $("#board").innerHTML = [["?state=default&shot=1", "Default · first viewport"], ["?state=default&shot=1&sheet=1", "Default · worklist sheet open"], ["?state=deal&shot=1", "Deal preview, stacked"], ["?state=compare&shot=1", "Comparison, stacked"]]
+    .map(([q, c]) => `<figure><figcaption>${c}</figcaption><iframe src="${base}${q}" title="${c}"></iframe></figure>`).join("");
+}
+
+/* ===== SegmentedTabs compact (pill measured from the chosen tab, as segmented-tabs.tsx does) ===== */
+function seg(el, labels, value, onChange) {
+  labels.forEach((l, i) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.textContent = l; b.setAttribute("aria-selected", i === value); b.tabIndex = i === value ? 0 : -1;
+    b.addEventListener("click", () => set(i));
+    b.addEventListener("keydown", (e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); const n = (value + d + labels.length) % labels.length; set(n); el.querySelectorAll("button")[n].focus(); } });
+    el.appendChild(b); });
+  const pill = el.querySelector(".pill");
+  function place() { const b = el.querySelectorAll("button")[value]; if (!b || !b.offsetWidth) return; pill.style.width = b.offsetWidth + "px"; pill.style.transform = `translateX(${b.offsetLeft - 2}px)`; }
+  function set(i) { value = i; el.querySelectorAll("button").forEach((b, j) => { b.setAttribute("aria-selected", j === i); b.tabIndex = j === i ? 0 : -1; }); place(); onChange && onChange(i); }
+  requestAnimationFrame(place); addEventListener("resize", place); document.fonts && document.fonts.ready.then(place);
+  return { place };
+}
+
+/* ===== header ===== */
+$("#hl").textContent = H.headline;
+$("#hl-sr").textContent = H.status_word + ". ";
+$("#hl-dot").className = "dot " + (H.status_tone === "bad" ? "bad" : H.status_tone === "warn" ? "warn" : "ok");
+for (const el of [$("#fresh"), $("#fresh-m")]) { el.textContent = T.updated; el.title = "Read " + H.last_read_when; el.setAttribute("aria-label", "Read " + H.last_read_when); }
+const modeSegs = [seg($("#mode"), T.modes, 0), seg(document.querySelector(".mode-m"), T.modes, 0)];
+
+/* ===== MetricStrip ===== */
+const scaleMax = K.cash_available.buffer.cash_fen * 1.5;
+const minPct = K.cash_available.buffer.min_fen / scaleMax * 100, cashPct = K.cash_available.buffer.cash_fen / scaleMax * 100;
+const lowNote = K.lowest_ahead.note.split(" · ");
+const cell = (id, label, value, cls, interp, extra, pop) => `
+  <div class="metric">
+    <div class="metric-head"><span class="lbl">${esc(label)}</span>
+      <button class="info" type="button" aria-expanded="false" aria-controls="pop-${id}" aria-label="Assumptions behind ${esc(label.toLowerCase())}"><svg><use href="#i-info"/></svg></button></div>
+    <div class="value ${cls}">${esc(value)}</div>
+    <p class="interp">${esc(interp)}</p>${extra}
+    <div class="pop" id="pop-${id}" role="dialog" aria-label="${esc(label)}">${pop}</div>
+  </div>`;
+$("#metrics").innerHTML =
+  cell("cash", T.cash, K.cash_available.value_display, "", K.cash_available.note,
+    `<div class="buffer-wrap"><div class="buffer" role="img" aria-label="${esc(`${K.cash_available.buffer.cash_display}; ${T.minimum.toLowerCase()} ${K.cash_available.buffer.min_display}; ${K.cash_available.buffer.headroom_text}`)}"><span class="track"></span><span class="fill" style="width:${cashPct}%"></span><span class="min" style="left:${minPct}%"></span><span class="cash" style="left:${cashPct}%"></span></div></div>`,
+    `<h4>Assumptions</h4><ul>${H.assumptions.map((a) => `<li>${esc(a)}</li>`).join("")}</ul><p style="margin:8px 0 0">${esc(H.basis)}</p>`) +
+  cell("low", T.lowest, K.lowest_ahead.value_display, "bad", lowNote[0],
+    `<div class="sub2"><svg width="14" height="14" style="color:var(--color-ink-3)" aria-hidden="true"><use href="#i-dashring"/></svg>${esc(cap(K.lowest_ahead.with_plan.label))} <b>${esc(K.lowest_ahead.with_plan.value_text)}</b></div>`,
+    `<h4>${esc(cap(lowNote.slice(1).join(" · ")))}</h4><p style="margin:0">${esc(K.lowest_ahead.with_plan_hint)}</p>`) +
+  cell("fund", T.funding, K.funding.value_display, "plan", K.funding.note,
+    `<div class="sub2">${sw("info", "dashring", T.ready)}</div>`,
+    `<p style="margin:0">${esc(K.funding.hint)}</p>`);
+document.querySelectorAll(".info").forEach((b) => b.addEventListener("click", (e) => {
+  e.stopPropagation(); const open = b.getAttribute("aria-expanded") !== "true";
+  document.querySelectorAll(".info").forEach((o) => { o.setAttribute("aria-expanded", "false"); $("#" + o.getAttribute("aria-controls")).classList.remove("open"); });
+  if (open) { b.setAttribute("aria-expanded", "true"); $("#" + b.getAttribute("aria-controls")).classList.add("open"); }
+}));
+document.addEventListener("click", () => document.querySelectorAll(".info[aria-expanded=true]").forEach((b) => b.click()));
+
+/* ===== DecisionHighlight: eyebrow, headline, one line, three facts, the action group ===== */
+const A = H.action;
+/* the server sends the three facts as one sentence (action.text); split at its " · " and ": " separators, words unchanged */
+const parts = A.text.replace(/\.$/, "").split(" · ");
+const timing = parts[0].split(": ").slice(1).join(": ");
+const costFact = parts[1].replace(/^cost /, "");
+$("#rec").innerHTML = `
+  <p class="eyebrow">${T.recommends}</p>
+  <h2 class="rec-title" id="rec-title">${esc(A.title)}</h2>
+  <p class="interp">${esc(H.headline_note)}</p>
+  <dl class="facts3">
+    <div><dt>${T.cost}</dt><dd class="num">${esc(costFact)}</dd></div>
+    <div><dt>${T.timing}</dt><dd>${esc(cap(timing))}</dd></div>
+    <div><dt>${T.authority}</dt><dd>${esc(cap(parts[2]))}</dd></div>
+  </dl>
+  <div class="ag" role="group" aria-label="${esc(A.title)}">
+    <button class="btn filled" type="button">${T.run}</button>
+    <button class="btn outline" type="button">${T.compareFunding}</button>
+  </div>`;
+$("#health").innerHTML = `
+  <div class="h-text"><span class="dot bad" aria-hidden="true"></span><b>${esc(WL.alert.eyebrow)}</b><span>${esc(A.title)}</span><span class="h-cost">${T.cost} <span class="num">${esc(costFact)}</span></span></div>
+  <div class="ag"><button class="btn outline" type="button">${T.reviewPlan}</button></div>`;
+
+/* ===== the decision preview ===== */
+const P = Object.fromEntries(D.paths.map((p) => [p.key, p]));
+const X = Object.fromEntries(D.exposure_paths.map((p) => [p.key, p]));
+const ASK = P.asked, OA = D.paths.find((p) => p.recommended), OB = D.paths.find((p) => p.kind === "reply" && !p.recommended);
+const ORDER = [ASK, OA, OB];
+/* authority_reason_text: the server field the implementer is adding; composed here from each counter's own terms in the
+   picture/evaluate read (every figure is already a server word). The asked path has none. */
+const AUTH_REASON = {
+  [OA.key]: "FLOW can send it. Terms stay at 45 days, no rebate. The early-settlement offer at 0.85% is within the limit you signed.",
+  [OB.key]: "Needs your approval. Payment terms 45 → 55 days. Price on future invoices +0.30%. Your mandate lets FLOW send a counter on its own only when the terms stay as they are.",
+};
+const toneOf = (t) => t === "bad" ? "bad" : t === "warn" ? "warn" : t === "info" ? "info" : "ok";
+const glyphOf = (t) => t === "bad" ? "cross" : t === "warn" ? "alert" : t === "info" ? "ringdot" : "check";
+let scenario = 0;
+
+function lowestOf(p) {
+  if (scenario === 1) {
+    const s = D.stress[p.key]; const days = (s.text.match(/(\d+ days below your minimum)/) || [])[1];
+    return { v: s.lowest_short, when: s.lowest_when, i: days, tone: "bad", full: s.text };
+  }
+  if (p.key === "asked") return { v: p.lowest_short, when: p.lowest_when, i: p.band_text, tone: "bad" };
+  return { v: p.lowest_short, when: p.lowest_when, i: X[p.key].lowest_when_text, tone: "ok" };
+}
+function cqRows() {
+  return [ASK, OA].map((p) => { const l = lowestOf(p);
+    return `<li><span class="path">${esc(p.label)} ${p.recommended ? sw("info", "ringdot", p.tag_text) : ""}</span>
+      <span class="v ${l.tone === "bad" ? "bad" : ""}">${esc(l.v)}<small>${esc(l.when)}</small></span>
+      <span class="i">${sw(l.tone, glyphOf(l.tone), cap(l.i))}</span></li>`; }).join("");
+}
+function econCell(p, detailed) {
+  if (p.cost_once_display && p.cost_forward_display) /* two parts the server never adds */
+    return `<span class="pair"><span class="cv bad">${esc(p.cost_forward_display)}</span><span class="cs">over 12 months</span></span>
+            <span class="pair"><span class="cv">${esc(p.cost_once_display)}</span><span class="cs">once</span></span>
+            <span class="cs scope">${esc(cap(p.cost_basis_text))}</span>`;
+  const comps = detailed && p.cost_components.length ? `<div class="comp">${p.cost_components.map((c) => `<div><span>${esc(c.label)}</span><span>${esc(c.display)}</span></div>`).join("")}</div>` : "";
+  return `<span class="cv">${esc(p.cost_total_display)}</span><span class="cs scope">${esc(cap(p.cost_basis_text))}</span>${comps}`;
+}
+const termOf = (p, key) => p.terms.find((t) => t.key === key);
+const termCell = (t) => `<span>${esc(t.value_text)}</span>${t.instead_of_text ? `<span class="cs">${esc(t.instead_of_text)}</span>` : ""}`;
+function commercialCell(p) {
+  return ["early_payment", "rebate_or_price"].map((k) => { const t = termOf(p, k); return `<div style="margin-bottom:6px"><span class="cs">${esc(t.label)}</span>${termCell(t)}</div>`; }).join("");
+}
+function limitCell(p) { const x = X[p.key]; const ok = x.limit_word === "WITHIN";
+  return `${sw(ok ? "ok" : "bad", ok ? "check" : "cross", cap(x.limit_text))}<span class="cs" style="margin-top:4px">${esc(p.authority_text)}</span>`; }
+function lowestCell(p) { const l = lowestOf(p);
+  return `<span class="pair"><span class="cv ${l.tone === "bad" ? "bad" : ""}">${esc(l.v)}</span><span class="cs">${esc(l.when)}</span></span><span class="cs" style="color:var(--color-${l.tone === "bad" ? "bad" : "ok"}-fg)">${esc(cap(l.i))}</span>`; }
+const ROWS = [[T.terms, (p) => termCell(termOf(p, "payment_terms"))], [T.commercial, commercialCell], [T.impact, (p) => econCell(p, true)], [T.lowestCash, lowestCell], [T.limits, limitCell]];
+function table() {
+  const head = ORDER.map((p) => `<th scope="col" class="${p.recommended ? "rec-col" : ""}">${esc(p.label)}<span class="t">${sw(toneOf(p.tag_tone), glyphOf(p.tag_tone), p.tag_text)}</span></th>`).join("");
+  const body = ROWS.map(([l, f]) => `<tr><th scope="row">${esc(l)}</th>${ORDER.map((p) => `<td class="${p.recommended ? "rec-col" : ""}">${f(p)}</td>`).join("")}</tr>`).join("");
+  const stack = ORDER.map((p) => `<div style="padding:14px 14px 4px;border-radius:12px;${p.recommended ? "background:var(--color-brand-50);box-shadow:inset 0 2px 0 var(--color-brand-600)" : "border:1px solid var(--color-line)"}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b style="font-family:var(--font-display);font-size:16px">${esc(p.label)}</b>${sw(toneOf(p.tag_tone), glyphOf(p.tag_tone), p.tag_text)}</div>
+      <dl class="fold-body" style="margin-top:10px">${ROWS.map(([l, f]) => `<dl style="grid-template-columns:110px minmax(0,1fr)"><dt>${esc(l)}</dt><dd>${f(p)}</dd></dl>`).join("")}</dl></div>`).join("");
+  return `<div class="cmp-scroll" id="cmp-scroll" tabindex="0" role="region" aria-label="${T.compareResponses}"><table class="ctable"><colgroup><col class="rh"><col><col><col></colgroup>
+    <thead><tr><th scope="col"><span class="sr">${T.terms}</span></th>${head}</tr></thead><tbody>${body}</tbody></table></div><div class="cstack">${stack}</div>`;
+}
+function renderScenario() {
+  $("#cq-rows").innerHTML = cqRows();
+  $("#cmp-body").innerHTML = table();
+}
+const ctx = D.customer_context;
+$("#deal").innerHTML = `
+  <nav class="crumbs" aria-label="Focus"><button type="button" id="back">‹ ${T.back}</button><span aria-hidden="true">/</span><span>${esc(D.subject)}</span></nav>
+  <p class="eyebrow">${sw("info", "ringdot", D.recommends)}</p>
+  <h2 class="dp-title" id="deal-title">${esc(D.subject)}</h2>
+  <p class="who"><span>${esc(D.buyer_name)} · ${esc(WL.customers.find((c) => c.name === D.buyer_name).detail_text)}</span><a class="link" href="#">${T.viewCustomer} <span class="arrow" aria-hidden="true">→</span></a></p>
+  <p class="ask-line"><span class="lbl">${T.buyerAsks}</span>“${esc(D.ask_text)}”</p>
+  <p class="lbl" style="margin-top:18px">${T.impact}</p>
+  <dl class="dp-facts">
+    ${[ASK, OA].map((p) => `<div><dt>${esc(p.label)} ${sw(toneOf(p.tag_tone), glyphOf(p.tag_tone), p.tag_text)}</dt>
+      <dd><span class="big ${p.key === "asked" ? "bad" : ""}">${esc(p.cost_display)}</span><span class="scope">${esc(cap(p.cost_note))}</span>
+      ${p.recommended ? `<span class="reason">${esc(AUTH_REASON[p.key])}</span>` : ""}</dd></div>`).join("")}
+  </dl>
+  <div class="ag" role="group" aria-label="${esc(D.subject)}">
+    <button class="btn filled" type="button">${T.reviewCounter}</button>
+    <button class="btn outline" type="button" id="cmp-btn" aria-expanded="false" aria-controls="cmp">${T.compareResponses}<svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg></button>
+  </div>
+  <section class="conseq" aria-labelledby="cq-title">
+    <h3 class="h-section" id="cq-title">${T.consequence}</h3>
+    <div class="assume"><span class="lbl" id="assume-lbl">${T.assumption}</span><div class="seg" role="tablist" aria-labelledby="assume-lbl" id="scen-tabs"><span class="pill" aria-hidden="true"></span></div></div>
+    <p class="assume-note">${T.assumptionNote}</p>
+    <ul class="cq-rows" id="cq-rows"></ul>
+    <div class="after-cq"><a class="link" href="#" id="explore">${T.explore} <span class="arrow" aria-hidden="true">→</span></a></div>
+    <div class="cmp" id="cmp">
+      <div id="cmp-body"></div>
+      <div class="why"><h4 class="h-section" style="font-size:16px">${T.why} ${esc(OA.label)}</h4>
+        <ul>${[OA, OB, ASK].map((p) => `<li><b>${esc(p.label)}</b><span class="ev-row"><svg aria-hidden="true" class="ev-g ${p.authority === "flow_may" ? "ok" : p.authority === "needs_owner" ? "warn" : "bad"}"><use href="#i-${p.authority === "flow_may" ? "check" : p.authority === "needs_owner" ? "alert" : "cross"}"/></svg><span>${esc(AUTH_REASON[p.key] || p.decides_text)}</span></span></li>`).join("")}</ul>
+        <div class="why-links"><a class="link" href="#">${T.detailed} <span class="arrow" aria-hidden="true">→</span></a><a class="link" href="#chart-sec">${T.cashImpact} <span class="arrow" aria-hidden="true">→</span></a></div>
+      </div>
+      <details class="fold"><summary>${T.finImpact}<svg aria-hidden="true"><use href="#i-chev"/></svg></summary>
+        <div class="fold-body">
+          <dl><dt>${T.concentration}</dt><dd>${esc(D.concentration)}</dd></dl>
+          ${ORDER.map((p) => `<dl><dt>${esc(p.label)}</dt><dd>${esc(D.capacity[p.key].capacity)}<br><span class="meta">${esc(X[p.key].share_after_text)}</span></dd></dl>`).join("")}
+        </div></details>
+    </div>
+  </section>`;
+renderScenario();
+function setCompare(open) {
+  STATE = open ? "compare" : "deal"; document.body.dataset.state = STATE;
+  $("#cmp-btn").setAttribute("aria-expanded", open); scenSeg.place();
+}
+$("#cmp-btn").addEventListener("click", () => setCompare(STATE !== "compare"));
+$("#explore").addEventListener("click", (e) => { e.preventDefault(); setCompare(true); });
+const scenSeg = seg($("#scen-tabs"), T.scenarios, 0, (i) => {
+  scenario = i; const els = [$("#cq-rows"), $("#cmp-body")];
+  const apply = () => { renderScenario(); drawChart(); els.forEach((e) => e.classList.remove("fading")); };
+  if (reduced) return apply();
+  els.forEach((e) => e.classList.add("fading")); setTimeout(apply, 150);
+});
+if (STATE === "compare") $("#cmp-btn").setAttribute("aria-expanded", "true");
+
+/* ===== CashPreview ===== */
+const isDeal = () => STATE === "deal" || STATE === "compare";
+let windowDays = 36, selDay = null;
+const valueAt = (s, d) => { let v = s[0][1]; for (const p of s) { if (p[0] <= d) v = p[1]; } return v; };
+const pointAt = (s, d) => { let p = s[0]; for (const q of s) if (q[0] <= d) p = q; return p; };
+const whenOf = (d) => H.when[d] ?? T.inDays(d);
+function stepPath(s, x, y, W) { let d = `M${x(0)},${y(s[0][1])}`; for (const [day, v] of s.slice(1)) { if (day > W) break; d += `H${x(day)}V${y(v)}`; } return d + `H${x(W)}`; }
+function chartModel() {
+  if (!isDeal()) return { lines: [{ s: H.series, kind: "base", label: H.chart.legend[0].label }, { s: H.plan_series, kind: "plan", label: H.chart.legend[1].label.replace(/ \(planned\)$/, "") }], lowest: H.lowest_day };
+  const late = scenario === 1;
+  const sA = late ? D.stress_series.asked : D.series.asked, sO = late ? D.stress_series[OA.key] : D.series[OA.key];
+  let lo = 0; for (const p of sA) if (p[0] <= windowDays && p[1] < valueAt(sA, lo)) lo = p[0];
+  return { lines: [{ s: sA, kind: "base", label: ASK.label }, { s: sO, kind: "opt", label: OA.label }], lowest: lo };
+}
+function axisFor(lines) {
+  const keys = [String(windowDays), "60", "120"]; const lo = Math.min(...lines.map((l) => Math.min(...l.s.filter((p) => p[0] <= windowDays).map((p) => p[1])))), hi = Math.max(...lines.map((l) => Math.max(...l.s.filter((p) => p[0] <= windowDays).map((p) => p[1]))));
+  for (const k of keys) { const a = H.axes[k]; if (a && a.min <= lo && a.max >= hi) return a; }
+  return H.axes["120"];
+}
+function renderChartText() {
+  $("#chart-title").textContent = T.chartTitle;
+  const m = chartModel();
+  if (isDeal()) {
+    $("#chart-scope").innerHTML = `<b>${esc(D.subject)}</b> · ${esc(ASK.label)} ${T.vs} ${esc(OA.label)} · ${esc(T.scenarios[scenario])}`;
+    $("#legend").innerHTML = `<span><i></i>${esc(ASK.label)}</span><span><i class="below"></i>${T.below}</span><span><i class="opt"></i>${esc(OA.label)} <em>${esc(OA.assumption_text)}</em></span><span><i class="res"></i>${T.minimum} ${esc(H.floor_display.replace(/\.00$/, ""))}</span>`;
+  } else {
+    $("#chart-scope").textContent = H.chart.legend[0].label;
+    $("#legend").innerHTML = `<span><i></i>${esc(H.chart.legend[0].label)}</span><span><i class="below"></i>${T.below}</span><span><i class="plan"></i>${esc(m.lines[1].label)} <em>${T.conditional}</em></span><span><i class="res"></i>${T.minimum} ${esc(H.chart.lowest_inspector.minimum_display)}</span>`;
+  }
+  $("#chart-foot").innerHTML = `<button class="btn outline sm" type="button">${T.compareCash}</button><a class="link" href="#">${T.full} <span class="arrow" aria-hidden="true">→</span></a>`;
+  $("#chart").setAttribute("aria-label", isDeal() ? `${T.chartTitle}: ${D.subject}, ${ASK.label} ${T.vs} ${OA.label}, ${T.scenarios[scenario]}` : "Your company's cash over the days ahead, with the lowest point marked.");
+}
+function renderInspector(m, day) {
+  const isLow = day === m.lowest, [a, b] = m.lines, pa = pointAt(a.s, day), pb = pointAt(b.s, day);
+  const evs = pa[0] === day ? pa[3] : [];
+  let cells;
+  if (!isDeal()) {
+    const I = H.chart.lowest_inspector;
+    cells = [[T.when, isLow ? I.day_text : cap(whenOf(day)), "when"], [T.projected, isLow ? I.projected_display : pa[2], pa[1] < H.floor ? "bad" : ""],
+      [T.withPlan, pb[2], "plan"], isLow ? [I.third_label, I.third_display, "bad"] : [T.minimum, I.minimum_display, ""]];
+    $("#inspect-ev").innerHTML = (evs.length ? `<span>${T.onThatDay} ${H.chart.lowest.cause && isLow ? esc(H.chart.lowest.cause) + ":" : ""}</span>` + evs.map(([l, v]) => `<span>${esc(l)} <span class="amt">${esc(v)}</span></span>`).join("") : "") +
+      (isLow ? `<span class="meta" style="flex-basis:100%">${esc(I.note)}</span>` : "");
+  } else {
+    cells = [[T.when, cap(whenOf(day)), "when"], [a.label, pa[2] || "", pa[1] < H.floor ? "bad" : ""], [b.label, pb[2] || "", "opt"], [T.minimum, H.chart.lowest_inspector.minimum_display, ""]];
+    const late = scenario === 1;
+    $("#inspect-ev").innerHTML = late ? (isLow ? `<span class="meta">${esc(D.stress.asked.text)}</span>` : "") :
+      (evs.length ? `<span>${T.onThatDay}</span>` + evs.map(([l, v]) => `<span>${esc(l)} <span class="amt">${esc(v)}</span></span>`).join("") : "");
+  }
+  $("#inspect").innerHTML = cells.map(([k, v, c]) => `<div><div class="k">${esc(k)}</div><div class="v ${c}">${esc(v)}</div></div>`).join("");
+}
+function drawChart() {
+  renderChartText();
+  const m = chartModel(); const wrap = $("#chart-wrap"), svg = $("#chart");
+  const Wpx = wrap.clientWidth; if (!Wpx) return; const phone = Wpx < 600, Hh = phone ? 200 : 260;
+  const mg = { l: phone ? 46 : 58, r: 8, t: 12, b: 28 };
+  const ax = axisFor(m.lines), W = windowDays;
+  const x = (d) => mg.l + (d / W) * (Wpx - mg.l - mg.r), y = (v) => mg.t + (1 - (v - ax.min) / (ax.max - ax.min)) * (Hh - mg.t - mg.b);
+  svg.setAttribute("viewBox", `0 0 ${Wpx} ${Hh}`); svg.setAttribute("height", Hh);
+  const xt = W === 36 ? (phone ? [0, 12, 24, 36] : [0, 6, 12, 18, 24, 30, 36]) : W === 60 ? (phone ? [0, 30, 60] : [0, 15, 30, 45, 60]) : (phone ? [0, 60, 120] : [0, 30, 60, 90, 120]);
+  const fy = y(H.floor), right = Wpx - mg.r;
+  let g = `<defs><clipPath id="cl-above"><rect x="0" y="-20" width="${Wpx}" height="${fy + 20}"/></clipPath><clipPath id="cl-below"><rect x="0" y="${fy}" width="${Wpx}" height="${Hh}"/></clipPath></defs>`;
+  g += `<rect x="${mg.l}" y="${fy}" width="${right - mg.l}" height="${y(ax.min) - fy}" fill="var(--color-chart-danger)" opacity=".5"/>`;
+  const keep = ax.ticks.filter(([v], i) => v === 0 || i === ax.ticks.length - 1 || (ax.ticks.length <= 5 ? true : i % 2 === 0));
+  for (const [v, l] of keep) { g += `<line x1="${mg.l}" x2="${right}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? "var(--color-line-strong)" : "var(--color-chart-grid)"}"/><text x="${mg.l - 10}" y="${y(v) + 4}" text-anchor="end">${esc(l)}</text>`; }
+  g += `<line x1="${mg.l}" x2="${right}" y1="${fy}" y2="${fy}" stroke="var(--color-chart-reserve)" stroke-width="1.25"/>`;
+  for (const d of xt) g += `<text x="${x(d)}" y="${Hh - 6}" text-anchor="${d === 0 ? "start" : d === W ? "end" : "middle"}">${d === 0 ? T.today : T.inDays(d)}</text>`;
+  const [base, other] = m.lines;
+  g += other.kind === "plan"
+    ? `<path d="${stepPath(other.s, x, y, W)}" fill="none" stroke="var(--color-ink-3)" stroke-width="1.5" stroke-dasharray="5 4" opacity=".85"/>`
+    : `<path d="${stepPath(other.s, x, y, W)}" fill="none" stroke="var(--color-brand-600)" stroke-width="1.75" stroke-dasharray="6 4"/>`;
+  const bp = stepPath(base.s, x, y, W);
+  g += `<path d="${bp}" fill="none" stroke="var(--color-chart-base)" stroke-width="2.25" stroke-linejoin="miter" clip-path="url(#cl-above)"/>`;
+  g += `<path d="${bp}" fill="none" stroke="var(--color-bad-solid)" stroke-width="2.75" stroke-linejoin="miter" clip-path="url(#cl-below)"/>`;
+  if (selDay === null || selDay > W) selDay = m.lowest <= W ? m.lowest : 0;
+  const lo = m.lowest;
+  if (lo <= W) g += `<circle cx="${x(lo)}" cy="${y(valueAt(base.s, lo))}" r="5" fill="var(--color-surface)" stroke="var(--color-bad-solid)" stroke-width="2"/>`;
+  const sx = x(selDay), sy = y(valueAt(base.s, selDay));
+  g += `<line x1="${sx}" x2="${sx}" y1="${mg.t}" y2="${Hh - mg.b}" stroke="var(--color-ink)" stroke-width="1" opacity=".22"/>`;
+  g += `<circle cx="${sx}" cy="${sy}" r="5" fill="${valueAt(base.s, selDay) < H.floor ? "var(--color-bad-solid)" : "var(--color-chart-base)"}" stroke="var(--color-surface)" stroke-width="2.5"/>`;
+  g += `<circle cx="${sx}" cy="${y(valueAt(other.s, selDay))}" r="3.5" fill="var(--color-surface)" stroke="${other.kind === "plan" ? "var(--color-ink-3)" : "var(--color-brand-600)"}" stroke-width="2"/>`;
+  g += `<rect id="hit" x="${mg.l}" y="0" width="${right - mg.l}" height="${Hh}" fill="transparent" style="cursor:crosshair"/>`;
+  svg.innerHTML = g;
+  renderInspector(m, selDay);
+  const days = [...new Set([...base.s, ...other.s].map((q) => q[0]).filter((q) => q <= W))];
+  const snap = (cx) => { const r = svg.getBoundingClientRect(); const d = ((cx - r.left - mg.l) / (right - mg.l)) * W; return days.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a); };
+  const hit = $("#hit");
+  hit.addEventListener("mousemove", (e) => { const d = snap(e.clientX); if (d !== selDay) { selDay = d; drawChart(); } });
+  hit.addEventListener("mouseleave", () => { if (selDay !== lo) { selDay = null; drawChart(); } });
+}
+const winSeg = seg($("#win-tabs"), ["36 days", "60 days", "120 days"], 0, (i) => { windowDays = [36, 60, 120][i]; selDay = null; drawChart(); });
+function setWindowFor() { const want = isDeal() ? 120 : 36; if (windowDays !== want) { windowDays = want; $("#win-tabs").querySelectorAll("button")[[36, 60, 120].indexOf(want)].click(); } }
+addEventListener("resize", drawChart);
+
+$("#links").innerHTML = H.links.map((l) => `<a class="link" href="#">${esc(l.label)} <span class="arrow" aria-hidden="true">→</span></a>`).join("");
+
+/* ===== WorklistRows ===== */
+$("#wl-alert").innerHTML = `<b>${esc(WL.alert.eyebrow)}.</b> ${esc(WL.alert.text)}`;
+$("#sheet-n").textContent = WL.counts.needs_you;
+const TABS = [["needs", "Needs you", WL.counts.needs_you], ["waiting", "Waiting", WL.counts.waiting], ["customers", "Customers", WL.counts.customers]];
+let tab = 0, selected = isDeal() ? D.key : null;
+const tabsEl = $("#wl-tabs");
+TABS.forEach(([k, l, n], i) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0);
+  b.innerHTML = `${esc(l)} <span class="n">${n}</span>`; b.addEventListener("click", () => setTab(i)); tabsEl.appendChild(b); });
+function placeBar() { const b = tabsEl.querySelectorAll("button")[tab], bar = tabsEl.querySelector(".bar"); if (!b.offsetWidth) return; bar.style.width = b.offsetWidth + "px"; bar.style.transform = `translateX(${b.offsetLeft}px)`; }
+function setTab(i) { tab = i; tabsEl.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-selected", j === i)); placeBar(); renderRows(); }
+const qual = (key) => { const id = key.replace(/^deal:/, ""); return DATA.differentiators[id]; };
+function renderRows() {
+  const q = $("#wl-q").value.trim().toLowerCase(), panel = $("#wl-panel"); let html = "";
+  if (tab === 0) {
+    const rows = WL.needs_you.filter((r) => !q || r.subject_text.toLowerCase().includes(q));
+    html = rows.length ? `<ul class="rows" role="listbox" aria-label="Needs you">${rows.map((r) => `
+      <li class="row" role="option" tabindex="0" data-key="${r.key}" aria-selected="${r.key === selected}">
+        <span class="subj">${esc(r.subject_text)}</span>
+        <span class="sev">${r.severity === "CAUTION" ? sw("warn", "alert", "Caution") : r.severity === "CRITICAL" ? sw("bad", "alert", "Critical") : ""}</span>
+        ${qual(r.key) ? `<span class="qual">“${esc(qual(r.key))}”</span>` : ""}
+        <span class="st">${esc(r.status_text)}</span>
+        <span class="cq">${esc(r.consequence_text)}</span>
+      </li>`).join("")}</ul>` : `<div class="empty"><h3>All caught up.</h3><p>Nothing needs a decision from you.</p></div>`;
+  } else if (tab === 1) html = `<div class="empty"><h3>All caught up.</h3><p>FLOW is not waiting for anyone.</p></div>`;
+  else html = `<ul class="rows">${WL.customers.filter((r) => !q || r.name.toLowerCase().includes(q)).map((r) => `
+      <li class="row" tabindex="0"><span class="subj">${esc(r.name)}</span><span></span><span class="st">${esc(r.status_text)}</span><span class="cq">${esc(r.detail_text)}</span></li>`).join("")}</ul>`;
+  panel.innerHTML = html;
+  panel.querySelectorAll(".row[data-key]").forEach((li) => { const go = () => select(li.dataset.key);
+    li.addEventListener("click", go); li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }); });
+}
+$("#wl-q").addEventListener("input", renderRows);
+function select(key) {
+  const toDeal = key === D.key && selected !== key; selected = toDeal ? key : null;
+  const fade = [$("#rec"), $("#health"), $("#deal")];
+  const apply = () => { STATE = selected ? "deal" : "default"; document.body.dataset.state = STATE; $("#cmp-btn").setAttribute("aria-expanded", "false");
+    document.body.classList.remove("sheet-open"); renderRows(); setWindowFor(); selDay = null; drawChart();
+    requestAnimationFrame(() => { scenSeg.place(); fade.forEach((f) => f.style.opacity = 1); }); };
+  if (reduced) return apply();
+  fade.forEach((f) => { f.style.transition = "opacity var(--dur) var(--ease-ui)"; f.style.opacity = 0; }); setTimeout(apply, 180);
+}
+$("#back").addEventListener("click", () => select(null));
+
+/* the phone sheet */
+const sheet = (open) => { document.body.classList.toggle("sheet-open", open); $("#sheet-head").setAttribute("aria-expanded", open); };
+$("#sheet-head").addEventListener("click", () => sheet(!document.body.classList.contains("sheet-open")));
+$("#scrim").addEventListener("click", () => sheet(false));
+if (params.get("sheet")) sheet(true);
+
+renderRows();
+if (isDeal()) { windowDays = 120; }
+requestAnimationFrame(() => { if (isDeal()) $("#win-tabs").querySelectorAll("button")[2].click(); placeBar(); drawChart(); });
+document.fonts && document.fonts.ready.then(() => { placeBar(); drawChart(); });
+</script>
+</body>
+</html>
