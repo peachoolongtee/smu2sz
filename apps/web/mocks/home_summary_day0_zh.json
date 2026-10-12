@@ -2717,13 +2717,13 @@
       },
       {
         "key": "lowest",
-        "label": "最低点，30 天后",
+        "label": "采用方案后的最低点，30 天后",
         "when": "30 天后",
-        "value_fen": -10500000,
-        "value_short": "−¥105k",
-        "note": "比您的最低现金低 ¥405k",
-        "tone": "bad",
-        "value_display": "−¥105,000.00"
+        "value_fen": 30000000,
+        "value_short": "¥300k",
+        "note": "比您的最低现金高 ¥0",
+        "tone": "warn",
+        "value_display": "¥300,000.00"
       },
       {
         "key": "arriving",
@@ -2851,6 +2851,7 @@
         "room_after_display": "¥11,886.07"
       }
     ],
+    "events_rail_days": 36,
     "stress_available": false,
     "counterfactual_series": [
       {

@@ -1595,12 +1595,13 @@
         "room_after_fen": 8659366,
         "room_after_short": "¥87k above your minimum",
         "tone": "ok",
-        "explain": "Foshan pays ¥420k. ¥152k of that repays the Bank credit line. Cash rises from ¥119k to ¥387k, ¥87k above your minimum.",
+        "explain": "Foshan pays ¥420k. ¥152k of it repays the Bank credit line. Cash rises from ¥119k to ¥387k, ¥87k above your minimum.",
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥386,593.66",
         "room_after_display": "¥86,593.66"
       }
     ],
+    "events_rail_days": 43,
     "stress_available": false,
     "counterfactual_series": [
       {
@@ -2842,7 +2843,7 @@
     "outstanding_short": "¥1,260k",
     "overdue_short": "¥420k",
     "next_text": "Foshan, ¥420k in 9 days",
-    "financing_note": "Part of this receipt will repay the ¥155k invoice financing; about ¥264k reaches your cash.",
+    "financing_note": "Foshan pays ¥420k, and ¥156k of it repays the invoice financing, leaving ¥264k.",
     "href": "/receivables"
   },
   "changes_card": {

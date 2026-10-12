@@ -1677,6 +1677,7 @@
         "room_after_display": "¥11,886.07"
       }
     ],
+    "events_rail_days": 34,
     "stress_available": false,
     "counterfactual_series": [
       {
@@ -2926,7 +2927,7 @@
     "outstanding_short": "¥420k",
     "overdue_short": "¥0",
     "next_text": "Foshan Home Retail Co.，32 天后 ¥420k",
-    "financing_note": "这笔回款的一部分将用于偿还 ¥255k 的发票融资；之后约剩 ¥163k，其中 ¥151k 用于偿还Bank credit line。",
+    "financing_note": "Foshan Home Retail Co.支付 ¥420k，其中 ¥257k 用于偿还发票融资，剩余 ¥163k。剩余的钱中 ¥151k 用于偿还Bank credit line。",
     "href": "/receivables"
   },
   "changes_card": {

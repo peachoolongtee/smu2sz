@@ -1536,6 +1536,7 @@
         "room_after_display": "¥73,217.81"
       }
     ],
+    "events_rail_days": 30,
     "stress_available": false,
     "counterfactual_series": [
       {
@@ -2776,7 +2777,7 @@
     "outstanding_short": "¥1,003k",
     "overdue_short": "¥163k",
     "next_text": "Foshan, ¥420k in 9 days",
-    "financing_note": "Part of this receipt will repay the ¥200k invoice financing; about ¥218k reaches your cash.",
+    "financing_note": "Foshan pays ¥420k, and ¥202k of it repays the invoice financing, leaving ¥218k.",
     "href": "/receivables"
   },
   "changes_card": {

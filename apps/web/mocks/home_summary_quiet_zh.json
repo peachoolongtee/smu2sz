@@ -1632,12 +1632,13 @@
         "room_after_fen": 1197223,
         "room_after_short": "比您的最低现金高 ¥12k",
         "tone": "ok",
-        "explain": "Foshan Home Retail Co.支付 ¥163k。剩余的钱中 ¥151k 用于偿还Bank credit line。现金从 ¥300k 升至 ¥312k，比您的最低现金高 ¥12k。",
+        "explain": "Foshan Home Retail Co.支付 ¥163k。其中 ¥151k 用于偿还Bank credit line。现金从 ¥300k 升至 ¥312k，比您的最低现金高 ¥12k。",
         "amount_display": "¥162,800.00",
         "cash_after_display": "¥311,972.23",
         "room_after_display": "¥11,972.23"
       }
     ],
+    "events_rail_days": 34,
     "stress_available": false,
     "counterfactual_series": [
       {
