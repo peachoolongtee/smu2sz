@@ -34,6 +34,8 @@ test("three ghosts, the recommended reply picked first, its thick line, its band
   const key = await page.getByTestId("path-line").getAttribute("data-key");
   expect(key).toMatch(/^CTR-/);
   await expect(page.getByTestId("path-band")).toHaveCount(1);
+  // The server's words for the band are always said, as the subtitle above the chart (the label inside the band is only where it fits).
+  await expect(page.getByTestId("path-band-text")).toHaveText("The next invoice is paid 15 days sooner than as asked");
   await expect(page.getByTestId("path-lowest")).toContainText("Lowest ¥300k");
   // The bar: Option A's own sentence and the page's one filled call to action.
   const bar = page.getByTestId("path-reply");
@@ -63,6 +65,7 @@ test("picking a column moves the thick line, the band and the reply bar; the ask
   await page.getByTestId("path-col-pick-0").click();
   await expect(line).toHaveAttribute("data-key", "asked");
   await expect(page.getByTestId("path-band")).toHaveCount(1);
+  await expect(page.getByTestId("path-band-text")).toHaveText("Below your minimum for 15 days");
   await expect(bar).toContainText("Not a reply you can send");
   await expect(bar).toContainText("Cannot be accepted within your signed limits.");
   await expect(bar.getByTestId("deal-send")).toHaveCount(0);

@@ -12,7 +12,7 @@ import { InboxList } from "@/components/deals/inbox-list";
 import { PathsSection, pathsUsable } from "@/components/deals/paths-section";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
-import { Button, Callout, Card, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { dealRecordId, getClock, getDeals, getLedger, getOfferPicture, getState, submitOffer } from "@/lib/api";
@@ -338,7 +338,12 @@ export default function DealsPage() {
           <LoadingBlock rows={3} />
         ) : !offer ? (
           <>
-            <EmptyState title={t("biz.deals.empty")} body={t("biz.deals.empty.body")} action={<ButtonLink href="/chat">{t("chat.open")}</ButtonLink>} />
+            <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-4" data-testid="deals-empty">
+              <p className="min-w-0 flex-[1_1_20rem] text-sm text-ink-2">
+                <strong className="font-extrabold text-ink">{t("biz.deals.empty")}</strong> {t("biz.deals.empty.body")}
+              </p>
+              <ButtonLink href="/chat">{t("chat.open")}</ButtonLink>
+            </div>
             {commitments}
           </>
         ) : (

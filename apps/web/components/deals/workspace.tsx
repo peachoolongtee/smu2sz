@@ -73,11 +73,11 @@ export function SelectedBuyer({
 }
 
 /** A bar sized by `part` against `whole` (both the server's `*_fen`): plotting only, never a figure. `limit` marks a second value on the same scale. */
-function Bar({ part, whole, tone = "brand", limit }: { part: number | null; whole: number; tone?: "brand" | "bad"; limit?: number }) {
+function Bar({ part, whole, tone = "bad", limit }: { part: number | null; whole: number; tone?: "bad" | "soft"; limit?: number }) {
   const w = part !== null && whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0;
   return (
     <div aria-hidden className="relative h-2.5 w-full rounded-pill bg-subtle">
-      <div className={`motion-grow h-full rounded-pill ${tone === "bad" ? "bg-bad-solid" : "bg-brand-600"}`} style={{ width: `${w}%` }} />
+      <div className={`motion-grow h-full rounded-pill ${tone === "bad" ? "bg-bad-solid" : "bg-bad-solid/45"}`} style={{ width: `${w}%` }} />
       {limit !== undefined && whole > 0 ? <span className="absolute -bottom-1 -top-1 w-0.5 bg-ink" style={{ left: `${Math.min(100, (limit / whole) * 100)}%` }} /> : null}
     </div>
   );
@@ -110,7 +110,7 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
         <div className="min-w-0 flex-[1_1_13rem]">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <Bar part={l.amount_fen} whole={largest} tone={l.horizon === "FORWARD" && fi.over_cap ? "bad" : "brand"} />
+              <Bar part={l.amount_fen} whole={largest} tone={l.horizon === "FORWARD" ? "bad" : "soft"} />
             </div>
             <p className="shrink-0 text-base font-extrabold tabular-nums text-ink" data-testid="deal-impact-amount">
               {l.amount_display ?? "—"}
@@ -125,19 +125,22 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
     <Card flat id="deal-ask" title={t("biz.deals.askCost")}>
       <div data-testid="deal-asks">
         {immediate.length ? (
-          <ul data-testid="deal-impact-immediate" className="border-b border-line">
+          <ul data-testid="deal-impact-immediate">
             {immediate.map((r) => row(r))}
           </ul>
         ) : null}
         {other.length ? <ul>{other.map((r) => row(r))}</ul> : null}
         {forward.length ? (
           <div id="deal-impact" data-testid="deal-impact-forward" className="border-b border-line">
-            {sharedWindow ? (
-              <p className="pt-3 text-xs text-ink-3" data-testid="deal-impact-window">
-                {sharedWindow}
-              </p>
-            ) : null}
-            <ul>{forward.map((r) => row(r, sharedWindow))}</ul>
+            {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
+            <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
+              {sharedWindow ? (
+                <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
+                  {sharedWindow}
+                </p>
+              ) : null}
+              <ul>{forward.map((r) => row(r, sharedWindow))}</ul>
+            </div>
             <div className="border-t border-line py-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                 <span className="text-sm font-extrabold text-ink">{t("biz.deals.impact.forwardTotal", { n: fi.window_months })}</span>
@@ -146,7 +149,7 @@ export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: V
                 </span>
               </div>
               <div className="my-2">
-                <Bar part={totalFen} whole={scale} tone={fi.over_cap ? "bad" : "brand"} limit={cap} />
+                <Bar part={totalFen} whole={scale} tone="bad" limit={cap} />
               </div>
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
                 <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>

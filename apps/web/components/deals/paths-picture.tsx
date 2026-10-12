@@ -94,6 +94,8 @@ export function PathsPicture({
   const valueAt = (s: Seg[], d: number) => s.find((q) => d >= q.d0 && d < q.d1)?.v ?? s[s.length - 1]?.v ?? 0;
   const pathOf = (s: Seg[]) => s.map((q, i) => (i === 0 ? `M${xOf(q.d0)},${yOf(q.v)}` : `H${xOf(q.d0)}V${yOf(q.v)}`)).join("") + (s.length ? `H${xOf(s[s.length - 1].d1)}` : "");
 
+  // Below `sm` the names are not drawn at the line ends (they would sit on the lines): a legend row and the subtitle name the paths.
+  const wide = W >= 592;
   const pickedIdx = Math.max(paths.findIndex((p) => p.key === picked.key), 0);
   const pickedSegs = segs[pickedIdx];
   const askedIdx = paths.findIndex((p) => p.kind === "asked");
@@ -192,6 +194,26 @@ export function PathsPicture({
 
   return (
     <div className="space-y-3" data-testid="paths-picture" data-pick={picked.key === "asked" ? "asked" : String(pickedIdx)}>
+      {W > 0 && !wide ? (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-ink-2" data-testid="paths-legend">
+          {paths.map((p) => (
+            <li key={p.key} className="inline-flex items-center gap-1.5">
+              <span aria-hidden className={`h-1 w-4 rounded-sm ${HUE[hueOf(p)].bg}`} />
+              {p.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {/* What the picked path does against the asked one (or, for the asked one, against the minimum): the guaranteed place for the server's band words. */}
+      <p className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-bold ${hue.ink}`} data-testid="path-subtitle">
+        <span aria-hidden className={`h-1 w-[18px] shrink-0 rounded-sm ${hue.bg}`} />
+        <span>{picked.label}</span>
+        {picked.band_text ? (
+          <span className="font-semibold" data-testid="path-band-text">
+            {picked.band_text}
+          </span>
+        ) : null}
+      </p>
       <div ref={frame} className="w-full" style={{ minHeight: H }}>
         {W > 0 ? (
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
@@ -213,7 +235,7 @@ export function PathsPicture({
             <g key={`band-${picked.key}`} className="picture-fade" style={{ animationDelay: "500ms" }}>
               {bandD ? <path data-testid="path-band" d={bandD} className={hue.band} /> : null}
               {bandLabel ? (
-                <text x={bandLabel.x} y={bandLabel.y} textAnchor="middle" className={`${hue.text} stroke-canvas`} fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round" data-testid="path-band-text">
+                <text x={bandLabel.x} y={bandLabel.y} textAnchor="middle" className={`${hue.text} stroke-canvas`} fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round" data-testid="path-band-label">
                   {bandLabel.text}
                 </text>
               ) : null}
@@ -263,7 +285,7 @@ export function PathsPicture({
               </g>
             ) : null}
 
-            {endLabels.map((e) => (
+            {(wide ? endLabels : []).map((e) => (
               <text
                 key={`n${e.p.key}`}
                 x={pr}

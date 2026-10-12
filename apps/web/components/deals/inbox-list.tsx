@@ -11,7 +11,7 @@ import type { RefusalBlock } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /** A fold inside the inbox list: its head spans the card, aligned with the rows. */
-const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-4 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
+const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-2 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {
@@ -111,9 +111,9 @@ export function InboxList({
         disabled={busy !== null}
         aria-current={isCurrent ? "true" : undefined}
         data-testid={`inbox-msg-${m.id}`}
-        className={`flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
+        className={`flex min-h-11 w-full flex-wrap items-start gap-x-3 gap-y-1 px-2 py-3 text-left transition-colors hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 disabled:cursor-wait ${
           isCurrent ? "bg-brand-50" : ""
-        } ${inThread ? "pl-8" : ""}`}
+        } ${inThread ? "pl-6" : ""}`}
       >
         <Badge className="mt-0.5 w-16 justify-center">
           {te("inbox.source", m.source)}
@@ -179,7 +179,7 @@ export function InboxList({
   }
   if (business && known === null) {
     return (
-      <Card id="inbox-list" title={t("biz.deals.inbox")}>
+      <Card flat id="inbox-list" title={t("biz.deals.inbox")}>
         <div data-testid={loadError ? "inbox-error" : "inbox-loading"}>
           {loadError ? <ErrorState error={loadError} onRetry={onRetry} /> : <LoadingBlock rows={2} />}
         </div>
@@ -188,6 +188,7 @@ export function InboxList({
   }
   return (
     <Card
+      flat
       id="inbox-list"
       title={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")}
       subtitle={business ? undefined : t("inbox.list.sub")}
@@ -199,7 +200,7 @@ export function InboxList({
         ) : undefined
       }
     >
-      <ul className="motion-rise -m-4 divide-y divide-line overflow-hidden rounded-b-card" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
+      <ul className="motion-rise -mt-1 divide-y divide-line border-b border-line" aria-label={business ? t("biz.deals.inbox") : t("biz.deals.simulatedInbox")} data-testid="inbox-list">
         {current ? thread(current) : null}
         {current && others.length ? (
           <li>
@@ -211,7 +212,7 @@ export function InboxList({
           others.map(thread)
         )}
         {aside ? (
-          <li className="flex items-start gap-2 px-4 py-3 text-xs text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
+          <li className="flex items-start gap-2 px-2 py-3 text-xs text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
             <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
               {aside.text}{" "}
