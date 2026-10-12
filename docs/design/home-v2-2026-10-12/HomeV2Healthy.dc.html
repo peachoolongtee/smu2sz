@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>FLOW Home V2 · healthy</title><script src="./support.js"></script></head><body><x-dc><helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet"><style>
+body{margin:0}
+a{color:#0368e9;text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,.display{font-family:'Plus Jakarta Sans','Lato','Inter','PingFang SC',system-ui,sans-serif}
+.page{background:#f7f8fa;color:#24324a;font-family:'Lato','Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.top{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #e6e9ef;background:#fff}
+.top h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#5a6577}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.wrap{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;padding:20px 32px 36px;max-width:1280px;margin:0 auto;box-sizing:border-box}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:#fff;border:1px solid #e6e9ef;border-radius:14px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5a6577}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpi{padding:16px 20px}.kpi+.kpi{border-left:1px solid #e6e9ef}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-.025em;margin-top:6px;line-height:1.1}
+.kpi .n{font-size:13px;color:#5a6577;margin-top:6px}
+.sec{padding:16px 20px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.btn{display:inline-flex;align-items:center;border-radius:10px;min-height:40px;padding:0 14px;font-size:14px;font-weight:800;background:#0368e9;color:#fff;white-space:nowrap}
+.btn2{display:inline-flex;align-items:center;border-radius:10px;min-height:40px;padding:0 14px;font-size:14px;font-weight:700;background:#fff;color:#24324a;border:1px solid #c9d0db;white-space:nowrap}
+.half{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.leg{display:flex;gap:16px;font-size:12px;color:#5a6577;align-items:center}
+.sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.cat{display:grid;grid-template-columns:12px 1fr auto auto;gap:6px 10px;font-size:13px;align-items:center}
+.cat i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.cat .d{border-bottom:1px dotted #d3d9e2;height:1px;align-self:end;margin-bottom:5px}
+.bar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:#eef1f5}
+.hb{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.hb .t{display:flex;justify-content:space-between}.hb .b{height:8px;border-radius:5px;background:#eef1f5;overflow:hidden}.hb .b i{display:block;height:100%}
+.filters{display:flex;gap:4px;font-size:13px}.filters span{padding:6px 10px;border-radius:8px;color:#4d5767}.filters .on{background:#eff4fb;color:#0048a5;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5a6577;text-align:left;padding:10px 12px;border-bottom:1px solid #e6e9ef}
+td{padding:12px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top}
+tr.flag td{background:#fffaf0}tr.flag td:first-child{box-shadow:inset 3px 0 0 #c9a24a}
+tr.sel td{background:#eff4fb}tr.sel td:first-child{box-shadow:inset 3px 0 0 #0368e9}
+.pill{font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.tag{font-size:11px;font-weight:800;letter-spacing:.06em;color:#82490a;border:1px solid #ecd092;border-radius:6px;padding:2px 6px}
+.crow{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #f0f2f5;font-size:14px}.crow .s{font-size:12px;color:#5a6577;margin-top:2px}.crow.flag{background:#fffaf0;box-shadow:inset 3px 0 0 #c9a24a}.crow.sel{background:#eff4fb;box-shadow:inset 3px 0 0 #0368e9}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.fact{padding:12px 16px}.fact+.fact{border-left:1px solid #e6e9ef}
+.fact .v{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:4px}.fact .n{font-size:12px;color:#5a6577;margin-top:3px}
+</style></helmet>
+<div class="page"><div class="top"><div style="display:flex;align-items:baseline;gap:16px"><h1>Home</h1><span class="status"><span class="dot" style="background:#12907f"></span><b style="color:#24324a">Covered</b> · Read today</span></div><span style="font-size:13px;color:#5a6577">Business · 中文</span></div>
+<div class="wrap"><div class="col"><div class="card kpis" aria-label="Your company"><div class="kpi"><div class="eyebrow">CASH AVAILABLE</div><div class="v display" style="color:#24324a">¥550k</div><div class="n">¥250k above your ¥300k minimum</div><svg viewBox="0 0 120 28" style="width:120px;height:28px;display:block;margin-top:8px"><polyline points="0,22 11,15 22,4 33,4 44,19 55,19 65,24 76,24 87,26 98,26 109,25 120,25" fill="none" stroke="#0368e9" stroke-width="1.5"/></svg></div><div class="kpi"><div class="eyebrow">LOWEST FORECAST CASH</div><div class="v display" style="color:#0a6b5f">¥420k</div><div class="n">in 30 days · with FLOW's plan · ¥120k above your minimum</div></div><div class="kpi"><div class="eyebrow">MONEY EXPECTED</div><div class="v display" style="color:#24324a">¥675k</div><div class="n">¥420k owed · ¥255k financing, arranged</div></div></div><div class="card sec row"><div><span class="eyebrow" style="color:#0a6b5f">NOTHING NEEDS YOU TODAY</span><div style="font-size:14px;margin-top:4px">Your cash is covered on the current plan. Next: ¥255k of invoice financing arrives in 3 days; Foshan pays ¥420k in 32 days.</div></div><a href="#" style="font-size:13px;font-weight:700;white-space:nowrap">The plan ›</a></div><div class="card sec" style="display:flex;flex-direction:column;gap:10px"><div class="row"><div><div class="eyebrow">CASH · NEXT 36 DAYS</div><div class="leg" style="margin-top:6px"><span><i class="sw" style="background:#0368e9"></i>With FLOW's plan</span></div></div><div style="font-size:12px;color:#5a6577">36 · <span style="color:#9aa3b2">60 · 120</span></div></div><svg viewBox="0 0 760 190" role="img" aria-label="Cash over the next 36 days" style="width:100%;height:auto;display:block"><line x1="16" x2="744" y1="145" y2="145" stroke="#f0f2f5"/><text x="2" y="149" font-size="10" fill="#9aa3b2">0k</text><line x1="16" x2="744" y1="106" y2="106" stroke="#f0f2f5"/><text x="2" y="110" font-size="10" fill="#9aa3b2">300k</text><line x1="16" x2="744" y1="67" y2="67" stroke="#f0f2f5"/><text x="2" y="71" font-size="10" fill="#9aa3b2">600k</text><line x1="16" x2="744" y1="28" y2="28" stroke="#f0f2f5"/><text x="2" y="32" font-size="10" fill="#9aa3b2">900k</text><line x1="16" x2="744" y1="106" y2="106" stroke="#c9a24a" stroke-dasharray="4 4" stroke-width="1.5"/><text x="742" y="101" font-size="11" fill="#82490a" text-anchor="end">your minimum ¥300k</text><path d="M16,93 L82,74 L148,41 L215,41 L281,85 L347,85 L413,100 L479,100 L545,106 L612,106 L678,104 L744,104" fill="none" stroke="#0368e9" stroke-width="2"/><circle cx="545" cy="106" r="5" fill="#fff" stroke="#c9a24a" stroke-width="2"/><text x="545" y="122" font-size="11" fill="#82490a" text-anchor="middle">lowest ¥300k, in 30 days</text><text x="16" y="186" font-size="11" fill="#5a6577" text-anchor="start">today</text><text x="281" y="186" font-size="11" fill="#5a6577" text-anchor="middle">in 12 days</text><text x="545" y="186" font-size="11" fill="#5a6577" text-anchor="middle">in 30 days</text><text x="744" y="186" font-size="11" fill="#5a6577" text-anchor="end">in 36 days</text></svg><div class="row" style="font-size:12px;color:#5a6577"><span>Hover any day for cash before, after and the room above your minimum. The same figures as Cash &amp; Funding.</span><a href="#">Full timeline ›</a></div></div><div class="card sec" style="display:flex;gap:0;font-size:13px"><a href="#" style="padding-right:16px;border-right:1px solid #e6e9ef">Where the cash goes ›</a><a href="#" style="padding:0 16px;border-right:1px solid #e6e9ef">Facility headroom ›</a><a href="#" style="padding:0 16px;border-right:1px solid #e6e9ef">What you are owed, by when ›</a><a href="#" style="padding-left:16px">Full timeline in Cash &amp; Funding ›</a></div></div><div class="col"><div class="card" style="overflow:hidden;padding-bottom:6px"><div class="sec" style="padding-bottom:8px"><div class="eyebrow">CUSTOMERS</div><div style="font-size:13px;color:#5a6577;margin-top:4px">Nothing needs you. Select a row to see it on the left.</div></div>
+<div style="padding:0 16px 10px"><div style="font-size:12px;color:#5a6577;border:1px solid #e6e9ef;border-radius:8px;padding:7px 10px">⌕ Search customers</div></div>
+<div class="crow "><span class="dot" style="background:#12907f"></span><div style="min-width:0"><div style="font-weight:700">Foshan Home Retail Co.</div><div class="s">On track · owes ¥420k, due in 32 days</div></div><span style="color:#9aa3b2">›</span></div><div class="crow "><span class="dot" style="background:#9aa3b2"></span><div style="min-width:0"><div style="font-weight:700">Dongguan Office Supplies Ltd.</div><div class="s">No contract on file yet</div></div><span style="color:#9aa3b2">›</span></div>
+<div class="crow" style="border-top:1px solid #e6e9ef"><a href="#" style="font-size:13px;font-weight:700">All deals, invoices and customers ›</a></div></div></div></div></div>
+</x-dc><script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":700}}'>class Component extends DCLogic { renderVals() { return {}; } }</script></body></html>
