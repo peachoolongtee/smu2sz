@@ -29,12 +29,13 @@ _WORD: dict[State, tuple[str, str]] = {
 }
 
 
-def state_of(lot: FundingLot | None, *, repaid: bool = False) -> State:
+def state_of(lot: FundingLot | None, *, repaid: bool = False, planned: bool = False) -> State:
     """The state of an advance by its lot: not landed -> ARRANGED; landed and still on the lender's books -> RECEIVED; a lot with
     nothing left -> REPAID. With no lot the books keep no trace of a cleared advance, so the caller that read the log says whether
-    one was repaid (`repaid`): REPAID then, else NONE (never financed)."""
+    one was repaid (`repaid`): REPAID then, else NONE (never financed). A leg that no operation has run yet has no lot either: the caller
+    that holds the plan, not the books, says so (`planned`) and gets PLANNED. PLANNED is never the state of a lot."""
     if lot is None:
-        return "REPAID" if repaid else "NONE"
+        return "REPAID" if repaid else "PLANNED" if planned else "NONE"
     if lot.remaining_fen <= 0:
         return "REPAID"
     return "RECEIVED" if lot.settled else "ARRANGED"
