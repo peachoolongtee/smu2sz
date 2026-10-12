@@ -728,7 +728,26 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return home.mockHome(dealt, lang);
+  return withHomePatch(home.mockHome(dealt, lang));
+}
+
+/**
+ * A test seam, like the two keys below it: e2e/home-hybrid.spec.ts lays fields over the recorded home read through this session key, for what no recording has
+ * (the late-payment stress is behind the API's exposure flag; an unreadable decision record; a populated or multi-row deals card; a rail longer than the picture;
+ * an older server with none of the hybrid's fields, by setting them to null). Top level keys replace, `cash` keys replace inside `cash`. Unset, the read is exactly
+ * the recording; nothing in a recording is edited.
+ */
+export const HOME_PATCH_KEY = "tl-mock-home-patch";
+function withHomePatch(view: HomeView): HomeView {
+  if (typeof window === "undefined") return view;
+  const raw = window.sessionStorage.getItem(HOME_PATCH_KEY);
+  if (!raw) return view;
+  try {
+    const patch = JSON.parse(raw) as Partial<HomeView>;
+    return { ...view, ...patch, cash: { ...view.cash, ...(patch.cash ?? {}) } };
+  } catch {
+    return view;
+  }
 }
 
 /** GET /receivables: the recording for this point of the story (lib/mock/receivables.ts). Owner only, as live. */

@@ -4,10 +4,11 @@ is stored, sent or booked, and every sentence is written here for `lang` through
 
 Per receivable still to collect (OPEN or FINANCED with something outstanding), additive to the receivables block of Home:
 
-    net                the net cash at collection on the due day (`app.strategy.net`) with its words
+    net                the net cash at collection on the due day (`app.strategy.net`) with its words; `net_short` is also on the row
+    amount_short       the outstanding at a glance ("¥420k"); recourse_text the standing sentence about a receipt that falls short
     financing_state    ARRANGED | RECEIVED | REPAID | NONE (never mixed)
-    governed_by        {contract_ref, terms_days, rebate_bp, terms_text}: the confirmed contract, the terms on this invoice and the
-                       rebate agreed with the buyer
+    governed_by        {contract_ref, terms_days, rebate_bp, terms_label, terms_text}: the confirmed contract, the terms on this invoice
+                       and the rebate agreed with the buyer; the text never opens with the label's own words
     early_payment      {agreed, text}: the live agreement on THIS invoice, else "none agreed on this invoice"
     pending_counter    {decision_id, text} when an open offer's counter would apply to this invoice, else None
     collection_state   CURRENT | DUE_SOON | OVERDUE | PROMISE_MISSED, by the owner's thresholds
@@ -22,7 +23,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any, NamedTuple
 
-from app.api.presentation import Lang, invoice_words, option_label, party_name, t, when_text
+from app.api.presentation import Lang, fmt_short, invoice_words, option_label, party_name, t, when_text
 from app.books import Books
 from app.decisions.identity import deal_id
 from app.domain.models import (
@@ -85,11 +86,11 @@ def _rebate_bp(commitments: Sequence[Commitment], buyer_id: str) -> int:
 
 def _governed_by(r: Receivable, ref: str | None, rebate_bp: int, lang: Lang) -> dict[str, Any]:
     terms = t(lang, f"{r.terms_days} days from the invoice date", f"自开票日起 {r.terms_days} 天")
-    head = t(lang, f"Governed by agreement {ref}: " if ref else "No confirmed agreement on file; ",
-             f"依据协议 {ref}：" if ref else "尚无已确认的协议；")
+    head = t(lang, f"Agreement {ref}: " if ref else "No confirmed agreement on file; ",
+             f"协议 {ref}：" if ref else "尚无已确认的协议；")
     rebate = (t(lang, f"; a {fmt_pct(bp(rebate_bp))} rebate is agreed with the buyer", f"；已与买方约定 {fmt_pct(bp(rebate_bp))} 的返利")
               if rebate_bp else "")
-    return {"contract_ref": ref, "terms_days": r.terms_days, "rebate_bp": rebate_bp,
+    return {"contract_ref": ref, "terms_days": r.terms_days, "rebate_bp": rebate_bp, "terms_label": t(lang, "Payment terms", "付款条款"),
             "terms_text": head + t(lang, f"payment is due {terms}", f"账期为{terms}") + rebate}
 
 
@@ -136,6 +137,13 @@ def _pending_counter(r: Receivable, open_offers: Sequence[OpenOffer], lang: Lang
     return None
 
 
+def _names(names: Sequence[str], lang: Lang) -> str:
+    """Buyer names in a sentence: "Foshan", "Foshan and Dongguan", "A, B and C"."""
+    if len(names) <= 1:
+        return "".join(names)
+    return t(lang, ", ".join(names[:-1]) + " and " + names[-1], "、".join(names))
+
+
 def _net_block(net: NetAtCollection, words: Mapping[str, str | None]) -> dict[str, Any]:
     return {**net.model_dump(mode="json"), **words}
 
@@ -155,6 +163,7 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
     owed = sorted((r for r in state.receivables if r.status in _OPEN and r.outstanding_fen > 0), key=lambda r: (r.due_day, r.id))
     rows: list[dict[str, Any]] = []
     nets: list[NetAtCollection] = []
+    recourse = t(lang, "If the receipt falls short, what is left is owed by you.", "如果回款不足，差额由您承担。")
     for r in owed:
         net = net_at_collection(state, r, max(today, r.due_day))  # an invoice already late is priced on the first day it can be paid
         if net.financing_state == "NONE" and r.id in financing_repaid:
@@ -164,10 +173,12 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
         cstate = collection_state(r.due_day, today, promise_missed=r.id in promise_missed)
         rows.append({
             "receivable_id": r.id, "buyer_id": r.counterparty_id, "buyer_name": buyer, "invoice": invoice_words(state, r.id, lang),
-            "face_fen": r.face_fen, "outstanding_fen": r.outstanding_fen, "status": r.status, "due_day": r.due_day,
+            "face_fen": r.face_fen, "outstanding_fen": r.outstanding_fen, "amount_short": fmt_short(r.outstanding_fen),
+            "status": r.status, "due_day": r.due_day,
             "due_when": when_text(r.due_day, today, lang), "past_due": today > r.due_day,
             "days_late": max(0, today - r.due_day),
-            "net": _net_block(net, net_words(lang, net, buyer_name=buyer, today=today, due_day=r.due_day)),
+            "net": (block := _net_block(net, net_words(lang, net, buyer_name=buyer, today=today, due_day=r.due_day))),
+            "net_short": block["net_short"], "recourse_text": recourse,
             "financing_state": net.financing_state,
             "governed_by": _governed_by(r, refs.get(r.counterparty_id), _rebate_bp(commitments, r.counterparty_id), lang),
             "early_payment": _early_payment(books, r, today, lang),
@@ -181,7 +192,10 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
         "outstanding_total_fen": sum(r.outstanding_fen for r in owed),
         "outstanding_total_display": fmt_yuan(sum(r.outstanding_fen for r in owed)),
         "next_expected": ({"when_text": when_text(first_due, today, lang), "due_day": first_due, "amount_fen": coming,
-                           "amount_display": fmt_yuan(coming)} if first_due is not None else None),
+                           "amount_display": fmt_yuan(coming),
+                           "buyer_name": _names(sorted({party_name(state, r.counterparty_id) for r in waiting if r.due_day == first_due}), lang)}
+                          if first_due is not None else None),
+        "financing_total_fen": sum(n.advance_fen for n in nets), "financing_total_display": fmt_yuan(sum(n.advance_fen for n in nets)),
         "net_total_fen": sum(n.net_fen for n in nets), "net_total_display": fmt_yuan(sum(n.net_fen for n in nets)),
         "net_total_text": (t(lang, "if every invoice is paid on its due day, or today for one already late",
                              "如果每张发票都在到期日付款（已逾期的则今天付款）") if any(r.due_day < today for r in owed) else

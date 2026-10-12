@@ -100,6 +100,23 @@ def fmt_yuan_about(fen: int) -> str:
     return f"{sign}¥{rounded:,}"
 
 
+def fmt_yuan_about_short(fen: int, zh: bool = False) -> str:
+    """A year's figure at a glance, rounded once from the fen (half-up): "¥1.09m" from a million yuan ("¥109万" in Chinese), else the
+    "about" rounding of `fmt_yuan_about`. The caller says "about"."""
+    size = abs(fen)
+    if size < 1_000_000 * FEN_PER_YUAN:
+        return fmt_yuan_about(fen)
+    hundredths = round_half_up(Fraction(size, 1_000_000))  # hundredths of a million yuan, which is also the 万
+    sign = "−" if fen < 0 else ""
+    return f"{sign}¥{hundredths}万" if zh else f"{sign}¥{hundredths // 100}.{hundredths % 100:02d}m"
+
+
+def fmt_yuan_rounded(fen: int) -> str:
+    """A figure to the whole yuan, rounded once from the fen (half-up): "¥1,092,000". For a sentence that says "about"."""
+    whole = round_half_up(Fraction(abs(fen), FEN_PER_YUAN))
+    return f"{'−' if fen < 0 else ''}¥{whole:,}"
+
+
 def fmt_pct(x: Fraction, places: int = 2) -> str:
     """Exact fraction to a half-up percentage string: 0.108417 -> '10.84%'."""
     scaled = round_half_up(x * 100 * 10**places)

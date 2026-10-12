@@ -153,3 +153,15 @@ def test_the_sql_table_keeps_the_json_as_written() -> None:
     with s.engine.connect() as conn:
         assert conn.execute(text("SELECT value_json FROM customer_inputs")).scalar_one() == '"strategic"'
     s.dispose()
+
+
+def test_the_change_marker_counts_log_entries_approvals_and_decisions_without_reading_rows(
+        store: InMemoryLedgerStore | SqlLedgerStore) -> None:
+    """A read cache's key (the customer overview): counts only, in both stores, and every write that matters moves one of them."""
+    assert store.change_marker() == (0, 0, 0, 0, 0)
+    store.append_operation("OP-1", "NOTE", "idem-1", '{"kind":"NOTE"}', '{"status":"EXECUTED"}')
+    assert store.change_marker() == (1, 0, 0, 0, 0)
+    approval = store.add_approval('{"kind":"NOTE"}', "test")
+    assert store.change_marker() == (1, 0, 1, 0, 0)
+    store.decide_approval(approval, True, "OWNER")
+    assert store.change_marker() == (1, 0, 1, 1, 0)

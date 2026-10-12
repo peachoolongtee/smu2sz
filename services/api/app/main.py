@@ -12,6 +12,7 @@ from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
 from app.api.collections import router as collections_router
+from app.api.customer_overview import router as customer_overview_router
 from app.api.deals import router as deals_router
 from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
@@ -59,6 +60,7 @@ app.include_router(strategy_router)
 app.include_router(pilot_router)
 app.include_router(collections_router)
 app.include_router(receivables_router)
+app.include_router(customer_overview_router)
 app.include_router(documents_router)
 app.include_router(deals_router)
 app.include_router(nav_router)

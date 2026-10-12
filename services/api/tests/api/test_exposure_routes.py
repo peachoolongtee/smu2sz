@@ -114,7 +114,7 @@ def test_a_read_before_the_offer_is_evaluated_has_one_path_and_no_package(api: T
     assert body["offer_id"] == offer_id and body["buyer_id"] == "BUYER-1" and body["buyer_name"] == "Foshan Home Retail Co."
     assert body["buyer"] == {"id": "BUYER-1", "name": "Foshan Home Retail Co."}
     assert body["response"] == "asked" and body["day"] == 0 and body["partial"] is False and body["state_version"] == 1
-    assert [p["key"] for p in body["paths"]] == ["asked"] and body["lead"] == "asked"
+    assert [p["key"] for p in body["paths"]] == ["asked", "do_nothing"] and body["lead"] == "asked"  # do_nothing: the books as they stand
     assert body["capacity"]["asked"]["after"] is None  # nothing to bind yet: the asked path is the books as they stand
     assert body["capacity"]["asked"]["spare"]["x_star_fen"] == 8_100_000
     c, p = body["concentration"], body["payments"]
@@ -127,7 +127,7 @@ def test_a_read_before_the_offer_is_evaluated_has_one_path_and_no_package(api: T
 
 def _by_label(body: dict[str, Any]) -> dict[str, str]:
     """The path key of each column: the Deals page's own ("asked" and the counters' ids)."""
-    return {p["label"]: p["key"] for p in body["paths"]}
+    return {p["label"]: p["key"] for p in body["paths"] if p["kind"] != "do_nothing"}  # the path the picture does not draw is not a column
 
 
 def test_the_whole_block_for_ex01_on_the_golden_books(api: TestClient, offer_id: str) -> None:

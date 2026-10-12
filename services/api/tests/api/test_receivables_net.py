@@ -77,7 +77,7 @@ def test_the_unfinanced_row_in_english(client):
     assert row["financing_state"] == "NONE"
     assert row["governed_by"]["terms_days"] == 45 and row["governed_by"]["rebate_bp"] == 0
     assert row["governed_by"]["contract_ref"] == "FHR-2026-07"  # the demo's confirmed supply agreement
-    assert row["governed_by"]["terms_text"] == "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date"
+    assert row["governed_by"]["terms_text"] == "Agreement FHR-2026-07: payment is due 45 days from the invoice date"
     assert row["early_payment"] == {"agreed": False, "text": "none agreed on this invoice"}
     assert row["pending_counter"] is None
     assert (row["collection_state"], row["collection_action"]["primary"], row["collection_action"]["label"]) == (
@@ -85,7 +85,8 @@ def test_the_unfinanced_row_in_english(client):
     summary = body["summary"]
     assert summary["outstanding_total_display"] == "¥420,000.00" and summary["net_total_display"] == "¥420,000.00"
     assert summary["net_total_text"] == "if every invoice is paid on its due day"
-    assert summary["next_expected"] == {"when_text": "in 32 days", "due_day": 32, "amount_fen": 42_000_000, "amount_display": "¥420,000.00"}
+    assert summary["next_expected"] == {"when_text": "in 32 days", "due_day": 32, "amount_fen": 42_000_000, "amount_display": "¥420,000.00",
+                                       "buyer_name": "Foshan Home Retail Co."}
 
 
 def test_the_row_in_chinese_has_the_same_figures_and_no_english(client):
@@ -204,7 +205,7 @@ def test_governed_by_names_the_confirmed_contract_and_says_so_when_there_is_none
     client.post("/demo/reset", json={})
     ref = client.get("/deals/BUYER-1").json()["deal"]["contract"]["reference"]
     assert ref == _row(client)["governed_by"]["contract_ref"]
-    assert _row(client, "zh")["governed_by"]["terms_text"] == f"依据协议 {ref}：账期为自开票日起 45 天"
+    assert _row(client, "zh")["governed_by"]["terms_text"] == f"协议 {ref}：账期为自开票日起 45 天"
     from app.strategy.receivable_rows import receivable_rows
 
     state = get_runtime().store.get_state()
