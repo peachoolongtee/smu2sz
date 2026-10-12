@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "@/components/business/kit";
 import { Card } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeTone, HomeV2 } from "@/lib/types";
@@ -51,8 +52,9 @@ function Cell({ id, eyebrow, value, tone, note, hint, children }: { id: string; 
       <p className="mt-1 text-pretty text-supporting text-ink-2 md:mt-1.5" data-testid={`home-kpi-${id}-note`}>
         {note}
       </p>
+      {/* A phone keeps each cell to its eyebrow, figure and note: the hint lines sit behind one fold under the action (`StripHints`). */}
       {hint ? (
-        <p className="mt-1 text-pretty text-supporting text-ink-3 md:mt-1.5" data-testid={`home-kpi-${id}-hint`}>
+        <p className="mt-1.5 hidden text-pretty text-supporting text-ink-3 md:block" data-testid={`home-kpi-${id}-hint`}>
           {hint}
         </p>
       ) : null}
@@ -81,5 +83,34 @@ export function CompanyStrip({ kpis }: { kpis: HomeV2["kpis"] }) {
         <Cell id="funding" eyebrow={funding.eyebrow} value={funding.value_display} tone={funding.tone} note={funding.note} hint={funding.hint} />
       </div>
     </Card>
+  );
+}
+
+/**
+ * The phone's hint lines (the plan's effect on the lowest figure, "conditional on you running the plan"), folded into one disclosure under the action so the action's
+ * button stays in the first screen. From `md` the hints are in their cells and this renders nothing visible. The sentences are the server's.
+ */
+export function StripHints({ kpis }: { kpis: HomeV2["kpis"] }) {
+  const { t } = useI18n();
+  const hints = [
+    { id: "lowest", eyebrow: kpis.lowest_ahead.eyebrow, text: kpis.lowest_ahead.with_plan_hint },
+    { id: "funding", eyebrow: kpis.funding.eyebrow, text: kpis.funding.hint },
+  ].filter((h): h is { id: string; eyebrow: string; text: string } => Boolean(h.text));
+  if (!hints.length) return null;
+  return (
+    <div className="md:hidden" data-testid="home-strip-hints">
+      <Disclosure summary={t("hv2.hints")} testId="home-strip-hints-fold">
+        <dl className="space-y-2 text-supporting">
+          {hints.map((h) => (
+            <div key={h.id}>
+              <dt className="text-meta font-extrabold tracking-[0.08em] text-ink-3">{h.eyebrow}</dt>
+              <dd className="mt-0.5 text-ink-2" data-testid={`home-hint-${h.id}`}>
+                {h.text}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </Disclosure>
+    </div>
   );
 }
