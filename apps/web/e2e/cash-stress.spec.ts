@@ -125,7 +125,7 @@ test("switching back to expected restores the ordinary picture and the address k
   // And the late scenario is one press away again.
   await page.getByTestId("home-scenario-late").click();
   await expect(picture).toHaveAttribute("data-scenario", "late");
-  await expect(page.getByTestId("stress-sentence")).toContainText(now.lowest_short);
+  await expect(page.getByTestId("stress-sentence")).toContainText(now.text);
   expect(new URL(page.url()).search).toBe(search);
 });
 
