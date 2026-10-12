@@ -266,3 +266,60 @@ test("sidebar: axe finds nothing serious on a collapsed sidebar, with the page b
     expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), path).toEqual([]);
   }
 });
+
+test("SegmentedTabs: the choice is not the pill alone, widths follow the labels, the pill never leaves the track, and choosing never scrolls the page", async ({ page }) => {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-tab-needs")).toBeVisible({ timeout: 15_000 });
+  const tab = (k: string) => page.getByTestId(`queue-tab-${k}`);
+  // Selected: weight 800 and a brand icon; the rest 600 in ink-2. The track has the line-ui hairline.
+  const look = async (k: string) => tab(k).evaluate((el) => ({ weight: getComputedStyle(el).fontWeight, ink: getComputedStyle(el).color, icon: getComputedStyle(el.querySelector("svg")!).color }));
+  expect(await look("needs")).toMatchObject({ weight: "800", icon: "rgb(3, 104, 233)" });
+  expect(await look("wait")).toMatchObject({ weight: "600", ink: "rgb(77, 87, 103)" });
+  const track = page.getByRole("tablist", { name: "Deals by status" });
+  await expect(track).toHaveCSS("border-top-color", "rgb(118, 131, 153)");
+  // Per-option widths: the four tabs follow their own labels; choosing one does not resize any.
+  const widths = () => Promise.all(["needs", "wait", "agreed", "setup"].map(async (k) => Math.round((await tab(k).boundingBox())!.width)));
+  const before = await widths();
+  expect(new Set(before).size).toBeGreaterThan(1);
+  await tab("setup").click();
+  expect(await widths()).toEqual(before);
+  // A jump across the tabs keeps the pill inside the track (no overshoot).
+  const inside = () =>
+    page.evaluate(() => {
+      const t = document.querySelector("[role=tablist]")!.getBoundingClientRect();
+      const p = document.querySelector("[role=tablist] > span[aria-hidden]")!.getBoundingClientRect();
+      return p.left >= t.left - 0.5 && p.right <= t.right + 0.5;
+    });
+  expect(await inside()).toBe(true);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const seen: boolean[] = [];
+  const poll = page.evaluate(async () => {
+    const out: boolean[] = [];
+    const t = document.querySelector("[role=tablist]")!.getBoundingClientRect();
+    for (let i = 0; i < 24; i++) {
+      const p = document.querySelector("[role=tablist] > span[aria-hidden]")!.getBoundingClientRect();
+      out.push(p.left >= t.left - 0.5 && p.right <= t.right + 0.5);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    return out;
+  });
+  await tab("needs").click();
+  seen.push(...(await poll));
+  expect(seen.every(Boolean)).toBe(true);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // On a phone choosing a tab never scrolls the window (the queue's own track scrolls by its scrollLeft; Home's window tabs sit mid-page).
+  await page.setViewportSize({ width: 390, height: 844 });
+  await tab("setup").click();
+  await expect(tab("setup")).toBeInViewport();
+  await page.goto("/");
+  await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("home-window-60").scrollIntoViewIfNeeded();
+  await page.evaluate(() => window.scrollBy(0, -60));
+  const y = await page.evaluate(() => window.scrollY);
+  expect(y).toBeGreaterThan(0);
+  await page.getByTestId("home-window-60").click();
+  await page.getByTestId("home-window-120").click();
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - y)).toBeLessThan(2);
+});

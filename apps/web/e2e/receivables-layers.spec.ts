@@ -186,8 +186,13 @@ test("day 34: the pills filter by the server's collection state, an empty pill i
   const late = day34.rows.filter((r) => r.collection_state === "OVERDUE").length;
   const soon = day34.rows.filter((r) => r.collection_state === "DUE_SOON").length;
   await expect(page.getByTestId("recv-filter-all")).toHaveAttribute("aria-selected", "true");
-  // The pills carry no number of the browser's own.
-  await expect(page.getByTestId("recv-filter-overdue")).toHaveText("Overdue");
+  // Each tab says how many rows the server sent it holds, "0" included; a tab with none is disabled but still says so.
+  await expect(page.getByTestId("recv-filter-overdue")).toContainText("Overdue");
+  await expect(page.getByTestId("recv-filter-count-overdue")).toHaveText(String(late));
+  await expect(page.getByTestId("recv-filter-count-overdue")).toHaveAttribute("data-tone", "alert");
+  await expect(page.getByTestId("recv-filter-count-promises")).toHaveText("0");
+  await expect(page.getByTestId("recv-filter-count-promises")).toHaveAttribute("data-tone", "neutral");
+  await expect(page.getByTestId("recv-filter-count-all")).toHaveText(String(ids.length));
   if (soon === 0) await expect(page.getByTestId("recv-filter-soon")).toBeDisabled();
   await expect(page.getByTestId("recv-filter-promises")).toBeDisabled();
   await page.getByTestId("recv-filter-overdue").click();

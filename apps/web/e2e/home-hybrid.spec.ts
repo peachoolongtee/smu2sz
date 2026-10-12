@@ -623,7 +623,7 @@ test("the older Home renders exactly when the server sends none of the hybrid's 
   await expect(page.getByTestId("home-next-action").getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(page.getByTestId("home-picture")).toBeVisible();
   await expect(page.getByTestId("picture-chips")).toContainText("Payroll");
-  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
   await expect(page.getByTestId("home-deals")).toBeVisible();

@@ -169,6 +169,13 @@ test("the way back and the switch work from the keyboard: Tab reaches them, the 
   await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
   expect(await focused()).toBe("home-scenario-late");
+  // Space (and Enter) on a focused tab that is not the chosen one chooses it.
+  await page.getByTestId("home-scenario-expected").focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "expected");
+  await page.getByTestId("home-scenario-late").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
 });
 
 test("a home read with no event rail still says the late-payment sentences, under a plain heading", async ({ page }) => {

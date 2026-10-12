@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { CashPicture, linesDiffer } from "@/components/business/cash-picture";
 import { Disclosure } from "@/components/business/kit";
 import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
-import { SegmentedButtons } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { versusMinimum } from "@/lib/minimum";
 import type { HomeSeriesPoint, HomeView, PictureAxis } from "@/lib/types";
@@ -155,11 +155,11 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
       <ReceiptBasisBlock h={h} horizon={horizon} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-ink-2">{t("biz.forecast.caption", { n: horizon })}</span>
-        <SegmentedButtons
+        <SegmentedTabs
           label={t("biz.forecast.horizon")}
           value={horizon}
           onChange={setHorizon}
-          options={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
+          tabs={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
         />
       </div>
       {cash.forecast_basis ? <ForecastBasis basis={cash.forecast_basis} /> : null}

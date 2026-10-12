@@ -161,9 +161,9 @@
        expanded 280 ms   a card or row arriving, a panel sliding in, a chart cursor
        scenario 350 ms   a scenario or window switch: the figures that change update together
        narrative 500 ms  the one story the Home picture tells (the line draws, the first breach pulses)
-     --ease-ui is the one ease-out; --ease-select a damped spring (one small overshoot, no bounce) for a choice settling into place. */
+     --ease-ui is the one ease-out; --ease-select an ease-out that settles without overshoot (a pill must never leave its track on a multi-tab jump) for a choice settling into place. */
   --ease-ui: cubic-bezier(0.2, 0, 0, 1);
-  --ease-select: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --ease-select: cubic-bezier(0.25, 1, 0.5, 1);
   --dur-instant: 80ms;
   --dur-fast: 140ms;
   --dur: 220ms;
@@ -439,6 +439,16 @@ input[type="radio"] {
     background: var(--color-brand-50);
   }
 
+  /* A scrolling track says there is more: its edge fades out on the side that has more (a mask, not a colour; SegmentedTabs sets data-fade). */
+  .seg-scroll[data-fade="end"] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+  .seg-scroll[data-fade="start"] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2rem), transparent);
+  }
+  .seg-scroll[data-fade="both"] {
+    mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  }
   /* The type roles that carry more than a size (the face, the weight, the tracking): the Home headline and every page title, a major value, a section title and a card
      title. Body, supporting and metadata are the utilities text-body / text-supporting / text-meta alone. A figure is always tabular. */
   .type-headline {
@@ -527,6 +537,16 @@ input[type="radio"] {
       bottom: calc(var(--dock-h, 0px) + 1.5rem);
     }
   }
+}
+
+/* The segmented pill is shown once measured (data-pill on its track); until then (the server's markup, the first frame) the chosen tab draws it. Outside the layers, so it wins over the utilities. */
+.seg-track:not([data-pill]) > span[aria-hidden] {
+  display: none;
+}
+.seg-track:not([data-pill]) .seg-tab[aria-selected="true"] {
+  border-color: var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pill);
 }
 
 /* The collapsible sidebar (components/app-shell.tsx, BusinessShell), outside the layers so it wins over the utilities on the same elements. Only on a laptop (1024 to 1366 px) and only with <html data-sidebar="collapsed"> (set by the toggle and,

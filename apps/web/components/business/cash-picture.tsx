@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { SegmentedButtons } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
 
@@ -423,11 +423,11 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">{header}</div>
         {hasPlan ? (
-          <SegmentedButtons
+          <SegmentedTabs
             label={viewLabel ?? alternativeLabel}
             value={view}
             onChange={setView}
-            options={[
+            tabs={[
               { value: "nothing", label: baselineLabel, testId: "picture-view-nothing" },
               { value: "plan", label: toggleAlternativeLabel ?? alternativeLabel, testId: "picture-view-plan" },
             ]}

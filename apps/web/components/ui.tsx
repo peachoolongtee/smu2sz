@@ -555,36 +555,6 @@ export function Segmented<T extends string>({
   );
 }
 
-/** The same pill track made of toggle buttons (`aria-pressed`), for a choice that is a view (a horizon), not a form field. */
-export function SegmentedButtons<T extends string | number>({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: ReactNode; testId?: string }[];
-}) {
-  return (
-    <SegmentedTrack role="group" label={label} count={options.length} index={options.findIndex((o) => o.value === value)}>
-      {options.map((o) => (
-        <button
-          key={String(o.value)}
-          type="button"
-          onClick={() => onChange(o.value)}
-          aria-pressed={value === o.value}
-          data-testid={o.testId}
-          className={`${segmentedOption} ${value === o.value ? "text-ink" : "text-ink-2 hover:text-ink"}`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </SegmentedTrack>
-  );
-}
-
 /** Horizontally scrollable table region that remains keyboard-scrollable. */
 export function TableWrap({ label, children }: { label: string; children: ReactNode }) {
   return (

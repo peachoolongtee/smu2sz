@@ -3,7 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { BasisLine, BasisRows, type BasisRow } from "@/components/home/receipt-basis";
-import { CalendarIcon, CheckIcon, ClockIcon } from "@/components/icons";
+import { CheckIcon, ClockIcon } from "@/components/icons";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
@@ -287,7 +287,7 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
               label={t("biz.forecast.horizon")}
               value={wanted}
               onChange={setChosenWindow}
-              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), icon: CalendarIcon, testId: `home-window-${d}` }))}
+              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
             />
           ) : null}
         </div>

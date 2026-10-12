@@ -2,7 +2,7 @@
 
 import { Avatar, initials, toneFor } from "@/components/business/kit";
 import { CustomerName } from "@/components/customer-link";
-import { AlertIcon, CheckIcon, ClockIcon, ListIcon } from "@/components/icons";
+import { AlertIcon, ChatIcon, ClockIcon, ListIcon } from "@/components/icons";
 import { BasisLine } from "@/components/home/receipt-basis";
 import { SegmentedTabs, type TabIcon } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
@@ -13,7 +13,7 @@ import { FinancingSteps } from "./financing-steps";
 import { inFilter, type RecvFilter } from "./state";
 
 /** One glyph per filter (the segmented control draws an icon and a label on each pill). */
-const FILTER_ICON: Record<RecvFilter, TabIcon> = { all: ListIcon, soon: ClockIcon, overdue: AlertIcon, promises: CheckIcon };
+const FILTER_ICON: Record<RecvFilter, TabIcon> = { all: ListIcon, soon: ClockIcon, overdue: AlertIcon, promises: ChatIcon };
 
 const COLS = "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)]";
 
@@ -47,13 +47,16 @@ export function InvoiceList({
 
   return (
     <section aria-label={t("recv3.list.label")} className="space-y-3" data-testid="recv3-list">
-      {/* A filter with nothing behind it is disabled (not counted for the owner: the page shows no number the server did not write). */}
+      {/* A filter with nothing behind it says "0" and is dimmed, never dimmed with no number; the count is the rows the server sent that the filter holds, red where the owner must act. */}
       <SegmentedTabs
         label={t("biz.recv.filter.label")}
         value={filter}
         onChange={onFilter}
         testId="recv-filters"
-        tabs={pills.map((p) => ({ value: p.id, label: p.label, icon: FILTER_ICON[p.id], disabled: p.id !== "all" && !rows.some((r) => inFilter(r, p.id)), testId: `recv-filter-${p.id}` }))}
+        tabs={pills.map((p) => {
+          const n = rows.filter((r) => inFilter(r, p.id)).length;
+          return { value: p.id, label: p.label, icon: FILTER_ICON[p.id], badge: n, badgeTone: n > 0 && (p.id === "overdue" || p.id === "promises") ? "alert" : "neutral", disabled: p.id !== "all" && n === 0, testId: `recv-filter-${p.id}`, badgeTestId: `recv-filter-count-${p.id}` };
+        })}
       />
 
       {shown.length === 0 ? (

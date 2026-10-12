@@ -7,7 +7,8 @@ import { BankIcon, SparkIcon, StoreIcon, UserIcon } from "@/components/icons";
 import { CustomerName } from "@/components/customer-link";
 import { StatePill } from "@/components/ui";
 import { SpanQuote } from "@/components/offer-parts";
-import { Badge, ErrorState, Hash, LoadingBlock, PageHeader, toggleClass } from "@/components/ui";
+import { Badge, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { getAudit, getLedger, getState } from "@/lib/api";
 import { API_MODE, STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
@@ -186,13 +187,19 @@ export default function ActivityPage() {
           <section id="activity-timeline" aria-label={t("biz.activity.rail")}>
             <p className="mb-3 text-meta text-ink-3">{t("biz.activity.timeline.sub")}</p>
             {showChips ? (
-              <div role="group" aria-label={t("biz.activity.filter.label")} className="mb-4 flex flex-wrap gap-1.5" data-testid="activity-filters">
-                {([["all", t("biz.activity.filter.all"), entries], ...kinds.map((c) => [c, t(`biz.activity.filter.${c}`), counts[c]] as const)] as const).map(([id, label, n]) => (
-                  <button key={id} type="button" aria-pressed={active === id} onClick={() => setFilter(id)} className={toggleClass(active === id, "sm")} data-testid={`activity-filter-${id}`}>
-                    {label}
-                    <span className="tabular-nums text-ink-3">{n}</span>
-                  </button>
-                ))}
+              <div className="mb-4">
+                <SegmentedTabs
+                  label={t("biz.activity.filter.label")}
+                  value={active}
+                  onChange={setFilter}
+                  testId="activity-filters"
+                  tabs={([["all", t("biz.activity.filter.all"), entries], ...kinds.map((c) => [c, t(`biz.activity.filter.${c}`), counts[c]] as const)] as const).map(([id, label, n]) => ({
+                    value: id as Filter,
+                    label,
+                    badge: n,
+                    testId: `activity-filter-${id}`,
+                  }))}
+                />
               </div>
             ) : null}
             {ops.length ? (

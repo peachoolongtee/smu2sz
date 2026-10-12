@@ -150,12 +150,12 @@ test("Activity: day captions, an icon for who acted, time passing as a thin sepa
 test("Activity: the filter chips narrow the rail by kind and never change its order", async ({ page }) => {
   await railAt34(page);
   const filters = page.getByTestId("activity-filters");
-  await expect(filters.getByTestId("activity-filter-all")).toHaveAttribute("aria-pressed", "true");
+  await expect(filters.getByTestId("activity-filter-all")).toHaveAttribute("aria-selected", "true");
   for (const id of ["money", "decisions", "documents"]) await expect(filters.getByTestId(`activity-filter-${id}`)).toBeVisible();
   const order = () => page.locator('[data-testid="activity-list"] li').evaluateAll((els) => els.map((el) => el.getAttribute("data-testid") ?? ""));
   const all = (await order()).filter((x) => x !== "activity-ADVANCE_CLOCK");
   await filters.getByTestId("activity-filter-documents").click();
-  await expect(filters.getByTestId("activity-filter-documents")).toHaveAttribute("aria-pressed", "true");
+  await expect(filters.getByTestId("activity-filter-documents")).toHaveAttribute("aria-selected", "true");
   const docs = await order();
   expect(docs.length).toBe(3);
   expect(docs.every((x) => x === "activity-CONFIRM_DOCUMENT")).toBe(true);
