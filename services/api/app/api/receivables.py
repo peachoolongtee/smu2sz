@@ -20,10 +20,13 @@ from app.api.auth import require_owner
 from app.api.display import displayed
 from app.api.home import Partial
 from app.api.presentation import last_read
+from app.api.receipt_basis import BasisReader, agreement_days, scheduled_billing
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import CommitmentStatus, DocumentKind, DocumentStatus
 from app.financial import EngineError
+from app.operations.log import read_entries
+from app.strategy import words
 from app.strategy.receivable_rows import OpenOffer, receivable_rows
 
 router = APIRouter(tags=["receivables"], dependencies=[Depends(require_owner)])
@@ -55,6 +58,22 @@ def _financing_repaid(store: Any) -> frozenset[str]:
         if result.get("status") == "EXECUTED" and "repaid advance" in str(result.get("message") or "") and payload.get("receivable_id"):
             out.add(str(payload["receivable_id"]))
     return frozenset(out)
+
+
+def _say_basis(body: dict[str, Any], books: Any, commitments: list[Any], store: Any, today: int, lang: str, partial: Partial) -> None:
+    """What each row rests on (the Cash picture's words, so the two pages agree) and the note on billings not yet invoiced, which are not
+    receivables and so are not rows. A supporting read: the rows stand without it, and `partial` says so."""
+    try:
+        reader = BasisReader(books, today, lang, agreement_days(read_entries(store.operations())[0], commitments))
+        for row in body["rows"]:
+            b = reader.of_receivable(row["receivable_id"])
+            row["basis"], row["basis_text"] = (b.code, reader.text(b)) if b is not None else (None, None)
+        billing = scheduled_billing(books.state)
+        body["summary"]["scheduled_note"] = (words.scheduled_note(lang, billing[0], max(billing[1] - today, 0), today)
+                                             if billing is not None else None)
+    except Exception:
+        logging.getLogger("termsledger.decisions").exception("the basis of the receivables could not be read")
+        partial.add("receipt_basis")
 
 
 @router.get("/receivables")
@@ -89,5 +108,6 @@ def get_receivables(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
         body = receivable_rows(state, today, lang, books=books, commitments=commitments, promise_missed=missed,
                                financing_repaid=_financing_repaid(store),
                                open_offers=open_offers, contract_refs=refs)
+        _say_basis(body, books, commitments, store, today, lang, partial)
     return displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, "partial": partial.view(lang),
                       **last_read(today, lang)})

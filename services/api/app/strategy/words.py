@@ -128,5 +128,85 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
         "per_period_text": per, "owed_text": owed, "unrecorded_text": unrecorded}
 
 
-__all__ = ["BP_FULL", "buyer_short", "financing_state_words", "invoice_label", "invoice_labels", "net_words", "share_bp", "share_text",
-           "whole_yuan"]
+
+# ---------------------------------------------------------------- what a receipt rests on (the Cash picture, Home and Receivables)
+
+OWED, SCHEDULED, AGREED, PENDING = "OWED", "SCHEDULED", "AGREED", "PENDING"
+
+
+def _days(n: int, lang: Lang) -> str:
+    return t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
+
+
+def basis_text(lang: Lang, basis: str, *, today: int, issue_day: int | None = None, due_day: int | None = None,
+               agreement_day: int | None = None, buyer_name: str = "") -> str:
+    """What a receipt rests on, said one way on every page. OWED: an invoice already issued, from its own issue and due days
+    ("owed: invoiced 13 days ago, due in 32 days"; "overdue by 2 days" once past due). SCHEDULED: a recurring billing not yet invoiced.
+    AGREED: timing or amount that comes from an agreement the owner recorded, named by the day it was made (never by an id); the
+    buyer's name when that day is not known. Never an id (INVARIANT 13)."""
+    if basis == SCHEDULED:
+        return t(lang, "scheduled: not yet invoiced", "按计划：尚未开票")
+    if basis == AGREED:
+        if agreement_day is None:
+            return t(lang, f"under the agreement with {buyer_name}" if buyer_name else "under the agreement",
+                     f"按与{buyer_name}达成的协议" if buyer_name else "按已达成的协议")
+        made = when_text(agreement_day, today, "en")
+        return t(lang, f"under the agreement made {made}", f"按{when_text(agreement_day, today, 'zh')}达成的协议")
+    # OWED
+    if issue_day is None or due_day is None:
+        return t(lang, "owed", "应收")
+    issued = when_text(issue_day, today, lang)
+    if due_day < today:
+        late = today - due_day
+        return t(lang, f"owed: invoiced {issued}, overdue by {_days(late, 'en')}", f"应收：{issued}开票，已逾期 {late} 天")
+    due = when_text(due_day, today, lang)
+    return t(lang, f"owed: invoiced {issued}, due {due}", f"应收：{issued}开票，{due}到期")
+
+
+def pending_label(lang: Lang, buyer_name: str, option: str) -> str:
+    """The pending line's name: "If Foshan accepts Option A"."""
+    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    return t(lang, f"If {who} accepts {option}", f"如果{who}接受{option}")
+
+
+def pending_text(lang: Lang, buyer_name: str, option: str, *, amount_fen: int, days_after: int, discount: bool = False) -> str:
+    """One receipt that moves if the buyer accepts the reply: "if Foshan accepts Option A: ¥257,200 paid 2 days after the offer"."""
+    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    amount = whole_yuan(abs(amount_fen))
+    if days_after <= 0:
+        en_when, zh_when = "the same day", "当天"
+    else:
+        en_when, zh_when = f"{_days(days_after, 'en')} after the offer", f"报价后 {days_after} 天"
+    if discount:
+        return t(lang, f"if {who} accepts {option}: {amount} discount given {en_when}",
+                 f"如果{who}接受{option}：{zh_when}让利 {amount}")
+    return t(lang, f"if {who} accepts {option}: {amount} paid {en_when}", f"如果{who}接受{option}：{zh_when}收到 {amount}")
+
+
+def receipts_legend(lang: Lang, buyer_name: str, option: str) -> str:
+    """The picture's legend sentence, present only while a reply is pending."""
+    who = buyer_short(buyer_name) if lang != "zh" else buyer_name
+    return t(lang, f"Solid: money owed or scheduled under today's terms. Dashed: if {who} accepts {option}.",
+             f"实线：按现行条款已应收或已按计划的款项。虚线：如果{who}接受{option}。")
+
+
+def scheduled_note(lang: Lang, amount_fen: int, in_days: int, today: int) -> str:
+    """The Receivables summary's note on billings not yet invoiced: "¥420,000 more is scheduled to be invoiced in 2 days; it is not
+    owed yet"."""
+    when = when_text(today + in_days, today, lang)
+    amount = whole_yuan(amount_fen)
+    return t(lang, f"{amount} more is scheduled to be invoiced {when}; it is not owed yet", f"另有 {amount} 计划于{when}开票；目前尚未应收")
+
+
+def net_later_text(lang: Lang, net: NetAtCollection, delay_days: int) -> str:
+    """What an invoice nets when the buyer pays `delay_days` after the due day (`net_at_collection` at that day): "about ¥160,940, a
+    month later". The stress rows of the Home and the buyer's pages say it in these words."""
+    amount = fmt_yuan_about(net.net_fen)
+    if delay_days == 30:
+        return t(lang, f"about {amount}, a month later", f"约 {amount}，晚一个月收到")
+    return t(lang, f"about {amount}, {_days(delay_days, 'en')} later", f"约 {amount}，晚 {delay_days} 天收到")
+
+
+__all__ = ["AGREED", "BP_FULL", "OWED", "PENDING", "SCHEDULED", "basis_text", "buyer_short", "financing_state_words", "invoice_label",
+           "invoice_labels", "net_later_text", "net_words", "pending_label", "pending_text", "receipts_legend", "scheduled_note", "share_bp",
+           "share_text", "whole_yuan"]

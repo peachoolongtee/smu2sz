@@ -22,7 +22,8 @@ from tests.api.conftest import english_leaks, figures, unchanged_words
 ROUTES = [r"\.attention\.items\[\]\.(primary|secondary)\.href", r"\.(deals_card\.rows\[\]|receivables_card|changes_card)\.href"]
 AUDIT = [r"\.next_action\.(formula|detail_raw)", r"\.next_action\.legs\[\]\.formula", r"\.next_action\.cost_breakdown\[\]\.formula",
          r"\.cash\.series\[\]\.events\[\]\.label(_short)?", r"\.cash\.plan_series\[\]\.events\[\]\.label(_short)?",
-         r"\.cash\.counterfactual_series\[\]\.events\[\]\.label(_short)?", *ROUTES]
+         r"\.cash\.counterfactual_series\[\]\.events\[\]\.label(_short)?",
+         r"\.cash\.pending\.series\[\]\.events\[\]\.label(_short)?", *ROUTES]
 
 
 @pytest.fixture(autouse=True)
@@ -514,6 +515,8 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     # before the plan, Foshan paying 30 days late leaves cash below the minimum for weeks, and no committed plan covers it
     assert (before["delay_days"], before["buyer"]) == (30, "Foshan")
     assert before["breach_days"] > 0 and before["need_short"] != "¥0" and "No committed plan covers" in before["plan_text"]
+    assert before["net_later_text"] == "about ¥420k, a month later"  # not financed yet: the whole invoice, a month later
+    assert before["text"].startswith("Paid 30 days late: cash falls to −¥250,000") and before["funding_text"] == before["plan_text"]
     _run_plan(client)
     h = client.get("/home").json()
     s = h["cash"]["stress"]
@@ -526,6 +529,16 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     assert "runs 30 days longer" in s["assumption_text"] and "RCV-" not in s["assumption_text"]
     # the page widens its window to show the moved receipt: Foshan's day-32 receipt is paid on day 62
     assert s["window_days_needed"] >= 62 + 4 - h["day"]
+    # the row's own sentences, so the Home and the Cash page say the same thing (ticket #116, item 5); `plan_text` stays as it was
+    assert s["funding_text"] == s["plan_text"]
+    assert s["text"] == ("Paid 30 days late: cash falls to ¥155,000 in 60 days, 15 days below your minimum; "
+                         "no committed facility covers the ¥145,000.")
+    assert s["net_later_text"] == "about ¥160k, a month later"
+    zh = client.get("/home", params={"lang": "zh"}).json()["cash"]["stress"]
+    assert zh["text"] == "晚付 30 天：60 天后现金将跌至 ¥155,000，有 15 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥145,000 的缺口。"
+    assert zh["funding_text"] == zh["plan_text"] and zh["funding_text"] != s["funding_text"]
+    assert zh["net_later_text"] == "约 ¥160k，晚一个月收到"
+    assert english_leaks({"stress": {k: zh[k] for k in ("text", "funding_text", "net_later_text")}}, ["Foshan Home Retail Co.", "FLOW"]) == []
     # one search per state: a second read of the same books takes the cached answer
     from app.strategy import impact
 
@@ -535,6 +548,15 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     client.get("/home")
     client.get("/home")
     assert calls == []
+
+
+def test_the_net_later_has_no_text_without_an_open_invoice(client):
+    rt = get_runtime()
+    state = rt.store.get_state()
+    c = SimpleNamespace(state=state.model_copy(update={"receivables": []}), today=0, lang="en")
+    assert home_hybrid._net_later(c, "BUYER-1", 30) is None
+    assert home_hybrid._net_later(SimpleNamespace(state=state, today=0, lang="zh"), "BUYER-1", 30) == "约 ¥420k，晚一个月收到"
+    assert home_hybrid._net_later(SimpleNamespace(state=state, today=0, lang="en"), "BUYER-9", 30) is None
 
 
 # ---------------------------------------------------------------- H4: the cards
