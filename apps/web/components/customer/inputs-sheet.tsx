@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
 import { ArrowLeftIcon } from "@/components/icons";
-import { Button, ButtonLink, Card, SegmentedButtons, inputClass } from "@/components/ui";
+import { Button, ButtonLink, Card, inputClass } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { saveInput } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
@@ -210,11 +211,11 @@ export function InputsSheet({ view, onSaved, carry = null }: { view: InputSheetV
                 {klass.label}
               </span>
               <div className="self-start" aria-describedby={errors[klass.key] ? `${uid}-${klass.key}-err` : undefined}>
-                <SegmentedButtons
+                <SegmentedTabs
                   label={klass.label}
                   value={values.classification ?? ""}
-                  onChange={(v) => klass.editable && !busy && set("classification", v)}
-                  options={klass.options.map((o) => ({ value: o.value, label: o.label, testId: `inputs-class-${o.value}` }))}
+                  onChange={(v: string) => { if (klass.editable && !busy) set("classification", v); }}
+                  tabs={klass.options.map((o) => ({ value: o.value, label: o.label, testId: `inputs-class-${o.value}` }))}
                 />
               </div>
               <p className="text-[13px] leading-relaxed text-ink-2" data-testid="inputs-class-note">

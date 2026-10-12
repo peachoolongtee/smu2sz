@@ -366,6 +366,9 @@ if (EXPOSURE) {
   await live.demoReset();
   for (const name of Object.keys(files)) write(name, files[name]);
   console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
 // --inputs: the owner's Inputs sheet for the demo's first buyer and nothing else (see the header).
 if (INPUTS) {
   const BUYER = "BUYER-1";
