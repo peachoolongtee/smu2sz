@@ -102,7 +102,7 @@ typography:
     fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "13px"
     fontWeight: 400
-    lineHeight: 1.25
+    lineHeight: 1.38
   label:
     fontFamily: "Lato, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif"
     fontSize: "12px"
@@ -325,7 +325,7 @@ Seven roles, each a CSS variable in `app/globals.css` (`--text-*`, with a `--lin
 - **Section** (`.type-section`, `--text-section`: 18 to 20 px, display face, 800): a block's title inside the page: the attention card's and the plan's title, the Deals queue's heading, the `Stat` figure at `size="md"` (`text-section`, weight 600).
 - **Card title** (`.type-card-title`, `--text-card-title`: 16 px, 700): a `Card`'s heading.
 - **Body** (`text-body`, 14 px, line-height 1.45; `text-body-lg`, 15 px, for the sentences that carry a page: the note under a headline, the stress sentences): sentences, data in a table or a row, controls. Headlines and card titles are `text-balance`; the sentences under them `text-pretty`.
-- **Supporting** (`text-supporting`, 13 px, line-height 1.25 rem): the floor for any financial qualification: a figure, a rate, a limit ("limit: at least 1.25×"), the caption under a fact, the words that say what a number is against, a status word, a table head, a basis sentence, a formula. A fact tile's caption, a `Badge`, a `StateWord` and `thCls` are 13 px.
+- **Supporting** (`text-supporting`, 13 px, line-height 18 px): the floor for any financial qualification: a figure, a rate, a limit ("limit: at least 1.25×"), the caption under a fact, the words that say what a number is against, a status word, a table head, a basis sentence, a formula. A fact tile's caption, a `Badge`, a `StateWord` and `thCls` are 13 px.
 - **Metadata** (`text-meta`, 12 px; 11 px is allowed, 10 and below is not): a small-caps eyebrow, a column or fact label, a time ("in 3 days"), an index mark, a legend. Never a figure and never a qualification: `e2e/design-system.spec.ts` fails on any visible text under 13 px that carries an amount, a rate, a multiple or a thousands group, on Home, Deals, Cash, Receivables and the Customer page.
 - **Mono** (400, 13 px, line-height 1.625): hashes (shortened, with copy), formulas (`Formula`, in a `subtle` tile).
 

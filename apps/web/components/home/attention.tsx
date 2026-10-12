@@ -119,7 +119,7 @@ export function AttentionCard({
           <dl className="flex flex-wrap gap-x-8 gap-y-1" data-testid="home-attention-facts">
             {main.facts.map((f, i) => (
               <div key={f.label} className="min-w-0">
-                <dt className="text-supporting font-semibold text-ink-3">{f.label}</dt>
+                <dt className="text-meta font-semibold text-ink-3">{f.label}</dt>
                 <dd className="text-sm font-bold tabular-nums text-ink" data-testid={i === 0 ? "next-action-lands" : undefined}>
                   {f.value}
                 </dd>
@@ -162,7 +162,7 @@ export function AttentionCard({
             <dl className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-2" data-testid="home-attention-facts">
               {facts.map((f, i) => (
                 <div key={f.label} className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-                  <dt className="shrink-0 text-supporting font-semibold text-ink-3">{f.label}</dt>
+                  <dt className="shrink-0 text-meta font-semibold text-ink-3">{f.label}</dt>
                   <dd className={`break-words text-right text-sm font-bold sm:text-left sm:text-base tabular-nums ${FACT_TONE[f.tone ?? "neutral"]}`} data-testid={runs?.lands_when && f.value.includes(runs.lands_when) && !facts.slice(0, i).some((g) => g.value.includes(runs.lands_when ?? "")) ? "next-action-lands" : undefined}>
                     {f.value}
                   </dd>
