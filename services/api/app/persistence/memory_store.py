@@ -48,12 +48,14 @@ from app.persistence.errors import (
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    CustomerInputRecord,
     DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
     LedgerEntry,
     LlmCallRecord,
     PilotJournalRecord,
+    latest_inputs,
 )
 
 
@@ -64,7 +66,7 @@ class InMemoryLedgerStore:
     _CONTAINERS = (
         "_ops", "_nonces", "_commitments", "_states", "_mandates", "_offers", "_verdicts",
         "_security_events", "_approvals", "_evidence_exports", "_llm_calls", "_evaluation_runs", "_decision_facts",
-        "_contract_records",
+        "_contract_records", "_customer_inputs",
     )
 
     def __init__(self) -> None:
@@ -116,6 +118,7 @@ class InMemoryLedgerStore:
         self._evidence_exports: list[EvidenceExportRecord] = []
         self._decision_facts: list[DecisionFactRecord] = []
         self._contract_records: dict[str, ContractRecord] = {}
+        self._customer_inputs: list[CustomerInputRecord] = []
 
     # ------------------------------------------------------------ operations log
 
@@ -447,6 +450,31 @@ class InMemoryLedgerStore:
         """Every fact, oldest first; of one decision when `decision_id` is given."""
         with self._lock:
             return [f for f in self._decision_facts if decision_id is None or f.decision_id == decision_id]
+
+    # ------------------------------------------------------------ customer inputs (map #88, brief H.4)
+
+    def add_customer_input(self, record: CustomerInputRecord) -> CustomerInputRecord:
+        """Append one row. Append-only: the store has no update or delete for it, and nothing here touches the books, the
+        operations log or the hash chain. `seq` and `recorded_at` are the store's; the returned row is the stored one."""
+        with self._lock:
+            stored = replace(record, seq=len(self._customer_inputs) + 1, recorded_at=datetime.now(UTC).isoformat())
+            self._customer_inputs.append(stored)
+            return stored
+
+    def customer_inputs(self, counterparty_id: str | None) -> list[CustomerInputRecord]:
+        """The history of one buyer's rows, oldest first; `None` is the firm's rows."""
+        with self._lock:
+            return [r for r in self._customer_inputs if r.counterparty_id == counterparty_id]
+
+    def all_customer_inputs(self) -> list[CustomerInputRecord]:
+        """Every row, oldest first."""
+        with self._lock:
+            return list(self._customer_inputs)
+
+    def latest_customer_inputs(self) -> dict[tuple[str | None, str], CustomerInputRecord]:
+        """The row in force for each (counterparty, field); the firm's rows have `None` as the counterparty."""
+        with self._lock:
+            return latest_inputs(self._customer_inputs)
 
     # ------------------------------------------------------------ evidence
 

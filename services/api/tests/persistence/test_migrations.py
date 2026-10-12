@@ -38,6 +38,7 @@ EXPECTED_TABLES = {
     "contract_records",
     "pilot_journal",
     "decision_facts",
+    "customer_inputs",
 }
 
 
@@ -127,4 +128,49 @@ def test_alembic_cli_reads_database_url(tmp_path: Path):
     engine = create_engine(f"sqlite:///{db}")
     with engine.connect() as conn:
         assert EXPECTED_TABLES <= set(inspect(conn).get_table_names())
+    engine.dispose()
+
+
+def test_migration_0008_adds_the_customer_inputs_table_and_downgrades_cleanly(tmp_path: Path):
+    """Map #88: 0008 creates `customer_inputs` (append-only by the store's hook, checked field and provenance, indexed on the
+    org and the counterparty) and leaves 0007 as it was; the downgrade removes exactly that table."""
+    import pytest
+    from sqlalchemy import insert
+    from sqlalchemy.exc import IntegrityError
+
+    url = f"sqlite:///{tmp_path / 'inputs.db'}"
+    cfg = _config(url)
+    command.upgrade(cfg, "0007")
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        assert "customer_inputs" not in inspect(conn).get_table_names()
+    command.upgrade(cfg, "head")
+    with engine.connect() as conn:
+        insp = inspect(conn)
+        assert [c["name"] for c in insp.get_columns("customer_inputs")] == [
+            "row_id", "org_id", "counterparty_id", "field", "value_json", "provenance", "source_ref", "entered_by",
+            "entered_day", "state_version", "recorded_at"]
+        assert {c["name"]: c["nullable"] for c in insp.get_columns("customer_inputs")}["counterparty_id"] is True
+        assert {tuple(i["column_names"]) for i in insp.get_indexes("customer_inputs")} == {("org_id",), ("counterparty_id",)}
+    row = {"org_id": "O", "counterparty_id": None, "field": "vat_rate_bp", "value_json": "1300", "provenance": "ERP",
+           "source_ref": "", "entered_by": "OWNER", "entered_day": 0, "state_version": 1, "recorded_at": "x"}
+    from app.persistence.tables import customer_inputs
+
+    with engine.begin() as conn:
+        conn.execute(insert(customer_inputs).values(**row))
+    with pytest.raises(IntegrityError), engine.begin() as conn:
+        conn.execute(insert(customer_inputs).values(**{**row, "field": "not_a_field"}))
+    engine.dispose()
+
+    store = SqlLedgerStore(url, create_tables=False)  # the migrated file works with the store
+    assert [r.field for r in store.all_customer_inputs()] == ["vat_rate_bp"]
+    store.reset()
+    assert store.all_customer_inputs() == []
+    store.dispose()
+
+    command.downgrade(cfg, "0007")
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        tables = set(inspect(conn).get_table_names()) - {"alembic_version"}
+        assert "customer_inputs" not in tables and "contract_records" in tables
     engine.dispose()

@@ -1,7 +1,9 @@
 """Settings and feature flags. Every optional feature can be switched off without breaking the core
 (Terms Guard + Debt Desk committed routing + verifier + executor + /nl).
 The three strategy flags (envelope, price_curve, collections_worth) are the read-only MVP of map #47 and default off;
-pilot_journal (map #58) is the shadow pilot's owner-recorded journal, also default off."""
+pilot_journal (map #58) is the shadow pilot's owner-recorded journal, also default off; exposure (map #88, Phase 1) is
+buyer exposure on the deal and the customer-inputs routes, default off; customer_economics (map #88, Phase 2) lets the
+customer-inputs routes take the six economics fields (sales, margins, classification, VAT), default off."""
 
 from __future__ import annotations
 
@@ -55,6 +57,8 @@ class Features:
     envelope: bool = field(default_factory=lambda: _flag("FEATURE_ENVELOPE", default=False))
     price_curve: bool = field(default_factory=lambda: _flag("FEATURE_PRICE_CURVE", default=False))
     collections_worth: bool = field(default_factory=lambda: _flag("FEATURE_COLLECTIONS_WORTH", default=False))
+    exposure: bool = field(default_factory=lambda: _flag("FEATURE_EXPOSURE", default=False))  # map #88 Phase 1, default off
+    customer_economics: bool = field(default_factory=lambda: _flag("FEATURE_CUSTOMER_ECONOMICS", default=False))  # map #88 Phase 2
     contracts: bool = field(default_factory=lambda: _flag("FEATURE_CONTRACTS"))  # contract ingestion + deal summary
     pilot_journal: bool = field(default_factory=lambda: _flag("FEATURE_PILOT_JOURNAL", default=False))  # map #58, default off
 

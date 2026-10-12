@@ -147,9 +147,11 @@ class Runtime:
             self.latest_verdict.clear()
             self.documents.clear()
             self.intake_day, self.intake_count = 0, 0
+            from app.api.strategy_exposure import clear_cache as clear_exposure_cache
             from app.nl import reset_sessions
 
             reset_sessions()
+            clear_exposure_cache()  # the answers were computed on the books that were just replaced
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
@@ -177,9 +179,15 @@ def _confirm_demo_documents(rt: Runtime, scenario: str) -> None:
 
 
 def _seed(store: LedgerStore, scenario: str = "golden_sme") -> None:
-    """Write the demo fixture state and the signed demo mandate. Never deletes."""
-    store.put_state(seed_state(scenario))  # the scenario's name is stored with the books
+    """Write the demo fixture state and the signed demo mandate, then the Demo's customer inputs (ESTIMATED, "Demo
+    assumption"; none yet in Phase 1). Never deletes."""
+    state = seed_state(scenario)
+    store.put_state(state)  # the scenario's name is stored with the books
     store.put_mandate(load_signed_mandate())
+    if scenario == "golden_sme":  # the inputs fixture is written for the golden books
+        from app.strategy.inputs import seed_demo_inputs
+
+        seed_demo_inputs(store, state)
 
 
 def _has(read: Any) -> bool:
