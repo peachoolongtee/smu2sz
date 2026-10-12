@@ -591,8 +591,14 @@ Rules for the transform `scenario_paid_late(state, buyer_id, days)`, new and sep
   r2:323, preferred to #93's refusal r4:258). The Demo's day-34 path has RCV-A under an agreement, and a refusal would leave the
   Demo without a stress.
 - **The buyer's own facility** (lender = the buyer) is removed from the copy (r2:324; P12).
-- **Financed invoices:** MVP fallback, not moved, and said ("RCV-B is financed; its delay is not modelled"). The two reports agree
-  (r2:325; r4:258).
+- **Financed invoices:** moved too (ticket #107, the owner's rules of 12 Oct, #89). The financing keeps running to the late day and
+  its charges accrue as the facility record says (`fee_bp_per_advance` / `fee_period_days`, `rate_bp`): the receipt, dated due + D,
+  pays the lender first (`apply_receipt`, final), a shortfall is owed by the owner as a fixed remainder (the engine's `orphaned`
+  rule), the facility's drawn balance falls and cash gets the rest, as one confirmed `CashFlow`. A lot not yet landed lands on its
+  arrival day and is repaid on the late day. A financed invoice already past due, or with no advance on record, stays as the books
+  count it. The copy says "The ¥255,000 financing on the ¥420,000.00 invoice (due …) runs 30 days longer: about ¥… more in charges".
+  The facility's drawn balance falls on the whole copy, not only from the late day, so the copy can show a little more room on the
+  invoice-financing facility than the books have until then.
 - **Recurring invoices:** each issue in the horizon becomes one dated `CashFlow` at issue + terms in force + D. The copy says
   "assumes the platform does not finance these invoices; this understates what could be financed by at most ‹advance rate ×
   outstanding›" (r4:258).
