@@ -8,41 +8,45 @@ import { decisionHref } from "@/components/business/open-decisions";
 import { DealStage } from "@/components/deals/deal-steps";
 import { ParsedTerms } from "@/components/deals/asks";
 import { AllChecks, checkCount, EngineVerdictLine } from "@/components/deals/reasons";
+import { StageTrack } from "@/components/deals/stage-track";
 import { PlanCard } from "@/components/plan-card";
 import { Badge, Callout, Card, Formula, StatePill, textLinkClass, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, type OfferItem } from "@/lib/offer-items";
-import type { AdvancedKey, DealWorkspace, Displayed, Obligation, OfferView, VerdictView } from "@/lib/types";
+import type { AdvancedKey, DealWorkspace, Displayed, Obligation, OfferView, OpenOffer, VerdictView } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /**
- * The Deals workspace (wayfinder #65 Wave 3, audit section 12): one selected buyer, then the sections in the order the server gives
- * (`workspace.order`): what the buyer asks, what it costs (the immediate discount and the forward figure on their own lines), why it matters,
- * what FLOW recommends, the one priced response, the folds. Every sentence and figure here is the server's string; the page adds nothing
- * up and decides nothing (INVARIANT 13).
+ * The Deals workspace in the A1 pattern: the verdict is the heading (deal-heading.tsx), then who and where, what they ask with what each ask
+ * costs, why it matters, the reply and the folds. Every sentence and figure here is the server's string; the page adds nothing up and decides
+ * nothing (INVARIANT 13). The bars only size a mark by the server's `*_fen` against the largest; they print no figure of their own.
  */
 
 /**
- * The compact header of the selected deal: the buyer, when the offer came, when it was checked, and one chip for where the deal stands (the
- * record's state in the server's words, its colour the server's `state_tone`; the browser never picks one) and, under the meta line, the stage
- * indicator: Received · Analysed · Response ready · Sent · Agreed, one chip each, from the same record state. No ask line (the asks card says it once).
+ * Who and where, unboxed: the buyer, when the offer came and when it was checked as one quiet line, the record's state chip, and the offer's five
+ * stages. An open offer carries the server's own five stages (the shared `StageTrack`); a deal past that point (sent, agreed, closed) keeps the
+ * record's chips (`DealStage`), which end in the record's own words.
  */
-export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: { buyer: string; received: string; evaluatedWhen: string | null; state?: { code: string; text: string; tone: Tone } | null }) {
+export function SelectedBuyer({
+  buyer,
+  received,
+  evaluatedWhen,
+  state = null,
+  open = null,
+}: {
+  buyer: string;
+  received: string;
+  evaluatedWhen: string | null;
+  state?: { code: string; text: string; tone: Tone } | null;
+  open?: OpenOffer | null;
+}) {
   const { t } = useI18n();
   return (
-    <section id="deal-selected" aria-labelledby="deal-selected-title" className="motion-reveal min-w-0 rounded-card border border-line bg-surface px-4 py-2 shadow-card sm:py-3">
-      {/* One wrapping row: the buyer, then the state chip and the meta line. On a phone the chip and the meta line share a row (the first screen is short);
-          from sm the chip sits at the right of the buyer and the meta line has its own row. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-y-1">
-        <h2 id="deal-selected-title" className="min-w-0 text-balance text-base font-semibold text-ink max-sm:basis-full sm:flex-1">
-          {buyer}
-        </h2>
-        {state ? (
-          <span data-testid="deal-state-chip" data-state={state.code} className="sm:order-2">
-            <StatePill tone={state.tone}>{state.text}</StatePill>
-          </span>
-        ) : null}
-        <p className="min-w-0 text-xs text-ink-3 max-sm:flex-1 sm:order-3 sm:basis-full" data-testid="deal-selected-meta">
+    <section id="deal-selected" aria-label={buyer} className="motion-reveal min-w-0 space-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="min-w-0 text-sm text-ink-3" data-testid="deal-selected-meta">
+          <strong className="font-extrabold text-ink">{buyer}</strong>
+          {" · "}
           {received}
           {evaluatedWhen ? (
             <>
@@ -51,75 +55,103 @@ export function SelectedBuyer({ buyer, received, evaluatedWhen, state = null }: 
             </>
           ) : null}
         </p>
+        {state ? (
+          <span data-testid="deal-state-chip" data-state={state.code}>
+            <StatePill tone={state.tone}>{state.text}</StatePill>
+          </span>
+        ) : null}
       </div>
-      {state ? <DealStage state={state.code} stateText={state.text} /> : null}
+      {open?.stages.length ? (
+        <div className="max-w-3xl">
+          <StageTrack stages={open.stages} testId="deal-stage" />
+        </div>
+      ) : state ? (
+        <DealStage state={state.code} stateText={state.text} />
+      ) : null}
     </section>
   );
 }
 
-/** What the buyer asks, in the server's sentences (one line per obligation). */
-export function WorkspaceAsks({ ws, children }: { ws: DealWorkspace; children?: React.ReactNode }) {
+/** A bar sized by `part` against `whole` (both the server's `*_fen`): plotting only, never a figure. `limit` marks a second value on the same scale. */
+function Bar({ part, whole, tone = "bad", limit }: { part: number | null; whole: number; tone?: "bad" | "soft"; limit?: number }) {
+  const w = part !== null && whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0;
   return (
-    <Card id="deal-ask" title={ws.buyer_asks.title}>
-      <ul className="space-y-1" data-testid="deal-asks">
-        {ws.buyer_asks.asks.map((a) => (
-          <li key={a.obligation_id} className="text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
-            {a.text}
-          </li>
-        ))}
-      </ul>
-      {children}
-    </Card>
+    <div aria-hidden className="relative h-2.5 w-full rounded-pill bg-subtle">
+      <div className={`motion-grow h-full rounded-pill ${tone === "bad" ? "bg-bad-solid" : "bg-bad-solid/45"}`} style={{ width: `${w}%` }} />
+      {limit !== undefined && whole > 0 ? <span className="absolute -bottom-1 -top-1 w-0.5 bg-ink" style={{ left: `${Math.min(100, (limit / whole) * 100)}%` }} /> : null}
+    </div>
   );
 }
 
 /**
- * What it costs: the lines the server named. The immediate discount stands on its own (it is taken off the invoice and checked against its
- * own cap); the forward lines and their total are kept apart in their own box with the limit and the server's note that the two are not
- * added. Under it, why it matters: the server's reasons, then the two cash facts of the offer as asked (`settled`: the deal has an outcome,
- * so the line says "had accepted").
+ * What they ask, and what each costs you: one row per ask in the server's words with a bar sized by the line's `amount_fen` against the largest
+ * line, its display amount and its window words; the ongoing lines then carry their total against the signed limit as one bar with the limit
+ * marked, and the server's note that the immediate discount and the ongoing total are not added.
  */
-export function WorkspaceImpact({ ws, v, today, settled = false }: { ws: DealWorkspace; v: VerdictView; today: number; settled?: boolean }) {
+export function WorkspaceAsksCost({ ws, v, children }: { ws: DealWorkspace; v: VerdictView | null; children?: React.ReactNode }) {
   const { t } = useI18n();
   const fi = ws.financial_impact;
-  const immediate = fi.lines.filter((l) => l.horizon === "IMMEDIATE");
-  const forward = fi.lines.filter((l) => l.horizon === "FORWARD");
-  const tr = v.trajectory ?? null;
-  const breach = tr?.first_breach_day ?? null;
-  const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
-  // Forward lines that share one valuation window say it once, above them; otherwise each says its own.
-  const sharedWindow = forward.length > 1 && forward.every((l) => l.window_text === forward[0].window_text) ? forward[0].window_text : null;
-  const line = (l: DealWorkspace["financial_impact"]["lines"][number], shared: string | null = null) => (
-    <li key={l.obligation_id} className="py-2.5 first:pt-0 last:pb-0" data-testid={`deal-impact-${l.type}`} data-horizon={l.horizon}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <span className="text-sm font-medium text-ink">{l.label}</span>
-        <span className="shrink-0 text-base font-semibold tabular-nums text-ink" data-testid="deal-impact-amount">
-          {l.amount_display ?? "—"}
-        </span>
-      </div>
-      {shared === null ? <p className="mt-0.5 text-xs text-ink-3">{l.window_text}</p> : null}
+  const lineOf = (id: string) => fi.lines.find((l) => l.obligation_id === id);
+  const largest = Math.max(0, ...fi.lines.map((l) => l.amount_fen ?? 0));
+  const rows = ws.buyer_asks.asks.map((a) => ({ a, l: lineOf(a.obligation_id) }));
+  const immediate = rows.filter((r) => r.l?.horizon === "IMMEDIATE");
+  const forward = rows.filter((r) => r.l?.horizon === "FORWARD");
+  const other = rows.filter((r) => !r.l);
+  const sharedWindow = forward.length > 1 && forward.every((r) => r.l?.window_text === forward[0].l?.window_text) ? (forward[0].l?.window_text ?? null) : null;
+  const cap = v?.forward_concession?.cap_fen;
+  const totalFen = v?.forward_concession?.total_fen ?? fi.forward_total_fen;
+  const scale = Math.max(totalFen, cap ?? 0);
+  const row = ({ a, l }: (typeof rows)[number], shared: string | null = null) => (
+    <li key={a.obligation_id} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-1" data-testid={l ? `deal-impact-${a.type}` : undefined} data-horizon={l?.horizon}>
+      <p className="min-w-0 flex-[2_1_18rem] text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
+        {a.text}
+      </p>
+      {l ? (
+        <div className="min-w-0 flex-[1_1_13rem]">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <Bar part={l.amount_fen} whole={largest} tone={l.horizon === "FORWARD" ? "bad" : "soft"} />
+            </div>
+            <p className="shrink-0 text-base font-extrabold tabular-nums text-ink" data-testid="deal-impact-amount">
+              {l.amount_display ?? "—"}
+            </p>
+          </div>
+          {shared === null ? <p className="mt-1 text-pretty text-xs text-ink-3">{l.window_text}</p> : null}
+        </div>
+      ) : null}
     </li>
   );
   return (
-    <Card id="deal-impact" title={fi.title}>
-      <div className="space-y-4">
-        {immediate.length ? <ul className="divide-y divide-line" data-testid="deal-impact-immediate">{immediate.map((l) => line(l))}</ul> : null}
+    <Card flat id="deal-ask" title={t("biz.deals.askCost")}>
+      <div data-testid="deal-asks">
+        {immediate.length ? (
+          <ul data-testid="deal-impact-immediate">
+            {immediate.map((r) => row(r))}
+          </ul>
+        ) : null}
+        {other.length ? <ul>{other.map((r) => row(r))}</ul> : null}
         {forward.length ? (
-          <div className="rounded-tile border border-line bg-subtle px-4 py-3" data-testid="deal-impact-forward">
-            {sharedWindow ? (
-              <p className="mb-2 text-xs text-ink-3" data-testid="deal-impact-window">
-                {sharedWindow}
-              </p>
-            ) : null}
-            <ul className="divide-y divide-line">{forward.map((l) => line(l, sharedWindow))}</ul>
-            <div className="mt-3 border-t border-line pt-3">
+          <div id="deal-impact" data-testid="deal-impact-forward" className="border-b border-line">
+            {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
+            <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
+              {sharedWindow ? (
+                <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
+                  {sharedWindow}
+                </p>
+              ) : null}
+              <ul>{forward.map((r) => row(r, sharedWindow))}</ul>
+            </div>
+            <div className="border-t border-line py-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                <span className="text-sm font-semibold text-ink">{t("biz.deals.impact.forwardTotal", { n: fi.window_months })}</span>
-                <span className={`shrink-0 text-lg font-semibold tabular-nums ${fi.over_cap ? "text-bad-fg" : "text-ink"}`} data-testid="deal-impact-total">
+                <span className="text-sm font-extrabold text-ink">{t("biz.deals.impact.forwardTotal", { n: fi.window_months })}</span>
+                <span className={`shrink-0 text-lg font-extrabold tabular-nums ${fi.over_cap ? "text-bad-fg" : "text-ink"}`} data-testid="deal-impact-total">
                   {fi.forward_total_display}
                 </span>
               </div>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
+              <div className="my-2">
+                <Bar part={totalFen} whole={scale} tone="bad" limit={cap} />
+              </div>
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
                 <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>
                 {fi.over_cap ? <Badge tone="bad">{t("biz.deals.impact.overCap")}</Badge> : null}
               </p>
@@ -129,44 +161,58 @@ export function WorkspaceImpact({ ws, v, today, settled = false }: { ws: DealWor
             </div>
           </div>
         ) : null}
+      </div>
+      {children}
+    </Card>
+  );
+}
 
-        <div data-testid="deal-why-matters">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.why.title")}</h3>
-          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-why-reasons">
-            {ws.why_it_matters.reasons.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-          {/* The cash facts are about the offer as the buyer asked for it, not about a counter: the line says so. */}
-          {tr && breach !== null ? (
-            <>
-              <p className="mt-3 text-sm text-ink-2" data-testid="deal-if-accept">
-                {settled ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
-              </p>
-              <dl className="mt-2 divide-y divide-line rounded-tile border border-line text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-3 py-2" data-testid="deal-fact-cash">
-                  <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
-                  <dd className="text-right">
-                    <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
-                    {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
-                  </dd>
-                </div>
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-3 py-2" data-testid="deal-fact-worst">
-                  <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
-                  <dd className="text-right">
-                    <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
-                    <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
-                  </dd>
-                </div>
-              </dl>
-            </>
-          ) : null}
-          {dearer ? (
-            <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">
-              {t("biz.deals.discountDearer", { rate: dearer.observed ?? "", limit: (dearer.limit ?? "").replace(/^<\s*/, "") })}
+/**
+ * Why it matters, unboxed: the server's reasons, then the two cash facts of the offer as asked (`settled`: the deal has an outcome, so the line
+ * says "had accepted"). With the paths picture on the page the cash facts are the picture's, so `facts` is false and only the reasons remain.
+ */
+export function WorkspaceWhy({ ws, v, today, settled = false, facts = true }: { ws: DealWorkspace; v: VerdictView; today: number; settled?: boolean; facts?: boolean }) {
+  const { t } = useI18n();
+  const tr = v.trajectory ?? null;
+  const breach = tr?.first_breach_day ?? null;
+  const dearer = v.violations.find((x) => x.code === "DISCOUNT_ABOVE_BREAK_EVEN");
+  return (
+    <Card flat id="deal-why" title={t("biz.deals.why.title")}>
+      <div data-testid="deal-why-matters">
+        <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-why-reasons">
+          {ws.why_it_matters.reasons.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+        {/* The cash facts are about the offer as the buyer asked for it, not about a counter: the line says so. */}
+        {facts && tr && breach !== null ? (
+          <>
+            <p className="mt-3 text-sm text-ink-2" data-testid="deal-if-accept">
+              {settled ? t("biz.deals.ifAccepted") : t("biz.deals.ifAccept")}
             </p>
-          ) : null}
-        </div>
+            <dl className="mt-1 divide-y divide-line border-y border-line text-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-cash">
+                <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
+                <dd className="text-right">
+                  <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
+                  {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
+                </dd>
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
+                <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
+                <dd className="text-right">
+                  <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
+                  <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
+                </dd>
+              </div>
+            </dl>
+          </>
+        ) : null}
+        {dearer ? (
+          <p className="mt-3 text-sm text-ink-2" data-testid="deal-discount-dearer">
+            {t("biz.deals.discountDearer", { rate: dearer.observed ?? "", limit: (dearer.limit ?? "").replace(/^<\s*/, "") })}
+          </p>
+        ) : null}
       </div>
     </Card>
   );
@@ -277,7 +323,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
     ),
   };
   return (
-    <Disclosure card testId="deal-advanced" summary={t("biz.deals.advanced")}>
+    <Disclosure className="border-t border-line pt-1" testId="deal-advanced" summary={t("biz.deals.advanced")}>
       <div className="space-y-2">
         {keys
           .filter((k) => k in body && body[k] !== null)

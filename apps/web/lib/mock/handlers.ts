@@ -967,8 +967,17 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 }
 
 /** GET /offers/{id}/picture: recorded for the package offer, in both languages; any other offer has no picture. */
+export const PICTURE_SLOW_KEY = "tl-mock-picture-slow";
+
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
   await delay();
+  // A spec can slow the read down (milliseconds in this key) to see the page while it is still on its way.
+  try {
+    const slow = typeof window === "undefined" ? 0 : Number(window.sessionStorage.getItem(PICTURE_SLOW_KEY));
+    if (slow > 0) await new Promise<void>((r) => setTimeout(r, slow));
+  } catch {
+    /* storage unavailable */
+  }
   const s = load();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });

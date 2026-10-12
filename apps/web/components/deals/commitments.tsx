@@ -90,7 +90,7 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
 function CommitmentItem({ c, buyer, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
   const { t, te } = useI18n();
   return (
-    <li className="rounded-tile border border-line px-4 py-3" data-testid={`commitment-${c.id}`} data-status={c.status}>
+    <li className="border-t border-line py-4 first:border-t-0 first:pt-1" data-testid={`commitment-${c.id}`} data-status={c.status}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer })}</p>
         <Badge tone={statusTone[c.status]}>
@@ -166,6 +166,7 @@ export function ActiveCommitments({
   const loose = agreed.filter((d) => !placed.has(d.counterparty_id) && ledger.data);
   return (
     <Card
+      flat
       id="commitments"
       title={t("biz.deals.commitments")}
       subtitle={t("biz.deals.commitments.sub")}
@@ -187,10 +188,10 @@ export function ActiveCommitments({
       ) : !ledger.data ? (
         <LoadingBlock rows={2} />
       ) : items.length || loose.length ? (
-        <ul className="space-y-3" data-testid="commitments-live">
+        <ul data-testid="commitments-live">
           {items}
           {loose.map((d) => (
-            <li key={d.counterparty_id} className="rounded-tile border border-line px-4 py-3">
+            <li key={d.counterparty_id} className="border-t border-line py-4 first:border-t-0 first:pt-1">
               <p className="min-w-0 break-words text-sm font-semibold text-ink">{t("deal.with", { buyer: d.counterparty_name })}</p>
               <DealSummary deal={d} today={dealsDay ?? today} />
             </li>
