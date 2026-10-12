@@ -4,9 +4,10 @@ Composed from what the Home hybrid has already read (the position, the facts, th
 trajectory); no figure is computed here and no state word is invented. Every sentence goes through `t(lang, en, zh)` and is the
 prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
 
-    kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`)
+    kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`, with `headroom_text`:
+                          the room as a short signed figure, "+¥100k", negative below the minimum)
     kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
-                          plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`).
+                          plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`) and, structured, `with_plan` {label, value_text} (null with no plan figure).
     kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
                           is pending; cash only when it lands) or NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
@@ -36,6 +37,7 @@ from app.api.home_hybrid import (
     _pending_lots,
     _plan_has_run,
     _short,
+    _signed,
     _sp,
     _tone,
     whole,
@@ -78,7 +80,7 @@ def _cash_available(c: HomeRead) -> dict[str, Any]:
     else:
         note = t(lang, f"{_short(-gap)} below your {_short(floor)} minimum", f"比您 {_short(floor)} 的最低现金低 {_short(-gap)}")
     return {"eyebrow": _eyebrow(lang, "Cash available", "可用现金"), "value_display": whole(cash), "note": note,
-            "tone": _tone(cash, floor), "buffer": {"min_fen": floor, "cash_fen": cash, "min_display": _short(floor)}}
+            "tone": _tone(cash, floor), "buffer": {"min_fen": floor, "cash_fen": cash, "min_display": _short(floor), "headroom_text": _signed(gap)}}
 
 
 def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
@@ -99,10 +101,12 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
         hint = t(lang, f"If FLOW's plan executes: {whole(plan_fen)}, assuming the funds arrive as planned.",
                  f"如果 FLOW 的方案执行：{whole(plan_fen)}，前提是资金按计划到账。")
+        with_plan: dict[str, str] | None = {"label": t(lang, "with plan", "采用方案后"), "value_text": whole(plan_fen)}
     else:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
+        with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint}
+            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:
