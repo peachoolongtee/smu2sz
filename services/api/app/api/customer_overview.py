@@ -252,17 +252,19 @@ class YearHeld:
     contribution_fen: int
     assumed: bool
     gross: bool  # margin_basis GROSS (the default) or CONTRIBUTION
+    sales_fen: int  # the year's sales behind it (the owner's, else projected from the books)
+    sales_projected: bool  # the books' projection, not the owner's figure
 
 
 def year_held(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int) -> YearHeld | None:
     """The buyer's year, or None when no sales are held (no contribution exists)."""
     held = Held(state, today, buyer_id, inputs)
-    contribution = _contribution_fen(held)
-    if contribution is None:
+    contribution, sales = _contribution_fen(held), _sales(held)
+    if contribution is None or sales is None:
         return None
     basis = held.input(InputField.MARGIN_BASIS)
     gross = basis is None or str(value_of(basis)).strip().upper() != "CONTRIBUTION"
-    return YearHeld(contribution, _margin(held).assumed, gross)
+    return YearHeld(contribution, _margin(held).assumed, gross, sales[0], sales[1] is None)
 
 
 def _about_big(fen: int, lang: Lang) -> str:

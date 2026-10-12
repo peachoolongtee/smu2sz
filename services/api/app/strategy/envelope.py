@@ -40,14 +40,14 @@ from app.domain.models import (
     Verdict,
     ViolationCode,
 )
-from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_rounded
+from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.domain.ports import LedgerStore
 from app.financial import EngineError, value_concessions
 from app.funding import NoPermanentSourceError, marginal_cost, plan
 from app.funding.router import shared_runs
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
-from app.strategy.words import buyer_short, share_text, whole_yuan
+from app.strategy.words import DEMO_MARGIN_NOTE, whole_yuan, year_share_sentence
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
 from app.verifier.evaluate import _evaluate, _Router
@@ -1287,28 +1287,13 @@ class Economics:
 
 
 def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) -> tuple[str | None, str | None]:
-    """(the sentence, the note). The share is the verdict's own forward concession on a 12-month basis over a year's gross
-    profit (brief C.2), at 1 dp with its bounds: "under 0.1%", and "more than 10 times" the year. None without a cost or a
-    positive year."""
-    year = eco.year_of(p.forward_total_fen)
-    if year <= 0 or eco.contribution_fen <= 0:
+    """(the sentence, the note): the verdict's own forward concession on a 12-month basis over a year's gross profit
+    (`words.year_share_sentence`, the one sentence every surface says it with). None without a cost or a positive year."""
+    sentence = year_share_sentence(facts.buyer_name, eco.year_of(p.forward_total_fen), eco.contribution_fen, eco.gross,
+                                   "zh" if lang == "zh" else "en")
+    if sentence is None:
         return None, None
-    ratio = Fraction(year, eco.contribution_fen)
-    who_en, who_zh = buyer_short(facts.buyer_name), facts.buyer_name
-    big = fmt_yuan_rounded(eco.contribution_fen)
-    basis_en, basis_zh = ("gross profit", "毛利") if eco.gross else ("contribution", "边际贡献")
-    bring_en = f"the {big} a year we estimate {who_en}'s orders bring you in {basis_en}"
-    bring_zh = f"我们估计{who_zh}订单每年为您带来的 {big} {basis_zh}"
-    if ratio > 10:
-        sentence = t(lang, f"That is more than 10 times {bring_en}.", f"超过{bring_zh}的 10 倍。")
-    elif ratio >= 1:
-        sentence = t(lang, f"That is more than all of {bring_en}.", f"超过{bring_zh}的全部。")
-    else:
-        share = share_text(ratio, lang)
-        sentence = (t(lang, f"That is {share} of {bring_en}.", f"相当于{bring_zh}的{share}。") if share.startswith(("under", "低于"))
-                    else t(lang, f"That is about {share} of {bring_en}.", f"约相当于{bring_zh}的 {share}。"))
-    note = t(lang, "the margin is assumed for the Demo, not confirmed by you", "毛利率为演示而假设，尚未经您确认")         if eco.assumed else None
-    return sentence, note
+    return sentence, t(lang, *DEMO_MARGIN_NOTE) if eco.assumed else None
 
 
 def _over_your_limits(facts: EnvelopeFacts, lang: str, economics: Economics | None = None) -> list[EnvelopePackage]:
