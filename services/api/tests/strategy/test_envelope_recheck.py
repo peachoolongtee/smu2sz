@@ -52,7 +52,7 @@ def late_fix(rt_day0: Runtime, books_day0: Books) -> Iterator[EnvelopeAnswer]:
 
 
 def test_a_package_whose_fix_cannot_land_in_time_is_not_shown(late_fix):
-    shown = [*late_fix.packages, *getattr(late_fix, "more", [])]
+    shown = [*late_fix.packages, *late_fix.more]
     assert shown, "the packages that need no fix are still shown"
     assert all(p.approved and p.authority in ("flow_may", "needs_owner") for p in shown)
     # every 50- and 55-day package leans on the day-47 fix: none is shown; the terms in force are

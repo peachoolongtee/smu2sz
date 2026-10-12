@@ -47,7 +47,7 @@ def _key(p: Any) -> tuple[int, int, int, int | None, int]:
 
 
 def _all(a: Any) -> list[Any]:
-    return [*a.packages, *getattr(a, "more", [])]
+    return [*a.packages, *a.more]
 
 
 def test_every_package_has_exactly_one_of_the_three_classes(facts):
@@ -155,4 +155,4 @@ def test_route_carries_the_class_3_group_with_its_displays(rt_day0, monkeypatch)
     (p,) = body["over_your_limits"]
     assert (p["cap_display"], p["cap_used_display"], p["over_cap_by_display"]) == ("¥5,000.00", "¥16,217.95", "¥11,217.95")
     assert p["authority"] == "over_your_limits" and p["authority_sentence"] == CLASS_3_EN
-    assert all(q["authority"] in ("flow_may", "needs_owner") for q in [*body["packages"], *body.get("more", [])])
+    assert all(q["authority"] in ("flow_may", "needs_owner") for q in [*body["packages"], *body["more"]])

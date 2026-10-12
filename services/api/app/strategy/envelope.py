@@ -67,6 +67,7 @@ from app.whatif.params import (
 PASSING = (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
 CAP_CODES = (ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED)
 MVP_TERMS_STEPS = 3  # the default package grid: the terms in force, +5 and +10 days
+CARD_SIZE = 3  # the packages on the card (owner's decision 15, #89): the verifier's counters and the ask's answer first
 
 # the levers, by the oracle's own labels (fixtures/strategy/envelope_day0.json `maxima[].lever`)
 TERMS_ALONE = "Terms (days), alone"
@@ -1026,7 +1027,9 @@ class EnvelopeAnswer(Contract):
     primary: str
     reason: str
     money: str
+    # the card, at most `CARD_SIZE`: the verifier's own counters, then the answer to the buyer's ask; never ranked
     packages: list[EnvelopePackage]
+    more: list[EnvelopePackage] = Field(default_factory=list)  # every other package, behind a disclosure
     # class 3, in a group of its own: the longest terms that keep your cash floor if the budget is ignored, over a cap you
     # signed (never an approval: only a new signed mandate moves the cap)
     over_your_limits: list[EnvelopePackage] = Field(default_factory=list)
@@ -1570,6 +1573,26 @@ def ask_answer(facts: EnvelopeFacts, ask: AskFacts, lang: str = "en") -> AskAnsw
         evaluations=ask.evaluations, computed_in_seconds=round(ask.seconds, 3))
 
 
+def _card(facts: EnvelopeFacts, ask: AskFacts | None, lang: str) -> tuple[list[EnvelopePackage], list[EnvelopePackage]]:
+    """(the card, the rest). The card holds the verifier's own counters among the approved packages, then the answer to the
+    buyer's ask (its smallest price, or the early payment that makes the terms work), at most `CARD_SIZE`; with neither,
+    the first packages of the grid. Order is the verifier's and the ask's, never a ranking; nothing is called recommended."""
+    cells = [(c.probe, c.counter_match) for c in facts.cells]
+    asked = list(facts.counter_costs_fen)  # the counters in the order the sweep put the asks: early payment, terms, rebate
+    counters = sorted(((p, m) for p, m in cells if m and p.approved), key=lambda c: asked.index(c[0].setting)
+                      if c[0].setting in asked else len(asked))
+    answer: list[tuple[Probe, bool]] = []
+    if ask is not None:
+        for p in (ask.price_only, ask.with_early):
+            if p is not None and p.approved and all(p.setting != q.setting for q, _ in [*counters, *answer]):
+                answer.append((p, any(m for q, m in cells if q.setting == p.setting)))
+    # the ask's answer keeps its place: the counters fill what is left of the card
+    on_card = [*counters[:CARD_SIZE - len(answer[:1])], *answer[:1]] or cells[:CARD_SIZE]
+    shown = {p.setting for p, _ in on_card}
+    rest = [(p, m) for p, m in cells if p.setting not in shown]
+    return [_package(facts, p, lang, m) for p, m in on_card], [_package(facts, p, lang, m) for p, m in rest]
+
+
 def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None = None) -> EnvelopeAnswer:
     """The sweep's facts in words (`en` or `zh`)."""
     meta: dict[str, object] = {"buyer_id": facts.buyer_id, "buyer_name": facts.buyer_name,
@@ -1579,6 +1602,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None
         return EnvelopeAnswer.model_validate({**meta, "primary": "", "reason": "", "money": "", "packages": [],
                                               "levers": [], "zone": [],
                                               "refused": _refusal(facts.buyer_name, lang, facts.refusal)})
+    card, more = _card(facts, ask, lang)
     zone = [ZoneEntry(terms_days=z.terms_days, terms_words=_days(z.terms_days, lang), min_price_bp=z.min_price_bp, rule_price_bp=z.rule_price_bp,
                       cost_per_invoice_fen=z.cost_per_invoice_fen, passes_within_range=z.min_price_bp is not None,
                       neighbours_confirmed=z.confirmed, at_that_price=_package(facts, z.at_price, lang),
@@ -1586,7 +1610,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None
             for z in facts.zone]
     return EnvelopeAnswer(
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
-        money=_money(facts, lang), packages=[_package(facts, c.probe, lang, c.counter_match) for c in facts.cells],
+        money=_money(facts, lang), packages=card, more=more,
         over_your_limits=_over_your_limits(facts, lang), ask=ask_answer(facts, ask, lang) if ask is not None else None,
         levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
         unlisted_counters=[_unlisted_sentence(c, lang) for c in facts.unlisted_counters],
