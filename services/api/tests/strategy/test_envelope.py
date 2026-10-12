@@ -53,13 +53,14 @@ GOLDEN_BUYER = "BUYER-1"
 OPTION_A = (45, 0, 85, 25_720_000, 0)  # terms, price, early-pay bp, face, rebate
 OPTION_B = (55, 30, 0, None, 0)
 
-PRIMARY_EN = ("You can live with: up to 55-day terms if the price rises 0.30%, or early payment at up to 0.85% on ¥257,200.00; "
-              "a rebate up to 1.25%; not 60 days without an early payment.")
+PRIMARY_EN = ("At today's price: up to 45 days within your limits. You can live with: 55-day terms with a 0.30% price rise, "
+              "or early payment of 0.85% on ¥257,200.00; not 60 days without an early payment.")
 REASON_EN = ("60 days without an early payment leaves a shortfall in 47 days that no fix covers; the ¥5,000.00 budget buys no terms "
              "without a price rise.")
 MONEY_EN = ("Cost to you ¥0.00 with the price rise, or ¥3,027.77 with the early payment; without a deal "
             "your current funding plan costs ¥3,113.93.")
-PRIMARY_ZH = "您能接受的范围：账期最长 55 天（价格上调 0.30%），或提前付款最高 0.85%（金额 ¥257,200.00）；返利最高 1.25%；不提前付款则不能做到 60 天。"
+PRIMARY_ZH = ("按现价：在您的底线内，账期最长 45 天。您能接受的范围：55 天账期并加价 0.30%，或提前付款 0.85%（金额 ¥257,200.00）；"
+              "不提前付款则不能做到 60 天。")
 REASON_ZH = "不提前付款的 60 天账期会在 47 天后出现无法补上的缺口；¥5,000.00 的预算无法在不加价的情况下延长账期。"
 MONEY_ZH = "您的成本：加价方案 ¥0.00，或提前付款方案 ¥3,027.77；不做交易时，现行资金安排的成本为 ¥3,113.93。"
 
@@ -75,6 +76,11 @@ def _load(name: str) -> dict[str, Any]:
 def _setting(p: EnvelopePackage) -> tuple[int, int, int, int | None, int]:
     q = p.package
     return (q.terms_days, q.price_bp, q.early_pay_bp, q.early_pay_face_fen, q.rebate_bp)
+
+
+def _all(a: EnvelopeAnswer) -> list[EnvelopePackage]:
+    """Every package: the card (at most three, P6) and the rest behind the disclosure."""
+    return [*a.packages, *a.more]
 
 
 def _by_lever(a: EnvelopeAnswer) -> dict[str, EnvelopeLever]:
@@ -265,24 +271,24 @@ def test_the_interaction_packages_pin_the_brief_figures(golden):
 
 
 def test_default_grid_packages_are_all_approved(answer):
-    assert answer.packages
-    for p in answer.packages:
+    assert _all(answer)
+    for p in _all(answer):
         assert p.approved and p.passes and p.binding_codes == [], _setting(p)
-    terms = {p.package.terms_days for p in answer.packages}
+    terms = {p.package.terms_days for p in _all(answer)}
     assert {45, 50, 55} <= terms and max(terms) <= 55  # the terms in force, +5, +10
 
 
 def test_the_verifiers_own_counters_are_among_the_approved_packages(answer):
-    by = {_setting(p): p for p in answer.packages}
+    by = {_setting(p): p for p in _all(answer)}
     for counter in (OPTION_A, OPTION_B):
         assert counter in by and by[counter].counter_match and by[counter].approved
     # the smallest passing price (0.25%) sits beside the counter's rule price (0.30%), both in the payload
-    assert any(_setting(p)[:2] == (55, 25) for p in answer.packages)
+    assert any(_setting(p)[:2] == (55, 25) for p in _all(answer))
     assert not by[(55, 25, 0, None, 60)].counter_match
 
 
 def test_packages_say_what_needs_the_owner_in_words(answer):
-    by = {_setting(p): p for p in answer.packages}
+    by = {_setting(p): p for p in _all(answer)}
     assert by[OPTION_A].flags == [] and by[OPTION_A].outcome == "ACCEPT"
     b = by[OPTION_B]
     assert b.flags == ["needs your approval", "its funding cannot run today"]
@@ -304,7 +310,7 @@ def test_the_golden_sentences_in_english(answer):
 def test_the_golden_sentences_in_chinese(cold):
     zh = envelope_answer(cold[0], "zh")
     assert (zh.primary, zh.reason, zh.money) == (PRIMARY_ZH, REASON_ZH, MONEY_ZH)
-    assert zh.packages[3].flags == ["需要您批准", "其资金安排今天无法执行"]
+    assert next(p for p in zh.packages if _setting(p) == OPTION_B).flags == ["需要您批准", "其资金安排今天无法执行"]
 
 
 LEVER_WORDS_EN = {  # maximum_display, wall_words, next_step_sentence
@@ -324,7 +330,9 @@ LEVER_WORDS_ZH = {
     "early_pay_counter": ("0.85%，金额 ¥257,200.00", "提前付款的盈亏平衡点", "0.90%，金额 ¥257,200.00：超出您的底线"),
     "rebate": ("1.25%", "您给买家让利的预算", "1.30%：超出您的底线"),
 }
-SUMMARIES_EN = [
+SUMMARIES_EN = [  # the card first (the verifier's three counters, in the order of the asks), then the rest in the grid's order
+    "45-day terms · early payment 0.85% on ¥257,200.00",
+    "55-day terms · price up 0.30%",
     "45-day terms · rebate 1.25%",
     "45-day terms · early payment 0.85% on ¥257,200.00 · rebate 1.25%",
     "45-day terms · early payment 0.70% · rebate 1.25%",
@@ -334,21 +342,20 @@ SUMMARIES_EN = [
     "55-day terms · price up 0.25% · rebate 0.60%",
     "55-day terms · price up 0.25% · early payment 0.85% on ¥257,200.00 · rebate 0.60%",
     "55-day terms · price up 0.25% · early payment 0.65% · rebate 0.60%",
-    "45-day terms · early payment 0.85% on ¥257,200.00",
-    "55-day terms · price up 0.30%",
 ]
 
 
 def test_the_lever_table_comes_worded_by_the_server_in_english(answer):
     assert {lv.key: (lv.maximum_display, lv.wall_words, lv.next_step_sentence) for lv in answer.levers} == LEVER_WORDS_EN
-    assert [p.summary for p in answer.packages] == SUMMARIES_EN
+    assert [p.summary for p in _all(answer)] == SUMMARIES_EN
 
 
 def test_the_lever_table_comes_worded_by_the_server_in_chinese(cold):
     zh = envelope_answer(cold[0], "zh")
     assert {lv.key: (lv.maximum_display, lv.wall_words, lv.next_step_sentence) for lv in zh.levers} == LEVER_WORDS_ZH
-    assert zh.packages[6].summary == "55 天账期 · 加价 0.25% · 返利 0.60%"
-    assert zh.packages[1].summary == "45 天账期 · 提前付款 0.85%，金额 ¥257,200.00 · 返利 1.25%"
+    summaries = {_setting(p): p.summary for p in _all(zh)}
+    assert summaries[(55, 25, 0, None, 60)] == "55 天账期 · 加价 0.25% · 返利 0.60%"
+    assert summaries[(45, 0, 85, 25_720_000, 125)] == "45 天账期 · 提前付款 0.85%，金额 ¥257,200.00 · 返利 1.25%"
 
 
 def test_the_zone_rows_say_the_lowest_price_in_words(zoned):
@@ -369,7 +376,7 @@ def test_the_zone_rows_say_the_lowest_price_in_chinese(golden):
 def test_the_server_strings_use_business_words(golden, lang):
     a = envelope_answer(golden.facts(zone=True), lang)
     texts = [*[w for lv in a.levers for w in (lv.maximum_display, lv.wall_words or "", lv.next_step_sentence)],
-             *[p.summary for p in a.packages], *[z.lowest_price_words for z in a.zone], *[z.at_that_price.summary for z in a.zone]]
+             *[p.summary for p in _all(a)], *[z.lowest_price_words for z in a.zone], *[z.at_that_price.summary for z in a.zone]]
     for text in texts:
         assert text and not DAY_N.search(text), text
         assert not CODE_NAME.search(text), text
@@ -381,7 +388,7 @@ def test_the_server_strings_use_business_words(golden, lang):
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_sentences_use_business_words(cold, lang):
     a = envelope_answer(cold[0], lang)
-    for text in (a.primary, a.reason, a.money, *[f for p in a.packages for f in p.flags],
+    for text in (a.primary, a.reason, a.money, *[f for p in _all(a) for f in p.flags],
                  *[lv.label for lv in a.levers], *[lv.wall_text or "" for lv in a.levers]):
         assert "offer them" not in text and "give them" not in text, text
         assert not DAY_N.search(text), text
@@ -393,6 +400,15 @@ def test_the_sentences_use_business_words(cold, lang):
 def test_the_primary_uses_the_rule_price_and_keeps_the_smallest_in_the_payload(answer):
     assert "0.30%" in answer.primary and "0.25%" not in answer.primary
     assert _by_lever(answer)[TERMS_WITH_PRICE].at_maximum.package.price_bp == 25  # type: ignore[union-attr]
+
+
+def test_the_primary_names_packages_not_maxima(answer):
+    """P3: the terms at today's price lead; each package named is one the verifier passed whole; the rebate maximum (1.25%) is
+    not joined to them, because neither quoted package carries it."""
+    assert answer.primary.startswith("At today's price: up to 45 days within your limits. ")
+    assert "1.25%" not in answer.primary and "rebate" not in answer.primary and "up to 0.85%" not in answer.primary
+    shown = {_setting(p) for p in _all(answer)}
+    assert OPTION_B in shown and OPTION_A in shown  # the two packages the sentence names
 
 
 # ---------------------------------------------------------------- a buyer with nothing to value
@@ -433,7 +449,7 @@ def test_a_buyer_with_an_open_invoice_and_no_recurring_invoice_gets_the_early_pa
     assert by[REBATE].unavailable is not None
     # without the recurring invoices the standing breach is deeper and no early payment fits: the engine's answer
     assert by[early_pay_lever(42_000_000)].maximum == 0 and by[early_pay_lever(42_000_000)].wall == "liquidity"
-    assert a.packages and all(p.package.terms_days == a.packages[0].package.terms_days for p in a.packages)
+    assert a.packages and all(p.package.terms_days == a.packages[0].package.terms_days for p in _all(a))
     assert a.refused is None and a.reason == "There is no recurring invoice to extend, so only an early payment can be priced."
 
 
@@ -496,7 +512,8 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     assert by[TERMS_ALONE].next_step is not None and by[TERMS_ALONE].next_step.forward_budget_used_fen == 748_521
     # with a price rise the engine does pass them (the verifier judges the offer's own effect, not the standing breach)
     assert by[TERMS_WITH_PRICE].maximum == 80
-    assert a.primary.startswith("You can live with: up to 80-day terms if the price rises 0.95%")
+    assert a.primary.startswith("At today's price: up to 45 days within your limits. You can live with: 80-day terms with a "
+                                "0.95% price rise")
     # the early-pay face is the earliest invoice not yet past due, RI:BUYER-1:2 (¥420,000 due day 47), not the overdue RCV-A
     assert context(books_day34.state, 34, GOLDEN_BUYER).receivable.id == "RI:BUYER-1:2"
     assert context(books_day34.state, 34).receivable.id == "RCV-A"  # the default rule is untouched
@@ -504,9 +521,9 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     assert early.maximum == 40 and early.wall == "plan comparison" and early.face_fen == 42_000_000
     assert early.next_step is not None and early.next_step.package.early_pay_bp == 45
     assert early.next_step.binding_codes == ["EARLY_PAY_DEARER_THAN_PLAN"]
-    with_early = [p for p in a.packages if p.package.early_pay_bp == 40]
+    with_early = [p for p in _all(a) if p.package.early_pay_bp == 40]
     assert with_early and all(p.approved and p.package.early_pay_face_fen is None for p in with_early)
-    assert "early payment at up to 0.40% on ¥420,000.00" in a.primary
+    assert "early payment of 0.40% on ¥420,000.00" in a.primary
     # the overdue invoice is why the standing position needs the owner, and the reason says so
     assert facts.past_due == ((16_280_000, 2),)
     assert a.reason.startswith("The ¥162,800.00 still owed by Foshan Home Retail Co. is 2 days past due, so any deal "
@@ -514,7 +531,7 @@ def test_day_34_books_no_extension_passes_without_a_price_rise(rt_day34, books_d
     zh = envelope_answer(facts, "zh")
     assert zh.reason.startswith("Foshan Home Retail Co. 欠款 ¥162,800.00 已逾期 2 天，因此与其做任何交易都需要您批准；")
     assert a.money == "Without a deal your current funding plan costs ¥1,706.10."
-    assert all(p.approved for p in a.packages) and not CODE_NAME.search(a.primary + a.reason + a.money)
+    assert all(p.approved for p in _all(a)) and not CODE_NAME.search(a.primary + a.reason + a.money)
     assert not DAY_N.search(a.primary + a.reason + a.money)
 
 
@@ -617,7 +634,7 @@ def test_full_grid_reproduces_the_oracles_thirty_packages(golden):
     a = envelope(golden.books, golden.mandate, buyer_id=GOLDEN_BUYER, zone=True, full_grid=True, **golden.kw())
     print(f"\nenvelope, full grid and zone, cold: {time.perf_counter() - started:.2f} s, {a.evaluations} verifier runs")
     mine = {(p.package.terms_days, p.package.price_bp, p.package.early_pay_bp, p.package.early_pay_face_fen,
-             p.package.rebate_bp): p for p in a.packages}
+             p.package.rebate_bp): p for p in _all(a)}
     assert len(oracle["packages"]) == 30
     for row in oracle["packages"]:
         early = row["early_pay"]
@@ -645,7 +662,7 @@ def test_full_grid_reproduces_the_oracles_thirty_packages(golden):
         assert z.rule_price_bp == (o["price_that_nets_it_to_zero"] or {}).get("bp"), o["terms_days"]
         assert _setting(z.at_that_price)[1] == o["at_that_price"]["price_adjustment"]["bp"]
     # a failing row is listed but never approved; the approved ones are the grid's passing packages
-    assert any(not p.approved for p in a.packages) and any(p.approved for p in a.packages)
+    assert any(not p.approved for p in _all(a)) and any(p.approved for p in _all(a))
 
 
 # ---------------------------------------------------------------- books off the levers' grids
@@ -661,12 +678,13 @@ def test_terms_in_force_off_the_five_day_grid_do_not_crash(golden):
     books = _with_terms(golden, 32)
     facts = envelope_facts(books, golden.mandate, buyer_id=GOLDEN_BUYER, zone=True, **golden.kw())
     a = envelope_answer(facts, "en")
-    assert a.refused is None and a.packages and facts.current_terms == 32
+    assert a.refused is None and _all(a) and facts.current_terms == 32
     # the terms in force are a point of their own in the range, and the packages at them are carried
     assert 32 in [z.terms_days for z in a.zone] and a.zone[0].terms_days == 30
-    assert any(p.package.terms_days == 32 for p in a.packages)
-    assert all(p.package.terms_days >= 32 for p in a.packages)
-    assert a.primary.startswith("You can live with: ") and envelope_answer(facts, "zh").primary.startswith("您能接受的范围：")
+    assert any(p.package.terms_days == 32 for p in _all(a))
+    assert all(p.package.terms_days >= 32 for p in _all(a))
+    assert a.primary.startswith("At today's price: up to ") and "You can live with: " in a.primary
+    assert "您能接受的范围：" in envelope_answer(facts, "zh").primary
     json.loads(a.model_dump_json())
 
 
@@ -712,10 +730,11 @@ def test_a_buyer_on_90_day_terms_is_scanned_to_100_and_the_zone_has_the_rows(gol
     assert alone.next_step.package.terms_days == 95 and not alone.next_step.passes
     for name in (TERMS_BUDGET_IGNORED, TERMS_WITH_PRICE):  # liquidity and the price let both new steps through: the range's top
         assert levers[name].maximum == 100 and levers[name].wall is None and levers[name].next_step is None
-    assert "up to 100-day terms (the most FLOW checks) if the price rises 0.25%" in a.primary
+    assert "100-day terms with a 0.25% price rise (the most FLOW checks)" in a.primary
+    assert a.primary.startswith("At today's price: up to 90 days within your limits. ")
     assert "no longer payment terms" not in a.primary
-    assert "账期最长 100 天（FLOW 检查的上限；价格上调 0.25%）" in envelope_answer(facts, "zh").primary
-    assert any(p.package.terms_days in (95, 100) for p in a.packages)
+    assert "100 天账期并加价 0.25%（FLOW 检查的上限）" in envelope_answer(facts, "zh").primary
+    assert any(p.package.terms_days in (95, 100) for p in _all(a))
     json.loads(a.model_dump_json())
 
 

@@ -854,8 +854,8 @@ def _check_buyer(run: EnvelopeRun, ref: Reference, sec: Section) -> None:
             sec.fail(who, 0, figure, f"bisection {got}, exhaustive scan {want}")
 
     for z in answer.zone:
-        want = next((p for p in prices if ref.grid[(z.terms_days, p)].passes), None)
-        agree(f"zone: smallest passing price at {z.terms_days} d", z.min_price_bp, want)
+        want = next((p for p in prices if ref.grid[(z.terms_days, p)].approved), None)  # the zone counts approved (P2)
+        agree(f"zone: smallest approved price at {z.terms_days} d", z.min_price_bp, want)
     sec.counts["zone_rows_scanned"] = len(answer.zone)
     alone = by_key.get("terms_alone")
     if alone is not None and alone.unavailable is None:

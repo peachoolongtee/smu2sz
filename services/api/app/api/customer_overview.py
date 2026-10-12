@@ -238,6 +238,33 @@ def _contribution_fen(r: _Basis) -> int | None:
     return round_half_up(Fraction(sales[0] * _margin(r).bp, 10_000))
 
 
+def twelve_months_of(forward_fen: int, horizon_days: int) -> int:
+    """A forward concession counted over the mandate's horizon, on a 12-month basis (half-up to the fen): the one scaling the
+    request's share of a year's contribution uses, here and on the envelope's economics line."""
+    return round_half_up(Fraction(forward_fen * 12, _months(horizon_days))) if forward_fen > 0 else 0
+
+
+@dataclass(frozen=True)
+class YearHeld:
+    """A buyer's year as this page reads it, for a surface outside it (the envelope's economics line): the contribution
+    (`_contribution_fen`, the one function), whether the margin behind it is the Demo's assumption, and its basis."""
+
+    contribution_fen: int
+    assumed: bool
+    gross: bool  # margin_basis GROSS (the default) or CONTRIBUTION
+
+
+def year_held(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: int) -> YearHeld | None:
+    """The buyer's year, or None when no sales are held (no contribution exists)."""
+    held = Held(state, today, buyer_id, inputs)
+    contribution = _contribution_fen(held)
+    if contribution is None:
+        return None
+    basis = held.input(InputField.MARGIN_BASIS)
+    gross = basis is None or str(value_of(basis)).strip().upper() != "CONTRIBUTION"
+    return YearHeld(contribution, _margin(held).assumed, gross)
+
+
 def _about_big(fen: int, lang: Lang) -> str:
     """A year's figure at a glance: "about ¥1.09m" (one formatter, rounded once from the fen)."""
     return t(lang, f"about {fmt_yuan_about_short(fen)}", f"约 {fmt_yuan_about_short(fen, zh=True)}")
@@ -259,9 +286,7 @@ def _ask(r: _Read) -> dict[str, Any] | None:
     scaled to twelve months, with the one-off discount (the picture's display) beside it and never added. None without a request."""
     if r.offer is None or r.verdict is None:
         return None
-    forward = r.verdict.forward_concession_total_fen
-    months = _months(r.ctx.mandate.forward_concession_horizon_days)
-    year = round_half_up(Fraction(forward * 12, months)) if forward > 0 else 0
+    year = twelve_months_of(r.verdict.forward_concession_total_fen, r.ctx.mandate.forward_concession_horizon_days)
     asked = next((p for p in (r.picture or {}).get("paths", []) if p["key"] == assembly.ASKED), None)
     once = asked.get("cost_once_display") if asked is not None else None
     return {"year_fen": year, "once_display": once} if year > 0 or once else None
