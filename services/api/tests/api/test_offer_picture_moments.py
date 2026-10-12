@@ -85,8 +85,9 @@ def test_the_list_is_ascending_at_most_six_with_one_decisive_and_every_word_in_b
     assert days == sorted(set(days)) and len(days) <= 6 and sum(m["decisive"] for m in en) == 1 and days == [m["day"] for m in zh]
     assert [m["kind"] for m in en] == ["today", "lowest", "reserve_cross", "lowest", "reserve_cross", "end"]
     assert all(m["kind"] in KINDS and m["kind"] == m["kinds"][0] for m in en)
-    assert [m["word"] for m in en] == ["Today", "Lowest point", "Below the reserve", "Lowest point", "Back above the reserve", "Day 66"]
-    assert [m["word"] for m in zh] == ["今天", "最低点", "低于储备", "最低点", "回到储备之上", "第 66 天"]
+    assert [m["word"] for m in en] == ["Today", "Lowest, Option A and Option B", "Below the reserve", "Lowest, as asked",
+                                           "Back above the reserve", "Day 66"]
+    assert [m["word"] for m in zh] == ["今天", "最低点，方案 A、方案 B", "低于储备", "最低点，按对方要求", "回到储备之上", "第 66 天"]
     assert next(m for m in en if m["decisive"])["day"] == 47
     assert en[0]["kinds"] == ["today", "paths_part"] and en[2]["kinds"] == ["reserve_cross", "invoice_due"]
     assert [m["day"] for m in en if "invoice_due" in m["kinds"]] == [47] and en[-1]["kinds"] == ["end"]
@@ -203,3 +204,15 @@ def test_events_text_follows_the_trajectorys_own_events_day_by_day(client):
             shown = m["events_text"][key]
             assert len(shown) == len(events)
             assert [s.rsplit(" ", 1)[1] for s in shown] == [fmt_yuan(e.amount_fen) for e in events]
+
+
+def test_a_lowest_point_names_its_path_only_when_more_than_one_is_listed():
+    floor = 100
+    asked = [_row(d, 300 - d if d < 4 else 400) for d in range(8)]  # lowest on day 3
+    reply = [_row(d, 300 - 2 * d if d < 6 else 400) for d in range(8)]  # lowest on day 5
+    paths = [_path("asked", "asked", asked), _path("r", "reply", reply)]
+    moments, _ = offer_picture._moments(paths, 0, floor, 120, None, "en")
+    assert {m["day"]: m["word"] for m in moments if "lowest" in m["kinds"]} == {3: "Lowest, as asked", 5: "Lowest, r"}
+    same = [_path("asked", "asked", asked), _path("r", "reply", asked)]
+    only, _ = offer_picture._moments(same, 0, floor, 120, None, "en")
+    assert [m["word"] for m in only if "lowest" in m["kinds"]] == ["Lowest point"]
