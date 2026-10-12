@@ -9,7 +9,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
     kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
                           plan ready but not run, never a hypothetical. The planned plan's effect is a hint line (`with_plan_hint`) and, structured, `with_plan` {label, value_text} (null with no plan figure).
     kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
-                          is pending; cash only when it lands) or NONE
+                          is pending; cash only when it lands) or NONE. `status_text` is its one status word: "Ready to run" (control
+                          RUN_PLAN), "Waiting for your approval" (APPROVE_PLAN), "Arranged" (`state_of`, after the run), null for NONE
     action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
@@ -62,6 +63,10 @@ def _planned(lang: str) -> str:
     return state_word(lang, state_of(None, planned=True))
 
 
+def _cap(word: str) -> str:
+    return word[:1].upper() + word[1:]
+
+
 def _digit_gap(text: str) -> str:
     """A space before a Chinese distance that starts with a number ("30 天后"), as the house writes it."""
     return f" {text}" if text[:1].isdigit() else text
@@ -95,10 +100,13 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
     gap = low_fen - floor
     if gap > 0:
         where = t(lang, f"{_short(gap)} above your minimum {when}", f"比您的最低现金高 {_short(gap)}（{when}）")
+        short = t(lang, f"{_short(gap)} above your minimum {when}", f"{when}高于最低现金 {_short(gap)}")
     elif gap == 0:
         where = t(lang, f"reaches your minimum {when}", f"{when}达到您的最低现金")
+        short = t(lang, f"At your minimum {when}", f"{when}正好是最低现金")
     else:
         where = t(lang, f"{_short(-gap)} below your minimum {when}", f"比您的最低现金低 {_short(-gap)}（{when}）")
+        short = t(lang, f"{_short(-gap)} shortfall {when}", f"{when}缺口 {_short(-gap)}")
     basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if _plan_has_run(c.state)
              else t(lang, "current books, no new funding", "当前账目，未新增融资"))
     if c.plan_traj is not None:
@@ -110,7 +118,7 @@ def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
         hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
         with_plan = None
     return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
-            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
+            "note": f"{where} · {basis}", "short_note": short, "tone": _tone(low_fen, floor), "with_plan_hint": hint, "with_plan": with_plan}
 
 
 def _lot_kind(lot: FundingLot, lang: str) -> str:
@@ -134,7 +142,7 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
         owed = whole(sum(lot.remaining_fen for lot in pending))
         return {"state": "ARRANGED", "eyebrow": _eyebrow(lang, "Funding arranged", "已安排的融资"),
                 "value_display": t(lang, f"{owed} pending", f"待到账 {owed}"), "note": " · ".join(parts),
-                "hint": t(lang, "Counted as cash only when it lands.", "到账后才计入现金。")}
+                "status_text": _cap(state_word(lang, "ARRANGED")), "hint": t(lang, "Counted as cash only when it lands.", "到账后才计入现金。")}
     if c.plan_traj is not None and a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
         legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
         kinds = {"DRAW_FACILITY": t(lang, "credit line", "信用额度"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
@@ -142,9 +150,11 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
                             f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}，{leg['lands_when']}") for leg in legs)
         who = t(lang, "approving", "批准") if c.waiting else t(lang, "running", "执行")
         return {"state": "PROPOSED", "eyebrow": t(lang, f"{_planned(lang).upper()} FUNDING", f"{_planned(lang)}的融资"), "value_display": whole(a["receive_fen"]),
-                "note": note, "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
+                "note": note, "status_text": (t(lang, "Waiting for your approval", "等待您批准") if c.waiting
+                                              else t(lang, "Ready to run", "可以执行")),
+                "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
     return {"state": "NONE", "eyebrow": _eyebrow(lang, "Funding", "融资"), "value_display": t(lang, "None", "无"),
-            "note": funding_line["text"], "hint": None}
+            "note": funding_line["text"], "status_text": None, "hint": None}
 
 
 # ---------------------------------------------------------------- the one next action
