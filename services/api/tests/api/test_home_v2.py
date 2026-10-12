@@ -95,10 +95,11 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
     k = _v2(api)["kpis"]
     assert k["cash_available"] == {"eyebrow": "CASH AVAILABLE", "value_display": "¥400,000", "note": "¥100k above your ¥300k minimum",
                                    "tone": "ok", "buffer": {"min_fen": 30_000_000, "cash_fen": 40_000_000, "min_display": "¥300k",
-                                                            "cash_display": "¥400,000.00"}}
+                                                            "cash_display": "¥400,000.00", "headroom_text": "+¥100k"}}
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "−¥105,000", "tone": "bad",
                                  "note": "¥405k below your minimum in 30 days · current books, no new funding",
-                                 "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned."}
+                                 "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
+                                 "with_plan": {"label": "with plan", "value_text": "¥300,000"}}
     assert k["funding"] == {"state": "PROPOSED", "eyebrow": "PLANNED FUNDING", "value_display": "¥405,000",
                             "note": "¥150k credit line today + ¥255k invoice financing in 3 days",
                             "hint": "Conditional on you running the plan; not counted as cash."}
@@ -117,7 +118,7 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
-                               {"label": "If FLOW's plan runs (planned)", "kind": "proposed"}]
+                               {"label": "If FLOW's plan runs (planned)", "kind": "planned"}]
     assert chart["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "−¥105,000", "minimum_display": "¥300,000",
         "third_label": "Shortfall", "third_display": "¥405,000",
@@ -137,7 +138,7 @@ def test_after_the_plan_the_three_kpis(api: TestClient) -> None:
     assert (k["cash_available"]["value_display"], k["cash_available"]["note"]) == ("¥550,000", "¥250k above your ¥300k minimum")
     assert k["lowest_ahead"] == {"eyebrow": "LOWEST CASH AHEAD", "value_display": "¥300,000", "tone": "warn",
                                  "note": "reaches your minimum in 30 days · current books, the plan ran",
-                                 "with_plan_hint": "No hypothetical applied."}
+                                 "with_plan_hint": "No hypothetical applied.", "with_plan": None}
     assert k["funding"] == {"state": "ARRANGED", "eyebrow": "FUNDING ARRANGED", "value_display": "¥255,000 pending",
                             "note": "¥150k credit-line draw received today · ¥255k invoice financing expected in 3 days",
                             "hint": "Counted as cash only when it lands."}
@@ -195,7 +196,7 @@ def test_the_planned_word_is_the_financing_vocabularys_own(api: TestClient) -> N
         word = state_word(lang, state_of(None, planned=True))
         v2 = _v2(api, lang)
         assert word in v2["kpis"]["funding"]["eyebrow"].lower() and word in v2["chart"]["legend"][1]["label"] and word in v2["action"]["text"]
-        assert word in v2["chart"]["lowest_inspector"]["note"] and "propos" not in str(v2).lower().replace('"kind": "proposed"', "").replace("'proposed'", "")
+        assert word in v2["chart"]["lowest_inspector"]["note"] and "propos" not in str(v2).lower().replace("'proposed'", "")
     assert (state_word("en", "PLANNED"), state_word("zh", "PLANNED")) == ("planned", "计划中")
 
 
@@ -350,3 +351,54 @@ def test_the_chinese_fields_after_the_plan(api: TestClient) -> None:
     assert zh["action"]["variant"] == "QUIET" and zh["action"]["title"] == "按已执行的方案，您的现金是安全的。"
     assert zh["action"]["text"] == "接下来：¥255k 将于 3 天后到账；Foshan将于 32 天后支付 ¥420k（应收）。您的待办列表里还有 1 项等您处理。"
     assert zh["chart"]["legend"] == [{"label": "当前账目 · 方案已执行", "kind": "current"}]
+
+
+# ---------------------------------------------------------------- what makes the lowest point the lowest
+
+
+def _cause(api: TestClient, lang: str = "en") -> tuple[str | None, str]:
+    """(`home_v2.chart.lowest.cause`, the label of the rail's lowest row)."""
+    h = _home(api, lang)
+    row = next(r for r in h["cash"]["events_rail"] if r["kind"] == "lowest")
+    assert h["home_v2"]["chart"]["lowest"].keys() == {"cause"}
+    cause: str | None = h["home_v2"]["chart"]["lowest"]["cause"]
+    return cause, row["label"]
+
+
+def test_the_lowest_cause_is_the_rails_lowest_row_named_by_its_cause_on_day_zero_and_after_the_plan(api: TestClient) -> None:
+    # the hybrid names the debt service (a loan repayment) as what takes the Demo company to its lowest point, with or without the plan
+    assert _cause(api) == ("a loan repayment goes out",) * 2 and _cause(api, "zh") == ("一笔贷款还款支出",) * 2
+    _offer(api)
+    assert _cause(api) == ("a loan repayment goes out",) * 2
+    _run_plan(api)
+    assert _cause(api) == ("a loan repayment goes out",) * 2 and _cause(api, "zh") == ("一笔贷款还款支出",) * 2
+
+
+def test_the_lowest_cause_is_null_when_the_hybrid_names_none() -> None:
+    assert home_v2._lowest_cause(None) is None and home_v2._lowest_cause([]) is None
+    assert home_v2._lowest_cause([{"kind": "payroll", "label": "payroll is paid", "amount_fen": -1}]) is None
+    row = {"kind": "lowest", "label": "cash is at its lowest", "amount_fen": 0}  # the rail's fallback row: no event behind it
+    assert home_v2._lowest_cause([row]) is None
+    assert home_v2._lowest_cause([{**row, "label": "payroll is paid", "amount_fen": -1}]) == "payroll is paid"
+
+
+def test_the_headroom_and_the_structured_with_plan_on_day_zero_after_the_plan_and_in_chinese(api: TestClient) -> None:
+    k = _v2(api)["kpis"]  # day 0: cash above the minimum; the plan figure is the hint's, structured
+    assert k["cash_available"]["buffer"]["headroom_text"] == "+¥100k"
+    assert k["lowest_ahead"]["with_plan"] == {"label": "with plan", "value_text": "¥300,000"} and "¥300,000" in k["lowest_ahead"]["with_plan_hint"]
+    _offer(api)
+    zh = _v2(api, "zh")["kpis"]
+    assert zh["cash_available"]["buffer"]["headroom_text"] == "+¥100k"
+    assert zh["lowest_ahead"]["with_plan"] == {"label": "采用方案后", "value_text": "¥300,000"}
+    _run_plan(api)
+    k = _v2(api)["kpis"]
+    assert k["cash_available"]["buffer"]["headroom_text"] == "+¥250k" and k["lowest_ahead"]["with_plan"] is None
+    assert _v2(api, "zh")["kpis"]["lowest_ahead"]["with_plan"] is None
+
+
+def test_the_headroom_is_negative_below_the_minimum_and_zero_on_it() -> None:
+    def kpi(cash: int) -> dict[str, Any]:
+        c = SimpleNamespace(lang="en", state=SimpleNamespace(cash_fen=cash), floor=30_000_000)
+        return home_v2._cash_available(c)["buffer"]  # type: ignore[arg-type,no-any-return]
+
+    assert kpi(26_000_000)["headroom_text"] == "−¥40k" and kpi(30_000_000)["headroom_text"] == "¥0" and kpi(40_000_000)["headroom_text"] == "+¥100k"

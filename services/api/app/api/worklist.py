@@ -329,6 +329,9 @@ def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: s
         who = buyer_short(party_name(ctx.state, cid)) if cid else None
         commercial = card.get("kind") in COMMERCIAL_KINDS
         subject = (t(lang, f"{who} · Agreement", f"{who} · 协议") if commercial and who else str(card.get("what") or card.get("headline") or ""))
+        facility = str(card.get("facility_name") or "")
+        if lang == "zh" and facility and facility in subject:  # the books give a facility no Chinese name: it stays, set off as the name it is
+            subject = subject.replace(facility, f"“{facility}”")
         if card.get("cost_display"):
             consequence = t(lang, f"Estimated cost {card['cost_display']}.", f"预计成本 {card['cost_display']}。")
         else:
