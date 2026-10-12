@@ -93,6 +93,17 @@ def _terms_in_force(state: Any, buyer: str | None) -> int | None:
     return ri.terms_days if ri is not None else None
 
 
+def _payment_days(state: Any, obligations: list[Any], buyer: str | None) -> int | None:
+    """The payment terms of a path in days: its terms extension's target (or the terms in force plus its delta), else the terms in force."""
+    in_force = _terms_in_force(state, buyer)
+    ext = next((o for o in obligations if o.type == ObligationType.TERMS_EXTENSION), None)
+    if ext is None:
+        return in_force
+    if ext.target_terms_days is not None:
+        return int(ext.target_terms_days)
+    return in_force + ext.days_delta if in_force is not None and ext.days_delta is not None else None
+
+
 def _pct(rate_bp: int | None, *, absolute: bool = False) -> str:
     """A rate as a percentage, with its sign; `absolute` where the words around it (a price cut) already carry the sign."""
     if rate_bp is None:
@@ -100,18 +111,16 @@ def _pct(rate_bp: int | None, *, absolute: bool = False) -> str:
     return fmt_pct(bp(abs(rate_bp) if absolute else rate_bp))
 
 
+def _rebate_what(o: Any) -> str:
+    """A rebate as the terms rows say it: its rate, else its amount."""
+    return _pct(o.rate_bp) if o.rate_bp is not None else (fmt_yuan(o.amount_fen) if o.amount_fen is not None else "")
+
+
 def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str) -> dict[str, tuple[str, str]]:
     """The three rows of a path from its obligations, each as (what the column says, the same said after "instead of"). A term the
     path does not carry is "None"; payment terms it leaves alone are the terms in force."""
-    in_force = _terms_in_force(state, buyer)
     none = say(lang, "None", "无")
-    ext = next((o for o in obligations if o.type == ObligationType.TERMS_EXTENSION), None)
-    days: int | None = None
-    if ext is not None:
-        days = ext.target_terms_days if ext.target_terms_days is not None else (
-            in_force + ext.days_delta if in_force is not None and ext.days_delta is not None else None)
-    elif in_force is not None:
-        days = in_force
+    days = _payment_days(state, obligations, buyer)
     if days is not None:
         terms = (say(lang, f"{days} days", f"{days} 天"), say(lang, str(days), f"{days} 天"))
     else:
@@ -131,7 +140,7 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
     other = []
     for o in obligations:
         if o.type == ObligationType.CONTINGENT_REBATE:
-            what = _pct(o.rate_bp) if o.rate_bp is not None else (fmt_yuan(o.amount_fen) if o.amount_fen is not None else "")
+            what = _rebate_what(o)
             other.append((say(lang, f"{what} rebate".strip(), f"{what} 返利".strip()),
                           say(lang, f"a {what} rebate" if what else "a rebate", f"{what} 返利".strip())))
         elif o.type == ObligationType.PRICE_ADJUSTMENT:
@@ -242,6 +251,88 @@ def _decides(lang: str, authority: str | None, authority_text: str, sendable: bo
     return say(lang, "FLOW can send it. Your approval is not needed.", "FLOW 可以发送。无需您批准。")
 
 
+# ---------------------------------------------------------------- the evidence behind who decides
+
+def _owner_rule(terms_change: bool, early_pay_only: bool, tier: Tier, in_plan: bool) -> str:
+    """Which rule sent a reply to the owner, in the order the mandate applies them (`tier_for`: a terms change, then anything beyond an
+    early payment on a named invoice, then a value above the single-commitment threshold), then the funding plan's flag, else the
+    verifier's own re-check. The same facts `owner` is made of; nothing is decided here."""
+    if terms_change:
+        return "terms"
+    if not early_pay_only:
+        return "beyond_early_pay"
+    if tier != Tier.TIER_1:
+        return "value"
+    return "plan" if in_plan else "recheck"
+
+
+def _rule_text(lang: str, rule: str, mandate: Any) -> str:
+    return {
+        "terms": say(lang, "Your mandate lets FLOW send a counter on its own only when the terms stay as they are.",
+                     "您的授权只允许 FLOW 在条款保持不变时自行发送还价。"),
+        "beyond_early_pay": say(lang, "Your mandate lets FLOW agree on its own only to an early-payment discount on a named invoice, with nothing else changed.",
+                                "您的授权只允许 FLOW 自行同意针对指定发票的提前付款折扣，且不改变其他任何条款。"),
+        "value": say(lang, f"Your mandate lets FLOW agree on its own only to a commitment of up to {fmt_yuan(mandate.tier2_single_commitment_fen)}.",
+                     f"您的授权只允许 FLOW 自行同意不超过 {fmt_yuan(mandate.tier2_single_commitment_fen)} 的承诺。"),
+        "plan": say(lang, "The funding plan this reply needs requires your approval because of its cost.",
+                    "此回复所需的融资方案因其成本需要您批准。"),
+        "recheck": say(lang, "The verifier's own check of this reply asks for your approval.", "验证器对此回复的复核要求您批准。"),
+    }[rule]
+
+
+def _signed_pct(rate_bp: int | None) -> str:
+    return "?" if rate_bp is None else (f"+{_pct(rate_bp)}" if rate_bp >= 0 else f"−{_pct(rate_bp, absolute=True)}")
+
+
+def _changes_text(lang: str, state: Any, obligations: list[Any], buyer: str | None) -> str:
+    """Each term the reply changes against the terms in force, before → after, from the fields the terms column reads: the payment days
+    (`_payment_days`), the early-payment and rebate words (`_term_rows`), the price adjustment's own rate."""
+    now, after = _term_rows(state, [], buyer, lang), _term_rows(state, obligations, buyer, lang)
+    out: list[str] = []
+    before_days, after_days = _payment_days(state, [], buyer), _payment_days(state, obligations, buyer)
+    if after_days is not None and after_days != before_days:
+        out.append(say(lang, f"Payment terms {before_days} → {after_days} days." if before_days is not None else f"Payment terms {after_days} days.",
+                       f"账期 {before_days} → {after_days} 天。" if before_days is not None else f"账期 {after_days} 天。"))
+    if after["early_payment"][0] != now["early_payment"][0]:
+        out.append(say(lang, f"Early payment {now['early_payment'][1]} → {after['early_payment'][0]}.",
+                       f"提前付款 {now['early_payment'][1]} → {after['early_payment'][0]}。"))
+    for o in obligations:
+        if o.type == ObligationType.CONTINGENT_REBATE:
+            out.append(say(lang, f"Rebate none → {_rebate_what(o)}.", f"返利 无 → {_rebate_what(o)}。"))
+        elif o.type == ObligationType.PRICE_ADJUSTMENT:
+            out.append(say(lang, f"Price on future invoices {_signed_pct(o.rate_bp)}.", f"今后发票的价格 {_signed_pct(o.rate_bp)}。"))
+    return say(lang, " ", "").join(out)
+
+
+def _stays_text(lang: str, state: Any, obligations: list[Any], buyer: str | None, mandate: Any) -> str:
+    """What a reply FLOW may send leaves as it is, and the limit what it does offer sits within."""
+    days = _payment_days(state, obligations, buyer)
+    stays = [say(lang, f"Terms stay at {days} days" if days is not None else "Terms stay as they are",
+                 f"账期保持 {days} 天" if days is not None else "账期保持不变")]
+    if not any(o.type in (ObligationType.CONTINGENT_REBATE, ObligationType.PRICE_ADJUSTMENT) for o in obligations):
+        stays.append(say(lang, "no rebate", "无返利"))
+    text = say(lang, ", ", "，").join(stays) + say(lang, ".", "。")
+    cap = mandate.max_immediate_discount_bp
+    for o in obligations:
+        if o.type == ObligationType.IMMEDIATE_DISCOUNT:
+            limit = say(lang, f"the {_pct(cap)} limit you signed" if cap is not None else "the limit you signed",
+                        f"您签署的 {_pct(cap)} 上限" if cap is not None else "您签署的上限")
+            text += say(lang, f" The early-settlement offer at {_pct(o.rate_bp)} is within {limit}.",
+                        f"{_pct(o.rate_bp)} 的提前结算方案在{limit}之内。")
+    return text
+
+
+def _authority_reason(lang: str, authority: str | None, owner_rule: str | None, state: Any, obligations: list[Any], buyer: str | None,
+                      mandate: Any) -> str | None:
+    """The evidence behind `decides_text` for a reply: what it changes and the mandate rule it crosses (it needs the owner), or what it
+    leaves alone and the limit it sits within (FLOW may send it); nothing for any other path."""
+    if authority == NEEDS_OWNER and owner_rule is not None:
+        return f"{_changes_text(lang, state, obligations, buyer)}{say(lang, ' ', '')}{_rule_text(lang, owner_rule, mandate)}".strip()
+    if authority == FLOW_MAY:
+        return _stays_text(lang, state, obligations, buyer, mandate)
+    return None
+
+
 def _cost_note_reply(c: Any, months: int, lang: str) -> str:
     cost, forward = c.supplier_cost_fen, c.forward_value_fen
     if cost > 0 and forward <= 0:
@@ -271,7 +362,7 @@ def _cost_basis(once: int, forward: int, months: int, net: bool, lang: str) -> t
     return fmt_yuan(0), say(lang, "nothing to pay", "无需付出成本")
 
 
-def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str) -> dict[str, Any]:
+def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str, plan_cost_fen: int = 0) -> dict[str, Any]:
     """One reply's cost on the common basis: the 12-month figure when the verifier gives one, else the one-off, with the basis said and
     the two kernel parts beside it (never added here). A reply whose net is the funding cost less a price offset carries both
     components, from the `dev` page's own `counter_economics`."""
@@ -292,6 +383,9 @@ def _reply_cost(c: Any, state: Any, mandate: Any, months: int, lang: str) -> dic
                            f"{_pct(price.rate_bp, absolute=True)} 提价的抵补")
                        if price is not None and price.rate_bp is not None and price.rate_bp > 0
                        else say(lang, "Offset by the price adjustment", "价格调整的抵补")), "display": eco["offset_display"]}]
+        if plan_cost_fen > 0:  # the router's plan that funds the shortfall on these terms: beside the net, which the verifier does not add it to
+            components.append({"label": say(lang, "Funding plan for the shortfall (not in the net)", "补足缺口的融资方案（不计入净额）"),
+                               "display": fmt_yuan(plan_cost_fen)})
     total, basis = _cost_basis(once, forward, months, bool(components), lang)
     return {"cost_total_display": total, "cost_basis_text": basis,
             "cost_once_display": fmt_yuan(once) if once > 0 else None,
@@ -308,17 +402,17 @@ def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable:
                 cost_display: str, cost_note: str, cost: dict[str, Any], terms: list[dict[str, Any]], decides: str,
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
-                lang: str) -> dict[str, Any]:
+                lang: str, reason: str | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
-            "decides_text": decides, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
+            "decides_text": decides, "authority_reason_text": reason, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
             "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band}
 
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
            breach: tuple[int, int] | None, replies: list[dict[str, Any]], trajs: dict[str, Any], flagged: set[str],
-           rechecked: dict[str, Any]) -> list[dict[str, Any]]:
+           rechecked: dict[str, Any], plan_costs: dict[str, int]) -> list[dict[str, Any]]:
     """One entry per line on the chart: the offer as asked, then each reply in the verdict's order, with every word its column says.
     Each figure and word is the verdict's, the workspace's or the executor's own (see the comment on each). `flagged` holds the ids of
     the replies whose funding plan needs the owner's approval; `rechecked` the verifier's verdict on each reply as an agreement."""
@@ -359,7 +453,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         breach_when=asked_view["first_breach_when"], band=band, lang=lang)]
 
     by_id = {r["counter_id"]: r for r in replies}
-    who: dict[str, tuple[str | None, str, bool]] = {}  # per reply: (authority, its words, whether the owner decides)
+    who: dict[str, tuple[str | None, str, bool, str]] = {}  # per reply: (authority, its words, whether the owner decides, the rule that says so)
     for c in verdict.counters:
         obligations = list(c.obligations)
         # who decides: the verifier's own re-check of the counter as an agreement (its tier, the past-due and autonomy rules), OR-ed with
@@ -369,15 +463,16 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
                               day=today, commitment_id="picture", nonce="picture")
         terms_change = lengthens_terms(obligations)
         check = rechecked.get(c.id)
-        owner = (tier_for(op, mandate, state, accepts_terms_change=terms_change, commitment_value_fen=c.forward_value_fen,
-                          accepts_beyond_early_pay=not only_early_pay(obligations)) != Tier.TIER_1
+        tier = tier_for(op, mandate, state, accepts_terms_change=terms_change, commitment_value_fen=c.forward_value_fen,
+                        accepts_beyond_early_pay=not only_early_pay(obligations))
+        owner = (tier != Tier.TIER_1
                  or c.id in flagged
                  or (check is not None and (check.required_tier != Tier.TIER_1 or check.outcome == Outcome.NEEDS_OWNER_APPROVAL)))
         if c.id in trajs:
             r_authority, r_text = _reply_authority(lang, check, owner)
         else:
             r_authority, r_text = None, say(lang, "FLOW cannot draw this reply on today's books", "FLOW 无法按今天的账目绘制此回复")
-        who[c.id] = (r_authority, r_text, owner)
+        who[c.id] = (r_authority, r_text, owner, _owner_rule(terms_change, only_early_pay(obligations), tier, c.id in flagged))
     # the workspace's priced response is the first reply FLOW could send: one that is over a limit, unpriced or not drawn is never it
     chosen = next((c.id for c in verdict.counters if who[c.id][0] in (FLOW_MAY, NEEDS_OWNER)), None) if action == "counter" else None
     for c in verdict.counters:
@@ -385,7 +480,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         obligations = list(c.obligations)
         traj = trajs.get(c.id)
         terms_change = lengthens_terms(obligations)
-        r_authority, r_text, owner = who[c.id]
+        r_authority, r_text, owner, owner_rule = who[c.id]
         sendable = r_authority in (FLOW_MAY, NEEDS_OWNER)
         needs_owner = sendable and owner
         band = None
@@ -404,13 +499,14 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         paths.append(_path_entry(
             key=c.id, kind="reply", label=r["label"], recommended=recommended, sendable=sendable, needs_owner=needs_owner,
             tag=("recommended" if recommended else "approval" if needs_owner else "over" if r_authority == OVER_LIMIT else None), cost_display=fmt_yuan(c.supplier_cost_fen),
-            cost_note=_cost_note_reply(c, months, lang), cost=_reply_cost(c, state, mandate, months, lang),
+            cost_note=_cost_note_reply(c, months, lang), cost=_reply_cost(c, state, mandate, months, lang, plan_costs.get(c.id, 0)),
             terms=_terms_view(_term_rows(state, obligations, buyer, lang), asked_rows, lang),
             decides=_decides(lang, r_authority, r_text, sendable, needs_owner, terms_change), authority=r_authority,
             authority_text=r_text, assumption=say(lang, "If the buyer accepts this reply", "如果买方接受此回复"),
             reply_text=business_text(state, c.text, rt.day, lang),
             series=r["series"], low={k: r[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
-            breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang))
+            breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang,
+            reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate)))
     return paths
 
 
@@ -650,6 +746,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     replies = []
     trajs: dict[str, Any] = {}
     flagged: set[str] = set()  # the replies whose funding plan needs the owner's approval
+    plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
         label = option_label(c.label, lang)
@@ -663,6 +760,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                             "lowest_when": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
             continue
         trajs[c.id] = traj
+        plan_costs[c.id] = funding.total_cost_fen
         if funding.needs_owner_approval:
             flagged.add(c.id)
         if actions:
@@ -682,7 +780,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
-    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked)
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
     return {

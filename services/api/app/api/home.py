@@ -50,6 +50,7 @@ from app.api.presentation import (
     live_windows,
     lowest_point_words,
     party_name,
+    point_words,
     receivable_face,
     relative_days,
     series_axes,
@@ -1149,6 +1150,8 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
                                   else t(lang, "A funding plan is ready, within your signed limits. No approval is needed.",
                                          "融资方案已准备好，在您签署的授权内，无需批准。"))
         series = _series(books.state, traj, lang, today)
+        point_words(series, today, lang)
+        point_words(plan_series, today, lang)
         picture_days = _picture_days(traj, today, mandate.min_cash_fen, breach_day, low_day, action, mandate.horizon_days)
         # One reconciliation, one set of alerts and one parse of the log for the whole request: the decision record is read first and the
         # rest of the home reuses what it holds.
