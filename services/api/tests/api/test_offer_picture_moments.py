@@ -9,6 +9,7 @@ from app.api.decisions import latest_verdict_for
 from app.api.runtime import get_runtime
 from app.books import current_books
 from app.domain.models import Mode
+from app.domain.money import fmt_yuan
 from app.financial import project
 from app.funding import plan
 from tests.api.test_offer_picture import _accepted, _evaluated
@@ -175,7 +176,30 @@ def test_when_more_than_six_days_qualify_the_cap_keeps_today_the_parting_the_ask
     by_day = {m["day"]: m for m in moments}
     # kept in order: today (0), the parting (3), the asked path's lowest (25), the first crossing (1), the end of the rows (39), then the
     # rest by day: the crossing on day 2 before the invoice falling due on day 20
-    assert days == [0, 1, 2, 3, 25, 39] and window == 43
+    assert days == [0, 1, 2, 3, 25, 39] and window == 39  # the window ends on the end moment, not past the last row
     assert by_day[3]["kinds"][0] == "paths_part" and "lowest" in by_day[25]["kinds"] and by_day[39]["kinds"][-1] == "end"
     assert by_day[1]["kinds"] == ["reserve_cross"] and by_day[1]["decisive"] is True and sum(m["decisive"] for m in moments) == 1
     assert 20 not in days
+
+
+def test_a_day_where_one_path_goes_below_the_reserve_and_another_comes_back_is_said_so():
+    floor = 100
+    asked = [_row(d, 150 if d < 2 else 50) for d in range(6)]  # goes below on day 2
+    reply = [_row(d, 50 if d < 2 else 150) for d in range(6)]  # is back above on day 2
+    moments, _ = offer_picture._moments([_path("asked", "asked", asked), _path("r", "reply", reply)], 0, floor, 120, None, "en")
+    day2 = next(m for m in moments if m["day"] == 2)
+    assert day2["kind"] == "reserve_cross" and day2["word"] == "Paths cross the reserve"
+    zh, _ = offer_picture._moments([_path("asked", "asked", asked), _path("r", "reply", reply)], 0, floor, 120, None, "zh")
+    assert next(m for m in zh if m["day"] == 2)["word"] == "路径穿过储备"
+
+
+def test_events_text_follows_the_trajectorys_own_events_day_by_day(client):
+    oid, _ = _evaluated(client)
+    trajs, _, _ = _kernel(oid)
+    pic = client.get(f"/offers/{oid}/picture").json()
+    for m in pic["moments"]:
+        for key, traj in trajs.items():
+            events = next((d.events for d in traj.days if d.day == m["day"]), [])
+            shown = m["events_text"][key]
+            assert len(shown) == len(events)
+            assert [s.rsplit(" ", 1)[1] for s in shown] == [fmt_yuan(e.amount_fen) for e in events]

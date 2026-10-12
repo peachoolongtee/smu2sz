@@ -102,9 +102,11 @@ def test_every_path_states_its_cost_on_a_basis_and_option_b_carries_its_componen
     oid, view = _evaluated(client)
     asked, opt_a, opt_b = _paths(client, oid)
     impact = view["workspace"]["financial_impact"]
-    assert asked["cost_total_display"] == impact["forward_total_display"] == view["forward_concession"]["total_display"] == "¥28,326.92"
-    assert asked["cost_basis_text"] == "over 12 months, plus ¥5,040.00 once" and asked["cost_once_display"] == "¥5,040.00"
-    assert asked["cost_forward_display"] == "¥28,326.92" and asked["cost_components"] == []
+    # the offer as asked has both parts: no total, the two kernel figures side by side, never added
+    assert asked["cost_total_display"] is None and asked["cost_basis_text"] == "two parts: once, and over 12 months"
+    assert asked["cost_forward_display"] == impact["forward_total_display"] == view["forward_concession"]["total_display"] == "¥28,326.92"
+    assert asked["cost_once_display"] == "¥5,040.00" and asked["cost_components"] == []
+    assert asked["cost_display"] == "¥28,326.92" and asked["cost_note"] == "over 12 months, plus ¥5,040.00 once"
     assert (opt_a["cost_total_display"], opt_a["cost_basis_text"]) == ("¥3,027.77", "once, nothing ongoing")
     assert opt_a["cost_once_display"] == "¥3,027.77" and opt_a["cost_forward_display"] is None and opt_a["cost_components"] == []
     # option B nets to zero: the funding cost of the longer terms and the price offset the `dev` page showed, never a bare ¥0.00
@@ -123,10 +125,16 @@ def test_a_reply_with_a_one_off_and_a_twelve_month_cost_states_both_without_addi
     rt = get_runtime()
     c = SimpleNamespace(supplier_cost_fen=504_000, forward_value_fen=2_832_692, obligations=[])
     cost = offer_picture._reply_cost(c, rt.store.get_state(), rt.store.get_mandate(), 12, "en")
-    assert cost["cost_basis_text"] == "¥5,040.00 once + ¥28,326.92 over 12 months"
-    assert (cost["cost_once_display"], cost["cost_forward_display"], cost["cost_total_display"]) == ("¥5,040.00", "¥28,326.92", "¥28,326.92")
+    assert cost["cost_basis_text"] == "two parts: once, and over 12 months"
+    assert (cost["cost_once_display"], cost["cost_forward_display"], cost["cost_total_display"]) == ("¥5,040.00", "¥28,326.92", None)
     zh = offer_picture._reply_cost(c, rt.store.get_state(), rt.store.get_mandate(), 12, "zh")
-    assert zh["cost_basis_text"] == "一次性 ¥5,040.00 + 12 个月内 ¥28,326.92"
+    assert zh["cost_basis_text"] == "两部分：一次性，以及 12 个月内" and zh["cost_total_display"] is None
+    only = {"once": SimpleNamespace(supplier_cost_fen=504_000, forward_value_fen=0, obligations=[]),
+            "forward": SimpleNamespace(supplier_cost_fen=0, forward_value_fen=2_832_692, obligations=[])}
+    one = offer_picture._reply_cost(only["once"], rt.store.get_state(), rt.store.get_mandate(), 12, "en")
+    assert (one["cost_total_display"], one["cost_basis_text"]) == ("¥5,040.00", "once, nothing ongoing")
+    two = offer_picture._reply_cost(only["forward"], rt.store.get_state(), rt.store.get_mandate(), 12, "en")
+    assert (two["cost_total_display"], two["cost_basis_text"]) == ("¥28,326.92", "over 12 months")
 
 
 # ---------------------------------------------------------------- Task 3: "over your limit" only on a cap violation
@@ -175,10 +183,10 @@ def test_no_deal_and_a_security_reject_read_their_own_sentences(client, monkeypa
 def test_a_counter_from_an_owner_goal_breach_reads_flow_counters_instead(client, monkeypatch):
     oid, _ = _evaluated(client)
     asked = _with_verdict(client, monkeypatch, oid, outcome=Outcome.COUNTER, violations=[], required_tier=Tier.TIER_1)[0]
-    assert _authority(asked) == ("flow_may", "FLOW counters instead") and asked["decides_text"] == "FLOW counters instead"
+    assert _authority(asked) == (None, "FLOW counters instead") and asked["decides_text"] == "FLOW counters instead"
     assert asked["tag_text"] is None and asked["sendable"] is False
     asked = _with_verdict(client, monkeypatch, oid, outcome=Outcome.COUNTER, violations=[], required_tier=Tier.TIER_2)[0]
-    assert _authority(asked) == ("needs_owner", "FLOW counters instead")
+    assert _authority(asked) == (None, "FLOW counters instead")  # the offer as asked is not sent: the replies carry the authority
     z = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["paths"][0]
     assert z["authority_text"] == "FLOW 改为还价"
 
@@ -268,3 +276,73 @@ def test_every_reply_carries_the_assumption_beside_its_figures(client):
     assert z[1]["assumption_text"] == "如果买方接受此回复" and z[0]["assumption_text"] is None
     # the replies' own notes are kept as they were
     assert all(r["note"] for r in client.get(f"/offers/{oid}/picture").json()["replies"])
+
+
+# ---------------------------------------------------------------- a reply the re-check does not clear is not sendable, recommended or owner-approved
+
+
+def _recheck_as(monkeypatch, **update: Any):
+    real = offer_picture.counter_recheck
+
+    def recheck(*a, **k):
+        check = real(*a, **k)
+        return lambda c: check(c).model_copy(update=update)
+
+    monkeypatch.setattr(offer_picture, "counter_recheck", recheck)
+    offer_picture._cache.clear()
+
+
+@pytest.mark.parametrize("update, authority, text", [
+    ({"outcome": Outcome.NO_VERDICT, "violations": []}, None, "FLOW needs one more fact before it can price this"),
+    ({"outcome": Outcome.REJECT, "violations": []}, None, "FLOW cannot send this reply as it stands"),
+    ({"outcome": Outcome.COUNTER, "violations": []}, None, "FLOW cannot send this reply as it stands"),
+    ({"outcome": Outcome.REJECT, "violations": [_violation(ViolationCode.AGG_CONCESSION_EXCEEDED)]}, "over_limit", OVER),
+    ({"outcome": Outcome.REJECT, "violations": [_violation(ViolationCode.PER_BUYER_CAP_EXCEEDED)]}, "over_limit", OVER),
+])
+def test_a_reply_the_recheck_does_not_clear_is_never_sendable_recommended_or_owner_approved(client, monkeypatch, update, authority, text):
+    oid, _ = _evaluated(client)
+    _recheck_as(monkeypatch, **update)
+    _, opt_a, opt_b = _paths(client, oid)
+    for p in (opt_a, opt_b):
+        assert (p["authority"], p["authority_text"]) == (authority, text)
+        assert p["sendable"] is False and p["recommended"] is False and p["needs_owner"] is False
+        assert p["tag_text"] in (None, "Over your limit") and p["tag_text"] != "FLOW recommends" and p["tag_text"] != "Needs your approval"
+
+
+def test_the_recommendation_falls_to_the_next_reply_that_can_be_sent(client, monkeypatch):
+    oid, view = _evaluated(client)
+    first = view["counters"][0]["id"]
+    real = offer_picture.counter_recheck
+
+    def recheck(*a, **k):
+        check = real(*a, **k)
+        return lambda c: check(c).model_copy(update={"outcome": Outcome.NO_VERDICT}) if c.id == first else check(c)
+
+    monkeypatch.setattr(offer_picture, "counter_recheck", recheck)
+    offer_picture._cache.clear()
+    _, opt_a, opt_b = _paths(client, oid)
+    assert (opt_a["sendable"], opt_a["recommended"]) == (False, False)
+    assert (opt_b["sendable"], opt_b["recommended"], opt_b["tag_text"]) == (True, True, "FLOW recommends")
+    assert opt_b["authority"] == "needs_owner" and opt_b["needs_owner"] is True
+
+
+def test_a_recheck_that_raises_reads_as_no_verdict(client, monkeypatch):
+    oid, _ = _evaluated(client)
+    real = offer_picture.counter_recheck
+
+    def recheck(*a, **k):
+        real(*a, **k)
+
+        def boom(c):
+            raise RuntimeError("the re-check failed")
+
+        return boom
+
+    monkeypatch.setattr(offer_picture, "counter_recheck", recheck)
+    offer_picture._cache.clear()
+    r = client.get(f"/offers/{oid}/picture")
+    assert r.status_code == 200
+    _, opt_a, opt_b = r.json()["paths"]
+    for p in (opt_a, opt_b):
+        assert p["authority"] is None and p["sendable"] is False and p["recommended"] is False and p["needs_owner"] is False
+        assert p["authority_text"] == "FLOW needs one more fact before it can price this"
