@@ -212,7 +212,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await expect(waiting).toHaveText("Waiting for your approval");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   // The question is the next step's card (cost, landing, the one primary); there is no second card saying it again.
-  await expect(page.getByTestId("next-action-lands")).toContainText("in 3 days");
+  await expect(page.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(page.locator('[data-testid^="home-approval-APR-"]')).toHaveCount(0);
 
   // The owner approves on the approval card: it executes and says when the cash lands.

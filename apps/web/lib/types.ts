@@ -2508,6 +2508,11 @@ export interface HomeStress {
   breach_days: number;
   need_short?: string | null;
   plan_text?: string | null;
+  /** The stress sentence the server wrote: the lowest point, the breach days and the uncovered amount. The browser composes none of it. */
+  text?: string | null;
+  /** What funds it (the server's sentence), and, when the money comes in later anyway, what the net is then. */
+  funding_text?: string | null;
+  net_later_text?: string | null;
   assumption_text: string;
   /** How many days the picture must show to include the moved receipt. */
   window_days_needed?: number;

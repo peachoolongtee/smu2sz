@@ -231,9 +231,6 @@ export function EventPicture({ h }: { h: HomeView }) {
   };
 
   const panelTitle = late ? lateName : event ? `${event.label}, ${event.when}` : "";
-  const lowestLine = stress ? t("home.hy.stress.lowest", { amount: stress.lowest_short, when: stress.lowest_when }) : "";
-  const breachLine = stress && stress.breach_days > 0 ? t("home.hy.stress.breach", { n: stress.breach_days }) : "";
-  const needLine = stress && stress.breach_days > 0 && stress.need_short ? t("home.hy.stress.need", { amount: stress.need_short }) : "";
 
   return (
     <section aria-labelledby="home-picture-title" className="space-y-3" data-testid="home-event-picture" data-scenario={late ? "late" : "expected"} data-window={windowDays}>
@@ -452,7 +449,7 @@ export function EventPicture({ h }: { h: HomeView }) {
                   {stress.assumption_text}
                 </p>
                 <p className="text-[0.9375rem] font-medium text-ink" data-testid="stress-sentence">
-                  {[lowestLine, breachLine, needLine, stress.plan_text].filter(Boolean).join(" ")}
+                  {[stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
                 </p>
               </div>
             ) : event ? (
@@ -464,8 +461,8 @@ export function EventPicture({ h }: { h: HomeView }) {
                 {event.effect_rows?.length ? (
                   <table className="w-full max-w-sm text-sm tabular-nums" data-testid="rail-effect">
                     <tbody>
-                      {event.effect_rows.map((r) => (
-                        <tr key={r.label} className="border-b border-line last:border-b-0" data-testid="rail-effect-row">
+                      {event.effect_rows.map((r, ri) => (
+                        <tr key={ri} className="border-b border-line last:border-b-0" data-testid="rail-effect-row">
                           <th scope="row" className="py-1 pr-4 text-left font-normal text-ink-2">
                             {r.label}
                           </th>

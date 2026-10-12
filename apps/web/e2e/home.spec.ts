@@ -73,7 +73,7 @@ test("the Business home answers safe, do and cost on the opening books, without 
   await expect(action.getByTestId("home-attention-title")).toContainText("FLOW recommends securing ¥405k of funding");
   // The cost and who decides are said once, in the funding line under the hairline; the facts row keeps what it does not say (when the funds arrive).
   await expect(action.getByTestId("home-attention-facts")).toContainText("in 3 days");
-  await expect(action.getByTestId("next-action-lands")).toContainText("in 3 days");
+  await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(action).toContainText("¥3,113.93");
   await expect(action.getByTestId("home-attention-facts")).not.toContainText("¥3,113.93");
   await expect(action.getByTestId("home-funding-costs")).toContainText("¥2,272.29");
@@ -261,7 +261,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   // The question is the next step's card (cost, landing, the one primary): the Decisions card and the "Waiting" change row would say it again, so they are gone.
   const decision = page.getByTestId("home-next-action");
   await expect(decision.getByTestId("home-funding-costs")).toContainText("¥1,782.19");
-  await expect(decision.getByTestId("next-action-lands")).toContainText("in 3 days");
+  await expect(decision.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(page.getByTestId("home-approval-APR-000001")).toHaveCount(0);
   await expect(page.getByTestId("home-card-changes")).not.toContainText("Waiting for your approval");
   await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
