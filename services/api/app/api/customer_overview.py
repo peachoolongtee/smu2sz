@@ -13,6 +13,8 @@ One page's read, composed from reads the other pages already make; nothing is pr
                     the exposure layer's own block (`app.strategy.exposure`); null, with the top-level `note` (the field the page reads), while FEATURE_EXPOSURE is off
     history         the open offer, the buyer's entries in the log, the terms in force
     context.back    {label, href} built from the query: `decision` (+ `path`) back to /deals, `invoice` back to /receivables
+    context.customer, .deal, .scenario   the selections the page was opened with (Home V2's URL state): this customer; the `decision` when it
+                    names one of this buyer's offers, else null; the `scenario` when there is such a deal, else null
 
 The sources are `inputs_from_store` (customer inputs and their provenance), `receivable_rows` (the net, the financing state, the
 agreement, the pending counter), `deal_offers.open_offers` and the offer picture (the recommended path, its cost and authority), the
@@ -844,9 +846,17 @@ def _back(rt: Runtime, state: FinancialState, buyer_id: str, who: str, lang: Lan
     return {"label": t(lang, "Back to Deals", "返回交易"), "href": "/deals"}
 
 
+def _selected_deal(rt: Runtime, buyer_id: str, decision: str | None) -> str | None:
+    """The deal the page was opened on, when the query names one of this buyer's offers (else None, never echoed)."""
+    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
+    offer = rt.store.get_offer(offer_id) if offer_id else None
+    return decision if offer is not None and offer.counterparty_id == buyer_id else None
+
+
 @router.get("/customers/{customer_id}/overview")
 def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), decision: str | None = Query(None, max_length=120),
-                 path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120)) -> dict[str, Any]:
+                 path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
+                 scenario: str | None = Query(None, max_length=120)) -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state = rt.store.get_state()
@@ -855,4 +865,7 @@ def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), deci
             raise HTTPException(404, detail={"code": "CUSTOMER_NOT_FOUND", "message": f"There is no customer {customer_id} on the books."})
         body = _cached(rt, customer_id, lang)
         back = _back(rt, state, customer_id, buyer_short(buyer.name), lang, decision, path, invoice)
-    return {**body, "context": {"back": back}}
+        deal = _selected_deal(rt, customer_id, decision)
+    # the three selections (Home V2's URL state), echoed when they name this buyer's: a `scenario` needs a deal to be a scenario of
+    return {**body, "context": {"back": back, "customer": customer_id, "deal": deal,
+                                "scenario": scenario if deal is not None and scenario and _SAFE.fullmatch(scenario) else None}}
