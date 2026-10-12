@@ -33,6 +33,26 @@ action precedes the forecast; the primary is in the first viewport.
 States: Action needed (amber dot; a filled primary), Reserve unsafe / critical (red dot; the action card carries a red rule and a
 deadline; the forecast shades the gap), Covered / healthy (green dot; no filled primary anywhere on the page).
 
+## 1b. Second cut (owner's "go", 12 Oct): the Sypher-like layout
+
+Two columns. Left (1.6 fr): the three KPIs renamed **Cash available | Lowest forecast cash | Money expected** (a sparkline
+under Cash available only, from the same cash series; the lowest always with its condition; money expected with each item's
+basis word); a one-line **action bar** (the next action with its one filled primary, or the quiet "nothing needs you" line);
+the **cash chart** with the plan line, the do-nothing comparator (grey dashed by default; solid red with the gap shaded in the
+critical state), the minimum, the lowest point marked and **its cause named** (#111's cause event), a Sypher-style tooltip
+built from the effect rows; two half cards: **Where the cash goes** (money in and money out for the window as stacked bars by
+kind, with the category list and shares; planned items counted only if the plan runs) and **Facility headroom** (credit line,
+invoice financing, the one-off payment FLOW could still cover alone, from the capacity read). Right (1 fr): the **Deals and
+customers** table (search; Needs you / Watching / Agreed / Setup filters; columns customer and what, state word, effect on your
+cash, one action; the row that needs the owner on top, flagged amber; selecting a row turns the left column into that customer's
+context: the company KPIs stay, then the customer header and four facts, the decision bar, the chart with the dashed hypothetical
+path, and two half cards: "If Foshan accepts Option A" and "If Foshan pays 30 days late", both tagged hypothetical), and under
+it **What you are owed, by when** (the ageing strip: current / due soon / overdue, net at collection, concentration).
+
+New server aggregation (additive, on the Home read): `cash.flows` {window_days, money_in[], money_out[] by kind with
+amount and share, net} from the same projection events; the ageing strip from the receivables read; everything else as in §2.
+Rejected: revenue or profit charts (FLOW is not a P&L; the contribution is an estimate). Phone: everything stacks, the table last.
+
 ## 2. Component contracts (reads; nothing computed in the browser)
 
 | Component | Read | Fields (all existing or already specified) |
