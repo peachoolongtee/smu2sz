@@ -47,6 +47,7 @@ from app.api.presentation import (
 from app.api.presentation import tick_label as _short
 from app.api.receipt_basis import RECEIPT_KINDS, BasisReader, annotate
 from app.books import Books
+from app.config import get_settings
 from app.decisions.identity import deal_id
 from app.decisions.state import DealState, FundingState
 from app.domain.models import FacilityKind, FinancialState, LedgerEventKind, Mandate, Mode, ObligationType
@@ -1218,6 +1219,22 @@ def build(c: HomeRead) -> dict[str, Any]:
     att = attention(c, deals or [])
     if deals is None:
         att = {**att, "none_text": None, "incomplete": True}
-    return {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None), deals), "attention": att,
-            "funding_line": funding_line(c), "deals_card": deals_card(c, deals) if deals is not None else None,
-            "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
+    line = funding_line(c)
+    out: dict[str, Any] = {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None), deals), "attention": att,
+                           "funding_line": line, "deals_card": deals_card(c, deals) if deals is not None else None,
+                           "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
+    if get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
+        out["home_v2"] = _guarded_v2(c, att, line)
+    return out
+
+
+def _guarded_v2(c: HomeRead, att: dict[str, Any], line: dict[str, Any]) -> dict[str, Any] | None:
+    from app.api import home_v2
+
+    try:
+        return home_v2.build(c, att, line)
+    except Exception:
+        log.exception("the Home V2 fields could not be built")
+        if c.partial is not None:
+            c.partial.add("home_v2")
+        return None

@@ -215,6 +215,43 @@ def test_a_promised_payment_waits_and_is_not_cash(api: TestClient) -> None:
     assert next(c for c in w["customers"] if c["customer_id"] == "BUYER-1")["status_text"] == "1 waiting"
 
 
+def test_the_plan_waiting_on_approval_is_the_alerts_and_not_a_row_of_needs_you(api: TestClient) -> None:
+    from app.api.runtime import get_runtime
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+
+    store = get_runtime().store
+    _offer(api)
+    store.put_mandate(sign(store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    a = api.get("/home").json()["next_action"]
+    api.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]})
+    assert api.get("/home").json()["next_action"]["pending_approval_id"]
+    w = _get(api)
+    assert w["alert"]["text"] == "Reserve unsafe in 12 days. The funding plan waits for your approval."
+    assert w["alert"]["primary"] == {"label": "Review the plan", "href": "/"}
+    assert [i["kind"] for i in w["needs_you"]] == ["DECISION"]  # the approval of the company's own funding is the alert's
+    assert _get(api, "zh")["alert"]["text"] == "现金储备将在 12 天后变得不安全。融资方案正等待您批准。"
+
+
+def test_an_unsafe_reserve_with_nothing_to_run_has_an_alert_that_points_at_the_options(api: TestClient) -> None:
+    from app.api.runtime import get_runtime
+    from tests.api.test_home import _exhaust_line
+
+    _exhaust_line(get_runtime())
+    w = _get(api)
+    assert w["alert"]["text"] == "Reserve unsafe in 12 days. A funding plan is ready."  # the application for a facility is the plan
+    assert w["needs_you"] == [] and w["counts"]["needs_you"] == 0
+
+
+def test_the_alert_for_an_unsafe_reserve_with_no_plan_points_at_the_options() -> None:
+    home = {"cash": {"first_breach_day": 12, "first_breach_when": "in 12 days"}, "next_action": None, "status": "CRITICAL"}
+    en, zh = worklist._alert(home, "en"), worklist._alert({**home, "cash": {**home["cash"], "first_breach_when": "12 天后"}}, "zh")
+    assert en is not None and zh is not None
+    assert en["text"] == "Reserve unsafe in 12 days. No funding plan is ready yet." and en["primary"] == {"label": "See the options", "href": "/cash#cash-options"}
+    assert zh["text"] == "现金储备将在 12 天后变得不安全。目前还没有准备好的融资方案。" and zh["primary"]["label"] == "查看选项"
+    assert worklist._alert({"cash": {"first_breach_day": None}, "next_action": None}, "en") is None
+
+
 def test_an_arrival_after_the_day_last_read_is_new(api: TestClient) -> None:
     _offer(api)
     assert _get(api)["needs_you"][0]["is_new"] is False  # without a day last read nothing is new

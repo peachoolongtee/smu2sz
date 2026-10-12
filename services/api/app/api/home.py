@@ -64,6 +64,7 @@ from app.api.presentation import (
 from app.api.receipt_basis import BasisReader, agreement_days, annotate
 from app.api.runtime import get_runtime
 from app.books import current_books
+from app.config import get_settings
 from app.decisions.identity import deal_id, decision_id_for
 from app.domain.models import (
     FinancialState,
@@ -747,7 +748,8 @@ class Partial:
     LABELS: ClassVar[dict[str, tuple[str, str]]] = {"decision_record": ("the record of your decisions", "您的决策记录"),
               "reconciliation": ("the check of receipts against promises", "收款与约定的核对"),
               "summary": ("the summary of what needs you", "待办事项摘要"),
-              "receipt_basis": ("what each receipt rests on", "每笔收款的依据")}
+              "receipt_basis": ("what each receipt rests on", "每笔收款的依据"),
+              "home_v2": ("the Home V2 summary", "新版首页摘要")}
 
     def __init__(self) -> None:
         self.missing: list[str] = []
@@ -1254,6 +1256,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "deals_card": hybrid["deals_card"],
         "receivables_card": hybrid["receivables_card"],
         "changes_card": hybrid["changes_card"],
+        **({"home_v2": hybrid.get("home_v2")} if get_settings().features.home_v2 else {}),  # FEATURE_HOME_V2: with it off the read carries no V2 field
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),

@@ -1,0 +1,271 @@
+"""The Home read's Home V2 fields (design/home-v2 rounds 4 and 5, wave 1, the server half): `home_v2` on `GET /home`, behind FEATURE_HOME_V2.
+
+Composed from what the Home hybrid has already read (the position, the facts, the funding lots, the recommended plan, the books' own
+trajectory); no figure is computed here and no state word is invented. Every sentence goes through `t(lang, en, zh)` and is the
+prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
+
+    kpis.cash_available   today's cash, its room above the minimum, and where the minimum sits on a thin scale (`buffer`)
+    kpis.lowest_ahead     the lowest cash ahead on the CURRENT BOOKS: what the books hold with the plan only if it has run, never the
+                          plan ready but not run, never a hypothetical. The proposed plan's effect is a hint line (`with_plan_hint`).
+    kpis.funding          PROPOSED (the plan is ready; conditional on the owner; not cash), ARRANGED (the plan ran; what landed and what
+                          is pending; cash only when it lands) or NONE
+    action                the one company-side next action (the funding plan, ready or waiting for approval; the unsafe reserve with no
+                          plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
+                          company shows no filled primary here.
+    chart                 the scope the chart states, its legend (current / proposed / hypothetical) and the lowest point's inspector
+    links                 where the rest of the company's picture lives
+
+The proposed plan is "proposed" in these words (the prototype's), as in the funding KPI's eyebrow; `funding.state` PROPOSED is the
+financing vocabulary's PLANNED. A lot that has been run is "arranged" until it lands and "received" once it has (`state_of`).
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from urllib.parse import quote
+
+from app.api.home import _lowest_ahead
+from app.api.home_hybrid import (
+    HomeRead,
+    _cause_event,
+    _event_kind,
+    _noun,
+    _pending_lots,
+    _plan_has_run,
+    _short,
+    _sp,
+    _tone,
+    whole,
+)
+from app.api.presentation import t, when_text
+from app.domain.models import FundingLot
+from app.financial.lots import ensure_lots
+from app.strategy import words as basis_words
+
+_LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
+_BASIS_WORD = {basis_words.OWED: ("owed", "应收"), basis_words.SCHEDULED: ("scheduled", "按计划"), basis_words.AGREED: ("agreed", "已约定"),
+               basis_words.PENDING: ("pending", "待对方接受")}
+
+
+def _digit_gap(text: str) -> str:
+    """A space before a Chinese distance that starts with a number ("30 天后"), as the house writes it."""
+    return f" {text}" if text[:1].isdigit() else text
+
+
+def _eyebrow(lang: str, en: str, zh: str) -> str:
+    return t(lang, en.upper(), zh)
+
+
+# ---------------------------------------------------------------- the three KPIs
+
+
+def _cash_available(c: HomeRead) -> dict[str, Any]:
+    lang, cash, floor = c.lang, c.state.cash_fen, c.floor
+    gap = cash - floor
+    if gap > 0:
+        note = t(lang, f"{_short(gap)} above your {_short(floor)} minimum", f"比您 {_short(floor)} 的最低现金高 {_short(gap)}")
+    elif gap == 0:
+        note = t(lang, f"at your {_short(floor)} minimum", f"正好是您 {_short(floor)} 的最低现金")
+    else:
+        note = t(lang, f"{_short(-gap)} below your {_short(floor)} minimum", f"比您 {_short(floor)} 的最低现金低 {_short(-gap)}")
+    return {"eyebrow": _eyebrow(lang, "Cash available", "可用现金"), "value_display": whole(cash), "note": note,
+            "tone": _tone(cash, floor), "buffer": {"min_fen": floor, "cash_fen": cash, "min_display": _short(floor)}}
+
+
+def _lowest_ahead_kpi(c: HomeRead) -> dict[str, Any]:
+    """The lowest cash ahead on the books as they stand (`c.low`, the books' own trajectory): the plan is in it only if it has run."""
+    lang, floor = c.lang, c.floor
+    low_fen, low_day = c.low
+    when = when_text(low_day, c.today, lang)
+    gap = low_fen - floor
+    if gap > 0:
+        where = t(lang, f"{_short(gap)} above your minimum {when}", f"比您的最低现金高 {_short(gap)}（{when}）")
+    elif gap == 0:
+        where = t(lang, f"reaches your minimum {when}", f"{when}达到您的最低现金")
+    else:
+        where = t(lang, f"{_short(-gap)} below your minimum {when}", f"比您的最低现金低 {_short(-gap)}（{when}）")
+    basis = (t(lang, "current books, the plan ran", "当前账目，方案已执行") if _plan_has_run(c.state)
+             else t(lang, "current books, no new funding", "当前账目，未新增融资"))
+    if c.plan_traj is not None:
+        plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
+        hint = t(lang, f"If FLOW's plan executes: {whole(plan_fen)}, assuming the funds arrive as planned.",
+                 f"如果 FLOW 的方案执行：{whole(plan_fen)}，前提是资金按计划到账。")
+    else:
+        hint = t(lang, "No hypothetical applied.", "未应用任何假设。")
+    return {"eyebrow": _eyebrow(lang, "Lowest cash ahead", "未来最低现金"), "value_display": whole(low_fen),
+            "note": f"{where} · {basis}", "tone": _tone(low_fen, floor), "with_plan_hint": hint}
+
+
+def _lot_kind(lot: FundingLot, lang: str) -> str:
+    return t(lang, "invoice financing", "发票融资") if lot.receivable_id else t(lang, "credit-line draw", "信用额度提款")
+
+
+def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
+    lang = c.lang
+    ran = sorted((lot for lot in ensure_lots(c.state).lots if not lot.assumed_date and lot.remaining_fen > 0),
+                 key=lambda lot: (lot.arrival_day, lot.id))
+    pending = _pending_lots(c.state, c.today)
+    a = c.action
+    if pending:  # the plan ran: what landed and what is still to land
+        parts = []
+        for lot in ran:
+            amount, kind, when = _short(lot.remaining_fen), _lot_kind(lot, lang), when_text(lot.arrival_day, c.today, lang)
+            if lot.settled:
+                parts.append(t(lang, f"{amount} {kind} received {when}", f"{amount} {kind}已到账（{when}）"))
+            else:
+                parts.append(t(lang, f"{amount} {kind} expected {when}", f"{amount} {kind}预计{_digit_gap(when)}到账"))
+        owed = whole(sum(lot.remaining_fen for lot in pending))
+        return {"state": "ARRANGED", "eyebrow": _eyebrow(lang, "Funding arranged", "已安排的融资"),
+                "value_display": t(lang, f"{owed} pending", f"待到账 {owed}"), "note": " · ".join(parts),
+                "hint": t(lang, "Counted as cash only when it lands.", "到账后才计入现金。")}
+    if c.plan_traj is not None and a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
+        legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
+        kinds = {"DRAW_FACILITY": t(lang, "credit line", "信用额度"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
+        note = " + ".join(t(lang, f"{_short(leg['amount_fen'])} {kinds[leg['operation_kind']]} {leg['lands_when']}",
+                            f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}，{leg['lands_when']}") for leg in legs)
+        who = t(lang, "approving", "批准") if c.waiting else t(lang, "running", "执行")
+        return {"state": "PROPOSED", "eyebrow": _eyebrow(lang, "Proposed funding", "建议的融资"), "value_display": whole(a["receive_fen"]),
+                "note": note, "hint": t(lang, f"Conditional on you {who} the plan; not counted as cash.", f"取决于您是否{who}方案；不计入现金。")}
+    return {"state": "NONE", "eyebrow": _eyebrow(lang, "Funding", "融资"), "value_display": t(lang, "None", "无"),
+            "note": funding_line["text"], "hint": None}
+
+
+# ---------------------------------------------------------------- the one next action
+
+
+def _legs_text(c: HomeRead, a: dict[str, Any]) -> str:
+    lang = c.lang
+    kinds = {"DRAW_FACILITY": t(lang, "credit-line draw", "信用额度提款"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
+    legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
+    parts = [t(lang, f"{_short(leg['amount_fen'])} {kinds[leg['operation_kind']]} {leg['lands_when']}",
+               f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}（{leg['lands_when']}）") for leg in legs]
+    proposed = t(lang, "both proposed" if len(parts) > 1 else "proposed", "均为建议" if len(parts) > 1 else "建议执行")
+    return t(lang, ", ".join(parts) + f", {proposed}", "、".join(parts) + f"，{proposed}")
+
+
+def _before_what(c: HomeRead) -> str:
+    """"payroll in 12 days": the posting that takes cash below the reserve on the first breach day, and when."""
+    lang = c.lang
+    day = next((d for d in c.traj.days if c.breach_day is not None and d.day == c.breach_day), None)
+    event = _cause_event(day.events) if day is not None else None
+    when = when_text(c.breach_day, c.today, lang)
+    if event is None:
+        return t(lang, f"your reserve is breached {when}", f"现金储备{_digit_gap(when)}被突破")
+    noun = _noun(_event_kind(event), lang)
+    return t(lang, f"{noun} {when}", f"{noun}（{when}）")
+
+
+def _breach_eyebrow(c: HomeRead) -> str:
+    lang = c.lang
+    if c.breach_day is None:
+        return _eyebrow(lang, "Next action", "下一步")
+    n = max(c.breach_day - c.today, 0)
+    return t(lang, f"NEXT ACTION · WITHIN {n} {'DAY' if n == 1 else 'DAYS'}", f"下一步 · {n} 天内")
+
+
+def _next_arrivals(c: HomeRead) -> str:
+    """"¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed)": the funding landing and the next receipt, each with the word for what
+    it rests on."""
+    lang = c.lang
+    parts = [t(lang, f"{_short(lot.remaining_fen)} arrives {when_text(lot.arrival_day, c.today, lang)}",
+               f"{_short(lot.remaining_fen)} 将于{_digit_gap(when_text(lot.arrival_day, c.today, lang))}到账") for lot in _pending_lots(c.state, c.today)[:2]]
+    nxt = c.receivables.get("next_receipt")
+    if nxt is not None:
+        who = basis_words.buyer_short(nxt["buyer_name"])
+        b = c.basis.of_receivable(nxt["receivable_id"]) if c.basis is not None else None
+        word = f" ({t(lang, *_BASIS_WORD[b.code])})" if b is not None and b.code in _BASIS_WORD else ""
+        word_zh = f"（{t(lang, *_BASIS_WORD[b.code])}）" if b is not None and b.code in _BASIS_WORD else ""
+        parts.append(t(lang, f"{who} pays {_short(nxt['face_fen'])} {nxt['due_when']}{word}",
+                       f"{who}将于{_digit_gap(nxt['due_when'])}支付 {_short(nxt['face_fen'])}{word_zh}"))
+    if not parts:
+        return t(lang, "Nothing is expected to arrive in the forecast.", "预测期内没有预计到账的款项。")
+    return t(lang, "Next: " + "; ".join(parts) + ".", "接下来：" + "；".join(parts) + "。")
+
+
+def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
+    lang, a = c.lang, c.action
+    others = [i for i in att["items"] if i["kind"] in ("deal", "approval", "collection")
+              and not (a is not None and a.get("pending_approval_id") and i["key"] == f"approval:{a['pending_approval_id']}")]
+    if a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
+        waiting = bool(a.get("pending_approval_id"))
+        landing = any(leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen") for leg in a["legs"])
+        if landing and a.get("receive_fen"):  # a plan that brings cash: say how much, before what, and what it is made of
+            amount = whole(a["receive_fen"])
+            within = (t(lang, "needs your approval because of its cost", "因其成本需要您批准") if a["needs_owner"]
+                      else t(lang, "within your signed limits", "在您签署的授权内"))
+            approval = (t(lang, "your approval is needed", "需要您批准") if a["needs_owner"] else t(lang, "no approval needed", "无需批准"))
+            cost = a.get("cost_total_display")
+            title = t(lang, f"Secure {amount} before {_before_what(c)}.", f"请在{_before_what(c)}之前筹措 {amount}。")
+            text = t(lang, f"FLOW's plan {within}: {_legs_text(c, a)}" + (f" · cost {cost}" if cost else "") + f" · {approval}.",
+                     f"FLOW 的方案{within}：{_legs_text(c, a)}" + (f" · 成本 {cost}" if cost else "") + f" · {approval}。")
+        else:  # a step with no cash landing yet (an application for a facility): the action's own words, and who must act
+            title = str(a.get("outcome_title") or a.get("title") or c.headline)
+            text = f"{c.headline}{_sp(lang)}{a.get('authority_text') or ''}".strip()
+        key = next((i["key"] for i in att["items"] if i["kind"] == "funding"), None) or (
+            f"approval:{a['pending_approval_id']}" if waiting else None)
+        return {"variant": "ACTION", "key": key, "tone": "bad" if c.breach_day is not None else "warn", "eyebrow": _breach_eyebrow(c),
+                "title": title, "text": text,
+                "primary": ({"label": t(lang, "Review the plan", "查看方案"), "href": f"/approvals#approval-{quote(str(a['pending_approval_id']), safe='')}"}
+                            if waiting else {"label": t(lang, "Run the funding plan", "执行融资方案"), "href": "/cash#cash-options"}),
+                "secondary": {"label": t(lang, "Compare", "比较"), "href": "/cash#cash-options"},
+                "control": "APPROVE_PLAN" if waiting else "RUN_PLAN"}
+    if c.breach_day is not None:  # the reserve is unsafe and there is no plan to run: say so, point to the options
+        return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note,
+                "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
+    held = (t(lang, f" Your worklist still holds {len(others)} {'item' if len(others) == 1 else 'items'} for you.",
+              f"您的待办列表里还有 {len(others)} 项等您处理。") if others else "")
+    return {"variant": "QUIET", "key": None, "tone": "ok",
+            "eyebrow": _eyebrow(lang, "Nothing needs you from the company side", "公司层面没有需要您处理的事项"),
+            "title": (t(lang, "Your cash is covered on the plan that ran.", "按已执行的方案，您的现金是安全的。") if _plan_has_run(c.state)
+                      else t(lang, "Your cash is covered.", "您的现金是安全的。")),
+            "text": _next_arrivals(c) + held, "primary": None, "secondary": None, "control": None}
+
+
+# ---------------------------------------------------------------- the chart
+
+
+def _chart(c: HomeRead) -> dict[str, Any]:
+    lang, floor = c.lang, c.floor
+    legend = [{"label": (t(lang, "Current books · the plan ran", "当前账目 · 方案已执行") if _plan_has_run(c.state)
+                         else t(lang, "Current books · no new funding", "当前账目 · 未新增融资")), "kind": "current"}]
+    if c.plan_traj is not None:
+        legend.append({"label": t(lang, "If FLOW's plan executes (proposed)", "如果 FLOW 的方案执行（建议）"), "kind": "proposed"})
+    low_fen, low_day = c.low
+    gap = low_fen - floor
+    if gap < 0:
+        third = (t(lang, "Shortfall", "缺口"), whole(-gap))
+        if c.plan_traj is not None:
+            plan_fen, _ = _lowest_ahead(c.plan_traj, c.today)
+            note = t(lang, f"With FLOW's proposed plan: {whole(plan_fen)}, assuming it executes and the funds arrive as planned.",
+                     f"采用 FLOW 建议的方案：{whole(plan_fen)}，前提是方案执行且资金按计划到账。")
+        else:
+            note = t(lang, "FLOW has no funding plan that closes this yet.", "FLOW 目前没有能补上这一缺口的融资方案。")
+    else:
+        third = (t(lang, "Above your minimum", "高于您的最低现金"), whole(gap))
+        note = (t(lang, "At your minimum; nothing below it in the window.", "正好在您的最低现金上；预测期内没有低于它的时候。") if gap == 0
+                else t(lang, f"{_short(gap)} above your minimum; nothing below it in the window.",
+                       f"比您的最低现金高 {_short(gap)}；预测期内没有低于它的时候。"))
+    when = when_text(low_day, c.today, lang)
+    return {"scope_title": t(lang, "COMPANY CASH FORECAST", "公司现金预测"), "legend": legend,
+            "lowest_inspector": {"day_text": t(lang, f"The lowest point · {when}", f"最低点 · {when}"),
+                                 "projected_display": whole(low_fen), "minimum_display": whole(floor),
+                                 "third_label": third[0], "third_display": third[1], "note": note},
+            "note": t(lang, "Current books, nothing new assumed. The same figures as Cash & Funding.",
+                      "当前账目，没有假设任何新增事项。数字与现金与融资页一致。")}
+
+
+def _links(c: HomeRead) -> list[dict[str, str]]:
+    lang = c.lang
+    return [{"label": t(lang, "Where the cash goes", "现金的去向"), "href": "/cash#where-the-cash-goes"},
+            {"label": t(lang, "Facility headroom", "融资额度余量"), "href": "/cash#facility-headroom"},
+            {"label": t(lang, "What you are owed, by when", "应收款的到期时间"), "href": "/receivables"},
+            {"label": t(lang, "All deals", "全部交易"), "href": "/deals"}]
+
+
+def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any]) -> dict[str, Any]:
+    """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links."""
+    return {"kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
+            "action": _action(c, att), "chart": _chart(c), "links": _links(c)}
+
+
+__all__ = ["build"]
