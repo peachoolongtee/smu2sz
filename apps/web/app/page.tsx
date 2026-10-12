@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { PartialRead } from "@/components/business/freshness";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock, WorthLine } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
@@ -145,7 +145,9 @@ export default function HomePage() {
       ) : !h || (hasV2 && features.data === undefined) ? (
         <LoadingBlock rows={3} />
       ) : v2On ? (
-        <HomeV2Page h={h} fixer={fixer} loading={view.loading} onRetry={view.reload} />
+        <Suspense fallback={<LoadingBlock rows={3} />}>
+          <HomeV2Page h={h} fixer={fixer} loading={view.loading} onRetry={view.reload} />
+        </Suspense>
       ) : (
         <div className="space-y-5 sm:space-y-7" aria-busy={view.loading}>
           {h.cash.status_word ? <HomePosition h={h} /> : <StatusBlock h={h} />}

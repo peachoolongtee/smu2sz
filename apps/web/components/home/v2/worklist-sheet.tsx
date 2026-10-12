@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { XIcon } from "@/components/icons";
 import { Button } from "@/components/ui";
 import { WorklistBody } from "@/components/home/v2/worklist";
+import type { HomeSelection } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomersView, WorklistView } from "@/lib/types";
 
@@ -11,7 +12,7 @@ import type { CustomersView, WorklistView } from "@/lib/types";
  * The phone's worklist: a "Worklist (N)" button under the chart that opens the same tabs, search and rows in a bottom sheet. A native modal dialog: the page behind is
  * inert, focus stays inside and Tab wraps, Escape closes it and focus returns to the button. It arrives by the expanded duration (`motion-reveal`).
  */
-export function WorklistSheet({ read, customers }: { read: WorklistView; customers: CustomersView | null }) {
+export function WorklistSheet({ read, customers, selection }: { read: WorklistView; customers: CustomersView | null; selection?: HomeSelection }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
@@ -49,7 +50,7 @@ export function WorklistSheet({ read, customers }: { read: WorklistView; custome
               </Button>
             </div>
             <div className="pt-3">
-              <WorklistBody read={read} customers={customers} onAlertGo={() => setOpen(false)} />
+              <WorklistBody read={read} customers={customers} onAlertGo={() => setOpen(false)} selection={selection} onLeave={() => setOpen(false)} />
             </div>
           </>
         ) : null}

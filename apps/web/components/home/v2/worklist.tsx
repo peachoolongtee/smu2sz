@@ -6,8 +6,7 @@ import { AlertIcon } from "@/components/icons";
 import { Card, ErrorState, inputClass, LoadingBlock, textLinkClass } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
-import { customerHref } from "@/lib/customer-href";
-import { rowHref } from "@/lib/home-v2-href";
+import { type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomersView, HomeTone, WorklistCustomer, WorklistNeedsRow, WorklistSeverity, WorklistView, WorklistWaitingRow } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -55,15 +54,23 @@ function Severity({ severity }: { severity: WorklistSeverity }) {
 
 const ROW = "motion-press flex w-full items-start gap-3 border-t border-line px-4 py-3 text-left hover:bg-subtle";
 
+/** Is this row the selection the address holds? A decision is its deal; a customer is the customer with no deal chosen. */
+function isSelected(sel: Partial<HomeSelection> | null, current: HomeSelection): boolean {
+  return Boolean(sel && sel.customer && sel.customer === current.customer && (sel.decision ?? null) === (current.decision ?? null));
+}
+
 /** A row of Needs you or Waiting: the owner's dot, the subject, who acts, the consequence; the severity word at the right. The first row of Needs you says why it is first. */
-export function ActionRow({ row, first }: { row: WorklistNeedsRow | WorklistWaitingRow; first: boolean }) {
+export function ActionRow({ row, first, selection = NO_SELECTION, onLeave }: { row: WorklistNeedsRow | WorklistWaitingRow; first: boolean; selection?: HomeSelection; onLeave?: () => void }) {
   const { t } = useI18n();
+  // A row that is the Home's own selection opens in place (the address changes, nothing else); any other row leads where the server says.
+  const sel = rowSelection(row);
+  const selected = isSelected(sel, selection);
   const needs = row.owner === "NEEDS_YOU";
   const why = "why_first_text" in row && first ? row.why_first_text : null;
   const isNew = "is_new" in row && row.is_new;
   return (
-    <li data-testid="home-worklist-row" data-kind={row.kind} data-owner={row.owner}>
-      <Link href={rowHref(row)} className={ROW}>
+    <li data-testid="home-worklist-row" data-kind={row.kind} data-owner={row.owner} data-key={row.key}>
+      <Link href={sel ? selectionHref(sel) : rowHref(row)} scroll={false} aria-current={selected ? "true" : undefined} onClick={onLeave} className={`${ROW} ${selected ? "row-selected" : ""}`}>
         <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-pill ${needs ? (row.severity === "CRITICAL" ? DOT.bad : DOT.warn) : DOT.neutral}`} />
         <span className="min-w-0 flex-1">
           <span className="block break-words text-sm font-bold text-ink">
@@ -89,10 +96,11 @@ export function ActionRow({ row, first }: { row: WorklistNeedsRow | WorklistWait
 }
 
 /** A row of Customers: the name, how many negotiations and which need the owner, what is outstanding and its share; the tone's dot and word. */
-export function CustomerRow({ customer }: { customer: WorklistCustomer }) {
+export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { customer: WorklistCustomer; selection?: HomeSelection; onLeave?: () => void }) {
+  const sel = { customer: customer.customer_id, decision: null };
   return (
     <li data-testid="home-worklist-row" data-kind="CUSTOMER" data-customer={customer.customer_id}>
-      <Link href={customerHref(customer.customer_id)} className={ROW}>
+      <Link href={selectionHref(sel)} scroll={false} aria-current={isSelected(sel, selection) ? "true" : undefined} onClick={onLeave} className={`${ROW} ${isSelected(sel, selection) ? "row-selected" : ""}`}>
         <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-pill ${DOT[customer.tone]}`} />
         <span className="min-w-0 flex-1">
           <span className="block break-words text-sm font-bold text-ink">{customer.name}</span>
@@ -117,7 +125,7 @@ function scrollToAction(reduced: boolean) {
  * already fetched (by the customers' `search_terms`; nothing is computed), one hint line per tab, the rows and the way to the full list. A row opens its workspace.
  * The same body is the desktop panel and the phone sheet.
  */
-export function WorklistBody({ read, customers, onAlertGo }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void }) {
+export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECTION, onLeave }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void; selection?: HomeSelection; onLeave?: () => void }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const uid = useId();
@@ -198,9 +206,9 @@ export function WorklistBody({ read, customers, onAlertGo }: { read: WorklistVie
           </p>
         ) : (
           <ul>
-            {tab === "needs_you" ? needs.map((r, i) => <ActionRow key={r.key} row={r} first={i === 0 && !q} />) : null}
-            {tab === "waiting" ? waiting.map((r) => <ActionRow key={r.key} row={r} first={false} />) : null}
-            {tab === "customers" ? people.map((c) => <CustomerRow key={c.customer_id} customer={c} />) : null}
+            {tab === "needs_you" ? needs.map((r, i) => <ActionRow key={r.key} row={r} first={i === 0 && !q} selection={selection} onLeave={onLeave} />) : null}
+            {tab === "waiting" ? waiting.map((r) => <ActionRow key={r.key} row={r} first={false} selection={selection} onLeave={onLeave} />) : null}
+            {tab === "customers" ? people.map((c) => <CustomerRow key={c.customer_id} customer={c} selection={selection} onLeave={onLeave} />) : null}
           </ul>
         )}
       </div>
@@ -217,7 +225,7 @@ export function WorklistBody({ read, customers, onAlertGo }: { read: WorklistVie
  * The right column (360 px from `xl`): the worklist in a `Card`. `read` null is a server that does not have the worklist; the page then has no panel. A read in flight is a
  * loading block, a read that failed is the error state with Retry. A fresh read does not reorder the list while focus is in it.
  */
-export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void }) {
+export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo, selection }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void; selection?: HomeSelection }) {
   const { t } = useI18n();
   const [settled, handlers] = useSettled(read ?? undefined);
   const titleId = useId();
@@ -234,7 +242,7 @@ export function WorklistPanel({ read, customers, loading, error, onRetry, onAler
         ) : !settled ? (
           <div className="px-4">{loading ? <LoadingBlock rows={3} label={t("hv2.work.loading")} /> : null}</div>
         ) : (
-          <WorklistBody read={settled} customers={customers ?? null} onAlertGo={onAlertGo} />
+          <WorklistBody read={settled} customers={customers ?? null} onAlertGo={onAlertGo} selection={selection} />
         )}
       </div>
     </Card>
