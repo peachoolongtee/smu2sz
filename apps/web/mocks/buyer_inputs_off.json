@@ -3,6 +3,7 @@
     "buyer_id": "BUYER-1",
     "inputs": [],
     "rows_stored": 0,
+    "eyebrow_text": "Foshan Home Retail Co. · What you know about this customer",
     "fields": [
       {
         "key": "annual_sales",
@@ -26,10 +27,10 @@
         "value_display": "20%",
         "input_text": "20%",
         "provenance_key": "DEMO",
-        "provenance_text": "assumed for the Demo",
+        "provenance_text": "assumed for the Demo, not confirmed by you",
         "entered_day_text": null,
         "editable": false,
-        "note": "Your company-wide gross margin until you enter Foshan's own",
+        "note": "The Demo assumes this until you enter Foshan's own",
         "options": []
       },
       {
@@ -142,7 +143,7 @@
     ],
     "footer_text": "Saved as a dated entry in your name. Your books, the verdict and every approval stay exactly as they are.",
     "economics_on": false,
-    "economics_off_text": "These facts cannot be saved yet: it belongs to a later phase (customer economics), which is switched off (FEATURE_CUSTOMER_ECONOMICS).",
+    "economics_off_text": "Customer economics is not switched on yet, so these facts cannot be saved.",
     "context": {
       "back": {
         "label": "Back to Foshan",
@@ -156,6 +157,7 @@
     "buyer_id": "BUYER-1",
     "inputs": [],
     "rows_stored": 0,
+    "eyebrow_text": "Foshan Home Retail Co. · 您对这位客户的了解",
     "fields": [
       {
         "key": "annual_sales",
@@ -179,10 +181,10 @@
         "value_display": "20%",
         "input_text": "20%",
         "provenance_key": "DEMO",
-        "provenance_text": "为演示而假设",
+        "provenance_text": "为演示而假设，尚未经您确认",
         "entered_day_text": null,
         "editable": false,
-        "note": "在您填写Foshan Home Retail Co.自己的毛利率之前，使用公司整体毛利率",
+        "note": "在您填写Foshan Home Retail Co.自己的毛利率之前，演示假设此数值",
         "options": []
       },
       {
@@ -295,7 +297,7 @@
     ],
     "footer_text": "以您的名义保存为一条带日期的记录。您的账目、结论和每一项审批都保持不变。",
     "economics_on": false,
-    "economics_off_text": "这些信息暂时无法保存：它属于后续阶段（客户盈利分析），目前未开启（FEATURE_CUSTOMER_ECONOMICS）。",
+    "economics_off_text": "客户盈利分析尚未开启，因此这些信息暂时无法保存。",
     "context": {
       "back": {
         "label": "返回Foshan",

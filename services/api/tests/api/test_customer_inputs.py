@@ -322,8 +322,9 @@ def test_the_sheet_reads_the_three_facts_and_the_delay_in_the_boards_order(api: 
         "Annual sales to Foshan", "¥5,460,000", "¥5,460,000", "projected from your books")
     assert sales["note"] == "From your books: ¥420,000 every 30 days, 13 invoices in the next 12 months"
     assert (margin["label"], margin["value_display"], margin["provenance_text"], margin["entered_day_text"]) == (
-        "Gross margin on Foshan's orders", "20%", "assumed for the Demo", None)
-    assert margin["note"] == "Your company-wide gross margin until you enter Foshan's own"
+        "Gross margin on Foshan's orders", "20%", "assumed for the Demo, not confirmed by you", None)
+    assert margin["note"] == "The Demo assumes this until you enter Foshan's own"
+    assert b["eyebrow_text"] == "Foshan Home Retail Co. · What you know about this customer"
     assert [o["value"] for o in rows["classification"]["options"]] == ["NORMAL", "IMPORTANT", "STRATEGIC"]
     assert rows["classification"]["note"] == "This changes nothing FLOW does on its own."
     assert rows["classification"]["options"][2]["note"].startswith('Context only: FLOW says "Foshan is marked Strategic')
@@ -341,7 +342,8 @@ def test_the_sheet_reads_the_three_facts_and_the_delay_in_the_boards_order(api: 
 def test_the_sheet_in_chinese_leaves_no_english(api: TestClient) -> None:
     b = _sheet(api, "zh")
     rows = _by(b["fields"])
-    assert rows["gross_margin"]["provenance_text"] == "为演示而假设" and rows["annual_sales"]["provenance_text"] == "根据您的账目推算"
+    assert rows["gross_margin"]["provenance_text"] == "为演示而假设，尚未经您确认" and rows["annual_sales"]["provenance_text"] == "根据您的账目推算"
+    assert b["eyebrow_text"] == "Foshan Home Retail Co. · 您对这位客户的了解"
     assert rows["annual_sales"]["note"] == "来自您的账目：每 30 天 ¥420,000，未来 12 个月 13 张发票"
     assert b["vat_note"] == "按开票金额（未设置增值税状态）"
     words = {"rows": [{k: v for k, v in r.items() if k in ("label", "value_display", "provenance_text", "note")} for r in b["fields"] + b["firm"]],
@@ -401,6 +403,7 @@ def test_the_company_average_stands_in_until_the_buyers_own(api: TestClient) -> 
     _post(api, {"field": "company_gross_margin_bp", "value_text": "23.76%", "provenance": "OWNER_ENTERED"}, buyer=None)
     margin = _by(_sheet(api)["fields"])["gross_margin"]
     assert (margin["value_display"], margin["provenance_text"]) == ("23.76%", "company average, estimated")
+    assert margin["note"] == "Your company-wide gross margin until you enter Foshan's own"
     overview = api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()
     assert _by(overview["economics"])["gross_margin"]["note"] == "company average, estimated"
     firm = api.get("/firm/inputs", headers=OWNER).json()
@@ -418,9 +421,9 @@ def test_with_economics_off_the_sheet_says_why_and_saves_nothing(api: TestClient
     monkeypatch.delenv("FEATURE_CUSTOMER_ECONOMICS")
     b = _sheet(api)
     assert b["economics_on"] is False and b["economics_off_text"] == (
-        "These facts cannot be saved yet: it belongs to a later phase (customer economics), which is switched off "
-        "(FEATURE_CUSTOMER_ECONOMICS).")
+        "Customer economics is not switched on yet, so these facts cannot be saved.")
+    assert "FEATURE_" not in b["economics_off_text"]
     assert not _by(b["fields"])["gross_margin"]["editable"] and _by(b["fields"])["typical_delay"]["editable"]
     assert api.get(f"/customers/{BUYER}/overview", headers=OWNER).json()["edit_href"] is None
     zh = _sheet(api, "zh")
-    assert zh["economics_off_text"].startswith("这些信息暂时无法保存：") and english_leaks({"t": zh["economics_off_text"]}) == []
+    assert zh["economics_off_text"] == "客户盈利分析尚未开启，因此这些信息暂时无法保存。" and english_leaks({"t": zh["economics_off_text"]}) == []

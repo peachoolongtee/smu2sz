@@ -47,17 +47,24 @@ function errorText(e: unknown): string {
  * for the form; Save sends only what the owner changed, field by field, as typed (the server parses it), then reads the sheet again so every
  * figure, provenance word and entered day shown is the server's. With the economics fields refused, the server's sentence and no form.
  */
-export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetView; onSaved: (status: string) => void; note?: string | null }) {
+/** What a Save left behind for the sheet read again after it: its status, and the fields that failed with what the owner typed and why. */
+export interface SaveCarry {
+  status: string | null;
+  values: Record<string, string>;
+  errors: Record<string, string>;
+}
+
+export function InputsSheet({ view, onSaved, carry = null }: { view: InputSheetView; onSaved: (carry: SaveCarry) => void; carry?: SaveCarry | null }) {
   const { t, lang } = useI18n();
   const uid = useId();
   const rows = view.fields ?? [];
   const firm = view.firm ?? [];
   const all = [...rows, ...firm];
   const initial = Object.fromEntries(all.map((r) => [r.key, r.input_text]));
-  const [values, setValues] = useState<Record<string, string>>(initial);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>({ ...initial, ...(carry?.values ?? {}) });
+  const [errors, setErrors] = useState<Record<string, string>>(carry?.errors ?? {});
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(note);
+  const [status, setStatus] = useState<string | null>(carry?.status ?? null);
   const back = view.context?.back ?? null;
   const by = Object.fromEntries(all.map((r) => [r.key, r]));
   const set = (key: string, v: string) => setValues((cur) => ({ ...cur, [key]: v }));
@@ -94,8 +101,10 @@ export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetVi
     setBusy(false);
     setErrors(failed);
     if (Object.keys(failed).length < changed.length) {
-      setStatus(t("inputs.saved"));
-      if (!Object.keys(failed).length) onSaved(t("inputs.saved"));  // read again: every value shown is what the server now holds
+      // read again, so every value, provenance word and entered day shown is what the server now holds; a field that failed keeps what
+      // the owner typed and the server's reason, and a field that saved starts again from the server's value (never sent twice)
+      const kept = Object.fromEntries(Object.keys(failed).map((k) => [k, values[k]]));
+      onSaved({ status: t("inputs.saved"), values: kept, errors: failed });
     }
   }
 
@@ -133,7 +142,7 @@ export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetVi
         <form onSubmit={submit} noValidate className="space-y-5">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.06em] text-ink-3">
-              {t("inputs.eyebrow")}
+              {view.eyebrow_text ?? t("inputs.eyebrow")}
             </p>
             <h1 id={`${uid}-title`} className="mt-1.5 font-display text-2xl font-extrabold tracking-[-0.02em] text-ink">
               {t("inputs.heading")}
@@ -162,6 +171,8 @@ export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetVi
                   {basis && basis.options.length ? (
                     <select
                       aria-label={basis.label}
+                      aria-invalid={errors.margin_basis ? true : undefined}
+                      aria-describedby={errors.margin_basis ? `${uid}-margin_basis-err` : undefined}
                       value={values.margin_basis ?? basis.input_text}
                       onChange={(e) => set("margin_basis", e.target.value)}
                       disabled={!basis.editable || busy}
@@ -177,7 +188,8 @@ export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetVi
                   ) : null}
                 </div>
                 <Source row={margin} id={`${uid}-${margin.key}-src`} />
-                <FieldError text={errors[margin.key] ?? errors.margin_basis} id={`${uid}-${margin.key}-err`} />
+                <FieldError text={errors[margin.key]} id={`${uid}-${margin.key}-err`} />
+                <FieldError text={errors.margin_basis} id={`${uid}-margin_basis-err`} />
               </div>
             ) : null}
           </div>
@@ -197,7 +209,7 @@ export function InputsSheet({ view, onSaved, note = null }: { view: InputSheetVi
               <span id={`${uid}-class`} className="text-[13px] font-bold text-ink">
                 {klass.label}
               </span>
-              <div className="self-start">
+              <div className="self-start" aria-describedby={errors[klass.key] ? `${uid}-${klass.key}-err` : undefined}>
                 <SegmentedButtons
                   label={klass.label}
                   value={values.classification ?? ""}

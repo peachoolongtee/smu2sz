@@ -25,7 +25,13 @@ from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 from typing import Any
 
-from app.api.customer_overview import margin_held, projected_sales_fen, projection_text, sales_held
+from app.api.customer_overview import (
+    demo_words,
+    margin_held,
+    projected_sales_fen,
+    projection_text,
+    sales_held,
+)
 from app.api.presentation import Lang, party_name, t, when_text
 from app.domain.models import FinancialState
 from app.domain.money import fmt_pct
@@ -172,7 +178,7 @@ def _source(rec: CustomerInputRecord | None, lang: Lang) -> tuple[str, str]:
     if rec is None:
         return "NONE", t(lang, "not entered yet", "尚未填写")
     if rec.entered_by == DEMO_ENTERED_BY:
-        return "DEMO", t(lang, "assumed for the Demo", "为演示而假设")
+        return "DEMO", demo_words(lang)
     if rec.provenance == "OWNER_ENTERED":
         return "OWNER", t(lang, "you entered", "由您填写")
     return rec.provenance, provenance_words(rec.provenance, lang)
@@ -237,15 +243,16 @@ def sheet(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: i
                  economics_on, sales_note)]
 
     margin = margin_held(state, inputs, buyer_id, today)
+    own = latest(InputField.MARGIN_BP)
+    m_note: str | None = None
     if margin.assumed:
-        m_source = ("DEMO", t(lang, "assumed for the Demo", "为演示而假设"))
+        m_source = ("DEMO", demo_words(lang))
+        m_note = t(lang, f"The Demo assumes this until you enter {who}'s own", f"在您填写{who}自己的毛利率之前，演示假设此数值")
     elif margin.company:
         m_source = ("COMPANY", t(lang, "company average, estimated", "公司平均，估算"))
+        m_note = t(lang, f"Your company-wide gross margin until you enter {who}'s own", f"在您填写{who}自己的毛利率之前，使用公司整体毛利率")
     else:
         m_source = _source(margin.record, lang)
-    own = latest(InputField.MARGIN_BP)
-    m_note = None if own is not None and own.entered_by == OWNER else t(
-        lang, f"Your company-wide gross margin until you enter {who}'s own", f"在您填写{who}自己的毛利率之前，使用公司整体毛利率")
     rows.append(_row("gross_margin", InputField.MARGIN_BP, "buyer", t(lang, f"Gross margin on {who}'s orders", f"{who}订单的毛利率"),
                      _pct(margin.bp), _pct(margin.bp), m_source, _entered(own, today, lang), economics_on, m_note))
 
@@ -303,7 +310,8 @@ def sheet(state: FinancialState, inputs: CustomerInputs, buyer_id: str, today: i
     ]
     vat_note = (t(lang, "as invoiced (VAT status not set)", "按开票金额（未设置增值税状态）") if not isinstance(vat, int) or isinstance(vat, bool)
                 else t(lang, f"Sales include VAT at {_pct(vat)}; the margin does not.", f"销售额含 {_pct(vat)} 增值税；毛利率不含。"))
-    return {"fields": rows, "firm": firm, "vat_note": vat_note,
+    return {"eyebrow_text": t(lang, f"{name} · What you know about this customer", f"{name} · 您对这位客户的了解"),
+            "fields": rows, "firm": firm, "vat_note": vat_note,
             "consistency": _consistency(state, buyer_id, who, sales, margin.bp, projected, lang),
             "footer_text": t(lang, "Saved as a dated entry in your name. Your books, the verdict and every approval stay exactly as they are.",
                              "以您的名义保存为一条带日期的记录。您的账目、结论和每一项审批都保持不变。")}

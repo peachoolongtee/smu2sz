@@ -59,9 +59,10 @@
 // books' overview with the exposure panel off and the server's note for it), which the mock serves while the spec's hook key is set.
 //
 // --inputs records ONLY apps/web/mocks/buyer_inputs.json and exits (the owner's Inputs sheet, ticket #97): { en, zh } of the opening sheet
-// (GET /buyers/BUYER-1/inputs, and again with the deal's `decision` for its back link), the firm read (GET /firm/inputs), the overview
-// before and after, the 422 a margin of 150% gets, the answer to saving a margin of 25% (POST /buyers/BUYER-1/inputs, `value_text`), and
-// the sheet after that save. The API needs FEATURE_EXPOSURE=1 FEATURE_CUSTOMER_ECONOMICS=1 and the other flags as above:
+// (GET /buyers/BUYER-1/inputs, read without a context: the mock serves it for any query, its back link the plain one to the customer),
+// the firm read (GET /firm/inputs; kept as the server's answer, the page itself shows the sheet's own firm rows), the overview before and
+// after, the 422 a margin of 150% gets, the answer to saving a margin of 25% (POST /buyers/BUYER-1/inputs, `value_text`), and the sheet
+// after that save. The API needs FEATURE_EXPOSURE=1 FEATURE_CUSTOMER_ECONOMICS=1 and the other flags as above:
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_CUSTOMER_ECONOMICS=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8197
 //   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
 // and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet

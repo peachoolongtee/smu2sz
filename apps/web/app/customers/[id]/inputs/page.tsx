@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { InputsSheet } from "@/components/customer/inputs-sheet";
+import { InputsSheet, type SaveCarry } from "@/components/customer/inputs-sheet";
 import { ButtonLink, EmptyState, ErrorState, LoadingBlock } from "@/components/ui";
 import { getBuyerInputs } from "@/lib/api";
 import { readContext } from "@/lib/customer-href";
@@ -39,7 +39,7 @@ function Inputs() {
   const asked = JSON.stringify([id, lang, ctx.decision ?? null, ctx.path ?? null, ctx.invoice ?? null]);
   const read = useAsync(async () => ({ asked, view: await getBuyerInputs(id, lang, ctx) }), [asked]);
   const missing = read.error instanceof ApiError && read.error.status === 404;
-  const [note, setNote] = useState<string | null>(null);
+  const [carry, setCarry] = useState<SaveCarry | null>(null);
 
   if (missing)
     return (
@@ -59,9 +59,9 @@ function Inputs() {
   if (!read.data || read.data.asked !== asked) return <LoadingBlock rows={4} label={t("inputs.loading")} />;
   // keyed by the read, so a saved sheet starts again from what the server now holds
   const view = read.data.view;
-  const saved = (status: string) => {
-    setNote(status);
+  const saved = (next: SaveCarry) => {
+    setCarry(next);
     read.reload();
   };
-  return <InputsSheet key={JSON.stringify([...(view.fields ?? []), ...(view.firm ?? [])].map((f) => [f.input_text, f.provenance_text]))} view={view} onSaved={saved} note={note} />;
+  return <InputsSheet key={JSON.stringify([...(view.fields ?? []), ...(view.firm ?? [])].map((f) => [f.input_text, f.provenance_text]))} view={view} onSaved={saved} carry={carry} />;
 }

@@ -3432,6 +3432,8 @@ export interface InputCheck {
 /** GET /buyers/{id}/inputs?lang&decision&path&invoice: the sheet. Every section is optional: the page draws what the server sent. */
 export interface InputSheetView {
   buyer_id: string;
+  /** "Foshan Home Retail Co. · What you know about this customer": the board's eyebrow, the name the books give the customer. */
+  eyebrow_text?: string;
   fields?: InputSheetRow[];
   firm?: InputSheetRow[];
   vat_note?: string | null;

@@ -4,6 +4,7 @@
       "buyer_id": "BUYER-1",
       "inputs": [],
       "rows_stored": 0,
+      "eyebrow_text": "Foshan Home Retail Co. · What you know about this customer",
       "fields": [
         {
           "key": "annual_sales",
@@ -27,10 +28,10 @@
           "value_display": "20%",
           "input_text": "20%",
           "provenance_key": "DEMO",
-          "provenance_text": "assumed for the Demo",
+          "provenance_text": "assumed for the Demo, not confirmed by you",
           "entered_day_text": null,
           "editable": true,
-          "note": "Your company-wide gross margin until you enter Foshan's own",
+          "note": "The Demo assumes this until you enter Foshan's own",
           "options": []
         },
         {
@@ -157,6 +158,7 @@
       "buyer_id": "BUYER-1",
       "inputs": [],
       "rows_stored": 0,
+      "eyebrow_text": "Foshan Home Retail Co. · 您对这位客户的了解",
       "fields": [
         {
           "key": "annual_sales",
@@ -180,10 +182,10 @@
           "value_display": "20%",
           "input_text": "20%",
           "provenance_key": "DEMO",
-          "provenance_text": "为演示而假设",
+          "provenance_text": "为演示而假设，尚未经您确认",
           "entered_day_text": null,
           "editable": true,
-          "note": "在您填写Foshan Home Retail Co.自己的毛利率之前，使用公司整体毛利率",
+          "note": "在您填写Foshan Home Retail Co.自己的毛利率之前，演示假设此数值",
           "options": []
         },
         {
@@ -695,7 +697,7 @@
         "entered_by": "OWNER",
         "entered_day": 0,
         "state_version": 1,
-        "recorded_at": "2026-10-12T12:09:48.293021+00:00",
+        "recorded_at": "2026-10-12T13:32:54.131984+00:00",
         "seq": 1
       },
       "state_version": 1,
@@ -714,7 +716,7 @@
         "entered_by": "OWNER",
         "entered_day": 0,
         "state_version": 1,
-        "recorded_at": "2026-10-12T12:09:48.445425+00:00",
+        "recorded_at": "2026-10-12T13:32:54.290311+00:00",
         "seq": 1
       },
       "state_version": 1,
@@ -737,11 +739,12 @@
           "entered_by": "OWNER",
           "entered_day": 0,
           "state_version": 1,
-          "recorded_at": "2026-10-12T12:09:48.445425+00:00",
+          "recorded_at": "2026-10-12T13:32:54.290311+00:00",
           "seq": 1
         }
       ],
       "rows_stored": 1,
+      "eyebrow_text": "Foshan Home Retail Co. · What you know about this customer",
       "fields": [
         {
           "key": "annual_sales",
@@ -906,11 +909,12 @@
           "entered_by": "OWNER",
           "entered_day": 0,
           "state_version": 1,
-          "recorded_at": "2026-10-12T12:09:48.445425+00:00",
+          "recorded_at": "2026-10-12T13:32:54.290311+00:00",
           "seq": 1
         }
       ],
       "rows_stored": 1,
+      "eyebrow_text": "Foshan Home Retail Co. · 您对这位客户的了解",
       "fields": [
         {
           "key": "annual_sales",

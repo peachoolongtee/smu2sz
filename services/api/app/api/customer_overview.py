@@ -279,8 +279,12 @@ def projection_text(state: FinancialState, buyer_id: str, today: int, lang: Lang
     return t(lang, "From your books: " + "; ".join(parts_en), "来自您的账目：" + "；".join(parts_zh))
 
 
-def _demo_words(lang: Lang) -> str:
+def demo_words(lang: Lang) -> str:
+    """The one wording of the Demo's assumed margin, for this page and the Inputs sheet."""
     return t(lang, "assumed for the Demo, not confirmed by you", "为演示而假设，尚未经您确认")
+
+
+_demo_words = demo_words
 
 
 def _contribution_fen(r: _Basis) -> int | None:

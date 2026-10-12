@@ -81,7 +81,7 @@ def _later_phase(f: InputField, lang: Lang) -> HTTPException:
 
 def economics_off_text(lang: Lang) -> str:
     """The sheet's quiet notice while the economics fields are refused: the same reason the 422 gives."""
-    return t(lang, f"These facts cannot be saved yet: {LATER_PHASE[0]}.", f"这些信息暂时无法保存：{LATER_PHASE[1]}。")
+    return t(lang, "Customer economics is not switched on yet, so these facts cannot be saved.", "客户盈利分析尚未开启，因此这些信息暂时无法保存。")
 
 
 def _value(body: InputBody, lang: Lang) -> InputValue:

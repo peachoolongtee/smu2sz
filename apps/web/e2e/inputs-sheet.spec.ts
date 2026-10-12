@@ -35,6 +35,7 @@ test("the sheet: three facts and the delay, each with where it came from, the ch
   await page.goto(SHEET);
   const en = rec.opening.en;
   await expect(page.locator("h1")).toHaveText("Three facts FLOW cannot read from your books");
+  await expect(page.getByText(en.eyebrow_text as string)).toBeVisible();
   const sales = row(en, "annual_sales");
   await expect(page.getByText(sales.label as string, { exact: true })).toBeVisible();
   await expect(page.getByTestId("inputs-input-annual_sales")).toHaveValue(sales.input_text as string);
@@ -92,6 +93,19 @@ test("a value the field does not take: the server's sentence, under the field, a
   await expect(page.getByTestId("inputs-error")).toHaveText(rec.rejected.en.detail.message);
   await expect(page.getByTestId("inputs-status")).toHaveText("");
   await expect(page.getByTestId("inputs-input-gross_margin")).toHaveAttribute("aria-invalid", "true");
+});
+
+test("a Save that partly fails: what saved reads as the server holds it and is not sent again, what failed keeps the owner's value and why", async ({ page }) => {
+  await page.goto(SHEET);
+  await page.getByTestId("inputs-input-gross_margin").fill("25%");  // recorded: saved
+  await page.getByTestId("inputs-input-typical_delay").fill("10");  // not recorded: the mock refuses it
+  await page.getByTestId("inputs-save").click();
+  await expect(page.getByTestId("inputs-status")).toHaveText("Saved. The facts below are what FLOW now holds.");
+  const after = row(rec.after_margin.en, "gross_margin");
+  await expect(page.getByTestId("inputs-provenance-gross_margin")).toHaveText(`${after.provenance_text} · ${after.entered_day_text}`);
+  await expect(page.getByTestId("inputs-input-typical_delay")).toHaveValue("10");
+  await expect(page.getByTestId("inputs-error")).toHaveCount(1);
+  await expect(page.getByTestId("inputs-input-typical_delay")).toHaveAttribute("aria-invalid", "true");
 });
 
 test("with the customer economics off: the server's sentence as a quiet notice and no form", async ({ page }) => {
