@@ -150,7 +150,7 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("deal-if-accept")).toHaveText("If you accept the offer as asked:");
   // The picture says the same in its own words: the decisive moment, the asked path's tile and its column's lowest point and first breach.
   await expect(page.getByTestId("path-moment")).toContainText("As asked, cash is below your minimum");
-  await expect(page.getByTestId("path-tile-0")).toContainText("¥209,960.00");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
   await expect(page.getByTestId("path-col-lowest-0")).toHaveText("Lowest ¥165k, in 60 days");
   await expect(page.getByTestId("path-col-breach-0")).toContainText("in 47 days");
   await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
@@ -162,18 +162,18 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   const response = page.locator("#counters");
   await expect(page.getByTestId("path-col-1")).toContainText("FLOW recommends");
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
-  await expect(page.getByTestId("path-col-basis-1")).toHaveText("once; nothing ongoing");
+  await expect(page.getByTestId("path-col-basis-1")).toHaveText("once, nothing ongoing");
+  // (the net's zero is never alone: its basis says "net" and both parts stand beneath it)
   const b = page.getByTestId("path-col-2");
-  await expect(b).toContainText("Net economic cost");
-  await expect(page.getByTestId("path-col-cost-2")).toContainText("¥0");
-  await expect(page.getByTestId("path-col-cost-2")).not.toHaveText("¥0.00");
-  await expect(b).toContainText("¥16,217.95");
-  await expect(b).toContainText("¥16,380.00");
-  await expect(b).not.toContainText("¥0.00");
+  await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
+  await expect(page.getByTestId("path-col-basis-2")).toHaveText("net over 12 months");
+  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,217.95");
+  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,380.00");
   await expect(b).not.toContainText("CTR-");
-  // The asked path's total and what it is measured over.
-  await expect(page.getByTestId("path-col-cost-0")).toHaveText("¥28,326.92");
-  await expect(page.getByTestId("path-col-basis-0")).toContainText("over 12 months");
+  // The asked path: its ongoing and its one-off cost as two figure lines, with no single total.
+  await expect(page.getByTestId("path-col-cost-0")).toHaveCount(0);
+  await expect(page.getByTestId("path-col-forward-0")).toHaveText("¥28,326.92 over 12 months");
+  await expect(page.getByTestId("path-col-once-0")).toHaveText("¥5,040.00 once");
 
   // With the check done there is no Action left to take on this card: the response carries the page's one filled call ("Send this counter").
   await expect(next).toHaveCount(0);

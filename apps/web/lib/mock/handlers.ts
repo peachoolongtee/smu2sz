@@ -29,11 +29,8 @@ import type {
   CapexView,
   ContractFixture,
   DealsView,
-  MomentValue,
   NavCounts,
   OfferPictureView,
-  PictureMoment,
-  PicturePath,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -985,35 +982,7 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
-  return patchPicture({ ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId });
-}
-
-/**
- * A spec can lay fields over the recorded picture (JSON in this key, by index: `{ paths: { "0": { ... } }, moments: { "3": { word, values: { "0": { ... } } } } }`)
- * to exercise the optional fields a newer server sends (moment words, tones, events, costs and authority classes) before the mock is recorded again. The
- * recorded files are never edited; with the key unset the picture is exactly what was recorded.
- */
-export const PICTURE_PATCH_KEY = "tl-mock-picture-patch";
-
-type IndexPatch<T> = Record<string, Partial<T>>;
-function patchPicture(pic: OfferPictureView): OfferPictureView {
-  let patch: { paths?: IndexPatch<PicturePath>; moments?: Record<string, Partial<PictureMoment> & { values?: IndexPatch<MomentValue> }> } | null = null;
-  try {
-    const raw = typeof window === "undefined" ? null : window.sessionStorage.getItem(PICTURE_PATCH_KEY);
-    patch = raw ? JSON.parse(raw) : null;
-  } catch {
-    patch = null;
-  }
-  if (!patch) return pic;
-  for (const [i, over] of Object.entries(patch.paths ?? {})) if (pic.paths?.[Number(i)]) Object.assign(pic.paths[Number(i)], over);
-  for (const [i, over] of Object.entries(patch.moments ?? {})) {
-    const m = pic.moments?.[Number(i)];
-    if (!m) continue;
-    const { values, ...rest } = over;
-    Object.assign(m, rest);
-    for (const [j, v] of Object.entries(values ?? {})) if (m.values[Number(j)]) Object.assign(m.values[Number(j)], v);
-  }
-  return pic;
+  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

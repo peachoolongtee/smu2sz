@@ -122,7 +122,7 @@ export function PathsBody({ picture, state, v, negotiation }: { picture: OfferPi
       <Card flat id="deal-paths-head" title={t("biz.deals.paths.title")}>
         <div className="space-y-3 pt-1">
           <PathsPicture picture={full} pick={state.pick} hoverKey={state.hoverKey} onHover={state.onHover} stop={state.stop} onStop={state.onStop} />
-          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} />
+          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} />
         </div>
       </Card>
     </section>

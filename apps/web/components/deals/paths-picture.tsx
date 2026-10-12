@@ -118,7 +118,7 @@ export function PathsPicture({
   const hi = Math.max(...levels);
   const yLo = axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = axis ? Math.max(axis.max_fen, hi) : hi + Math.max((hi - lo) * 0.08, 1);
-  const H = W < 520 ? 216 : 224;
+  const H = W < 520 ? 216 : 208;
   const gutter = axis ? Math.ceil(Math.max(...axis.ticks.map((k) => textWidth(k.label, false)))) + 8 : 0;
   const pl = PAD.l + gutter;
   const pr = W - PAD.r;

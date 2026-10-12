@@ -35,6 +35,7 @@ export function PathColumns({
   onPick,
   onHover,
   economics,
+  windowMonths,
 }: {
   paths: PicturePath[];
   pick: string;
@@ -42,6 +43,8 @@ export function PathColumns({
   onHover: (key: string | null) => void;
   /** The verifier's economics of the counter behind a reply path, when it has one. */
   economics: (p: PicturePath) => CounterEconomics | null;
+  /** The server's valuation window in months (the verdict's `financial_impact.window_months`), for the words of the ongoing figure. */
+  windowMonths?: number | null;
 }) {
   const { t } = useI18n();
   const group = useRef<HTMLDivElement>(null);
@@ -59,6 +62,7 @@ export function PathColumns({
         const net = eco?.is_net ? eco : null;
         const total = p.cost_total_display ?? (net ? (net.net_words ?? net.net_display) : p.cost_display);
         const basis = p.cost_basis_text ?? p.cost_note;
+        const mixed = Boolean(p.cost_once_display && p.cost_forward_display);
         const parts = p.cost_components?.length ? p.cost_components : net ? [{ label: t("biz.deals.fundingCost"), display: net.funding_cost_display }, { label: t("biz.deals.offset"), display: `−${net.offset_display}` }] : [];
         const tone = authorityTone(p);
         const lowest = p.lowest_short && p.lowest_when ? t("biz.deals.paths.lowestAt", { amount: p.lowest_short, when: p.lowest_when }) : null;
@@ -81,13 +85,30 @@ export function PathColumns({
               <StatePill tone={toneOfTag(p.tag_tone)}>{p.tag_text}</StatePill>
             </div>
             <div>
-              <p className={net && !p.cost_total_display ? "text-xs text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
-              <p className={`text-2xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-cost-${i}`}>
-                {total}
-              </p>
-              <p className="text-sm text-ink-2" data-testid={`path-col-basis-${i}`}>
-                {basis}
-              </p>
+              {mixed ? (
+                // Both a one-off and an ongoing cost: each its own figure and words, no single headline (so the two never read as a sum).
+                <>
+                  <p className="sr-only">{t("biz.deals.paths.cost")}</p>
+                  <ul className="space-y-0.5" data-testid={`path-col-parts-${i}`}>
+                    <li className={`text-xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-forward-${i}`}>
+                      {windowMonths ? t("biz.deals.paths.forwardLine", { amount: p.cost_forward_display ?? "", n: windowMonths }) : t("biz.deals.paths.ongoingLine", { amount: p.cost_forward_display ?? "" })}
+                    </li>
+                    <li className={`text-xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-once-${i}`}>
+                      {t("biz.deals.paths.onceLine", { amount: p.cost_once_display ?? "" })}
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <p className={net && !p.cost_total_display ? "text-xs text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
+                  <p className={`text-2xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-cost-${i}`}>
+                    {total}
+                  </p>
+                  <p className="text-sm text-ink-2" data-testid={`path-col-basis-${i}`}>
+                    {basis}
+                  </p>
+                </>
+              )}
               {parts.length ? (
                 <dl className="mt-2 divide-y divide-line border-y border-line text-xs" data-testid={`path-col-components-${i}`}>
                   {parts.map((c) => (

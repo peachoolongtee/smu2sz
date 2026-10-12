@@ -319,6 +319,17 @@ export default function DealsPage() {
         dealParts.before = null;
         dealParts.why = null;
       }
+      // The two closed folds (what they ask, why it matters) sit side by side from `lg`, so the page stays within its two screens.
+      if (!settledDeal) {
+        dealParts.folds = (
+          <div key="folds" className="grid items-start gap-x-6 gap-y-4 lg:grid-cols-2">
+            {dealParts.buyer_asks}
+            {dealParts.why}
+          </div>
+        );
+        dealParts.buyer_asks = null;
+        dealParts.why = null;
+      }
       dealParts.advanced = <AdvancedDetails key="advanced" ws={ws} v={v} offer={offer} items={items} asks={asks} />;
     }
     dealParts.agreements = commitments;
@@ -326,13 +337,13 @@ export default function DealsPage() {
   // One order at every width, so the DOM order is the visual order and the focus order follows it: the verdict (the heading), the one Action, the reply bar
   // (the priced decision, inside the first screen of a phone), the picture with its moments and the path columns, who and where, what they ask and cost, why it
   // matters (folded), the strategy block, the agreements, the folds. The server's `workspace.order` no longer decides it: the heading is the recommendation.
-  const order = ["heading", "next", "priced_response", "paths", "buyer", "buyer_asks", "why", "before", "original", "agreements", "advanced"];
+  const order = ["heading", "next", "priced_response", "paths", "buyer", "folds", "buyer_asks", "why", "before", "original", "agreements", "advanced"];
   const errorNode = error ? <ErrorState key="error" error={error} /> : null;
 
   return (
     <>
       {offer && ready ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={offer && narrow ? undefined : t("biz.deals.subtitle")} />}
-      <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4">
         {inbox}
 
         {errorNode}

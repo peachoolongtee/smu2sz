@@ -13,51 +13,6 @@ test.beforeEach(async ({ request }) => {
   await resetBooks(request);
 });
 
-/**
- * Fields a newer server sends and the recorded picture does not have yet (moment words, tones, events, a cost total with its components, authority classes) are laid
- * over the recorded picture in mock mode (`tl-mock-picture-patch`, by index) so the page's use of them is covered before the mock is recorded again. Live runs
- * are skipped for the tests that need it.
- */
-const NEW_FIELDS = {
-  paths: {
-    "0": { authority: "over_limit", authority_text: "Over a limit you signed: only a new mandate changes that", cost_total_display: "¥33,366.92", cost_basis_text: "over 12 months, the immediate discount included" },
-    "1": { authority: "flow_may", authority_text: "FLOW can send it", cost_total_display: "¥3,027.77", cost_basis_text: "over 12 months", assumption_text: "If the buyer accepts" },
-    "2": {
-      authority: "needs_owner",
-      authority_text: "Needs your approval",
-      cost_total_display: "¥0.00",
-      cost_basis_text: "over 12 months, net",
-      cost_components: [
-        { label: "Funding cost", display: "¥16,217.95" },
-        { label: "Offset", display: "¥16,380.00" },
-      ],
-      assumption_text: "If the buyer accepts",
-    },
-  },
-  moments: {
-    "0": { kind: "today", word: "Today" },
-    "1": { kind: "due", word: "Invoice due" },
-    "2": { kind: "lowest", word: "Lowest point" },
-    "3": {
-      kind: "parts",
-      word: "Paths part",
-      events_text: { asked: ["Operating bill −¥100k"], "CTR-193394b6ba8b": ["Operating bill −¥100k", "Receipt from Foshan Home Retail Co. ¥420k"] },
-      values: {
-        "0": { closing_short: "¥210k", tone: "bad" },
-        "1": { closing_short: "¥632k", tone: "ok", vs_asked_short: "+¥422k", vs_asked_tone: "ok" },
-        "2": { closing_short: "¥302k", tone: "neutral", vs_asked_short: "+¥92k", vs_asked_tone: "ok" },
-      },
-    },
-    "4": { kind: "lowest", word: "Lowest point" },
-    "5": { kind: "end", word: "End of window" },
-  },
-};
-
-async function withNewFields(page: Page) {
-  test.skip(test.info().project.name === "live", "the recorded picture is laid over only in mock mode");
-  await page.addInitScript((patch) => sessionStorage.setItem("tl-mock-picture-patch", JSON.stringify(patch)), NEW_FIELDS);
-}
-
 async function checked(page: Page) {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
@@ -99,8 +54,8 @@ test("three lines in their own patterns, the recommended reply picked first and 
 test("the picture carries three lines, the minimum, one cursor and its band, and no label of any event, line name or lowest point", async ({ page }) => {
   await checked(page);
   const svg = page.getByTestId("paths-picture").locator("svg").first();
-  // A data-testid sweep: nothing in the picture is an event label, a path name, a lowest-point label or a legend.
-  const ids = await page.getByTestId("paths-picture").evaluate((root) => Array.from(root.querySelectorAll("[data-testid]")).map((el) => el.getAttribute("data-testid") ?? ""));
+  // A data-testid sweep of the drawing (what moved cash is a fold under the tiles, on demand, never on the picture): nothing in it is an event label, a path name, a lowest-point label or a legend.
+  const ids = await page.getByTestId("paths-picture").locator("svg").first().evaluate((root) => Array.from(root.querySelectorAll("[data-testid]")).map((el) => el.getAttribute("data-testid") ?? ""));
   for (const id of ids) expect(id, `testid ${id}`).not.toMatch(/event|name|lowest|legend|band-label|^path-subtitle$/);
   await expect(page.getByTestId("paths-legend")).toHaveCount(0);
   await expect(page.getByTestId("path-subtitle")).toHaveCount(0);
@@ -134,7 +89,7 @@ test("picking a column moves the emphasis and the reply bar; the asked path cann
   await page.getByTestId("path-col-pick-0").click();
   await expect(page.getByTestId("path-line-0")).toHaveAttribute("data-active", "true");
   await expect(bar).toContainText("Not a reply you can send");
-  await expect(bar).toContainText("Cannot be accepted within your signed limits.");
+  await expect(bar).toContainText("Over a limit you signed: only a new mandate changes that");
   await expect(bar.getByTestId("deal-send")).toHaveCount(0);
   await expect(bar.getByRole("button", { name: /^Send/ })).toHaveCount(0);
   // Back to the recommended reply from the bar.
@@ -166,59 +121,66 @@ test("the chips are the moments, in the server's order and words, the decisive o
   await expect(stops).toHaveCount(6);
   await expect(page.getByTestId("path-stops")).toHaveAttribute("role", "group");
   await expect(page.getByTestId("path-stops")).toHaveAccessibleName("Moments");
-  // The decisive moment is selected first. (An older server has no words: the chip carries the moment's own label.)
-  await expect(page.getByTestId("path-stop-3")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-count")).toHaveText("4 of 6");
-  await expect(page.getByTestId("path-moment")).toContainText("Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. As asked, cash is below your minimum.");
-  // The tiles say each path's cash on that moment, and the asked path says it is under the minimum, from the server's flags.
-  await expect(page.getByTestId("path-tile-0")).toContainText("¥209,960.00");
+  // The chips are the server's words, never "In 47 days": today, each lowest point, the reserve crossings in either direction and the end of the window.
+  expect(await stops.allInnerTexts()).toEqual(["Today", "Lowest point", "Below the reserve", "Lowest point", "Back above the reserve", "Day 66"]);
+  // The decisive moment (the first the asked path is below the reserve) is selected first.
+  await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("path-count")).toHaveText("3 of 6");
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "47");
+  await expect(page.getByTestId("path-moment")).toContainText("On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. As asked, cash is below your minimum.");
+  // The tiles say each path's cash on that moment in the server's short figures, and the asked path says it is under the minimum, from the server's tone and flag.
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
   await expect(page.getByTestId("path-tile-0")).toContainText("Below your minimum");
   await expect(page.getByTestId("path-tile-0")).toHaveAttribute("data-below", "true");
-  await expect(page.getByTestId("path-tile-1")).toContainText("¥631,972.23");
+  await expect(page.getByTestId("path-tile-0")).toHaveAttribute("data-tone", "bad");
+  await expect(page.getByTestId("path-tile-figure-1")).toHaveText("¥632k");
+  await expect(page.getByTestId("path-tile-figure-2")).toHaveText("¥302k");
   await expect(page.getByTestId("path-tile-1")).not.toContainText("Below your minimum");
-  const day = await page.getByTestId("path-cursor").getAttribute("data-day");
+  await expect(page.getByTestId("path-tile-1")).toHaveAttribute("data-tone", "neutral");
+  // The gap against as asked: the server's signed string in its tone; the asked tile shows none.
+  await expect(page.getByTestId("path-tile-vs-0")).toHaveCount(0);
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥422k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveClass(/text-ok-fg/);
+  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥92k vs as asked");
+  await expect(page.getByTestId("path-tile-assumption-1")).toHaveText("If the buyer accepts this reply");
+  await expect(page.getByTestId("path-tile-assumption-2")).toHaveText("If the buyer accepts this reply");
+  await expect(page.getByTestId("path-tile-assumption-0")).toHaveCount(0);
+  // The parting moment (day 0, "Today"): the server's sentence says who decides, per reply.
   await page.getByTestId("path-stop-0").click();
   await expect(page.getByTestId("path-stop-0")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-stop-3")).toHaveAttribute("aria-pressed", "false");
-  expect(await page.getByTestId("path-cursor").getAttribute("data-day")).not.toBe(day);
-  await expect(page.getByTestId("path-tile-0")).toContainText("¥400,000.00");
+  await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "0");
+  await expect(page.getByTestId("path-moment")).toHaveText("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. Who decides: Option A: FLOW can send it; Option B: needs your approval.");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥400k");
   await expect(page.getByTestId("path-tile-0")).not.toContainText("Below your minimum");
-  await expect(page.getByTestId("path-moment")).toContainText("Credit line draw ¥150k");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥150k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-2")).toHaveText("+¥90k vs as asked");
+  // A reply that gives up cash to stay above the reserve is in the bad tone against as asked (day 30).
+  await page.getByTestId("path-stop-1").click();
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("−¥10k vs as asked");
+  await expect(page.getByTestId("path-tile-vs-1")).toHaveClass(/text-bad-fg/);
   // Previous and next move between moments.
+  await page.getByTestId("path-stop-0").click();
   await expect(page.getByTestId("path-prev")).toBeDisabled();
   await page.getByTestId("path-next").click();
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true");
   await page.getByTestId("path-stop-5").click();
   await expect(page.getByTestId("path-next")).toBeDisabled();
+  await expect(page.getByTestId("path-moment")).toHaveText("No cash moves on any path.");
   await page.getByTestId("path-prev").click();
   await expect(page.getByTestId("path-stop-4")).toHaveAttribute("aria-pressed", "true");
-  // No chip is a day number.
-  for (const label of await stops.allInnerTexts()) expect(label).not.toMatch(/^(Day )?\d+$/);
 });
 
-test("with the server's moment fields the chips are the words, the tiles carry the short figures, the gap versus as asked and the assumption, and the events are behind a fold", async ({ page }) => {
-  await withNewFields(page);
+test("what moved cash on this day is a closed fold in words per path, and absent when nothing moved", async ({ page }) => {
   await checked(page);
-  expect(await page.locator('[data-testid^="path-stop-"]').allInnerTexts()).toEqual(["Today", "Invoice due", "Lowest point", "Paths part", "Lowest point", "End of window"]);
-  for (const label of await page.locator('[data-testid^="path-stop-"]').allInnerTexts()) expect(label).not.toMatch(/\d/);
-  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
-  await expect(page.getByTestId("path-tile-figure-1")).toHaveText("¥632k");
-  await expect(page.getByTestId("path-tile-0")).toHaveAttribute("data-tone", "bad");
-  // The gap against as asked: the server's signed string, in its tone; the asked tile shows none.
-  await expect(page.getByTestId("path-tile-vs-0")).toHaveCount(0);
-  await expect(page.getByTestId("path-tile-vs-1")).toHaveText("+¥422k vs as asked");
-  await expect(page.getByTestId("path-tile-vs-1")).toHaveClass(/text-ok-fg/);
-  await expect(page.getByTestId("path-tile-assumption-1")).toHaveText("If the buyer accepts");
-  await expect(page.getByTestId("path-tile-assumption-0")).toHaveCount(0);
-  // What moved cash on this day: folded by default, in words, per path.
   const events = page.getByTestId("path-events");
   await expect(events).toHaveJSProperty("open", false);
   await events.locator("summary").click();
   await expect(events).toContainText("What moved cash on this day");
-  await expect(events).toContainText("Operating bill −¥100k");
-  await expect(events).toContainText("Receipt from Foshan Home Retail Co. ¥420k");
-  // A moment the server gave no events for has no fold.
-  await page.getByTestId("path-stop-0").click();
+  await expect(events).toContainText("Operating bill −¥100,000.00");
+  await expect(events).toContainText("Receipt from Foshan Home Retail Co. ¥420,000.00");
+  // A moment on which nothing moved has no fold.
+  await page.getByTestId("path-stop-5").click();
   await expect(page.getByTestId("path-events")).toHaveCount(0);
 });
 
@@ -229,13 +191,13 @@ test("Play never starts by itself, steps one moment every two seconds, ends on t
   await expect(play).toHaveAttribute("aria-pressed", "false");
   // Never auto-starts: left alone for longer than a step, the cursor stays where it was.
   await page.waitForTimeout(2600);
-  await expect(page.getByTestId("path-stop-3")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-count")).toHaveText("4 of 6");
+  await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("path-count")).toHaveText("3 of 6");
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-0")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true", { timeout: 6000 });
-  await expect(page.getByTestId("path-announce")).toContainText("In 2 days");
+  await expect(page.getByTestId("path-announce")).toHaveText("Lowest point. On every path: Debt service −¥45k.");
   // Stop halts it where it is.
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "false");
@@ -308,7 +270,7 @@ test("pointing at a day shows a tooltip with the three paths' figures that day; 
   const t2 = (await tip.boundingBox())!;
   expect(t2.x + t2.width).toBeLessThanOrEqual(box2.x + box2.width + 1);
   // Pointing changes no moment.
-  await expect(page.getByTestId("path-stop-3")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("path-stop-2")).toHaveAttribute("aria-pressed", "true");
   // The days of the moments: each chip's cursor day, read by pressing it.
   const momentDays: number[] = [];
   const count = await page.locator('[data-testid^="path-stop-"]').count();
@@ -316,11 +278,14 @@ test("pointing at a day shows a tooltip with the three paths' figures that day; 
     await page.getByTestId(`path-stop-${i}`).click();
     momentDays.push(Number(await page.getByTestId("path-cursor").getAttribute("data-day")));
   }
+  expect(momentDays).toEqual([0, 30, 47, 60, 62, 66]);
   // A click lands the cursor on the nearest moment, never on another day; at the far left that is today.
   await chart.click({ position: { x: width * 0.4, y: 90 } });
   expect(momentDays).toContain(Number(await page.getByTestId("path-cursor").getAttribute("data-day")));
   await chart.click({ position: { x: 40, y: 90 } });
-  expect(Number(await page.getByTestId("path-cursor").getAttribute("data-day"))).toBe(momentDays[0]);
+  expect(Number(await page.getByTestId("path-cursor").getAttribute("data-day"))).toBe(0);
+  await chart.click({ position: { x: width - 10, y: 90 } });
+  expect(Number(await page.getByTestId("path-cursor").getAttribute("data-day"))).toBe(66);
 });
 
 test("pointing at a column or a tile lights its line and dims the other two to 40%; leaving restores; the picked path stays emphasised", async ({ page }) => {
@@ -351,10 +316,10 @@ test("pointing at a column or a tile lights its line and dims the other two to 4
 
 test("hovering or focusing a moment chip previews it without changing the selected moment; a click keeps it", async ({ page }) => {
   await checked(page);
-  const selected = page.getByTestId("path-stop-3");
+  const selected = page.getByTestId("path-stop-2");
   await page.getByTestId("path-stop-0").hover();
   await expect(page.getByTestId("path-moment")).toContainText("Credit line draw ¥150k");
-  await expect(page.getByTestId("path-tile-0")).toContainText("¥400,000.00");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥400k");
   await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "0");
   await expect(selected).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("path-stop-0")).toHaveAttribute("aria-pressed", "false");
@@ -363,13 +328,12 @@ test("hovering or focusing a moment chip previews it without changing the select
   await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "47");
   // Focus previews too; the announcement belongs to the selected moment only.
   await page.getByTestId("path-stop-1").focus();
-  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "2");
+  await expect(page.getByTestId("path-cursor")).toHaveAttribute("data-day", "30");
   await expect(selected).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-announce")).toContainText("Operating bill");
+  await expect(page.getByTestId("path-announce")).toContainText("Below the reserve. On every path: Operating bill");
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("path-stop-1")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("path-announce")).not.toContainText("Operating bill");
-  await expect(page.getByTestId("path-announce")).toContainText("In 2 days");
+  await expect(page.getByTestId("path-announce")).toHaveText("Lowest point. On every path: Debt service −¥45k.");
 });
 
 test("keyboard: the arrow keys move between the chips, Enter keeps one, and Space plays or stops from the focused picture", async ({ page }) => {
@@ -396,41 +360,40 @@ test("keyboard: the arrow keys move between the chips, Enter keeps one, and Spac
   await expect(page.getByTestId("path-play")).toHaveAttribute("aria-pressed", "false");
 });
 
-test("a column shows its cost on one basis; Option B's net cost carries its two parts, never a bare zero", async ({ page }) => {
+test("a column shows its cost on one basis; Option B's net cost carries its two parts beside the net; a mixed cost is two lines, never a sum", async ({ page }) => {
   await checked(page);
-  const b = page.getByTestId("path-col-2");
-  // (Until the mock is recorded again the net comes from the counter's own economics: the same two parts.)
-  await expect(page.getByTestId("path-col-cost-2")).not.toHaveText("¥0.00");
-  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,217.95");
-  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,380.00");
-  await expect(b).not.toContainText("¥0.00");
+  // Option A: one figure, once.
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
-  await expect(page.getByTestId("path-col-basis-1")).toHaveText("once; nothing ongoing");
-  await expect(page.getByTestId("path-col-cost-0")).toHaveText("¥28,326.92");
-  await expect(page.getByTestId("path-col-basis-0")).toContainText("plus ¥5,040.00 once");
+  await expect(page.getByTestId("path-col-basis-1")).toHaveText("once, nothing ongoing");
+  // Option B: the net with its basis and the two parts that make it, so the zero never stands alone.
+  await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
+  await expect(page.getByTestId("path-col-basis-2")).toHaveText("net over 12 months");
+  const rows = page.getByTestId("path-col-components-2").locator("> div");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toHaveText("Funding cost of the longer terms¥16,217.95");
+  await expect(rows.nth(1)).toHaveText("Offset by the 0.30% price rise¥16,380.00");
+  // The asked path has both a one-off and a 12-month part: two figure lines, no single headline, so they never read as a sum.
+  await expect(page.getByTestId("path-col-cost-0")).toHaveCount(0);
+  await expect(page.getByTestId("path-col-parts-0").locator("> li")).toHaveCount(2);
+  await expect(page.getByTestId("path-col-forward-0")).toHaveText("¥28,326.92 over 12 months");
+  await expect(page.getByTestId("path-col-once-0")).toHaveText("¥5,040.00 once");
   // The cash facts of each path, in the server's words.
   await expect(page.getByTestId("path-col-lowest-0")).toHaveText("Lowest ¥165k, in 60 days");
   await expect(page.getByTestId("path-col-breach-0")).toHaveText("First below your minimum in 47 days");
   await expect(page.getByTestId("path-col-breach-1")).toHaveCount(0);
 });
 
-test("with the server's cost total, basis and components a column shows them; the three classes of who decides have three tones in the column and the bar", async ({ page }) => {
-  await withNewFields(page);
+test("the three classes of who decides have three tones in the column and the bar, in the server's words", async ({ page }) => {
   await checked(page);
-  await expect(page.getByTestId("path-col-cost-0")).toHaveText("¥33,366.92");
-  await expect(page.getByTestId("path-col-basis-0")).toHaveText("over 12 months, the immediate discount included");
-  await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
-  const rows = page.getByTestId("path-col-components-2").locator("> div");
-  await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0)).toHaveText("Funding cost¥16,217.95");
-  await expect(rows.nth(1)).toHaveText("Offset¥16,380.00");
-  // The words are the server's; the tone follows the class.
   const tone = (i: number) => page.getByTestId(`path-col-decides-${i}`).locator("[data-tone]").getAttribute("data-tone");
   await expect(page.getByTestId("path-col-decides-0")).toContainText("Over a limit you signed: only a new mandate changes that");
+  await expect(page.getByTestId("path-col-decides-0")).toHaveAttribute("data-authority", "over_limit");
   expect(await tone(0)).toBe("bad");
   await expect(page.getByTestId("path-col-decides-1")).toContainText("FLOW can send it");
+  await expect(page.getByTestId("path-col-decides-1")).toHaveAttribute("data-authority", "flow_may");
   expect(await tone(1)).toBe("ok");
   await expect(page.getByTestId("path-col-decides-2")).toContainText("Needs your approval");
+  await expect(page.getByTestId("path-col-decides-2")).toHaveAttribute("data-authority", "needs_owner");
   expect(await tone(2)).toBe("warn");
   // The bar's caption is the same words in the same tone.
   const barTone = () => page.getByTestId("path-reply-decides").locator("[data-tone]").getAttribute("data-tone");
