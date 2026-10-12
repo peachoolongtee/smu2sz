@@ -352,9 +352,17 @@ test("section 3: the window switch widens the picture", async ({ page }) => {
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "36");
   await page.getByTestId("home-window-60").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
-  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-selected", "true");
   await page.getByTestId("home-window-120").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "120");
+  // The window switch is a SegmentedTabs tablist (#112): tabs of 44 px, one tab stop, the arrows move the choice.
+  await expect(page.getByRole("tablist").filter({ has: page.getByTestId("home-window-60") })).toBeVisible();
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("role", "tab");
+  expect((await page.getByTestId("home-window-60").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByTestId("home-window-120").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
+  await expect(page.getByTestId("home-window-60")).toBeFocused();
 });
 
 test("section 3: the scenario switch is absent while the server says stress is not available", async ({ page }) => {
@@ -567,7 +575,7 @@ test("section 3: a rail longer than the picture widens the window with its own o
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "62");
   await expect(page.getByTestId("home-widened")).toHaveText("Showing 62 days so every key event appears.");
   // The owner's own choices stay what they are: the first window is still the one pressed.
-  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-selected", "true");
 });
 
 test("section 3: reduced motion carries no transition on the cursor; with motion allowed it eases", async ({ page }) => {

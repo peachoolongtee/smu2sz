@@ -3,7 +3,8 @@
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
-import { SegmentedButtons } from "@/components/ui";
+import { CalendarIcon, CheckIcon, ClockIcon } from "@/components/icons";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -270,22 +271,22 @@ export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead
         </h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {stress ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("home.hy.scenario")}
               value={scenario}
               onChange={setScenario}
-              options={[
-                { value: "expected", label: t("home.hy.scenario.expected"), testId: "home-scenario-expected" },
-                { value: "late", label: lateName, testId: "home-scenario-late" },
+              tabs={[
+                { value: "expected", label: t("home.hy.scenario.expected"), icon: CheckIcon, testId: "home-scenario-expected" },
+                { value: "late", label: lateName, icon: ClockIcon, testId: "home-scenario-late" },
               ]}
             />
           ) : null}
           {windows.length > 1 ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("biz.forecast.horizon")}
               value={wanted}
               onChange={setChosenWindow}
-              options={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
+              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), icon: CalendarIcon, testId: `home-window-${d}` }))}
             />
           ) : null}
         </div>

@@ -39,6 +39,7 @@ export function SegmentedTabs<T extends string | number>({
   onChange,
   tabs,
   stretch = false,
+  scroll = false,
   className = "",
   testId,
 }: {
@@ -49,6 +50,8 @@ export function SegmentedTabs<T extends string | number>({
   tabs: SegmentedTabOption<T>[];
   /** Fill the width of the parent (the queue's four tabs); the default is as narrow as the options allow. */
   stretch?: boolean;
+  /** Keep every label on one line and let the track scroll sideways where it does not fit (the queue's four tabs on a phone); the default shrinks the options and wraps a long label. */
+  scroll?: boolean;
   className?: string;
   testId?: string;
 }) {
@@ -72,11 +75,11 @@ export function SegmentedTabs<T extends string | number>({
   };
 
   return (
-    <div className={`${stretch ? "w-full" : "max-w-full"} overflow-x-auto p-1 -m-1 ${className}`} ref={list} data-testid={testId}>
+    <div className={`${stretch ? "w-full" : "max-w-full"} ${scroll ? "overflow-x-auto" : ""} p-1 -m-1 ${className}`} ref={list} data-testid={testId}>
       <div
         role="tablist"
         aria-label={label}
-        className={`relative grid auto-cols-fr grid-flow-col rounded-pill bg-track p-0.5 ${stretch ? "min-w-max" : "w-max"}`}
+        className={`relative grid auto-cols-fr grid-flow-col rounded-pill bg-track p-0.5 ${scroll ? "min-w-max" : "max-w-full"} ${stretch ? "" : "w-max"}`}
         style={{ ["--n" as string]: tabs.length }}
       >
         <span
@@ -95,10 +98,10 @@ export function SegmentedTabs<T extends string | number>({
               data-testid={o.testId}
               onClick={() => onChange(o.value)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`relative z-10 flex min-h-11 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-pill px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "text-ink" : "text-ink-2 enabled:hover:text-ink"}`}
+              className={`relative z-10 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-pill px-3 text-center text-sm font-semibold leading-tight sm:px-4 ${scroll ? "whitespace-nowrap" : ""} transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${on ? "text-ink" : "text-ink-2 enabled:hover:text-ink"}`}
             >
               {Icon ? <Icon className="size-4 shrink-0" /> : null}
-              <span>{o.label}</span>
+              <span className="min-w-0">{o.label}</span>
               {badgeShown(o.badge) ? (
                 <span
                   data-testid={o.badgeTestId}

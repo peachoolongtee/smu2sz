@@ -65,9 +65,9 @@ for (const [origin, { query, back: b }] of Object.entries(ORIGINS)) {
     await open(page, query, { exposure: back(b) });
     const picture = page.getByTestId("home-event-picture");
     await expect(picture).toHaveAttribute("data-scenario", "late");
-    await expect(page.getByTestId("home-scenario-late")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("home-scenario-late")).toHaveAttribute("aria-selected", "true");
     await expect(page.getByTestId("home-scenario-late")).toHaveText(`${buyer.concentration.buyer_name} 30 days late`);
-    await expect(page.getByTestId("home-scenario-expected")).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByTestId("home-scenario-expected")).toHaveAttribute("aria-selected", "false");
     await expect(page.getByTestId("home-line-late")).toBeVisible();
     // The window reaches the lowest point (the server's series runs 120 days).
     await expect(picture).toHaveAttribute("data-window", "120");
@@ -140,7 +140,7 @@ test("switching back to expected restores the ordinary picture and the address k
   await expect(page.getByTestId("home-line-plan")).toBeVisible();
   await expect(page.getByTestId("home-line-late")).toHaveCount(0);
   await expect(page.getByTestId("rail-panel")).toHaveAttribute("data-mode", "expected");
-  await expect(page.getByTestId("home-scenario-expected")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-scenario-expected")).toHaveAttribute("aria-selected", "true");
   // The address and the way back are unchanged.
   expect(new URL(page.url()).search).toBe(search);
   await expect(page.getByTestId("cash-stress-back")).toHaveAttribute("href", b.href);
@@ -151,24 +151,24 @@ test("switching back to expected restores the ordinary picture and the address k
   expect(new URL(page.url()).search).toBe(search);
 });
 
-test("the way back and the switch work from the keyboard: Tab reaches them, Enter and Space press", async ({ page }) => {
+test("the way back and the switch work from the keyboard: Tab reaches them, the arrow keys move the choice", async ({ page }) => {
   await open(page, ORIGINS.receivables.query, { exposure: back(ORIGINS.receivables.back) });
   await page.getByTestId("cash-stress-back").focus();
   await expect(page.getByTestId("cash-stress-back")).toBeFocused();
-  // Tab from the way back reaches the expected-payments switch (nothing between them takes focus).
+  // The switch is a SegmentedTabs tablist (#112): one tab stop, at the chosen tab. Tab from the way back reaches the late test it opened on (nothing between takes focus).
   const focused = () => page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
   let at = "";
-  for (let i = 0; i < 8 && at !== "home-scenario-expected"; i++) {
+  for (let i = 0; i < 8 && at !== "home-scenario-late"; i++) {
     await page.keyboard.press("Tab");
     at = await focused();
   }
-  expect(at).toBe("home-scenario-expected");
-  await page.keyboard.press("Enter");
+  expect(at).toBe("home-scenario-late");
+  await page.keyboard.press("ArrowLeft");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "expected");
-  await page.keyboard.press("Tab");
-  expect(await focused()).toBe("home-scenario-late");
-  await page.keyboard.press("Space");
+  expect(await focused()).toBe("home-scenario-expected");
+  await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  expect(await focused()).toBe("home-scenario-late");
 });
 
 test("a home read with no event rail still says the late-payment sentences, under a plain heading", async ({ page }) => {

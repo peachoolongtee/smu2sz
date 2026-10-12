@@ -45,6 +45,7 @@ export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, num
       value={tab}
       onChange={onTab}
       stretch
+      scroll
       testId="queue-tabs"
       tabs={QUEUE_TABS.map((k) => ({
         value: k,
