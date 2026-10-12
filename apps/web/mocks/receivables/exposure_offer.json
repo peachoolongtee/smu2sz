@@ -19,7 +19,7 @@
       "lowest_when_text": "below it for 15 days",
       "limit_word": "EXCEEDED",
       "limit_text": "exceeded",
-      "share_after_text": "100%, for 15 days longer"
+      "share_after_text": "0%, for 15 days longer"
     },
     {
       "key": "CTR-193394b6ba8b",
@@ -30,7 +30,7 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "100%, paid 2 days after the offer"
+      "share_after_text": "0%, paid 2 days after the offer"
     },
     {
       "key": "CTR-6b07cbf70441",
@@ -41,7 +41,7 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "100%, for 10 days longer"
+      "share_after_text": "0%, for 10 days longer"
     },
     {
       "key": "do_nothing",
@@ -50,8 +50,8 @@
       "lowest_display": "−¥105k",
       "lowest_when": "in 30 days",
       "lowest_when_text": "below it for 20 days",
-      "limit_word": "WITHIN",
-      "limit_text": "within",
+      "limit_word": null,
+      "limit_text": null,
       "share_after_text": "100%"
     }
   ],
@@ -2639,7 +2639,8 @@
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
-      }
+      },
+      "do_nothing": null
     },
     "also": []
   },
@@ -4014,7 +4015,8 @@
         "no_borrowing_text": null
       },
       "spare": null
-    }
+    },
+    "do_nothing": null
   },
   "economics": null,
   "loss": null,
@@ -4024,6 +4026,13 @@
     "text": "Foshan is 100% of what you are owed",
     "min_share_bp": 5000,
     "min_share_display": "50.00%"
+  },
+  "customer_context": {
+    "contribution_display": "about ¥1.09m",
+    "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
+    "owes_display": "¥420,000",
+    "share_text": "100%",
+    "profile_href": "/customers/BUYER-1"
   },
   "spare_read": false,
   "lead": "asked",
@@ -4043,15 +4052,9 @@
       "CTR-6b07cbf70441": {
         "stress": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
         "capacity": null
-      }
+      },
+      "do_nothing": null
     }
-  },
-  "customer_context": {
-    "contribution_display": "about ¥1.09m",
-    "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
-    "owes_display": "¥420,000",
-    "share_text": "100%",
-    "profile_href": "/customers/BUYER-1"
   },
   "state_version": 1,
   "day": 0,

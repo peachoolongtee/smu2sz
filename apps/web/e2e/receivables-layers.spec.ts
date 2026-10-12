@@ -43,10 +43,7 @@ async function advanceTo34(page: Page, to = "/receivables") {
 }
 
 /** The books after the day-0 funding plan ran (the financing is arranged, expected in a few days). */
-/** The fields the server's next fix adds are read when the recording has them, so this spec holds before and after the re-record. */
-const nx = (read: unknown) => (read as { summary: { next_expected: { amount_short?: string; amount_display: string; buyer_name: string } } }).summary.next_expected;
-const sm = (read: unknown) => (read as { summary: { count_text?: string; repays_line?: string | null; net_total_display: string } }).summary;
-const rn = (row: unknown) => (row as { repays_note?: string | null }).repays_note;
+const sm = (read: unknown) => (read as { summary: { count_text: string; headline: string; headline_second: string | null } }).summary;
 const BRAND = "rgb(3, 104, 233)";
 /** Visible links and buttons filled with the brand blue: the page's primaries. */
 const filled = (page: Page) =>
@@ -70,11 +67,11 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   await expect(page.getByTestId("recv3-status")).toHaveAttribute("data-tone", "ok");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
   await expect(page.getByTestId("recv3-status")).toContainText("Read today");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${nx(day0).amount_short ?? nx(day0).amount_display} expected from ${nx(day0).buyer_name}.`);
-  // Nothing is financed on the opening books: no second line. No sentence under the heading: the counts are the first card's.
-  await expect(page.getByTestId("recv3-h1-net")).toHaveCount(0);
+  // The two heading lines are the server's, verbatim. No sentence under them: the counts are the first card's.
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(sm(day0).headline);
+  await expect(page.getByTestId("recv3-h1-net")).toHaveText(sm(day0).headline_second!);
   await expect(page.getByTestId("recv3-sub")).toHaveCount(0);
-  if (sm(day0).count_text) await expect(page.getByTestId("recv3-count")).toHaveText(sm(day0).count_text!);
+  await expect(page.getByTestId("recv3-count")).toHaveText(sm(day0).count_text);
   // The header carries no decorative icon chip.
   await expect(page.locator("header.motion-reveal").locator("span.rounded-pill")).toHaveCount(0);
   // The three cards, in the server's strings.
@@ -129,9 +126,9 @@ test("the financing is arranged: the repayment is said in the answer and in the 
   const row = after.rows[0];
   expect(row.financing_state).toBe("ARRANGED");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${nx(after).amount_short ?? nx(after).amount_display} expected from ${nx(after).buyer_name}.`);
-  const line2 = sm(after).repays_line ?? `${sm(after).net_total_display} becomes available at collection, after the financing is repaid.`;
-  await expect(page.getByTestId("recv3-h1-net")).toHaveText(new RegExp(`^${line2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"));
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(sm(after).headline);
+  await expect(page.getByTestId("recv3-h1-net")).toHaveText(sm(after).headline_second!);
+  expect(sm(after).headline_second).toContain("after the financing is repaid");
   // Said twice, never four times: no sub-sentence, no repeat on the cards, no separate paragraph under the breakdown.
   await expect(page.getByTestId("recv3-sub")).toHaveCount(0);
   await expect(page.getByTestId("recv3-net-financing")).toHaveCount(0);
@@ -150,7 +147,7 @@ test("the financing is arranged: the repayment is said in the answer and in the 
   // The breakdown: the invoice, less the financing with the server's repayment note, less the charges with the per-period note, the cash.
   await expect(page.getByTestId("recv3-bd-invoice")).toHaveText(row.outstanding_display);
   await expect(page.getByTestId("recv3-bd-advance")).toContainText(row.net.advance_display);
-  await expect(page.getByTestId("recv3-bd-state")).toHaveText(rn(row) ?? row.net.financing_state_text);
+  await expect(page.getByTestId("recv3-bd-state")).toHaveText(row.net.repays_note);
   await expect(page.getByTestId("recv3-bd-charges")).toContainText(row.net.charges_display);
   await expect(page.getByTestId("recv3-breakdown")).toContainText(row.net.per_period_text);
   await expect(page.getByTestId("recv3-bd-net")).toHaveText(row.net.net_display);
@@ -180,7 +177,8 @@ test("day 34: the pills filter by the server's collection state, an empty pill i
   for (const id of ids) await expect(page.getByTestId(`recv-${id}`)).toBeVisible();
   await expect(page.getByTestId("recv3-status")).toHaveAttribute("data-tone", "bad");
   await expect(page.getByTestId("recv3-status")).toContainText("Overdue");
-  if (sm(day34).count_text) await expect(page.getByTestId("recv3-count")).toHaveText(sm(day34).count_text!);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(sm(day34).headline);
+  await expect(page.getByTestId("recv3-count")).toHaveText(sm(day34).count_text);
   const late = day34.rows.filter((r) => r.collection_state === "OVERDUE").length;
   const soon = day34.rows.filter((r) => r.collection_state === "DUE_SOON").length;
   await expect(page.getByTestId("recv-filter-all")).toHaveAttribute("aria-pressed", "true");
@@ -386,7 +384,7 @@ test("Chinese: the same page and figures in the server's Chinese, with the dicti
   await page.goto("/receivables");
   const row = offerZh.rows[0];
   await expect(page.getByTestId("recv3-status")).toContainText("一切按计划");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`预计从 ${nx(offerZh).buyer_name} 收到 ${nx(offerZh).amount_short ?? nx(offerZh).amount_display}。`);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(sm(offerZh).headline);
   await expect(page.getByTestId("recv3-owe")).toHaveText(offerZh.summary.outstanding_total_display);
   await expect(page.getByTestId("recv3-cards")).toContainText("客户欠您");
   await expect(page.getByTestId(`recv-${row.receivable_id}`)).toContainText(row.due_when);
@@ -402,8 +400,8 @@ test("Chinese: the same page and figures in the server's Chinese, with the dicti
   // The financed books, in Chinese: the steps are the dictionary's, and the answer's second line reads as a sentence.
   await afterFund(page);
   await expect(page.getByTestId(`recv-steps-${afterZh.rows[0].receivable_id}`).locator("li")).toHaveText(["已安排", "已到账", "已还清"]);
-  const line2 = await page.getByTestId("recv3-h1-net").innerText();
-  expect(line2).not.toContain("为 约");
+  await expect(page.getByTestId("recv3-h1-net")).toHaveText(sm(afterZh).headline_second!);
+  expect(sm(afterZh).headline_second).not.toContain("为 约");
 });
 
 test("a server without GET /receivables keeps the page of before; a failure is an error with Retry, never a silent fallback", async ({ page }) => {
