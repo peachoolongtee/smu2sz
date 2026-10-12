@@ -505,9 +505,10 @@ def test_the_stress_reads_the_buyer_paying_thirty_days_late(client, monkeypatch)
     assert h["cash"]["stress_available"] is True
     assert s["series"] and {"day", "closing_fen", "closing_display"} <= set(s["series"][0])
     assert s["lowest_short"] == fmt_short(min(r["closing_fen"] for r in s["series"]))
-    # once the invoice is financed its delay is not modelled, and the test says so without naming an id
-    assert s["breach_days"] == 0 and s["plan_text"].startswith("Cash stays above your minimum")
-    assert "financed; its delay is not modelled" in s["assumption_text"] and "RCV-" not in s["assumption_text"]
+    # once the invoice is financed its late receipt is modelled too (#107): the financing runs longer and its repayment
+    # moves with the receipt, so the stress still breaches, and the assumption says so without naming an id
+    assert s["breach_days"] > 0 and not s["plan_text"].startswith("Cash stays above your minimum")
+    assert "runs 30 days longer" in s["assumption_text"] and "RCV-" not in s["assumption_text"]
     # the page widens its window to show the moved receipt: Foshan's day-32 receipt is paid on day 62
     assert s["window_days_needed"] >= 62 + 4 - h["day"]
     # one search per state: a second read of the same books takes the cached answer

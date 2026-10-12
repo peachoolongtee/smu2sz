@@ -563,7 +563,7 @@ def _stress(c: HomeRead, buyer_id: str | None) -> dict[str, Any] | None:
 
     def compute() -> dict[str, Any]:
         row = stress(c.books, c.mandate, buyer_id, (delay,), c.today, commitments, lang=c.lang)[0]
-        line = stress_line(c.books, c.mandate, buyer_id, c.today, c.lang)
+        line = stress_line(c.books, c.mandate, buyer_id, c.today, delay, c.lang)
         receipt = next((d.day for d in c.traj.days if d.day >= c.today for e in d.events
                         if e.kind == LedgerEventKind.RECEIPT and buyer_of_receivable(c.state, e.ref) == buyer_id), None)
         moved = (receipt + delay) if receipt is not None else row.lowest_day
