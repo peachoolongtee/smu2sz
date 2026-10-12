@@ -411,7 +411,16 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     books = current_books(state, held)
     today = max(rt.day, state.as_of_day)
     floor = mandate.min_cash_fen
-    asked = project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
+    try:
+        asked = project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
+    except EngineError:
+        # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books
+        return {"offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today, "available": False,
+                "unavailable_text": say(lang, "This offer can no longer be drawn on today's books: the days it named have passed or the "
+                                              "invoice has changed since.",
+                                        "此报价已无法按今天的账目绘制：它所说的日期已过，或发票自那时起已有变动。"),
+                "asked": None, "replies": [], "paths": [], "moments": [], "axis": None, "picture_days": None,
+                "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
     breach = first_breach_ahead(asked, today, floor)
     replies = []
     trajs: dict[str, Any] = {}
@@ -448,6 +457,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     picture_days = min(max((moments[-1]["day"] - today if moments else 0) + 4, 30), 90, mandate.horizon_days)
     return {
         "offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today,
+        "available": True, "unavailable_text": None,
         "asked": asked_view,
         "replies": replies,
         "paths": paths,
