@@ -504,18 +504,18 @@ test("a phone (390 x 844): the primary is in the first screen, the rail sits bel
   await page.getByTestId(`rail-row-${LOWEST}`).click();
   await expect(page.getByTestId("rail-explain")).toHaveText(rail0Explain(LOWEST));
   // The h1 is 24 px here.
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "24px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "26px");
 });
 
 const rail0Explain = (i: number) => rail(day0)[i].explain;
 
-test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 34 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
+test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 36 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
   await open(page);
   const chart = (await page.getByTestId("home-chart").boundingBox())!;
   const rail = (await page.getByTestId("home-rail").boundingBox())!;
   expect(rail.x).toBeGreaterThanOrEqual(chart.x + chart.width);
   expect(Math.round(rail.width)).toBe(312);
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "34px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "36px");
   await expect(page.getByTestId("home-headline")).toHaveCSS("font-weight", "800");
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
   await page.setViewportSize({ width: 1366, height: 768 });

@@ -129,8 +129,8 @@
   --radius-control: 8px;
 
   /* The type scale: seven roles, each a size (a line height beside it), and nothing in between. Two of them are the app's own text-xs / text-sm
-     (the utilities text-meta / text-body are the same sizes). The headline is 24 px on a phone, 30 px from `sm` and 34 px from `lg` (:root below), the
-     major value 28 to 32 (tabular numerals, `.type-value`). Supporting 13 px is the floor for any financial qualification: a figure, a rate, a
+     (the utilities text-meta / text-body are the same sizes). The headline is 26 px on a phone, 34 px from `md` and 36 px from `lg` (:root below), the
+     major value 24 / 28 / 30 (tabular numerals, `.type-value`, never above 30 beside a headline). Supporting 13 px is the floor for any financial qualification: a figure, a rate, a
      "limit: at least 1.25x", the words that say what a number is against. Metadata (11 to 12 px) is a label, a time or a legend and never a
      figure or a qualification. The kit classes at the end of @layer components (.type-headline and the rest) add the face, weight and tracking
      a role always has. */
@@ -146,9 +146,9 @@
   --text-card-title--line-height: 1.375rem;
   --text-section: clamp(1.125rem, 1.05rem + 0.25vw, 1.25rem);
   --text-section--line-height: 1.3;
-  --text-value: clamp(1.75rem, 1.55rem + 0.6vw, 2rem);
+  --text-value: 1.5rem;
   --text-value--line-height: 1.1;
-  --text-headline: 1.5rem;
+  --text-headline: 1.625rem;
   --text-headline--line-height: 1.15;
 
   /* Motion tokens: six durations and two easings, and nothing else moves the app. Every transition and animation names one of them
@@ -195,15 +195,21 @@ html {
   text-size-adjust: 100%;
 }
 
-/* The headline's size steps with the screen (24 / 30 / 34 px); the rest of the scale is fixed. */
+/* The headline and the major value step with the screen: the headline 26 / 34 / 36 px (phone / md / lg), the value 24 / 28 / 30 px, so the headline always dominates a value beside it; the rest of the scale is fixed. */
 @media (min-width: 40rem) {
   :root {
-    --text-headline: 1.875rem;
+    --text-value: 1.75rem;
+  }
+}
+@media (min-width: 48rem) {
+  :root {
+    --text-headline: 2.125rem;
   }
 }
 @media (min-width: 64rem) {
   :root {
-    --text-headline: 2.125rem;
+    --text-value: 1.875rem;
+    --text-headline: 2.25rem;
   }
 }
 

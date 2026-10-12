@@ -112,13 +112,16 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
 const smallFinancialText = (page: import("@playwright/test").Page) =>
   page.evaluate(() => {
     const figure = /[¥$€%×]|\d,\d{3}/;
+    // A chart's tick or line label that carries money or a date ("¥500k", "in 30 days", "Today") is a figure too.
+    const chartFigure = /[¥$€%×]|\d,\d{3}|\d+k\b|\d+ days?\b|\btoday\b|天|今天/i;
     const found: string[] = [];
     document.querySelectorAll("details").forEach((d) => (d.open = true));
     const walker = document.createTreeWalker(document.querySelector("main") ?? document.body, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const text = (n.textContent ?? "").trim();
       const el = n.parentElement;
-      if (!text || !el || el.closest("svg, script, style, sup") || !figure.test(text)) continue;
+      const inSvg = Boolean(el?.closest("svg"));
+      if (!text || !el || el.closest("script, style, sup") || !(inSvg ? chartFigure : figure).test(text)) continue;
       const r = el.getBoundingClientRect();
       if (!r.width || !r.height) continue;
       const s = getComputedStyle(el);
@@ -148,14 +151,19 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   expect(vars["--text-card-title"]).toBe(16);
   expect(vars["--text-section"]).toBeGreaterThanOrEqual(17);
   expect(vars["--text-section"]).toBeLessThanOrEqual(20);
-  expect(vars["--text-value"]).toBeGreaterThanOrEqual(28);
-  expect(vars["--text-value"]).toBeLessThanOrEqual(36);
-  // The Home headline is 34 px on a desktop, 30 px at tablet width and 24 px on a phone, and a major value is tabular.
-  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(34);
+  expect(vars["--text-value"]).toBe(30);
+  // The Home headline is 36 px on a desktop, 34 px at tablet width and 26 px on a phone; a major value is 30, 28 and 24: the headline always dominates it.
+  const size = (id: string) => page.getByTestId(id).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  const head = async () => size("home-headline");
+  expect(vars["--text-headline"]).toBe(36);
+  expect(await head()).toBe(36);
   await page.setViewportSize({ width: 820, height: 900 });
-  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(30);
+  expect(await head()).toBe(34);
+  expect(vars["--text-headline"]).toBeGreaterThan(vars["--text-value"]);
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(24);
+  expect(await head()).toBe(26);
+  const phoneValue = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-value")) * 16);
+  expect(phoneValue).toBe(24);
   await page.setViewportSize({ width: 1440, height: 900 });
 
   const found: Record<string, string[]> = {};
