@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from app.api.auth import require_owner
 from app.api.customer_inputs import router as customer_inputs_router
 from app.api.strategy_collections import router as collections_router
+from app.api.strategy_compare import router as compare_router
 from app.api.strategy_curve import router as curve_router
 from app.api.strategy_envelope import router as envelope_router
 from app.api.strategy_exposure import router as exposure_router
@@ -20,4 +21,5 @@ router.include_router(curve_router)
 router.include_router(envelope_router)
 router.include_router(collections_router)
 router.include_router(exposure_router)
+router.include_router(compare_router)
 router.include_router(customer_inputs_router)
