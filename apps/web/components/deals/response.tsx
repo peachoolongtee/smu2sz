@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
 import { authorityText, authorityTone } from "@/components/deals/path-columns";
 import { ActionBar } from "@/components/business/action-bar";
@@ -283,6 +283,7 @@ export function RecommendedResponse({
   onCompareChange,
   reply,
   bare = false,
+  onBusy,
 }: {
   v: VerdictView;
   offerId: string;
@@ -296,6 +297,8 @@ export function RecommendedResponse({
   reply?: { path: PicturePath; recommended: PicturePath | null; onBack: () => void };
   /** With `reply`: only the send (what it does, the confirm, the refusals and slow notices) in a plain block, for a card that already says the reply. */
   bare?: boolean;
+  /** Told whenever a send or a check is in flight, so the page can hold what would unmount it. */
+  onBusy?: (busy: boolean) => void;
 }) {
   const { t } = useI18n();
   // On a phone the generic line under the title gives way to the answer: the Send button comes up the page.
@@ -312,6 +315,11 @@ export function RecommendedResponse({
   // The send ran out of time: it may have landed. Retry reads the deal's record and the books again and sends nothing.
   const [slow, setSlow] = useState(false);
   const [rechecked, setRechecked] = useState(false);
+  const inFlight = sending !== null || checking;
+  useEffect(() => {
+    onBusy?.(inFlight);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the flight, not the callback
+  }, [inFlight]);
   const changed = refused && refused.key === shownKey ? refused.detail : null;
   // What the owner is looking at, and what the send will carry: the evaluation's, or the current proposal the API sent back.
   const shown = changed && changed.counters.length ? { verdictId: changed.verdict_id ?? v.id, stateVersion: changed.state_version, counters: changed.counters as Counter[] } : { verdictId: v.id, stateVersion: v.state_version, counters: v.counters as Counter[] };

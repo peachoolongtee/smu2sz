@@ -10,14 +10,15 @@ import { isAgreed } from "@/components/deals/deal-summary";
 import { contractsOff } from "@/components/documents";
 import { DealHeading } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
-import { contextQuery, exposureFor, firstOpenInvoice, openTab, queueRows, stressHref, type QueueTab } from "@/components/deals/queue/model";
+import { contextQuery, exposureFor, firstOpenInvoice, openTab, queueRows, stressHref, type QueueRow, type QueueTab } from "@/components/deals/queue/model";
 import { QueueAside } from "@/components/deals/queue/queue-aside";
 import { QueueDetail } from "@/components/deals/queue/queue-detail";
+import { QueueReadOnly } from "@/components/deals/queue/queue-readonly";
 import { QueueBody, QueueHead } from "@/components/deals/queue/queue";
 import { PathsBody, PathsReply, usePathsState } from "@/components/deals/paths-section";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
-import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
+import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink, type Tone } from "@/components/ui";
 import { STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { dealRecordId, getClock, getDeals, getLedger, getOfferExposure, getOfferPicture, getState, submitOffer } from "@/lib/api";
@@ -207,10 +208,15 @@ function Deals() {
   // The exposure read is asked for as soon as an offer is open (it needs no verdict). The server's FEATURE_EXPOSURE decides: with it off the read is absent and the page below is the page as it was.
   // `undefined` is "on its way", null "the server has no exposure read": the page then keeps its current form. Once the queue has shown it stays for the visit.
   const exposureRead = useAsync(
-    async () => ({ offerId: pictureOfferId, asked: Boolean(open), view: pictureOfferId && open ? await getOfferExposure(pictureOfferId, lang).catch(() => null) : null }),
+    async () => ({ offerId: pictureOfferId, asked: Boolean(open), view: pictureOfferId && open ? await getOfferExposure(pictureOfferId, lang) : null }),
     [pictureOfferId, Boolean(open), v?.id, v?.state_version, lang],
   );
   const exposureNow: ExposureView | null | undefined = !pictureOfferId || !open ? null : exposureRead.data?.offerId === pictureOfferId && exposureRead.data.asked ? exposureRead.data.view : undefined;
+  // Only a server that has the read switched off (403 FEATURE_DISABLED) or lacks the route (404) answers "absent" (null); any other failure is said, with Retry.
+  const exposureError = open && exposureRead.error ? <ErrorState key="exposure-error" error={exposureRead.error} onRetry={exposureRead.reload} /> : null;
+  // A line the owner opened that has no open request (agreed, setup), and whether a send is in flight (nothing may change the selection under it).
+  const [rowSel, setRowSel] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const [queueSeen, setQueueSeen] = useState(false);
   if (exposureNow && !queueSeen) setQueueSeen(true);
   const queueOn = queueSeen || Boolean(exposureNow);
@@ -254,7 +260,7 @@ function Deals() {
   const decisionParam = params.get("decision");
   useEffect(() => {
     const id = decisionParam?.startsWith("deal:") ? decisionParam.slice(5) : null;
-    if (id && id !== cur.offerId && demo.offers[id]) {
+    if (id && id !== cur.offerId) {
       fromAddress.current = id;
       selectOffer(id);
     }
@@ -453,22 +459,80 @@ function Deals() {
     // Where the owner came from, when the page was opened from a customer or an invoice: the server's words and address.
     const backLink = (open?.context?.back ?? (dealsView.data?.deals ?? []).find((d) => d.open_offer?.context?.back)?.open_offer?.context?.back) ?? null;
     const onTab = (k: QueueTab) => {
+      if (sending) return;
       const q = new URLSearchParams(window.location.search);
       q.set("tab", k);
       window.history.replaceState(null, "", `/deals?${q.toString()}${window.location.hash}`);
     };
-    const recommendFor = (o: NonNullable<typeof open>): string | null => {
-      if (o.offer_id === selectedId && v) {
-        const reply = pathsState.paths.find((p) => p.kind === "reply" && p.recommended);
-        return ws?.recommends.action === "counter" && reply ? t("dq.rec.counter", { label: reply.label }) : (ws?.recommends.text ?? o.headline_short ?? null);
-      }
-      return o.headline_short ?? null;
+    // A selection is a line: an open deal (it selects the offer, read here or fetched) or an agreed or setup line (read only). It is held while a send is in flight.
+    const onSelect = (row: QueueRow) => {
+      if (sending) return;
+      if (row.offerId) {
+        setRowSel(null);
+        selectOffer(row.offerId);
+      } else setRowSel(row.key);
     };
+    // The detail belongs to a line of the open tab: a tab that does not hold the selected line shows none (it comes back with its tab).
+    const rowSelRow = rowSel ? (rows.find((r) => r.key === rowSel) ?? null) : null;
+    if (rowSel && (!rowSelRow || rowSelRow.tab !== tab)) setRowSel(null);
+    const offerRow = selectedId ? (rows.find((r) => r.offerId === selectedId) ?? null) : null;
+    const offerVisible = !offerRow || offerRow.tab === tab;
     // A deal that has an outcome has no open request, and an offer the server has no exposure for (a message not yet read through, an older server) has no queue detail: the
     // queue keeps its tabs and list, and the deal's own parts (the page as it was: where it stands, the answer, the paths, the agreements) take the detail's place.
     const settledNow = Boolean(v && ws && record && progress?.reached && progress.tone !== "open");
     const showQueueDetail = Boolean(offer && open && exposure && !settledNow);
     const outcome = offer && ready && !showQueueDetail ? order.map((k) => dealParts[k] ?? null) : null;
+    const state = showQueueDetail && record ? { code: record.state, text: record.state_text, tone: (record.state_tone ?? "neutral") as Tone } : null;
+    const heading = open?.headline_short ?? open?.read_text ?? open?.asks_text ?? "";
+    const detailNode =
+      cur.error || clock.error ? (
+        <ErrorState
+          error={(cur.error ?? clock.error)!}
+          onRetry={() => {
+            cur.reload();
+            clock.reload();
+          }}
+        />
+      ) : cur.loading || !clock.data || (offer && dealsView.loading && !dealsView.data) ? (
+        <LoadingBlock rows={3} />
+      ) : rowSelRow && rowSelRow.tab === tab ? (
+        <QueueBody
+          offerKey={rowSelRow.key}
+          announce={t("dq.selected", { title: rowSelRow.deal.counterparty_name })}
+          detail={<QueueReadOnly deal={rowSelRow.deal} tab={tab} today={today} customerHref={`/customers/${encodeURIComponent(rowSelRow.deal.counterparty_id)}?${contextQuery({ customer: rowSelRow.deal.counterparty_id, decision: selectedId ? dealRecordId(selectedId) : null, path: pick })}`} />}
+          aside={null}
+        />
+      ) : !offerVisible ? null : showQueueDetail && offer && open && exposure ? (
+        <QueueBody
+          offerKey={offer.offer.offer_id}
+          announce={t("dq.selected", { title: heading })}
+          detail={
+            <QueueDetail
+              deal={dealRow!}
+              open={open}
+              offer={offer}
+              verdict={v}
+              negotiation={cur.negotiation}
+              exposure={exposure}
+              picture={picture}
+              paths={queuePaths}
+              today={today}
+              mode={mode}
+              customerHref={customerHref}
+              items={items}
+              asks={asks}
+              busy={busy}
+              error={error}
+              onCheck={() => void evaluate()}
+              onSending={setSending}
+              after={STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
+            />
+          }
+          aside={<QueueAside exposure={exposure} customerHref={exposure.customer_context?.profile_href ? `${exposure.customer_context.profile_href}?${ctx}` : customerHref} stressHref={stressHref(exposure.buyer_id, exposure.stress.delay_days, dealRow ? firstOpenInvoice(dealRow) : null, ctx)} pathLabel={pathsState.picked?.label ?? ""} />}
+        />
+      ) : outcome ? (
+        <div className="space-y-6">{outcome}</div>
+      ) : null;
     return (
       <>
         <PageHeader section="deals" title={t("nav.deals")} subtitle={(narrow || short) && offer ? undefined : rows.some((r) => r.tab === "needs") ? t("dq.sub.needs") : t("dq.sub.none")} />
@@ -480,48 +544,10 @@ function Deals() {
           ) : null}
           {!offer || !(narrow || short) ? inbox : null}
           {errorNode}
+          {exposureError}
           {dealsError ? <ErrorState error={dealsError} onRetry={dealsView.reload} /> : null}
-          <QueueHead deals={dealsView.data?.deals ?? []} tab={tab} onTab={onTab} selectedOfferId={selectedId} onSelect={(id) => demo.offers[id] && selectOffer(id)} pick={pick} recommendFor={recommendFor} />
-          {cur.error || clock.error ? (
-            <ErrorState
-              error={(cur.error ?? clock.error)!}
-              onRetry={() => {
-                cur.reload();
-                clock.reload();
-              }}
-            />
-          ) : cur.loading || !clock.data || (offer && dealsView.loading && !dealsView.data) ? (
-            <LoadingBlock rows={3} />
-          ) : showQueueDetail && offer && open && exposure ? (
-            <QueueBody
-              offerKey={offer.offer.offer_id}
-              detail={
-                <QueueDetail
-                  deal={dealRow!}
-                  open={open}
-                  offer={offer}
-                  verdict={v}
-                  negotiation={cur.negotiation}
-                  exposure={exposure}
-                  picture={picture}
-                  paths={queuePaths}
-                  today={today}
-                  mode={mode}
-                  customerHref={customerHref}
-                  items={items}
-                  asks={asks}
-                  busy={busy}
-                  error={error}
-                  onCheck={() => void evaluate()}
-                  state={record ? { code: record.state, text: record.state_text, tone: record.state_tone ?? "neutral" } : null}
-                  after={STRATEGY_MVP ? <BeforeTheyAsk buyerId={offer.offer.counterparty_id} /> : null}
-                />
-              }
-              aside={<QueueAside exposure={exposure} customerHref={exposure.customer_context?.profile_href ? `${exposure.customer_context.profile_href}?${ctx}` : customerHref} stressHref={stressHref(exposure.buyer_id, exposure.stress.delay_days, dealRow ? firstOpenInvoice(dealRow) : null, ctx)} pathLabel={pathsState.picked?.label ?? ""} />}
-            />
-          ) : outcome ? (
-            <div className="space-y-6">{outcome}</div>
-          ) : null}
+          <QueueHead deals={dealsView.data?.deals ?? []} tab={tab} onTab={onTab} selectedOfferId={offerVisible ? selectedId : null} selectedKey={rowSelRow?.key ?? null} onSelect={onSelect} pick={pick} state={state} />
+          {detailNode}
           {!offer ? commitments : null}
           {offer && (narrow || short) ? inbox : null}
         </div>
@@ -536,6 +562,7 @@ function Deals() {
         {inbox}
 
         {errorNode}
+        {exposureError}
 
         {cur.error || clock.error ? (
           <ErrorState

@@ -496,12 +496,12 @@ test("the three classes of who decides have three tones in the column and the ba
   await expect(page.getByTestId("path-col-decides-2")).toContainText("Needs your approval");
   await expect(page.getByTestId("path-col-decides-2")).toHaveAttribute("data-authority", "needs_owner");
   expect(await tone(2)).toBe("warn");
-  // The card's caption (the old bar's) is the same words in the same tone.
-  const barTone = () => page.getByTestId("queue-authority").locator("[data-tone]").getAttribute("data-tone");
-  await expect(page.getByTestId("queue-authority")).toHaveText("✓FLOW can send it");
+  // The card's line (the old bar's caption) is the server's sentence for the path, in the same class and tone.
+  const barTone = () => page.getByTestId("queue-authority").getAttribute("data-tone");
+  await expect(page.getByTestId("queue-authority")).toHaveText("FLOW can send it. Your approval is not needed.");
   expect(await barTone()).toBe("ok");
   await page.getByTestId("path-col-pick-2").click();
-  await expect(page.getByTestId("queue-authority")).toContainText("Needs your approval");
+  await expect(page.getByTestId("queue-authority")).toHaveText("It changes your terms, so you approve it first.");
   expect(await barTone()).toBe("warn");
   await page.getByTestId("path-col-pick-0").click();
   await expect(page.getByTestId("queue-option")).toHaveText("Over a limit you signed: only a new mandate changes that");
@@ -525,7 +525,7 @@ for (const [width, height] of [[1280, 800], [412, 915], [390, 844], [360, 740]])
   });
 }
 
-// (360 x 740 is dropped: the why and the card cannot both fit above a 56 px tab bar on a screen that small; the phone check is 390 x 844)
+// (360 x 740 is not held: with the list, the why and the card above the button, the primary ends about 200 px below a 56 px tab bar on a screen that small; the phone checks are 412 x 915 and 390 x 844)
 for (const [width, height] of [[412, 915], [390, 844]]) {
   test(`the priced decision, "Review and send the counter", is inside the first viewport at ${width} x ${height}, above the tab bar`, async ({ page }) => {
     await page.setViewportSize({ width, height });

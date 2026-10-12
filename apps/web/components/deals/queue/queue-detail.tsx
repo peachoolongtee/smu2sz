@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
 import { authorityText, authorityTone } from "@/components/deals/path-columns";
-import { PathsBody, pathsUsable, type PathsState } from "@/components/deals/paths-section";
+import { PathsBody, PathsReply, pathsUsable, type PathsState } from "@/components/deals/paths-section";
 import { RecommendedResponse } from "@/components/deals/response";
 import { AdvancedDetails } from "@/components/deals/workspace";
 import { NextStep } from "@/components/next-step";
-import { Button, ErrorState, LoadingBlock, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Button, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import type { Mode } from "@/lib/mode";
@@ -17,8 +17,10 @@ import type { DealView, Displayed, ExposureView, NegotiationView, Obligation, Of
 import { ExposureBand, StressToggle } from "./exposure-band";
 import { ImpactTable } from "./impact-table";
 import { eyebrowCls } from "./queue-list";
+import { WhyFacts } from "./why-facts";
 
 const RULE: Record<string, string> = { accept: "border-ok-solid", counter: "border-bad-solid", decline: "border-bad-solid", cannot: "border-bad-solid", needs_owner: "border-warn-solid" };
+const AUTHORITY_INK: Record<string, string> = { ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg" };
 const RULE_INK: Record<string, string> = { accept: "text-ok-fg", counter: "text-bad-fg", decline: "text-bad-fg", cannot: "text-bad-fg", needs_owner: "text-warn-fg" };
 
 /**
@@ -44,7 +46,7 @@ export function QueueDetail({
   busy,
   error,
   onCheck,
-  state = null,
+  onSending,
   after = null,
 }: {
   deal: DealView;
@@ -64,14 +66,17 @@ export function QueueDetail({
   busy: boolean;
   error: string | null;
   onCheck: () => void;
-  /** Where the deal stands, in the record's own words and tone (one quiet chip; it moves as the deal does). */
-  state?: { code: string; text: string; tone: Tone } | null;
+  /** Told whenever a send is in flight: the page then holds the selection, so nothing that would unmount the send can be pressed. */
+  onSending: (sending: boolean) => void;
   /** Anything the page adds under the comparison (the strategy build's "Before they ask" card). */
   after?: React.ReactNode;
 }) {
   const { t } = useI18n();
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [stress, setStress] = useState(false);
+  // A send is in flight: the picks, the close and the selection are held until it ends, so it cannot be unmounted mid-send and a second one cannot start.
+  const [sendingNow, setSendingNow] = useState(false);
+  const lockedPaths: PathsState = sendingNow ? { ...paths, onPick: () => undefined, locked: true } : paths;
   const ws = verdict?.workspace ?? null;
   const buyer = exposure.concentration.buyer_name;
   const heading = open.headline_short ?? open.read_text ?? open.asks_text;
@@ -97,23 +102,12 @@ export function QueueDetail({
 
   return (
     <div className="flex min-w-0 flex-col gap-2.5 sm:gap-4 short:gap-3" data-testid="queue-detail" data-offer={offer.offer.offer_id}>
-      {/* Announced once per selection, politely: the page does not move focus. */}
-      <p role="status" aria-live="polite" className="sr-only" data-testid="queue-announce">
-        {t("dq.selected", { title: heading })}
+      <p className={`${eyebrowCls} text-ink-3`}>
+        {t("dq.eyebrow")} ·{" "}
+        <Link href={customerHref} className="inline-flex min-h-8 items-center text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-detail-customer">
+          {deal.counterparty_name} ›
+        </Link>
       </p>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className={`${eyebrowCls} text-ink-3 max-sm:text-xs`}>
-          {t("dq.eyebrow")} ·{" "}
-          <Link href={customerHref} className="text-brand-700 hover:underline focus-visible:underline" data-testid="queue-detail-customer">
-            {deal.counterparty_name} ›
-          </Link>
-        </p>
-        {state ? (
-          <span data-testid="deal-state-chip" data-state={state.code}>
-            <StatePill tone={state.tone}>{state.text}</StatePill>
-          </span>
-        ) : null}
-      </div>
       <h2 tabIndex={-1} className="text-balance font-display text-lg font-extrabold leading-tight tracking-tight text-ink sm:text-[1.625rem]" data-testid="queue-heading">
         {heading}
       </h2>
@@ -123,7 +117,7 @@ export function QueueDetail({
 
       {ws && ws.why_it_matters.reasons.length ? (
         <div className={`flex flex-col gap-0.5 border-l-[3px] py-0.5 pl-3 sm:gap-1 sm:pl-3.5 ${RULE[action ?? "counter"] ?? "border-line-strong"}`} data-testid="queue-why">
-          <p className={`${eyebrowCls} max-sm:text-xs ${RULE_INK[action ?? "counter"] ?? "text-ink-3"}`}>{t(`dq.why.${action ?? "counter"}` as DictKey)}</p>
+          <p className={`${eyebrowCls} ${RULE_INK[action ?? "counter"] ?? "text-ink-3"}`}>{t(`dq.why.${action ?? "counter"}` as DictKey)}</p>
           {ws.why_it_matters.reasons.slice(0, 2).map((r) => (
             <p key={r} className="text-sm leading-snug text-ink sm:text-[0.9375rem] sm:leading-normal">
               {r}
@@ -156,14 +150,9 @@ export function QueueDetail({
       ) : (
         <section aria-labelledby="dq-rec" className="flex flex-col gap-1.5 rounded-card border border-brand-100 bg-brand-50 p-3 sm:gap-2 sm:p-5 short:p-4" data-testid="queue-recommends" data-path={!card ? "" : card.kind === "asked" ? "asked" : card.recommended ? "recommended" : "other"}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <h3 id="dq-rec" className={`${eyebrowCls} max-sm:text-xs ${card && !card.sendable ? "text-ink-3" : "text-brand-700"}`}>
+            <h3 id="dq-rec" className={`${eyebrowCls} ${card && !card.sendable ? "text-ink-3" : "text-brand-700"}`}>
               {!card ? t("dq.rec.plain") : card.kind === "asked" ? t("biz.deals.reply.cannot") : card.recommended ? t("dq.rec.eyebrow", { label: card.label }) : card.needs_owner ? t("biz.deals.reply.approveFirst", { label: card.label }) : t("biz.deals.reply.eyebrow", { label: card.label })}
             </h3>
-            {card && card.kind === "reply" ? (
-              <span data-testid="queue-authority" data-authority={card.authority ?? ""}>
-                <StatePill tone={authorityTone(card)}>{authorityText(card)}</StatePill>
-              </span>
-            ) : null}
           </div>
           <p className="font-display text-[0.9375rem] font-bold leading-snug text-ink sm:text-[1.0625rem]" data-testid="queue-option">
             {card ? (card.sendable ? (card.reply_text ?? card.decides_text) : authorityText(card)) : (ws?.recommends.text ?? open.read_text)}
@@ -173,9 +162,14 @@ export function QueueDetail({
               {cost}
             </p>
           ) : null}
+          {card && card.kind === "reply" ? (
+            <p className={`text-sm font-semibold leading-snug sm:text-[0.9375rem] ${AUTHORITY_INK[authorityTone(card)] ?? "text-ink"}`} data-testid="queue-authority" data-authority={card.authority ?? ""} data-tone={authorityTone(card)}>
+              {card.decides_text}
+            </p>
+          ) : null}
           {card && card.kind === "asked" && reply && usable ? (
             <div className="pt-0.5">
-              <Button variant="secondary" onClick={() => paths.onPick(reply.key)} data-testid="path-reply-back">
+              <Button variant="secondary" onClick={() => lockedPaths.onPick(reply.key)} data-testid="path-reply-back">
                 {t("biz.deals.reply.back", { label: reply.label })}
               </Button>
             </div>
@@ -183,9 +177,9 @@ export function QueueDetail({
           {card && card.sendable && usable && mode === "business" ? (
             opened ? (
               <div role="region" aria-label={t("dq.review.region")} className="flex flex-col gap-3 pt-1" data-testid="queue-review">
-                <RecommendedResponse v={verdict} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={negotiation} reply={{ path: card, recommended: reply, onBack: () => setReviewing(null) }} bare />
+                <RecommendedResponse v={verdict} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={negotiation} reply={{ path: card, recommended: reply, onBack: () => setReviewing(null) }} bare onBusy={(b) => { setSendingNow(b); onSending(b); }} />
                 <div>
-                  <button type="button" onClick={() => setReviewing(null)} className={textLinkClass} data-testid="queue-review-close">
+                  <button type="button" onClick={() => setReviewing(null)} disabled={sendingNow} className={`${textLinkClass} disabled:opacity-50`} data-testid="queue-review-close">
                     {t("dq.review.close")}
                   </button>
                 </div>
@@ -202,6 +196,12 @@ export function QueueDetail({
         </section>
       )}
 
+      {/* Whenever the reply cannot be reviewed here (the picture cannot be drawn, no reply to send, or the Demo view), the page's own response stands in the card's place: the server's
+          sentence when the offer can no longer be drawn, the counter cards with their sends in Business, the hint in the Demo. The owner can always send. */}
+      {verdict && !negotiation && picture !== undefined && (!usable || mode !== "business") ? (
+        <PathsReply picture={picture} state={paths} v={verdict} offerId={offer.offer.offer_id} today={today} mode={mode} negotiation={negotiation} />
+      ) : null}
+
       {picture === undefined && verdict && !negotiation && verdict.counters.length > 0 ? (
         <div data-testid="paths-loading">
           <LoadingBlock rows={3} />
@@ -209,12 +209,17 @@ export function QueueDetail({
       ) : usable && verdict ? (
         <PathsBody
           picture={picture}
-          state={paths}
+          state={lockedPaths}
           v={verdict}
           negotiation={negotiation}
           title={t("dq.chart.title")}
           above={<StressToggle exposure={exposure} on={stress} onChange={setStress} />}
-          below={<ExposureBand exposure={exposure} pick={paths.pick} />}
+          below={
+            <>
+              <WhyFacts v={verdict} today={today} />
+              <ExposureBand exposure={exposure} pick={paths.pick} />
+            </>
+          }
           stress={stressLine?.series?.length ? { series: stressLine.series, label: stressLine.text ?? "" } : null}
         />
       ) : null}
@@ -223,8 +228,8 @@ export function QueueDetail({
         <Disclosure testId="queue-compare" className="border-t border-line pt-2" summary={t("dq.compare")}>
           <div className="space-y-3 pt-1">
             <p className="text-[0.8125rem] text-ink-3">{t("dq.compare.note")}</p>
-            <ImpactTable asked={asked as PicturePath} reply={reply as PicturePath} exposure={exposure} verdict={verdict} buyer={buyer} />
-            <AdvancedDetails ws={ws} v={verdict} offer={offer} items={items} asks={asks} />
+            <ImpactTable asked={asked as PicturePath} reply={reply as PicturePath} exposure={exposure} verdict={verdict} buyer={buyer} windowDays={picture?.picture_days ?? null} />
+            <AdvancedDetails ws={ws} v={verdict} offer={offer} items={items} asks={asks} only={["source_text", "formula"]} />
           </div>
         </Disclosure>
       ) : null}

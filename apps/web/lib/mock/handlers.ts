@@ -568,8 +568,17 @@ function counterChangedStory(): "replaced" | "moved" | null {
   }
 }
 
+/** Test hook: milliseconds in this sessionStorage key hold a send in flight, so a spec can press things while it is on its way. */
+export const NEGOTIATE_SLOW_KEY = "tl-mock-negotiate-slow";
+
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   await delay();
+  try {
+    const slow = typeof window === "undefined" ? 0 : Number(window.sessionStorage.getItem(NEGOTIATE_SLOW_KEY));
+    if (slow > 0) await new Promise<void>((r) => setTimeout(r, slow));
+  } catch {
+    /* storage unavailable */
+  }
   const s = load();
   if (req.verdict_id) {
     const story = counterChangedStory();
@@ -1015,6 +1024,7 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 
 /** GET /offers/{id}/picture: recorded for the package offer, in both languages; any other offer has no picture. */
 export const PICTURE_SLOW_KEY = "tl-mock-picture-slow";
+export const PICTURE_OFF_KEY = "tl-mock-picture-off";
 
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
   await delay();
@@ -1029,7 +1039,14 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!s.offers[offerId] || offerId !== ex01?.view.offer.offer_id) throw new ApiError(404, `Offer ${offerId} not found.`, undefined, "offer_missing", { id: offerId });
   const rec = cast<Record<"en" | "zh", OfferPictureView>>(offerPictureJson);
-  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+  const view = { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+  // A spec can make the offer undrawable, as the server answers one it can no longer draw (200, no paths, no moments, a sentence): the owner must still be able to send.
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(PICTURE_OFF_KEY) === "1") return { ...view, available: false, asked: null, replies: [], paths: [], moments: [], unavailable_text: "This offer can no longer be drawn on today's books." };
+  } catch {
+    /* storage unavailable */
+  }
+  return view;
 }
 
 export async function getDocuments(lang: "en" | "zh" = "en"): Promise<DocumentsList> {

@@ -26,6 +26,8 @@ export interface PathsState {
   onHover: (key: string | null) => void;
   picked: PicturePath | null;
   recommended: PicturePath | null;
+  /** A send is in flight (the decision queue holds the picks until it ends). */
+  locked?: boolean;
   /** What the reply bar now shows, said politely after a pick (the bar sits far above the columns); empty until the owner picks. */
   said: string;
 }
@@ -155,7 +157,7 @@ export function PathsBody({
             {state.said}
           </p>
           <PathsPicture picture={full} pick={state.pick} hoverKey={state.hoverKey} onHover={state.onHover} stop={state.stop} onStop={state.onStop} stress={stress} />
-          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} />
+          <PathColumns paths={state.paths} pick={state.pick} onPick={state.onPick} onHover={state.onHover} economics={economics} windowMonths={v.workspace?.financial_impact.window_months ?? null} locked={state.locked} />
           {below}
         </div>
       </Card>

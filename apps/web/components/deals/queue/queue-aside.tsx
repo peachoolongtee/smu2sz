@@ -48,7 +48,7 @@ export function QueueAside({ exposure, customerHref, stressHref, pathLabel }: { 
       <Link href={stressHref} className="text-[0.8125rem] font-bold text-brand-700 hover:underline focus-visible:underline" data-testid="aside-stress">
         {t("dq.aside.late", { buyer, n: exposure.stress.delay_days })} ›
       </Link>
-      <p className="text-[0.8125rem] leading-relaxed text-ink-3">{t("dq.aside.keeps", { label: pathLabel })}</p>
+      <p className="text-[0.8125rem] leading-relaxed text-ink-3">{pathLabel ? t("dq.aside.keeps", { label: pathLabel }) : t("dq.aside.keepsDeal")}</p>
     </aside>
   );
 }

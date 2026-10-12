@@ -21,6 +21,7 @@ const exposureEn = rec("offer_exposure_ex01.json").en;
 const exposureZh = rec("offer_exposure_ex01.json").zh;
 const pictureEn = rec("offer_picture_ex01.json").en;
 const recheck = rec("verdict_ex01.json").workspace.priced_response.recheck_text as string;
+const decides = (key: string) => pictureEn.paths.find((p: { key: string }) => p.key === key).decides_text as string;
 const words = (key: string) => exposureEn.paths.find((p: { key: string }) => p.key === key);
 const reply = pictureEn.paths.find((p: { recommended: boolean }) => p.recommended);
 const asked = pictureEn.paths.find((p: { kind: string }) => p.kind === "asked");
@@ -46,7 +47,9 @@ test("four tabs filter the list: the owner's reply first, the others by what the
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText("Foshan Home Retail Co.");
   await expect(rows.first()).toContainText(open.cost_display);
-  await expect(rows.first()).toContainText("Counter with Option A");
+  // Every line says FLOW's short verdict, the server's own, and the selected line's status is the record's word.
+  await expect(rows.first()).toContainText(open.headline_short);
+  await expect(rows.first().getByTestId("deal-state-chip")).toHaveText(/Counter recommended/);
   await expect(rows.first()).toHaveAttribute("aria-current", "true");
 
   await page.getByTestId("queue-tab-wait").click();
@@ -60,18 +63,29 @@ test("four tabs filter the list: the owner's reply first, the others by what the
   await expect(rows.first()).toContainText("FHR-2026-07");
   await expect(rows.first()).toContainText("Payment terms: 45 days");
   await expect(rows.first()).not.toContainText("0.85%");
+  // Selecting it shows its read-only detail (the terms in force, the deal's own summary); switching tabs clears a detail whose line is not on the tab.
+  await expect(page.getByTestId("queue-detail")).toHaveCount(0);
+  await rows.first().getByTestId("queue-select").click();
+  await expect(page.getByTestId("queue-readonly")).toBeVisible();
+  await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
+  await expect(rows.first()).toHaveAttribute("aria-current", "true");
 
   await page.getByTestId("queue-tab-setup").click();
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText("Dongguan Office Supplies Ltd.");
   await expect(rows.first()).toContainText("No contract on file yet");
-  // The detail stays: the queue and the selected deal are kept across tabs.
-  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page.getByTestId("queue-readonly")).toHaveCount(0);
+  await rows.first().getByTestId("queue-select").click();
+  await expect(page.getByTestId("queue-readonly")).toHaveAttribute("data-tab", "setup");
+  await expect(page.getByRole("link", { name: "Add the contract" })).toHaveAttribute("href", "/documents");
 
   // The keyboard moves between the tiles.
   await page.getByTestId("queue-tab-setup").focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByTestId("queue-tab-needs")).toHaveAttribute("aria-selected", "true");
+  // Back on the first tab the open deal's detail is back with its line: the selection was kept.
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page.getByTestId("queue-readonly")).toHaveCount(0);
 });
 
 test("selecting a deal replaces the detail in place and keeps ?decision=; the heading is the server's; one filled primary", async ({ page }) => {
@@ -79,7 +93,8 @@ test("selecting a deal replaces the detail in place and keeps ?decision=; the he
   await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
   // The address carries the deal and the path, not the customer: a customer in it would say the page was opened from that customer's page.
   await expect(page).not.toHaveURL(/customer=/);
-  await page.getByTestId("queue-select").click();
+  // (on a phone the selected line gives its request to the detail below it, so there is nothing to press there)
+  if (await page.getByTestId("queue-select").isVisible()) await page.getByTestId("queue-select").click();
   await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
   await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
   await expect(page.getByTestId("queue-announce")).toContainText(open.headline_short);
@@ -90,10 +105,14 @@ test("selecting a deal replaces the detail in place and keeps ?decision=; the he
   // The blue card: the option, the one-off cost if the buyer accepts, who decides, and the one filled primary.
   await expect(page.getByTestId("queue-option")).toHaveText(reply.reply_text);
   await expect(page.getByTestId("queue-cost")).toHaveText(`Estimated one-off cost ${reply.cost_once_display}, if Foshan accepts.`);
-  await expect(page.getByTestId("queue-authority")).toContainText(reply.authority_text);
+  // Who decides is one sentence after the cost line (the server's words), not a badge.
+  await expect(page.getByTestId("queue-authority")).toHaveText(decides(reply.key));
+  await expect(page.getByTestId("queue-authority").locator("[data-tone]")).toHaveCount(0);
+  await expect(page.getByTestId("deal-state-chip")).toHaveCount(1); // the one status word is the selected line's
   await expect(page.getByTestId("queue-review-open")).toHaveText("Review and send the counter");
   // The server's sentence on what the send re-checks stands beside the button.
-  if (recheck) await expect(page.getByTestId("queue-recommends")).toContainText(recheck); // (present once the verdict recording carries `recheck_text`)
+  expect(recheck, "the verdict recording carries the recheck sentence").toBeTruthy();
+  await expect(page.getByTestId("queue-recommends")).toContainText(recheck);
   expect(await filledBrand(page)).toBe(1);
   // Opening the review replaces the button with the existing send: still one filled primary, the bound option and the server's lines.
   await page.getByTestId("queue-review-open").click();
@@ -299,4 +318,33 @@ test("returning from the Customer page: the address's decision and path select t
   await page.getByTestId("path-col-pick-2").click();
   await expect.poll(() => new URL(page.url()).searchParams.get("path")).toMatch(/^CTR-/);
   expect(new URL(page.url()).searchParams.get("decision")).toBe(`deal:${open.offer_id}`);
+});
+
+test("when the picture cannot be drawn the owner can still send: the server's sentence and the counter cards with their sends", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-picture-off", "1"));
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page.getByTestId("paths-unavailable")).toContainText("can no longer be drawn");
+  await expect(page.getByTestId("deal-paths")).toHaveCount(0);
+  await expect(page.getByTestId("deal-send")).toBeVisible();
+  await page.getByTestId("deal-send").click();
+  await page.getByTestId("deal-send-confirm").click();
+  await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
+});
+
+test("a send in flight holds the selection: the picks, the close, the tabs and the lines wait, and the send is not unmounted", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-negotiate-slow", "1500"));
+  await openQueue(page);
+  await page.getByTestId("queue-review-open").click();
+  await page.getByTestId("deal-send").click();
+  await page.getByTestId("deal-send-confirm").click();
+  // While it is on its way: no pick, no close, no other tab, and the review stays mounted.
+  await expect(page.getByTestId("path-col-pick-2")).toBeDisabled();
+  await expect(page.getByTestId("queue-review-close")).toBeDisabled();
+  await page.getByTestId("queue-tab-setup").click();
+  await expect(page.getByTestId("queue-tab-needs")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("queue-review")).toBeVisible();
+  await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A", { timeout: 10_000 });
 });

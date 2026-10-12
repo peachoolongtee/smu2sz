@@ -55,13 +55,12 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await scan(page, "/deals inbox");
   await checkedDeal(page);
   await scan(page, "/deals checked");
-  // Everything the page folds, opened: the audit level is read too.
+  // Everything the page folds, opened: the buyer's message and the calculations (the queue's evidence), then the decision page the record lives on.
   await openCompare(page);
-  const advanced = page.getByTestId("deal-advanced");
-  await advanced.locator("summary").first().click();
-  await page.getByTestId("deal-adv-audit_evidence").locator("summary").click();
-  await scan(page, "/deals advanced open");
-  await page.getByTestId("deal-audit-evidence").getByRole("link").first().click();
+  for (const key of ["source_text", "formula"]) await page.getByTestId(`deal-adv-${key}`).locator("summary").first().click();
+  await scan(page, "/deals evidence open");
+  const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
+  await page.goto(`/decisions/${encodeURIComponent(`deal:${offerId}`)}`);
   await expect(page).toHaveURL(/\/decisions\//);
   await expect(page.locator("h1").first()).toBeVisible();
   await scan(page, "decision page");

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { StatePill, type Tone } from "@/components/ui";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -22,25 +22,29 @@ export interface ListItem {
   recommends: string;
   status: string;
   statusTone: Tone;
-  /** The offer a click selects; null for a line that is not a request (terms in force, a customer to set up). */
-  offerId: string | null;
+  /** The record's state, when the line is the open deal and the record is read: the status pill then carries it (`data-state`). */
+  statusState: string | null;
   selected: boolean;
 }
 
 /**
- * The four count tiles as the queue's tabs (a tablist: arrow keys move between them, the selected one is `aria-selected`) and the list they filter.
- * The tiles are a horizontal scroll of pills on a phone and a row of four from `sm`; the list keeps its five columns from `lg` and is two lines per row below.
+ * The four count tiles as the queue's tabs (a tablist: arrow keys move between them, the selected one is `aria-selected`, with a bar under it as well as a weight and a tint)
+ * and the list they filter. The tiles are a horizontal scroll of pills on a phone (the open one scrolled into view) and a row of four from `sm`; the list keeps its five
+ * columns from `lg`, and below it a line is its customer and status, the request, then the cost and what FLOW recommends.
  */
 export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, number>; tab: QueueTab; onTab: (t: QueueTab) => void }) {
   const { t } = useI18n();
   const group = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    group.current?.querySelector<HTMLElement>("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [tab]);
   const move = (from: number, by: number) => {
     const next = QUEUE_TABS[(from + by + QUEUE_TABS.length) % QUEUE_TABS.length];
     onTab(next);
     group.current?.querySelectorAll<HTMLButtonElement>("[role=tab]")[QUEUE_TABS.indexOf(next)]?.focus();
   };
   return (
-    <div ref={group} role="tablist" aria-label={t("dq.tabs")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:pb-0" data-testid="queue-tabs">
+    <div ref={group} role="tablist" aria-label={t("dq.tabs")} className="-mx-4 -my-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 sm:mx-0 sm:my-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0" data-testid="queue-tabs">
       {QUEUE_TABS.map((k, i) => {
         const on = k === tab;
         return (
@@ -60,10 +64,10 @@ export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, num
               e.preventDefault();
               move(i, by);
             }}
-            className={`motion-press flex min-h-14 shrink-0 flex-col items-start justify-center rounded-card border px-4 py-2 text-left transition-colors duration-(--dur) max-sm:min-h-11 max-sm:flex-row max-sm:items-center max-sm:gap-2.5 max-sm:rounded-pill max-sm:px-3.5 max-sm:py-1 short:min-h-11 short:flex-row short:items-center short:gap-2.5 short:py-1 touch:min-h-11 sm:touch:min-h-14 ${on ? "border-brand-600 bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
+            className={`motion-press flex min-h-14 shrink-0 flex-col items-start justify-center rounded-card border px-4 py-2 text-left transition-colors duration-(--dur) max-sm:min-h-11 max-sm:flex-row max-sm:items-center max-sm:gap-2.5 max-sm:rounded-pill max-sm:px-3.5 max-sm:py-1 short:min-h-11 short:flex-row short:items-center short:gap-2.5 short:py-1 touch:min-h-11 sm:touch:min-h-14 ${on ? "border-brand-600 border-b-[3px] bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
           >
-            <span className={`${eyebrowCls} ${k === "needs" ? "text-warn-fg" : "text-ink-3"}`}>{t(`dq.tab.${k}` as DictKey)}</span>
-            <span className="font-display text-xl font-extrabold tabular-nums text-ink max-sm:text-base short:text-base" data-testid={`queue-count-${k}`}>
+            <span className={`${eyebrowCls} ${k === "needs" ? "text-warn-fg" : "text-ink-3"} ${on ? "text-ink" : ""}`}>{t(`dq.tab.${k}` as DictKey)}</span>
+            <span className={`font-display text-xl tabular-nums text-ink max-sm:text-base short:text-base ${on ? "font-black" : "font-extrabold"}`} data-testid={`queue-count-${k}`}>
               {counts[k]}
             </span>
           </button>
@@ -75,8 +79,8 @@ export function QueueTabs({ counts, tab, onTab }: { counts: Record<QueueTab, num
 
 const COLS = "lg:grid-cols-[1.3fr_1.6fr_1fr_1.2fr_1fr]";
 
-/** The list of the open tab. A line with an offer behind it selects that deal (its request is the button); the customer is always a link. */
-export function QueueList({ tab, items, onSelect, emptyText }: { tab: QueueTab; items: ListItem[]; onSelect: (offerId: string) => void; emptyText: string }) {
+/** The list of the open tab. Every line selects (its request is the button) and its customer is always a link. */
+export function QueueList({ tab, items, emptyText }: { tab: QueueTab; items: (ListItem & { select: () => void })[]; emptyText: string }) {
   const { t } = useI18n();
   return (
     <section id="dq-list" role="tabpanel" aria-labelledby={`dq-tab-${tab}`} className="overflow-hidden rounded-card border border-line bg-surface" data-testid="queue-list">
@@ -101,38 +105,31 @@ export function QueueList({ tab, items, onSelect, emptyText }: { tab: QueueTab; 
               data-testid="queue-row"
               data-selected={it.selected ? "true" : "false"}
               onClick={(e) => {
-                if (it.offerId && !(e.target as HTMLElement).closest("a,button")) onSelect(it.offerId);
+                if (!(e.target as HTMLElement).closest("a,button")) it.select();
               }}
-              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 border-t border-line px-4 py-2 text-sm sm:py-3 first:border-t-0 lg:gap-3 ${COLS} ${it.offerId ? "cursor-pointer" : ""} ${it.selected ? "border-l-[3px] border-l-brand-600 bg-brand-50/60" : "hover:bg-subtle"} transition-colors duration-(--dur)`}
+              className={`relative grid cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-0.5 border-t border-line px-4 py-2 text-sm first:border-t-0 sm:py-3 short:py-2 lg:gap-3 ${COLS} ${it.selected ? "bg-brand-50/60 before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-brand-600" : "hover:bg-subtle"} transition-colors duration-(--dur)`}
             >
-              <span role="cell" className="min-w-0 font-bold lg:col-auto">
-                <Link href={it.customerHref} className="break-words text-ink underline-offset-2 hover:text-brand-700 hover:underline focus-visible:underline" data-testid="queue-customer">
-                  {it.customer}
+              <span role="cell" className="min-w-0 font-bold max-lg:col-span-1 lg:col-start-1 lg:row-start-1">
+                <Link href={it.customerHref} className="inline-flex min-h-8 max-w-full items-center text-ink underline-offset-2 hover:text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-customer">
+                  <span className="max-lg:truncate">{it.customer}</span>
                 </Link>
               </span>
-              <span role="cell" className="min-w-0 max-lg:order-3 max-lg:col-span-2 lg:col-auto">
-                {it.offerId ? (
-                  <button type="button" onClick={() => onSelect(it.offerId as string)} className="motion-press min-h-8 w-full rounded-pill text-left text-ink focus-visible:underline max-lg:line-clamp-1 touch:min-h-11" data-testid="queue-select">
-                    {it.request}
-                    <span className="lg:hidden">
-                      {it.cost ? <span className={it.costTone === "bad" ? " font-bold text-bad-fg" : " font-bold"}>{` · ${it.cost}`}</span> : null}
-                    </span>
-                  </button>
-                ) : (
-                  <span className={`max-lg:line-clamp-1 ${it.cost ? "" : "text-ink-3"}`}>
-                    {it.request}
-                    {it.cost ? <span className="lg:hidden font-bold">{` · ${it.cost}`}</span> : null}
-                  </span>
-                )}
+              <span role="cell" className="min-w-0 justify-self-end lg:col-start-5 lg:row-start-1 lg:justify-self-start">
+                <span data-testid={it.statusState ? "deal-state-chip" : undefined} data-state={it.statusState ?? undefined}>
+                  <StatePill tone={it.statusTone} wrap={false} className="!text-[0.8125rem]">{it.status}</StatePill>
+                </span>
               </span>
-              <span role="cell" className={`hidden lg:block ${it.costTone === "bad" ? "font-bold text-bad-fg" : it.cost ? "font-bold" : "text-ink-3"}`}>
+              {/* On a phone the selected line gives its request to the detail right below (the ask sentence says it in full), which brings the primary up the screen. */}
+              <span role="cell" className={`col-span-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1 ${it.selected ? "max-lg:hidden" : ""}`}>
+                <button type="button" onClick={it.select} className="motion-press min-h-8 w-full rounded-pill text-left text-ink first-letter:uppercase focus-visible:underline" data-testid="queue-select">
+                  <span className="block max-lg:truncate">{it.request}</span>
+                </button>
+              </span>
+              <span role="cell" className={`lg:col-start-3 lg:row-start-1 ${it.costTone === "bad" ? "font-bold text-bad-fg" : it.cost ? "font-bold" : "text-ink-3"}`}>
                 {it.cost || "—"}
               </span>
-              <span role="cell" className="hidden font-bold lg:block">
+              <span role="cell" className="min-w-0 font-bold lg:col-start-4 lg:row-start-1">
                 {it.recommends}
-              </span>
-              <span role="cell" className="max-lg:order-2 lg:col-auto">
-                <StatePill tone={it.statusTone}>{it.status}</StatePill>
               </span>
             </div>
           ))

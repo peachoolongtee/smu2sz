@@ -61,5 +61,6 @@ test("the exposure recording holds both languages, every path's sentences and no
 test("every queue word is said in English and in Chinese", () => {
   const keys = Object.keys(en).filter((k) => k.startsWith("dq."));
   assert.ok(keys.length > 60);
-  for (const k of keys) assert.ok(zh[k] && zh[k] !== en[k], `${k} is translated`);
+  // ("¥0" is the same sign in both languages)
+  for (const k of keys) assert.ok(zh[k] && (zh[k] !== en[k] || k === "dq.none"), `${k} is translated`);
 });
