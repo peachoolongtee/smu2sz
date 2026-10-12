@@ -18,6 +18,8 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Sequence
 
+from app.api.financing_words import state_word
+
 Rule = tuple["re.Pattern[str]", Callable[["re.Match[str]"], str]]
 
 MISSES: set[str] = set()  # sentences with Latin words that no template knew (the tests and the report read it)
@@ -219,7 +221,9 @@ def _drew(m: re.Match[str]) -> str:
 
 @rule(rf"Advance (?P<amt>{M}) on (?P<inv>{INV}) from (?P<fac>{N}) (?P<w>{WHEN}){_LANDS}")
 def _advance(m: re.Match[str]) -> str:
-    return f"已于{when_zh(m['w'])}以{inv(m['inv'])}从{m['fac']}预支 {m['amt']}" + _landing(m)
+    # one vocabulary for the financing (app.api.financing_words): an advance whose cash lands later is ARRANGED, not "advanced"
+    word = state_word("zh", "ARRANGED" if m["lw"] else "RECEIVED")
+    return f"已于{when_zh(m['w'])}以{inv(m['inv'])}从{m['fac']}申请融资 {m['amt']}（融资{word}）" + _landing(m)
 
 
 @rule(rf"Repaid (?P<amt>{M}) on (?P<fac>{N}) with interest (?P<int>{M}) \((?P<parts>.+)\)")

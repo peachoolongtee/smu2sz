@@ -8,7 +8,7 @@ Read-only: every state passed to the kernel is a `model_copy`, nothing is stored
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from app.alerts import alerts
 from app.api.presentation import party_name, t, when_text
@@ -16,6 +16,7 @@ from app.books import Books, binds, current_books
 from app.domain.models import (
     CashFlow,
     Commitment,
+    Facility,
     FacilityKind,
     FacilityStatus,
     FinancialState,
@@ -27,7 +28,7 @@ from app.domain.models import (
     Obligation,
     Receivable,
 )
-from app.domain.money import fmt_yuan
+from app.domain.money import fmt_yuan, fmt_yuan_about
 from app.domain.ports import LedgerStore
 from app.financial import lots as funding_lots
 from app.financial import project
@@ -36,7 +37,7 @@ from app.funding import plan
 from app.funding.router import shared_runs
 from app.strategy.capacity import Package, books_with, resolve_package
 from app.strategy.types import MarginalImpact, ScenarioState, StressRow
-from app.strategy.words import invoice_labels
+from app.strategy.words import invoice_label, invoice_labels, whole_yuan
 
 _OPEN = ("OPEN", "FINANCED")
 
@@ -256,6 +257,75 @@ def _ids_text(ids: Sequence[str]) -> str:
     return ", ".join(ids)
 
 
+@dataclass(frozen=True)
+class _Charged:
+    """One financed invoice paid late: its lot and facility, what the extra periods add and what the owner is left owing."""
+
+    facility: Facility
+    lot: FundingLot
+    extra_fen: int  # the charges on the late day less the charges on the due day (`advance_charges`)
+    owed_fen: int  # the fixed remainder the owner owes after the receipt (0 when the receipt covers the claim)
+
+
+@dataclass
+class _Lenders:
+    """What the lender-first settlement of the financed invoices does to the copy."""
+
+    landings: list[CashFlow] = field(default_factory=list)  # an advance not landed yet lands on its arrival day
+    cleared: list[FundingLot] = field(default_factory=list)  # the lots the receipts replace
+    left: list[FundingLot] = field(default_factory=list)  # a fixed remainder the owner owes, in place of a cleared lot
+    drawn: dict[str, int] = field(default_factory=dict)  # facility id -> drawn balance after the receipts
+    charged: dict[str, _Charged] = field(default_factory=dict)  # receivable id -> the above
+
+
+def _lender_first(held: FinancialState, issued: dict[str, Receivable], advance_of: dict[str, FundingLot], moved: Sequence[str],
+                  owed: dict[str, int], due: dict[str, int], delay_days: int, today: int, paid: dict[str, int]) -> _Lenders:
+    """A FINANCED invoice paid `delay_days` late, settled the way `_received_today` settles one but on the late day: the
+    receipt goes to the lender first (`apply_receipt`, final), so the advance's charges run to that day as the facility sets
+    them; cash gets the rest (`paid` is lowered to it) and the facility's drawn balance falls by what the receipt repays. A
+    lot whose cash has not landed lands on its arrival day (`landing_cash`) and is repaid on the late day."""
+    out = _Lenders()
+    drawn = {f.id: f.drawn_fen for f in held.facilities}
+    for rid in moved:
+        lot = advance_of.get(rid)
+        if rid not in issued or issued[rid].status != "FINANCED" or lot is None:
+            continue
+        f = next(x for x in held.facilities if x.id == lot.facility_id)
+        late_day = due[rid] + delay_days
+        applied = funding_lots.apply_receipt(f, lot, owed[rid], late_day, final=True)
+        was = funding_lots.advance_charges(f, lot, due[rid])
+        now = funding_lots.advance_charges(f, lot, late_day)
+        paid[rid] = owed[rid] - applied.applied
+        if not lot.settled and (cash := funding_lots.landing_cash(f, lot)) > 0:
+            out.landings.append(CashFlow(
+                id=f"LATE-LAND:{rid}", day=max(today, lot.arrival_day), amount_fen=cash, kind=FlowKind.OTHER,
+                label=f"Advance on {rid} lands, {f.name} (a test)", confirmed=True))
+        remainder = applied.lot
+        out.cleared.append(lot)
+        if remainder is not None:  # the receipt did not cover the claim: a fixed amount the owner owes, landed on the copy
+            out.left.append(remainder.model_copy(update={"settled": True}))
+        drawn[f.id] += (remainder.remaining_fen if remainder is not None else 0) - lot.remaining_fen
+        out.charged[rid] = _Charged(f, lot, (now[0] + now[1]) - (was[0] + was[1]),
+                                    remainder.remaining_fen if remainder is not None else 0)
+    touched = {c.facility.id for c in out.charged.values()}
+    out.drawn = {fid: amount for fid, amount in drawn.items() if fid in touched}
+    return out
+
+
+def _financing_note(state: FinancialState, rid: str, delay_days: int, today: int, lang: str, charged: _Charged) -> str:
+    """The assumption sentence for one financed invoice paid late: the financing runs on, and what that adds."""
+    label = invoice_label(state, rid, today, "zh" if lang == "zh" else "en")
+    advance = whole_yuan(charged.lot.remaining_fen)
+    more_en = (f"about {fmt_yuan_about(charged.extra_fen)} more in charges" if charged.extra_fen > 0 else "no more in charges")
+    more_zh = f"费用约增加 {fmt_yuan_about(charged.extra_fen)}" if charged.extra_fen > 0 else "费用不增加"
+    out = t(lang, f"The {advance} financing on {label} runs {delay_days} days longer: {more_en}, as its agreement sets them.",
+            f"{label}所融资的 {advance} 将多持续 {delay_days} 天：按融资协议计算，{more_zh}。")
+    if charged.owed_fen > 0:
+        out += t(lang, f" The receipt then no longer covers the financing, so about {fmt_yuan_about(charged.owed_fen)} stays owed by you.",
+                 f" 届时回款不足以还清融资，约 {fmt_yuan_about(charged.owed_fen)} 仍需由您偿还。")
+    return out
+
+
 def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *,
                        horizon_days: int = DEFAULT_HORIZON_DAYS, lang: str = "en") -> ScenarioState:
     """The buyer pays every invoice `delay_days` late (a test, not a forecast): a labelled copy of the books.
@@ -274,8 +344,14 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
       discount; the agreement no longer binds and `read_books` leaves it out). At a delay of 0 there is no lateness to
       lapse it: the agreement stands and the copy reproduces the books exactly;
     - the buyer's own facility (lender = the buyer) is taken off the copy: it needs the buyer's agreement to pay early;
-    - a FINANCED invoice is not moved and is named ("its delay is not modelled"); with nothing else to move the stress is
-      refused (`ValueError`), as is an unknown buyer, a negative delay or a buyer with nothing to pay.
+    - a FINANCED invoice is moved too (map #88, ticket #107), and the financing keeps running to the late day: the receipt
+      is dated due + `delay_days` and pays the lender first through `funding_lots.apply_receipt(..., final=True)`, so the
+      charges of the extra periods fall as the facility sets them (`advance_charges`). The lot is cleared, or left as a
+      FIXED remainder the owner owes (the engine's `orphaned` rule: recourse); the facility's drawn balance falls with it
+      and cash gets the rest, as ONE confirmed `CashFlow` (the single receipt). A lot whose cash has not landed lands on
+      its arrival day on the copy and is repaid on the late day. A financed invoice already past due, or with no advance
+      on record, stays as the books count it. An unknown buyer, a negative delay or a buyer with nothing to pay is refused
+      (`ValueError`).
 
     The copy cannot be financed on the moved invoices, which understates what could be financed by at most the advance
     rate times what is outstanding: the assumption says so."""
@@ -287,8 +363,14 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
         raise ValueError(f"{buyer_id} is not on the books")
     name = party_name(state, buyer_id)
     issued = {r.id: r for r in state.receivables if r.counterparty_id == buyer_id}
-    financed = [r.id for r in issued.values() if r.status == "FINANCED" and r.outstanding_fen > 0]
-    overdue = [r.id for r in issued.values() if r.status == "OPEN" and r.outstanding_fen > 0 and r.due_day < today]
+    overdue = [r.id for r in issued.values() if r.status in _OPEN and r.outstanding_fen > 0 and r.due_day < today]
+    taken_off = [f for f in state.facilities if f.lender_id == buyer_id]
+    gone = {f.id for f in taken_off}
+    held = funding_lots.ensure_lots(state)  # the lots as the projection reads them (a balance no lot explains is assumed)
+    advance_of: dict[str, FundingLot] = {}
+    for lot in held.lots:
+        if lot.receivable_id and lot.remaining_fen > 0 and lot.facility_id not in gone:
+            advance_of.setdefault(lot.receivable_id, lot)
 
     ahead = project(state, books.with_([]), [], Mode.CONSERVATIVE, horizon_days + LATE_REACH_DAYS)
     owed: dict[str, int] = {}
@@ -299,7 +381,11 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
             if e.kind not in _RECEIPTS or e.ref is None or e.amount_fen <= 0:
                 continue
             if e.ref in issued:
-                if issued[e.ref].status != "OPEN":
+                status = issued[e.ref].status
+                if status == "FINANCED":
+                    if e.ref not in advance_of:  # no advance on record: it stays as the books count it
+                        continue
+                elif status != "OPEN":
                     continue
             elif not e.ref.startswith(f"RI:{buyer_id}:"):
                 continue
@@ -319,41 +405,47 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
                     raise ValueError(f"{rid} cannot be dated: no recurring invoice of {buyer_id} issues it")
                 due[rid] = int(rid.rsplit(":", 1)[1]) + terms
     if not owed:
-        why = f" {_ids_text(financed)} is financed; its delay is not modelled." if financed else ""
-        raise ValueError(f"{name} has no open invoice or recurring invoice to pay late.{why}")
+        raise ValueError(f"{name} has no open invoice or recurring invoice to pay late.")
     if delay_days == 0:  # no lateness: an agreement to pay early is honoured, so the copy reproduces the books exactly
         for rid in agreed & issued.keys():  # (one on an invoice not issued yet lapses with the template, at any delay)
             del owed[rid]
 
     moved = sorted(owed, key=lambda r: (due[r], r))
-    flows = [CashFlow(id=f"LATE:{rid}", day=due[rid] + delay_days, amount_fen=owed[rid], kind=FlowKind.RECEIVABLE,
+    paid: dict[str, int] = dict(owed)  # what reaches cash on the late day (a financed invoice's lender is paid first)
+    lenders = _lender_first(held, issued, advance_of, moved, owed, due, delay_days, today, paid)
+    flows = [CashFlow(id=f"LATE:{rid}", day=due[rid] + delay_days, amount_fen=paid[rid], kind=FlowKind.RECEIVABLE,
                       label=f"Receipt of {rid} from {name}, paid {delay_days} days late (a test)",
-                      counterparty_id=buyer_id, confirmed=True) for rid in moved]
-    taken_off = [f for f in state.facilities if f.lender_id == buyer_id]
-    gone = {f.id for f in taken_off}
+                      counterparty_id=buyer_id, confirmed=True) for rid in moved if paid[rid] > 0]
+    flows += lenders.landings
+    cleared = {lot.id for lot in lenders.cleared}
+    drawn = dict(lenders.drawn)
     scenario = state.model_copy(update={
         "receivables": [r for r in state.receivables if r.id not in owed],
         "recurring_invoices": [ri for ri in state.recurring_invoices if ri.counterparty_id != buyer_id],
-        "facilities": [f for f in state.facilities if f.id not in gone],
-        "lots": [lot for lot in state.lots if lot.facility_id not in gone],
+        "facilities": [f.model_copy(update={"drawn_fen": drawn[f.id]}) if f.id in drawn else f
+                       for f in state.facilities if f.id not in gone],
+        "lots": [*(lot for lot in held.lots if lot.facility_id not in gone and lot.id not in cleared), *lenders.left],
         "flows": [*state.flows, *flows]})
 
     end = today + horizon_days
     past = [f for f in flows if f.day > end >= f.day - delay_days]  # the delay pushes it out of the horizon
     rates = [f.advance_rate_bp or 10_000 for f in state.facilities
              if f.kind == FacilityKind.INVOICE_FINANCING and f.status == FacilityStatus.COMMITTED and f.owner_approved]
-    inside = sum(owed[rid] for rid in moved if due[rid] <= end)  # what the horizon would have collected
+    inside = sum(owed[rid] for rid in moved if due[rid] <= end and rid not in lenders.charged)  # a financed one is not financeable again
     understated = max((inside * r // 10_000 for r in rates), default=0)
     on_time = delay_days == 0
     head = t(lang, f"If {name} paid every invoice on its due day (a test: the books as they stand)." if on_time else
              f"If {name} paid every invoice {delay_days} days late (a test, not a forecast).",
              f"如果 {name} 的每张发票都按到期日付款（这是测试：账面就是现在的样子）。" if on_time else
              f"如果 {name} 的每张发票都晚付 {delay_days} 天（这是压力测试，不是预测）。")
-    notes = []
-    if financed:
-        notes.append(t(lang, f"{_capital(invoice_labels(state, financed, today, 'en'))} {'is' if len(financed) == 1 else 'are'} financed; "
-                             f"its delay is not modelled.",
-                       f"{invoice_labels(state, financed, today, 'zh')} 已用于融资，其延期未纳入测算。"))
+    notes = [] if on_time else [_financing_note(state, rid, delay_days, today, lang, lenders.charged[rid])
+                                for rid in moved if rid in lenders.charged]
+    unmodelled = [rid for rid, r in issued.items() if r.status == "FINANCED" and r.outstanding_fen > 0 and rid not in owed
+                  and rid not in overdue]
+    if unmodelled:
+        notes.append(t(lang, f"{_capital(invoice_labels(state, unmodelled, today, 'en'))} {'is' if len(unmodelled) == 1 else 'are'} "
+                             f"financed and {'stays' if len(unmodelled) == 1 else 'stay'} as the books count it.",
+                       f"{invoice_labels(state, unmodelled, today, 'zh')} 已用于融资，保持账面原有的计算方式。"))
     if overdue:
         notes.append(t(lang, f"{_capital(invoice_labels(state, overdue, today, 'en'))} {'is' if len(overdue) == 1 else 'are'} already past due "
                              f"and {'stays' if len(overdue) == 1 else 'stay'} as the books count it.",

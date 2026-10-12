@@ -14,10 +14,11 @@ from app.books import Books, binds
 from app.domain.models import (
     FacilityKind,
     FinancialState,
-    FundingLot,
     LedgerEventKind,
     Mode,
 )
+from app.domain.money import fmt_yuan_about
+from app.financial import lots as funding_lots
 from app.financial import project
 from app.strategy.capacity import books_with, resolve_package
 from app.strategy.impact import (
@@ -30,7 +31,7 @@ from app.strategy.impact import (
 )
 from app.strategy.types import StressRow
 
-from .exposure_books import ASKED, OPTION_A, OPTION_B, OWNER_KEY, golden
+from .exposure_books import ASKED, OPTION_A, OPTION_B, OWNER_KEY, financed_golden, golden
 
 FOSHAN = "BUYER-1"
 HORIZON = DEFAULT_HORIZON_DAYS
@@ -226,31 +227,109 @@ def test_on_day_34_rcv_a_is_two_days_overdue_and_is_not_moved_by_any_stress(book
         project(state, books_day34.with_([]), [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen).min_cash_fen)
 
 
-def test_a_financed_invoice_is_not_moved_and_is_named():
-    books, _ = golden()
-    state = books.state
-    rcv = next(r for r in state.receivables if r.id == "RCV-A")
-    lot = FundingLot(id="LOT-IF", facility_id="FAC-IF", principal_fen=25_500_000, remaining_fen=25_500_000, request_day=0,
-                     arrival_day=3, receivable_id="RCV-A", settled=False)
-    financed = state.model_copy(update={
-        "receivables": [rcv.model_copy(update={"status": "FINANCED", "advance_fen": 25_500_000,
-                                              "advance_facility_id": "FAC-IF"})],
-        "facilities": [f.model_copy(update={"drawn_fen": 25_500_000}) if f.id == "FAC-IF" else f for f in state.facilities],
-        "lots": [lot]})
-    sc = scenario_paid_late(Books(state=financed, obligations=()), FOSHAN, 30, 0)
-    assert "The ¥420,000.00 invoice to Foshan Home Retail Co. (due in 32 days) is financed; its delay is not modelled." in sc.assumption
-    assert "RCV-A" not in sc.assumption
-    assert [r.id for r in sc.state.receivables] == ["RCV-A"] and sc.state.receivables[0].status == "FINANCED"
-    assert "LATE:RCV-A" not in {f.id for f in _flows(sc.state)} and "LATE:RI:BUYER-1:2" in {f.id for f in _flows(sc.state)}
+_financed = financed_golden
 
 
-def test_a_buyer_with_nothing_but_a_financed_invoice_is_refused_with_the_sentence():
+def _claim_extra(books: Books, delay: int) -> int:
+    """What `advance_charges` says the extra periods add for RCV-A's lot, interest plus fee."""
+    lot = books.state.lots[0]
+    f = next(x for x in books.state.facilities if x.id == "FAC-IF")
+    due = 32
+    now, was = funding_lots.advance_charges(f, lot, due + delay), funding_lots.advance_charges(f, lot, due)
+    return now[0] + now[1] - was[0] - was[1]
+
+
+@pytest.mark.parametrize("landed", [False, True])
+def test_a_financed_invoice_is_moved_and_its_financing_runs_on_to_the_late_day(landed):
+    books = _financed(landed)
+    sc = scenario_paid_late(books, FOSHAN, 30, 0)
+    extra = _claim_extra(books, 30)
+    assert extra > 0
+    assert [r.id for r in sc.state.receivables] == []  # the invoice is off the copy: one receipt, on its late day
+    flows = {f.id: f for f in _flows(sc.state)}
+    f = next(x for x in books.state.facilities if x.id == "FAC-IF")
+    claim_late = 25_500_000 + sum(funding_lots.advance_charges(f, books.state.lots[0], 62)[:2])
+    assert (flows["LATE:RCV-A"].day, flows["LATE:RCV-A"].amount_fen) == (62, 42_000_000 - claim_late)  # the lender first
+    assert sc.state.lots == [] and next(x for x in sc.state.facilities if x.id == "FAC-IF").drawn_fen == 0
+    assert (f"The ¥255,000 financing on the ¥420,000.00 invoice to Foshan Home Retail Co. (due in 32 days) runs 30 days longer: "
+            f"about {fmt_yuan_about(extra)} more in charges, as its agreement sets them.") in sc.assumption
+    assert "is financed; its delay is not modelled" not in sc.assumption and "RCV-A" not in sc.assumption
+
+
+def test_the_extra_charges_are_advance_charges_at_the_late_day_less_at_the_due_day():
+    books = _financed(True)
+    on_due = {f.id: f for f in _flows(scenario_paid_late(books, FOSHAN, 0, 0).state)}["LATE:RCV-A"]
+    for delay in (1, 29, 30, 31, 60, 95):
+        late = {f.id: f for f in _flows(scenario_paid_late(books, FOSHAN, delay, 0).state)}["LATE:RCV-A"]
+        assert late.day == on_due.day + delay
+        assert on_due.amount_fen - late.amount_fen == _claim_extra(books, delay)  # the cash the receipt leaves falls by exactly it
+    assert _claim_extra(books, 1) == 0 and _claim_extra(books, 31) > 0  # a period turns over only when it is crossed
+    assert "no more in charges" in scenario_paid_late(books, FOSHAN, 1, 0).assumption
+
+
+def test_a_receipt_that_no_longer_covers_the_claim_leaves_a_fixed_remainder_owed_by_the_owner():
+    books = _financed(True, outstanding_fen=25_600_000)  # ¥256,000 left to collect against a ¥255,000 advance
+    lot, f = books.state.lots[0], next(x for x in books.state.facilities if x.id == "FAC-IF")
+    claim = 25_500_000 + sum(funding_lots.advance_charges(f, lot, 62)[:2])
+    assert claim > 25_600_000  # the late claim outgrows the receipt
+    sc = scenario_paid_late(books, FOSHAN, 30, 0)
+    assert not [x for x in _flows(sc.state) if x.id == "LATE:RCV-A"]  # the lender takes the whole receipt: cash gets nothing
+    (rest,) = sc.state.lots
+    assert (rest.principal_fen, rest.remaining_fen, rest.settled) == (0, claim - 25_600_000, True)
+    assert funding_lots.is_fixed_remainder(rest) and funding_lots.orphaned(sc.state, "FAC-IF") == [rest]  # the engine's rule
+    assert next(x for x in sc.state.facilities if x.id == "FAC-IF").drawn_fen == rest.remaining_fen
+    assert f"about {fmt_yuan_about(rest.remaining_fen)} stays owed by you." in sc.assumption
+    # on the due day the claim is smaller (one period fewer), so less is owed
+    (on_due,) = scenario_paid_late(books, FOSHAN, 0, 0).state.lots
+    assert 0 < on_due.remaining_fen < rest.remaining_fen
+
+
+def test_an_arranged_lot_lands_on_its_arrival_day_and_is_repaid_on_the_late_day():
+    books = _financed(False)
+    sc = scenario_paid_late(books, FOSHAN, 30, 0)
+    flows = {x.id: x for x in sc.state.flows if x.id.startswith("LATE")}
+    assert (flows["LATE-LAND:RCV-A"].day, flows["LATE-LAND:RCV-A"].amount_fen) == (3, 25_500_000)
+    assert flows["LATE:RCV-A"].day == 62
+    traj = project(sc.state, [], [], Mode.CONSERVATIVE, 70)
+    seen = {(p.day, e.ref): e.amount_fen for p in traj.days for e in p.events if e.kind == LedgerEventKind.FLOW and e.ref}
+    assert seen[(3, "LATE-LAND:RCV-A")] == 25_500_000  # lands on its arrival day ...
+    assert seen[(62, "LATE:RCV-A")] == flows["LATE:RCV-A"].amount_fen  # ... and is repaid out of the receipt on the late day
+    assert sum(1 for k in seen if k[1] in ("LATE:RCV-A", "LATE-LAND:RCV-A")) == 2  # each exactly once
+
+
+@pytest.mark.parametrize("landed", [False, True])
+def test_a_delay_of_zero_reproduces_the_books_with_a_financed_invoice(landed):
+    books = _financed(landed)
+    sc = scenario_paid_late(books, FOSHAN, 0, 0)
+    assert _closings(Books(state=sc.state, obligations=())) == _closings(books)
+    assert "financing on" not in sc.assumption  # nothing runs longer
+
+
+def test_the_financing_sentence_in_chinese():
+    zh = scenario_paid_late(_financed(True), FOSHAN, 30, 0, lang="zh").assumption
+    assert "所融资的 ¥255,000 将多持续 30 天：按融资协议计算，费用约增加 ¥" in zh and "RCV-A" not in zh
+
+
+def test_a_financed_invoice_past_due_or_with_no_advance_on_record_stays_as_the_books_count_it():
+    books = _financed(True)
+    late = books.state.model_copy(update={"as_of_day": 34, "flows": [f for f in books.state.flows if f.day >= 34]})
+    sc = scenario_paid_late(Books(state=late, obligations=()), FOSHAN, 30, 34)
+    assert [r.id for r in sc.state.receivables] == ["RCV-A"] and "LATE:RCV-A" not in {f.id for f in _flows(sc.state)}
+    assert "is already past due and stays as the books count it" in sc.assumption
+    no_lot = books.state.model_copy(update={"lots": [], "facilities": [
+        f.model_copy(update={"drawn_fen": 0}) for f in books.state.facilities]})
+    sc = scenario_paid_late(Books(state=no_lot, obligations=()), FOSHAN, 30, 0)
+    assert [r.id for r in sc.state.receivables] == ["RCV-A"]
+    assert "is financed and stays as the books count it." in sc.assumption
+
+
+def test_a_buyer_with_nothing_but_an_unmodelled_financed_invoice_is_refused():
     books, _ = golden()
     state = books.state
     rcv = next(r for r in state.receivables if r.id == "RCV-A")
     only = state.model_copy(update={
         "receivables": [rcv.model_copy(update={"status": "FINANCED", "advance_fen": 25_500_000})], "recurring_invoices": []})
-    with pytest.raises(ValueError, match="RCV-A is financed; its delay is not modelled"):
+    with pytest.raises(ValueError, match="no open invoice or recurring invoice to pay late"):
         scenario_paid_late(Books(state=only, obligations=()), FOSHAN, 30, 0)
 
 
