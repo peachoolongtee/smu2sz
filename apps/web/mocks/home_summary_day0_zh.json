@@ -4200,7 +4200,7 @@
         "formula": "150,000.00 × 6.4% × 32/365 = 841.64"
       },
       {
-        "label": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）预支 ¥255,000.00",
+        "label": "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）融资 ¥255,000.00",
         "display": "¥2,272.29",
         "formula": "255,000.00 × 7.8% × 30/365 (29 days billed as 1 × 30-day period) = 1,634.79; 255,000.00 × 0.25% × 1 = 637.50; total ¥2,272.29"
       }

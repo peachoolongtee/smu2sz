@@ -38,6 +38,8 @@
           "amount_display": "¥255,000.00",
           "arrival_day": 3,
           "arrival_when": "in 3 days",
+          "financing_state": "ARRANGED",
+          "financing_state_text": "financing arranged, expected in 3 days",
           "headline": "¥255k funding arriving in 3 days"
         }
       ]

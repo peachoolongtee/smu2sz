@@ -38,6 +38,8 @@
           "amount_display": "¥200,000.00",
           "arrival_day": 37,
           "arrival_when": "3 天后",
+          "financing_state": "ARRANGED",
+          "financing_state_text": "融资已安排，预计3 天后到账",
           "headline": "¥200k 资金将于3 天后到账"
         }
       ]
@@ -105,7 +107,7 @@
         "events": [
           {
             "kind": "ADVANCE",
-            "label": "Invoice financing (onboarded platform)以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）预支",
+            "label": "Invoice financing (onboarded platform)以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）融资",
             "label_short": "发票融资到账",
             "amount_fen": 20000000,
             "amount_display": "¥200,000.00",
@@ -245,7 +247,7 @@
           },
           {
             "kind": "REPAYMENT",
-            "label": "偿还Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）的预支款",
+            "label": "偿还Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）的融资款",
             "label_short": "还款",
             "amount_fen": -20000000,
             "amount_display": "−¥200,000.00",
@@ -2919,7 +2921,7 @@
       "seq": 11,
       "kind": "OPERATION",
       "actor": "AGENT",
-      "text": "已于今天以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）从Invoice financing (onboarded platform)预支 ¥200,000.00；资金将于3 天后到账，不是今天",
+      "text": "已于今天以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）从Invoice financing (onboarded platform)申请融资 ¥200,000.00（融资已安排）；资金将于3 天后到账，不是今天",
       "event_text": "您已批准¥200,000.00 的发票融资。资金将于3 天后到账。",
       "event_detail": null,
       "when": "今天",

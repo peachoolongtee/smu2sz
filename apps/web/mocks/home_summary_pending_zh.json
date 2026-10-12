@@ -4136,8 +4136,8 @@
       "cost_total_display": "¥1,706.10",
       "approvals": 2,
       "legs": [
-        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（43 天后到期）预支 ¥80,000.00: ¥1,425.75",
-        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）预支 ¥120,000.00: ¥1,069.32",
+        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（43 天后到期）融资 ¥80,000.00: ¥1,425.75",
+        "Invoice financing (onboarded platform)：以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）融资 ¥120,000.00: ¥1,069.32",
         "预测期内其他利息与费用的变化: −¥788.97"
       ]
     },
