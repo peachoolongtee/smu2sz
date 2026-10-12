@@ -46,9 +46,9 @@ from app.api.home_hybrid import (
     _tone,
 )
 from app.api.presentation import party_name, t, when_text, whole
+from app.decisions.identity import offer_id_of
 from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
-from app.decisions.identity import offer_id_of
 from app.strategy import words as basis_words
 from app.strategy.payments import STRESS_DELAY_DAYS
 

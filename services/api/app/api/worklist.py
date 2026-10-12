@@ -59,7 +59,6 @@ from __future__ import annotations
 
 import json
 import logging
-from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Any, Literal
 from urllib.parse import quote
@@ -221,10 +220,11 @@ def _ask_phrase(offer: Any) -> str | None:
 def _differentiate(rows: list[Row]) -> list[Row]:
     """Rows of one customer that share a subject say what separates them: the ask's own phrase in quotes. A row whose phrase is not its own
     in the group (the same words twice) or that has none stays null: nothing here makes up a word, and no figure is written."""
-    groups = Counter((r.customer_id, r.subject) for r in rows if r.customer_id is not None)
     out: list[Row] = []
     for r in rows:
-        group = [x for x in rows if (x.customer_id, x.subject) == (r.customer_id, r.subject)] if groups[(r.customer_id, r.subject)] > 1 else []
+        group = [x for x in rows if r.customer_id is not None and (x.customer_id, x.subject) == (r.customer_id, r.subject)]
+        if len(group) < 2:
+            group = []
         own = r.ask is not None and sum(1 for x in group if x.ask == r.ask) == 1
         out.append(replace(r, differentiator=f"“{r.ask}”" if own else None))
     return out

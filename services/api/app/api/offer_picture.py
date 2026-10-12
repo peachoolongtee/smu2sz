@@ -29,13 +29,22 @@ from app.api.presentation import (
     party_name,
     series_axis,
     when_text,
+    whole,
 )
 from app.api.presentation import t as say
-from app.api.presentation import whole
 from app.api.runtime import get_runtime
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
-from app.domain.models import Actor, FundingActionKind, LedgerEventKind, Mode, ObligationType, Outcome, RecordCommitment, Tier
+from app.domain.models import (
+    Actor,
+    FundingActionKind,
+    LedgerEventKind,
+    Mode,
+    ObligationType,
+    Outcome,
+    RecordCommitment,
+    Tier,
+)
 from app.domain.money import bp, fmt_pct, fmt_yuan
 from app.financial import EngineError, project
 from app.funding import plan

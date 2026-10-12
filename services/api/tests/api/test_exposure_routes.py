@@ -589,7 +589,7 @@ def test_the_stress_band_says_its_days_below_the_minimum_or_where_the_lowest_poi
 
     from app.strategy.exposure import breach_days_text
 
-    row = lambda days, low: SimpleNamespace(breach_days=days, lowest_fen=low)  # noqa: E731
+    row = lambda days, low: SimpleNamespace(breach_days=days, lowest_fen=low)
     floor = 30_000_000
     assert breach_days_text(row(15, 1), floor, "en") == "Below your minimum for 15 days"  # type: ignore[arg-type]
     assert breach_days_text(row(1, 1), floor, "en") == "Below your minimum for 1 day"  # type: ignore[arg-type]
