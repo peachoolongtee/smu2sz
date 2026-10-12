@@ -10,6 +10,7 @@
       "invoice": "the ¥420,000.00 invoice to Foshan Home Retail Co.",
       "face_fen": 42000000,
       "outstanding_fen": 42000000,
+      "amount_short": "¥420k",
       "status": "FINANCED",
       "due_day": 32,
       "due_when": "in 32 days",
@@ -45,12 +46,15 @@
         "owed_by_owner_display": "¥0.00",
         "per_period_more_display": "¥2,272.30"
       },
+      "net_short": "about ¥163k",
+      "recourse_text": "If the receipt falls short, what is left is owed by you.",
       "financing_state": "ARRANGED",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
         "terms_days": 45,
         "rebate_bp": 0,
-        "terms_text": "Governed by agreement FHR-2026-07: payment is due 45 days from the invoice date",
+        "terms_label": "Payment terms",
+        "terms_text": "Agreement FHR-2026-07: payment is due 45 days from the invoice date",
         "rebate_display": "0.00%"
       },
       "early_payment": {
@@ -70,6 +74,7 @@
           }
         ]
       },
+      "financing_href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -81,8 +86,11 @@
       "when_text": "in 32 days",
       "due_day": 32,
       "amount_fen": 42000000,
-      "amount_display": "¥420,000.00"
+      "amount_display": "¥420,000.00",
+      "buyer_name": "Foshan Home Retail Co."
     },
+    "financing_total_fen": 25500000,
+    "financing_total_display": "¥255,000.00",
     "net_total_fen": 16272771,
     "net_total_display": "¥162,727.71",
     "net_total_text": "if every invoice is paid on its due day"

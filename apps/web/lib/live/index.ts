@@ -153,6 +153,9 @@ export const live = {
   /** GET /decisions/{id}/exposure (flag `exposure`): the buyer's late-payment test for a deal decision. Null when the feature is off or the decision names no buyer. */
   getDecisionExposure: (decisionId: string, lang: "en" | "zh") =>
     nullWhenOff(() => http<BuyerExposureView>("GET", `/decisions/${enc(decisionId)}/exposure?lang=${lang}&spare=0`)),
+  /** GET /buyers/{id}/exposure (flag `exposure`). Null when the feature is off (404) or the buyer is unknown. */
+  getBuyerExposure: (buyerId: string, lang: "en" | "zh") =>
+    nullWhenOff(() => http<BuyerExposureView>("GET", `/buyers/${enc(buyerId)}/exposure?lang=${lang}&spare=0`)),
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */
   getReceivablesWorth: (lang: "en" | "zh") => nullWhenOff(() => http<ReceivablesWorthView>("GET", `/receivables/worth?lang=${lang}`)),
 

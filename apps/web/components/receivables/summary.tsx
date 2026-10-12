@@ -17,11 +17,14 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
   const late = rows.filter(isLate).length;
   const tone = statusTone(rows);
   const next = summary.next_expected;
-  // The buyer behind "next expected": rows come due first, so it is the first one not yet past its day.
+  // The server names the buyer behind "next expected". Its short amount is the row's when that row is the only one due that day; else the summary's own figure.
+  const buyer = next?.buyer_name;
   const lead = rows.find((r) => !r.past_due);
+  const alone = lead ? rows.filter((r) => !r.past_due && r.due_when === lead.due_when).length === 1 : false;
+  const amount = (alone ? lead?.amount_short : undefined) ?? next?.amount_display;
   const financed = rows.find(isFinanced);
-  const net = rows.length === 1 ? rows[0].net?.net_short : summary.net_total_display;
-  const line1 = next?.amount_display && lead?.buyer_name ? t("recv3.h1.expected", { amount: next.amount_display, buyer: lead.buyer_name }) : rows.length ? t("recv3.h1.expected.none") : null;
+  const net = rows.length === 1 ? (rows[0].net_short ?? rows[0].net?.net_short) : summary.net_total_display;
+  const line1 = amount && buyer ? t("recv3.h1.expected", { amount, buyer }) : rows.length ? t("recv3.h1.expected.none") : null;
   const line2 = financed && net ? t("recv3.h1.net", { net }) : null;
   const repays = financed?.net?.repays_text;
 
@@ -68,7 +71,7 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
           label={t("recv3.card.next")}
           value={<span className="first-letter:uppercase">{next?.when_text ?? "-"}</span>}
           testId="recv3-next"
-          caption={<span className="text-sm">{next?.amount_display && lead?.buyer_name ? t("recv3.card.next.sub", { amount: next.amount_display, buyer: lead.buyer_name }) : t("recv3.card.next.none")}</span>}
+          caption={<span className="text-sm">{next?.amount_display && buyer ? t("recv3.card.next.sub", { amount: next.amount_display, buyer }) : t("recv3.card.next.none")}</span>}
         />
         <Stat
           size="lg"
@@ -76,7 +79,16 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
           label={t("recv3.card.net")}
           value={summary.net_total_display ?? "-"}
           testId="recv3-net"
-          caption={<span className="block text-sm first-letter:uppercase">{summary.net_total_text}</span>}
+          caption={
+            <>
+              <span className="block text-sm first-letter:uppercase">{summary.net_total_text}</span>
+              {financed && summary.financing_total_display ? (
+                <span className="block text-sm" data-testid="recv3-net-financing">
+                  {t("recv3.card.net.financing", { amount: summary.financing_total_display })}
+                </span>
+              ) : null}
+            </>
+          }
         />
       </dl>
     </>

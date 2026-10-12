@@ -2314,6 +2314,9 @@ export const en = {
   "recv3.stress.explore": "Explore the cash impact",
   "recv3.stress.keeps": "Opens Cash with this invoice and {buyer} selected; coming back keeps this invoice selected.",
   "recv3.stress.customer": "The customer profile",
+  "recv3.stress.later": "Net to you",
+  "recv3.actions.financing": "View the financing",
+  "recv3.card.net.financing": "After {amount} repays the financing",
   // ---- Home, the hybrid (position, attention, picture with the event rail, cards)
   "home.hy.read": "· read {when}",
   "home.hy.assumptions": "Forecast assumptions",
@@ -4655,6 +4658,9 @@ export const zh: Record<DictKey, string> = {
   "recv3.stress.explore": "查看对现金的影响",
   "recv3.stress.keeps": "打开现金页，并选中这张发票和 {buyer}；返回后仍停留在这张发票。",
   "recv3.stress.customer": "客户概况",
+  "recv3.stress.later": "您实得",
+  "recv3.actions.financing": "查看融资记录",
+  "recv3.card.net.financing": "其中 {amount} 先用于偿还融资",
   // ---- Home, the hybrid (position, attention, picture with the event rail, cards)
   "home.hy.read": "· {when}读取",
   "home.hy.assumptions": "预测所依据的假设",

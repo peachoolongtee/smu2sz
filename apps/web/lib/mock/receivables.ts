@@ -66,6 +66,15 @@ export async function mockReceivables(dealt: boolean, lang: "en" | "zh"): Promis
   return { ...clone<ReceivablesRead>(recorded), day: mockClock().day };
 }
 
+/** GET /buyers/{id}/exposure: BUYER-1's recording, taken on the opening books and on day 34's; any other buyer has none (null, as the server's 404 reads). */
+export async function mockBuyerExposure(buyerId: string, lang: "en" | "zh", news: boolean): Promise<BuyerExposureView | null> {
+  if (buyerId !== "BUYER-1") return null;
+  const file = news
+    ? await (lang === "zh" ? import("../../mocks/buyer_exposure_day34_zh.json") : import("../../mocks/buyer_exposure_day34.json"))
+    : await (lang === "zh" ? import("../../mocks/buyer_exposure_zh.json") : import("../../mocks/buyer_exposure.json"));
+  return clone<BuyerExposureView>(file.default);
+}
+
 /** GET /decisions/{id}/exposure: the recording of the open offer's decision; any other decision names no buyer (404, as the server answers) and the aside shows no result. */
 export async function mockDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
   const recorded = (await (lang === "zh" ? import("../../mocks/receivables/exposure_offer_zh.json") : import("../../mocks/receivables/exposure_offer.json"))).default as BuyerExposureView;

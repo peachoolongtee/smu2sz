@@ -761,6 +761,12 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
   return receivablesMock.mockReceivables(dealt, lang);
 }
 
+/** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  await delay();
+  return receivablesMock.mockBuyerExposure(buyerId, lang, home.mockClock().day >= home.NEWS_DAY);
+}
+
 /** GET /decisions/{id}/exposure: the recorded exposure of the open offer's decision; any other decision answers 404 (null: no result in the aside). */
 export async function getDecisionExposure(decisionId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
   await delay();

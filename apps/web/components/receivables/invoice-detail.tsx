@@ -83,6 +83,11 @@ export function InvoiceDetail({
           {financed ? t("recv3.sub.end") : ""}
         </p>
       ) : null}
+      {financed && row.recourse_text ? (
+        <p className="text-sm text-ink-2" data-testid="recv3-recourse">
+          {row.recourse_text}
+        </p>
+      ) : null}
       {net.owed_text ? (
         <p className="border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="recv3-owed">
           {net.owed_text}
@@ -90,7 +95,7 @@ export function InvoiceDetail({
       ) : null}
 
       <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[max-content_minmax(0,1fr)]" data-testid="recv3-facts">
-        {row.governed_by?.terms_text ? <Fact label={t("recv3.facts.terms")} testId="recv3-terms">{row.governed_by.terms_text}</Fact> : null}
+        {row.governed_by?.terms_text ? <Fact label={row.governed_by.terms_label ?? t("recv3.facts.terms")} testId="recv3-terms">{row.governed_by.terms_text}</Fact> : null}
         {row.early_payment?.text ? (
           <Fact label={t("recv3.facts.early")} testId="recv3-early">
             <span className="first-letter:uppercase">{row.early_payment.text}</span>
@@ -111,7 +116,7 @@ export function InvoiceDetail({
         {history ? <Fact label={t("recv3.facts.history")} testId="recv3-history">{history}</Fact> : null}
       </dl>
 
-      {actions.length ? (
+      {actions.length || row.financing_href ? (
         <div className="space-y-2">
           <div role="group" aria-label={t("recv3.actions")} className="flex flex-wrap gap-2" data-testid="recv3-actions">
             {actions.map((a, i) =>
@@ -125,6 +130,11 @@ export function InvoiceDetail({
                 </span>
               ),
             )}
+            {row.financing_href ? (
+              <ButtonLink prefetch={false} href={row.financing_href} className="min-h-11" data-testid="recv3-action-financing">
+                {t("recv3.actions.financing")}
+              </ButtonLink>
+            ) : null}
           </div>
           <p className="text-sm text-ink-3">{t("recv3.actions.note", { chase: t("biz.chase.button") })}</p>
         </div>

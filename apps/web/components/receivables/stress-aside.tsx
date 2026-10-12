@@ -81,6 +81,11 @@ export function StressAside({
                   <span className="first-letter:uppercase">{row.net.per_period_text}</span>
                 </Result>
               ) : null}
+              {now.net_later_text ? (
+                <Result label={t("recv3.stress.later")} testId="recv3-stress-later">
+                  <span className="first-letter:uppercase">{now.net_later_text}</span>
+                </Result>
+              ) : null}
             </dl>
             {now.assumption ? (
               <Disclosure summary={t("recv3.stress.assumes")} testId="recv3-stress-assumes">

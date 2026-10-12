@@ -13,17 +13,46 @@
     {
       "key": "asked",
       "kind": "asked",
-      "label": "按对方要求"
+      "label": "按对方要求",
+      "lowest_display": "¥165k",
+      "lowest_when": "60 天后",
+      "lowest_when_text": "低于最低现金 15 天",
+      "limit_word": "EXCEEDED",
+      "limit_text": "超出授权",
+      "share_after_text": "100%，多持续 15 天"
     },
     {
       "key": "CTR-193394b6ba8b",
       "kind": "reply",
-      "label": "方案 A"
+      "label": "方案 A",
+      "lowest_display": "¥300k",
+      "lowest_when": "30 天后",
+      "lowest_when_text": "恰为您的最低现金",
+      "limit_word": "WITHIN",
+      "limit_text": "在授权内",
+      "share_after_text": "100%，报价后 2 天付款"
     },
     {
       "key": "CTR-6b07cbf70441",
       "kind": "reply",
-      "label": "方案 B"
+      "label": "方案 B",
+      "lowest_display": "¥300k",
+      "lowest_when": "30 天后",
+      "lowest_when_text": "恰为您的最低现金",
+      "limit_word": "WITHIN",
+      "limit_text": "在授权内",
+      "share_after_text": "100%，多持续 10 天"
+    },
+    {
+      "key": "do_nothing",
+      "kind": "do_nothing",
+      "label": "不采取行动",
+      "lowest_display": "−¥105k",
+      "lowest_when": "30 天后",
+      "lowest_when_text": "低于最低现金 20 天",
+      "limit_word": "WITHIN",
+      "limit_text": "在授权内",
+      "share_after_text": "100%"
     }
   ],
   "concentration": {
@@ -4016,6 +4045,13 @@
         "capacity": null
       }
     }
+  },
+  "customer_context": {
+    "contribution_display": "约 ¥109万",
+    "contribution_note": "每年，估算；毛利率为演示而假设，尚未经您确认",
+    "owes_display": "¥420,000",
+    "share_text": "100%",
+    "profile_href": "/customers/BUYER-1"
   },
   "state_version": 1,
   "day": 0,

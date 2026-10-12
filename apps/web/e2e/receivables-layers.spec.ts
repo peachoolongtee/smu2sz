@@ -9,7 +9,9 @@ import offer from "../mocks/receivables/offer.json";
 import offerZh from "../mocks/receivables/offer_zh.json";
 import settled from "../mocks/receivables/settled.json";
 import exposure from "../mocks/receivables/exposure_offer.json";
-import exposureZh from "../mocks/receivables/exposure_offer_zh.json";
+import buyer from "../mocks/buyer_exposure.json";
+import buyerZh from "../mocks/buyer_exposure_zh.json";
+import buyer34 from "../mocks/buyer_exposure_day34.json";
 
 /**
  * Receivables in three layers (map #110) in mock mode, on the recorded GET /receivables of each point of the demo path (mocks/receivables/*.json) and the
@@ -55,7 +57,7 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   await expect(page.getByTestId("recv3-status")).toHaveAttribute("data-tone", "ok");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
   await expect(page.getByTestId("recv3-status")).toContainText("Read today");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${day0.summary.next_expected.amount_display} expected from ${row.buyer_name}`);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${row.amount_short} expected from ${day0.summary.next_expected.buyer_name}`);
   // Nothing is financed on the opening books: no second line, no financing sentence.
   await expect(page.getByTestId("recv3-h1-net")).toHaveCount(0);
   await expect(page.getByTestId("recv3-sub")).toHaveText("Nothing is overdue.");
@@ -85,6 +87,10 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   await expect(page.getByTestId("recv3-bd-advance")).toHaveCount(0);
   await expect(page.getByTestId("recv3-bd-net")).toHaveText(row.net.net_display);
   await expect(page.getByTestId("recv3-terms")).toHaveText(row.governed_by.terms_text);
+  await expect(page.getByTestId("recv3-facts")).toContainText(row.governed_by.terms_label);
+  expect(row.governed_by.terms_text.startsWith("Agreement ")).toBe(true);
+  await expect(page.getByTestId("recv3-recourse")).toHaveCount(0);
+  await expect(page.getByTestId("recv3-action-financing")).toHaveCount(0);
   await expect(page.getByTestId("recv3-early")).toContainText(row.early_payment.text);
   // The actions follow the server: CURRENT leads with the terms, then the reminder.
   const order = await page.locator('[data-testid^="recv3-action-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
@@ -98,7 +104,7 @@ test("the financing is arranged: the answer has two lines, the steps show where 
   const row = after.rows[0];
   expect(row.financing_state).toBe("ARRANGED");
   await expect(page.getByTestId("recv3-status")).toContainText("On track");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${after.summary.next_expected.amount_display} expected from ${row.buyer_name}`);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`${row.amount_short} expected from ${after.summary.next_expected.buyer_name}`);
   await expect(page.getByTestId("recv3-h1-net")).toHaveText(new RegExp(`^${row.net.net_short} becomes available at collection, after the financing is repaid\\.$`, "i"));
   await expect(page.getByTestId("recv3-sub")).toContainText("Nothing is overdue.");
   await expect(page.getByTestId("recv3-sub")).toContainText(row.net.repays_text);
@@ -119,6 +125,12 @@ test("the financing is arranged: the answer has two lines, the steps show where 
   await expect(page.getByTestId("recv3-breakdown")).toContainText(row.net.per_period_text);
   await expect(page.getByTestId("recv3-bd-net")).toHaveText(row.net.net_display);
   await expect(page.getByTestId("recv3-repays")).toContainText(row.net.repays_text);
+  await expect(page.getByTestId("recv3-recourse")).toHaveText(row.recourse_text);
+  await expect(page.getByTestId("recv3-net-financing")).toContainText(after.summary.financing_total_display);
+  // "View the financing" is the record of the request, shown because the server sent the link.
+  const financing = page.getByTestId("recv3-action-financing");
+  await expect(financing).toHaveText("View the financing");
+  expect(await financing.getAttribute("href")).toBe(row.financing_href);
   // The aside names the financing's extra cost for a late month, in the server's words.
   await expect(page.getByTestId("recv3-stress-financing")).toContainText(row.net.per_period_text);
 });
@@ -190,41 +202,50 @@ test("selecting an invoice replaces the detail in place and sets ?invoice=; the 
   await expect(page.getByTestId("chase-request")).toContainText(overdue.buyer_name);
 });
 
-test("the late-payment test: the result is the server's strings for the deal in context, and the one primary opens Cash with the series", async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-offer", "1"));
+test("the late-payment test is the buyer's own read, with no deal in context: the server's strings, and the one primary opens Cash with the series", async ({ page }) => {
   await page.goto("/receivables");
-  const row = offer.rows[0];
-  const now = exposure.stress.now;
-  expect(row.pending_counter.decision_id).toBe(exposure.decision_id);
-  await expect(page.getByTestId("recv3-stress")).toContainText(`If ${row.buyer_name} pays ${exposure.stress.delay_days} days late`);
+  const row = day0.rows[0];
+  const now = buyer.stress.now;
+  await expect(page.getByTestId("recv3-stress")).toContainText(`If ${row.buyer_name} pays ${buyer.stress.delay_days} days late`);
   await expect(page.getByTestId("recv3-stress-cash")).toHaveText(`${now.lowest_short} ${now.lowest_when}`);
   await expect(page.getByTestId("recv3-stress-minimum")).toHaveText(now.funding_text);
-  await expect(page.getByTestId("recv3-history")).toHaveText(exposure.payments.sentence);
-  await expect(page.getByTestId("recv3-concentration")).toContainText(exposure.concentration.ar_text);
-  await expect(page.getByTestId("recv3-counter")).toHaveText(row.pending_counter.text);
+  await expect(page.getByTestId("recv3-stress-later")).toHaveText(new RegExp(`^${now.net_later_text}$`, "i"));
+  await expect(page.getByTestId("recv3-history")).toHaveText(buyer.payments.sentence);
+  await expect(page.getByTestId("recv3-concentration")).toContainText(buyer.concentration.ar_text);
+  await expect(page.getByTestId("recv3-concentration-link")).toBeVisible();
   // The primary: one brand-filled action on the page, a link into Cash carrying the buyer, the invoice and the context.
   const explore = page.getByTestId("recv3-explore");
   await expect(explore).toHaveText("Explore the cash impact");
   const href = new URL((await explore.getAttribute("href")) ?? "", "http://x");
   expect(href.pathname).toBe("/cash");
-  expect(href.searchParams.get("stress")).toBe(`${row.buyer_id}:${exposure.stress.delay_days}`);
+  expect(href.searchParams.get("stress")).toBe(`${row.buyer_id}:${buyer.stress.delay_days}`);
   expect(href.searchParams.get("invoice")).toBe(row.receivable_id);
   expect(href.searchParams.get("customer")).toBe(row.buyer_id);
   await expect(page.getByText("coming back keeps this invoice selected")).toBeVisible();
   expect(await page.locator("main a, main button").evaluateAll((els) => els.filter((e) => getComputedStyle(e).backgroundColor === "rgb(3, 104, 233)" && e.getClientRects().length > 0).length)).toBe(1);
-  // The deal link of the counter carries the decision.
+});
+
+test("day 34: the buyer read is the one taken on day 34's books", async ({ page }) => {
+  await advanceTo34(page);
+  await expect(page.getByTestId("recv3-stress-later")).toHaveText(new RegExp(`^${buyer34.stress.now.net_later_text}$`, "i"));
+  await expect(page.getByTestId("recv3-stress-cash")).toHaveText(`${buyer34.stress.now.lowest_short} ${buyer34.stress.now.lowest_when}`);
+});
+
+test("a deal in the address (?decision=) is read for its own test; the counter's link carries the decision", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-receivables-offer", "1"));
+  await page.goto(`/receivables?decision=${encodeURIComponent(exposure.decision_id)}`);
+  const row = offer.rows[0];
+  const now = exposure.stress.now;
+  expect(row.pending_counter.decision_id).toBe(exposure.decision_id);
+  await expect(page.getByTestId("recv3-stress-cash")).toHaveText(`${now.lowest_short} ${now.lowest_when}`);
+  await expect(page.getByTestId("recv3-stress-minimum")).toHaveText(now.funding_text);
+  await expect(page.getByTestId("recv3-counter")).toHaveText(row.pending_counter.text);
   const deal = new URL((await page.getByTestId("recv3-counter").getAttribute("href")) ?? "", "http://x");
   expect(deal.pathname).toBe("/deals");
   expect(deal.searchParams.get("decision")).toBe(exposure.decision_id);
-});
-
-test("without a deal in context the aside keeps its explanation and the way into Cash, and shows no result", async ({ page }) => {
-  await page.goto("/receivables");
-  await expect(page.getByTestId("recv3-stress")).toBeVisible();
-  await expect(page.getByTestId("recv3-stress-cash")).toHaveCount(0);
-  await expect(page.getByTestId("recv3-stress-failed")).toHaveCount(0);
-  await expect(page.getByTestId("recv3-explore")).toBeVisible();
-  await expect(page.getByTestId("recv3-concentration-link")).toBeVisible();
+  // The context travels: the Cash link keeps the decision.
+  const href = new URL((await page.getByTestId("recv3-explore").getAttribute("href")) ?? "", "http://x");
+  expect(href.searchParams.get("decision")).toBe(exposure.decision_id);
 });
 
 test("Chinese: the same page and figures in the server's Chinese, with the dictionary's words", async ({ page }) => {
@@ -235,14 +256,15 @@ test("Chinese: the same page and figures in the server's Chinese, with the dicti
   await page.goto("/receivables");
   const row = offerZh.rows[0];
   await expect(page.getByTestId("recv3-status")).toContainText("一切按计划");
-  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`预计从 ${row.buyer_name} 收到 ${offerZh.summary.next_expected.amount_display}。`);
+  await expect(page.getByTestId("recv3-h1-expected")).toHaveText(`预计从 ${offerZh.summary.next_expected.buyer_name} 收到 ${row.amount_short}。`);
   await expect(page.getByTestId("recv3-owe")).toHaveText(offerZh.summary.outstanding_total_display);
   await expect(page.getByTestId("recv3-cards")).toContainText("客户欠您");
   await expect(page.getByTestId(`recv-${row.receivable_id}`)).toContainText(row.due_when);
   await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.condition_text);
   await expect(page.getByTestId("recv3-terms")).toHaveText(row.governed_by.terms_text);
-  await expect(page.getByTestId("recv3-stress-cash")).toContainText(exposureZh.stress.now.lowest_when);
-  await expect(page.getByTestId("recv3-stress-minimum")).toHaveText(exposureZh.stress.now.funding_text);
+  await expect(page.getByTestId("recv3-stress-cash")).toContainText(buyerZh.stress.now.lowest_when);
+  await expect(page.getByTestId("recv3-stress-minimum")).toHaveText(buyerZh.stress.now.funding_text);
+  await expect(page.getByTestId("recv3-stress-later")).toContainText(buyerZh.stress.now.net_later_text);
   await expect(page.getByTestId("recv3-explore")).toHaveText("查看对现金的影响");
   expect(await page.locator("main").innerText()).not.toMatch(/\bDay \d|RCV-|BUYER-1/);
   // The financed books, in Chinese: the steps are the dictionary's.

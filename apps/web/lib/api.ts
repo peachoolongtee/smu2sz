@@ -222,6 +222,14 @@ export async function getDecisionExposure(decisionId: string, lang: "en" | "zh")
   return isMock ? (await mock()).getDecisionExposure(decisionId, lang) : (await live()).getDecisionExposure(decisionId, lang);
 }
 
+/**
+ * GET /buyers/{id}/exposure?lang= (flag `exposure`): the buyer's concentration, payment history and 30-day late-payment test on the books as they
+ * stand, with no deal needed. Null when the feature is off or the buyer is unknown. The spare-capacity search is not asked for (`spare=0`).
+ */
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+  return isMock ? (await mock()).getBuyerExposure(buyerId, lang) : (await live()).getBuyerExposure(buyerId, lang);
+}
+
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */
 export async function getReceivablesWorth(lang: "en" | "zh"): Promise<ReceivablesWorthView | null> {
   return isMock ? (await mock()).getReceivablesWorth(lang) : (await live()).getReceivablesWorth(lang);

@@ -1917,6 +1917,14 @@ export interface ReceivableNet {
 
 export interface ReceivableRow {
   receivable_id: string;
+  /** The outstanding at a glance ("¥420k"). */
+  amount_short?: string;
+  /** "about ¥163k": also on the row itself. */
+  net_short?: string;
+  /** The standing sentence about a receipt that falls short ("If the receipt falls short, what is left is owed by you."). */
+  recourse_text?: string;
+  /** The record of the executed financing request for this invoice; null when there is none to open. */
+  financing_href?: string | null;
   buyer_id?: string;
   buyer_name?: string;
   /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
@@ -1927,7 +1935,7 @@ export interface ReceivableRow {
   past_due?: boolean;
   net?: ReceivableNet;
   financing_state?: FinancingState;
-  governed_by?: { terms_text?: string; contract_ref?: string | null };
+  governed_by?: { terms_label?: string; terms_text?: string; contract_ref?: string | null };
   early_payment?: { agreed?: boolean; text?: string };
   pending_counter?: { decision_id?: string; text?: string } | null;
   collection_state?: CollectionState;
@@ -1945,7 +1953,9 @@ export interface ReceivablesRead {
   rows?: ReceivableRow[];
   summary?: {
     outstanding_total_display?: string;
-    next_expected?: { when_text?: string; amount_display?: string } | null;
+    next_expected?: { when_text?: string; amount_display?: string; /** "Foshan Home Retail Co.", or several names in one sentence. */ buyer_name?: string } | null;
+    /** What the financing against these invoices still stands at. */
+    financing_total_display?: string;
     net_total_display?: string;
     /** "if every invoice is paid on its due day" */
     net_total_text?: string;
@@ -1960,12 +1970,15 @@ export interface BuyerStressRow {
   /** "−¥250k" and "in 60 days" */
   lowest_short?: string;
   lowest_when?: string;
+  /** "about ¥160,940, a month later": what the buyer's open invoices leave the owner a month after the late day. */
+  net_later_text?: string | null;
   /** "Cash is below your minimum on 65 days. No committed plan covers the ¥550,000.00 shortfall..." */
   funding_text?: string;
   text?: string;
   assumption?: string;
 }
 
+/** GET /buyers/{id}/exposure and GET /decisions/{id}/exposure (flag `exposure`): the buyer's concentration, payment history and late-payment test. */
 export interface BuyerExposureView {
   decision_id?: string;
   buyer_id?: string;

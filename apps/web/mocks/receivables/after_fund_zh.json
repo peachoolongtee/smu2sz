@@ -10,6 +10,7 @@
       "invoice": "Foshan Home Retail Co. 的 ¥420,000.00 发票",
       "face_fen": 42000000,
       "outstanding_fen": 42000000,
+      "amount_short": "¥420k",
       "status": "FINANCED",
       "due_day": 32,
       "due_when": "32 天后",
@@ -45,12 +46,15 @@
         "owed_by_owner_display": "¥0.00",
         "per_period_more_display": "¥2,272.30"
       },
+      "net_short": "约 ¥163k",
+      "recourse_text": "如果回款不足，差额由您承担。",
       "financing_state": "ARRANGED",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
         "terms_days": 45,
         "rebate_bp": 0,
-        "terms_text": "依据协议 FHR-2026-07：账期为自开票日起 45 天",
+        "terms_label": "付款条款",
+        "terms_text": "协议 FHR-2026-07：账期为自开票日起 45 天",
         "rebate_display": "0.00%"
       },
       "early_payment": {
@@ -70,6 +74,7 @@
           }
         ]
       },
+      "financing_href": "/decisions/alert%3AALERT-RESERVE-12%3Av1%3Aplan",
       "face_display": "¥420,000.00",
       "outstanding_display": "¥420,000.00"
     }
@@ -81,8 +86,11 @@
       "when_text": "32 天后",
       "due_day": 32,
       "amount_fen": 42000000,
-      "amount_display": "¥420,000.00"
+      "amount_display": "¥420,000.00",
+      "buyer_name": "Foshan Home Retail Co."
     },
+    "financing_total_fen": 25500000,
+    "financing_total_display": "¥255,000.00",
     "net_total_fen": 16272771,
     "net_total_display": "¥162,727.71",
     "net_total_text": "如果每张发票都在到期日付款"

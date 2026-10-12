@@ -10,10 +10,10 @@ import { Summary } from "@/components/receivables/summary";
 import { PartialRead } from "@/components/business/freshness";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { PromisedAndReceived } from "@/components/receivables/history";
-import { getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
+import { getBuyerExposure, getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { withContext } from "@/lib/receivables-context";
-import type { ReceivableRow, ReceivablesRead } from "@/lib/types";
+import type { BuyerExposureView, ReceivableRow, ReceivablesRead } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { LegacyReceivables } from "./legacy";
 
@@ -83,10 +83,16 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The late-payment test needs a deal to be read against: the one whose counter would apply to this invoice, else the one in the address.
-  const decisionId = selected?.pending_counter?.decision_id ?? params.get("decision");
-  const exposure = useAsync(() => (decisionId ? getDecisionExposure(decisionId, lang) : Promise.resolve(null)), [decisionId, lang]);
-  const forBuyer = selected && exposure.data && exposure.data.buyer_id === selected.buyer_id ? exposure.data : null;
+  // The late-payment test, the concentration and the payment history are the buyer's, read with no deal needed. When the address carries a deal
+  // (`?decision=`) its own read is used instead, provided it is about this buyer.
+  const buyerId = selected?.buyer_id ?? null;
+  const decisionId = params.get("decision");
+  const buyerRead = useAsync(() => (buyerId ? getBuyerExposure(buyerId, lang) : Promise.resolve(null)), [buyerId, lang]);
+  const dealRead = useAsync(() => (decisionId ? getDecisionExposure(decisionId, lang) : Promise.resolve(null)), [decisionId, lang]);
+  const forBuyer = (view: BuyerExposureView | null | undefined) => (view && view.buyer_id === buyerId ? view : null);
+  const deal = decisionId ? forBuyer(dealRead.data) : null;
+  const exposure = deal ? dealRead : buyerRead;
+  const view = deal ?? forBuyer(buyerRead.data);
 
   // What was promised early and what arrived, under the layers: the reconciliation read, as the page has always shown it. If it cannot be read
   // the page stands without it (the server's own `partial` says so for the rows' side); nothing is shown in its place.
@@ -117,16 +123,16 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
             {t("recv3.selected", { invoice: selected.invoice ?? selected.buyer_name ?? "" })}
           </p>
           <div key={selected.receivable_id} className="motion-swap min-w-0">
-            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={forBuyer?.payments?.sentence ?? null} />
+            <InvoiceDetail row={selected} customerHref={customerHref(selected)} dealHref={dealHref(selected)} history={view?.payments?.sentence ?? null} />
           </div>
           <div key={`${selected.receivable_id}-aside`} className="motion-swap min-w-0">
             <StressAside
               row={selected}
-              exposure={forBuyer}
-              loading={Boolean(decisionId) && exposure.loading}
-              failed={Boolean(decisionId) && Boolean(exposure.error)}
+              exposure={view}
+              loading={exposure.loading && !view}
+              failed={Boolean(exposure.error) && !view}
               onRetry={exposure.reload}
-              exploreHref={withContext("/cash", params, { customer: selected.buyer_id ?? null, invoice: selected.receivable_id }, selected.buyer_id ? { stress: `${selected.buyer_id}:${forBuyer?.stress?.delay_days ?? STRESS_DAYS}` } : {})}
+              exploreHref={withContext("/cash", params, { customer: selected.buyer_id ?? null, invoice: selected.receivable_id }, selected.buyer_id ? { stress: `${selected.buyer_id}:${view?.stress?.delay_days ?? STRESS_DAYS}` } : {})}
               customerHref={customerHref(selected)}
             />
           </div>

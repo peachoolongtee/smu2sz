@@ -50,7 +50,8 @@
 // receivables/<point>[_zh].json   GET /receivables (the Receivables page's rows and summary) at each point of the home's story: day0, quiet,
 // day2, after_fund, day34 (and its noreceipt / half / residual books), pending, after, settled, in both languages; receivables/offer[_zh].json is
 // the opening books with the buyer's early-payment message open (the row carries pending_counter) and receivables/exposure_offer[_zh].json the
-// exposure of that deal's decision (the aside's late-payment test). The API needs FEATURE_EXPOSURE=1 for the last two.
+// exposure of that deal's decision (the aside's late-payment test). buyer_exposure[_zh] and buyer_exposure_day34[_zh] are GET /buyers/BUYER-1/exposure on
+// the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
 //
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
@@ -157,7 +158,7 @@ function normalise(name, value) {
       }
     } else if (node && typeof node === "object") for (const v of Object.values(node)) rechain(v);
   };
-  if (name.startsWith("strategy/") || name.startsWith("receivables/")) out.computed_in_seconds = 0;
+  if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
   return out;
@@ -239,6 +240,14 @@ async function reset() {
 const ops = {};
 const files = {};
 mkdirSync(join(OUT, "receivables"), { recursive: true });
+/** GET /buyers/BUYER-1/exposure (the aside's late-payment test with no deal), in both languages, at the opening books and at day 34. */
+async function buyerExposure(name) {
+  for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
+    const view = await live.getBuyerExposure("BUYER-1", lang);
+    if (!view) throw new Error("GET /buyers/{id}/exposure is off: start the API with FEATURE_EXPOSURE=1 from a branch that carries it (feat/connected-words)");
+    files[`${name}${suffix}.json`] = view;
+  }
+}
 /** GET /receivables at this point of the story, in both languages (the mock chooses among them as it chooses the home summary). */
 async function recvRead(point) {
   for (const [suffix, lang] of [["", "en"], ["_zh", "zh"]]) {
@@ -300,6 +309,7 @@ files["chase_day0.json"] = await chaseAll(files["reconciliation.json"]); // the 
 files["home_summary_day0.json"] = await live.getHome("en");
 files["home_summary_day0_zh.json"] = await live.getHome("zh");
 await recvRead("day0");
+await buyerExposure("buyer_exposure");
 files["trajectory_conservative_day0.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 // The day-0 fix runs alone (Tier 1): the home's "Go ahead" on the opening books, bound to what the home showed.
 {
@@ -534,6 +544,7 @@ navCounts.day34 = await live.getNavCounts("en"); // the late invoice, the reserv
 files["home_summary_day34.json"] = await live.getHome("en");
 files["home_summary_day34_zh.json"] = await live.getHome("zh");
 await recvRead("day34");
+await buyerExposure("buyer_exposure_day34");
 files["trajectory_conservative_day34.json"] = await live.getTrajectory("CONSERVATIVE"); // the Cash page's readings, on the books this home was read on
 files["home_state_day34.json"] = await live.getState();
 // The books' history at day 34 (the deal, the funding, the day-2 receipt): the mock replays it when the clock is moved to day 34 without the walk.

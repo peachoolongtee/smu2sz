@@ -13,17 +13,46 @@
     {
       "key": "asked",
       "kind": "asked",
-      "label": "As they asked"
+      "label": "As they asked",
+      "lowest_display": "¥165k",
+      "lowest_when": "in 60 days",
+      "lowest_when_text": "below it for 15 days",
+      "limit_word": "EXCEEDED",
+      "limit_text": "exceeded",
+      "share_after_text": "100%, for 15 days longer"
     },
     {
       "key": "CTR-193394b6ba8b",
       "kind": "reply",
-      "label": "Option A"
+      "label": "Option A",
+      "lowest_display": "¥300k",
+      "lowest_when": "in 30 days",
+      "lowest_when_text": "at your minimum",
+      "limit_word": "WITHIN",
+      "limit_text": "within",
+      "share_after_text": "100%, paid 2 days after the offer"
     },
     {
       "key": "CTR-6b07cbf70441",
       "kind": "reply",
-      "label": "Option B"
+      "label": "Option B",
+      "lowest_display": "¥300k",
+      "lowest_when": "in 30 days",
+      "lowest_when_text": "at your minimum",
+      "limit_word": "WITHIN",
+      "limit_text": "within",
+      "share_after_text": "100%, for 10 days longer"
+    },
+    {
+      "key": "do_nothing",
+      "kind": "do_nothing",
+      "label": "Do nothing",
+      "lowest_display": "−¥105k",
+      "lowest_when": "in 30 days",
+      "lowest_when_text": "below it for 20 days",
+      "limit_word": "WITHIN",
+      "limit_text": "within",
+      "share_after_text": "100%"
     }
   ],
   "concentration": {
@@ -4016,6 +4045,13 @@
         "capacity": null
       }
     }
+  },
+  "customer_context": {
+    "contribution_display": "about ¥1.09m",
+    "contribution_note": "a year, estimated; margin assumed for the Demo, not confirmed by you",
+    "owes_display": "¥420,000",
+    "share_text": "100%",
+    "profile_href": "/customers/BUYER-1"
   },
   "state_version": 1,
   "day": 0,
