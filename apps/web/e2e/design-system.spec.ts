@@ -54,7 +54,7 @@ test("the six motion tokens are the scale, and every duration in the stylesheet 
         /* cross-origin sheet */
       }
     }
-    return Array.from(found).filter((x) => !x.includes("0.001ms"));
+    return Array.from(found).filter((x) => !x.includes("0.001ms") && !/: 0s \}$/.test(x));
   });
   expect(stray).toEqual([]);
 });
@@ -214,8 +214,19 @@ test("sidebar: on a laptop it collapses to icons with the label on hover and foc
   await page.keyboard.press("Tab");
   await expect(nav.getByRole("link", { name: "Cash & funding" })).toBeFocused();
   await expect(nav.getByRole("link", { name: "Cash & funding" }).locator(".side-label")).toHaveCSS("opacity", "1");
-  // The way out of the icons is by keyboard too: the toggle is the first stop, and Enter opens the sidebar again.
+  // The toggle is an icon button at the foot of the sidebar with its name as a tooltip (hover and focus) and as its accessible name.
+  const tip = toggle.locator(".side-tip");
+  await expect(tip).toHaveText("Expand the sidebar");
+  await expect(tip).toHaveCSS("opacity", "0");
+  await toggle.hover();
+  await expect(tip).toHaveCSS("opacity", "1");
+  await page.mouse.move(700, 400);
+  const toggleBox = (await toggle.boundingBox())!;
+  const navBox = (await nav.boundingBox())!;
+  expect(toggleBox.y).toBeGreaterThan(navBox.y + navBox.height);
+  // The way out of the icons is by keyboard too: Enter on the focused toggle opens the sidebar again.
   await toggle.focus();
+  await expect(tip).toHaveCSS("opacity", "1");
   await page.keyboard.press("Enter");
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   expect(await sidebarWidth(page)).toBe(240);
@@ -357,4 +368,27 @@ test("cards: a page has one decision card, and a chosen row, invoice or path is 
     expect(s.bg).toBe(want.bg);
     expect(s.ruleColor).toBe(want.ruleColor);
   }
+});
+
+test("sidebar: a bad stored value cannot skip the language, and the folds open at once under reduced motion", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("tl-sidebar", "{not json");
+    localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" }));
+  });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(page.locator("html")).not.toHaveAttribute("data-sidebar", "collapsed");
+  // A native <details> opens by height through ::details-content; reduced motion switches that transition off too.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/cash");
+  await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });
+  const transition = await page.evaluate(() => {
+    const d = document.createElement("details");
+    d.innerHTML = "<summary>x</summary><p>y</p>";
+    document.body.append(d);
+    const t = getComputedStyle(d, "::details-content").transitionProperty;
+    d.remove();
+    return t;
+  });
+  expect(["none", ""]).toContain(transition);
 });

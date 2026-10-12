@@ -561,6 +561,31 @@ input[type="radio"] {
   box-shadow: var(--shadow-pill);
 }
 
+/* The toggle's tooltip: its name beside the button on hover and on keyboard focus, in the expanded sidebar and the collapsed one alike (opacity only). */
+.side-tip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  z-index: 50;
+  translate: 0 -50%;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  padding: 0.375rem 0.75rem;
+  box-shadow: var(--shadow-pop);
+  color: var(--color-ink);
+  font-size: var(--text-supporting);
+  font-weight: 600;
+  transition: opacity var(--dur-fast) var(--ease-ui);
+}
+.side-tip-host:hover .side-tip,
+.side-tip-host:focus-visible .side-tip {
+  opacity: 1;
+}
+
 /* The collapsible sidebar (components/app-shell.tsx, BusinessShell), outside the layers so it wins over the utilities on the same elements. Only on a laptop (1024 to 1366 px) and only with <html data-sidebar="collapsed"> (set by the toggle and,
    before the first paint, by lib/pre-hydration.ts): the column narrows to 4.5 rem, each destination is its icon, and its word is a label that appears beside the icon on hover
    and on keyboard focus (opacity only). The link keeps its full accessible name; the Ask FLOW pill shrinks to its icon; a count becomes a small badge on the icon's corner. */
@@ -603,15 +628,9 @@ input[type="radio"] {
   html[data-sidebar="collapsed"] .side-foot {
     display: none;
   }
-  html[data-sidebar="collapsed"] .side-toggle .side-toggle-label {
-    display: none;
-  }
   html[data-sidebar="collapsed"] .side-toggle {
     justify-content: center;
     padding-inline: 0;
-  }
-  html[data-sidebar="collapsed"] .side-toggle .side-toggle-icon {
-    rotate: 0deg;
   }
   html[data-sidebar="collapsed"] .ask-trigger {
     left: 1.125rem;
@@ -740,6 +759,10 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   .motion-lift:hover,
   .motion-press:not(:disabled):active {
     transform: none !important;
+  }
+  /* A native <details> body opens by height through ::details-content, which the universal selector above does not reach: it opens at once. */
+  details::details-content {
+    transition: none !important;
   }
   /* A frozen arc is no feedback: the busy state is an ellipsis instead. */
   .spinner {

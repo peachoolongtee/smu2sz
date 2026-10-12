@@ -329,8 +329,9 @@ function useDock(ref: RefObject<HTMLElement | null>) {
 
 /** The phone tab bar: one icon and word per section. The current tab's icon takes its section's hue, its word stays in ink, and a bar slides to it. */
 /**
- * The sidebar's toggle, on a laptop only (1024 to 1366 px; wider screens always have the full sidebar): it collapses the sidebar to its icons and opens it
- * again, and the choice is kept (lib/use-sidebar.ts). Its name says what it will do; `aria-expanded` says where the sidebar is now.
+ * The sidebar's toggle, at its foot and on a laptop only (1024 to 1366 px; wider screens always have the full sidebar): an icon button whose chevron points the way it
+ * will move, with its name as the tooltip (hover and keyboard focus) and as the accessible name. It collapses the sidebar to its icons and opens it again, and the
+ * choice is kept (lib/use-sidebar.ts); `aria-expanded` says where the sidebar is now.
  */
 function SidebarToggle({ controls }: { controls: string }) {
   const { t } = useI18n();
@@ -343,12 +344,11 @@ function SidebarToggle({ controls }: { controls: string }) {
       aria-expanded={!collapsed}
       aria-controls={controls}
       aria-label={label}
-      title={label}
       data-testid="sidebar-toggle"
-      className="side-toggle motion-press mb-2 hidden min-h-11 w-full items-center gap-3 rounded-control px-3 text-sm font-medium text-ink-2 hover:bg-subtle hover:text-ink laptop:flex"
+      className="side-toggle side-tip-host motion-press relative mb-1 hidden min-h-11 w-full items-center gap-3 rounded-control px-3 text-ink-2 hover:bg-subtle hover:text-ink laptop:flex"
     >
-      <ChevronRightIcon width={20} height={20} className={`side-toggle-icon shrink-0 text-ink-3 ${collapsed ? "" : "rotate-180"}`} />
-      <span className="side-toggle-label">{label}</span>
+      <ChevronRightIcon width={20} height={20} className={`shrink-0 text-ink-3 ${collapsed ? "" : "rotate-180"}`} />
+      <span aria-hidden className="side-tip">{label}</span>
     </button>
   );
 }
@@ -393,7 +393,6 @@ function BusinessShell({ children }: { children: ReactNode }) {
           Phones get the tab bar at the bottom instead. */}
       <div className="shell-grid lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-canvas px-3 pb-20 pt-5 lg:flex">
-          <SidebarToggle controls="nav-pills" />
           <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
             <ul className="space-y-1">
               {BUSINESS_NAV.map((n) => {
@@ -419,7 +418,10 @@ function BusinessShell({ children }: { children: ReactNode }) {
               })}
             </ul>
           </nav>
-          <p className="side-foot mt-auto px-3 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+          <div className="mt-auto">
+            <p className="side-foot px-3 pb-2 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+            <SidebarToggle controls="nav-pills" />
+          </div>
         </aside>
       <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
         {backTo ? (
