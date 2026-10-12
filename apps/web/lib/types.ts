@@ -2495,6 +2495,7 @@ export interface HomeRailEvent {
 export interface HomeStress {
   delay_days?: number;
   buyer?: string;
+  buyer_id?: string;
   series: HomeSeriesPoint[];
   lowest_short: string;
   lowest_when: string;
@@ -2548,22 +2549,34 @@ export interface HomeFundingLine {
 
 export interface HomeDealsCardRow {
   buyer: string;
+  buyer_id?: string;
   status_text: string;
   request_text?: string | null;
   recommendation_text?: string | null;
   href?: string | null;
 }
 
+/** Your deals on Home: one row per deal (no stages), the server's sentence for none, and where the card leads. */
+export interface HomeDealsCard {
+  rows: HomeDealsCardRow[];
+  empty_text?: string | null;
+  href?: string | null;
+}
+
 export interface HomeReceivablesCard {
-  outstanding_short: string;
-  overdue_short: string;
+  outstanding_short?: string | null;
+  overdue_short?: string | null;
   next_text?: string | null;
   financing_note?: string | null;
   href?: string | null;
 }
 
-/** A recent change as a sentence; the server may send the bare sentence or the sentence with its when. */
-export type HomeChangesCardRow = string | { text: string; when?: string | null };
+/** The latest ledger sentences, as the server worded them, with their when. */
+export interface HomeChangesCard {
+  rows: { id?: string; text: string; when?: string | null; kind?: string }[];
+  empty_text?: string | null;
+  href?: string | null;
+}
 
 export interface HomeView {
   day: Day;
@@ -2648,6 +2661,10 @@ export interface HomeView {
     facts?: HomeFact[];
     /** Section 3, the picture: the key events (the rail and the numbered marks), the name of the dashed comparison line, and the late-payment scenario. */
     events_rail?: HomeRailEvent[];
+    /** How many days from today the rail spans (the lowest point stays on it even past the picture's window). */
+    events_rail_days?: number;
+    /** The books without the whole plan (or without any action): drawn dashed grey with `counterfactual_label`. Both absent when there is nothing to compare. */
+    counterfactual_series?: HomeSeriesPoint[] | null;
     counterfactual_label?: string | null;
     stress_available?: boolean;
     stress?: HomeStress | null;
@@ -2656,9 +2673,9 @@ export interface HomeView {
   attention?: HomeAttention | null;
   funding_line?: HomeFundingLine | null;
   /** Section 4: the three cards under the picture. */
-  deals_card?: HomeDealsCardRow[];
+  deals_card?: HomeDealsCard | null;
   receivables_card?: HomeReceivablesCard | null;
-  changes_card?: HomeChangesCardRow[];
+  changes_card?: HomeChangesCard | null;
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];
   pending_count: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { FONT, PAD, linesDiffer, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
+import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
 import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeView } from "@/lib/types";
@@ -76,11 +76,11 @@ export function EventPicture({ h }: { h: HomeView }) {
   const event: HomeRailEvent | null = rail[shown] ?? null;
 
   // ---- the lines: the plan line (the home's plan when it differs from the projection, else the projection itself), the comparison line, or the stress line
-  const planPoints = h.next_action && cash.plan_series?.length ? cash.plan_series : null;
-  const hasCounter = linesDiffer(cash.series, planPoints);
-  const planSeries = (hasCounter ? planPoints : null) ?? cash.series;
-  const counterSeries = hasCounter ? cash.series : null;
-  const planName = hasCounter ? t("biz.picture.plan") : t("biz.forecast.projected");
+  // The plan line is the home's plan while one is waiting to run, else the projection itself. The grey line is the server's comparison
+  // (the books without the whole plan, or without any action) and exists only with its label: no series, no legend entry.
+  const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
+  const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
+  const planName = cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected");
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 30 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
@@ -90,8 +90,11 @@ export function EventPicture({ h }: { h: HomeView }) {
   const windows = [base, ...WINDOWS.filter((d) => d > base && d <= (cash.horizon_days || 120))];
   const wanted = chosenWindow !== null && windows.includes(chosenWindow) ? chosenWindow : base;
   const needed = late && stress?.window_days_needed ? stress.window_days_needed : 0;
-  const windowDays = Math.max(wanted, needed);
+  // The rail keeps the lowest point even when it is past the window: the window then reaches it (`events_rail_days` is the rail's span).
+  const railNeeded = cash.events_rail_days ?? 0;
+  const windowDays = Math.max(wanted, needed, railNeeded);
   const widened = windowDays > wanted;
+  const widenedForLate = needed > Math.max(wanted, railNeeded);
 
   const mainPts = mainSeries.filter((p) => p.day >= today);
   if (!mainPts.length) return null;
@@ -253,7 +256,7 @@ export function EventPicture({ h }: { h: HomeView }) {
       </div>
       {widened ? (
         <p className="text-sm text-ink-3" data-testid="home-widened">
-          {t("home.hy.widened", { n: windowDays })}
+          {t(widenedForLate ? "home.hy.widened" : "home.hy.widened.rail", { n: windowDays })}
         </p>
       ) : null}
 
@@ -272,7 +275,7 @@ export function EventPicture({ h }: { h: HomeView }) {
           <div
             ref={frame}
             role="group"
-            aria-label={t("home.hy.alt")}
+            aria-label={`${cash.headline_conditional || h.headline} ${t("home.hy.alt")}`}
             aria-describedby={hintId}
             tabIndex={0}
             data-testid="home-chart"
@@ -443,7 +446,7 @@ export function EventPicture({ h }: { h: HomeView }) {
               <div className="space-y-1.5">
                 <h3 className="flex items-baseline gap-2 text-sm font-bold text-ink" data-testid="rail-panel-title">
                   <span className="tabular-nums">{shown + 1}.</span>
-                  <span>{panelTitle}</span>
+                  <span className="first-letter:uppercase">{panelTitle}</span>
                 </h3>
                 <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="rail-explain">
                   {event.explain}
@@ -484,7 +487,7 @@ export function EventPicture({ h }: { h: HomeView }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-3">
-                        <span className="min-w-0 break-words text-sm font-semibold text-ink">{e.label}</span>
+                        <span className="min-w-0 break-words text-sm font-semibold text-ink first-letter:uppercase">{e.label}</span>
                         <span className="shrink-0 text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
                           {e.amount_short}
                         </span>

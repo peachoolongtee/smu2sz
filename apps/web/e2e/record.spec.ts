@@ -235,8 +235,8 @@ test("Home: after the cure is approved, 'Waiting on' lists what is open and link
   await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  // The hero says what is on its way, so "Waiting on" does not list the same funding again.
-  await expect(page.getByTestId("home-in-transit")).toContainText("arriving in 3 days");
+  // The position says what is on its way (the "Arriving next" fact), so "Waiting on" does not list the same funding again.
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("in 3 days");
   await expect(page.getByTestId("home-waiting-on-list")).toHaveCount(0);
   await page.goto("/approvals");
   await page.getByTestId("approval-record-APR-000001").click();

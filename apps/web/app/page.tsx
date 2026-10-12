@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { PartialRead } from "@/components/business/freshness";
-import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/components/business/blocks";
+import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock, WorthLine } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
 import { CashPicture } from "@/components/home/cash-picture";
@@ -92,30 +92,42 @@ export default function HomePage() {
         <ChangesBlock changes={shownChanges} sinceWhen={sinceWhen} bare />
       </Disclosure>
     ) : null;
-  const receivables =
-    h && !h.receivables_card ? (
-      <div key="receivables" className="min-w-0 space-y-3">
-        {/* A failed ranking is said, with Retry: the home is then not "nothing to collect". */}
-        {worthRead.error ? (
-          <div data-testid="home-worth-failed">
-            <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
-          </div>
-        ) : null}
-        <ReceivablesBlock r={h.receivables} worth={worth} />
+  // With the receivables card the block is gone; the strategy line (and its failure, with Retry) stays, under the cards.
+  const worthParts = (
+    <>
+      {/* A failed ranking is said, with Retry: the home is then not "nothing to collect". */}
+      {worthRead.error ? (
+        <div data-testid="home-worth-failed">
+          <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+        </div>
+      ) : null}
+    </>
+  );
+  const receivables = !h ? null : h.receivables_card ? (
+    worthRead.error || (worth?.rows.length && worth.top_action) ? (
+      <div key="receivables-worth" className="min-w-0 space-y-3">
+        {worthParts}
+        <WorthLine worth={worth} />
       </div>
-    ) : null;
+    ) : null
+  ) : (
+    <div key="receivables" className="min-w-0 space-y-3">
+      {worthParts}
+      <ReceivablesBlock r={h.receivables} worth={worth} />
+    </div>
+  );
 
   const action = h?.attention ? (
-    <AttentionCard key="attention" attention={h.attention} funding={h.funding_line} />
+    <AttentionCard key="attention" attention={h.attention} funding={h.funding_line} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} />
   ) : h?.next_action ? (
     <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
   ) : null;
   const picture = h ? h.cash.events_rail?.length ? <EventPicture key="picture" h={h} /> : <CashPicture key="picture" h={h} /> : null;
   const cards = hasCards && h ? (
     <div key="cards" className="grid gap-x-6 gap-y-5 md:grid-cols-3" data-testid="home-cards">
-      {h.deals_card ? <DealsCard rows={h.deals_card} /> : null}
+      {h.deals_card ? <DealsCard card={h.deals_card} /> : null}
       {h.receivables_card ? <ReceivablesCard card={h.receivables_card} /> : null}
-      {h.changes_card ? <ChangesCard rows={h.changes_card} /> : null}
+      {h.changes_card ? <ChangesCard card={{ ...h.changes_card, rows: h.changes_card.rows.filter((r) => !(r.kind === "WAITING" && h.pending_count > 0)) }} /> : null}
     </div>
   ) : null;
 

@@ -22,9 +22,9 @@ export function HomePosition({ h }: { h: HomeView }) {
   const facts = cash.facts ?? [];
   const assumptions = cash.assumptions ?? [];
   return (
-    <header aria-labelledby="home-status-title" className="motion-reveal flex flex-col items-start gap-2.5 short:gap-2" data-testid="home-status" data-status={h.status}>
+    <header aria-labelledby="home-status-title" className="motion-reveal flex flex-col items-start gap-2 sm:gap-2.5 short:gap-2" data-testid="home-status" data-status={h.status}>
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-ink-2" data-testid="home-status-word">
-        <span aria-hidden className={`size-2 shrink-0 rounded-pill ${DOT[tone]}`} />
+        <span aria-hidden className={`size-2 shrink-0 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
         <span className="text-ink">{cash.status_word}</span>
         {cash.last_read_when ? (
           <span className="font-normal text-ink-3" data-testid="home-read-when">
@@ -36,7 +36,7 @@ export function HomePosition({ h }: { h: HomeView }) {
         {heading}
       </h1>
       {cash.headline_note ? (
-        <p className="max-w-3xl text-pretty text-[0.9375rem] leading-normal text-ink-2" data-testid="home-note">
+        <p className="max-w-3xl text-pretty text-[0.9375rem] leading-snug text-ink-2 sm:leading-normal" data-testid="home-note">
           {cash.headline_note}
         </p>
       ) : null}
@@ -50,7 +50,7 @@ export function HomePosition({ h }: { h: HomeView }) {
         </Disclosure>
       ) : null}
       {facts.length ? (
-        <dl aria-label={t("home.hy.facts")} className="mt-1 grid w-full gap-2 sm:grid-cols-3 sm:gap-3" data-testid="home-facts">
+        <dl aria-label={t("home.hy.facts")} className="mt-1 grid w-full gap-1.5 sm:grid-cols-3 sm:gap-3" data-testid="home-facts">
           {facts.map((f) => (
             <Stat key={f.key} row size="lg" label={f.label} value={f.value_short} caption={f.note} tone={FIGURE[f.tone ?? "neutral"]} testId={`home-fact-${f.key}`} rootTestId={`home-fact-tile-${f.key}`} />
           ))}

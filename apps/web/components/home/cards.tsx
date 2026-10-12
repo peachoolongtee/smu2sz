@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRightIcon } from "@/components/icons";
 import { useI18n } from "@/lib/i18n";
-import type { HomeChangesCardRow, HomeDealsCardRow, HomeReceivablesCard } from "@/lib/types";
+import type { HomeChangesCard, HomeDealsCard, HomeReceivablesCard } from "@/lib/types";
 
 /**
  * One card of the row under the picture: unboxed on a hairline like the rest of Home (the one raised surface is the attention card), the whole card a link (the heading's link is stretched
@@ -25,9 +25,10 @@ function Card({ id, title, href, children }: { id: string; title: string; href: 
 }
 
 /** Your deals: one line per deal, the buyer, the status word, what they ask and what FLOW recommends. No stages, no avatar, no badge. */
-export function DealsCard({ rows }: { rows: HomeDealsCardRow[] }) {
+export function DealsCard({ card }: { card: HomeDealsCard }) {
   const { t } = useI18n();
-  const href = rows.length === 1 && rows[0].href ? rows[0].href : "/deals";
+  const rows = card.rows ?? [];
+  const href = rows.length === 1 && rows[0].href ? rows[0].href : card.href || "/deals";
   return (
     <Card id="home-card-deals" title={t("biz.homeDeals.title")} href={href}>
       {rows.length ? (
@@ -44,7 +45,7 @@ export function DealsCard({ rows }: { rows: HomeDealsCardRow[] }) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-ink-3">{t("home.hy.deals.none")}</p>
+        <p className="text-sm text-ink-3" data-testid="home-card-deals-none">{card.empty_text || t("home.hy.deals.none")}</p>
       )}
     </Card>
   );
@@ -59,13 +60,13 @@ export function ReceivablesCard({ card }: { card: HomeReceivablesCard }) {
         <div className="min-w-0">
           <dt className="text-xs font-semibold text-ink-3">{t("home.hy.recv.outstanding")}</dt>
           <dd className="text-lg font-extrabold tabular-nums text-ink" data-testid="home-card-outstanding">
-            {card.outstanding_short}
+            {card.outstanding_short ?? "—"}
           </dd>
         </div>
         <div className="min-w-0">
           <dt className="text-xs font-semibold text-ink-3">{t("home.hy.recv.overdue")}</dt>
           <dd className="text-lg font-extrabold tabular-nums text-ink" data-testid="home-card-overdue">
-            {card.overdue_short}
+            {card.overdue_short ?? "—"}
           </dd>
         </div>
         {card.next_text ? (
@@ -87,25 +88,24 @@ export function ReceivablesCard({ card }: { card: HomeReceivablesCard }) {
 }
 
 /** Recent changes: the latest ledger sentences, as the server worded them. */
-export function ChangesCard({ rows }: { rows: HomeChangesCardRow[] }) {
+export function ChangesCard({ card }: { card: HomeChangesCard }) {
   const { t } = useI18n();
+  const rows = card.rows ?? [];
   return (
-    <Card id="home-card-changes" title={t("biz.recent")} href="/activity">
+    <Card id="home-card-changes" title={t("biz.recent")} href={card.href || "/activity"}>
       {rows.length ? (
         <ul className="divide-y divide-line">
-          {rows.map((r, i) => {
-            const text = typeof r === "string" ? r : r.text;
-            const when = typeof r === "string" ? null : r.when;
-            return (
-              <li key={`${i}-${text}`} className="py-2 text-sm text-ink first:pt-0 last:pb-0" data-testid="home-card-change">
-                {text}
-                {when ? <span className="block text-xs text-ink-3">{when}</span> : null}
-              </li>
-            );
-          })}
+          {rows.map((r, i) => (
+            <li key={`${r.id ?? i}-${r.text}`} className="py-2 text-sm text-ink first:pt-0 last:pb-0" data-testid="home-card-change">
+              {r.text}
+              {r.when ? <span className="block text-xs text-ink-3">{r.when}</span> : null}
+            </li>
+          ))}
         </ul>
       ) : (
-        <p className="text-sm text-ink-3">{t("home.hy.changes.none")}</p>
+        <p className="text-sm text-ink-3" data-testid="home-card-changes-none">
+          {card.empty_text || t("home.hy.changes.none")}
+        </p>
       )}
     </Card>
   );
