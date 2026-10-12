@@ -10,6 +10,8 @@ import worklistDay0 from "../mocks/home_v2/worklist_day0.json";
 import worklistOffer from "../mocks/home_v2/worklist_offer.json";
 import worklistAfter from "../mocks/home_v2/worklist_after_fund.json";
 import evaluated from "../mocks/deals_day0_evaluated.json";
+import focusOfferRec from "../mocks/home_v2/focus_offer.json";
+import exposureRec from "../mocks/home_v2/exposure_offer.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
 
 /**
@@ -88,10 +90,27 @@ test("day 0, before the plan runs: the header and the three KPI strings are the 
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
   await expect(page.getByTestId("home-kpi-lowest-note")).toContainText("current books, no new funding");
   await expect(page.getByTestId("home-kpi-lowest-value")).toHaveClass(/text-bad-fg/);
-  await expect(page.getByTestId("home-kpi-lowest-hint")).toHaveText(v2.kpis.lowest_ahead.with_plan_hint);
   await expect(page.getByTestId("home-kpi-funding-eyebrow")).toHaveText("PLANNED FUNDING");
   await expect(page.getByTestId("home-kpi-funding-value")).toHaveText("¥405,000");
-  await expect(page.getByTestId("home-kpi-funding-hint")).toHaveText(v2.kpis.funding.hint);
+  // Each cell is its eyebrow, its figure and one note line: the second sentence is not on the page until it is asked for (hover or focus; a tap on a phone).
+  for (const [id, text] of [["lowest", v2.kpis.lowest_ahead.with_plan_hint], ["funding", v2.kpis.funding.hint]] as const) {
+    const cell = page.getByTestId(`home-kpi-${id}`);
+    const hint = page.getByTestId(`home-kpi-${id}-hint`);
+    await expect(hint).toHaveText(text);
+    await expect(hint).toBeHidden();
+    await expect(cell).toHaveAttribute("aria-describedby", (await hint.getAttribute("id")) ?? "");
+    await cell.hover();
+    await expect(hint).toBeVisible();
+    await page.mouse.move(5, 5);
+    await expect(hint).toBeHidden();
+    await cell.focus();
+    await expect(hint).toBeVisible();
+    await cell.blur();
+  }
+  // The colours are the meanings': the planned funding wears the planned state's dashed ring and blue; the lowest figure is red below the minimum; the cash is green above it.
+  await expect(page.getByTestId("home-kpi-funding-value")).toHaveClass(/text-info-fg/);
+  await expect(page.getByTestId("home-kpi-funding").locator("svg").first()).toHaveClass(/text-info-solid/);
+  await expect(page.getByTestId("home-kpi-cash-value")).toHaveClass(/text-ok-fg/);
   // The buffer scale places the minimum and today's cash; it is a scale, not a progress bar.
   await expect(page.getByTestId("home-buffer-min")).toBeAttached();
   await expect(page.getByTestId("home-buffer-cash")).toBeAttached();
@@ -140,7 +159,10 @@ test("running the plan: no alert, FUNDING ARRANGED, the quiet action with no fil
   await expect(page.getByTestId("home-worklist-row")).toContainText(row.status_text);
   await expect(page.getByTestId("home-worklist-row")).toContainText(row.consequence_text);
   await expect(page.getByTestId("home-tab-needs_you")).toContainText("0");
-  await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveCount(0);
+  // The counts sit beside the labels as badges: nothing needs the owner, so Needs you's is neutral, and every other badge is neutral too.
+  await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("0");
+  await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveAttribute("data-tone", "neutral");
+  await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
 });
 
 test("the chart: the legend, the minimum, the plan as the grey dashed comparator, and the window word", async ({ page }) => {
@@ -196,12 +218,19 @@ test("the lowest point opens the inspector with its four rows; Escape closes it 
   await expect(page.getByTestId("home-inspector")).toBeVisible();
 });
 
-test("the worklist: the alert pinned and counted nowhere, the counts equal the rows, three tabs, one hint each, the first row says why it is first", async ({ page }) => {
+test("the worklist: the alert pinned and counted nowhere, the counts equal the rows, three tabs with their counts beside them, the first row says why it is first", async ({ page }) => {
   await open(page, { offer: true });
   const w = worklistOffer.en;
   await expect(page.getByTestId("home-worklist-alert")).toContainText(w.alert.text);
   await expect(page.getByTestId("home-worklist-alert")).toContainText(w.alert.eyebrow);
   await expect(page.getByTestId("home-worklist-alert-go")).toContainText(w.alert.primary.label);
+  // Not a red box: a quiet card with a left rule. Its explanation is the card's description for a reader who asks, and is not text on the page.
+  await expect(page.getByTestId("home-worklist-alert")).toHaveClass(/border-l-/);
+  await expect(page.getByTestId("home-worklist-alert")).not.toHaveClass(/bg-bad/);
+  const note = page.getByTestId("home-worklist-alert-note");
+  await expect(page.getByTestId("home-worklist-alert")).toHaveAttribute("aria-describedby", (await note.getAttribute("id")) ?? "");
+  expect(((await note.boundingBox())?.width ?? 0) <= 1).toBe(true);
+  await expect(note).toHaveText("An alert, not a queue item: it is counted nowhere below.");
   // Needs you: the badge is the read's count and equals the rows; the alert is not one of them.
   expect(w.counts.needs_you).toBe(w.needs_you.length);
   await expect(page.getByTestId("home-tab-needs_you")).toHaveAttribute("aria-selected", "true");
@@ -213,24 +242,24 @@ test("the worklist: the alert pinned and counted nowhere, the counts equal the r
   await expect(rows.first()).toContainText(w.needs_you[0].consequence_text);
   await expect(page.getByTestId("home-why-first")).toHaveText(w.needs_you[0].why_first_text);
   await expect(rows.first().getByTestId("home-row-severity")).toHaveAttribute("data-severity", w.needs_you[0].severity);
-  const hints = new Set<string>();
-  hints.add((await page.getByTestId("home-worklist-hint").textContent()) ?? "");
   await expect(page.getByTestId("home-worklist-all")).toHaveText(/^All deals/);
   // Waiting: nothing yet, said in words.
   await page.getByTestId("home-tab-waiting").click();
   await expect(page.getByTestId("home-tab-waiting")).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("home-worklist-empty")).toBeVisible();
-  hints.add((await page.getByTestId("home-worklist-hint").textContent()) ?? "");
-  // Customers: one row per buyer; the badge belongs to Needs you only.
+  // Customers: one row per buyer.
   await page.getByTestId("home-tab-customers").click();
   await expect(rows).toHaveCount(w.customers.length);
   await expect(rows.first()).toContainText(w.customers[0].name);
   await expect(rows.first()).toContainText(w.customers[0].status_text);
   await expect(rows.first()).toContainText(w.customers[0].detail_text);
-  hints.add((await page.getByTestId("home-worklist-hint").textContent()) ?? "");
-  expect(hints.size).toBe(3);
   await expect(page.getByTestId("home-worklist-all")).toHaveText(/^All customers/);
-  await expect(page.getByTestId("home-tab-waiting-badge")).toHaveCount(0);
+  // The counts: red on Needs you while something needs the owner, neutral on the others, beside the labels and not under them.
+  await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveAttribute("data-tone", "alert");
+  await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText(String(w.counts.waiting));
+  await expect(page.getByTestId("home-tab-waiting-badge")).toHaveAttribute("data-tone", "neutral");
+  await expect(page.getByTestId("home-tab-customers-badge")).toHaveText(String(w.counts.customers));
+  await expect(page.getByTestId("home-worklist-hint")).toHaveCount(0);
   // The arrow keys move between the tabs.
   await page.getByTestId("home-tab-customers").focus();
   await page.keyboard.press("ArrowLeft");
@@ -259,16 +288,6 @@ test("search narrows the rows already fetched, by the customers' search terms", 
   await expect(page.getByTestId("home-worklist-empty")).toBeVisible();
 });
 
-test("a row opens its workspace: a decision opens the deal, a customer opens the customer", async ({ page }) => {
-  await open(page, { offer: true });
-  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-/);
-  await page.goto("/");
-  await page.getByTestId("home-tab-customers").click();
-  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page).toHaveURL(/\/customers\/BUYER-1/);
-});
-
 test("day 0 with nothing open: Needs you is empty in words and the customers are listed", async ({ page }) => {
   await open(page);
   await expect(page.getByTestId("home-worklist-alert")).toContainText(worklistDay0.en.alert.text);
@@ -285,7 +304,7 @@ test("nothing in Business mode is an id, a code or a day number; every figure is
   const small = await page.evaluate(() => {
     const root = document.querySelector('[data-testid="home-v2"]')!;
     const out: string[] = [];
-    for (const id of ["home-kpi-cash-value", "home-kpi-cash-note", "home-kpi-lowest-note", "home-kpi-lowest-hint", "home-kpi-funding-note", "home-action-text", "home-chart-note", "home-lowest-cause", "home-worklist-hint"]) {
+    for (const id of ["home-kpi-cash-value", "home-kpi-cash-note", "home-kpi-lowest-note", "home-kpi-lowest-hint", "home-kpi-funding-note", "home-action-text", "home-chart-note", "home-lowest-cause"]) {
       const el = root.querySelector(`[data-testid="${id}"]`);
       if (el && parseFloat(getComputedStyle(el).fontSize) < 13) out.push(id);
     }
@@ -326,13 +345,28 @@ test("phone: the strip as rows, the action and its primary in the first viewport
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { offer: true });
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
-  // The three KPIs are rows, one under the other.
+  // The three KPIs are rows, one under the other, each its eyebrow, figure and note: the second sentence is not on the page until a tap asks for it.
   const ys = await Promise.all(["cash", "lowest", "funding"].map(async (k) => (await page.getByTestId(`home-kpi-${k}`).boundingBox())!.y));
   expect(ys[0]).toBeLessThan(ys[1]);
   expect(ys[1]).toBeLessThan(ys[2]);
-  // The primary is in the first viewport, above the bottom tab bar.
-  const primary = (await page.getByTestId(`fix-open-${ALERT}`).boundingBox())!;
-  expect(primary.y + primary.height).toBeLessThanOrEqual(844 - 56);
+  await expect(page.getByTestId("home-kpi-funding-hint")).toBeHidden();
+  await page.getByTestId("home-kpi-funding").click();
+  await expect(page.getByTestId("home-kpi-funding-hint")).toBeVisible();
+  await page.getByTestId("home-kpi-funding").click();
+  await page.mouse.move(5, 5);
+  await expect(page.getByTestId("home-kpi-funding-hint")).toBeHidden();
+  // The primary is in the first viewport, above the bottom tab bar, at a 390 x 844 and a 375 x 812 phone.
+  for (const [w, h] of [[390, 844], [375, 812]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto("/");
+    await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+    const primary = (await page.getByTestId(`fix-open-${ALERT}`).boundingBox())!;
+    const tabBar = (await page.getByTestId("tab-bar").boundingBox())!;
+    expect(primary.y + primary.height, `inside the first ${h} px`).toBeLessThanOrEqual(h);
+    expect(primary.y + primary.height, "and not behind the tab bar").toBeLessThanOrEqual(tabBar.y);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
   // No side panel on a phone: a button with the count opens the sheet.
   await expect(page.getByTestId("home-v2-worklist")).toHaveCount(0);
   const opener = page.getByTestId("home-worklist-open");
@@ -386,4 +420,225 @@ test("accessibility: no axe violations at 1440 (the inspector open) and at 390 (
   await expect(page.getByTestId("home-worklist-sheet")).toBeVisible();
   const sheet = await new AxeBuilder({ page }).analyze();
   expect(sheet.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+// ---------------------------------------------------------------- slice 2: the customer and the decision, in place
+
+const exposure = exposureRec as unknown as Record<Lang, { paths: { key: string; kind: string; label: string; lowest_display?: string; lowest_when_text?: string; limit_text?: string; share_after_text?: string }[] }>;
+const focusOffer = focusOfferRec as unknown as Record<Lang, { customers: Record<string, FocusView>; deals: Record<string, FocusView> }>;
+interface FocusView {
+  name: string;
+  figures: { key: string; label: string; value_display: string; note: string; state?: string; state_text?: string }[];
+  decision: { eyebrow: string; text: string; headline_short?: string; authority_text?: string; primary: { label: string; href: string } } | null;
+  context: { back: { href: string }; deal: string | null; scenario: string | null };
+}
+const DECISION = worklistOffer.en.needs_you[0].key; // deal:OFF-…
+const DEAL = `/?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}`;
+const query = (page: Page) => new URL(page.url()).searchParams;
+
+test("a customer row opens the customer in place: the address is the selection, the overview's figures and state words, the open rows, the alert stays", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page).toHaveURL(/\/\?customer=BUYER-1$/);
+  const view = focusOffer.en.customers["BUYER-1"];
+  const focus = page.getByTestId("home-customer-focus");
+  await expect(focus).toBeVisible();
+  await expect(page.getByTestId("focus-title")).toHaveText(view.name);
+  await expect(page.getByTestId("focus-announce")).toHaveText(view.name);
+  for (const f of view.figures) {
+    await expect(page.getByTestId(`focus-figure-${f.key}-value`)).toHaveText(f.value_display);
+    if (f.state && f.state !== "none") await expect(page.getByTestId(`focus-figure-${f.key}-state`)).toHaveText(f.state_text!);
+  }
+  // The open rows are the worklist's own rows for this customer; the decision opens in place from them too.
+  await expect(page.getByTestId("focus-rows").getByTestId("home-worklist-row")).toHaveCount(1);
+  await expect(page.getByTestId("focus-open-customer")).toHaveAttribute("href", "/customers/BUYER-1");
+  // The company is still on the page: the strip as it was, the alert pinned, the action's warning (held, no filled button), and no second chart under the panel.
+  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
+  await expect(page.getByTestId("home-worklist-alert")).toBeVisible();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "held");
+  await expect(page.getByTestId("home-action-back")).toBeVisible();
+  await expect(page.getByTestId("home-chart")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(0);
+  await expect(page.locator(".card-decision")).toHaveCount(0);
+  // The selected row says so.
+  await page.getByTestId("home-tab-customers").click();
+  await expect(page.getByTestId("home-worklist-panel").getByTestId("home-worklist-row").first().getByRole("link")).toHaveAttribute("aria-current", "true");
+});
+
+test("Escape, the cross and 'All business' clear the selection; 'Back to the action' too, and the plan's control returns", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.goto("/?customer=BUYER-1");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
+  await expect(page.getByTestId("home-chart")).toBeVisible();
+  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+  await page.goto("/?customer=BUYER-1");
+  await page.getByTestId("focus-close").click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/?customer=BUYER-1");
+  await page.getByTestId("focus-all").click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/?customer=BUYER-1");
+  await page.getByTestId("home-action-back").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+});
+
+test("a decision row opens the deal in place: the server's action as the one filled primary, the paths, the scenario in the address, the figures from one read", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page).toHaveURL(new RegExp(`customer=BUYER-1&decision=${encodeURIComponent(DECISION).replace(/%/g, "%")}$`));
+  const view = focusOffer.en.deals.none;
+  const d = view.decision!;
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("deal-eyebrow")).toHaveText(d.eyebrow);
+  await expect(page.getByTestId("focus-title")).toHaveText(d.headline_short!);
+  await expect(page.getByTestId("deal-text")).toHaveText(d.text);
+  await expect(page.getByTestId("deal-authority")).toHaveText(d.authority_text!);
+  // The one filled primary on the page is the deal's; the company's action is held, quiet, and the plan's control is not on the page; one decision card.
+  await expect(page.getByTestId("deal-primary")).toHaveText(d.primary.label);
+  await expect(page.getByTestId("deal-primary")).toHaveAttribute("href", d.primary.href);
+  await expect(page.getByTestId("deal-open")).toHaveAttribute("href", view.context.back.href);
+  expect(await filledBrand(page)).toBe(1);
+  await expect(page.locator(".card-decision")).toHaveCount(1);
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "held");
+  await expect(page.getByTestId(`fix-open-${ALERT}`)).toHaveCount(0);
+  // The paths are the Deals page's own columns, in the server's order.
+  await expect(page.getByTestId("path-columns")).toBeVisible();
+  await expect(page.getByTestId("path-col-0")).toContainText("As they asked");
+  await expect(page.getByTestId("path-col-1")).toContainText("Option A");
+  // No scenario: the current books, said so; nothing is drawn as hypothetical.
+  await expect(page.getByTestId("deal-current-note")).toBeVisible();
+  await expect(page.getByTestId("home-legend-hypothetical")).toHaveCount(0);
+  await expect(page.getByTestId("home-chart-scope")).toHaveText("Impact of Foshan's proposed terms");
+  // The scenario: a tab, written to the address by replacing it, validated by the server, its figures the exposure read's words, its path the one dashed hypothetical line.
+  await page.getByTestId("deal-scenario-counter:0").click();
+  await expect(page).toHaveURL(/scenario=counter%3A0$/);
+  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "counter:0");
+  const optionA = exposure.en.paths.find((p) => p.label === "Option A")!;
+  await expect(page.getByTestId("deal-figure-lowest")).toContainText(optionA.lowest_display!);
+  await expect(page.getByTestId("deal-figure-lowest")).toContainText(optionA.lowest_when_text!);
+  await expect(page.getByTestId("deal-figure-limit")).toContainText(optionA.limit_text!);
+  await expect(page.getByTestId("deal-figure-share")).toContainText(optionA.share_after_text!);
+  await expect(page.getByTestId("home-legend-hypothetical")).toContainText("Option A");
+  await expect(page.getByTestId("home-legend-hypothetical")).toContainText("Hypothetical");
+  await expect(page.getByTestId("home-line-pending")).toBeAttached();
+  await page.getByTestId("deal-scenario-asked").click();
+  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "asked");
+  const asked = exposure.en.paths.find((p) => p.kind === "asked")!;
+  await expect(page.getByTestId("deal-figure-lowest")).toContainText(asked.lowest_display!);
+  // A column's own button picks the scenario too, and the company's figures never moved.
+  await page.getByTestId("path-col-1").getByRole("radio").click();
+  await expect(page).toHaveURL(/scenario=counter%3A0$/);
+  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
+  await page.getByTestId("deal-scenario-current").click();
+  await expect(page).not.toHaveURL(/scenario=/);
+  await expect(page.getByTestId("deal-current-note")).toBeVisible();
+  // The customer's name goes up one level; Escape clears everything.
+  await page.getByTestId("focus-customer").click();
+  await expect(page).toHaveURL(/\/\?customer=BUYER-1$/);
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+});
+
+test("back and forward restore the selections, a reload keeps them, and a decision that is not open says so", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await page.getByTestId("focus-rows").getByRole("link").click();
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await page.getByTestId("deal-scenario-counter:0").click();
+  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "counter:0");
+  // The scenario replaced the entry (no history of its own): back goes to the customer, back again to the company.
+  await page.goBack();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  expect(query(page).get("decision")).toBeNull();
+  await page.goBack();
+  await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
+  await expect(page.getByTestId("home-chart")).toBeVisible();
+  await page.goForward();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await page.goForward();
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "counter:0");
+  await page.reload();
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "counter:0");
+  await expect(page.getByTestId("deal-scenario-counter:0")).toHaveAttribute("aria-selected", "true");
+  // A decision the server does not know for this customer is not shown as a deal.
+  await page.goto("/?customer=BUYER-2&decision=deal%3AOFF-nope");
+  await expect(page.getByTestId("home-deal-gone")).toBeVisible();
+  // Nothing is kept in a store: the address alone held all of it.
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => /customer|decision|scenario/i.test(k)))).toEqual([]);
+});
+
+test("the focus panels in Chinese: the overview's figures and state words, the decision, the scenario's figures", async ({ page }) => {
+  await open(page, { lang: "zh", offer: true });
+  await page.goto(DEAL);
+  const view = focusOffer.zh.deals.none;
+  await expect(page.getByTestId("focus-title")).toHaveText(view.decision!.headline_short!);
+  await expect(page.getByTestId("deal-eyebrow")).toHaveText(view.decision!.eyebrow);
+  await expect(page.getByTestId("deal-primary")).toHaveText(view.decision!.primary.label);
+  await expect(page.getByTestId("deal-current-note")).toHaveText("当前账目，没有任何假设。选择一个情景，即可与之对比。");
+  await page.getByTestId("deal-scenario-counter:0").click();
+  const optionA = exposure.zh.paths.find((p) => p.kind === "reply")!;
+  await expect(page.getByTestId("deal-figure-lowest")).toContainText(optionA.lowest_display!);
+  await expect(page.getByTestId("home-legend-hypothetical")).toContainText("假设");
+  await page.goto("/?customer=BUYER-1");
+  const customer = focusOffer.zh.customers["BUYER-1"];
+  await expect(page.getByTestId("focus-title")).toHaveText(customer.name);
+  for (const f of customer.figures) if (f.state && f.state !== "none") await expect(page.getByTestId(`focus-figure-${f.key}-state`)).toHaveText(f.state_text!);
+  await expect(page.getByTestId("home-action-back")).toHaveText("回到待办操作");
+});
+
+test("reduced motion: a selection replaces the panel without an animation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page, { offer: true });
+  await page.goto("/?customer=BUYER-1");
+  const panel = page.getByTestId("home-customer-focus");
+  await expect(panel).toBeVisible();
+  const ms = await panel.evaluate((el) => parseFloat(getComputedStyle(el).animationDuration) * 1000);
+  const name = await panel.evaluate((el) => getComputedStyle(el).animationName);
+  expect(name === "none" || ms <= 1).toBe(true);
+});
+
+test("phone: a row in the sheet closes it and the panel opens under the action bar, the primary in the first viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, { offer: true });
+  await page.getByTestId("home-worklist-open").click();
+  await page.getByTestId("home-worklist-sheet").getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("home-worklist-sheet")).toBeHidden();
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await expect(page).toHaveURL(/decision=/);
+  // The panel sits under the action bar (held), nothing scrolls sideways, and the deal's primary is reachable.
+  const bar = (await page.getByTestId("home-v2-action").boundingBox())!;
+  const panel = (await page.getByTestId("home-focus").boundingBox())!;
+  expect(panel.y).toBeGreaterThan(bar.y);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  await expect(page.getByTestId("deal-primary")).toBeVisible();
+  expect(await filledBrand(page)).toBe(1);
+  // Opening the deal from a fresh load puts the primary in the first viewport.
+  await page.goto(DEAL);
+  const primary = (await page.getByTestId("deal-primary").boundingBox())!;
+  const tabBar = (await page.getByTestId("tab-bar").boundingBox())!;
+  expect(primary.y + primary.height).toBeLessThanOrEqual(tabBar.y);
+});
+
+test("accessibility: no axe violations with the customer and with the deal open, at 1440 and at 390", async ({ page }) => {
+  await open(page, { offer: true });
+  for (const url of ["/?customer=BUYER-1", `${DEAL}&scenario=counter%3A0`]) {
+    await page.goto(url);
+    await expect(page.getByTestId("home-focus")).toBeVisible();
+    await expect(page.getByTestId("deal-working")).toHaveCount(0);
+    const found = await new AxeBuilder({ page }).analyze();
+    expect(found.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByTestId("home-focus")).toBeVisible();
+    const phone = await new AxeBuilder({ page }).analyze();
+    expect(phone.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+    await page.setViewportSize({ width: 1440, height: 900 });
+  }
 });
