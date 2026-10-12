@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { HUE, hueOf, Swatch } from "@/components/deals/path-hue";
+import { hueOf, Swatch } from "@/components/deals/path-hue";
 import { toggleClass, type Tone } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
@@ -61,7 +61,6 @@ export function PathColumns({
     <div ref={group} role="radiogroup" aria-label={t("biz.deals.paths.group")} className="flex flex-wrap items-stretch gap-3" data-testid="path-columns">
       {paths.map((p, i) => {
         const on = p.key === pick;
-        const hue = HUE[hueOf(p)];
         const eco = p.cost_total_display ? null : economics(p);
         const net = eco?.is_net ? eco : null;
         const total = p.cost_total_display ?? (net ? (net.net_words ?? net.net_display) : p.cost_display);
@@ -80,7 +79,7 @@ export function PathColumns({
             // Keyboard focus lights the line too; a tap that happens to focus the button does not (it would leave the other lines dimmed).
             onFocus={(e) => e.target.matches(":focus-visible") && onHover(p.key)}
             onBlur={() => onHover(null)}
-            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 rounded-card border-2 bg-surface p-3.5 transition-colors duration-(--dur) ease-ui ${on ? `${hue.border}` : "border-line"}`}
+            className={`motion-reveal flex min-w-0 flex-[1_1_15rem] flex-col gap-2.5 p-3.5 ${on ? "card-selected" : "card-standard"}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-ink">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { HTMLAttributes } from "react";
 import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { CashPicture } from "@/components/business/cash-picture";
@@ -96,6 +97,11 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands 
  * moves, why it needs them and what happens after. All of that sits above the buttons. A commercial approval whose terms the
  * server could not present cannot be approved (Decline stays). Ids, the tier and the operation id sit under "Audit details".
  */
+/** A standard card as a section (the approvals that are not the page's decision card). */
+function StandardSection({ className = "", ...rest }: HTMLAttributes<HTMLElement>) {
+  return <section {...rest} className={`motion-reveal card-standard min-w-0 ${className}`} />;
+}
+
 export function ApprovalCard({
   a,
   busyId,
@@ -104,6 +110,7 @@ export function ApprovalCard({
   onRetry,
   cash,
   headlineInPage = false,
+  raised = true,
 }: {
   a: ApprovalView;
   busyId: string | null;
@@ -116,8 +123,11 @@ export function ApprovalCard({
   cash?: ApprovalCash | null;
   /** The page's own `h1` is this approval's question (the only one waiting), so the card does not say it again. */
   headlineInPage?: boolean;
+  /** The page's one decision card: the first waiting approval is raised, the others are standard cards (a page raises one surface). */
+  raised?: boolean;
 }) {
   const { t, te } = useI18n();
+  const Wrap = raised ? DecisionCard : StandardSection;
   // On a phone the buttons come up the screen: they sit right after the reason, before the picture.
   const narrow = useNarrow();
   const isPending = a.status === "PENDING";
@@ -341,7 +351,7 @@ export function ApprovalCard({
     );
     const picture = cash && p?.series_if_declined?.length && p?.series_if_approved?.length ? <ApprovalPicture a={a} cash={cash} after={afterText} decline={declineText} /> : null;
     return (
-      <DecisionCard
+      <Wrap
         id={`approval-${a.id}`}
         aria-labelledby={headlineInPage ? undefined : `approval-${a.id}-title`}
         aria-label={headlineInPage ? headlineText : undefined}
@@ -397,7 +407,7 @@ export function ApprovalCard({
         {narrow ? null : decide}
         {recordLink}
         {auditFold}
-      </DecisionCard>
+      </Wrap>
     );
   }
 

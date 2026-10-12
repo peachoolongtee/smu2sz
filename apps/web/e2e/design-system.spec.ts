@@ -323,3 +323,30 @@ test("SegmentedTabs: the choice is not the pill alone, widths follow the labels,
   await page.getByTestId("home-window-120").click();
   expect(Math.abs((await page.evaluate(() => window.scrollY)) - y)).toBeLessThan(2);
 });
+
+test("cards: a page has one decision card, and a chosen row, invoice or path is the one selected style (the tint and the 3 px rule)", async ({ page }) => {
+  const decisionCards = () => page.locator(".card-decision:visible").count();
+  for (const path of ["/", "/cash", "/receivables", "/customers/BUYER-1"]) {
+    await page.goto(path);
+    await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(300);
+    expect(await decisionCards(), path).toBeLessThanOrEqual(1);
+  }
+  const selected = (loc: import("@playwright/test").Locator) => loc.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, rule: getComputedStyle(el).borderLeftWidth, ruleColor: getComputedStyle(el).borderLeftColor }));
+  const want = { bg: "rgb(230, 241, 255)", rule: "3px", ruleColor: "rgb(3, 104, 233)" };
+  await page.goto("/receivables");
+  await expect(page.getByTestId("recv-RCV-A")).toBeVisible({ timeout: 15_000 });
+  expect(await selected(page.getByTestId("recv-RCV-A"))).toEqual(want);
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-heading")).toBeVisible({ timeout: 15_000 });
+  expect(await decisionCards()).toBeLessThanOrEqual(1);
+  expect(await selected(page.locator('[data-testid="queue-row"][data-selected="true"]'))).toEqual(want);
+  const picked = page.locator('[data-testid^="path-col-"][data-selected="true"]').first();
+  if (await picked.count()) {
+    const s = await selected(picked);
+    expect(s.bg).toBe(want.bg);
+    expect(s.ruleColor).toBe(want.ruleColor);
+  }
+});

@@ -539,6 +539,12 @@ input[type="radio"] {
   }
 }
 
+/* The selected row of a list is the same selection as the selected card: the brand tint and the 3 px rule (the row has a transparent 3 px left border to take it). Outside the layers, so it wins over the row's own border colour. */
+.row-selected {
+  border-left-color: var(--color-brand-600);
+  background: var(--color-brand-50);
+}
+
 /* The segmented pill is shown once measured (data-pill on its track); until then (the server's markup, the first frame) the chosen tab draws it. Outside the layers, so it wins over the utilities. */
 .seg-track:not([data-pill]) > span[aria-hidden] {
   display: none;

@@ -69,7 +69,7 @@ const COLS = "lg:grid-cols-[1.3fr_1.6fr_1fr_1.2fr_1fr]";
 export function QueueList({ tab, items, emptyText }: { tab: QueueTab; items: (ListItem & { select: () => void })[]; emptyText: string }) {
   const { t } = useI18n();
   return (
-    <section id="dq-list" role="tabpanel" aria-labelledby={`dq-tab-${tab}`} className="overflow-hidden rounded-card border border-line bg-surface" data-testid="queue-list">
+    <section id="dq-list" role="tabpanel" aria-labelledby={`dq-tab-${tab}`} className="card-standard overflow-hidden" data-testid="queue-list">
       <div role="table" aria-label={t("dq.list")}>
         <div role="row" className={`hidden gap-3 border-b border-line px-4 py-2.5 lg:grid short:sr-only ${COLS} ${eyebrowCls} text-ink-3`}>
           {(["customer", "request", "cost", "rec", "status"] as const).map((c) => (
@@ -93,7 +93,7 @@ export function QueueList({ tab, items, emptyText }: { tab: QueueTab; items: (Li
               onClick={(e) => {
                 if (!(e.target as HTMLElement).closest("a,button")) it.select();
               }}
-              className={`relative grid cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-0.5 border-t border-line px-4 py-2 text-sm first:border-t-0 sm:py-3 short:py-2 lg:gap-3 ${COLS} ${it.selected ? "bg-brand-50/60 before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-brand-600" : "hover:bg-subtle"} transition-colors duration-(--dur)`}
+              className={`relative grid cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-0.5 border-l-[3px] border-t border-line px-4 py-2 text-sm first:border-t-0 sm:py-3 short:py-2 lg:gap-3 ${COLS} ${it.selected ? "row-selected" : "border-l-transparent hover:bg-subtle"} transition-colors duration-(--dur)`}
             >
               <span role="cell" className="min-w-0 font-bold max-lg:col-span-1 lg:col-start-1 lg:row-start-1">
                 <Link href={it.customerHref} className="inline-flex min-h-8 max-w-full items-center text-ink underline-offset-2 hover:text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-customer">

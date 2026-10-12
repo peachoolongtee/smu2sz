@@ -263,10 +263,10 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
       <section
         id="doc-decide"
         aria-labelledby="doc-decide-title"
-        className={`motion-reveal rounded-card ${
+        className={`motion-reveal ${
           proposed
-            ? "order-3 max-lg:order-5 max-lg:sticky max-lg:bottom-(--dock-h) max-lg:z-20 border-2 border-brand-600 bg-brand-50 p-4 shadow-lift sm:p-6 sm:max-lg:pr-36"
-            : `order-3 border px-5 py-3.5 ${d.status === "CONFIRMED" ? "border-ok-line bg-ok-bg" : "border-line bg-surface"}`
+            ? "card-decision order-3 max-lg:order-5 max-lg:sticky max-lg:bottom-(--dock-h) max-lg:z-20 p-4 sm:p-6 sm:max-lg:pr-36"
+            : `card-standard order-3 px-5 py-3.5 ${d.status === "CONFIRMED" ? "border-ok-line bg-ok-bg" : ""}`
         }`}
       >
         {proposed ? (

@@ -196,19 +196,15 @@ export function Card({
 }
 
 /**
- * The decision card: the one raised card of a page (a 16 px radius, one soft shadow), for what the owner is asked to decide. It carries one strong action,
- * the `action` slot (the page's one filled button, at the end of the row); everything else in it is read, not pressed. Solid white: no frost, no blur.
- * `ActionBar` (the sticky variant) and the approval card are made of it.
+ * The decision card: the one raised card of a page (a 16 px radius, one soft shadow), for what the owner is asked to decide. The strong action, the page's one
+ * filled button, is a child inside it (there is no separate slot: the cards that exist lay their action out in their own row); everything else in it is read, not
+ * pressed. One per page: a page with several decisions raises the first and leaves the rest standard. Solid white: no frost, no blur.
+ * `ActionBar` (the sticky variant), the attention card, the first waiting approval and the document's decision bar are made of it.
  */
-export function DecisionCard({ action, children, className = "", ...rest }: HTMLAttributes<HTMLElement> & { action?: ReactNode }) {
+export function DecisionCard({ children, className = "", ...rest }: HTMLAttributes<HTMLElement>) {
   return (
     <section {...rest} className={`motion-reveal card-decision min-w-0 ${className}`}>
       {children}
-      {action ? (
-        <div data-slot="action" className="flex flex-wrap items-center gap-2">
-          {action}
-        </div>
-      ) : null}
     </section>
   );
 }
