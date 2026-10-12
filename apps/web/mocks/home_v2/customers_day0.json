@@ -1,0 +1,102 @@
+{
+  "en": {
+    "lang": "en",
+    "day": 0,
+    "state_version": 1,
+    "customers": [
+      {
+        "customer_id": "BUYER-1",
+        "short": "Foshan",
+        "name": "Foshan Home Retail Co.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥420,000",
+        "share_text": "100% of what you are owed",
+        "tone": "neutral",
+        "status_text": "Nothing open",
+        "detail_text": "¥420,000 outstanding · 100% of what you are owed",
+        "href": "/?customer=BUYER-1"
+      },
+      {
+        "customer_id": "BUYER-2",
+        "short": "Dongguan",
+        "name": "Dongguan Office Supplies Ltd.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥0",
+        "share_text": null,
+        "tone": "neutral",
+        "status_text": "Nothing open",
+        "detail_text": "¥0 outstanding",
+        "href": "/?customer=BUYER-2"
+      }
+    ],
+    "search_terms": [
+      {
+        "customer_id": "BUYER-1",
+        "terms": [
+          "Foshan Home Retail Co.",
+          "Foshan"
+        ]
+      },
+      {
+        "customer_id": "BUYER-2",
+        "terms": [
+          "Dongguan Office Supplies Ltd.",
+          "Dongguan"
+        ]
+      }
+    ],
+    "partial": null
+  },
+  "zh": {
+    "lang": "zh",
+    "day": 0,
+    "state_version": 1,
+    "customers": [
+      {
+        "customer_id": "BUYER-1",
+        "short": "Foshan",
+        "name": "Foshan Home Retail Co.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥420,000",
+        "share_text": "占您应收款的 100%",
+        "tone": "neutral",
+        "status_text": "没有进行中的事项",
+        "detail_text": "未收 ¥420,000 · 占您应收款的 100%",
+        "href": "/?customer=BUYER-1"
+      },
+      {
+        "customer_id": "BUYER-2",
+        "short": "Dongguan",
+        "name": "Dongguan Office Supplies Ltd.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥0",
+        "share_text": null,
+        "tone": "neutral",
+        "status_text": "没有进行中的事项",
+        "detail_text": "未收 ¥0",
+        "href": "/?customer=BUYER-2"
+      }
+    ],
+    "search_terms": [
+      {
+        "customer_id": "BUYER-1",
+        "terms": [
+          "Foshan Home Retail Co.",
+          "Foshan"
+        ]
+      },
+      {
+        "customer_id": "BUYER-2",
+        "terms": [
+          "Dongguan Office Supplies Ltd.",
+          "Dongguan"
+        ]
+      }
+    ],
+    "partial": null
+  }
+}
