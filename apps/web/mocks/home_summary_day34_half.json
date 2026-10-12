@@ -4116,6 +4116,11 @@
             "tone": "neutral"
           },
           {
+            "label": "Funds arrive",
+            "value": "in 3 days",
+            "tone": "neutral"
+          },
+          {
             "label": "Invoice financing",
             "value": "¥28k in 3 days (planned)",
             "tone": "neutral"

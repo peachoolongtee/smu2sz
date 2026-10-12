@@ -2713,7 +2713,7 @@
         "day": 37,
         "when": "3 天后",
         "kind": "landing",
-        "label": "发票融资将到账，前提是您执行方案",
+        "label": "发票融资将到账，前提是您批准方案",
         "note": null,
         "planned": true,
         "amount_fen": 20000000,
@@ -4064,7 +4064,7 @@
       }
     ],
     "counterfactual_label": "不采用 FLOW 建议方案的情形（仅供对比）",
-    "plan_line_label": "如果您执行 FLOW 的方案",
+    "plan_line_label": "如果您批准 FLOW 的方案",
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",

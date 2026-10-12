@@ -2713,7 +2713,7 @@
         "day": 37,
         "when": "in 3 days",
         "kind": "landing",
-        "label": "invoice financing would arrive, if you run the plan",
+        "label": "invoice financing would arrive, if you approve the plan",
         "note": null,
         "planned": true,
         "amount_fen": 20000000,
@@ -4064,7 +4064,7 @@
       }
     ],
     "counterfactual_label": "without the plan FLOW proposes (a comparison)",
-    "plan_line_label": "If you run FLOW's plan",
+    "plan_line_label": "If you approve FLOW's plan",
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",

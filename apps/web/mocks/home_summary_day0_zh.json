@@ -4187,6 +4187,11 @@
             "tone": "neutral"
           },
           {
+            "label": "资金到账",
+            "value": "3 天后",
+            "tone": "neutral"
+          },
+          {
             "label": "信用额度提款",
             "value": "¥150k，今天（计划中）",
             "tone": "neutral"

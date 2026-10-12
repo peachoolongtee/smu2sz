@@ -4116,6 +4116,11 @@
             "tone": "neutral"
           },
           {
+            "label": "资金到账",
+            "value": "3 天后",
+            "tone": "neutral"
+          },
+          {
             "label": "发票融资",
             "value": "¥28k，3 天后（计划中）",
             "tone": "neutral"

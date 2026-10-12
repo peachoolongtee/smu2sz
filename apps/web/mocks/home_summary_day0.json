@@ -4187,6 +4187,11 @@
             "tone": "neutral"
           },
           {
+            "label": "Funds arrive",
+            "value": "in 3 days",
+            "tone": "neutral"
+          },
+          {
             "label": "Credit line draw",
             "value": "¥150k today (planned)",
             "tone": "neutral"
