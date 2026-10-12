@@ -101,13 +101,14 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
 
   // The Business home keeps cash in hand apart from the advance on its way (both are the server's strings).
   await page.goto("/");
-  await expect(page.getByTestId("home-cash")).toHaveText("¥550k");
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥255k funding arriving in 3 days");
+  await expect(page.getByTestId("home-fact-today")).toHaveText("¥550k");
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("¥255k");
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("Invoice financing, in 3 days");
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
-  await expect(page.getByTestId("home-cash")).toHaveText("¥805k");
-  await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
+  await expect(page.getByTestId("home-fact-today")).toHaveText("¥805k");
+  await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
@@ -195,7 +196,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
-  await expect(risk.getByTestId("next-action-needs-owner")).toContainText("15.00%");
+  await expect(risk.getByTestId("home-funding-authority")).toContainText("15.00%");
   await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
   // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the home.
@@ -239,7 +240,8 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-in-transit")).toContainText("¥200k funding arriving in 3 days");
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("¥200k");
+  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("in 3 days");
   await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
   // The cure is an open decision until its cash lands: the hero says what is on its way once (Waiting on does not list it again), and its record says the same.
   await expect(page.getByTestId("home-waiting-on-list")).toHaveCount(0);

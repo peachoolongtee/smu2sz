@@ -725,21 +725,20 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
-  return withHomePatch(home.mockHome(dealt, lang));
+  return withHomeStress(home.mockHome(dealt, lang));
 }
 
 /**
- * Temporary (until the Home hybrid fields are re-recorded): e2e/home-hybrid.spec.ts lays the new optional fields over the recorded home read through
- * this session key. Unset, the read is exactly the recording. Nothing in a recording is edited; delete this with the spec's patch once the mocks are re-recorded.
+ * A test seam, like the two keys below it: the late-payment stress is behind the API's exposure flag, so no recording has it. e2e/home-hybrid.spec.ts
+ * lays one on the recorded read through this session key to exercise the scenario switch; unset, the read is exactly the recording.
  */
-export const HOME_PATCH_KEY = "tl-mock-home-patch";
-function withHomePatch(view: HomeView): HomeView {
+export const HOME_STRESS_KEY = "tl-mock-home-stress";
+function withHomeStress(view: HomeView): HomeView {
   if (typeof window === "undefined") return view;
-  const raw = window.sessionStorage.getItem(HOME_PATCH_KEY);
+  const raw = window.sessionStorage.getItem(HOME_STRESS_KEY);
   if (!raw) return view;
   try {
-    const patch = JSON.parse(raw) as Partial<HomeView>;
-    return { ...view, ...patch, cash: { ...view.cash, ...(patch.cash ?? {}) } };
+    return { ...view, cash: { ...view.cash, stress_available: true, stress: JSON.parse(raw) as HomeView["cash"]["stress"] } };
   } catch {
     return view;
   }

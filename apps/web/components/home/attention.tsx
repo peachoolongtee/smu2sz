@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { ActionBar } from "@/components/business/action-bar";
+import { usePlanRun } from "@/components/business/next-action";
+import type { useFixAlert } from "@/components/home/fix-alert";
 import { ButtonLink, textLinkClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { HomeAttention, HomeAttentionItem, HomeFundingLine, HomeTone } from "@/lib/types";
+import type { HomeAttention, HomeAttentionItem, HomeFundingLine, HomeNextAction, HomeTone } from "@/lib/types";
 
 const FACT_TONE: Record<HomeTone, string> = { ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg", neutral: "text-ink" };
 
@@ -40,7 +42,7 @@ function FundingLine({ line, testId = "home-funding" }: { line: HomeFundingLine;
  * page's only filled button and a quiet second one), the plan's line beneath a hairline, and the other items as a short ordered list under the card
  * ("Also waiting"), never as more raised cards. With nothing waiting the card shrinks to the plan's line under one quiet sentence.
  */
-export function AttentionCard({ attention, funding }: { attention: HomeAttention; funding: HomeFundingLine | null | undefined }) {
+export function AttentionCard({ attention, funding, nextAction, stateVersion, fixer }: { attention: HomeAttention; funding: HomeFundingLine | null | undefined; nextAction?: HomeNextAction | null; stateVersion: number; fixer: ReturnType<typeof useFixAlert> }) {
   const { t } = useI18n();
   const items = attention.items ?? [];
   const main: HomeAttentionItem | undefined = items.find((i) => i.key === attention.primary_key);
@@ -56,10 +58,13 @@ export function AttentionCard({ attention, funding }: { attention: HomeAttention
       </section>
     );
   }
+  // The funding item is the plan the owner can run from here; so is the approval that plan is waiting in (the plan bar's waiting state).
+  const runs = nextAction && (main.kind === "funding" || (main.kind === "approval" && nextAction.pending_approval_id && main.key === `approval:${nextAction.pending_approval_id}`)) ? nextAction : null;
   return (
     <section aria-label={t("home.hy.attention")} className="space-y-3" data-testid="home-attention" data-state="needs" data-kind={main.kind}>
-      <ActionBar flow data-testid="home-attention-card">
-        <div className="w-full min-w-0 space-y-3">
+      {/* The card that holds the plan's run control is the page's "next action" (the handle the specs and the demo know it by). */}
+      <ActionBar flow data-testid={runs ? "home-next-action" : "home-attention-card"} data-alert={runs?.alert_id}>
+        <div className="w-full min-w-0 space-y-2.5 sm:space-y-3">
           <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-warn-fg" data-testid="home-attention-eyebrow">
             {main.eyebrow}
           </p>
@@ -76,7 +81,9 @@ export function AttentionCard({ attention, funding }: { attention: HomeAttention
               ))}
             </dl>
           ) : null}
-          {main.primary || main.secondary ? (
+          {runs ? (
+            <PlanRunControls a={runs} stateVersion={stateVersion} fixer={fixer} compare={(main.kind === "funding" ? main.primary : main.secondary) ?? null} alternatives={main.kind === "funding"} />
+          ) : main.primary || main.secondary ? (
             <div className="flex flex-wrap items-center gap-2">
               {main.primary ? (
                 <ButtonLink href={main.primary.href} variant="primary" className="max-sm:w-full" data-testid="home-attention-primary">
@@ -99,6 +106,24 @@ export function AttentionCard({ attention, funding }: { attention: HomeAttention
       </ActionBar>
       {others.length ? <Queue items={others} /> : null}
     </section>
+  );
+}
+
+/** The funding item's actions: run the plan (ask, then run), or the waiting state, with the compare link beside it. */
+function PlanRunControls({ a, stateVersion, fixer, compare, alternatives }: { a: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert>; compare: { label: string; href: string } | null; alternatives: boolean }) {
+  const { primary, panel } = usePlanRun(a, stateVersion, fixer);
+  return (
+    <div className="space-y-3" data-testid="home-attention-run">
+      <div className="flex flex-wrap items-center gap-2 max-sm:[&>button]:w-full max-sm:[&>a]:w-full">
+        {primary}
+        {compare ? (
+          <ButtonLink href={compare.href} className="max-sm:w-full" data-testid={alternatives ? "next-action-alternatives" : "home-attention-secondary"}>
+            {compare.label}
+          </ButtonLink>
+        ) : null}
+      </div>
+      {panel}
+    </div>
   );
 }
 

@@ -119,6 +119,21 @@ export function ChangesBlock({ changes, sinceWhen, bare = false }: { changes: Ho
   );
 }
 
+/** The strategy MVP's one line on Home: what is best to do about the invoice that saves the most (the server's sentence, and a second under it). Nothing without it. */
+export function WorthLine({ worth, className = "" }: { worth?: ReceivablesWorthView | null; className?: string }) {
+  if (!worth?.rows.length || !worth.top_action) return null;
+  return (
+    <div className={`text-sm text-ink-2 ${className}`} data-testid="home-top-action">
+      <p>{worth.top_action}</p>
+      {worth.top_action_second ? (
+        <p className="mt-1" data-testid="home-top-action-second">
+          {worth.top_action_second}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Who has not paid, and what comes in next, as rows: the buyer, then the amount. With the strategy MVP's `worth` loaded,
  * one line more: what is best to do about the invoice that saves the most (the server's sentence).
@@ -153,12 +168,7 @@ export function ReceivablesBlock({ r, worth }: { r: HomeReceivables; worth?: Rec
             {t("biz.nextReceipt.none")}
           </p>
         )}
-        {worth?.rows.length && worth.top_action ? (
-          <div className="py-2.5 text-sm text-ink-2" data-testid="home-top-action">
-            <p>{worth.top_action}</p>
-            {worth.top_action_second ? <p className="mt-1" data-testid="home-top-action-second">{worth.top_action_second}</p> : null}
-          </div>
-        ) : null}
+        <WorthLine worth={worth} className="py-2.5" />
       </div>
     </Card>
   );
