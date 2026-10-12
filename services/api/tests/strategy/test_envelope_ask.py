@@ -221,3 +221,24 @@ def test_route_rejects_an_ask_outside_the_query_range(api):
 def test_route_asks_nothing_of_a_buyer_with_no_lever(api):
     body = api.get("/buyers/BUYER-2/envelope?ask=60", headers=OWNER).json()
     assert body["refused"] is not None and body["ask"] is None
+
+
+# ---------------------------------------------------------------- refused (brief E.3)
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_ask_never_says_upfront_and_the_budget_has_one_chinese_name(facts, ask60, lang):
+    """"60 days with 20% upfront" is false on these books and not representable (no deposit obligation exists): the
+    answer names the part of the open invoice paid now, never a share upfront. The budget is 让利 everywhere, never 让步."""
+    a = module.envelope_answer(facts, lang, ask60)
+    texts = [a.primary, a.reason, a.money, a.ask.sentence if a.ask else "",
+             *[w for p in [*a.packages, *a.more, *a.over_your_limits]
+               for w in (p.summary, p.authority_sentence or "", *p.flags)],
+             *[w for lv in a.levers for w in (lv.wall_text or "", lv.wall_words or "", lv.next_step_sentence)]]
+    for text in texts:
+        assert "upfront" not in text.lower() and "20%" not in text and "预付" not in text and "定金" not in text, text
+        assert "让步" not in text, text
+
+
+def test_the_two_wall_tables_name_the_budget_alike():
+    assert module._WALL_TEXT["forward budget"][1] == module._WALL_WORDS["forward budget"][1] == "您给买家让利的预算"

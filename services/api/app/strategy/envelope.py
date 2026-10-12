@@ -1045,7 +1045,7 @@ class EnvelopeAnswer(Contract):
 
 
 _WALL_TEXT = {
-    "forward budget": ("your budget for what you give buyers", "您给买家让步的预算"),
+    "forward budget": ("your budget for what you give buyers", "您给买家让利的预算"),
     "buyer cap": ("your limit for this buyer", "您对该买家的上限"),
     "liquidity": ("your cash floor", "您的现金底线"),
     "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
