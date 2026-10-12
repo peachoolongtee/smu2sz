@@ -15,7 +15,7 @@ session) and replaces this session's private memory. Read it first, then `docs/H
 4. Yes to bundling the headline font as a package.
 
 The mockups are a design canvas in the owner's Claude account ("FLOW Home Mockups": Home A / B / C, A1 and A2, and two Deals layouts);
-the approved A1 file is kept in the repository as `docs/design/home-a1-mock.dc.html` for reference (a canvas file, not a page).
+all nine boards are kept in the repository under `docs/design/mockups-2026-10-12/` with a README that names each and its status (canvas files, not pages; `SeamlessA` is the approved A1).
 
 ## 2. What was built (all on `dev` after this merge)
 
@@ -24,8 +24,7 @@ the page with no card; one picture where the data supports one; one raised surfa
 `lg`, in flow on a phone); everything else unboxed, small-caps captions and hairlines; the top bar is the canvas colour at 70% with
 blur, so it reads as frosted glass only when content passes under it; the sidebar is seamless with counts; headlines are Plus Jakarta
 Sans Variable, bundled with the app (`@fontsource-variable/plus-jakarta-sans`, about 27 KB for an English page, no font host).
-The mockups of the Deals page and of the callouts are `docs/design/deals-3-three-paths-mock.dc.html` and
-`what-moves-your-cash-callouts-mock.dc.html`. Three rules of the old guide changed on the owner's instruction and are rewritten there: the navy "deep block" is the Demo strip only;
+The mockups of the Deals page and of the callouts are `DealsCompare` and `HomeCallouts` in that folder. Three rules of the old guide changed on the owner's instruction and are rewritten there: the navy "deep block" is the Demo strip only;
 the chart's one line-draw is an allowed motion; a labelled chart fed by the server's series is not a sparkline.
 
 | Page | What it is now |
@@ -90,7 +89,7 @@ regression. `SKIP_PERF_BENCH=1` hides it.
 **The owner**
 - **"What moves your cash"**: the lead proposed replacing the chip row under the cash picture (Home and Cash) with callout pills joined to
   their steps by leader lines, a flow strip of money in and out on the chart's own day axis, and one card that follows the focus (press a
-  pill, step, or Play). The mockup is `docs/design/what-moves-your-cash-callouts-mock.dc.html`; nothing is built until the owner says go. It
+  pill, step, or Play). The mockup is `docs/design/mockups-2026-10-12/HomeCallouts.dc.html`; nothing is built until the owner says go. It
   needs one small read addition (per movement: below the minimum or not, and a status sentence).
 - The owner items of handoff 08 section 3 stand (map #88's build, #104, the readers and interviewers, a Postgres run, fonts are now done).
 
