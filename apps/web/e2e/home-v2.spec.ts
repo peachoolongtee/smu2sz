@@ -9,6 +9,7 @@ import homeAfter from "../mocks/home_v2/home_after_fund.json";
 import worklistDay0 from "../mocks/home_v2/worklist_day0.json";
 import worklistOffer from "../mocks/home_v2/worklist_offer.json";
 import worklistAfter from "../mocks/home_v2/worklist_after_fund.json";
+import evaluated from "../mocks/deals_day0_evaluated.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
 
 /**
@@ -40,7 +41,9 @@ async function open(page: Page, { lang = "en", flag = true, offer = false }: { l
     await page.goto("/deals");
     await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
     await page.getByTestId("queue-check-button").click();
-    await expect(page.getByTestId("queue-heading")).toBeVisible();
+    // The queue names the offer once FLOW has read it: only then is the offer open on the books the Home reads.
+    const headline = evaluated.deals.find((d) => d.open_offer)!.open_offer!.headline_short;
+    await expect(page.getByTestId("queue-heading")).toHaveText(headline);
   }
   await page.goto("/");
   await expect(page.getByTestId(flag ? "home-v2" : "home-status")).toBeVisible();
