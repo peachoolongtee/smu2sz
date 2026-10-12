@@ -59,7 +59,7 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(none.getByRole("link")).toHaveText(["View the invoices", "Stress-test payment"]);
   await expect(page.getByTestId("customer-decision")).toHaveCount(0);
   await expect(none.getByRole("link", { name: "View the invoices" })).toHaveAttribute("href", "/receivables?customer=BUYER-1&invoice=RCV-A");
-  await expect(none.getByRole("link", { name: "Stress-test payment" })).toHaveAttribute("href", "/cash?stress=BUYER-1:30&invoice=RCV-A");
+  await expect(none.getByRole("link", { name: "Stress-test payment" })).toHaveAttribute("href", "/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer");
   // The economics and the exposure panels, each in the server's rows.
   await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("¥5,460,000");
   await expect(page.getByTestId("customer-economics-rows-annual_sales")).toContainText("projected from your books");

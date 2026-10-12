@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { contextQuery, customerHref, readContext } from "../lib/customer-href.ts";
+import { contextQuery, customerHref, fromCustomer, readContext } from "../lib/customer-href.ts";
 import { en, zh } from "../lib/dictionary.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -19,6 +19,11 @@ test("a customer's href carries the decision, the path and the invoice, in that 
   assert.equal(customerHref("BUYER-1", { invoice: "RCV-A", decision: "deal:OFF-1" }), "/customers/BUYER-1?decision=deal%3AOFF-1&invoice=RCV-A");
   assert.equal(customerHref("A B/1"), "/customers/A%20B%2F1");
   assert.equal(customerHref("BUYER-1", { decision: null, path: "", invoice: undefined }), "/customers/BUYER-1");
+});
+
+test("the stress link is marked as opened from the customer, the server's href kept", () => {
+  assert.equal(fromCustomer("/cash?stress=BUYER-1:30&invoice=RCV-A", "BUYER-1"), "/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer");
+  assert.equal(fromCustomer("/cash", "A B"), "/cash?customer=A%20B&from=customer");
 });
 
 test("the context is read from a URL's query: only the three keys, only when set", () => {

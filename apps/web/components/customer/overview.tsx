@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
 import { PartialRead } from "@/components/business/freshness";
 import { Card, ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
+import { fromCustomer } from "@/lib/customer-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
 
@@ -33,7 +34,7 @@ function Decision({ view }: { view: CustomerOverviewView }) {
   const decision = view.decision;
   const rest: OverviewAction[] = decision ? decision.secondary : (view.actions ?? []);
   const links = rest.map((a) => (
-    <ButtonLink key={a.key} href={a.href} data-testid={`customer-action-${a.key}`}>
+    <ButtonLink key={a.key} href={a.key === "stress" ? fromCustomer(a.href, view.customer_id) : a.href} data-testid={`customer-action-${a.key}`}>
       {a.label}
     </ButtonLink>
   ));

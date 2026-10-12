@@ -31,6 +31,14 @@ export function contextQuery(ctx: CustomerContext = {}): string {
   return CONTEXT_KEYS.filter((k) => ctx[k]).map((k) => `&${k}=${encodeURIComponent(ctx[k] as string)}`).join("");
 }
 
+/**
+ * The server's Stress-test link, marked as opened from this customer (`customer=<id>&from=customer`) so the Cash page's back link returns here
+ * and not to Receivables. Only the query is added; the server's href is otherwise kept as it is.
+ */
+export function fromCustomer(href: string, id: string): string {
+  return `${href}${href.includes("?") ? "&" : "?"}customer=${encodeURIComponent(id)}&from=customer`;
+}
+
 /** The customer's page, carrying the context: `/customers/BUYER-1?decision=…&path=…`. */
 export function customerHref(id: string, ctx: CustomerContext = {}): string {
   const query = contextQuery(ctx);
