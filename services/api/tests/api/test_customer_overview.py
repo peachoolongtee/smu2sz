@@ -472,8 +472,9 @@ def test_the_context_echoes_the_deal_and_the_scenario_it_was_opened_on(api, rt):
     offer_id = _before(api, rt)
     ctx = _get(api, decision=f"deal:{offer_id}", scenario="asked")["context"]
     assert (ctx["customer"], ctx["deal"], ctx["scenario"]) == ("BUYER-1", f"deal:{offer_id}", "asked")
-    counter = next(p["key"] for p in api.get(f"/offers/{offer_id}/picture").json()["paths"] if p["recommended"])
-    assert _get(api, "BUYER-1", "zh", decision=f"deal:{offer_id}", scenario=counter)["context"]["scenario"] == counter
+    assert _get(api, "BUYER-1", "zh", decision=f"deal:{offer_id}", scenario="counter:1")["context"]["scenario"] == "counter:1"
+    assert _get(api, decision=f"deal:{offer_id}", scenario="counter:2")["context"]["scenario"] is None  # the verdict has two counters
+    assert _get(api, decision=f"deal:{offer_id}", scenario="counter:999")["context"]["scenario"] is None
     assert _get(api, decision=f"deal:{offer_id}")["context"]["scenario"] is None  # no scenario asked for: none echoed
 
 

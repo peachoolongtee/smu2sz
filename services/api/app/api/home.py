@@ -749,7 +749,9 @@ class Partial:
               "reconciliation": ("the check of receipts against promises", "收款与约定的核对"),
               "summary": ("the summary of what needs you", "待办事项摘要"),
               "receipt_basis": ("what each receipt rests on", "每笔收款的依据"),
-              "home_v2": ("the Home V2 summary", "新版首页摘要")}
+              "home_v2": ("the Home V2 summary", "新版首页摘要"),
+              "offer_picture": ("the cash picture of an open offer", "未决报价的现金图景"),
+              "customer_shares": ("each customer's share of what you are owed", "各客户占您应收款的比例")}
 
     def __init__(self) -> None:
         self.missing: list[str] = []
@@ -1105,6 +1107,12 @@ def _decision_record(rt: Any, lang: str, ctx: Any = None, partial: Partial | Non
 
 @router.get("/home")
 def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
+    return read_home(lang, since_day)
+
+
+def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True) -> dict[str, Any]:
+    """The Home read. `v2=False` leaves out the Home V2 fields even with FEATURE_HOME_V2 on: a caller that reads only the company's status,
+    plan and approvals (the worklist) neither pays for them nor depends on them."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
@@ -1187,7 +1195,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                 rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
                 action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
                 low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
-                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial))
+                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial), v2=v2)
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the home summary could not be built")
             partial.add("summary")
@@ -1256,7 +1264,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "deals_card": hybrid["deals_card"],
         "receivables_card": hybrid["receivables_card"],
         "changes_card": hybrid["changes_card"],
-        **({"home_v2": hybrid.get("home_v2")} if get_settings().features.home_v2 else {}),  # FEATURE_HOME_V2: with it off the read carries no V2 field
+        **({"home_v2": hybrid.get("home_v2")} if v2 and get_settings().features.home_v2 else {}),  # FEATURE_HOME_V2: with it off the read carries no V2 field
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),

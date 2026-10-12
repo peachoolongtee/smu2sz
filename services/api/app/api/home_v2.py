@@ -21,6 +21,7 @@ funding KPI's eyebrow; `funding.state` PROPOSED is its code. A lot that has been
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 from urllib.parse import quote
 
@@ -43,6 +44,7 @@ from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
 from app.strategy import words as basis_words
 
+log = logging.getLogger("termsledger.decisions")
 _LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
 _BASIS_WORD = {basis_words.OWED: ("owed", "应收"), basis_words.SCHEDULED: ("scheduled", "按计划"), basis_words.AGREED: ("agreed", "已约定"),
                basis_words.PENDING: ("pending", "待对方接受")}
@@ -188,10 +190,22 @@ def _next_arrivals(c: HomeRead) -> str:
     return t(lang, "Next: " + "; ".join(parts) + ".", "接下来：" + "；".join(parts) + "。")
 
 
+def _worklist_holds(c: HomeRead) -> int:
+    """What waits for the owner in the worklist, from the worklist's own count (one count, not a second). A worklist that cannot be read is
+    named in `partial` and the sentence about it is left out."""
+    from app.api import worklist
+
+    try:
+        return worklist.counts(c.rt, c.lang)["needs_you"]
+    except Exception:
+        log.exception("the worklist could not be counted for the Home V2 action")
+        if c.partial is not None:
+            c.partial.add("home_v2")
+        return 0
+
+
 def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
     lang, a = c.lang, c.action
-    others = [i for i in att["items"] if i["kind"] in ("deal", "approval", "collection")
-              and not (a is not None and a.get("pending_approval_id") and i["key"] == f"approval:{a['pending_approval_id']}")]
     if a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
         waiting = bool(a.get("pending_approval_id"))
         landing = any(leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen") for leg in a["legs"])
@@ -215,11 +229,20 @@ def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
                             if waiting else {"label": t(lang, "Run the funding plan", "执行融资方案"), "href": "/cash#cash-options"}),
                 "secondary": {"label": t(lang, "Compare", "比较"), "href": "/cash#cash-options"},
                 "control": "APPROVE_PLAN" if waiting else "RUN_PLAN"}
+    if a is not None and a["kind"] == "FACILITY_REPAYABLE":  # the credit line can be repaid: that is the company's action, not a quiet day
+        waiting = bool(a.get("pending_approval_id"))
+        return {"variant": "ACTION", "key": f"approval:{a['pending_approval_id']}" if waiting else None, "tone": "warn",
+                "eyebrow": _eyebrow(lang, "Next action", "下一步"), "title": str(a.get("outcome_title") or a.get("title")),
+                "text": f"{a.get('after') or ''}{_sp(lang)}{a.get('authority_text') or ''}".strip(),
+                "primary": ({"label": t(lang, "Review the repayment", "查看还款"), "href": f"/approvals#approval-{quote(str(a['pending_approval_id']), safe='')}"}
+                            if waiting else {"label": t(lang, "Run the repayment", "执行还款"), "href": "/cash#cash-options"}),
+                "secondary": {"label": t(lang, "Compare", "比较"), "href": "/cash#cash-options"},
+                "control": "APPROVE_PLAN" if waiting else "RUN_PLAN"}
     if c.breach_day is not None:  # the reserve is unsafe and there is no plan to run: say so, point to the options
         return {"variant": "ACTION", "key": None, "tone": "bad", "eyebrow": _breach_eyebrow(c), "title": c.headline, "text": c.note,
                 "primary": {"label": t(lang, "See the options", "查看选项"), "href": "/cash#cash-options"}, "secondary": None, "control": None}
-    held = (t(lang, f" Your worklist still holds {len(others)} {'item' if len(others) == 1 else 'items'} for you.",
-              f"您的待办列表里还有 {len(others)} 项等您处理。") if others else "")
+    n = _worklist_holds(c)
+    held = (t(lang, f" Your worklist still holds {n} {'item' if n == 1 else 'items'} for you.", f"您的待办列表里还有 {n} 项等您处理。") if n else "")
     return {"variant": "QUIET", "key": None, "tone": "ok",
             "eyebrow": _eyebrow(lang, "Nothing needs you from the company side", "公司层面没有需要您处理的事项"),
             "title": (t(lang, "Your cash is covered on the plan that ran.", "按已执行的方案，您的现金是安全的。") if _plan_has_run(c.state)

@@ -853,6 +853,21 @@ def _selected_deal(rt: Runtime, buyer_id: str, decision: str | None) -> str | No
     return decision if offer is not None and offer.counterparty_id == buyer_id else None
 
 
+_SCENARIO = re.compile(r"asked|counter:[0-9]{1,3}")
+
+
+def _selected_scenario(rt: Runtime, deal: str | None, scenario: str | None) -> str | None:
+    """The scenario the page was opened on, validated as the exposure reads validate `response`: `asked`, or `counter:<k>` when the deal's
+    verdict has a k-th counter-offer; none without a deal (a scenario is of a deal), and never an echo of anything else."""
+    if deal is None or not scenario or not _SCENARIO.fullmatch(scenario):
+        return None
+    if scenario == "asked":
+        return scenario
+    offer_id = offer_id_of(deal)
+    verdict = latest_verdict_for(rt, offer_id) if offer_id else None
+    return scenario if verdict is not None and int(scenario.split(":")[1]) < len(verdict.counters) else None
+
+
 @router.get("/customers/{customer_id}/overview")
 def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), decision: str | None = Query(None, max_length=120),
                  path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
@@ -867,5 +882,4 @@ def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), deci
         back = _back(rt, state, customer_id, buyer_short(buyer.name), lang, decision, path, invoice)
         deal = _selected_deal(rt, customer_id, decision)
     # the three selections (Home V2's URL state), echoed when they name this buyer's: a `scenario` needs a deal to be a scenario of
-    return {**body, "context": {"back": back, "customer": customer_id, "deal": deal,
-                                "scenario": scenario if deal is not None and scenario and _SAFE.fullmatch(scenario) else None}}
+    return {**body, "context": {"back": back, "customer": customer_id, "deal": deal, "scenario": _selected_scenario(rt, deal, scenario)}}

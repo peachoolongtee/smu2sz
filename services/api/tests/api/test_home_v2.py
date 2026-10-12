@@ -249,6 +249,54 @@ def test_an_unsafe_reserve_with_no_action_at_all_is_never_the_quiet_variant() ->
     assert action["primary"] == {"label": "See the options", "href": "/cash#cash-options"} and action["eyebrow"] == "NEXT ACTION · WITHIN 12 DAYS"
 
 
+def test_a_repayable_credit_line_is_the_action_and_never_the_quiet_variant() -> None:
+    repay = {"kind": "FACILITY_REPAYABLE", "pending_approval_id": None, "outcome_title": "Repay ¥150k of the credit line",
+             "after": "The balance is repaid and the interest stops.", "authority_text": "Within your signed limits. No additional approval required."}
+    c = SimpleNamespace(action=repay, breach_day=None, today=0, lang="en", headline="You're covered.", note="", state=None)
+    action = home_v2._action(c, {"items": []})  # type: ignore[arg-type]
+    assert action["variant"] == "ACTION" and action["control"] == "RUN_PLAN" and action["tone"] == "warn" and action["key"] is None
+    assert action["title"] == "Repay ¥150k of the credit line"
+    assert action["text"] == "The balance is repaid and the interest stops. Within your signed limits. No additional approval required."
+    assert action["primary"] == {"label": "Run the repayment", "href": "/cash#cash-options"}
+    waiting = home_v2._action(SimpleNamespace(**{**c.__dict__, "action": {**repay, "pending_approval_id": "APR-000007"}}), {"items": []})  # type: ignore[arg-type]
+    assert waiting["control"] == "APPROVE_PLAN" and waiting["key"] == "approval:APR-000007"
+    assert waiting["primary"] == {"label": "Review the repayment", "href": "/approvals#approval-APR-000007"}
+    zh = home_v2._action(SimpleNamespace(**{**c.__dict__, "lang": "zh", "action": {**repay, "outcome_title": "偿还信用额度 ¥150k"}}), {"items": []})  # type: ignore[arg-type]
+    assert zh["primary"]["label"] == "执行还款" and zh["eyebrow"] == "下一步"
+
+
+def test_the_pointer_to_the_worklist_is_the_worklists_own_count(api: TestClient) -> None:
+    _offer(api)
+    offer = api.post("/offers", json={"fixture_id": "EX02_EARLY_1_5"}).json()["offer"]
+    api.post(f"/offers/{offer['offer_id']}/evaluate", json={"fixture_id": "EX02_EARLY_1_5"})
+    _run_plan(api)
+    held = api.get("/worklist").json()["counts"]["needs_you"]
+    assert held == 2
+    assert _v2(api)["action"]["text"].endswith(f"Your worklist still holds {held} items for you.")
+    assert _v2(api, "zh")["action"]["text"].endswith(f"您的待办列表里还有 {held} 项等您处理。")
+
+
+def test_a_worklist_that_cannot_be_counted_is_named_and_the_pointer_is_left_out(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.api import worklist
+
+    _offer(api)
+    _run_plan(api)
+
+    def boom(*_: Any, **__: Any) -> dict[str, int]:
+        raise RuntimeError("no")
+
+    monkeypatch.setattr(worklist, "counts", boom)
+    h = api.get("/home").json()
+    assert h["partial"]["missing"] == ["home_v2"]
+    assert h["home_v2"]["action"]["text"] == "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed)."
+
+
+def test_the_home_reads_for_the_worklist_without_building_the_v2_fields(api: TestClient) -> None:
+    from app.api.home import read_home
+
+    assert "home_v2" in read_home("en") and "home_v2" not in read_home("en", v2=False)
+
+
 def test_the_company_alert_and_the_action_agree(api: TestClient) -> None:
     _offer(api)
     assert _home(api)["home_v2"]["action"]["variant"] == "ACTION" and api.get("/worklist").json()["alert"] is not None

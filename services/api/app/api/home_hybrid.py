@@ -1212,7 +1212,7 @@ def changes_card(c: HomeRead) -> dict[str, Any]:
     return {"rows": rows, "empty_text": t(c.lang, "Nothing has changed lately.", "最近没有变化。"), "href": "/activity"}
 
 
-def build(c: HomeRead) -> dict[str, Any]:
+def build(c: HomeRead, *, v2: bool = True) -> dict[str, Any]:
     """Everything the hybrid adds to `GET /home`: the cash block's new fields and the top-level blocks. When the deals could not be read
     (the decision record, which `partial` names) the queue cannot say "No urgent action required" and the deals card is absent."""
     deals = _deals(c)
@@ -1223,7 +1223,7 @@ def build(c: HomeRead) -> dict[str, Any]:
     out: dict[str, Any] = {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None), deals), "attention": att,
                            "funding_line": line, "deals_card": deals_card(c, deals) if deals is not None else None,
                            "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
-    if get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
+    if v2 and get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
         out["home_v2"] = _guarded_v2(c, att, line)
     return out
 

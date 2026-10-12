@@ -7,8 +7,8 @@ Behind FEATURE_HOME_V2 (off: the standard 403 FEATURE_DISABLED), owner only, rea
 make; nothing is ranked, priced, projected or decided a second time:
 
     alert        the company cash alert (the Home read's own status, first breach and next action) when the reserve is unsafe or a cure
-                 waits, else null. It is counted nowhere ("an alert, not a queue item"); the funding plan's own approval is the alert's
-                 and is not a row of Needs you.
+                 waits, else null. It is counted nowhere ("an alert, not a queue item"); while it is up, the company plan's own approval (the
+                 Home's `next_action.pending_approval_id`) is the alert's and is not a row. Every other pending approval is a row.
     needs_you    decisions only a person can take, one row per decision: DECISION (an open offer waiting for the owner's reply, from the
                  decision record, one row per offer, with the offer picture's words for the cash consequence), APPROVAL (the Home's
                  pending approvals, less the company cash plan), COLLECTION (the receivable rows' `collection_state` OVERDUE or
@@ -21,8 +21,9 @@ make; nothing is ranked, priced, projected or decided a second time:
 
 Severity (documented, separate from who acts) is a word about the item's weight, from its authority class and its cash effect:
 
-    DECISION    CRITICAL when even FLOW's recommended reply takes cash below the minimum; CAUTION when the offer as asked would take
-                cash below the minimum, or as asked it needs the owner (over a limit, or a signature of the owner's); else NORMAL.
+    DECISION    CRITICAL when even FLOW's recommended reply takes cash below the minimum (with no counter, the offer as asked is the only
+                path); CAUTION when the offer as asked would take cash below the minimum, or as asked it needs the owner (over a limit,
+                or an approval of the owner's), the recommended reply being safe; else NORMAL.
     APPROVAL    CAUTION when the approval states what it protects (the cure's after-state); else NORMAL.
     COLLECTION  CRITICAL when the promised payment was missed or the company reserve is unsafe; else CAUTION.
     SETUP       NORMAL.
@@ -30,20 +31,23 @@ Severity (documented, separate from who acts) is a word about the item's weight,
 
 Ordering (deterministic; `order`, pinned by tests). Five tiers, then within a tier:
 
-    0  cash safety           the item's consequence takes cash below the reserve; by the day it does (breach day), earliest first
+    0  cash safety           the item's consequence takes cash below the reserve; for a DECISION that is the RECOMMENDED reply's breach (an
+                             offer that breaches only as asked, with a safe counter ready, is not cash safety); by breach day, earliest first
     1  deadlines             an item with a deadline (an approval whose agreement expires); by deadline, earliest first
     2  missed receipts       a COLLECTION; by the day the invoice fell due, oldest first
-    3  material consequences severity CRITICAL or CAUTION without a deadline
+    3  material consequences severity CRITICAL or CAUTION without a deadline; CRITICAL before CAUTION
     4  ordinary replies      everything else
     The deadline is the tiebreaker inside a tier (an item with none sorts after one with), the key the last. Waiting rows are ordered by
     severity word, then by the day the thing is expected, then the key.
 
-`deadline_day` is the day the consequence or the cut-off lands: a DECISION's is the day the offer as asked would breach the reserve, an
+`deadline_day` is the day the consequence or the cut-off lands: a DECISION's is the day its recommended reply would breach the reserve, an
 APPROVAL's the day the agreement expires, a COLLECTION's the day the invoice fell due. `is_new` is true when the item arrived after the
 `since_day` the page last read (without `since_day`, nothing is new). `why_first_text` says why the first row is first, by its tier.
 
 Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence (keys and hrefs carry them).
-Cached on the books, the mandate, the day, the commitments, the owner's inputs, the flags, the store's change marker and the session's
+No hidden degradation: a supporting read that fails (an offer picture, a customer's share, the Home's own, the receivable rows') is named in
+one merged `partial` on the body, the row words say the effect could not be read, and the read is returned and never cached; a figure that is
+not known is null, never a dash. Cached on the books, the mandate, the day, the commitments, the owner's inputs, the flags, the store's change marker and the session's
 documents (a whole read only; a read that fell back to `partial` is returned and never cached).
 """
 
@@ -64,7 +68,7 @@ from app.api.decisions import Context, load_context
 from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.financing_words import financing_state_words, state_of
-from app.api.home import get_home
+from app.api.home import Partial, read_home
 from app.api.home_hybrid import _ASK_ORDER, _pending_lots
 from app.api.offer_picture import cached_picture
 from app.api.presentation import (
@@ -154,10 +158,16 @@ def tier_of(kind: str, severity: str, breach_day: int | None, deadline_day: int 
 
 
 def rank(row: Row) -> tuple[int, int, int, str]:
-    """The sort key: the tier; inside cash safety the breach day; the deadline as the tiebreaker (none last); the key last."""
+    """The sort key: the tier; inside cash safety the breach day, inside material consequences the severity (CRITICAL before CAUTION); the
+    deadline as the tiebreaker (none last); the key last."""
     tier = tier_of(row.kind, row.severity, row.breach_day, row.deadline_day)
-    day = row.breach_day if tier == CASH_SAFETY and row.breach_day is not None else 0
-    return tier, day, row.deadline_day if row.deadline_day is not None else _LATE, row.key
+    if tier == CASH_SAFETY and row.breach_day is not None:
+        head = row.breach_day
+    elif tier == MATERIAL:
+        head = _SEVERITY_RANK[row.severity]
+    else:
+        head = 0
+    return tier, head, row.deadline_day if row.deadline_day is not None else _LATE, row.key
 
 
 def order(rows: list[Row]) -> list[Row]:
@@ -192,6 +202,11 @@ def _days(n: int, lang: Lang) -> str:
     return t(lang, f"{n} {'day' if n == 1 else 'days'}", f"{n} 天")
 
 
+def _gap(text: str) -> str:
+    """A space before a Chinese distance that starts with a number ("预计 3 天后到账"), as the house writes it."""
+    return f" {text}" if text[:1].isdigit() else text
+
+
 def _lower(text: str) -> str:
     return text[:1].lower() + text[1:]
 
@@ -199,13 +214,15 @@ def _lower(text: str) -> str:
 # ---------------------------------------------------------------- Needs you
 
 
-def _deal_rows(rt: Runtime, ctx: Context, lang: Lang) -> tuple[list[Row], list[dict[str, Any]]]:
+def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str, Any], DealState, Any]], partial: Partial
+               ) -> tuple[list[Row], list[dict[str, Any]]]:
     """(the DECISION rows, the BUYER_REPLY rows) of the open offers, one each. An offer waiting on the owner's approval is the approval's
-    row, not this one."""
+    row, not this one. An offer picture that cannot be read is named in `partial` and the row says its cash effect could not be read."""
     state = ctx.state
+    floor = ctx.mandate.min_cash_fen
     needs: list[Row] = []
     waits: list[dict[str, Any]] = []
-    for view, st, ds in open_deals(ctx, lang):
+    for view, st, ds in deals:
         offer = ds.offer
         cid = offer.counterparty_id
         who = buyer_short(party_name(state, cid))
@@ -220,26 +237,26 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang) -> tuple[list[Row], list[d
         if st == DealState.AUTHORIZATION_REQUIRED:
             continue
         pic: dict[str, Any] | None = None
+        failed = False
         if view.get("verdict_id"):
             try:
                 pic = cached_picture(rt, view["offer_id"], lang)
-            except Exception:  # a supporting read: the row then reads from the offer's own words
+            except Exception:  # a supporting read: named in `partial`, and the row says it could not be read
                 log.exception("the offer picture could not be read for the worklist")
-        if pic is not None and not pic.get("available"):
-            pic = None
-        severity, breach, consequence = _deal_effect(pic, lang)
+                partial.add("offer_picture")
+                failed = True
+        severity, breach, consequence = _deal_effect(pic, floor, failed, lang)
         needs.append(Row(key=f"deal:{view['offer_id']}", kind="DECISION", customer_id=cid, customer_short=who, subject=subject,
                          status=_deal_status(st, pic, lang), consequence=consequence, severity=severity, deadline_day=breach,
-                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])),
-                         since=offer.received_day))
+                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])), since=offer.received_day))
     return needs, waits
 
 
 def _deal_status(st: DealState, pic: dict[str, Any] | None, lang: Lang) -> str:
     """Who acts, in the row's words: the counter FLOW has ready, or a recommendation, or the offer that has not been read."""
-    if st == DealState.RECEIVED or pic is None:
+    if st == DealState.RECEIVED:
         return t(lang, "Offer received · Your review needed", "已收到报价 · 需要您审核")
-    rec = next((p for p in pic.get("paths") or [] if p.get("recommended")), None)
+    rec = next((p for p in (pic or {}).get("paths") or [] if p.get("recommended")), None)
     if rec is not None and rec.get("kind") == "reply" and rec.get("sendable"):
         return t(lang, "Counter ready · Reply needed", "还价已就绪 · 需要您答复")
     if rec is not None and rec.get("kind") == "asked":
@@ -247,40 +264,59 @@ def _deal_status(st: DealState, pic: dict[str, Any] | None, lang: Lang) -> str:
     return t(lang, "Read by FLOW · Reply needed", "FLOW 已读取 · 需要您答复")
 
 
-def _deal_effect(pic: dict[str, Any] | None, lang: Lang) -> tuple[str, int | None, str]:
-    """(severity, the day the offer as asked would breach the reserve, the cash consequence in a sentence), from the offer picture's own
-    figures and words (`band_text`). Without a picture nothing is known and the row says so."""
+def _first_below(path: dict[str, Any] | None, floor: int, today: int) -> int | None:
+    """The first day from today on that a path's own series closes below the reserve (the picture's series; nothing is projected here)."""
+    return next((r["day"] for r in (path or {}).get("series") or [] if r["day"] >= today and r["closing_fen"] < floor), None)
+
+
+def _deal_effect(pic: dict[str, Any] | None, floor: int, failed: bool, lang: Lang) -> tuple[str, int | None, str]:
+    """(severity, the day the RECOMMENDED path takes cash below the reserve, the cash consequence in a sentence), from the offer picture's
+    own figures and words (`band_text`). The breach day is the recommended path's: an offer that would breach as asked but has a safe
+    counter ready is a caution, not a cash-safety item; with no recommended path the offer as asked is the only one. A picture that could
+    not be read says so; one that is not there says the offer has not been read."""
+    unread = t(lang, "FLOW has not read the offer yet, so its effect on your cash is not known.", "FLOW 尚未读取这份报价，所以还不知道它对现金的影响。")
     if pic is None:
-        return NORMAL, None, t(lang, "No cash effect is known until FLOW has read the offer.", "FLOW 读取报价之前，暂无法判断对现金的影响。")
+        return NORMAL, None, (t(lang, "The effect on your cash could not be read just now.", "暂时无法读取它对现金的影响。") if failed else unread)
+    if not pic.get("available"):
+        return NORMAL, None, str(pic.get("unavailable_text") or unread)
     asked = pic.get("asked") or {}
     paths = pic.get("paths") or []
     asked_path = next((p for p in paths if p.get("key") == "asked"), None) or {}
     rec = next((p for p in paths if p.get("recommended")), None)
-    breach = asked.get("first_breach_day")
+    asked_breach = asked.get("first_breach_day")
     over_owner = asked_path.get("authority") in ("over_limit", "needs_owner")
-    if rec is not None and rec.get("first_breach_when"):
+    if rec is None:
+        rec_breach = asked_breach
+    elif rec.get("first_breach_when"):
+        rec_breach = _first_below(rec, floor, int(pic.get("day") or 0))
+        if rec_breach is None:  # breaching, on a day the series does not give: no later than the first day it could
+            rec_breach = int(pic.get("day") or 0)
+    else:
+        rec_breach = None
+    if rec_breach is not None:
         severity = CRITICAL
-    elif breach is not None or over_owner:
+    elif asked_breach is not None or over_owner:
         severity = CAUTION
     else:
         severity = NORMAL
     band = asked_path.get("band_text")
-    if breach is not None and band:
-        return severity, breach, t(lang, f"As asked: {_lower(band)}.", f"按对方要求：{band}。")
+    if asked_breach is not None and band:
+        return severity, rec_breach, t(lang, f"As asked: {_lower(band)}.", f"按对方要求：{band}。")
     if asked_path.get("authority") == "over_limit":
-        return severity, None, t(lang, "Over your limit as asked; it does not take cash below your minimum.",
-                                 "按对方要求已超出您的上限，但现金不会低于您的最低现金。")
-    return severity, None, t(lang, "Accepting as asked does not take cash below your minimum.", "按对方要求接受，现金不会低于您的最低现金。")
+        return severity, rec_breach, t(lang, "Over your limit as asked; it does not take cash below your minimum.",
+                                       "按对方要求已超出您的上限，但现金不会低于您的最低现金。")
+    return severity, rec_breach, t(lang, "Accepting as asked does not take cash below your minimum.", "按对方要求接受，现金不会低于您的最低现金。")
 
 
-def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, alert: bool) -> list[Row]:
-    """The pending approvals the Home already words, less the company cash plan's (the alert's): customer and deadline from the agreement the
-    queued operation names, else from the invoice it names."""
+def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_approval: str | None) -> list[Row]:
+    """The pending approvals the Home already words, less the company cash plan's own (`plan_approval`, the alert's, given only while the
+    alert is up): every other approval is a row. Customer and deadline from the agreement the queued operation names, else from the invoice
+    it names."""
     cards = {a["id"]: a for a in home.get("approvals") or []}
     out: list[Row] = []
     for rec in ctx.approvals:
         card = cards.get(rec.id)
-        if card is None or (alert and card.get("kind") not in COMMERCIAL_KINDS):
+        if card is None or rec.id == plan_approval:
             continue
         try:
             op = json.loads(rec.op_json)
@@ -379,7 +415,7 @@ def _promise_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
         when = when_text(p.promised_day, ctx.today, lang) if p.promised_day is not None else ""
         out.append(_wait_row(f"promise:{p.commitment_id}:{p.obligation_id}", "PROMISE", p.counterparty_id,
                              t(lang, f"{who} · Payment promised", f"{who} · 承诺付款"),
-                             t(lang, f"Expected {when} · {fmt_yuan_short(p.expected_fen)}", f"预计{when}到账 · {fmt_yuan_short(p.expected_fen)}")
+                             t(lang, f"Expected {when} · {fmt_yuan_short(p.expected_fen)}", f"预计{_gap(when)}到账 · {fmt_yuan_short(p.expected_fen)}")
                              if when else t(lang, f"Expected · {fmt_yuan_short(p.expected_fen)}", f"预计到账 · {fmt_yuan_short(p.expected_fen)}"),
                              t(lang, "Not counted as cash until it arrives.", "到账前不计入现金。"), CAUTION, None, p.promised_day,
                              _focus(p.counterparty_id)))
@@ -406,7 +442,7 @@ def _alert(home: dict[str, Any], lang: Lang) -> dict[str, Any] | None:
     head = t(lang, f"Reserve unsafe {when}.", f"现金储备将在{' ' if when[:1].isdigit() else ''}{when}变得不安全。")
     if cure and action is not None and action.get("pending_approval_id"):
         tail = t(lang, " The funding plan waits for your approval.", "融资方案正等待您批准。")
-        label, href = t(lang, "Review the plan", "查看方案"), "/"
+        label, href = t(lang, "Review the plan", "查看方案"), f"/approvals#approval-{quote(str(action['pending_approval_id']), safe='')}"
     elif cure:
         tail = t(lang, " A funding plan is ready.", "融资方案已准备好。")
         label, href = t(lang, "Run or compare", "执行或比较"), "/"
@@ -421,7 +457,7 @@ def _alert(home: dict[str, Any], lang: Lang) -> dict[str, Any] | None:
 
 
 def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, Any]],
-                   negotiations: dict[str, int]) -> list[dict[str, Any]]:
+                   negotiations: dict[str, int], partial: Partial) -> list[dict[str, Any]]:
     """One row per buyer on the books: its negotiations, how many of Needs you are its, what it owes and its share of what is owed (the
     Customer overview's own words, `customer_context`), a tone from the weightiest of its Needs you rows, and the way to its focus."""
     state = ctx.state
@@ -430,6 +466,7 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
         books = current_books(state, tuple(ctx.commitments))
     except EngineError:
         log.exception("the books could not be projected for the customers")
+        partial.add("customer_shares")
         books = None
     rows: list[tuple[tuple[int, int, int, str], dict[str, Any]]] = []
     for buyer in (c for c in state.counterparties if c.role == "BUYER"):
@@ -441,6 +478,7 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
                 conc = concentration(books, buyer.id, rt.day, inputs, lang=lang).model_dump(mode="json")
             except EngineError:
                 log.exception("the concentration could not be read for the customers")
+                partial.add("customer_shares")
         said = customer_context(state, inputs, buyer.id, ctx.today, conc, lang)
         owes, share = said["owes_display"], said["share_text"]
         n, k = negotiations.get(buyer.id, 0), len(mine)
@@ -455,7 +493,7 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
         owed = conc["ar_buyer_fen"] if conc is not None and not conc["is_aggregate"] else 0
         rows.append(((weight, -k, -owed, buyer.name), {
             "customer_id": buyer.id, "short": buyer_short(buyer.name), "name": buyer.name, "negotiations_count": n, "needs_you_count": k,
-            "outstanding_display": owes or "—", "share_text": share_said, "tone": _TONE[min(mine, key=lambda r: _SEVERITY_RANK[r.severity]).severity]
+            "outstanding_display": owes, "share_text": share_said, "tone": _TONE[min(mine, key=lambda r: _SEVERITY_RANK[r.severity]).severity]
             if mine else "neutral", "status_text": status, "detail_text": detail + (f" · {share_said}" if share_said else ""),
             "href": _focus(buyer.id)}))
     return [row for _, row in sorted(rows, key=lambda x: x[0])]
@@ -465,40 +503,48 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
 
 
 def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, Any], bool]:
-    """(the worklist, whether it is whole). Call under `rt.lock`. The Home read is the source of the company's status, plan and approvals."""
-    home = get_home(lang)
-    whole = home.get("partial") is None
+    """(the worklist, whether it is whole). Call under `rt.lock`. The Home read (without its V2 fields) is the source of the company's
+    status, plan and approvals. `partial` merges the Home's, the receivable rows' and the worklist's own; a read that fell back is
+    returned and never cached."""
+    home = read_home(lang, v2=False)
+    partial = Partial()
+    for name in (home.get("partial") or {}).get("missing", []):
+        partial.add(name)
     ctx = load_context(rt, found=[])
     alert = _alert(home, lang)
-    needs, waiting = _deal_rows(rt, ctx, lang)
-    needs += _approval_rows(home, ctx, lang, alert is not None)
-    _state, _today, body, partial = read_rows(rt, lang)
-    whole = whole and partial.view(lang) is None
+    deals = open_deals(ctx, lang)
+    needs, waiting = _deal_rows(rt, ctx, lang, deals, partial)
+    plan_approval = (home.get("next_action") or {}).get("pending_approval_id") if alert is not None else None
+    needs += _approval_rows(home, ctx, lang, plan_approval)
+    _state, _today, body, rows_partial = read_rows(rt, lang)
+    for name in rows_partial.missing:
+        partial.add(name)
     needs += _collection_rows(body["rows"], home["cash"].get("first_breach_day") is not None, lang)
     needs += _setup_rows(rt, ctx, lang)
     waiting += _settlement_rows(ctx, lang) + _promise_rows(ctx, lang)
     needs_sorted = order(needs)
     waiting_sorted = _order_waiting(waiting)
     negotiations: dict[str, int] = {}
-    for _view, _st, ds in open_deals(ctx, lang):
+    for _view, _st, ds in deals:
         negotiations[ds.offer.counterparty_id] = negotiations.get(ds.offer.counterparty_id, 0) + 1
-    customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations)
+    customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations, partial)
     return {
         "lang": lang, "day": ctx.today, "state_version": ctx.state.state_version, "alert": alert,
         "counts": {"needs_you": len(needs_sorted), "waiting": len(waiting_sorted), "customers": len(customers)},
         "needs_you": [_needs_item(r, i == 0, since_day, lang) for i, r in enumerate(needs_sorted)],
         "waiting": waiting_sorted, "customers": customers,
         "search_terms": [{"customer_id": c["customer_id"], "terms": [c["name"], c["short"]]} for c in customers],
-        "partial": home.get("partial"),
-    }, whole
+        "partial": partial.view(lang),
+    }, not partial.missing
 
 
 def _cached(rt: Runtime, lang: Lang, since_day: int | None) -> dict[str, Any]:
-    """The read, cached on what it reads (the same key parts as the Customer overview, plus the day the page last read and every flag)."""
+    """The read, cached on what it reads (the same key parts as the Customer overview, plus the day the page last read, every flag and where each contract stands)."""
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     flags = tuple(sorted(get_settings().features.__dict__.items()))
     key = cache_key(state, mandate, max(rt.day, state.as_of_day), tuple(rt.store.commitments()), "worklist", lang, since_day,
-                    inputs_from_store(rt.store).digest(), flags, rt.store.change_marker(), tuple(rt.documents))
+                    inputs_from_store(rt.store).digest(), flags, rt.store.change_marker(), tuple(rt.documents),
+                    tuple((r.id, r.status, r.superseded_by) for r in rt.store.contract_guard_rows()))  # a contract confirmed moves no count
     hit = _CACHE.get(key)
     if hit is not None:
         return hit
@@ -506,6 +552,11 @@ def _cached(rt: Runtime, lang: Lang, since_day: int | None) -> dict[str, Any]:
     if whole:
         _CACHE.put(key, body)
     return body
+
+
+def counts(rt: Runtime, lang: Lang) -> dict[str, int]:
+    """The worklist's counts (call under `rt.lock`): the one count of what waits for the owner, for the Home's own sentence about it."""
+    return dict(_cached(rt, lang, None)["counts"])
 
 
 @router.get("/worklist")
