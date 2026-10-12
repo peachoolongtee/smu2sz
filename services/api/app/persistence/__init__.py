@@ -19,12 +19,16 @@ from app.persistence.memory_store import InMemoryLedgerStore
 from app.persistence.records import (
     ApprovalRecord,
     ApprovalStatus,
+    CustomerInputRecord,
     DecisionFactRecord,
     EvaluationRunRecord,
     EvidenceExportRecord,
+    InputField,
+    InputProvenance,
     LedgerEntry,
     LlmCallRecord,
     PilotJournalRecord,
+    latest_inputs,
 )
 from app.persistence.sql_store import SqlLedgerStore
 
@@ -35,11 +39,14 @@ __all__ = [
     "ApprovalRecord",
     "ApprovalStatus",
     "ConcurrentWriteConflict",
+    "CustomerInputRecord",
     "DecisionFactRecord",
     "DocumentAlreadyDecided",
     "EvaluationRunRecord",
     "EvidenceExportRecord",
     "InMemoryLedgerStore",
+    "InputField",
+    "InputProvenance",
     "InvalidPayload",
     "LedgerEntry",
     "LlmCallRecord",
@@ -53,5 +60,6 @@ __all__ = [
     "canonical_json",
     "compute_entry_hash",
     "is_retryable",
+    "latest_inputs",
     "verify_entries",
 ]
