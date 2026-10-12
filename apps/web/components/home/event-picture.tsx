@@ -6,7 +6,6 @@ import { SegmentedButtons } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { HomeRailEvent, HomeSeriesPoint, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
-import { whenText } from "@/lib/when";
 
 /**
  * Section 3 of Home, the cash picture with its event rail. The picture draws the plan line (blue), the dashed grey comparison line when there is
@@ -49,6 +48,12 @@ function at(series: HomeSeriesPoint[], day: number): HomeSeriesPoint | undefined
   return best;
 }
 
+/** The picture can be drawn: the rail has events and the line it sits on has days from today. Otherwise the page keeps the older picture. */
+export function eventPictureReady(h: HomeView): boolean {
+  const line = h.cash.plan_series?.length ? h.cash.plan_series : h.cash.series;
+  return Boolean(h.cash.events_rail?.length && line?.some((p) => p.day >= h.day));
+}
+
 export function EventPicture({ h }: { h: HomeView }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
@@ -61,7 +66,8 @@ export function EventPicture({ h }: { h: HomeView }) {
   const floor = cash.floor_fen;
 
   // ---- state: the chosen event, the one being previewed, the scenario, the owner's window, and the pointer
-  const [selected, setSelected] = useState(0);
+  // The chosen event is kept by its key, so a re-read that reorders or drops events never moves the choice to another one.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [preview, setPreview] = useState<number | null>(null);
   const [scenario, setScenario] = useState<"expected" | "late">("expected");
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
@@ -69,9 +75,11 @@ export function EventPicture({ h }: { h: HomeView }) {
   const [focused, setFocused] = useState(false);
 
   const n = rail.length;
-  const stress = cash.stress_available && cash.stress?.series?.length ? cash.stress : null;
+  // The switch needs the server's stress, its series and the delay it is about; without any of them there is no scenario to offer.
+  const stress = cash.stress_available && cash.stress?.series?.length && cash.stress.delay_days ? cash.stress : null;
+  if (scenario === "late" && stress === null) setScenario("expected");
   const late = scenario === "late" && stress !== null;
-  const chosen = Math.min(selected, Math.max(n - 1, 0));
+  const chosen = Math.max(rail.findIndex((e) => e.key === selectedKey), 0);
   const shown = Math.min(preview ?? chosen, Math.max(n - 1, 0));
   const event: HomeRailEvent | null = rail[shown] ?? null;
 
@@ -81,7 +89,7 @@ export function EventPicture({ h }: { h: HomeView }) {
   const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
   const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
   const planName = cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected");
-  const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 30 }).trim() : "";
+  const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
 
@@ -201,7 +209,8 @@ export function EventPicture({ h }: { h: HomeView }) {
   };
   const choose = (i: number) => {
     setPreview(null);
-    setSelected(Math.min(Math.max(i, 0), Math.max(n - 1, 0)));
+    const e = rail[Math.min(Math.max(i, 0), Math.max(n - 1, 0))];
+    if (e) setSelectedKey(e.key);
   };
 
   // The tooltip: the day's distance from today, the event on that day when there is one, and each line's figure from the series' own strings.
@@ -382,8 +391,12 @@ export function EventPicture({ h }: { h: HomeView }) {
                 className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop"
                 style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
               >
-                <p className="font-bold text-ink">{whenText(tipAt.day, today, t)}</p>
-                {tipEvent ? <p className="text-ink-2">{tipEvent.label}</p> : null}
+                {/* The day's words are the server's (the rail's `when`); a day with no event of its own has no day word, only the figures. */}
+                {tipEvent ? (
+                  <p className="font-bold text-ink">
+                    <span className="first-letter:uppercase">{tipEvent.label}</span>, {tipEvent.when}
+                  </p>
+                ) : null}
                 {lines.map((l) => (
                   <p key={l.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
@@ -480,8 +493,10 @@ export function EventPicture({ h }: { h: HomeView }) {
                     onFocus={() => setPreview(i)}
                     onBlur={() => setPreview(null)}
                     onKeyDown={(ev) => onRailKey(ev, i)}
-                    className={`motion-press flex w-full min-h-12 touch:min-h-14 items-start gap-3 rounded-tile border px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${i === chosen ? "border-brand-600 bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
+                    className={`motion-press relative flex w-full min-h-12 touch:min-h-14 items-start gap-3 rounded-tile border px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-50 ${i === chosen ? "border-brand-600 bg-brand-50" : "border-line bg-surface hover:bg-subtle"}`}
                   >
+                    {/* The chosen row also has a bar at its left edge: the choice is not told by colour alone, and it stays while another row is previewed. */}
+                    {i === chosen ? <span aria-hidden className="absolute inset-y-1.5 left-0 w-0.75 rounded-pill bg-brand-600" data-testid={`rail-chosen-${i}`} /> : null}
                     <span aria-hidden className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill border-2 text-xs font-extrabold tabular-nums ${on ? c.chipOn : c.chip}`}>
                       {i + 1}
                     </span>

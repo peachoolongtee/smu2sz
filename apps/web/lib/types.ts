@@ -2534,6 +2534,8 @@ export interface HomeAttention {
   items: HomeAttentionItem[];
   primary_key: string | null;
   none_text?: string | null;
+  /** The queue could not be read in full (an unreadable decision record): it must not say nothing is urgent. */
+  incomplete?: boolean;
 }
 
 /** The funding plan as one sentence with its two costs and who decides. */

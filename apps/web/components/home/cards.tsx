@@ -12,9 +12,9 @@ import type { HomeChangesCard, HomeDealsCard, HomeReceivablesCard } from "@/lib/
  */
 function Card({ id, title, href, children }: { id: string; title: string; href: string; children: ReactNode }) {
   return (
-    <section aria-labelledby={`${id}-title`} className="motion-reveal relative min-w-0 border-t border-line-strong pb-3 pt-3 hover:bg-subtle" data-testid={id}>
+    <section aria-labelledby={`${id}-title`} className="motion-reveal relative min-w-0 rounded-tile px-3 pb-3 pt-3 before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-line-strong hover:bg-subtle has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus " data-testid={id}>
       <h2 id={`${id}-title`} className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
-        <Link href={href} className="flex items-center justify-between gap-2 after:absolute after:inset-0" data-testid={`${id}-link`}>
+        <Link href={href} className="flex items-center justify-between gap-2 after:absolute after:inset-0 focus-visible:outline-none" data-testid={`${id}-link`}>
           {title}
           <ChevronRightIcon aria-hidden className="shrink-0 text-ink-3" />
         </Link>

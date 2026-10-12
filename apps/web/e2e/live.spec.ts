@@ -108,6 +108,7 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
   await page.goto("/");
   await expect(page.getByTestId("home-fact-today")).toHaveText("¥805k");
+  await expect(page.getByTestId("home-fact-tile-arriving")).toBeVisible(); // the tile is there (a negated check passes on an absent one)
   await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });

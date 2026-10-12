@@ -44,7 +44,7 @@ test("the Home headline sits on the canvas with no card; the status is a tone do
   const dot = page.getByTestId("home-status-dot");
   expect(await bg(dot)).toBe(BAD_SOLID);
   expect(contrast(await bg(dot), CANVAS)).toBeGreaterThan(3);
-  expect(contrast(await color(word.locator("> span").nth(1)), CANVAS)).toBeGreaterThan(4.5);
+  expect(contrast(await color(word), CANVAS)).toBeGreaterThan(4.5);
   expect(contrast(await color(page.getByTestId("home-headline")), CANVAS)).toBeGreaterThan(4.5);
   expect(contrast(await color(page.getByTestId("home-note")), CANVAS)).toBeGreaterThan(4.5);
   // The headline is one colour: the server's sentence is never parsed or part-coloured.

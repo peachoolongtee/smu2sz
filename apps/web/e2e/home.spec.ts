@@ -71,9 +71,11 @@ test("the Business home answers safe, do and cost on the opening books, without 
   // The best next action: what, how much, cost, when, who decides, what if nothing, after. The card names the plan and what it costs; the calculation is on Cash & funding (below).
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("home-attention-title")).toContainText("FLOW recommends securing ¥405k of funding");
-  await expect(action.getByTestId("home-attention-facts")).toContainText("¥3,113.93");
+  // The cost and who decides are said once, in the funding line under the hairline; the facts row keeps what it does not say (when the funds arrive).
   await expect(action.getByTestId("home-attention-facts")).toContainText("in 3 days");
-  await expect(action.getByTestId("home-attention-facts")).toContainText("within your signed limits");
+  await expect(action.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(action).toContainText("¥3,113.93");
+  await expect(action.getByTestId("home-attention-facts")).not.toContainText("¥3,113.93");
   await expect(action.getByTestId("home-funding-costs")).toContainText("¥2,272.29");
   await expect(action.getByTestId("home-funding-costs")).toContainText("¥3,113.93");
   await expect(action.getByTestId("home-funding-authority")).toHaveText("Within your signed limits. No additional approval required.");
@@ -126,8 +128,10 @@ test("the plan card is the cost and who decides; the first press asks, Cancel ru
   await page.goto("/");
   const action = page.getByTestId("home-next-action");
   await expect(action).toContainText("Cash needs a decision");
-  // The facts in the card: the estimated total cost, when the funds arrive and who decides.
-  await expect(action.getByTestId("home-attention-facts").locator("dt")).toHaveText(["Estimated cost", "Funds arrive", "Authority"]);
+  // The facts in the card: when the funds arrive; the estimated cost and who decide are in the funding line under the hairline (each said once).
+  await expect(action.getByTestId("home-attention-facts").locator("dt")).toHaveText(["Funds arrive"]);
+  await expect(action.getByTestId("home-funding-costs")).toContainText("Cost ");
+  await expect(action.getByTestId("home-funding-authority")).toBeVisible();
   // Everything else waits on Cash & funding behind "See the calculation", outside the card, and the card carries no fold of its own.
   await expect(action.getByTestId("next-action-details")).toHaveCount(0);
   await page.goto("/cash");
@@ -207,7 +211,7 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.getByTestId("home-note")).toHaveText("Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.");
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("home-attention-title")).toContainText("FLOW recommends securing ¥200k of funding");
-  await expect(action).toContainText("¥1,782.19");
+  await expect(action.getByTestId("home-funding-costs")).toContainText("¥1,782.19");
   await expect(action.getByTestId("home-attention-facts")).toContainText("in 3 days");
   await expect(action.getByTestId("home-funding-authority")).toContainText("above the 15.00% limit you signed");
   // The calculation, the cheaper two-invoice plan and the parts are on Cash & funding (the card's compare link goes there).
@@ -253,8 +257,8 @@ test("day 34: the fix needs approval; queuing it from the home runs nothing and 
   await expect(page.locator("main button.bg-brand-600")).toHaveCount(0);
   // The question is the next step's card (cost, landing, the one primary): the Decisions card and the "Waiting" change row would say it again, so they are gone.
   const decision = page.getByTestId("home-next-action");
-  await expect(decision.getByTestId("home-attention-facts")).toContainText("¥1,782.19");
-  await expect(decision.getByTestId("home-attention-facts")).toContainText("in 3 days");
+  await expect(decision.getByTestId("home-funding-costs")).toContainText("¥1,782.19");
+  await expect(decision.getByTestId("next-action-lands")).toHaveText("in 3 days");
   await expect(page.getByTestId("home-approval-APR-000001")).toHaveCount(0);
   await expect(page.getByTestId("home-card-changes")).not.toContainText("Waiting for your approval");
   await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
@@ -467,8 +471,8 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await expect(page.getByTestId("next-step")).toBeVisible();
-  // (Home's deals card is the server's `deals_card`, recorded once for the opening books: its rows for an open offer are pinned in the API's tests
-  // and in the live spec, not replayed here. The mock's deal state still drives the sidebar's count.)
+  // (The mock replays one recorded `deals_card` for the opening books, so it does not follow the offer; the card's rows for an open offer are asserted
+  // in the next test on a populated `deals_card` laid over the read. Here the mock's deal state drives the sidebar's count.)
   await page.goto("/");
   const side = page.getByTestId("nav-pills");
   await expect(side.getByTestId("nav-count-deals")).toHaveText("1");
@@ -480,6 +484,36 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await page.goto("/");
+  expect(await proseOf(page)).not.toMatch(/\bOFF-|\bVER-/);
+});
+
+test("an offer waiting: Home's deals card is one line for the deal, its status word, what they ask and what FLOW recommends, and leads to the deal", async ({ page }) => {
+  // The card as the API sends it for an open offer (laid over the recorded read; see the seam in lib/mock/handlers.ts).
+  const row = {
+    buyer: "Foshan Home Retail Co.",
+    buyer_id: "BUYER-1",
+    status_text: "Your response needed",
+    request_text: "early settlement of ¥420,000.00 at 1.20%",
+    recommendation_text: "Counter with Option A, estimated cost ¥3,027.77",
+    href: "/deals?buyer=BUYER-1",
+  };
+  await page.context().addInitScript(([key, value]) => sessionStorage.setItem(key, JSON.stringify(value)), ["tl-mock-home-patch", { deals_card: { rows: [row], empty_text: "No deals are open.", href: "/deals" } }] as const);
+  await page.goto("/");
+  const card = page.getByTestId("home-card-deals");
+  const line = card.getByTestId("home-card-deal");
+  await expect(line).toHaveCount(1);
+  await expect(line).toContainText("Foshan Home Retail Co.");
+  // The status word is the only mark (no stage track, no avatar, no pill): it says an offer is waiting for the owner's reply.
+  await expect(line).toContainText("Your response needed");
+  await expect(line.locator("ol, li li, img, svg, [data-tone]")).toHaveCount(0);
+  await expect(line).toContainText("early settlement of ¥420,000.00 at 1.20%"); // what they ask
+  await expect(line).toContainText("Counter with Option A, estimated cost ¥3,027.77"); // FLOW's read and what to do
+  // The card is the way in: with one deal it leads to that deal.
+  await expect(card.getByTestId("home-card-deals-link")).toHaveAttribute("href", "/deals?buyer=BUYER-1");
+  // The cost's bad tone, the track and the "Open this deal" button belong to the Deals page now; Home's card holds none of them.
+  await expect(card.locator("button")).toHaveCount(0);
+  await expect(page.getByTestId("home-deal-cost")).toHaveCount(0);
+  await expect(page.getByTestId("home-deals")).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bOFF-|\bVER-/);
 });
 
