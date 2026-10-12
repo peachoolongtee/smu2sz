@@ -4038,7 +4038,7 @@
     "parse_source": "rules",
     "trace_id": "rec-fund:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund:t1:8bd58b7ded48",
+    "decision_id": "nl:rec-fund:t1:0443afc5c068",
     "decision_recorded": true
   },
   "status": {
@@ -6840,7 +6840,7 @@
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund-zh:t1:c6511064ed0b",
+    "decision_id": "nl:rec-fund-zh:t1:22563aa1c4d0",
     "decision_recorded": true
   },
   "status_zh": {

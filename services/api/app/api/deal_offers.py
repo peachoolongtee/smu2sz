@@ -145,6 +145,7 @@ def _open_offer(ctx: Context, ds: Any, offer: Any, lang: str) -> dict[str, Any]:
         "action_text": _action_text(state, action, replies, lang),
         "cost_display": fmt_yuan(verdict.forward_concession_total_fen) if verdict is not None else None,
         "cost_window_text": say(lang, window[0], window[1]) if verdict is not None else None,
+        "limit_fen": cap,
         "limit_display": fmt_yuan(cap),
         "over_limit": bool(over),
         "replies_ready": replies,

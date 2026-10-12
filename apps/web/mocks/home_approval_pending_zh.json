@@ -1271,7 +1271,7 @@
         "events": [
           {
             "kind": "ADVANCE",
-            "label": "Invoice financing (onboarded platform)以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）预支",
+            "label": "Invoice financing (onboarded platform)以Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）融资",
             "label_short": "发票融资到账",
             "amount_fen": 20000000,
             "amount_display": "¥200,000.00",
@@ -1411,7 +1411,7 @@
           },
           {
             "kind": "REPAYMENT",
-            "label": "偿还Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）的预支款",
+            "label": "偿还Foshan Home Retail Co. 的 ¥420,000.00 发票（13 天后到期）的融资款",
             "label_short": "还款",
             "amount_fen": -20000000,
             "amount_display": "−¥200,000.00",
