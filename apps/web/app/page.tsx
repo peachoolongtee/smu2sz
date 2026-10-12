@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { PartialRead } from "@/components/business/freshness";
 import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock, WorthLine } from "@/components/business/blocks";
 import { NextActionBlock } from "@/components/business/next-action";
@@ -15,7 +15,8 @@ import { HomeDealsRead } from "@/components/home/deals";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { StatusBlock } from "@/components/business/status-block";
 import { ErrorState, LoadingBlock } from "@/components/ui";
-import { getHome, getReceivablesWorth } from "@/lib/api";
+import { HomeV2Page } from "@/components/home/v2/home-v2";
+import { getFeatures, getHome, getReceivablesWorth } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { bump } from "@/lib/demo-store";
 import { withoutSuperseded } from "@/lib/home-changes";
@@ -62,6 +63,11 @@ export default function HomePage() {
   // A read refused for want of the owner token refetches once the owner has signed in.
   useEffect(() => onSignedIn(() => bump()), []);
   const h = view.data;
+  // Home V2 (the server's FEATURE_HOME_V2): the Home read carries `home_v2` and /health says the switch is on; only then is the page the new one. Asked only when the read
+  // carries the block, so with the switch off nothing more is read and the page below is exactly what it was. A switch that cannot be read leaves the older page.
+  const hasV2 = Boolean(h?.home_v2);
+  const features = useAsync(() => (hasV2 ? getFeatures() : Promise.resolve(null)), [hasV2]);
+  const v2On = hasV2 && features.data?.home_v2 === true;
   // The decisions still open, minus the two the page already says in its own block: an approval waiting for the owner (the decisions block below
   // has its question) and the one holding the remaining task.
   // Said once: the hero already says what is on its way, so the funding that is still landing is not listed again.
@@ -136,8 +142,12 @@ export default function HomePage() {
     <>
       {view.error ? (
         <ErrorState error={view.error} onRetry={view.reload} />
-      ) : !h ? (
+      ) : !h || (hasV2 && features.data === undefined) ? (
         <LoadingBlock rows={3} />
+      ) : v2On ? (
+        <Suspense fallback={<LoadingBlock rows={3} />}>
+          <HomeV2Page h={h} fixer={fixer} loading={view.loading} onRetry={view.reload} />
+        </Suspense>
       ) : (
         <div className="space-y-5 sm:space-y-7" aria-busy={view.loading}>
           {h.cash.status_word ? <HomePosition h={h} /> : <StatusBlock h={h} />}

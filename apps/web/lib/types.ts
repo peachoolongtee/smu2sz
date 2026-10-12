@@ -2486,6 +2486,11 @@ export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
+  /** The short figure and the day as a distance from today, on every point (Home V2's inspector says these and never a day number); absent from an older server. */
+  display?: string;
+  when?: string;
+  /** On a deal's picture series: the same day's figures for the request and the recommended reply, and the server's signed difference (never computed here). */
+  comparison?: { label: string; asked_display: string; recommended_display: string; difference_display: string } | null;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
@@ -2757,6 +2762,164 @@ export interface HomeChangesCard {
   href?: string | null;
 }
 
+/**
+ * Home V2 (behind the server's FEATURE_HOME_V2): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
+ * server wrote in the language asked for; `*_fen` and `day` only place a mark. Absent when the flag is off: the page is then the older Home.
+ */
+export interface HomeV2Kpi {
+  eyebrow: string;
+  value_display: string;
+  note: string;
+  tone?: HomeTone;
+}
+
+export interface HomeV2Action {
+  /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
+  facts?: { label: string; value: string }[];
+  variant: "ACTION" | "QUIET";
+  key: string | null;
+  tone: HomeTone;
+  eyebrow: string;
+  title: string;
+  text: string;
+  primary: { label: string; href: string } | null;
+  secondary: { label: string; href: string } | null;
+  /** RUN_PLAN: the confirm-and-run control; APPROVE_PLAN: the plan waits for the owner's approval; null: nothing to run from here. */
+  control: "RUN_PLAN" | "APPROVE_PLAN" | null;
+}
+
+export interface HomeV2Chart {
+  scope_title: string;
+  /** `proposed` is the server's word for the plan that is ready and has not run (drawn like `planned`). */
+  legend: { label: string; kind: "current" | "planned" | "proposed" | "hypothetical" }[];
+  /** What takes cash to its lowest point, in the server's words ("a loan repayment goes out"); null or absent while the server has none (the page then uses the rail's lowest event). */
+  lowest?: { cause: string | null } | null;
+  /** The chart's title in a deal: the offer, the paths and the payment assumption, in the server's words; absent until the server sends it. */
+  scenario_title_text?: string | null;
+  lowest_inspector: {
+    day_text: string;
+    projected_display: string;
+    minimum_display: string;
+    third_label: string;
+    third_display: string;
+    note: string;
+  };
+  note: string;
+}
+
+export interface HomeV2 {
+  kpis: {
+    cash_available: HomeV2Kpi & {
+      buffer: {
+        min_fen: Fen;
+        cash_fen: Fen;
+        min_display: string;
+        cash_display?: string;
+        /** The words under the minimum mark and the short headroom figure above the dot ("¥100k above"), when the server sends them; until then the cell keeps its note sentence. */
+        minimum_text?: string | null;
+        headroom_text?: string | null;
+      };
+    };
+    lowest_ahead: HomeV2Kpi & {
+      with_plan_hint?: string | null;
+      /** The plan's effect as a figure ("with plan", "¥300,000"), when the server sends it structured; until then `with_plan_hint` is the sentence. */
+      with_plan?: { label: string; value_text: string } | null;
+      /** The note in a few words ("in 30 days · current books, no new funding"); absent until the server sends it (`note` then). */
+      short_note?: string | null;
+    };
+    funding: HomeV2Kpi & { state: "PROPOSED" | "ARRANGED" | "NONE"; hint: string | null; /** "Ready to run" and its like, in the server's words. */ status_text?: string | null };
+  };
+  action: HomeV2Action;
+  chart: HomeV2Chart;
+  links: { label: string; href: string }[];
+}
+
+export type WorklistSeverity = "CRITICAL" | "CAUTION" | "NORMAL";
+
+export interface WorklistAlert {
+  key: string;
+  eyebrow: string;
+  text: string;
+  tone: HomeTone;
+  primary: { label: string; href: string };
+}
+
+/** A row of Needs you: a decision only a person can take. */
+export interface WorklistNeedsRow {
+  key: string;
+  kind: "DECISION" | "APPROVAL" | "COLLECTION" | "SETUP" | string;
+  customer_id: string | null;
+  customer_short: string | null;
+  subject_text: string;
+  status_text: string;
+  consequence_text: string;
+  owner: "NEEDS_YOU";
+  /** What tells this row from another with the same subject, in business words (an invoice, a scope); present only when two rows would read alike. */
+  differentiator_text?: string | null;
+  severity: WorklistSeverity;
+  deadline_day: Day | null;
+  /** Said under the first row only: why it is first. */
+  why_first_text: string | null;
+  href: string;
+  is_new: boolean;
+}
+
+/** A row of Waiting: what FLOW waits for (a buyer, a bank, a promise). */
+export interface WorklistWaitingRow {
+  key: string;
+  kind: "BUYER_REPLY" | "SETTLEMENT" | "PROMISE" | string;
+  customer_id: string | null;
+  subject_text: string;
+  status_text: string;
+  consequence_text: string;
+  since_day: Day | null;
+  expected_day: Day | null;
+  owner: "WAITING";
+  severity: WorklistSeverity;
+  href: string;
+}
+
+export interface WorklistCustomer {
+  customer_id: string;
+  short: string;
+  name: string;
+  negotiations_count: number;
+  needs_you_count: number;
+  outstanding_display: string;
+  share_text: string | null;
+  tone: HomeTone;
+  status_text: string;
+  detail_text: string;
+  href: string;
+}
+
+export interface WorklistView {
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  alert: WorklistAlert | null;
+  counts: { needs_you: number; waiting: number; customers: number };
+  needs_you: WorklistNeedsRow[];
+  waiting: WorklistWaitingRow[];
+  customers: WorklistCustomer[];
+  partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
+}
+
+/** GET /customers: the worklist's customers with the terms a page filters the list it already holds by. */
+export interface CustomersView {
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  customers: WorklistCustomer[];
+  search_terms: { customer_id: string; terms: string[] }[];
+  partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
+}
+
+/** GET /health's switches (the server's feature flags); a flag the server does not know is absent. */
+export interface FeaturesView {
+  home_v2?: boolean;
+}
+
 export interface HomeView {
   day: Day;
   state_version: number;
@@ -2879,6 +3042,8 @@ export interface HomeView {
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;
+  /** Home V2 (server flag FEATURE_HOME_V2): the three KPIs, the one action, the chart's scope and the links. Absent with the flag off, and the page is the older Home. */
+  home_v2?: HomeV2 | null;
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
@@ -3471,6 +3636,11 @@ export interface PicturePath {
   cost_components?: { label: string; display: string }[] | null;
   /** The assumption a reply's cash rests on (for example, the buyer accepting), as a short caption; null or absent for the asked path. */
   assumption_text?: string | null;
+  /** The evidence for who decides (why the verifier classed it so), and the reason this path is the recommended one; each absent until the server sends it. */
+  authority_reason_text?: string | null;
+  recommended_reason_text?: string | null;
+  /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
+  scenario_assumption_text?: string | null;
 }
 
 /** Who decides, in the verifier's three classes. */
@@ -3515,6 +3685,8 @@ export interface ExposureStressPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
+  display?: string;
+  when?: string;
 }
 
 /** The late-payment test for one path: the server's sentence, the lowest point and the series that draws it. Every word is the server's. */
@@ -3526,8 +3698,11 @@ export interface ExposureStress {
   available: boolean;
   unavailable_text: string | null;
   lowest_short?: string | null;
+  lowest_display?: string | null;
   lowest_when?: string | null;
   first_breach_when?: string | null;
+  /** How long cash is below the minimum, in words ("below it for 65 days"); absent until the server sends it (`text` is the whole sentence). */
+  breach_days_text?: string | null;
   text?: string;
   funding_text?: string;
   assumption?: string;
@@ -3577,6 +3752,7 @@ export interface ExposurePathWords {
   limit_word?: string | null;
   limit_text?: string | null;
   share_after_text?: string | null;
+  scenario_assumption_text?: string | null;
 }
 
 /** What the aside says about the customer: the server's words (the contribution needs the economics inputs, so it can be absent). */
@@ -3635,6 +3811,9 @@ export interface OverviewFigure {
   value_display: string;
   note: string;
   tone: OverviewTone;
+  /** The one state vocabulary's key (lower case: planned, arranged, received, repaid, current, due_soon, overdue, promise_missed) and its word; `none` and "" when the figure has no state. */
+  state?: string;
+  state_text?: string;
 }
 
 /** A labelled row of the economics or the exposure panel. `note` is the quiet sentence after the value (where it came from, what it means), when there is one. */
@@ -3698,6 +3877,6 @@ export interface CustomerOverviewView {
   /** Present when a supporting read failed and the page is not whole (never cached by the server). */
   partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   history?: OverviewHistoryRow[];
-  /** `back` is built by the server from the query the page was opened with. */
-  context?: { back: { label: string; href: string } };
+  /** `back` is built by the server from the query the page was opened with; `customer`, `deal` and `scenario` echo Home V2's selections when they name this buyer's (`deal` the decision id, `scenario` validated against the deal's counters), else null. */
+  context?: { back: { label: string; href: string }; customer?: string | null; deal?: string | null; scenario?: string | null };
 }

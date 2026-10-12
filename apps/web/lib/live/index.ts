@@ -30,6 +30,8 @@ import type {
   ExposureView,
   ContractFixture,
   CustomerOverviewView,
+  CustomersView,
+  FeaturesView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -61,6 +63,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WorklistView,
   ApprovalDecision,
 } from "../types";
 import * as approvals from "./approvals";
@@ -156,6 +159,25 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
+  /** GET /health's feature switches (no owner token needed): the page asks whether Home V2 is on before it draws the new Home. */
+  getFeatures: async (): Promise<FeaturesView> => {
+    const raw = await http<{ features?: FeaturesView }>("GET", "/health", { auth: "none", silent: true });
+    return raw.features ?? {};
+  },
+  /** GET /worklist (flag `home_v2`): Home V2's right panel, in the language asked for. Null when the flag is off (403) or the route is absent (404): the older Home stands. */
+  getWorklist: (lang: "en" | "zh", sinceDay: number | null = null) =>
+    nullWhenOff(() => http<WorklistView>("GET", `/worklist?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`)),
+  /** GET /customers/{id}/overview with Home V2's selections: `decision` and `scenario` come back validated in `context.deal` and `context.scenario` (null when they do not name this buyer's deal). */
+  getCustomerFocus: (id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null } = {}) =>
+    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${sel.decision ? `&decision=${enc(sel.decision)}` : ""}${sel.scenario ? `&scenario=${enc(sel.scenario)}` : ""}`),
+  /** GET /offers/{offer_id}/exposure for a Home V2 deal focus: the customer in the query asks for the echoed selections. Null when the feature is off or the offer is unknown. */
+  getDealExposure: (offerId: string, lang: "en" | "zh", customer: string) =>
+    nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}&customer=${enc(customer)}`)),
+  /** GET /home with a decision: the chart's title for that deal (`home_v2.chart.scenario_title_text`), null when the server has none. */
+  getDealTitle: async (decision: string, lang: "en" | "zh"): Promise<string | null> =>
+    (await http<HomeView>("GET", `/home?lang=${lang}&decision=${enc(decision)}`)).home_v2?.chart.scenario_title_text ?? null,
+  /** GET /customers (flag `home_v2`): the same customers with the terms a page filters them by. Null when the flag is off or the route is absent. */
+  getCustomers: (lang: "en" | "zh") => nullWhenOff(() => http<CustomersView>("GET", `/customers?lang=${lang}`)),
   getReconciliation: async (): Promise<ReconciliationView> => {
     const raw = await http<{ reconciliation: ReconciliationView; last_read_when?: string }>("GET", "/reconciliation");
     // The freshness word sits beside the report or inside it, depending on the server's version; the report carries whichever there is.

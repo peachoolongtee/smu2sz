@@ -33,6 +33,8 @@ import type {
   ClockView,
   ContractFixture,
   CustomerOverviewView,
+  CustomersView,
+  FeaturesView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -68,6 +70,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WorklistView,
 } from "./types";
 
 export { ApiError };
@@ -290,6 +293,49 @@ export async function nlOpener(sessionId: string | undefined, lang: "en" | "zh")
 /** GET /home: the owner's home in business words (owner only). Every sentence and figure is the server's. */
 export async function getHome(lang: "en" | "zh", sinceDay: number | null = null): Promise<HomeView> {
   return isMock ? (await mock()).getHome(lang) : (await live()).getHome(lang, sinceDay);
+}
+
+/** GET /health's feature switches. Read once the Home read carries `home_v2` (a server with the flag off never sends it, so the older Home asks nothing). Never rejects: a server that cannot say has the switch off. */
+export async function getFeatures(): Promise<FeaturesView> {
+  try {
+    return isMock ? (await mock()).getFeatures() : await (await live()).getFeatures();
+  } catch {
+    return {};
+  }
+}
+
+/** GET /worklist (Home V2): the alert, the three tabs and their counts. Null when the server has Home V2 off. Owner only. */
+export async function getWorklist(lang: "en" | "zh", sinceDay: number | null = null): Promise<WorklistView | null> {
+  return isMock ? (await mock()).getWorklist(lang) : (await live()).getWorklist(lang, sinceDay);
+}
+
+/** GET /customers (Home V2): the customers and the terms the search filters them by. Null when the server has Home V2 off. Owner only. */
+export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | null> {
+  return isMock ? (await mock()).getCustomers(lang) : (await live()).getCustomers(lang);
+}
+
+/** GET /customers/{id}/overview for Home V2's customer and deal focus: the selections ride in the query and come back validated in `context` (`deal`, `scenario`). Owner only. */
+export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null } = {}): Promise<CustomerOverviewView> {
+  return isMock ? (await mock()).getCustomerFocus(id, lang, sel) : (await live()).getCustomerFocus(id, lang, sel);
+}
+
+/** GET /offers/{id}/exposure for Home V2's deal focus (every path's words in one read). Null when the server has the exposure read off or does not know the offer. */
+export async function getDealExposure(offerId: string, lang: "en" | "zh", customer: string): Promise<ExposureView | null> {
+  return isMock ? (await mock()).getDealExposure(offerId, lang) : (await live()).getDealExposure(offerId, lang, customer);
+}
+
+/** The deal chart's title in the server's words (GET /home with the decision); null when it has none or cannot say. */
+export async function getDealTitle(decision: string, lang: "en" | "zh"): Promise<string | null> {
+  try {
+    return isMock ? (await mock()).getDealTitle(lang) : await (await live()).getDealTitle(decision, lang);
+  } catch {
+    return null;
+  }
+}
+
+/** GET /offers/{id}/picture for Home V2's deal focus: the paths with their words (authority evidence, the scenario's assumption) and series. The deal's own mock is Home V2's recording. */
+export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promise<OfferPictureView | null> {
+  return isMock ? (await mock()).getDealPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang).catch(() => null);
 }
 
 /** GET /clock: the simulated day. */
