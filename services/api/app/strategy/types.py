@@ -163,7 +163,7 @@ SpareCriterion = Literal["R-TODAY", "R-AS-ISSUED"]
 
 class SpareCapacity(Contract):
     """The additional working-capital need FLOW could still support (brief F.3): X*, the largest one-off payment of X today
-    (on a YUAN_STEP grid) for which the router still returns a plan that is admissible, needs no owner approval and can
+    (on a ¥1,000 grid) for which the router still returns a plan that is admissible, needs no owner approval and can
     run (today, or as issued). `x_star_fen` is None when today's books already have no such plan (`refused_text`)."""
 
     shape: SpareShape

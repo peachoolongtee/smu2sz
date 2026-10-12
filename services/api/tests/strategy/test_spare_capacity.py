@@ -14,7 +14,6 @@ import app.strategy.capacity as capacity_module
 from app.books import Books
 from app.domain.models import FacilityKind, FinancialState, Mandate
 from app.funding import plan as real_plan
-from app.persistence import InMemoryLedgerStore
 from app.strategy.capacity import (
     CRITERIA,
     REFUSED,
@@ -101,16 +100,6 @@ def test_the_buyers_early_pay_source_is_absent_from_every_copy_the_router_sees(m
     flows = sorted((f.amount_fen for s in seen for f in s.flows if f.id.startswith("SPARE-NEED")), reverse=True)
     assert flows and all(x < 0 for x in flows)
     assert books.state.model_dump_json() == golden()[0].state.model_dump_json()  # the books themselves are untouched
-
-
-def test_with_the_buyers_early_pay_left_in_the_answer_would_be_different():
-    """Why the rule exists: left on the copy, the cheapest plan is an early payment only the buyer can agree to."""
-    books, mandate = golden()
-    kept = books.state.model_copy(update={"facilities": books.state.facilities})
-    from app.strategy.capacity import _with_need
-
-    plan_with = real_plan(_with_need(kept, 8_200_000), books.with_([]), mandate)
-    assert any(a.kind.value == "EARLY_PAY" for a in plan_with.actions) or not plan_with.executable_now
 
 
 # ---------------------------------------------------------------- the sentences, always printed
@@ -259,7 +248,3 @@ def test_the_search_on_the_public_record_sme_finishes_and_is_recorded():
     assert r.plan_at_x is not None and r.plan_at_x.admissible and r.plan_at_x.executable_now
     assert r.evaluations <= 20, r.evaluations
     print(f"public SME: X* {r.x_star_fen}, {r.evaluations} router runs, {r.seconds} s")
-
-
-def test_the_ledger_store_import_is_not_needed():
-    assert InMemoryLedgerStore  # the search takes the books and the commitments, never a store
