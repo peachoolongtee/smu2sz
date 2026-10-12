@@ -468,8 +468,8 @@ def _moment_text(lang: str, events: dict[str, list[str]], below: list[str], name
 _KINDS = ("today", "paths_part", "reserve_cross", "invoice_due", "lowest", "end")  # which word a day wears when it is several moments
 
 
-def _word(kind: str, n: int, crossing: str, lang: str) -> str:
-    """The chip word of a moment."""
+def _word(kind: str, n: int, crossing: str, lang: str, lowest_of: list[str] | None = None) -> str:
+    """The chip word of a moment. `lowest_of` names the paths whose lowest point it is, when more than one moment lists a lowest point."""
     if kind == "today":
         return say(lang, "Today", "今天")
     if kind == "invoice_due":
@@ -477,6 +477,9 @@ def _word(kind: str, n: int, crossing: str, lang: str) -> str:
     if kind == "paths_part":
         return say(lang, "Paths part", "路径分叉")
     if kind == "lowest":
+        if lowest_of:
+            who = _names(lang, lowest_of)
+            return say(lang, f"Lowest, {who}", f"最低点，{who}")
         return say(lang, "Lowest point", "最低点")
     if kind == "reserve_cross":
         if crossing == "both":  # one path goes below the reserve on the day another comes back above it
@@ -541,8 +544,10 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
         kinds.setdefault(part, set()).add("paths_part")
     if invoice_day is not None and days[0] <= invoice_day <= last:
         kinds.setdefault(invoice_day, set()).add("invoice_due")
+    lowest_by_day: dict[int, list[str]] = {}  # the paths whose lowest point is that day
     for p in live:
         kinds.setdefault(lowest_day(p), set()).add("lowest")
+        lowest_by_day.setdefault(lowest_day(p), []).append(p["key"])
     down: set[int] = set()  # the days a path crosses the reserve downwards
     up: set[int] = set()  # and upwards
     crossings: set[int] = set()
@@ -574,6 +579,7 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
         if d is not None and d not in chosen and len(chosen) < _MAX_MOMENTS:
             chosen.append(d)
     names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+    named = len([d for d in chosen if d in lowest_by_day]) > 1  # more than one lowest moment is listed: each says whose it is
     discount = say(lang, "Early-payment discount", "提前付款折扣")  # the row's own label is a whole sentence about one invoice
 
     out = []
@@ -602,7 +608,9 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
         have = [k for k in _KINDS if k in kinds[d]]
         kind = have[0] if have else "end"
         out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "decisive": d == decisive,
-                    "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang), "text": text, "values": values,
+                    "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
+                                [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
+                                if named and d in lowest_by_day else None), "text": text, "values": values,
                     "events_text": events_text})
     return out, picture_days
 
