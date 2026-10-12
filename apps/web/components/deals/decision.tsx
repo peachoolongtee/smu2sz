@@ -18,7 +18,7 @@ export const ACTION_KEY: Record<BusinessAction, DictKey> = {
   cannot: "biz.deals.action.cannot",
 };
 
-const H1 = "max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl";
+const H1 = "max-w-4xl text-balance font-display text-xl font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl";
 
 const toneOf = (tone: DealTone | undefined): Tone => (!tone || tone === "mute" ? "warn" : tone);
 
@@ -74,7 +74,7 @@ export function DealHeading({
         {headline}
       </h1>
       {quiet ? (
-        <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-action">
+        <p className="max-w-3xl text-pretty text-base text-ink-2 max-sm:hidden sm:text-[1.0625rem] sm:leading-normal" data-testid="deal-action">
           {quiet}
         </p>
       ) : null}

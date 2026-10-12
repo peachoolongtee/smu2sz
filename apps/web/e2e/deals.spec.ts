@@ -85,28 +85,39 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   const next = page.getByTestId("next-step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
 
-  // The workspace in the page's order: the verdict (the heading), who and where, what they ask with what each costs, why it matters, the priced response.
-  await expect(page.getByTestId("deal-recommendation")).toContainText("Don't accept as asked");
+  // The workspace in the page's order: the verdict (the heading), the priced response (the bar), the picture and its columns, who and where, what they ask with
+  // what each costs, why it matters (folded).
+  await expect(page.getByTestId("deal-recommendation")).toHaveText("Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.");
   await expect(page.getByTestId("deal-action")).toHaveText("Two replies are ready to send.");
   await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
   // The verdict is the page's one heading.
   await expect(page.locator("h1")).toHaveCount(1);
-  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact", "deal-why", "counters", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
+  // The recommendation has its reason: the first of the server's reasons (behind the "Why it matters" fold) is not empty.
+  await expect(page.getByTestId("deal-why-reasons").locator("li").first()).not.toBeEmpty();
+  const tops = await page.evaluate(() => ["deal-recommendation-card", "counters", "deal-paths", "deal-selected", "deal-ask", "deal-why", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
   // (no agreement yet, so there is no commitments card)
   const present = tops.filter((y) => y >= 0);
   expect(present.length).toBe(7);
   expect(present).toEqual([...present].sort((a, b) => a - b));
   // The header: the buyer, when it came and when it was checked, and one chip for where the deal stands. No ask line: the asks card says it once.
   await expect(page.locator("#deal-selected")).not.toContainText("Immediate discount · Terms extension · Contingent rebate");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
+  // (the pill's tone glyph comes first; the words are exactly the server's)
+  await expect(page.getByTestId("deal-state-chip")).toHaveText(/^\S?\s?Counter recommended$/);
   await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
+  // What they ask and what each costs sit behind a fold, closed (the paths' columns already say what each path costs).
+  const askFold = page.getByTestId("deal-ask-fold");
+  await expect(askFold).toHaveJSProperty("open", false);
+  await expect(askFold.locator("> summary")).toHaveText("What they ask, and what each costs you");
+  await askFold.locator("> summary").click();
   // Buyer terms appear once: the server's sentence for the term, not again in a second card, the response or the header.
   await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toHaveText("The buyer gets 60-day payment terms on future invoices (ongoing, no end date)");
   expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
   await expect(page.getByTestId("deal-asks").locator("li")).toHaveCount(3);
   await expect(page.getByTestId("deal-parsed-terms")).toHaveCount(0);
+  await expect(page.getByTestId("deal-ask-label-IMMEDIATE_DISCOUNT")).toHaveText("Immediate discount");
   // What it costs: the immediate discount on its own line, the forward lines and their total kept apart, never added together.
   const immediate = page.getByTestId("deal-impact-immediate");
+  await expect(immediate).toContainText("Immediate discount");
   await expect(immediate).toContainText("1.20%");
   await expect(immediate.getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
   await expect(immediate).toContainText("is not part of the forward figure");
@@ -122,26 +133,47 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(forward).toContainText("Over your limit");
   await expect(forward.getByTestId("deal-impact-note")).toContainText("the two are not added together");
   // Why it matters: the server's reasons, then the cash facts of the offer as asked: first breach and worst point are two named days.
+  await page.getByTestId("deal-why-fold").locator("> summary").click();
   await expect(page.getByTestId("deal-why-reasons").locator("li")).toHaveText([
     "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
     "Accepted as asked, cash would fall below your minimum in 47 days.",
   ]);
-  // The two cash facts of the offer as asked (first breach, worst point) are the chart's now: the asked path's column and the decisive stop say them.
-  await expect(page.getByTestId("deal-fact-cash")).toHaveCount(0);
-  await expect(page.getByTestId("path-moment")).toContainText("In 47 days");
-  await expect(page.getByTestId("path-col-cash-0")).toContainText("¥209,960.00");
+  const breach = page.getByTestId("deal-fact-cash");
+  await expect(breach).toContainText("First reserve breach");
+  await expect(breach).toContainText("in 47 days");
+  await expect(breach).toContainText("Cash falls to ¥209,960.00");
+  const worst = page.getByTestId("deal-fact-worst");
+  await expect(worst).toContainText("Worst point");
+  await expect(worst).toContainText("¥164,960.00");
+  await expect(worst).toContainText("in 60 days");
+  // The three numbers are about the offer as the buyer asked for it, and the page says so.
+  await expect(page.getByTestId("deal-if-accept")).toHaveText("If you accept the offer as asked:");
+  // The picture says the same in its own words: the decisive moment, the asked path's tile and its column's lowest point and first breach.
+  await expect(page.getByTestId("path-moment")).toContainText("As asked, cash is below your minimum");
+  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
+  await expect(page.getByTestId("path-col-lowest-0")).toHaveText("Lowest ¥165k, in 60 days");
+  await expect(page.getByTestId("path-col-breach-0")).toContainText("in 47 days");
   await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
   // No engine count or code at level 1.
   await expect(page.locator("body")).not.toContainText("failed,");
   await expect(page.locator("#deal-recommendation-card")).not.toContainText("REJECT");
 
-  // The reply: three paths on one chart, the recommended reply picked first; Option B is a column away, with its cost and its note.
+  // The reply: three paths on one chart, the recommended reply picked first. Option A's cost with its basis; Option B's net economic cost with both parts, never a bare zero.
   const response = page.locator("#counters");
   await expect(page.getByTestId("path-col-1")).toContainText("FLOW recommends");
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
-  await expect(page.getByTestId("path-col-2")).toContainText("the price rise pays for the longer terms");
+  await expect(page.getByTestId("path-col-basis-1")).toHaveText("once, nothing ongoing");
+  // (the net's zero is never alone: its basis says "net" and both parts stand beneath it)
+  const b = page.getByTestId("path-col-2");
   await expect(page.getByTestId("path-col-cost-2")).toHaveText("¥0.00");
-  await expect(page.getByTestId("path-col-2")).not.toContainText("CTR-");
+  await expect(page.getByTestId("path-col-basis-2")).toHaveText("net over 12 months");
+  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,217.95");
+  await expect(page.getByTestId("path-col-components-2")).toContainText("¥16,380.00");
+  await expect(b).not.toContainText("CTR-");
+  // The asked path: its ongoing and its one-off cost as two figure lines, with no single total.
+  await expect(page.getByTestId("path-col-cost-0")).toHaveCount(0);
+  await expect(page.getByTestId("path-col-forward-0")).toHaveText("¥28,326.92 over 12 months");
+  await expect(page.getByTestId("path-col-once-0")).toHaveText("¥5,040.00 once");
 
   // With the check done there is no Action left to take on this card: the response carries the page's one filled call ("Send this counter").
   await expect(next).toHaveCount(0);
@@ -185,10 +217,11 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await advanced.locator("> summary").click();
   // No empty commitments card; the page fits about two screens with the disclosures closed.
   await expect(page.locator("#commitments")).toHaveCount(0);
+  await askFold.locator("> summary").click();
+  await page.getByTestId("deal-why-fold").locator("> summary").click();
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   // (the strategy build adds its "Before they ask" card to the page)
-  // (the three paths, their chart and their columns make it about three screens; the disclosures stay closed)
-  expect(height).toBeLessThanOrEqual(3 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
+  expect(height).toBeLessThanOrEqual(2 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // Reading the same message again costs nothing: it is shown, not read twice.
   await page.getByTestId("inbox-back").click();

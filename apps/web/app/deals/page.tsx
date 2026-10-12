@@ -9,7 +9,7 @@ import { isAgreed } from "@/components/deals/deal-summary";
 import { contractsOff } from "@/components/documents";
 import { DealHeading } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
-import { PathsSection, pathsUsable } from "@/components/deals/paths-section";
+import { PathsBody, PathsReply, usePathsState } from "@/components/deals/paths-section";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
@@ -31,10 +31,11 @@ import { whenText } from "@/lib/when";
 import { Disclosure } from "@/components/business/kit";
 
 /**
- * Deals in the A1 pattern, one workspace for the selected buyer: the verdict is the heading (FLOW's read of the offer, under the status pill),
- * then who and where (the buyer, the five stages), the one Action while the offer is unchecked, what they ask with what each costs you, why it
- * matters, the priced response with its bound send, the agreements and, folded, the advanced details. The inbox folds to one row once a deal is
- * selected. Buyer terms appear once. Every figure and sentence is the server's; days are distances from today; the page decides nothing.
+ * Deals in the A1 pattern, one workspace for the selected buyer, in the remediation's order at every width: the verdict is the heading (FLOW's read of the
+ * offer, under the status pill), the one Action while the offer is unchecked, the priced response (the reply bar with its bound send) directly under the
+ * heading, the picture of the three paths with its moments and columns, who and where (the buyer, the five stages), then what they ask with what each costs
+ * you and why it matters (both behind closed folds), the agreements and, folded, the advanced details. The inbox folds to one row once a deal is selected.
+ * Buyer terms appear once. Every figure and sentence is the server's; days are distances from today; the page decides nothing.
  */
 export default function DealsPage() {
   const { t, te, lang } = useI18n();
@@ -177,6 +178,13 @@ export default function DealsPage() {
   }
 
   const compareOpen = Boolean(offer && compareFor === offer.offer.offer_id);
+  // One pick and one cursor drive the reply bar (right under the heading) and the picture with its columns (below it).
+  const pathsState = usePathsState(
+    picture,
+    pictureOfferId,
+    STRATEGY_MVP ? compareOpen : undefined,
+    STRATEGY_MVP && offer ? (on: boolean) => setCompareFor(on ? offer.offer.offer_id : null) : undefined,
+  );
 
   // Once both parties have agreed, each buyer's deal summary (the confirmed contract beside the books) sits inside that buyer's agreement: one section, not two.
   const commitments = (
@@ -271,7 +279,7 @@ export default function DealsPage() {
       );
     }
     dealParts.buyer_asks = ws ? (
-      <WorkspaceAsksCost key="asks" ws={ws} v={v}>{abstentions}</WorkspaceAsksCost>
+      <WorkspaceAsksCost key="asks" ws={ws} v={v} folded={Boolean(v && !settledDeal)}>{abstentions}</WorkspaceAsksCost>
     ) : (
       <Card flat key="asks" id="deal-ask" title={t("biz.deals.ask", { buyer: buyerName(offer.offer.counterparty_id) })}>
         <BuyerAsks asks={asks} />
@@ -280,10 +288,12 @@ export default function DealsPage() {
     );
     if (STRATEGY_MVP) dealParts.before = <BeforeTheyAsk key="before" buyerId={offer.offer.counterparty_id} />;
     if (v && ws) {
-      dealParts.why = <WorkspaceWhy key="why" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} facts={!pathsUsable(picture, cur.negotiation, v)} />;
+      // Why it matters sits behind its fold (its reasons and the cash facts of the offer as asked); once the deal has an outcome it is part of the original ask's fold below.
+      dealParts.why = <WorkspaceWhy key="why" ws={ws} v={v} today={today} settled={Boolean(record && progress?.reached)} folded={!settledDeal} />;
       dealParts.priced_response = (
-        <PathsSection
+        <PathsReply
           key="response"
+          state={pathsState}
           v={v}
           offerId={offer.offer.offer_id}
           today={today}
@@ -293,6 +303,7 @@ export default function DealsPage() {
           {...(STRATEGY_MVP ? { compareOpen, onCompareChange: (on: boolean) => setCompareFor(on ? offer.offer.offer_id : null) } : {})}
         />
       );
+      dealParts.paths = <PathsBody key="paths" state={pathsState} picture={picture} v={v} negotiation={cur.negotiation} />;
       // Once the deal has an outcome (an agreement in force, a missed payment, no deal) the offer as it was asked is history: what they asked and cost,
       // the most the owner could give and why it mattered sit under one heading, folded, so they are not read as part of the agreement.
       if (settledDeal) {
@@ -309,22 +320,31 @@ export default function DealsPage() {
         dealParts.before = null;
         dealParts.why = null;
       }
+      // The two closed folds (what they ask, why it matters) sit side by side from `lg`, so the page stays within its two screens.
+      if (!settledDeal) {
+        dealParts.folds = (
+          <div key="folds" className="grid items-start gap-x-6 gap-y-4 lg:grid-cols-2">
+            {dealParts.buyer_asks}
+            {dealParts.why}
+          </div>
+        );
+        dealParts.buyer_asks = null;
+        dealParts.why = null;
+      }
       dealParts.advanced = <AdvancedDetails key="advanced" ws={ws} v={v} offer={offer} items={items} asks={asks} />;
     }
     dealParts.agreements = commitments;
   }
-  // One order at every width: the verdict, who and where, the one Action, what they ask and cost, why it matters, the reply, the strategy block, the
-  // agreements, the folds. The server's `workspace.order` no longer decides it: the heading is the recommendation.
-  // On a phone the reply comes right after the heading (the answer, then what to do), then who and where, and what they ask and why follow it.
-  const order = narrow
-    ? ["heading", "next", "priced_response", "buyer", "buyer_asks", "why", "before", "original", "agreements", "advanced"]
-    : ["heading", "buyer", "next", "buyer_asks", "why", "priced_response", "before", "original", "agreements", "advanced"];
+  // One order at every width, so the DOM order is the visual order and the focus order follows it: the verdict (the heading), the one Action, the reply bar
+  // (the priced decision, inside the first screen of a phone), the picture with its moments and the path columns, who and where, what they ask and cost, why it
+  // matters (folded), the strategy block, the agreements, the folds. The server's `workspace.order` no longer decides it: the heading is the recommendation.
+  const order = ["heading", "next", "priced_response", "paths", "buyer", "folds", "buyer_asks", "why", "before", "original", "agreements", "advanced"];
   const errorNode = error ? <ErrorState key="error" error={error} /> : null;
 
   return (
     <>
       {offer && ready ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={offer && narrow ? undefined : t("biz.deals.subtitle")} />}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {inbox}
 
         {errorNode}

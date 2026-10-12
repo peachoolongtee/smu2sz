@@ -216,8 +216,8 @@ def test_moments_are_at_most_six_ascending_with_exactly_one_decisive(client):
     days = [m["day"] for m in moments]
     assert 1 <= len(moments) <= 6 and days == sorted(set(days)) and days[0] == pic["day"] == 0
     assert [m["day"] for m in moments if m["decisive"]] == [47]
-    assert days == [0, 2, 30, 47, 60, 62]
-    assert moments[0]["label"] == moments[0]["title"] == "Today" and moments[3]["label"] == moments[3]["title"] == "In 47 days"
+    assert days == [0, 30, 47, 60, 62, 66]
+    assert moments[0]["label"] == moments[0]["title"] == "Today" and moments[2]["label"] == moments[2]["title"] == "In 47 days"
     assert all(m["text"] for m in moments)
 
 
@@ -245,14 +245,16 @@ def test_a_moments_text_says_what_every_path_has_once_then_what_differs_then_who
     assert text[47] == ("On every path: Operating bill −¥100k. Option A: Receipt from Foshan Home Retail Co. ¥420k. "
                         "As asked, cash is below your minimum.")
     assert text[60] == "On every path: Debt service −¥45k. As asked, cash is below your minimum."
-    assert text[0] == "Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k."
+    assert text[0] == ("Option A: Credit line draw ¥150k. Option B: Credit line draw ¥90k. "
+                       "Who decides: Option A: FLOW can send it; Option B: needs your approval.")
     assert opt_a not in " ".join(text.values())
 
 
 def test_picture_days_and_the_axis_follow_the_window_of_the_moments(client):
     oid, _ = _evaluated(client)
     pic = client.get(f"/offers/{oid}/picture").json()
-    assert pic["picture_days"] == max(30, pic["moments"][-1]["day"] - pic["day"] + 4) == 66
+    # the window ends on the last moment; it runs four days past the last day anything changes (62), a month at least
+    assert pic["picture_days"] == pic["moments"][-1]["day"] - pic["day"] == max(30, 62 + 4) == 66
     assert 30 <= pic["picture_days"] <= min(90, pic["horizon_days"])
     inside = [r["closing_fen"] for p in pic["paths"] for r in p["series"] if r["day"] - pic["day"] <= pic["picture_days"]]
     lo, hi = pic["axis"]["min_fen"], pic["axis"]["max_fen"]

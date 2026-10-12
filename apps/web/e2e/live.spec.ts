@@ -661,8 +661,10 @@ test("Deals: the workspace is the API's, in its order, and ?buyer= selects the b
   await expect(page.getByTestId("deal-impact-forward")).not.toContainText("¥5,040.00");
   await expect(page.getByTestId("deal-why-reasons")).toContainText("Accepted as asked, cash would fall below your minimum");
   await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
-  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask", "deal-impact"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
+  const tops = await page.evaluate(() => ["deal-recommendation-card", "deal-selected", "deal-ask"].map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  // (the asks sit behind a closed fold; opened, the buyer's term is said once)
+  await page.getByTestId("deal-ask-fold").locator("> summary").click();
   expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
   await post("/demo/reset", {});
 });

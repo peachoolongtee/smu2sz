@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
+import { authorityText, authorityTone } from "@/components/deals/path-columns";
 import { ActionBar } from "@/components/business/action-bar";
-import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, StatePill, textLinkClass } from "@/components/ui";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
@@ -176,7 +177,7 @@ function SendControl({ c, lines, primary, filled = primary, sending, busy, onSen
         lines?.length ? (
           <div id={scopeId} data-testid="deal-send-scope">
             <p className="text-sm font-semibold text-ink">{t("biz.deals.send.thisWill")}</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink" data-testid="deal-send-scope-lines">
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm text-ink sm:pl-5" data-testid="deal-send-scope-lines">
               {lines.map((l) => (
                 <li key={l}>{l}</li>
               ))}
@@ -371,19 +372,30 @@ export function RecommendedResponse({
     const counter = withdrawn ? undefined : counters.find((c) => c.id === path.key) ?? counters.find((c) => (c.label_when ?? c.label) === path.label);
     const canSend = path.sendable && counter && mode === "business";
     const eyebrow = !path.sendable ? t("biz.deals.reply.cannot") : path.needs_owner ? t("biz.deals.reply.approveFirst", { label: path.label }) : t("biz.deals.reply.eyebrow", { label: path.label });
+    // Who decides: the server's class and words (else the earlier sentence), in the class's tone: the same tone as the path's column.
+    const tone = authorityTone(path);
+    const decides = authorityText(path);
     return (
-      <ActionBar flow id="counters" aria-labelledby="path-reply-title" data-testid="path-reply" data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
-        <div className="w-full">{changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}</div>
+      <ActionBar id="counters" aria-labelledby="path-reply-title" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
+        {changed ? (
+          <div className="w-full">
+            <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} />
+          </div>
+        ) : null}
         <div className="min-w-0 flex-[2_1_20rem]">
-          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${!path.sendable ? "text-bad-fg" : path.needs_owner ? "text-warn-fg" : "text-brand-700"}`}>{eyebrow}</p>
-          <h2 id="path-reply-title" className="mt-1 text-pretty text-lg font-extrabold leading-snug text-ink" data-testid="path-reply-text">
-            {path.sendable ? (path.reply_text ?? path.decides_text) : path.decides_text}
+          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
+          <h2 id="path-reply-title" className="mt-1 text-pretty text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="path-reply-text">
+            {path.sendable ? (path.reply_text ?? decides) : decides}
           </h2>
-          {path.sendable && path.needs_owner ? <p className="mt-1 text-sm text-ink-2">{path.decides_text}</p> : null}
+          {path.sendable ? (
+            <p className="mt-1.5" data-testid="path-reply-decides" data-authority={path.authority ?? ""}>
+              <StatePill tone={tone}>{decides}</StatePill>
+            </p>
+          ) : null}
         </div>
         <div className="min-w-0 flex-[1_1_16rem]">
           {canSend ? (
-            <SendControl c={counter} lines={pricedLines(counter)} primary={path.recommended} filled sending={sending === counter.id} busy={busy} onSend={(profile) => void send(counter, profile)} />
+            <SendControl key={counter.id} c={counter} lines={pricedLines(counter)} primary={path.recommended} filled sending={sending === counter.id} busy={busy} onSend={(profile) => void send(counter, profile)} />
           ) : !path.sendable && reply.recommended && reply.recommended.key !== path.key ? (
             <Button variant="secondary" onClick={reply.onBack} data-testid="path-reply-back">
               {t("biz.deals.reply.back", { label: reply.recommended.label })}

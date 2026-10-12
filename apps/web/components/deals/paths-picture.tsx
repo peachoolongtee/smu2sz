@@ -1,75 +1,122 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Disclosure } from "@/components/business/kit";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
-import { HUE, hueOf } from "@/components/deals/path-hue";
-import { buttonClass } from "@/components/ui";
+import { HUE, hueOf, Marker, Swatch } from "@/components/deals/path-hue";
+import { buttonClass, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
-import type { OfferPictureView, PictureMoment, PicturePath } from "@/lib/types";
+import type { MomentValue, OfferPictureView, PictureMoment, PicturePath } from "@/lib/types";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { whenText } from "@/lib/when";
 
 /**
- * The offer's cash on every path at once. Every path is always drawn as a ghost (thin, about a third opacity, in its own colour: the asked path in the
- * bad tone, the recommended reply in the ok tone, a further reply in the third series colour); the picked path is drawn on top, thick, with the
- * chart's one draw each time the pick changes. Its lowest point is marked and named with the server's `lowest_short`; a soft band says what it does
- * against the asked path (between the two lines where they differ by more than a few pixels) or, for the asked path, where it is under the minimum,
- * labelled with the server's `band_text` if the label fits inside it. A cursor (a dashed line and a dot on each path) sits on the selected
- * moment's day and slides there; under the chart one stop per moment and "Play the comparison", which steps through the moments.
+ * The offer's cash on every path at once, and the moments where the paths differ. The picture draws three lines (the asked path thin and solid,
+ * the recommended reply thicker and solid, a further reply dashed, each in its own colour), the minimum, one cursor and the band around it, and nothing
+ * else: no event labels (payroll, rent and the like hit every path alike and stay in the shape of the lines) and no line names (the three tiles under
+ * the cursor are the legend). The cursor visits the server's `moments` only; the chips are those moments, named by the server's `word`. Under the
+ * cursor: the moment's one sentence, a tile per path, and on demand what moved cash that day.
+ *
+ * Pointing at a day shows a small tooltip (the series' own display strings); a tap moves the cursor to the nearest moment, never to an arbitrary day.
+ * Pointing at a chip previews its moment, a click keeps it. The path being hovered or picked in the columns is the emphasised line. Play steps the
+ * moments one every two seconds, ends on the last, never starts by itself and waits while the pointer is over the picture.
  *
  * Every word and figure is a string the server sent; the `*_fen` and `day` numbers only place a mark (INVARIANT 13). The y ticks are the server's own.
  */
 const STEP_MS = 2000;
 
-interface Rect {
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
+type Tone = NonNullable<MomentValue["tone"]>;
+const TONE_INK: Record<Tone, string> = { ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg", neutral: "text-ink-3" };
+
+/** The tone of a figure: the server's `tone`, else (an older server) its `below_floor` flag. Never compared here. */
+function toneOf(v: MomentValue | undefined): Tone {
+  return v?.tone ?? (v?.below_floor ? "bad" : "neutral");
 }
+
+const arrow = (dir: 1 | -1) => <path d={dir === 1 ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
 
 export function PathsPicture({
   picture,
   pick,
-  onPick,
+  hoverKey,
+  onHover,
   stop,
   onStop,
-  playing,
-  onPlaying,
 }: {
   picture: OfferPictureView & { paths: PicturePath[]; moments: PictureMoment[] };
   pick: string;
-  onPick: (key: string) => void;
+  /** The path whose column or tile is being pointed at, or null. */
+  hoverKey: string | null;
+  onHover: (key: string | null) => void;
   stop: number;
   onStop: (i: number) => void;
-  playing: boolean;
-  onPlaying: (on: boolean) => void;
 }) {
   const { t } = useI18n();
+  const reduced = useReducedMotion();
+  const hintId = useId();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
   const { paths, moments } = picture;
   const today = picture.day;
   const floor = picture.floor_fen;
-  const picked = paths.find((p) => p.key === pick) ?? paths[0];
-  const moment = moments[stop] ?? null;
+  const n = moments.length;
 
-  // Play steps through the moments about every two seconds and ends on the last one; a stop pressed by hand halts it.
+  // A chip pointed at or focused previews its moment; leaving returns to the selected one. Play and the selection never depend on a preview.
+  const [preview, setPreview] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
+  // Stopped by hand part-way through a run: Play then continues from the current moment instead of starting again at the first.
+  const [paused, setPaused] = useState(false);
+  // The pointer is over the picture (a mouse; a finger has no "over"): Play waits. The tooltip's anchor, in pixels inside the frame, while it is shown.
+  const [over, setOver] = useState(false);
+  const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
+  const [focused, setFocused] = useState(false);
+  const shown = Math.min(preview ?? stop, Math.max(n - 1, 0));
+  const moment = moments[shown] ?? null;
+
   const at = useRef(stop);
   useEffect(() => {
     at.current = stop;
   }, [stop]);
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || over) return;
     const id = window.setInterval(() => {
       const next = at.current + 1;
-      if (next >= moments.length) {
-        onPlaying(false);
+      if (next >= n) {
+        setPlaying(false);
+        setPaused(false);
         return;
       }
+      at.current = next;
       onStop(next);
-      if (next >= moments.length - 1) onPlaying(false);
+      if (next >= n - 1) {
+        setPlaying(false);
+        setPaused(false);
+      }
     }, STEP_MS);
     return () => window.clearInterval(id);
-  }, [playing, moments.length, onStop, onPlaying]);
+  }, [playing, over, n, onStop]);
+
+  /** A step made by hand (a chip, an arrow, a tap) halts Play. */
+  const choose = (i: number) => {
+    setPlaying(false);
+    setPaused(false);
+    setPreview(null);
+    onStop(Math.min(Math.max(i, 0), n - 1));
+  };
+  const togglePlay = () => {
+    if (playing) {
+      setPlaying(false);
+      setPaused(true);
+      return;
+    }
+    setPreview(null);
+    if (!(paused && stop < n - 1)) {
+      at.current = 0;
+      onStop(0);
+    }
+    setPaused(false);
+    setPlaying(true);
+  };
 
   // ---- the window and the scale: the server's axis and `picture_days`; widened only for what is drawn
   const lastData = Math.max(today + 1, ...paths.map((p) => p.series?.[p.series.length - 1]?.day ?? today));
@@ -82,98 +129,21 @@ export function PathsPicture({
   const hi = Math.max(...levels);
   const yLo = axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = axis ? Math.max(axis.max_fen, hi) : hi + Math.max((hi - lo) * 0.08, 1);
-  const padB = PAD.b + 16;
-  const H = (W < 520 ? 250 : 300) + 16;
+  const H = W < 520 ? 216 : 196;
   const gutter = axis ? Math.ceil(Math.max(...axis.ticks.map((k) => textWidth(k.label, false)))) + 8 : 0;
   const pl = PAD.l + gutter;
   const pr = W - PAD.r;
   const pt = PAD.t;
-  const pb = H - padB;
+  const pb = H - PAD.b;
   const xOf = (d: number) => r1(pl + ((d - today) / last) * Math.max(pr - pl, 1));
   const yOf = (v: number) => r1(pt + ((yHi - v) / (yHi - yLo)) * (pb - pt));
-  const valueAt = (s: Seg[], d: number) => s.find((q) => d >= q.d0 && d < q.d1)?.v ?? s[s.length - 1]?.v ?? 0;
   const pathOf = (s: Seg[]) => s.map((q, i) => (i === 0 ? `M${xOf(q.d0)},${yOf(q.v)}` : `H${xOf(q.d0)}V${yOf(q.v)}`)).join("") + (s.length ? `H${xOf(s[s.length - 1].d1)}` : "");
 
-  // Below `sm` the names are not drawn at the line ends (they would sit on the lines): a legend row and the subtitle name the paths.
-  const wide = W >= 592;
-  const pickedIdx = Math.max(paths.findIndex((p) => p.key === picked.key), 0);
-  const pickedSegs = segs[pickedIdx];
-  const askedIdx = paths.findIndex((p) => p.kind === "asked");
-  const askedSegs = askedIdx >= 0 ? segs[askedIdx] : null;
-  const hue = HUE[hueOf(picked)];
-
-  // ---- the band: for a reply, between its line and the asked line where they are apart; for the asked path, between its line and the minimum where it is under it
-  const band: Rect[] = [];
-  if (pickedSegs) {
-    if (picked.kind === "asked") {
-      for (const s of pickedSegs) if (s.v < floor) band.push({ x0: xOf(s.d0), x1: xOf(s.d1), y0: yOf(floor), y1: yOf(s.v) });
-    } else if (askedSegs) {
-      const days = [...new Set([...pickedSegs.map((q) => q.d0), ...askedSegs.map((q) => q.d0), end])].sort((a, b) => a - b);
-      days.slice(0, -1).forEach((d0, i) => {
-        const ya = yOf(valueAt(askedSegs, d0));
-        const yb = yOf(valueAt(pickedSegs, d0));
-        if (Math.abs(ya - yb) > 4) band.push({ x0: xOf(d0), x1: xOf(days[i + 1]), y0: ya, y1: yb });
-      });
-    }
-  }
-  const bandD = band.map((r) => `M${r.x0},${r.y0}H${r.x1}V${r.y1}H${r.x0}Z`).join("");
-  // The label sits inside the widest part of the band, and is dropped when none is wide and tall enough.
-  const bandLabel = (() => {
-    if (!picked.band_text) return null;
-    const w = textWidth(picked.band_text, true) + 12;
-    const roomy = band.filter((r) => r.x1 - r.x0 >= w && Math.abs(r.y1 - r.y0) >= FONT + 6).sort((a, b) => b.x1 - b.x0 - (a.x1 - a.x0))[0];
-    return roomy ? { x: (roomy.x0 + roomy.x1) / 2, y: (roomy.y0 + roomy.y1) / 2 + 4, text: picked.band_text } : null;
-  })();
-
-  const cursorX0 = moment ? xOf(Math.min(Math.max(moment.day, today), end)) : null;
-
-  // ---- the picked path's lowest point
-  const low = (() => {
-    if (!picked.series || picked.lowest_fen === null || !picked.lowest_short) return null;
-    const pt0 = picked.series.find((q) => q.day >= today && q.day <= end && q.closing_fen === picked.lowest_fen);
-    if (!pt0) return null;
-    const x = xOf(pt0.day);
-    const y = yOf(pt0.closing_fen);
-    const text = t("biz.picture.lowest", { amount: picked.lowest_short });
-    const w = textWidth(text, true);
-    const spots = [
-      { x, y: y + 22, anchor: "middle" as const },
-      { x, y: y - 12, anchor: "middle" as const },
-      { x: x + 8, y: y - 8, anchor: "start" as const },
-      { x: x - 8, y: y - 8, anchor: "end" as const },
-    ];
-    // A spot must be inside the plot and, where one is free, clear of the cursor's line (which moves with the stop).
-    const inside = (s: (typeof spots)[number]) => {
-      const x0 = s.anchor === "start" ? s.x : s.anchor === "end" ? s.x - w : s.x - w / 2;
-      return x0 >= pl && x0 + w <= pr + 4 && s.y - FONT >= 4 && s.y + 4 <= pb + 24 ? x0 : null;
-    };
-    const clear = (s: (typeof spots)[number]) => {
-      const x0 = inside(s);
-      return x0 !== null && (cursorX0 === null || x0 + w < cursorX0 - 8 || x0 > cursorX0 + 8);
-    };
-    const spot = spots.find(clear) ?? spots.find((s) => inside(s) !== null);
-    return { x, y, text, spot: spot ?? spots[1] };
-  })();
-
-  // ---- the minimum's name, under its line at the left; skipped when it would sit on the lowest point's label (the label rules: never drawn over another)
-  const reserve = (() => {
-    const text = t("biz.picture.reserve", { amount: picture.floor_short });
-    const box = { x0: pl + 4, x1: pl + 4 + textWidth(text, true), y0: yOf(floor) + 17 - FONT, y1: yOf(floor) + 17 + 4 };
-    if (low) {
-      const w = textWidth(low.text, true);
-      const lx0 = low.spot.anchor === "start" ? low.spot.x : low.spot.anchor === "end" ? low.spot.x - w : low.spot.x - w / 2;
-      if (box.x0 < lx0 + w + 4 && box.x1 > lx0 - 4 && box.y0 < low.spot.y + 4 && box.y1 > low.spot.y - FONT) return null;
-    }
-    return { x: box.x0, y: yOf(floor) + 17, text };
-  })();
-
-  // ---- the names at the right-hand end: stacked so they never sit on each other; pressing one picks its path
-  const ends = paths
-    .map((p, i) => ({ p, i, y: segs[i] ? yOf(valueAt(segs[i]!, end - 1)) : null }))
-    .filter((e): e is { p: PicturePath; i: number; y: number } => e.y !== null)
-    .sort((a, b) => a.y - b.y);
-  // Stacked upward from the highest end so they sit above the lines, not across them.
-  const endLabels = ends.map((e, k) => ({ ...e, ly: (ends[0]?.y ?? 0) - 8 - (ends.length - 1 - k) * (FONT + 4) }));
+  // The emphasised line: the path being pointed at, else the picked one. The others dim to 40% while a path is pointed at.
+  const active = hoverKey ?? pick;
+  const dimmed = hoverKey !== null;
+  const order = Array.from({ length: paths.length }, (_, i) => i).sort((a, b) => Number(paths[a].key === active) - Number(paths[b].key === active));
+  const cursorX = moment ? xOf(Math.min(Math.max(moment.day, today), end)) : null;
 
   // ---- the server's y ticks and the foot's day ticks
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -188,35 +158,83 @@ export function PathsPicture({
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
+  const reserveText = t("biz.picture.reserve", { amount: picture.floor_short });
 
-  const cursorX = cursorX0;
-  const ariaLabel = t("biz.deals.paths.alt", { paths: paths.map((p) => (p.band_text ? `${p.label}: ${p.band_text}` : p.label)).join(". ") });
+  // ---- pointing: a mouse shows the tooltip for the day under it; a click or a tap moves the cursor to the nearest moment, never to another day
+  const nearestMoment = (x: number): number => {
+    let best = 0;
+    moments.forEach((m, i) => {
+      if (Math.abs(xOf(Math.min(Math.max(m.day, today), end)) - x) < Math.abs(xOf(Math.min(Math.max(moments[best].day, today), end)) - x)) best = i;
+    });
+    return best;
+  };
+  const localX = (e: React.PointerEvent | React.MouseEvent) => {
+    const box = frame.current?.getBoundingClientRect();
+    return box ? { x: e.clientX - box.left, y: e.clientY - box.top } : { x: 0, y: 0 };
+  };
+  const dayAt = (x: number) => Math.min(Math.max(Math.round(today + ((x - pl) / Math.max(pr - pl, 1)) * last), today), end);
+
+  // The tooltip: the day's word (a moment's own word, else the distance from today) and each path's figure that day, from the series' own strings.
+  const tipDay = tip?.day ?? (focused && moment ? Math.min(Math.max(moment.day, today), end) : null);
+  const tipAt = tip ?? (tipDay !== null ? { x: xOf(tipDay), y: pt + 8, day: tipDay } : null);
+  const tipWord = tipDay === null ? "" : (moments.find((m) => m.day === tipDay)?.word ?? moments.find((m) => m.day === tipDay)?.label ?? whenText(tipDay, today, t));
+  const flip = tipAt ? tipAt.x > W * 0.55 : false;
+
+  const ariaLabel = t("biz.deals.paths.alt", { paths: paths.map((p) => p.label).join(". ") });
+  const chipLabel = (m: PictureMoment) => m.word ?? m.label;
+
+  const onChipKey = (e: React.KeyboardEvent<HTMLElement>, i: number) => {
+    const by = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    if (!by) return;
+    e.preventDefault();
+    const next = (i + by + n) % n;
+    e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
+  };
+
+  const eventRows = moment?.events_text ? paths.map((p) => ({ p, lines: moment.events_text?.[p.key] ?? [] })).filter((r) => r.lines.length > 0) : [];
 
   return (
-    <div className="space-y-3" data-testid="paths-picture" data-pick={picked.key === "asked" ? "asked" : String(pickedIdx)}>
-      {W > 0 && !wide ? (
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-ink-2" data-testid="paths-legend">
-          {paths.map((p) => (
-            <li key={p.key} className="inline-flex items-center gap-1.5">
-              <span aria-hidden className={`h-1 w-4 rounded-sm ${HUE[hueOf(p)].bg}`} />
-              {p.label}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {/* What the picked path does against the asked one (or, for the asked one, against the minimum): the guaranteed place for the server's band words. */}
-      <p className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-bold ${hue.ink}`} data-testid="path-subtitle">
-        <span aria-hidden className={`h-1 w-[18px] shrink-0 rounded-sm ${hue.bg}`} />
-        <span>{picked.label}</span>
-        {picked.band_text ? (
-          <span className="font-semibold" data-testid="path-band-text">
-            {picked.band_text}
-          </span>
-        ) : null}
-      </p>
-      <div ref={frame} className="w-full" style={{ minHeight: H }}>
+    <div className="space-y-2.5" data-testid="paths-picture" data-pick={pick === "asked" ? "asked" : String(Math.max(paths.findIndex((p) => p.key === pick), 0))}>
+      <div
+        ref={frame}
+        role="group"
+        aria-label={ariaLabel}
+        aria-describedby={hintId}
+        tabIndex={0}
+        data-testid="paths-chart"
+        className="relative w-full touch-pan-y rounded-tile"
+        style={{ minHeight: H }}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setOver(true)}
+        onPointerLeave={() => {
+          setOver(false);
+          setTip(null);
+        }}
+        onPointerMove={(e) => {
+          if (e.pointerType !== "mouse") return;
+          const { x, y } = localX(e);
+          setTip({ x, y, day: dayAt(x) });
+        }}
+        onClick={(e) => {
+          if (n) choose(nearestMoment(localX(e).x));
+        }}
+        onFocus={(e) => setFocused(e.currentTarget.matches(":focus-visible"))}
+        onBlur={() => setFocused(false)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === " ") {
+            e.preventDefault();
+            if (n) togglePlay();
+          } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            e.preventDefault();
+            choose(stop + (e.key === "ArrowRight" ? 1 : -1));
+          }
+        }}
+      >
+        <p id={hintId} className="sr-only">
+          {t("biz.deals.paths.keys")}
+        </p>
         {W > 0 ? (
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
+          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden className="picture-fade block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
             {yTicks.map((k) => (
               <g key={`y${k.key}`} data-testid="picture-ytick">
                 <line x1={pl} x2={pr} y1={k.y} y2={k.y} className="stroke-line" strokeWidth={1} opacity={0.7} />
@@ -225,87 +243,58 @@ export function PathsPicture({
                 </text>
               </g>
             ))}
-            <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className="stroke-warn-solid" strokeWidth={1.5} strokeDasharray="6 5" />
-            {reserve ? (
-              <text x={reserve.x} y={reserve.y} className="fill-warn-fg stroke-canvas" fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
-                {reserve.text}
-              </text>
-            ) : null}
+            <line x1={pl} x2={pr} y1={yOf(floor)} y2={yOf(floor)} className="stroke-warn-solid" strokeWidth={1.5} strokeDasharray="6 5" data-testid="paths-reserve" />
+            <text x={pl + 4} y={yOf(floor) + 17} className="fill-warn-fg stroke-canvas" fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+              {reserveText}
+            </text>
 
-            <g key={`band-${picked.key}`} className="picture-fade" style={{ animationDelay: "500ms" }}>
-              {bandD ? <path data-testid="path-band" d={bandD} className={hue.band} /> : null}
-              {bandLabel ? (
-                <text x={bandLabel.x} y={bandLabel.y} textAnchor="middle" className={`${hue.text} stroke-canvas`} fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round" data-testid="path-band-label">
-                  {bandLabel.text}
-                </text>
-              ) : null}
-            </g>
-
-            {paths.map((p, i) =>
-              segs[i] ? <path key={`g${p.key}`} data-testid={`path-ghost-${i}`} d={pathOf(segs[i]!)} fill="none" strokeLinejoin="round" strokeWidth={1.5} opacity={0.32} className={HUE[hueOf(p)].stroke} /> : null,
-            )}
-            {pickedSegs ? (
-              <path
-                key={`line-${picked.key}`}
-                data-testid="path-line"
-                data-key={picked.key}
-                d={pathOf(pickedSegs)}
-                pathLength={1}
-                fill="none"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                strokeWidth={3.5}
-                className={`picture-draw ${hue.stroke}`}
-              />
-            ) : null}
-
-            {cursorX !== null && moment ? (
-              <g data-testid="path-cursor" data-day={moment.day} className="pointer-events-none">
-                <g className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translateX(${cursorX}px)` }}>
+            {cursorX !== null ? (
+              <g data-testid="path-cursor" data-day={moment?.day} className="pointer-events-none">
+                <g className={reduced ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                  <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" data-testid="path-moment-band" />
                   <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                 </g>
+              </g>
+            ) : null}
+
+            {order.map((i) => {
+              const p = paths[i];
+              const s = segs[i];
+              if (!s) return null;
+              const hue = HUE[hueOf(p)];
+              const on = p.key === active;
+              return (
+                <path
+                  key={`l${p.key}`}
+                  data-testid={`path-line-${i}`}
+                  data-key={p.key}
+                  data-active={on ? "true" : "false"}
+                  data-dash={hue.dash ? "dashed" : "solid"}
+                  d={pathOf(s)}
+                  fill="none"
+                  strokeLinejoin="round"
+                  strokeLinecap={hue.dash ? "butt" : "round"}
+                  strokeDasharray={hue.dash}
+                  strokeWidth={hue.width + (on ? 1.5 : 0)}
+                  opacity={on ? 1 : dimmed ? 0.4 : 0.85}
+                  className={`${hue.stroke} ${reduced ? "" : "transition-[opacity,stroke-width] duration-(--dur) ease-out"}`}
+                />
+              );
+            })}
+
+            {cursorX !== null && moment ? (
+              <g className="pointer-events-none">
                 {paths.map((p) => {
                   const v = moment.values.find((x) => x.key === p.key);
                   if (!v) return null;
                   return (
-                    <g key={`c${p.key}`} className="transition-transform duration-(--dur-slow) ease-out" style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
-                      <circle r={5.5} className={`${HUE[hueOf(p)].fill} stroke-surface`} strokeWidth={2} />
+                    <g key={`c${p.key}`} data-testid="path-dot" className={reduced ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translate(${cursorX}px, ${yOf(v.closing_fen)}px)` }}>
+                      <Marker hue={hueOf(p)} />
                     </g>
                   );
                 })}
               </g>
             ) : null}
-
-            {low ? (
-              <g key={`low-${picked.key}`} className="picture-fade" style={{ animationDelay: "700ms" }}>
-                <circle cx={low.x} cy={low.y} r={5} className={`${hue.fill} stroke-surface`} strokeWidth={2} />
-                <text x={low.spot.x} y={low.spot.y} textAnchor={low.spot.anchor} className={`${hue.text} stroke-canvas`} fontWeight={700} strokeWidth={3} paintOrder="stroke" strokeLinejoin="round" data-testid="path-lowest">
-                  {low.text}
-                </text>
-              </g>
-            ) : null}
-
-            {(wide ? endLabels : []).map((e) => (
-              <text
-                key={`n${e.p.key}`}
-                x={pr}
-                y={e.ly}
-                textAnchor="end"
-                className={`${HUE[hueOf(e.p)].text} stroke-canvas cursor-pointer`}
-                fontWeight={e.p.key === picked.key ? 800 : 600}
-                strokeWidth={3}
-                paintOrder="stroke"
-                strokeLinejoin="round"
-                data-testid={`path-name-${e.i}`}
-                onClick={() => onPick(e.p.key)}
-              >
-                {e.p.label}
-              </text>
-            ))}
-
-            {paths.map((p, i) =>
-              segs[i] ? <path key={`h${p.key}`} d={pathOf(segs[i]!)} fill="none" stroke="transparent" strokeWidth={14} pointerEvents="stroke" className="cursor-pointer" onClick={() => onPick(p.key)} /> : null,
-            )}
 
             {ticks.map((d, i) => (
               <text key={d} x={xOf(d)} y={H - 8} textAnchor={i === 0 ? "start" : d === end ? "end" : "middle"} className="fill-ink-3">
@@ -314,9 +303,31 @@ export function PathsPicture({
             ))}
           </svg>
         ) : null}
+        {tipAt && W > 0 ? (
+          <div
+            aria-hidden
+            data-testid="path-tooltip"
+            className="pointer-events-none absolute z-10 w-44 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop"
+            style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
+          >
+            <p className="font-bold text-ink">{tipWord}</p>
+            {paths.map((p) => {
+              const q = p.series?.find((x) => x.day === tipAt.day);
+              return (
+                <p key={p.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
+                  <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
+                    <Swatch hue={hueOf(p)} />
+                    <span className="truncate">{p.label}</span>
+                  </span>
+                  <span className="shrink-0 font-bold text-ink">{q?.closing_display ?? "—"}</span>
+                </p>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
-      {/* The same picture as a table, for a screen reader and anyone who prefers numbers: each stop's cash on every path, in the server's figures. */}
+      {/* The same picture as a table, for a screen reader and anyone who prefers numbers: each moment's cash on every path, in the server's figures. */}
       <div className="sr-only">
         <table data-testid="paths-table">
           <caption>{t("biz.picture.table")}</caption>
@@ -333,7 +344,7 @@ export function PathsPicture({
           <tbody>
             {moments.map((m) => (
               <tr key={m.day}>
-                <th scope="row">{m.label}</th>
+                <th scope="row">{chipLabel(m)}</th>
                 {paths.map((p) => (
                   <td key={p.key}>{m.values.find((v) => v.key === p.key)?.closing_display ?? ""}</td>
                 ))}
@@ -343,52 +354,123 @@ export function PathsPicture({
         </table>
       </div>
 
-      {moments.length ? (
+      {n ? (
         <>
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("biz.deals.paths.step")} data-testid="path-stops">
-            <span className="mr-1 text-sm font-semibold text-ink-2" aria-hidden>
-              {t("biz.deals.paths.step")}
-            </span>
-            {moments.map((m, i) => (
-              <button
-                key={m.day}
-                type="button"
-                aria-pressed={i === stop}
-                data-testid={`path-stop-${i}`}
-                onClick={() => {
-                  onPlaying(false);
-                  onStop(i);
-                }}
-                className={`motion-press inline-flex min-h-10 touch:min-h-11 items-center rounded-pill border px-3.5 text-sm font-bold ${i === stop ? "border-ink bg-ink text-surface" : "border-line-strong bg-surface text-ink hover:bg-subtle"}`}
-              >
-                {m.label}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("biz.deals.paths.moments")} data-testid="path-stops" onPointerLeave={() => setPreview(null)}>
+              {moments.map((m, i) => (
+                <button
+                  key={m.day}
+                  type="button"
+                  aria-pressed={i === stop}
+                  data-testid={`path-stop-${i}`}
+                  onClick={() => choose(i)}
+                  onPointerEnter={(e) => e.pointerType === "mouse" && setPreview(i)}
+                  onFocus={() => setPreview(i)}
+                  onBlur={() => setPreview(null)}
+                  onKeyDown={(e) => onChipKey(e, i)}
+                  className={toggleClass(i === stop)}
+                >
+                  {chipLabel(m)}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+              <button type="button" aria-label={t("biz.deals.paths.prev")} disabled={stop <= 0} onClick={() => choose(stop - 1)} className={buttonClass("secondary", "md", "px-3 touch:min-w-11")} data-testid="path-prev">
+                <svg viewBox="0 0 24 24" aria-hidden className="size-4">
+                  {arrow(-1)}
+                </svg>
               </button>
-            ))}
-            <button
-              type="button"
-              data-testid="path-play"
-              onClick={() => {
-                if (playing) onPlaying(false);
-                else {
-                  onStop(0);
-                  onPlaying(true);
-                }
-              }}
-              className={buttonClass("secondary", "md", "ml-auto")}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden className="size-3.5 fill-current">
-                {playing ? <path d="M6 5h4v14H6zM14 5h4v14h-4z" /> : <path d="M7 4l13 8-13 8z" />}
-              </svg>
-              {playing ? t("biz.deals.paths.stop") : t("biz.deals.paths.play")}
-            </button>
+              <button type="button" aria-label={t("biz.deals.paths.next")} disabled={stop >= n - 1} onClick={() => choose(stop + 1)} className={buttonClass("secondary", "md", "px-3 touch:min-w-11")} data-testid="path-next">
+                <svg viewBox="0 0 24 24" aria-hidden className="size-4">
+                  {arrow(1)}
+                </svg>
+              </button>
+              <button type="button" aria-pressed={playing} data-testid="path-play" data-state={playing ? "playing" : paused ? "paused" : "idle"} onClick={togglePlay} className={toggleClass(playing, "md", "ml-1")}>
+                <svg viewBox="0 0 24 24" aria-hidden className="size-3.5 fill-current">
+                  {playing ? <path d="M6 5h4v14H6zM14 5h4v14h-4z" /> : <path d="M7 4l13 8-13 8z" />}
+                </svg>
+                {playing ? t("biz.deals.paths.pause") : paused ? t("biz.deals.paths.resume") : t("biz.deals.paths.play")}
+              </button>
+              <span className="text-sm font-semibold tabular-nums text-ink-3" data-testid="path-count">
+                {t("biz.deals.paths.count", { n: stop + 1, total: n })}
+              </span>
+              {/* While the pointer is over the picture Play waits: said, so a held cursor is not mistaken for a stuck one. */}
+              {playing && over ? (
+                <span className="text-sm font-semibold text-ink-3" data-testid="path-paused">
+                  {t("biz.deals.paths.waiting")}
+                </span>
+              ) : null}
+            </div>
           </div>
-          <p aria-live="polite" className="text-pretty text-base text-ink" data-testid="path-moment">
-            {moment ? (
-              <>
-                <strong className="font-extrabold">{moment.title}.</strong> {moment.text}
-              </>
-            ) : null}
+
+          {/* The sentence is the moment under the cursor (or the chip being previewed); it is announced once per step by the live region below, never on a preview. */}
+          <p className="min-h-16 text-pretty text-[0.9375rem] font-medium leading-snug text-ink sm:min-h-11" data-testid="path-moment" data-day={moment?.day}>
+            {moment?.text}
           </p>
+          <div aria-live="polite" className="sr-only" data-testid="path-announce">
+            {moments[stop] ? `${chipLabel(moments[stop])}. ${moments[stop].text}` : null}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-3" data-testid="path-tiles">
+            {paths.map((p, i) => {
+              const v = moment?.values.find((x) => x.key === p.key);
+              const tone = toneOf(v);
+              return (
+                <div
+                  key={p.key}
+                  data-testid={`path-tile-${i}`}
+                  data-tone={tone}
+                  data-below={v?.below_floor ? "true" : "false"}
+                  onPointerEnter={(e) => e.pointerType === "mouse" && onHover(p.key)}
+                  onPointerLeave={() => onHover(null)}
+                  className={`min-w-0 rounded-tile border px-2.5 py-2 sm:px-3 ${tone === "bad" ? "border-bad-line bg-bad-bg" : "border-line bg-subtle"}`}
+                >
+                  <p className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
+                    <Swatch hue={hueOf(p)} />
+                    <span className="min-w-0 break-words">{p.label}</span>
+                  </p>
+                  <p className={`mt-1 break-words text-base font-extrabold tabular-nums sm:text-lg ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-tile-figure-${i}`}>
+                    {v ? (v.closing_short ?? v.closing_display) : "—"}
+                  </p>
+                  {p.kind !== "asked" && v?.vs_asked_short ? (
+                    <p className={`text-xs font-semibold ${TONE_INK[v.vs_asked_tone ?? "neutral"]}`} data-testid={`path-tile-vs-${i}`}>
+                      {t("biz.deals.paths.vsAsked", { amount: v.vs_asked_short })}
+                    </p>
+                  ) : null}
+                  {v?.below_floor && v.note ? <p className="text-xs font-bold text-bad-fg">{v.note}</p> : null}
+                  {p.assumption_text ? (
+                    <p className="mt-0.5 text-xs text-ink-3" data-testid={`path-tile-assumption-${i}`}>
+                      {p.assumption_text}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          {eventRows.length ? (
+            <Disclosure testId="path-events" className="text-sm" summary={t("biz.deals.paths.moved")}>
+              <div className="space-y-2 pt-1">
+                {eventRows.map(({ p, lines }) => (
+                  <div key={p.key}>
+                    <p className="flex items-center gap-1.5 text-xs font-bold text-ink-2">
+                      <Swatch hue={hueOf(p)} />
+                      {p.label}
+                    </p>
+                    <ul className="mt-0.5 list-disc space-y-0.5 pl-5 text-sm text-ink">
+                      {lines.map((l) => (
+                        <li key={l}>{l}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Disclosure>
+          ) : (
+            // The slot stays (empty) on a moment where nothing moved, so what is below does not shift while Play steps.
+            <div aria-hidden className="min-h-10" data-testid="path-events-slot" />
+          )}
         </>
       ) : null}
     </div>
