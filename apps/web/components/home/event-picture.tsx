@@ -78,7 +78,14 @@ export interface LateRead {
   startLate?: boolean;
 }
 
-export function EventPicture({ h, lateRead, compact }: { h: HomeView; lateRead?: LateRead; compact?: HomeV2Chart }) {
+/** A deal's scenario on the compact picture: one hypothetical path, dashed in the brand colour, named by the server's label and tagged as hypothetical; and the scope title that says what the picture is of. */
+export interface ChartOverlay {
+  label: string;
+  series: HomeSeriesPoint[];
+  scope: string;
+}
+
+export function EventPicture({ h, lateRead, compact, overlay }: { h: HomeView; lateRead?: LateRead; compact?: HomeV2Chart; overlay?: ChartOverlay | null }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const hintId = useId();
@@ -125,7 +132,8 @@ export function EventPicture({ h, lateRead, compact }: { h: HomeView; lateRead?:
   const mainSeries = v2 ? cash.series : late && stress ? stress.series : planSeries;
   const counterName = v2 ? (v2Planned?.label ?? "") : cash.counterfactual_label || t("biz.forecast.nothing");
   // The buyer's reply as an alternative: drawn only with its series and its label, and never in the late scenario (that line is the stressed plan).
-  const pending = !v2 && !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
+  const hypo = v2 && overlay?.series.length ? overlay : null;
+  const pending = hypo ? ({ series: hypo.series, label: hypo.label } as NonNullable<HomeView["cash"]["pending"]>) : !v2 && !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
   const pendingSeries = pending?.series ?? null;
 
   // ---- the window: the server's picture window, 60 and 120 days; the late scenario widens it to the days the server says it needs
@@ -435,10 +443,15 @@ export function EventPicture({ h, lateRead, compact }: { h: HomeView; lateRead?:
   if (v2) {
     const insp = v2.lowest_inspector;
     return (
-      <div className="space-y-3" data-testid="home-event-picture" data-compact="true" data-window={windowDays} onKeyDown={(e) => inspecting && e.key === "Escape" && closeInspector()}>
+      <div className="space-y-3" data-testid="home-event-picture" data-compact="true" data-window={windowDays} onKeyDown={(e) => {
+          if (inspecting && e.key === "Escape") {
+            e.stopPropagation();
+            closeInspector();
+          }
+        }}>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <h2 id="home-picture-title" className="text-meta font-extrabold tracking-[0.08em] text-ink-3" data-testid="home-chart-scope">
-            {v2.scope_title}
+            {overlay?.scope ?? v2.scope_title}
           </h2>
           {windows.length > 1 ? (
             <SegmentedTabs
@@ -461,6 +474,15 @@ export function EventPicture({ h, lateRead, compact }: { h: HomeView; lateRead?:
               </li>
             );
           })}
+          {hypo ? (
+            <li className="flex items-center gap-2" data-testid="home-legend-hypothetical">
+              <svg width="22" height="8" aria-hidden className="shrink-0">
+                <line x1="1" x2="21" y1="4" y2="4" strokeWidth={2} strokeDasharray="4 3" opacity={0.6} className="stroke-brand-600" />
+              </svg>
+              {hypo.label}
+              <span className="rounded-pill border border-warn-line px-1.5 text-meta font-extrabold tracking-[0.06em] text-warn-fg">{t("hv2.hypothetical")}</span>
+            </li>
+          ) : null}
         </ul>
         <div
           ref={frame}

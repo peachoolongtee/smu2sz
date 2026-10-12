@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePlanRun } from "@/components/business/next-action";
 import type { useFixAlert } from "@/components/home/fix-alert";
-import { ButtonLink, Card, DecisionCard, textLinkClass } from "@/components/ui";
+import { Button, ButtonLink, Card, DecisionCard, textLinkClass } from "@/components/ui";
+import { useI18n } from "@/lib/i18n";
 import type { HomeNextAction, HomeTone, HomeV2Action } from "@/lib/types";
 
 const EYEBROW: Record<HomeTone, string> = { ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg", neutral: "text-ink-3" };
@@ -49,7 +50,29 @@ function PlanControls({ a, run, stateVersion, fixer }: { a: HomeV2Action; run: H
  * button: an action with only a way to look (the options) is a secondary link, and the quiet variant ("nothing needs you from the company side") is an unraised card.
  * The scroll target of the worklist's alert ("Run or compare"): `id="home-v2-action"`.
  */
-export function HomeV2ActionBar({ action, nextAction, stateVersion, fixer }: { action: HomeV2Action; nextAction: HomeNextAction | null; stateVersion: number; fixer: ReturnType<typeof useFixAlert> }) {
+export function HomeV2ActionBar({ action, nextAction, stateVersion, fixer, onBack }: { action: HomeV2Action; nextAction: HomeNextAction | null; stateVersion: number; fixer: ReturnType<typeof useFixAlert>; onBack?: () => void }) {
+  const { t } = useI18n();
+  // While a customer or a decision is selected the company's warning stays on the page, in its quiet variant (an unraised card, no filled button; the selection's own
+  // action, if it has one, is the page's primary) with the way back to the action.
+  if (onBack && action.variant === "ACTION") {
+    return (
+      <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="held" className="outline-none">
+        <Card tone={action.tone === "bad" ? "bad" : action.tone === "warn" ? "warn" : undefined}>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="min-w-0 flex-1 basis-72 space-y-1">
+              <p className={`text-meta font-extrabold tracking-[0.08em] ${EYEBROW[action.tone]}`}>{action.eyebrow}</p>
+              <p className="type-card-title text-pretty text-ink" data-testid="home-action-title">
+                {action.title}
+              </p>
+            </div>
+            <Button onClick={onBack} className="max-sm:w-full" data-testid="home-action-back">
+              {t("hv2.focus.back")}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
   if (action.variant === "QUIET") {
     return (
       <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="quiet" className="outline-none">
