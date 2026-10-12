@@ -167,10 +167,17 @@ def test_envelope_of_buyer_a_on_90_day_terms_is_scanned_to_100_and_the_zone_has_
     assert set(terms) == {"terms_alone", "terms_budget_ignored", "terms_with_price"}
     # every terms lever passes both new steps; the engine finds no wall inside the range, so each ends at its top
     assert all(lv.maximum == 100 and lv.confirmed and lv.wall is None and lv.next_step is None for lv in terms.values())
-    assert {p.package.terms_days for p in a.packages} == {90, 95, 100}
-    assert a.primary == ("You can live with: up to 100-day terms (the most FLOW checks), or early payment at up to 0.10% "
-                         "on ¥5,397,202.57; a rebate up to 1.50%.")
-    assert envelope_answer(facts, "zh").primary.startswith("您能接受的范围：账期最长 100 天（FLOW 检查的上限），或提前付款")
+    # the card holds at most three packages, the verifier's counters first; the other approved packages sit behind "more"
+    assert {p.package.terms_days for p in a.packages} == {90}
+    # 95 and 100 days are approved packages (within the limits, the owner's to approve), not failures
+    behind = [p for p in a.more if p.package.terms_days in (95, 100)]
+    assert {p.package.terms_days for p in behind} == {95, 100}
+    assert all(p.approved and p.passes and not p.binding_codes and p.authority == "needs_owner"
+               and p.authority_words == "within your limits; needs your approval" for p in behind)
+    assert a.primary == ("At today's price: up to 100 days (the most FLOW checks) within your limits. You can live with: "
+                         "early payment of 0.10% on ¥5,397,202.57.")
+    assert envelope_answer(facts, "zh").primary == ("按现价：在您的底线内，账期最长 100 天（FLOW 检查的上限）。"
+                                                    "您能接受的范围：提前付款 0.10%（金额 ¥5,397,202.57）。")
 
 
 def test_the_curve_answers_on_the_bank_line_books_with_the_value_the_engine_gives(api: TestClient) -> None:

@@ -50,11 +50,11 @@ def test_the_envelope_of_buyer_a_in_week_1_says_what_it_said_in_fewer_runs(week_
                            commitments=tuple(rt.store.commitments()))
     a = envelope_answer(facts, "en")
     assert not facts.no_plan and a.refused is None
-    assert a.primary == ("You can live with: up to 100-day terms (the most FLOW checks), or early payment at up to 0.10% "
-                         "on ¥5,397,202.57; a rebate up to 1.50%.")
+    assert a.primary == ("At today's price: up to 100 days (the most FLOW checks) within your limits. You can live with: "
+                         "early payment of 0.10% on ¥5,397,202.57.")
     assert a.reason == "No payment-terms step fails inside the range FLOW checks."
     assert a.money == "Without a deal your current funding plan costs ¥5,631.28."
-    assert (len(a.packages), len(a.zone)) == (6, 15)
+    assert (len(a.packages) + len(a.more), len(a.zone)) == (6, 15)  # the card shows the counters, the rest sit behind "more"
     assert facts.evaluations <= 55, "73 distinct settings were evaluated before the searches were shortened (52 now)"
 
 
