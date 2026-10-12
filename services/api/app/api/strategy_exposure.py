@@ -25,7 +25,7 @@ Cached like the Customer overview (the books, the mandate, the day, the commitme
 store's change marker and the flag). With the flag off it answers 404 with a sentence. When the query carries `customer`, `invoice` or
 `decision` (with `path`) the read also carries `context.back` {label, href}, built after the cache and following the origin: a `decision`
 back to the deal (`/deals?decision=&path=&customer=`), else an `invoice` back to Receivables (`/receivables?invoice=&customer=`), else
-`customer` back to the Customer page (`app.api.exposure_words.origin_back`); a part that names another buyer is ignored.
+`customer` back to the Customer page (`app.api.exposure_words.origin_back`), unless `from=deal|invoice|customer` names the origin; a part that names another buyer is ignored.
 
 The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
 `limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
@@ -202,7 +202,8 @@ def _buyer_block(rt: Runtime, buyer_id: str, lang: Literal["en", "zh"], spare: b
 @router.get("/buyers/{buyer_id}/exposure")
 def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), spare: int = Query(1, ge=0, le=1),
                        customer: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
-                       decision: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120)) -> dict[str, Any]:
+                       decision: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120),
+                       origin: Literal["deal", "invoice", "customer"] | None = Query(None, alias="from")) -> dict[str, Any]:
     if not get_settings().features.exposure:  # this route answers 404 with a sentence, so a page without the feature reads "no exposure"
         raise HTTPException(404, detail={"code": "FEATURE_DISABLED", "feature": "exposure",
                                          "message": t(lang, _MESSAGES["exposure"], "买家风险敞口功能尚未开启（FEATURE_EXPOSURE）。")})
@@ -222,9 +223,9 @@ def get_buyer_exposure(buyer_id: str, lang: Literal["en", "zh"] = Query("en"), s
     if not (customer or invoice or decision):
         return out
     # `context.back`, built from the query after the cache (never cached) and following the origin: the deal, the invoice in Receivables or the
-    # Customer page (`exposure_words.origin_back`). A part that names another buyer's is ignored, never echoed.
+    # Customer page (`exposure_words.origin_back`; `from` = deal | invoice | customer names the origin and decides when the query supports it). A part that names another buyer's is ignored, never echoed.
     with rt.lock:
-        back = origin_back(rt, rt.store.get_state(), lang, buyer_id, customer=customer, invoice=invoice, decision=decision, path=path)
+        back = origin_back(rt, rt.store.get_state(), lang, buyer_id, customer=customer, invoice=invoice, decision=decision, path=path, origin=origin)
     if back is None:
         return out
     return {**out, "context": {"back": back}}

@@ -15,7 +15,7 @@ import { EventPicture, eventPictureReady } from "@/components/home/event-picture
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
 import { ChevronRightIcon } from "@/components/icons";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
-import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding } from "@/lib/api";
+import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding, type ExposureContext } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { lateReadOf, parseStress } from "@/lib/cash-stress";
 import { bump, useDemo } from "@/lib/demo-store";
@@ -97,6 +97,9 @@ export default function CashPage() {
   );
 }
 
+/** The origin a stress link names (`from`): only the three the server knows are passed on; anything else is the link without one. */
+const originOf = (v: string | null): ExposureContext["from"] => (v === "deal" || v === "invoice" || v === "customer" ? v : null);
+
 function Cash() {
   const { t, te, lang } = useI18n();
   const params = useSearchParams();
@@ -115,8 +118,8 @@ function Cash() {
   // the buyer's exposure read draws the stressed line, and its `context.back` is the way back. Without the link, or with the feature off on the
   // server (the read answers null), the parameters are ignored and the page is the ordinary one.
   const link = parseStress(params.get("stress"));
-  const ctx = { customer: params.get("customer"), invoice: params.get("invoice"), decision: params.get("decision"), path: params.get("path") };
-  const stressRead = useAsync(() => (link ? getBuyerExposure(link.buyerId, lang, ctx) : Promise.resolve(null)), [link?.buyerId, lang, ctx.customer, ctx.invoice, ctx.decision, ctx.path]);
+  const ctx = { customer: params.get("customer"), invoice: params.get("invoice"), decision: params.get("decision"), path: params.get("path"), from: originOf(params.get("from")) };
+  const stressRead = useAsync(() => (link ? getBuyerExposure(link.buyerId, lang, ctx) : Promise.resolve(null)), [link?.buyerId, lang, ctx.customer, ctx.invoice, ctx.decision, ctx.path, ctx.from]);
   // The invoice's name is the Receivables read's own sentence for it; a failure of that read only leaves the invoice unnamed.
   const invoiceRead = useAsync(() => (link && ctx.invoice ? getReceivables(lang).catch(() => null) : Promise.resolve(null)), [link?.buyerId, ctx.invoice, lang]);
   useEffect(() => onSignedIn(() => bump()), []);

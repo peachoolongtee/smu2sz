@@ -220,6 +220,8 @@ export interface ExposureContext {
   invoice?: string | null;
   decision?: string | null;
   path?: string | null;
+  /** The page that sent the owner (`deal`, `invoice` or `customer`); the server's back link follows it when the other parts support it. */
+  from?: "deal" | "invoice" | "customer" | null;
 }
 
 /**

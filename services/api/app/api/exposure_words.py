@@ -258,22 +258,26 @@ def customer_back(rt: Any, state: FinancialState, lang: Lang, *, customer: str |
 
 
 def origin_back(rt: Any, state: FinancialState, lang: Lang, buyer_id: str, *, customer: str | None, invoice: str | None, decision: str | None,
-                path: str | None) -> dict[str, str] | None:
-    """Where the Cash page opened from a stress link goes back to, which follows the origin: a deal of this buyer's (`decision`, with its `path`)
-    back to the deal, else an invoice of this buyer's back to Receivables with it selected, else the customer when the query names this buyer
-    back to the Customer page. A part that names another buyer's is ignored, never echoed; None when nothing names this buyer."""
+                path: str | None, origin: str | None = None) -> dict[str, str] | None:
+    """Where the Cash page opened from a stress link goes back to. `origin` (`from` in the query: deal | invoice | customer) says which page sent
+    the owner and decides when it names a target the query supports; without it the query decides: a deal of this buyer's (`decision`, with its
+    `path`) back to the deal, else an invoice of this buyer's back to Receivables with it selected, else the customer when the query names this
+    buyer back to the Customer page. A part that names another buyer's is ignored, never echoed; None when nothing names this buyer."""
     who = buyer_short(party_name(state, buyer_id))
     quoted = quote(buyer_id, safe="")
     offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
     offer = rt.store.get_offer(offer_id) if offer_id else None
+    targets: dict[str, dict[str, str]] = {}
     if decision and offer is not None and offer.counterparty_id == buyer_id:
         tail = f"&path={quote(path, safe='')}" if path and _SAFE.fullmatch(path) else ""
-        return {"label": deal_back_label(lang, who), "href": f"/deals?decision={quote(decision, safe='')}{tail}&customer={quoted}"}
+        targets["deal"] = {"label": deal_back_label(lang, who), "href": f"/deals?decision={quote(decision, safe='')}{tail}&customer={quoted}"}
     if invoice and any(x.id == invoice and x.counterparty_id == buyer_id for x in state.receivables):
-        return {"label": t(lang, "Back to the invoice", "返回发票"), "href": f"/receivables?invoice={quote(invoice, safe='')}&customer={quoted}"}
+        targets["invoice"] = {"label": t(lang, "Back to the invoice", "返回发票"), "href": f"/receivables?invoice={quote(invoice, safe='')}&customer={quoted}"}
     if customer == buyer_id:
-        return {"label": t(lang, f"Back to {who}", f"返回{who}"), "href": f"/customers/{quoted}"}
-    return None
+        targets["customer"] = {"label": t(lang, f"Back to {who}", f"返回{who}"), "href": f"/customers/{quoted}"}
+    if origin in targets:
+        return targets[origin]
+    return next((targets[k] for k in ("deal", "invoice", "customer") if k in targets), None)
 
 
 # ---------------------------------------------------------------- the stress row's net a month later

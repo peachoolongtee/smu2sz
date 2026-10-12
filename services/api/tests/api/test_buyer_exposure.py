@@ -185,6 +185,23 @@ def test_the_back_link_follows_the_origin_and_is_built_after_the_cache(api: Test
     assert {k: v for k, v in _buyer(api, customer="BUYER-1").items() if k not in ("context", "computed_in_seconds")} == {k: v for k, v in plain.items() if k != "computed_in_seconds"}
 
 
+def test_an_explicit_origin_decides_the_back_link(api: TestClient) -> None:
+    """`from` = deal | invoice | customer names the page that sent the owner; without it the query's own rule stands (the test above)."""
+    offer = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
+    everything = {"customer": "BUYER-1", "invoice": "RCV-A", "decision": f"deal:{offer}", "path": "counter:0"}
+    hrefs = {origin: _buyer(api, **everything, **{"from": origin})["context"]["back"]["href"] for origin in ("deal", "invoice", "customer")}
+    assert hrefs == {"deal": f"/deals?decision=deal%3A{offer}&path=counter%3A0&customer=BUYER-1",
+                     "invoice": "/receivables?invoice=RCV-A&customer=BUYER-1", "customer": "/customers/BUYER-1"}
+    # the Customer page's own link carries an invoice and says it is the customer: back to the customer, not Receivables
+    assert _buyer(api, "zh", customer="BUYER-1", invoice="RCV-A", **{"from": "customer"})["context"]["back"] == {"label": "返回Foshan", "href": "/customers/BUYER-1"}
+    # no `from`: the decision, then the invoice, then the customer
+    assert _buyer(api, **everything)["context"]["back"]["href"].startswith("/deals?")
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-A")["context"]["back"]["href"].startswith("/receivables?")
+    # an origin the query cannot support falls back to the rule; one that is not an origin is refused
+    assert _buyer(api, customer="BUYER-1", **{"from": "deal"})["context"]["back"]["href"] == "/customers/BUYER-1"
+    assert api.get("/buyers/BUYER-1/exposure", params={"from": "home"}).status_code == 422
+
+
 # ---------------------------------------------------------------- GET /receivables: the words the page dashed out
 
 

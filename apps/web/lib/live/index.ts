@@ -167,7 +167,7 @@ export const live = {
   /** GET /buyers/{id}/exposure (flag `exposure`). Null when the feature is off (404) or the buyer is unknown. The context (customer, invoice, decision, path) asks for `context.back`. */
   getBuyerExposure: (buyerId: string, lang: "en" | "zh", context: ExposureContext = {}) => {
     const q = new URLSearchParams({ lang, spare: "0" });
-    for (const k of ["customer", "invoice", "decision", "path"] as const) if (context[k]) q.set(k, context[k]);
+    for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (context[k]) q.set(k, context[k]);
     return nullWhenOff(() => http<BuyerExposureView>("GET", `/buyers/${enc(buyerId)}/exposure?${q.toString()}`));
   },
   /** GET /receivables/worth (flag `collections_worth`). Null when the feature is off or absent. */

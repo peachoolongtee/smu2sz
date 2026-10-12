@@ -86,6 +86,19 @@ for (const [origin, { query, back: b }] of Object.entries(ORIGINS)) {
   });
 }
 
+// The explicit origin (`from=deal|invoice|customer`) decides the server's back link; the page only passes it on, so the recorded read is patched as above.
+test("the origin in the address is passed on: the Customer page's link (with an invoice) returns to the customer", async ({ page }) => {
+  const customerBack = ORIGINS.customer.back;
+  await open(page, "stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer", { exposure: back(customerBack) });
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  await expect(page.getByTestId("cash-stress-back")).toHaveAttribute("href", customerBack.href);
+  await expect(page.getByTestId("cash-stress-invoice")).toBeVisible(); // the invoice is still named
+  // An origin the server does not know is not passed on (the read would be refused): the page is the same.
+  await page.goto("/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=home");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-scenario", "late");
+  await expect(page.getByTestId("cash-stress-failed")).toHaveCount(0);
+});
+
 test("the invoice is named from the link, in the server's words for it", async ({ page }) => {
   await open(page, ORIGINS.receivables.query, { exposure: back(ORIGINS.receivables.back) });
   await expect(page.getByTestId("cash-stress-invoice")).toHaveText(`About ${row.invoice}: what happens to your cash if the buyer pays late.`);
