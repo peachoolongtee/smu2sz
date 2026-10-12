@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
 import { ActiveCommitments } from "@/components/deals/commitments";
@@ -9,20 +10,24 @@ import { isAgreed } from "@/components/deals/deal-summary";
 import { contractsOff } from "@/components/documents";
 import { DealHeading } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
+import { contextQuery, exposureFor, firstOpenInvoice, openTab, queueRows, stressHref, type QueueTab } from "@/components/deals/queue/model";
+import { QueueAside } from "@/components/deals/queue/queue-aside";
+import { QueueDetail } from "@/components/deals/queue/queue-detail";
+import { QueueBody, QueueHead } from "@/components/deals/queue/queue";
 import { PathsBody, PathsReply, usePathsState } from "@/components/deals/paths-section";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
-import { STRATEGY_MVP } from "@/lib/config";
+import { DEALS_QUEUE, STRATEGY_MVP } from "@/lib/config";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { dealRecordId, getClock, getDeals, getLedger, getOfferPicture, getState, submitOffer } from "@/lib/api";
+import { dealRecordId, getClock, getDeals, getLedger, getOfferExposure, getOfferPicture, getState, submitOffer } from "@/lib/api";
 import { recordOffer, selectOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage } from "@/lib/inbox";
 import { useMode } from "@/lib/mode";
 import { offerItems } from "@/lib/offer-items";
-import type { OfferPictureView, VerdictView } from "@/lib/types";
-import { useAsync } from "@/lib/use-async";
+import type { ExposureView, OfferPictureView, VerdictView } from "@/lib/types";
+import { useAsync, useQueueAsync } from "@/lib/use-async";
 import { useNarrow } from "@/lib/use-narrow";
 import { useCurrentOffer } from "@/lib/use-current";
 import { useDecision, useDecisions } from "@/lib/use-decision";
@@ -38,7 +43,17 @@ import { Disclosure } from "@/components/business/kit";
  * Buyer terms appear once. Every figure and sentence is the server's; days are distances from today; the page decides nothing.
  */
 export default function DealsPage() {
+  return (
+    <Suspense fallback={<LoadingBlock rows={3} />}>
+      <Deals />
+    </Suspense>
+  );
+}
+
+function Deals() {
   const { t, te, lang } = useI18n();
+  const router = useRouter();
+  const params = useSearchParams();
   const mode = useMode();
   // On a phone, once a deal is open the page's own subtitle gives way to the deal: the answer comes up the screen.
   const narrow = useNarrow();
@@ -185,6 +200,64 @@ export default function DealsPage() {
     STRATEGY_MVP ? compareOpen : undefined,
     STRATEGY_MVP && offer ? (on: boolean) => setCompareFor(on ? offer.offer.offer_id : null) : undefined,
   );
+
+  // ---- The decision queue (build flag DEALS_QUEUE plus the exposure read): the same reads, laid out as four tabs, a list, one selected deal and its aside.
+  // The exposure read is asked for as soon as an offer is open (it needs no verdict); without the flag nothing is read and the page below is the page as it was.
+  // `undefined` is "on its way", null "the server has no exposure read": the page then keeps its current form. Once the queue has shown it stays for the visit.
+  const exposureRead = useQueueAsync(
+    async () => ({ offerId: pictureOfferId, view: pictureOfferId && open ? await getOfferExposure(pictureOfferId, lang).catch(() => null) : null }),
+    [pictureOfferId, Boolean(open), v?.id, v?.state_version, lang],
+  );
+  const exposureNow: ExposureView | null | undefined = !pictureOfferId || !open ? null : exposureRead.data?.offerId === pictureOfferId ? exposureRead.data.view : undefined;
+  const [queueSeen, setQueueSeen] = useState(false);
+  if (exposureNow && !queueSeen) setQueueSeen(true);
+  const queueOn = DEALS_QUEUE && (queueSeen || Boolean(exposureNow));
+  const queuePending = DEALS_QUEUE && !queueOn && Boolean(open) && exposureNow === undefined && !exposureRead.error;
+  // The context in the address and nowhere else: `customer`, `decision` (the deal's record), `path` (the picked path), and the `tab`. The address leads: a path or a
+  // decision it names is picked when it arrives (a back link, a reload); a pick or a selection the owner makes is written to it. The address is only filled in where it is silent.
+  const setQuery = (set: Record<string, string | null>) => {
+    const q = new URLSearchParams(window.location.search);
+    let changed = false;
+    for (const [k, val] of Object.entries(set)) {
+      if (val && q.get(k) !== val) {
+        q.set(k, val);
+        changed = true;
+      } else if (!val && q.has(k)) {
+        q.delete(k);
+        changed = true;
+      }
+    }
+    if (changed) router.replace(`/deals?${q.toString()}`, { scroll: false });
+  };
+  const pathParam = params.get("path");
+  useEffect(() => {
+    if (pathParam && pathsState.picked?.key !== pathParam && pathsState.paths.some((p) => p.key === pathParam)) pathsState.onPick(pathParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- follows the address (a back link, a reload) and the arrival of the paths
+  }, [pathParam, pathsState.paths]);
+  const decisionParam = params.get("decision");
+  useEffect(() => {
+    const id = decisionParam?.startsWith("deal:") ? decisionParam.slice(5) : null;
+    if (id && id !== cur.offerId && demo.offers[id]) selectOffer(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- follows the address (a back link), not the store
+  }, [decisionParam]);
+  const customerNow = offer?.offer.counterparty_id ?? null;
+  const decisionNow = offer && open ? dealRecordId(offer.offer.offer_id) : null;
+  const pickNow = pathsState.picked?.key ?? null;
+  useEffect(() => {
+    if (queueOn) setQuery({ customer: customerNow, decision: decisionNow });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- written when the selected deal changes
+  }, [queueOn, customerNow, decisionNow]);
+  useEffect(() => {
+    if (queueOn && !pathParam && pickNow) setQuery({ path: pickNow });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fills the silent address once the paths are known
+  }, [queueOn, pathParam, pickNow]);
+  const queuePaths: typeof pathsState = {
+    ...pathsState,
+    onPick: (key) => {
+      pathsState.onPick(key);
+      setQuery({ path: key });
+    },
+  };
 
   // Once both parties have agreed, each buyer's deal summary (the confirmed contract beside the books) sits inside that buyer's agreement: one section, not two.
   const commitments = (
@@ -340,6 +413,81 @@ export default function DealsPage() {
   // matters (folded), the strategy block, the agreements, the folds. The server's `workspace.order` no longer decides it: the heading is the recommendation.
   const order = ["heading", "next", "priced_response", "paths", "buyer", "folds", "buyer_asks", "why", "before", "original", "agreements", "advanced"];
   const errorNode = error ? <ErrorState key="error" error={error} /> : null;
+
+  if (queuePending) return <LoadingBlock rows={3} />;
+  if (queueOn) {
+    const rows = queueRows(dealsView.data?.deals ?? []);
+    const tab: QueueTab = openTab(params.get("tab"), rows);
+    const selectedId = offer && open ? offer.offer.offer_id : null;
+    const exposure = exposureFor(exposureNow, selectedId);
+    const pick = pathsState.picked?.key ?? null;
+    const ctx = offer ? contextQuery({ customer: offer.offer.counterparty_id, decision: selectedId ? dealRecordId(selectedId) : null, path: pick }) : "";
+    const customerHref = offer ? `/customers/${encodeURIComponent(offer.offer.counterparty_id)}?${ctx}` : "#";
+    const onTab = (k: QueueTab) => {
+      const q = new URLSearchParams(window.location.search);
+      q.set("tab", k);
+      router.replace(`/deals?${q.toString()}`, { scroll: false });
+    };
+    const recommendFor = (o: NonNullable<typeof open>): string | null => {
+      if (o.offer_id === selectedId && v) {
+        const reply = pathsState.paths.find((p) => p.kind === "reply" && p.recommended);
+        return ws?.recommends.action === "counter" && reply ? t("dq.rec.counter", { label: reply.label }) : (ws?.recommends.text ?? o.headline_short ?? null);
+      }
+      return o.headline_short ?? null;
+    };
+    // A deal that has an outcome has no open request: the queue keeps its tabs and list, and the deal's own parts (where it stands, the answer, the agreements) take the detail's place.
+    const outcome = offer && !open && ready ? ["heading", "buyer", "next", "priced_response", "original", "agreements"].map((k) => dealParts[k] ?? null) : null;
+    return (
+      <>
+        <PageHeader section="deals" title={t("nav.deals")} subtitle={narrow && offer ? undefined : rows.some((r) => r.tab === "needs") ? t("dq.sub.needs") : t("dq.sub.none")} />
+        <div className="space-y-4">
+          {!offer ? inbox : null}
+          {errorNode}
+          {dealsError ? <ErrorState error={dealsError} onRetry={dealsView.reload} /> : null}
+          <QueueHead deals={dealsView.data?.deals ?? []} tab={tab} onTab={onTab} selectedOfferId={selectedId} onSelect={(id) => demo.offers[id] && selectOffer(id)} pick={pick} recommendFor={recommendFor} />
+          {cur.error || clock.error ? (
+            <ErrorState
+              error={(cur.error ?? clock.error)!}
+              onRetry={() => {
+                cur.reload();
+                clock.reload();
+              }}
+            />
+          ) : cur.loading || !clock.data || (offer && dealsView.loading && !dealsView.data) ? (
+            <LoadingBlock rows={3} />
+          ) : offer && open && exposure ? (
+            <QueueBody
+              offerKey={offer.offer.offer_id}
+              detail={
+                <QueueDetail
+                  deal={dealRow!}
+                  open={open}
+                  offer={offer}
+                  verdict={v}
+                  negotiation={cur.negotiation}
+                  exposure={exposure}
+                  picture={picture}
+                  paths={queuePaths}
+                  today={today}
+                  mode={mode}
+                  customerHref={customerHref}
+                  items={items}
+                  asks={asks}
+                  busy={busy}
+                  error={error}
+                  onCheck={() => void evaluate()}
+                />
+              }
+              aside={<QueueAside exposure={exposure} customerHref={customerHref} stressHref={stressHref(exposure.buyer_id, exposure.stress.delay_days, dealRow ? firstOpenInvoice(dealRow) : null, ctx)} pathLabel={pathsState.picked?.label ?? ""} />}
+            />
+          ) : outcome ? (
+            <div className="space-y-6">{outcome}</div>
+          ) : null}
+          {!offer ? commitments : null}
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

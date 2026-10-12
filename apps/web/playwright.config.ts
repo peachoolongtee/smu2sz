@@ -34,6 +34,10 @@ const strategy = process.env.E2E_STRATEGY === "1";
 const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
 const strategyApi: Record<string, string> = strategy ? { FEATURE_ENVELOPE: "1", FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
 
+// The Deals decision queue is a build-time flag on the web app (NEXT_PUBLIC_DEALS_QUEUE=1, its own dist dir): E2E_QUEUE=1 builds that app so e2e/deals-queue.spec.ts sees it.
+const queue = process.env.E2E_QUEUE === "1";
+const queueWeb: Record<string, string> = queue ? { NEXT_PUBLIC_DEALS_QUEUE: "1" } : {};
+
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
 
 export default defineConfig({
@@ -56,7 +60,7 @@ export default defineConfig({
           },
           {
             name: "phone",
-            testMatch: /(responsive|screenshots|strategy|a11y)\.spec\.ts/,
+            testMatch: /(responsive|screenshots|strategy|a11y|deals-queue)\.spec\.ts/,
             use: { ...devices["Pixel 7"], baseURL: `http://localhost:${MOCK_PORT}` },
           },
         ]
@@ -83,8 +87,9 @@ export default defineConfig({
             env: {
               NEXT_PUBLIC_API_MODE: "mock",
               NEXT_PUBLIC_MOCK_LATENCY_MS: "10",
-              NEXT_DIST_DIR: strategy ? ".next-e2e-mock-strategy" : ".next-e2e-mock",
+              NEXT_DIST_DIR: queue ? ".next-e2e-mock-queue" : strategy ? ".next-e2e-mock-strategy" : ".next-e2e-mock",
               ...strategyWeb,
+              ...queueWeb,
             },
           },
         ]

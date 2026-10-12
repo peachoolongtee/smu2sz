@@ -1,0 +1,243 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import AxeBuilder from "@axe-core/playwright";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import { filledBrand, resetBooks } from "./helpers";
+
+/**
+ * Deals as a decision queue (ticket #109): four count tiles as tabs over one list, the selected deal beside its aside, the cash on each path
+ * with the exposure band, and the comparison behind one fold. Every sentence and figure is the server's (the recorded deals read, the offer picture
+ * and the exposure read); the spec reads them from the recordings and compares what the page says.
+ *
+ * Gated like strategy.spec.ts: the queue exists only in a build with NEXT_PUBLIC_DEALS_QUEUE=1 and a server that has the exposure read, so it runs
+ * only with E2E_QUEUE=1. Run (mock): E2E_QUEUE=1 E2E_PORT=3193 E2E_TARGET=mock pnpm exec playwright test e2e/deals-queue.spec.ts
+ */
+test.skip(process.env.E2E_QUEUE !== "1", "set E2E_QUEUE=1 (the build flag NEXT_PUBLIC_DEALS_QUEUE=1)");
+
+const rec = (name: string) => JSON.parse(readFileSync(join(process.cwd(), "mocks", name), "utf8"));
+const deals = rec("deals_day0_evaluated.json");
+const open = deals.deals.find((d: { open_offer: unknown }) => d.open_offer).open_offer as { offer_id: string; headline_short: string; asks_text: string; cost_display: string };
+const exposureEn = rec("offer_exposure_ex01.json").en;
+const exposureZh = rec("offer_exposure_ex01.json").zh;
+const pictureEn = rec("offer_picture_ex01.json").en;
+const reply = pictureEn.paths.find((p: { recommended: boolean }) => p.recommended);
+const asked = pictureEn.paths.find((p: { kind: string }) => p.kind === "asked");
+
+test.beforeEach(async ({ request }) => {
+  await resetBooks(request);
+});
+
+/** The owner reads the EX01 message in the inbox and has FLOW check it; the queue appears once the offer is open and its exposure read arrives. */
+async function openQueue(page: Page) {
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+}
+
+test("four tabs filter the list: the owner's reply first, the others by what they hold", async ({ page }) => {
+  await openQueue(page);
+  const counts = async () => Promise.all(["needs", "wait", "agreed", "setup"].map((k) => page.getByTestId(`queue-count-${k}`).innerText()));
+  expect(await counts()).toEqual(["1", "0", "1", "1"]);
+  await expect(page.getByTestId("queue-tab-needs")).toHaveAttribute("aria-selected", "true");
+  const rows = page.getByTestId("queue-row");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("Foshan Home Retail Co.");
+  await expect(rows.first()).toContainText(open.cost_display);
+  await expect(rows.first()).toContainText("Counter with Option A");
+  await expect(rows.first()).toHaveAttribute("aria-current", "true");
+
+  await page.getByTestId("queue-tab-wait").click();
+  await expect(page.getByTestId("queue-tab-wait")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("queue-empty")).toHaveText("No reply is out with a buyer right now.");
+  await expect(page).toHaveURL(/tab=wait/);
+
+  await page.getByTestId("queue-tab-agreed").click();
+  await expect(rows).toHaveCount(1);
+  // The terms in force (the contract reference, the days, the rebate), never the pending counter's figures.
+  await expect(rows.first()).toContainText("FHR-2026-07");
+  await expect(rows.first()).toContainText("Payment terms: 45 days");
+  await expect(rows.first()).not.toContainText("0.85%");
+
+  await page.getByTestId("queue-tab-setup").click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("Dongguan Office Supplies Ltd.");
+  await expect(rows.first()).toContainText("No contract on file yet");
+  // The detail stays: the queue and the selected deal are kept across tabs.
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+
+  // The keyboard moves between the tiles.
+  await page.getByTestId("queue-tab-setup").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("queue-tab-needs")).toHaveAttribute("aria-selected", "true");
+});
+
+test("selecting a deal replaces the detail in place and keeps ?decision=; the heading is the server's; one filled primary", async ({ page }) => {
+  await openQueue(page);
+  await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
+  await expect(page).toHaveURL(/customer=BUYER-1/);
+  await page.getByTestId("queue-select").click();
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page).toHaveURL(new RegExp(`decision=deal(%3A|:)${open.offer_id}`));
+  await expect(page.getByTestId("queue-announce")).toContainText(open.headline_short);
+  await expect(page.getByTestId("queue-ask")).toContainText(open.asks_text);
+  // WHY COUNTER?: the server's reasons, two short sentences.
+  await expect(page.getByTestId("queue-why")).toContainText("Why counter?");
+  await expect(page.getByTestId("queue-why").locator("p")).toHaveCount(3);
+  // The blue card: the option, the one-off cost if the buyer accepts, who decides, and the one filled primary.
+  await expect(page.getByTestId("queue-option")).toHaveText(reply.reply_text);
+  await expect(page.getByTestId("queue-cost")).toHaveText(`Estimated one-off cost ${reply.cost_once_display}, if Foshan accepts.`);
+  await expect(page.getByTestId("queue-authority")).toContainText(reply.authority_text);
+  await expect(page.getByTestId("queue-review-open")).toHaveText("Review and send the counter");
+  expect(await filledBrand(page)).toBe(1);
+  // Opening the review replaces the button with the existing send: still one filled primary, the bound option and the server's lines.
+  await page.getByTestId("queue-review-open").click();
+  await expect(page.getByTestId("deal-send-scope")).toBeVisible();
+  await expect(page.getByTestId("deal-send")).toBeVisible();
+  expect(await filledBrand(page)).toBe(1);
+  await page.getByTestId("queue-review-close").click();
+  await expect(page.getByTestId("queue-review-open")).toBeVisible();
+});
+
+test("the cash on each path is always visible under the card, with the exposure band and the paid-late line", async ({ page }) => {
+  await openQueue(page);
+  const detail = page.getByTestId("queue-detail");
+  await expect(detail.getByTestId("deal-paths")).toBeVisible();
+  await expect(detail.getByTestId("deal-paths")).toContainText("Cash on each path");
+  await expect(page.getByTestId("paths-chart")).toBeVisible();
+  // Order: the card, the chart, then the comparison fold.
+  const y = async (id: string) => (await page.getByTestId(id).boundingBox())!.y;
+  expect(await y("queue-recommends")).toBeLessThan(await y("deal-paths"));
+  expect(await y("deal-paths")).toBeLessThan(await y("queue-compare"));
+  // The band: the server's three sentences for the picked path.
+  const band = page.getByTestId("exposure-band");
+  await expect(band).toContainText(exposureEn.band.concentration);
+  await expect(band).toContainText(exposureEn.band.by_path[reply.key].stress);
+  await expect(band).toContainText(exposureEn.band.by_path[reply.key].capacity);
+  // Picking the asked path moves the band's late-payment and capacity sentences with it.
+  await page.getByTestId("path-col-0").getByRole("radio").click();
+  await expect(band).toContainText(exposureEn.band.by_path.asked.stress);
+  await expect(band).toContainText(exposureEn.band.by_path.asked.capacity);
+  // The paid-late toggle adds one dashed line and never changes the pick.
+  await expect(page.getByTestId("stress-line")).toHaveCount(0);
+  await page.getByTestId("stress-toggle").click();
+  await expect(page.getByTestId("stress-toggle")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("stress-line")).toHaveCount(1);
+  await expect(page.getByTestId("paths-picture")).toHaveAttribute("data-pick", "asked");
+  await page.getByTestId("stress-toggle").click();
+  await expect(page.getByTestId("stress-line")).toHaveCount(0);
+});
+
+test("the comparison is closed by default; open it for seven rows with the server's strings", async ({ page }) => {
+  await openQueue(page);
+  const fold = page.getByTestId("queue-compare");
+  await expect(fold).not.toHaveAttribute("open", "");
+  await expect(page.getByTestId("queue-impact")).toBeHidden();
+  await fold.locator("> summary").click();
+  const table = page.getByTestId("queue-impact");
+  await expect(table.locator("tbody tr")).toHaveCount(7);
+  await expect(page.getByTestId("queue-impact-once")).toContainText(asked.cost_once_display);
+  await expect(page.getByTestId("queue-impact-once")).toContainText(reply.cost_once_display);
+  await expect(page.getByTestId("queue-impact-forward")).toContainText(asked.cost_forward_display);
+  await expect(page.getByTestId("queue-impact-lowest")).toContainText(asked.lowest_short);
+  await expect(page.getByTestId("queue-impact-spare")).toContainText(exposureEn.capacity.asked.spare.today_display);
+  await expect(page.getByTestId("queue-impact-spare")).toContainText(exposureEn.capacity[reply.key].spare.x_star_display);
+  await expect(page.getByTestId("queue-impact-limit")).toContainText(asked.authority_text);
+  await expect(page.getByTestId("queue-impact-share")).toContainText(exposureEn.concentration.ar_share_display);
+  await expect(table.locator("thead")).toContainText("Do nothing");
+  await expect(table.locator("thead")).toContainText("If Foshan accepts Option A");
+});
+
+test("the customer links carry customer, decision and path; the stress link carries stress and invoice; the aside has three facts", async ({ page }) => {
+  await openQueue(page);
+  for (const id of ["queue-customer", "queue-detail-customer", "aside-profile"]) {
+    const href = (await page.getByTestId(id).first().getAttribute("href"))!;
+    expect(href, id).toContain("/customers/BUYER-1?");
+    const q = new URL(href, "http://x").searchParams;
+    expect(q.get("customer"), id).toBe("BUYER-1");
+    expect(q.get("decision"), id).toBe(`deal:${open.offer_id}`);
+    expect(q.get("path"), id).toBe(reply.key);
+  }
+  const stress = new URL((await page.getByTestId("aside-stress").getAttribute("href"))!, "http://x");
+  expect(stress.pathname).toBe("/cash");
+  expect(stress.searchParams.get("stress")).toBe("BUYER-1:30");
+  expect(stress.searchParams.get("invoice")).toBe("RCV-A");
+  const aside = page.getByTestId("queue-aside");
+  await expect(aside.locator("dt")).toHaveCount(2); // the contribution waits on the economics read; owes now and the share are the exposure read's
+  await expect(page.getByTestId("aside-owes")).toHaveText(exposureEn.concentration.ar_buyer_display);
+  await expect(page.getByTestId("aside-share")).toHaveText(exposureEn.concentration.ar_share_display);
+  await expect(aside).toContainText("Context, not a promise");
+  // The picked path travels with the links.
+  await page.getByTestId("path-col-0").getByRole("radio").click();
+  expect(new URL((await page.getByTestId("aside-profile").getAttribute("href"))!, "http://x").searchParams.get("path")).toBe("asked");
+});
+
+test("the address restores the selection: a back link with customer, decision and path opens the same deal on the same path", async ({ page }) => {
+  await openQueue(page);
+  await page.getByTestId("path-col-0").getByRole("radio").click();
+  await expect(page).toHaveURL(/path=asked/);
+  await page.getByTestId("aside-profile").click(); // /customers/BUYER-1 does not exist on this branch; the link is the contract
+  await page.waitForURL(/\/customers\/BUYER-1\?/);
+  expect(page.url()).toContain("path=asked");
+  await page.goBack();
+  await expect(page.getByTestId("queue-heading")).toHaveText(open.headline_short);
+  await expect(page.getByTestId("paths-picture")).toHaveAttribute("data-pick", "asked");
+  await expect(page).toHaveURL(/path=asked/);
+});
+
+test("reduced motion: nothing transitions in the queue", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openQueue(page);
+  const moving = await page.evaluate(() =>
+    [...document.querySelectorAll("[data-testid=queue-body], [data-testid=queue-body] *, [data-testid=queue-tabs] *, [data-testid=queue-row]")].filter((el) => {
+      const s = getComputedStyle(el);
+      return s.transitionDuration.split(",").some((d) => parseFloat(d) > 0.001) && s.transitionProperty !== "none" && s.transitionProperty !== "";
+    }).length,
+  );
+  expect(moving).toBe(0);
+});
+
+test("Chinese: the same page in the owner's voice, with the same figures", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-tab-needs")).toContainText("需要您回复");
+  await expect(page.getByTestId("queue-heading")).not.toHaveText(open.headline_short);
+  await expect(page.getByTestId("queue-why")).toContainText("为什么还价？");
+  await expect(page.getByTestId("exposure-band")).toContainText(exposureZh.band.concentration);
+  await expect(page.getByTestId("queue-review-open")).toHaveText("查看并发送还价");
+  await expect(page.getByTestId("aside-owes")).toHaveText(exposureZh.concentration.ar_buyer_display);
+  expect(await page.locator("main").innerText()).not.toMatch(/\bday \d/i);
+});
+
+test("a phone: tiles scroll sideways, the primary is in the first screens, nothing overflows", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openQueue(page);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId("queue-tab-needs")).toBeVisible();
+  // Order on a phone: the list, the heading, the ask, why, the card with its button, the chart, the fold, then the aside.
+  const ys = [];
+  for (const id of ["queue-list", "queue-heading", "queue-why", "queue-recommends", "deal-paths", "queue-compare", "queue-aside"]) ys.push((await page.getByTestId(id).boundingBox())!.y);
+  expect([...ys].sort((a, b) => a - b)).toEqual(ys);
+  const row = await page.getByTestId("queue-row").first().boundingBox();
+  expect(row!.height).toBeLessThan(120); // two lines per row
+  await expect(page.getByTestId("queue-review-open")).toBeVisible();
+  const box = (await page.getByTestId("queue-review-open").boundingBox())!;
+  console.log("review button bottom", box.y + box.height);
+  expect(box.y + box.height).toBeLessThanOrEqual(844);
+});
+
+test("axe finds nothing serious or critical on the queue, with the comparison and the review open, at either width", async ({ page }) => {
+  await openQueue(page);
+  await page.getByTestId("queue-compare").locator("> summary").click();
+  await page.getByTestId("queue-review-open").click();
+  const result = await new AxeBuilder({ page }).analyze();
+  const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  expect(result.passes.length).toBeGreaterThan(10);
+  expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});

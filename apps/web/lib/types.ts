@@ -864,6 +864,8 @@ export interface DealWorkspace {
     send_scope: string;
     /** What sending does, one line each (the agreement it records, the funding it draws or requests, the estimated cost); absent when there is no counter or in older recordings. */
     send_scope_lines?: string[] | null;
+    /** One sentence on what the send re-checks (the books are read again; if they moved, the new figures are shown first). Not sent yet: the queue shows it only when present. */
+    recheck_text?: string | null;
     supplier_cost_display: string;
     forward_value_display: string;
     verdict_id: string;
@@ -3172,4 +3174,93 @@ export interface PictureMoment {
   word?: string | null;
   /** What moved cash that day, in words with their amounts, per path key, in the server's path order. Absent when the server has none. */
   events_text?: Record<string, string[]> | null;
+}
+
+// ------------------------------------------------------------------ buyer exposure (flag `exposure`; GET /offers/{offer_id}/exposure)
+
+/** One day of a stressed cash line (the home point shape, display strings included). */
+export interface ExposureStressPoint {
+  day: Day;
+  closing_fen: Fen;
+  closing_display: string;
+}
+
+/** The late-payment test for one path: the server's sentence, the lowest point and the series that draws it. Every word is the server's. */
+export interface ExposureStress {
+  delay_days: number;
+  lowest_fen: Fen | null;
+  lowest_day: Day | null;
+  breach_days: number | null;
+  available: boolean;
+  unavailable_text: string | null;
+  lowest_short?: string | null;
+  lowest_when?: string | null;
+  first_breach_when?: string | null;
+  text?: string;
+  funding_text?: string;
+  assumption?: string;
+  series?: ExposureStressPoint[];
+}
+
+/** One capacity window (a facility's or a limit's room before and after), with the server's words. */
+export interface ExposureWindow {
+  dimension: string;
+  label: string;
+  today_text: string | null;
+  after_text: string | null;
+  lowest_text: string | null;
+  recovers_when: string | null;
+  recovery_assumed_text: string | null;
+  facility_name: string | null;
+  reading_text: string | null;
+}
+
+/** What a path leaves of the room for another payment, FLOW alone: the figure and its words. */
+export interface ExposureSpare {
+  x_star_fen: Fen;
+  figure_short: string;
+  today_short: string;
+  x_star_display: string;
+  today_display: string;
+  shape_text: string;
+  binding_text: string | null;
+}
+
+export interface ExposureCapacity {
+  available: boolean;
+  unavailable_text: string | null;
+  before: { windows: ExposureWindow[] };
+  after: { windows: ExposureWindow[] };
+  spare: ExposureSpare | null;
+}
+
+/** GET /offers/{offer_id}/exposure?lang=: what the deal does to the exposure to one buyer, for every path of the offer at once. Read-only context, never a verdict. */
+export interface ExposureView {
+  offer_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  response: string;
+  lang: "en" | "zh";
+  buyer: { id: string; name: string };
+  /** The offer's paths in the server's order; `key` is "asked" or a counter's id (the keys of the offer picture's paths). */
+  paths: { key: string; kind: "asked" | "reply"; label: string }[];
+  concentration: {
+    buyer_name: string;
+    ar_buyer_display: string;
+    ar_total_display: string;
+    ar_share_display: string;
+    ar_text: string;
+    receipts_text: string;
+    sentence: string;
+  };
+  payments: { sentence: string; insufficient: boolean };
+  payments_note: string | null;
+  stress: { delay_days: number; now: ExposureStress; paths: Record<string, ExposureStress> };
+  capacity: Record<string, ExposureCapacity>;
+  /** Contribution, set only with the economics flag (phase 2); absent or null otherwise. */
+  economics?: { annual_text?: string | null; contribution_display?: string | null; estimated?: boolean; sentence?: string | null; context_text?: string | null } | null;
+  flag: { material: boolean; text: string };
+  /** The band's sentences: the concentration, then the stress and the capacity for the leading path and for every path. */
+  band: { concentration: string; stress: string; capacity: string | null; by_path: Record<string, { stress: string; capacity: string | null }> };
+  day: Day;
 }

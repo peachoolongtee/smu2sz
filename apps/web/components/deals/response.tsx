@@ -282,6 +282,7 @@ export function RecommendedResponse({
   compareOpen,
   onCompareChange,
   reply,
+  bare = false,
 }: {
   v: VerdictView;
   offerId: string;
@@ -293,6 +294,8 @@ export function RecommendedResponse({
   onCompareChange?: (open: boolean) => void;
   /** The path picked on the paths picture: the card is then the reply bar for that path (and the counter cards are not shown). */
   reply?: { path: PicturePath; recommended: PicturePath | null; onBack: () => void };
+  /** With `reply`: only the send (what it does, the confirm, the refusals and slow notices) in a plain block, for a card that already says the reply. */
+  bare?: boolean;
 }) {
   const { t } = useI18n();
   // On a phone the generic line under the title gives way to the answer: the Send button comes up the page.
@@ -375,6 +378,29 @@ export function RecommendedResponse({
     // Who decides: the server's class and words (else the earlier sentence), in the class's tone: the same tone as the path's column.
     const tone = authorityTone(path);
     const decides = authorityText(path);
+    if (bare) {
+      return (
+        <div id="counters" className="space-y-3" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
+          {changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}
+          {canSend ? <SendControl key={counter.id} c={counter} lines={pricedLines(counter)} primary={path.recommended} filled sending={sending === counter.id} busy={busy} onSend={(profile) => void send(counter, profile)} /> : null}
+          {slow ? (
+            <SlowNotice
+              message={t("err.timeout_write")}
+              onRetry={() => {
+                setSlow(false);
+                setRechecked(true);
+                bump();
+              }}
+            />
+          ) : rechecked && !error ? (
+            <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">
+              {t("biz.slow.checked")}
+            </p>
+          ) : null}
+          {error ? <ErrorState error={error} /> : null}
+        </div>
+      );
+    }
     return (
       <ActionBar id="counters" aria-labelledby="path-reply-title" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
         {changed ? (

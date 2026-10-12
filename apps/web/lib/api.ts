@@ -51,6 +51,7 @@ import type {
   OfferView,
   PlanRequest,
   EnvelopeView,
+  ExposureView,
   PilotJournalView,
   PriceCurveView,
   ReceivablesWorthView,
@@ -217,6 +218,14 @@ export async function getReceivablesWorth(lang: "en" | "zh"): Promise<Receivable
  */
 export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = false): Promise<EnvelopeView | null> {
   return isMock ? (await mock()).getEnvelope(buyerId, lang, zone) : (await live()).getEnvelope(buyerId, lang, zone);
+}
+
+/**
+ * GET /offers/{offer_id}/exposure (flag `exposure`): what the open deal does to the exposure to its buyer, for every path at once. Null when
+ * the server has the feature off or lacks the offer, so the Deals page keeps its current form. Call it only behind STRATEGY_MVP.
+ */
+export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
+  return isMock ? (await mock()).getOfferExposure(offerId, lang) : (await live()).getOfferExposure(offerId, lang);
 }
 
 /**

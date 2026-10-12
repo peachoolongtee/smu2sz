@@ -22,6 +22,7 @@ import type {
   CapexRequest,
   CapexView,
   EnvelopeView,
+  ExposureView,
   ContractFixture,
   DealsView,
   DocumentDecision,
@@ -152,6 +153,9 @@ export const live = {
   /** GET /buyers/{buyer_id}/envelope (flag `envelope`). Null when the feature is off or the buyer is unknown. The zone is a detail of the answer, read only when asked. */
   getEnvelope: (buyerId: string, lang: "en" | "zh", zone = false) =>
     nullWhenOff(() => http<EnvelopeView>("GET", `/buyers/${enc(buyerId)}/envelope?lang=${lang}${zone ? "&zone=1" : ""}`)),
+
+  /** GET /offers/{offer_id}/exposure (flag `exposure`). Null when the feature is off, the offer is unknown or the route is absent. One read carries every path. */
+  getOfferExposure: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}`)),
 
   /** GET /pilot/journal (flag `pilot_journal`). Null when the feature is off or absent. Read-only: the web never posts an entry. */
   getPilotJournal: () => nullWhenOff(() => http<PilotJournalView>("GET", "/pilot/journal")),

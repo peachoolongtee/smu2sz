@@ -50,6 +50,7 @@ import type {
   PilotJournalView,
   PriceCurveView,
   EnvelopeView,
+  ExposureView,
   ReceivablesWorthView,
   ReconciliationView,
   StateView,
@@ -810,6 +811,15 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   if (buyerId !== "BUYER-1") return null;
   const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
   return zone ? view : { ...view, zone: [] };
+}
+
+/** GET /offers/{id}/exposure: recorded for the package offer, in both languages; any other offer has none (null, as a server with the feature off). */
+export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
+  await delay();
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
+  const rec = cast<Record<"en" | "zh", ExposureView>>((await import("../../mocks/offer_exposure_ex01.json")).default);
+  return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
 }
 
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
