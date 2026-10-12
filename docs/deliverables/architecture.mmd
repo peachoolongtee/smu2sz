@@ -28,8 +28,14 @@ flowchart LR
     LOG[("Append-only hash-chained<br/>operations log + commitments<br/>+ security events")]
   end
 
+  subgraph Records["Beside the engine (it imports none of them)"]
+    INGEST["ingest/ + contracts/ + deals/:<br/>an uploaded contract is read into a record<br/>(ADR-0012); the owner confirms it;<br/>the books never change"]
+    DECISIONS["decisions/: durable decision record<br/>(ADR-0011), derived on request,<br/>3 stored facts"]
+    STRATEGY["strategy/: envelope, cash price curve,<br/>collections worth; flags off by default,<br/>read-only, labelled copies"]
+  end
+
   EVID["GET /evidence (JSONL)<br/>scripts/verify_evidence.py"]
-  WEB["apps/web (Next.js)<br/>screens, chat panel, owner sign-in;<br/>displays server-formatted money"]
+  WEB["apps/web (Next.js)<br/>Home, Deals, Cash, Receivables, Activity,<br/>chat panel, owner sign-in;<br/>displays server-written sentences and money<br/>(INVARIANT 13)"]
 
   BUYER --> COMPILER
   LENDER --> COMPILER
@@ -50,4 +56,10 @@ flowchart LR
   APPROVE --> EXEC
   MANDATE --> EXEC
   LOG --> EVID
+  BUYER -->|"uploaded contract / lender agreement"| INGEST
+  INGEST -->|"reading, parsed by code"| COMPILER
+  APPROVE -->|"CONFIRM_DOCUMENT / REJECT_DOCUMENT<br/>(log only, hash-bound)"| EXEC
+  LOG --> DECISIONS
+  ENGINE -.->|"labelled copies"| STRATEGY
+  VERIFIER -.->|"labelled copies"| STRATEGY
   API --> WEB
