@@ -3434,3 +3434,82 @@ export interface PictureMoment {
   /** What moved cash that day, in words with their amounts, per path key, in the server's path order. Absent when the server has none. */
   events_text?: Record<string, string[]> | null;
 }
+
+// ------------------------------------------------------------------ the customer overview (map #88, ticket #108): GET /customers/{id}/overview
+
+/** The tone the overview gives a figure or a row; the browser only picks the colour. */
+export type OverviewTone = "neutral" | "ok" | "warn" | "bad";
+
+/** One of the four figures: relationship value, outstanding, financing linked, share of what you are owed. Every string is the server's. */
+export interface OverviewFigure {
+  key: string;
+  label: string;
+  value_display: string;
+  note: string;
+  tone: OverviewTone;
+}
+
+/** A labelled row of the economics or the exposure panel. `note` is the quiet sentence after the value (where it came from, what it means), when there is one. */
+export interface OverviewRow {
+  key: string;
+  label: string;
+  value_display: string;
+  note: string | null;
+  tone: OverviewTone;
+}
+
+/** A link the server built, with the buyer, the invoice or the stress it opens on already in the href. */
+export interface OverviewAction {
+  key: string;
+  label: string;
+  href: string;
+}
+
+/** The one commercial decision waiting for the owner; `primary` opens it on Deals with the recommended path selected. */
+export interface OverviewDecision {
+  /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read). */
+  kind?: "counter" | "request" | "offer_received";
+  eyebrow: string;
+  text: string;
+  headline_short?: string | null;
+  authority_text?: string | null;
+  primary: { label: string; href: string };
+  secondary: OverviewAction[];
+}
+
+export interface OverviewHistoryRow {
+  when_text: string;
+  text: string;
+  /** Where the row opens (the deal, its record, the documents), or null for a row that is only said; `link_label` says where. */
+  href: string | null;
+  link_label?: string | null;
+}
+
+/** GET /customers/{id}/overview?lang&decision&path&invoice. Each section is rendered only when its field is present. */
+export interface CustomerOverviewView {
+  customer_id: string;
+  name: string;
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  summary_text?: string;
+  figures?: OverviewFigure[];
+  decision?: OverviewDecision | null;
+  /** The line shown instead of the decision card when nothing waits. */
+  none_text?: string | null;
+  /** The actions that remain: view the invoices, stress-test payment (the second only while the exposure read is on). */
+  actions?: OverviewAction[];
+  economics?: OverviewRow[];
+  economics_note?: string | null;
+  edit_label?: string | null;
+  /** Where the customer's facts are edited; the link is shown only when this is non-null. */
+  edit_href?: string | null;
+  /** The exposure panel; null while the exposure read is off, and then `note` says why. */
+  exposure?: { rows: OverviewRow[]; same_figures_note?: string | null } | null;
+  note?: string | null;
+  /** Present when a supporting read failed and the page is not whole (never cached by the server). */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
+  history?: OverviewHistoryRow[];
+  /** `back` is built by the server from the query the page was opened with. */
+  context?: { back: { label: string; href: string } };
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CustomerName } from "@/components/customer-link";
 import { PromisedAndReceived } from "@/components/receivables/history";
 import { ErrorState, LoadingBlock, PageHeader, textLinkClass } from "@/components/ui";
 import { getHome, getReceivablesWorth, getReconciliation, getState } from "@/lib/api";
@@ -164,7 +165,9 @@ export function LegacyReceivables() {
                   </p>
                 ) : (
                   <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink">
-                    {name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)}
+                    <CustomerName id={invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id}>
+                      {name(invoices.find((o) => o.receivable_id === chaseTarget)?.counterparty_id ?? null)}
+                    </CustomerName>
                     <span className="ml-3 text-base font-bold text-bad-fg tabular-nums">
                       {t("biz.recv.bar.overdue")} {r.overdue_total_display}
                     </span>

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { Avatar, initials, toneFor } from "@/components/business/kit";
+import { CustomerName } from "@/components/customer-link";
 import { Badge, toggleClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import type { ReceivableRow } from "@/lib/types";
@@ -22,14 +22,12 @@ export function InvoiceList({
   onSelect,
   filter,
   onFilter,
-  customerHref,
 }: {
   rows: ReceivableRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   filter: RecvFilter;
   onFilter: (f: RecvFilter) => void;
-  customerHref: (row: ReceivableRow) => string;
 }) {
   const { t } = useI18n();
   const pills: { id: RecvFilter; label: string }[] = [
@@ -94,9 +92,9 @@ export function InvoiceList({
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                    <Link prefetch={false} href={customerHref(r)} className="hit relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700 underline-offset-2 hover:underline" data-testid={`recv-customer-${r.receivable_id}`}>
+                    <CustomerName id={r.buyer_id} className="hit relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700" testId={`recv-customer-${r.receivable_id}`}>
                       {buyer}
-                    </Link>
+                    </CustomerName>
                   </div>
                   <div role="cell" className="min-w-0">
                     <Label>{t("recv3.col.outstanding")}</Label>

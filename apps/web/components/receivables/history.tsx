@@ -1,6 +1,7 @@
 "use client";
 
 import { ReceiptFacts } from "@/components/receipt-facts";
+import { CustomerName } from "@/components/customer-link";
 import { Badge } from "@/components/ui";
 import { Disclosure } from "@/components/business/kit";
 import { useI18n } from "@/lib/i18n";
@@ -37,7 +38,9 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
               data-status={p.status}
             >
               <span className="min-w-0">
-                <span className="font-medium text-ink">{name(p.counterparty_id)}</span>
+                <span className="font-medium text-ink">
+                  <CustomerName id={p.counterparty_id}>{name(p.counterparty_id)}</CustomerName>
+                </span>
                 <span className="block text-sm text-ink-2">{p.detail_when ?? p.detail}</span>
               </span>
               <span className="flex items-center gap-2">
@@ -62,7 +65,9 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
           {data.receipts.map((x) => (
             <li key={x.entry_hash} className="py-3 text-sm" data-testid={`receipt-${x.op_id}`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-medium text-ink">{name(x.counterparty_id)}</span>
+                <span className="font-medium text-ink">
+                  <CustomerName id={x.counterparty_id}>{name(x.counterparty_id)}</CustomerName>
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="font-semibold tabular-nums">{x.received_display}</span>
                   <Badge tone={x.flagged ? "bad" : "ok"}>{te("recstatus", x.status)}</Badge>

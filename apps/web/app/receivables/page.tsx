@@ -148,7 +148,7 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
       </div>
       <PartialRead partial={read.partial} onRetry={reload} />
       {narrow && selected ? <SelectedStrip row={selected} customerHref={customerHref(selected)} /> : null}
-      <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={applyFilter} customerHref={customerHref} />
+      <InvoiceList rows={rows} selectedId={selected?.receivable_id ?? null} onSelect={select} filter={filter} onFilter={applyFilter} />
 
       {selected ? (
         <section

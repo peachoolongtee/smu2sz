@@ -53,6 +53,17 @@
 // exposure of that deal's decision (the aside's late-payment test). buyer_exposure[_zh] and buyer_exposure_day34[_zh] are GET /buyers/BUYER-1/exposure on
 // the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
 //
+// --overview records ONLY apps/web/mocks/customer_overview.json and exits (GET /customers/BUYER-1/overview, ticket #108): for each moment the
+// mock chooses among (lib/mock/handlers.ts overviewMoment), { en, zh } of { view, backs }, where `backs` holds the back link the server builds for
+// each query the specs open the page with (a deal; a deal and its path; an invoice). The moments: quiet (the opening books), offer_received and
+// offer_evaluated (the package offer waiting, unread and read), after_fund (the day-0 plan ran: the financing arranged), day34 and day34_after (the
+// late invoice, then the approved cure). The API needs FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1
+// and the other flags as above:
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
+//   node scripts/record-mocks.mjs --api http://localhost:8016 --overview
+// and, against an API started WITHOUT FEATURE_EXPOSURE, `--overview --exposure-off` records customer_overview_exposure_off.json ({ en, zh }: the opening
+// books' overview with the exposure panel off and the server's note for it), which the mock serves while the spec's hook key is set.
+//
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
 
 import { createHash } from "node:crypto";
@@ -68,12 +79,13 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
+const OVERVIEW = process.argv.includes("--overview");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -294,6 +306,69 @@ if (STRATEGY) {
   await live.demoReset();
   for (const name of Object.keys(files).sort()) write(name, files[name]);
   console.log(`recorded ${written.length} strategy files into ${join(OUT, "strategy")} from ${API}`);
+  process.exit(0);
+}
+
+// --overview: the customer overview of the demo's first buyer and nothing else (see the header).
+if (OVERVIEW) {
+  const BUYER = "BUYER-1";
+  // --exposure-off (the API started without FEATURE_EXPOSURE): the opening books' overview with its exposure panel off and the server's note for it.
+  if (process.argv.includes("--exposure-off")) {
+    await reset();
+    const off = { en: await live.getCustomerOverview(BUYER, "en"), zh: await live.getCustomerOverview(BUYER, "zh") };
+    if (off.en.exposure || !off.en.note) throw new Error("the exposure is on: start the API without FEATURE_EXPOSURE");
+    await live.demoReset();
+    write("customer_overview_exposure_off.json", off);
+    console.log(`recorded customer_overview_exposure_off.json into ${OUT} from ${API}`);
+    process.exit(0);
+  }
+  const queryOf = (href) => Object.fromEntries(new URL(href, "http://flow.local").searchParams);
+  const read = async (lang) => {
+    const view = await live.getCustomerOverview(BUYER, lang);
+    if (!view.exposure) throw new Error("the exposure panel is off: start the API with FEATURE_EXPOSURE=1");
+    const backs = [];
+    const ask = async (query) => backs.push({ query, back: (await live.getCustomerOverview(BUYER, lang, query)).context.back });
+    if (view.decision) {
+      const { decision, path } = queryOf(view.decision.primary.href);
+      await ask({ decision });
+      if (path) await ask({ decision, path });
+    }
+    const invoices = view.actions.find((a) => a.key === "invoices");
+    if (invoices && queryOf(invoices.href).invoice) await ask({ invoice: queryOf(invoices.href).invoice });
+    return { view, backs };
+  };
+  const moment = async () => ({ en: await read("en"), zh: await read("zh") });
+  const moments = {};
+  await reset();
+  moments.quiet = await moment();
+  await step("inbox").run();
+  moments.offer_received = await moment();
+  await step("trajectory").run();
+  moments.offer_evaluated = await moment();
+  // The day-0 plan, as the home's "Go ahead" runs it on the opening books: the financing is arranged.
+  await reset();
+  {
+    const a = (await live.getHome("en")).next_action;
+    await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
+    moments.after_fund = await moment();
+  }
+  await toDay34();
+  moments.day34 = await moment();
+  {
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((a) => a.id.startsWith("ALERT-RESERVE") && a.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    const act = await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    if (act.results[0]?.status !== "PENDING_APPROVAL") throw new Error("the day-34 cure no longer waits for approval: the demo path has changed");
+    await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+  }
+  moments.day34_after = await moment();
+  await live.demoReset();
+  write("customer_overview.json", moments);
+  console.log(`recorded customer_overview.json into ${OUT} from ${API}`);
   process.exit(0);
 }
 

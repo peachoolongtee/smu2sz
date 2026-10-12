@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { BankIcon, SparkIcon, StoreIcon, UserIcon } from "@/components/icons";
+import { CustomerName } from "@/components/customer-link";
 import { StatePill } from "@/components/ui";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, ErrorState, Hash, LoadingBlock, PageHeader, toggleClass } from "@/components/ui";
@@ -339,7 +340,9 @@ export default function ActivityPage() {
                 {data.commitments.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                     <span>
-                      <span className="font-medium text-ink">{buyerName(c.counterparty_id)}</span>
+                      <span className="font-medium text-ink">
+                        <CustomerName id={c.counterparty_id}>{buyerName(c.counterparty_id)}</CustomerName>
+                      </span>
                       <span className="block text-xs text-ink-3">
                         {t(c.expires_day < today ? "biz.activity.expired" : "biz.activity.expires", { when: whenText(c.expires_day, today, t) })} · {t("biz.activity.concessions")}: {c.forward_value_display}
                       </span>
