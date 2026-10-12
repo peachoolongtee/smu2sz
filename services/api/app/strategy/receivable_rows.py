@@ -75,9 +75,12 @@ def collection_action(state: str, lang: Lang) -> dict[str, Any]:
 
 
 def _rebate_bp(commitments: Sequence[Commitment], buyer_id: str) -> int:
-    """The rebate agreed with the buyer in live commitments, in bp (the rebates add up)."""
+    """The rebate agreed with the buyer in live commitments, in bp (the rebates add up). Read from the commitments themselves:
+    `Books.obligations` keeps a rebate only when it has an effective day (`cash_relevant`), and an agreed rebate is one whatever
+    its day. A rebate already settled or lapsed no longer counts."""
     return sum(o.rate_bp or 0 for c in commitments if c.counterparty_id == buyer_id and c.status in _LIVE
-               for o in c.obligations if o.type == ObligationType.CONTINGENT_REBATE)
+               for o in c.obligations if o.type == ObligationType.CONTINGENT_REBATE
+               and o.id not in c.settled_obligations and o.id not in c.lapsed_obligations)
 
 
 def _governed_by(r: Receivable, ref: str | None, rebate_bp: int, lang: Lang) -> dict[str, Any]:
@@ -97,16 +100,23 @@ def _live_discount(books: Books | None, r: Receivable) -> Obligation | None:
                  and o.base.receivable_id == r.id), None)
 
 
+def _none_agreed(lang: Lang) -> dict[str, Any]:
+    return {"agreed": False, "text": t(lang, "none agreed on this invoice", "这张发票没有约定提前付款")}
+
+
 def _early_payment(books: Books | None, r: Receivable, today: int, lang: Lang) -> dict[str, Any]:
     o = _live_discount(books, r)
     if o is None:
-        return {"agreed": False, "text": t(lang, "none agreed on this invoice", "这张发票没有约定提前付款")}
-    face = max(0, (o.base.amount_fen or 0) - r.early_paid_fen.get(o.id, 0)) or r.outstanding_fen
+        return _none_agreed(lang)
+    face = min(max(0, (o.base.amount_fen or r.outstanding_fen) - r.early_paid_fen.get(o.id, 0)), r.outstanding_fen)
+    if face == 0:  # the whole agreed face has been paid early: nothing is left to agree
+        return _none_agreed(lang)
     rate = fmt_pct(bp(o.rate_bp or 0))
-    when = when_text(o.effective_day, today, lang) if o.effective_day is not None else ""
+    when_en = f", {when_text(o.effective_day, today, 'en')}" if o.effective_day is not None else ""
+    when_zh = f"（{when_text(o.effective_day, today, 'zh')}）" if o.effective_day is not None else ""
     return {"agreed": True, "text": t(
-        lang, f"{whole_yuan(face)} of this invoice may be paid early at {rate} off, {when}; the agreement lapses if payment comes later",
-        f"这张发票的 {whole_yuan(face)} 可提前付款，折扣 {rate}（{when}）；如果更晚才付款，该约定即告失效")}
+        lang, f"{whole_yuan(face)} of this invoice may be paid early at {rate} off{when_en}; the agreement lapses if payment comes later",
+        f"这张发票的 {whole_yuan(face)} 可提前付款，折扣 {rate}{when_zh}；如果更晚才付款，该约定即告失效")}
 
 
 def _pending_counter(r: Receivable, open_offers: Sequence[OpenOffer], lang: Lang) -> dict[str, Any] | None:
@@ -122,7 +132,7 @@ def _pending_counter(r: Receivable, open_offers: Sequence[OpenOffer], lang: Lang
                     label = option_label(counter.label, lang)
                     return {"decision_id": deal_id(offer_id), "text": t(
                         lang, f"The {label} counter, if sent and accepted, would apply to {whole_yuan(face)} of it",
-                        f"{label}的还价如果发出并被接受，将适用于其中的 {whole_yuan(face)}")}
+                        f"{label} 的还价如果发出并被接受，将适用于其中的 {whole_yuan(face)}")}
     return None
 
 
@@ -132,10 +142,12 @@ def _net_block(net: NetAtCollection, words: Mapping[str, str | None]) -> dict[st
 
 def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Books | None = None,
                     commitments: Sequence[Commitment] = (), promise_missed: frozenset[str] = frozenset(),
+                    financing_repaid: frozenset[str] = frozenset(),
                     open_offers: Sequence[OpenOffer] = (),
                     contract_refs: Mapping[str, str] | None = None) -> dict[str, Any]:
     """The rows and the summary for every receivable still to collect, due first. `books` carries the live early-payment
-    agreements; `promise_missed` the receivables with a promised early payment that did not arrive; `open_offers` the offers
+    agreements; `promise_missed` the receivables with a promised early payment that did not arrive; `financing_repaid` the receivables whose
+    advance a receipt cleared (read from the log: the books keep no trace of it); `open_offers` the offers
     still open with their latest verdicts, newest first; `contract_refs` the agreement number of each buyer's
     confirmed contract."""
     lang = "zh" if lang == "zh" else "en"
@@ -144,7 +156,9 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
     rows: list[dict[str, Any]] = []
     nets: list[NetAtCollection] = []
     for r in owed:
-        net = net_at_collection(state, r)
+        net = net_at_collection(state, r, max(today, r.due_day))  # an invoice already late is priced on the first day it can be paid
+        if net.financing_state == "NONE" and r.id in financing_repaid:
+            net = net.model_copy(update={"financing_state": "REPAID"})
         nets.append(net)
         buyer = party_name(state, r.counterparty_id)
         cstate = collection_state(r.due_day, today, promise_missed=r.id in promise_missed)
@@ -169,7 +183,9 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
         "next_expected": ({"when_text": when_text(first_due, today, lang), "due_day": first_due, "amount_fen": coming,
                            "amount_display": fmt_yuan(coming)} if first_due is not None else None),
         "net_total_fen": sum(n.net_fen for n in nets), "net_total_display": fmt_yuan(sum(n.net_fen for n in nets)),
-        "net_total_text": t(lang, "if every invoice is paid on its due day", "如果每张发票都在到期日付款")}
+        "net_total_text": (t(lang, "if every invoice is paid on its due day, or today for one already late",
+                             "如果每张发票都在到期日付款（已逾期的则今天付款）") if any(r.due_day < today for r in owed) else
+                           t(lang, "if every invoice is paid on its due day", "如果每张发票都在到期日付款"))}
     return {"rows": rows, "summary": summary}
 
 

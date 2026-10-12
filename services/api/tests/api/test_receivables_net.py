@@ -194,7 +194,7 @@ def test_an_open_offers_counter_that_would_apply_to_the_invoice_is_named(client)
     pending = row["pending_counter"]
     assert pending is not None and pending["decision_id"] == f"deal:{offer['offer_id']}"
     assert pending["text"] == "The Option A counter, if sent and accepted, would apply to ¥257,200 of it"
-    assert _row(client, "zh")["pending_counter"]["text"].startswith("方案 A的还价如果发出并被接受，将适用于其中的 ¥257,200")
+    assert _row(client, "zh")["pending_counter"]["text"].startswith("方案 A 的还价如果发出并被接受，将适用于其中的 ¥257,200")
     # once the offer is accepted it is no longer open
     client.post(f"/negotiate/{offer['offer_id']}", json={"buyer_profile": "cooperative"})
     assert _row(client)["pending_counter"] is None
@@ -221,3 +221,80 @@ def test_the_read_writes_nothing(client):
     client.get("/receivables")
     client.get("/receivables", params={"lang": "zh"})
     assert (rt.store.get_state().model_dump_json(), len(rt.store.operations())) == before
+
+
+# ---------------------------------------------------------------- review fixes (ticket #107)
+
+
+def test_an_overdue_financed_invoice_is_priced_on_the_first_day_it_can_be_paid(client):
+    _finance(client, landed=True)
+    get_runtime().day = 40  # due on day 32
+    body = client.get("/receivables").json()
+    net = body["rows"][0]["net"]
+    state = get_runtime().store.get_state()
+    f, lot = next(x for x in state.facilities if x.id == "FAC-IF"), state.lots[0]
+    assert net["on_day"] == 40 and net["charges_fen"] == sum(funding_lots.advance_charges(f, lot, 40)[:2])
+    assert net["condition_text"] == "if Foshan pays today (it is already late)"
+    assert body["summary"]["net_total_text"] == "if every invoice is paid on its due day, or today for one already late"
+    zh = client.get("/receivables", params={"lang": "zh"}).json()
+    assert zh["rows"][0]["net"]["condition_text"] == "如果 Foshan 今天（已逾期）付款"
+
+
+def test_an_advance_a_receipt_cleared_reads_repaid_from_the_log(client):
+    _finance(client, landed=True)
+    version = client.get("/mandate").json()["mandate"]["version"]
+    r = client.post("/operations", headers={"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "rc-1", "idempotency_key": "rc-1", "mandate_version": version, "requested_by": "SYSTEM",
+        "receivable_id": "RCV-A", "amount_fen": 30_000_000, "bank_reference": "BANK-1"})
+    assert r.json()["result"]["status"] == "EXECUTED"
+    state = get_runtime().store.get_state()
+    assert state.lots == [] and state.receivables[0].status == "OPEN"  # cleared the advance, ¥120,000 still to collect
+    row = _row(client)
+    assert row["financing_state"] == row["net"]["financing_state"] == "REPAID"
+    assert row["net"]["claim_fen"] == 0 and row["net"]["net_fen"] == 12_000_000
+    assert row["net"]["financing_state_text"] == "Repaid" and "repaid the financing" in row["net"]["repays_text"]
+    assert _row(client, "zh")["net"]["financing_state_text"] == "已还清"
+
+
+def test_a_financed_invoice_with_no_advance_on_record_is_named(client):
+    _finance(client, landed=True)
+    rt = get_runtime()
+    state = rt.store.get_state()
+    rt.store.put_state(state.model_copy(update={"lots": [], "facilities": [
+        f.model_copy(update={"drawn_fen": 0}) if f.id == "FAC-IF" else f for f in state.facilities]}))
+    net = _row(client)["net"]
+    assert net["financing_unrecorded"] is True and net["net_fen"] == 42_000_000
+    assert "no financing is on record" in net["unrecorded_text"]
+
+
+def test_a_failed_reconciliation_leaves_the_rows_and_says_so(client, monkeypatch):
+    client.post("/demo/reset", json={})
+
+    def boom(*_a, **_k):
+        raise RuntimeError("log unreadable")
+
+    monkeypatch.setattr("app.api.receivables.reconcile", boom)
+    body = client.get("/receivables").json()
+    assert body["rows"][0]["collection_state"] == "CURRENT"
+    assert body["partial"]["missing"] == ["reconciliation"] and "could not be read" in body["partial"]["text"]
+    assert client.get("/receivables", params={"lang": "zh"}).json()["partial"]["text"].startswith("部分辅助信息未能读取")
+
+
+def test_the_early_payment_sentence_without_a_day_and_with_nothing_left(client):
+    from app.books import Books
+    from app.strategy.receivable_rows import receivable_rows
+
+    _walk(client, 1)
+    rt = get_runtime()
+    state = rt.store.get_state()
+    live = next(c for c in rt.store.commitments()).obligations
+    discount = next(o for o in live if o.type.value == "IMMEDIATE_DISCOUNT")
+
+    def text(o, early_paid=0):
+        s = state.model_copy(update={"receivables": [r.model_copy(update={"early_paid_fen": {o.id: early_paid} if early_paid else {}})
+                                                     for r in state.receivables]})
+        return receivable_rows(s, 1, "en", books=Books(state=s, obligations=(o,)))["rows"][0]["early_payment"]
+
+    undated = text(discount.model_copy(update={"effective_day": None}))
+    assert undated["agreed"] is True and ", ;" not in undated["text"] and "off; the agreement lapses" in undated["text"]
+    assert text(discount, early_paid=discount.base.amount_fen) == {"agreed": False, "text": "none agreed on this invoice"}

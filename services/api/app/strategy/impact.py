@@ -8,7 +8,7 @@ Read-only: every state passed to the kernel is a `model_copy`, nothing is stored
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 
 from app.alerts import alerts
 from app.api.presentation import party_name, t, when_text
@@ -264,28 +264,17 @@ class _Charged:
     facility: Facility
     lot: FundingLot
     extra_fen: int  # the charges on the late day less the charges on the due day (`advance_charges`)
-    owed_fen: int  # the fixed remainder the owner owes after the receipt (0 when the receipt covers the claim)
+    owed_fen: int  # what the claim exceeds the receipt by: the owner pays it from cash on the late day (0 when covered)
 
 
-@dataclass
-class _Lenders:
-    """What the lender-first settlement of the financed invoices does to the copy."""
-
-    landings: list[CashFlow] = field(default_factory=list)  # an advance not landed yet lands on its arrival day
-    cleared: list[FundingLot] = field(default_factory=list)  # the lots the receipts replace
-    left: list[FundingLot] = field(default_factory=list)  # a fixed remainder the owner owes, in place of a cleared lot
-    drawn: dict[str, int] = field(default_factory=dict)  # facility id -> drawn balance after the receipts
-    charged: dict[str, _Charged] = field(default_factory=dict)  # receivable id -> the above
-
-
-def _lender_first(held: FinancialState, issued: dict[str, Receivable], advance_of: dict[str, FundingLot], moved: Sequence[str],
-                  owed: dict[str, int], due: dict[str, int], delay_days: int, today: int, paid: dict[str, int]) -> _Lenders:
-    """A FINANCED invoice paid `delay_days` late, settled the way `_received_today` settles one but on the late day: the
-    receipt goes to the lender first (`apply_receipt`, final), so the advance's charges run to that day as the facility sets
-    them; cash gets the rest (`paid` is lowered to it) and the facility's drawn balance falls by what the receipt repays. A
-    lot whose cash has not landed lands on its arrival day (`landing_cash`) and is repaid on the late day."""
-    out = _Lenders()
-    drawn = {f.id: f.drawn_fen for f in held.facilities}
+def _lender_runs_on(held: FinancialState, issued: dict[str, Receivable], advance_of: dict[str, FundingLot], moved: Sequence[str],
+                    owed: dict[str, int], due: dict[str, int], delay_days: int) -> dict[str, _Charged]:
+    """What a FINANCED invoice paid `delay_days` late costs, from the lot's own rules: the receipt on the late day goes to the
+    lender first (`apply_receipt`, final), so the charges of the extra whole periods fall as the facility sets them
+    (`advance_charges`). Only the figures for the assumption sentence are taken here: the copy itself keeps the invoice, its lot
+    and the facility's drawn balance and moves the invoice's due day (the engine then dates the receipt, the charges and the
+    repayment on the late day, `trajectory._repay_carried_advance`), so the room on the facility is held until then."""
+    out: dict[str, _Charged] = {}
     for rid in moved:
         lot = advance_of.get(rid)
         if rid not in issued or issued[rid].status != "FINANCED" or lot is None:
@@ -295,20 +284,8 @@ def _lender_first(held: FinancialState, issued: dict[str, Receivable], advance_o
         applied = funding_lots.apply_receipt(f, lot, owed[rid], late_day, final=True)
         was = funding_lots.advance_charges(f, lot, due[rid])
         now = funding_lots.advance_charges(f, lot, late_day)
-        paid[rid] = owed[rid] - applied.applied
-        if not lot.settled and (cash := funding_lots.landing_cash(f, lot)) > 0:
-            out.landings.append(CashFlow(
-                id=f"LATE-LAND:{rid}", day=max(today, lot.arrival_day), amount_fen=cash, kind=FlowKind.OTHER,
-                label=f"Advance on {rid} lands, {f.name} (a test)", confirmed=True))
-        remainder = applied.lot
-        out.cleared.append(lot)
-        if remainder is not None:  # the receipt did not cover the claim: a fixed amount the owner owes, landed on the copy
-            out.left.append(remainder.model_copy(update={"settled": True}))
-        drawn[f.id] += (remainder.remaining_fen if remainder is not None else 0) - lot.remaining_fen
-        out.charged[rid] = _Charged(f, lot, (now[0] + now[1]) - (was[0] + was[1]),
-                                    remainder.remaining_fen if remainder is not None else 0)
-    touched = {c.facility.id for c in out.charged.values()}
-    out.drawn = {fid: amount for fid, amount in drawn.items() if fid in touched}
+        out[rid] = _Charged(f, lot, (now[0] + now[1]) - (was[0] + was[1]),
+                            applied.lot.remaining_fen if applied.lot is not None else 0)
     return out
 
 
@@ -331,8 +308,8 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
     """The buyer pays every invoice `delay_days` late (a test, not a forecast): a labelled copy of the books.
 
     A new transform, separate from `scenario_received` (whose refusal of a late receipt stands). It never changes the
-    contractual terms of a receivable on the copy (`_received_on` does; that would keep an invoice financeable past its
-    due day). Instead each invoice the buyer still owes is taken off the copy and replaced by ONE confirmed `CashFlow` of
+    contractual terms of an open receivable on the copy (`_received_on` does; that would keep an invoice financeable past its
+    due day; a financed invoice, below, is the one exception: it cannot be financed again). Instead each invoice the buyer still owes is taken off the copy and replaced by ONE confirmed `CashFlow` of
     its whole outstanding on its due day in force + `delay_days`, so a receipt moves exactly once and is never
     duplicated:
 
@@ -344,14 +321,13 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
       discount; the agreement no longer binds and `read_books` leaves it out). At a delay of 0 there is no lateness to
       lapse it: the agreement stands and the copy reproduces the books exactly;
     - the buyer's own facility (lender = the buyer) is taken off the copy: it needs the buyer's agreement to pay early;
-    - a FINANCED invoice is moved too (map #88, ticket #107), and the financing keeps running to the late day: the receipt
-      is dated due + `delay_days` and pays the lender first through `funding_lots.apply_receipt(..., final=True)`, so the
-      charges of the extra periods fall as the facility sets them (`advance_charges`). The lot is cleared, or left as a
-      FIXED remainder the owner owes (the engine's `orphaned` rule: recourse); the facility's drawn balance falls with it
-      and cash gets the rest, as ONE confirmed `CashFlow` (the single receipt). A lot whose cash has not landed lands on
-      its arrival day on the copy and is repaid on the late day. A financed invoice already past due, or with no advance
-      on record, stays as the books count it. An unknown buyer, a negative delay or a buyer with nothing to pay is refused
-      (`ValueError`).
+    - a FINANCED invoice is moved too (map #88, ticket #107), and the financing keeps running to the late day: the invoice stays
+      on the copy with its lot and the facility's drawn balance, and falls due `delay_days` later, so the engine dates the
+      receipt, the lender's repayment and the charges of the extra periods on that day (`advance_charges`: the facility's own
+      fee and rate) and frees the room only then. A shortfall is paid by the owner out of cash on the late day (recourse). A
+      lot whose cash has not landed lands on its arrival day, as in the books. A financed invoice already past due, or with no
+      advance on record, stays as the books count it. An unknown buyer, a negative delay or a buyer with nothing to pay is
+      refused (`ValueError`).
 
     The copy cannot be financed on the moved invoices, which understates what could be financed by at most the advance
     rate times what is outstanding: the assumption says so."""
@@ -411,35 +387,34 @@ def scenario_paid_late(books: Books, buyer_id: str, delay_days: int, day: int, *
             del owed[rid]
 
     moved = sorted(owed, key=lambda r: (due[r], r))
-    paid: dict[str, int] = dict(owed)  # what reaches cash on the late day (a financed invoice's lender is paid first)
-    lenders = _lender_first(held, issued, advance_of, moved, owed, due, delay_days, today, paid)
-    flows = [CashFlow(id=f"LATE:{rid}", day=due[rid] + delay_days, amount_fen=paid[rid], kind=FlowKind.RECEIVABLE,
+    charged = _lender_runs_on(held, issued, advance_of, moved, owed, due, delay_days)
+    flows = [CashFlow(id=f"LATE:{rid}", day=due[rid] + delay_days, amount_fen=owed[rid], kind=FlowKind.RECEIVABLE,
                       label=f"Receipt of {rid} from {name}, paid {delay_days} days late (a test)",
-                      counterparty_id=buyer_id, confirmed=True) for rid in moved if paid[rid] > 0]
-    flows += lenders.landings
-    cleared = {lot.id for lot in lenders.cleared}
-    drawn = dict(lenders.drawn)
+                      counterparty_id=buyer_id, confirmed=True) for rid in moved if rid not in charged]
+    # a financed invoice stays on the copy, its lot and the facility's drawn balance with it, and falls due `delay_days` later: the
+    # engine repays the lender, with the charges of the periods it ran, out of that receipt and only then frees the room
+    receivables = [r.model_copy(update={"terms_days": r.terms_days + delay_days}) if r.id in charged else r
+                   for r in state.receivables if r.id not in owed or r.id in charged]
     scenario = state.model_copy(update={
-        "receivables": [r for r in state.receivables if r.id not in owed],
+        "receivables": receivables,
         "recurring_invoices": [ri for ri in state.recurring_invoices if ri.counterparty_id != buyer_id],
-        "facilities": [f.model_copy(update={"drawn_fen": drawn[f.id]}) if f.id in drawn else f
-                       for f in state.facilities if f.id not in gone],
-        "lots": [*(lot for lot in held.lots if lot.facility_id not in gone and lot.id not in cleared), *lenders.left],
+        "facilities": [f for f in state.facilities if f.id not in gone],
+        "lots": [lot for lot in state.lots if lot.facility_id not in gone],
         "flows": [*state.flows, *flows]})
 
     end = today + horizon_days
     past = [f for f in flows if f.day > end >= f.day - delay_days]  # the delay pushes it out of the horizon
     rates = [f.advance_rate_bp or 10_000 for f in state.facilities
              if f.kind == FacilityKind.INVOICE_FINANCING and f.status == FacilityStatus.COMMITTED and f.owner_approved]
-    inside = sum(owed[rid] for rid in moved if due[rid] <= end and rid not in lenders.charged)  # a financed one is not financeable again
+    inside = sum(owed[rid] for rid in moved if due[rid] <= end and rid not in charged)  # a financed one is not financeable again
     understated = max((inside * r // 10_000 for r in rates), default=0)
     on_time = delay_days == 0
     head = t(lang, f"If {name} paid every invoice on its due day (a test: the books as they stand)." if on_time else
              f"If {name} paid every invoice {delay_days} days late (a test, not a forecast).",
              f"如果 {name} 的每张发票都按到期日付款（这是测试：账面就是现在的样子）。" if on_time else
              f"如果 {name} 的每张发票都晚付 {delay_days} 天（这是压力测试，不是预测）。")
-    notes = [] if on_time else [_financing_note(state, rid, delay_days, today, lang, lenders.charged[rid])
-                                for rid in moved if rid in lenders.charged]
+    notes = [] if on_time else [_financing_note(state, rid, delay_days, today, lang, charged[rid])
+                                for rid in moved if rid in charged]
     unmodelled = [rid for rid, r in issued.items() if r.status == "FINANCED" and r.outstanding_fen > 0 and rid not in owed
                   and rid not in overdue]
     if unmodelled:

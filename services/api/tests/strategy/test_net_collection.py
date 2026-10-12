@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.api.financing_words import financing_state_words
+from app.api.financing_words import financing_state_words, state_of
 from app.domain.models import FundingLot
 from app.domain.money import fmt_yuan, fmt_yuan_about
 from app.financial import lots as funding_lots
@@ -48,14 +48,28 @@ def test_arranged_today_received_after_landing_repaid_after_the_receipt():
     assert net_r.net_fen == 42_000_000 - net_r.claim_fen and net_r.owed_by_owner_fen == 0
     # the lot has not landed: the charges still run from its arrival day (day 3), so they are smaller than after landing on day -2
     assert net.charges_fen == sum(funding_lots.advance_charges(f, arranged.state.lots[0], 32)[:2]) < net_r.charges_fen
-    # after the receipt the lot is gone and the books keep no trace on the invoice: the caller who read the log says so
+    # after the receipt the lot is gone and the books keep no trace on the invoice: the state is NONE here, and the rows mark it
+    # REPAID from the log (tests/api/test_receivables_net.py)
     settled = received.state.model_copy(update={
         "receivables": [_rcv(received).model_copy(update={"status": "SETTLED", "settled_fen": 42_000_000, "advance_fen": 0,
                                                            "advance_facility_id": None})],
         "lots": [], "facilities": [x.model_copy(update={"drawn_fen": 0}) if x.id == "FAC-IF" else x for x in received.state.facilities]})
-    done = net_at_collection(settled, settled.receivables[0], 32, financed_before=True)
-    assert (done.financing_state, done.claim_fen, done.net_fen) == ("REPAID", 0, 0)
-    assert net_at_collection(settled, settled.receivables[0], 32).financing_state == "NONE"  # nothing says it was financed
+    done = net_at_collection(settled, settled.receivables[0], 32)
+    assert (done.financing_state, done.claim_fen, done.net_fen, done.financing_unrecorded) == ("NONE", 0, 0, False)
+    cleared = received.state.lots[0].model_copy(update={"remaining_fen": 0})  # a lot with nothing left is REPAID by the one function
+    assert state_of(cleared) == "REPAID" and state_of(None) == "NONE" and state_of(None, repaid=True) == "REPAID"
+
+
+def test_a_financed_invoice_with_no_advance_on_record_is_named_not_silently_unfinanced():
+    received = financed_golden(True)
+    bare = received.state.model_copy(update={"lots": [], "facilities": [
+        x.model_copy(update={"drawn_fen": 0}) if x.id == "FAC-IF" else x for x in received.state.facilities]})
+    net = net_at_collection(bare, bare.receivables[0])
+    assert (net.financing_state, net.financing_unrecorded, net.claim_fen, net.net_fen) == ("NONE", True, 0, 42_000_000)
+    assert "no financing is on record" in net_words("en", net, buyer_name=FOSHAN, today=0, due_day=32)["unrecorded_text"]
+    assert "没有融资记录" in net_words("zh", net, buyer_name=FOSHAN, today=0, due_day=32)["unrecorded_text"]
+    assert net_words("en", net_at_collection(received.state, received.state.receivables[0]), buyer_name=FOSHAN, today=0,
+                     due_day=32)["unrecorded_text"] is None
 
 
 def test_a_receipt_that_does_not_cover_the_claim_is_owed_by_the_owner_and_the_net_is_never_negative():
@@ -134,7 +148,8 @@ def test_the_financing_state_words_by_the_lots_state_never_mixed(lang, words):
     got = [financing_state_words(lang, lot, 0) for lot in (arranged, received, cleared)]
     assert [g["state"] for g in got] == ["ARRANGED", "RECEIVED", "REPAID"]
     assert [g["word"] for g in got] == list(words)
-    assert financing_state_words(lang, None, 0)["state"] == "REPAID"
+    assert financing_state_words(lang, None, 0)["state"] == "NONE" and financing_state_words(lang, None, 0)["text"] == ""
+    assert financing_state_words(lang, None, 0, repaid=True)["state"] == "REPAID"
     for g in got:  # a sentence names its own state's word only
         assert [w for w in words if w in g["text"]] == [g["word"]]
     assert "advanced" not in got[0]["text"]  # never the word advanced for an unlanded lot
