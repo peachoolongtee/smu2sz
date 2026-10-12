@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { AnnotatedText } from "@/components/annotated-text";
 import { Disclosure } from "@/components/business/kit";
+import { CustomerName } from "@/components/customer-link";
 import { decisionHref } from "@/components/business/open-decisions";
 import { DealStage } from "@/components/deals/deal-steps";
 import { ParsedTerms } from "@/components/deals/asks";
 import { AllChecks, checkCount, EngineVerdictLine } from "@/components/deals/reasons";
 import { StageTrack } from "@/components/deals/stage-track";
 import { PlanCard } from "@/components/plan-card";
-import { Badge, Callout, Card, Formula, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Badge, Callout, Card, Formula, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import { annotationsFor, type OfferItem } from "@/lib/offer-items";
 import type { AdvancedKey, DealWorkspace, Displayed, Obligation, OfferView, OpenOffer, VerdictView } from "@/lib/types";
@@ -29,12 +31,15 @@ import { whenText } from "@/lib/when";
  */
 export function SelectedBuyer({
   buyer,
+  buyerId,
   received,
   evaluatedWhen,
   state = null,
   open = null,
 }: {
   buyer: string;
+  /** The buyer's id, so the name is the link to their overview. */
+  buyerId?: string;
   received: string;
   evaluatedWhen: string | null;
   state?: { code: string; text: string; tone: Tone } | null;
@@ -45,7 +50,15 @@ export function SelectedBuyer({
     <section id="deal-selected" aria-label={buyer} className="motion-reveal min-w-0 space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="min-w-0 text-sm text-ink-3" data-testid="deal-selected-meta">
-          <strong className="font-extrabold text-ink">{buyer}</strong>
+          <strong className="font-extrabold text-ink">
+            {buyerId ? (
+              <CustomerName id={buyerId} testId="deal-selected-customer">
+                {buyer}
+              </CustomerName>
+            ) : (
+              buyer
+            )}
+          </strong>
           {" · "}
           {received}
           {evaluatedWhen ? (
@@ -57,7 +70,7 @@ export function SelectedBuyer({
         </p>
         {state ? (
           <span data-testid="deal-state-chip" data-state={state.code}>
-            <StatePill tone={state.tone}>{state.text}</StatePill>
+            <StateWord tone={state.tone}>{state.text}</StateWord>
           </span>
         ) : null}
       </div>
@@ -104,7 +117,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
   const row = ({ a, l }: (typeof rows)[number], shared: string | null = null) => (
     <li key={a.obligation_id} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-1" data-testid={l ? `deal-impact-${a.type}` : undefined} data-horizon={l?.horizon}>
       <div className="min-w-0 flex-[2_1_18rem]">
-        <p className="text-xs font-semibold text-ink-3" data-testid={`deal-ask-label-${a.type}`}>
+        <p className="text-supporting font-semibold text-ink-3" data-testid={`deal-ask-label-${a.type}`}>
           {a.label}
         </p>
         <p className="text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
@@ -121,7 +134,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
               {l.amount_display ?? "—"}
             </p>
           </div>
-          {shared === null ? <p className="mt-1 text-pretty text-xs text-ink-3">{l.window_text}</p> : null}
+          {shared === null ? <p className="mt-1 text-pretty text-supporting text-ink-3">{l.window_text}</p> : null}
         </div>
       ) : null}
     </li>
@@ -139,7 +152,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
           {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
           <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
             {sharedWindow ? (
-              <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
+              <p className="pt-2 text-supporting font-medium text-ink-3" data-testid="deal-impact-window">
                 {sharedWindow}
               </p>
             ) : null}
@@ -155,11 +168,11 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
             <div className="my-2">
               <Bar part={totalFen} whole={scale} tone={fi.over_cap ? "bad" : "brand"} limit={cap} />
             </div>
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-2">
               <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>
               {fi.over_cap ? <Badge tone="bad">{t("biz.deals.impact.overCap")}</Badge> : null}
             </p>
-            <p className="mt-1 text-xs text-ink-3" data-testid="deal-impact-note">
+            <p className="mt-1 text-supporting text-ink-3" data-testid="deal-impact-note">
               {fi.total_note}
             </p>
           </div>
@@ -212,14 +225,14 @@ export function WorkspaceWhy({ ws, v, today, settled = false, facts = true, fold
               <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
               <dd className="text-right">
                 <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
-                {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
+                {tr.first_breach_cash ? <span className="block text-supporting text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
               </dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
               <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
               <dd className="text-right">
                 <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
-                <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
+                <span className="block text-supporting text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
               </dd>
             </div>
           </dl>
@@ -262,7 +275,7 @@ const ADVANCED_TITLE: Record<AdvancedKey, "biz.deals.parsed" | "biz.deals.origin
  * read the message, the message itself, every check, the formulas, the engine's verdict and the audit evidence. The page folds the verdict's
  * existing fields; it copies none of them.
  */
-export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[] }) {
+export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealWorkspace; v: VerdictView; offer: OfferView; items: OfferItem[]; asks: Displayed<Obligation>[]; /** Only these sections, each its own fold, without the "Advanced details" fold around them (the decision queue's evidence: the buyer's message and the calculations). */ only?: AdvancedKey[] }) {
   const { t, te, lang } = useI18n();
   const [active, setActive] = useState<string | null>(null);
   const keys = Object.keys(ws.advanced.keys) as AdvancedKey[];
@@ -294,7 +307,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
                   <span className="font-semibold tabular-nums">{c.value_display}</span>
                 </div>
                 <Disclosure className="mt-1.5" summary={t("common.formula")}>
-                  <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
+                  <p className="mt-1 text-supporting text-ink-3">{c.basis}</p>
                   <div className="mt-1">
                     <Formula>{c.formula}</Formula>
                   </div>
@@ -312,7 +325,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
           </div>
         ))}
         {v.plan ? <PlanCard plan={v.plan} id="deal-plan" /> : null}
-        <p className="text-xs text-ink-3">
+        <p className="text-supporting text-ink-3">
           <Link href="/verdict" className={textLinkClass}>
             {t("biz.deals.fullVerdict")}
           </Link>
@@ -321,7 +334,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
     ),
     engine_verdict: <EngineVerdictLine v={v} />,
     audit_evidence: (
-      <div className="space-y-2 text-xs text-ink-2" data-testid="deal-audit-evidence">
+      <div className="space-y-2 text-supporting text-ink-2" data-testid="deal-audit-evidence">
         <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5">
           {v.decision_id ? (
             <>
@@ -352,6 +365,20 @@ export function AdvancedDetails({ ws, v, offer, items, asks }: { ws: DealWorkspa
       </div>
     ),
   };
+  if (only) {
+    const title: Partial<Record<AdvancedKey, string>> = { source_text: t("dq.link.message"), formula: t("dq.link.calcs") };
+    return (
+      <div className="space-y-2" data-testid="queue-evidence">
+        {keys
+          .filter((k) => only.includes(k) && k in body && body[k] !== null)
+          .map((k) => (
+            <Disclosure key={k} testId={`deal-adv-${k}`} summary={title[k] ?? t(ADVANCED_TITLE[k])}>
+              <div className="pt-1">{body[k]}</div>
+            </Disclosure>
+          ))}
+      </div>
+    );
+  }
   return (
     <Disclosure className="border-t border-line pt-1" testId="deal-advanced" summary={t("biz.deals.advanced")}>
       <div className="space-y-2">

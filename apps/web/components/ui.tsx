@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useState, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
 import { requestSignIn } from "@/lib/auth";
 import { ApiError, isTimeout } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n";
@@ -75,30 +75,10 @@ export function Badge({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-supporting font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
     >
       {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
-    </span>
-  );
-}
-
-/** The mark that goes with a state's words, one per tone, so a state is never colour alone. */
-const toneGlyph: Record<Tone, string> = { ok: "✓", warn: "▲", bad: "■", info: "◆", brand: "◆", neutral: "○" };
-
-/**
- * A state as the server names it: the words, a glyph for the tone (never colour alone) and the tone the SERVER chose (`state_tone` /
- * `result_tone`; the browser never colours a state itself). 12 px, the same pill as `Badge`, with a mark of its own instead of the dot.
- */
-export function StatePill({ tone, children, testId, wrap = true }: { tone: Tone; children: ReactNode; testId?: string; wrap?: boolean }) {
-  return (
-    <span data-testid={testId} data-tone={tone}>
-      <Badge tone={tone} dot={false} wrap={wrap}>
-        <span aria-hidden className="text-xs leading-none">
-          {toneGlyph[tone]}
-        </span>
-        {children}
-      </Badge>
     </span>
   );
 }
@@ -138,7 +118,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-balance font-display text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
+          <h1 className={`type-headline text-balance text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
           {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
@@ -147,6 +127,10 @@ export function PageHeader({
   );
 }
 
+/**
+ * The standard card: a 14 px radius, a hairline and no shadow, the rest of the page's content in a box. Its siblings are `DecisionCard` (the one
+ * raised card, with the strong action) and `SelectedCard` (the tinted card of the choice being read); the three and when to use which are in DESIGN.md.
+ */
 export function Card({
   title,
   subtitle,
@@ -156,6 +140,7 @@ export function Card({
   id,
   tone,
   flat = false,
+  labelledBy,
 }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -166,6 +151,8 @@ export function Card({
   tone?: Tone;
   /** No card chrome (the seamless Home): a small-caps heading over the content, no box, no fill, no shadow. */
   flat?: boolean;
+  /** The id of a heading inside that names the card, when its title is not the `title` prop. */
+  labelledBy?: string;
 }) {
   const border = tone ? toneBorder[tone] : "border-line";
   if (flat) {
@@ -174,10 +161,10 @@ export function Card({
         {title ? (
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line-strong pb-2">
             <div className="min-w-0">
-              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
                 {title}
               </h2>
-              {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
+              {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
             </div>
             {actions}
           </div>
@@ -189,21 +176,47 @@ export function Card({
   return (
     <section
       id={id}
-      aria-labelledby={title && id ? `${id}-title` : undefined}
-      className={`motion-reveal min-w-0 rounded-card border bg-surface shadow-card ${border} ${className}`}
+      aria-labelledby={labelledBy ?? (title && id ? `${id}-title` : undefined)}
+      className={`motion-reveal card-standard min-w-0 ${border} ${className}`}
     >
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-base font-bold text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="type-card-title text-balance text-ink">
               {title}
             </h2>
-            {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
           </div>
           {actions}
         </div>
       ) : null}
       <div className={title ? "px-5 pb-5 pt-3" : "p-5"}>{children}</div>
+    </section>
+  );
+}
+
+/**
+ * The decision card: the one raised card of a page (a 16 px radius, one soft shadow), for what the owner is asked to decide. The strong action, the page's one
+ * filled button, is a child inside it (there is no separate slot: the cards that exist lay their action out in their own row); everything else in it is read, not
+ * pressed. One per page: a page with several decisions raises the first and leaves the rest standard. Solid white: no frost, no blur.
+ * `ActionBar` (the sticky variant), the attention card, the first waiting approval and the document's decision bar are made of it.
+ */
+export function DecisionCard({ children, className = "", ...rest }: HTMLAttributes<HTMLElement>) {
+  return (
+    <section {...rest} className={`motion-reveal card-decision min-w-0 ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * The selected card: the brand tint with a 3 px accent rule on the left, for the one item whose detail the page is showing (the chosen invoice).
+ * A card the owner can choose among says so by this and by `aria-current`/`aria-selected` in its parent; the tint is never a status.
+ */
+export function SelectedCard({ children, className = "", ...rest }: HTMLAttributes<HTMLElement>) {
+  return (
+    <section {...rest} className={`card-selected min-w-0 ${className}`}>
+      {children}
     </section>
   );
 }
@@ -273,22 +286,22 @@ export function Stat({
   const box = bare ? "border-t border-line-strong" : deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
     <div className={`min-w-0 ${bare ? "py-2.5" : "rounded-tile px-4 py-3"} ${press ? "motion-lift relative hover:bg-subtle" : ""} ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
-      <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
-      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
+      <dt className={`text-meta font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "type-value" : "text-section"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
           {value}
         </span>
         {delta ? (
-          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-xs font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
+          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-supporting font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
         ) : null}
       </dd>
       {note ? (
-        <dd className={`mt-0.5 text-xs ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
+        <dd className={`mt-0.5 text-supporting ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
           {note}
         </dd>
       ) : null}
       {press ? (
-        <dd className="mt-0.5 text-xs">
+        <dd className="mt-0.5 text-meta">
           <button type="button" onClick={press.onPress} className="rounded-pill font-medium text-brand-700 underline underline-offset-2 after:absolute after:inset-0 after:rounded-tile" data-testid={press.testId}>
             {press.label}
           </button>
@@ -315,7 +328,7 @@ const variantClass: Record<ButtonVariant, string> = {
  */
 export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
+    size === "sm" ? "min-h-8 px-3 text-meta touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${variantClass[variant]} ${className}`;
 }
 
@@ -343,12 +356,12 @@ export function Button({
 /** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
+    size === "sm" ? "min-h-8 px-3 text-meta touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
 
 /** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 8.5:1. */
-export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
+export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-meta font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
 
 /** A link in a button's shape (a navigation that is the page's next step). */
 export function ButtonLink({ variant = "secondary", size = "md", className = "", ...rest }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
@@ -406,7 +419,7 @@ export function ErrorState({ error, onRetry }: { error: Error | string; onRetry?
   // Being signed out is not a failure: the owner's pages ask for the sign-in in words instead of showing an error code.
   if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
     return (
-      <div role="status" className="motion-reveal rounded-card border border-line bg-surface p-5 text-center shadow-card" data-testid="signin-needed">
+      <div role="status" className="motion-reveal card-standard p-5 text-center" data-testid="signin-needed">
         <p className="font-semibold text-ink">{t("auth.signinToSee")}</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{error.status === 401 ? t("auth.signinToSee.body") : t("auth.signinToSee.forbidden")}</p>
         <Button className="mt-3" variant="primary" onClick={() => requestSignIn("required")}>
@@ -469,7 +482,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
     >
       <span
         aria-hidden
-        className={`motion-slide pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill bg-surface shadow-card ${index < 0 ? "opacity-0" : ""}`}
+        className={`motion-slide pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill bg-surface shadow-pill ${index < 0 ? "opacity-0" : ""}`}
         style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
       />
       {children}
@@ -477,7 +490,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
   );
 }
 
-const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
+const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-supporting font-medium transition-colors";
 
 /** Radio-group segmented control. Native radios give arrow-key navigation for free. */
 export function Segmented<T extends string>({
@@ -518,36 +531,6 @@ export function Segmented<T extends string>({
   );
 }
 
-/** The same pill track made of toggle buttons (`aria-pressed`), for a choice that is a view (a horizon), not a form field. */
-export function SegmentedButtons<T extends string | number>({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: ReactNode; testId?: string }[];
-}) {
-  return (
-    <SegmentedTrack role="group" label={label} count={options.length} index={options.findIndex((o) => o.value === value)}>
-      {options.map((o) => (
-        <button
-          key={String(o.value)}
-          type="button"
-          onClick={() => onChange(o.value)}
-          aria-pressed={value === o.value}
-          data-testid={o.testId}
-          className={`${segmentedOption} ${value === o.value ? "text-ink" : "text-ink-2 hover:text-ink"}`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </SegmentedTrack>
-  );
-}
-
 /** Horizontally scrollable table region that remains keyboard-scrollable. */
 export function TableWrap({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -563,7 +546,7 @@ export function TableWrap({ label, children }: { label: string; children: ReactN
 }
 
 export const tableCls = "w-full border-collapse text-left text-sm [&_tbody_tr:last-child_td]:border-b-0 [&_tbody_tr:last-child_th]:border-b-0";
-export const thCls = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-xs font-semibold text-ink-2";
+export const thCls = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-supporting font-semibold text-ink-2";
 export const tdCls = "border-b border-line px-3 py-2 align-top";
 
 /** Shortened hash with the full value on hover and a copy button. */
@@ -573,7 +556,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
   if (!value) return <span className="text-ink-3">{t("common.none")}</span>;
   const short = value.length > 20 ? `${value.slice(0, 10)}…${value.slice(-6)}` : value;
   return (
-    <span className={`inline-flex items-center gap-1 font-mono text-xs ${className}`}>
+    <span className={`inline-flex items-center gap-1 font-mono text-meta ${className}`}>
       <span title={value}>{short}</span>
       <button
         type="button"
@@ -594,7 +577,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
 
 export function Formula({ children }: { children: ReactNode }) {
   return (
-    <code className="block break-words rounded-tile border border-line bg-subtle px-2.5 py-1.5 font-mono text-xs leading-relaxed text-ink">
+    <code className="block break-words rounded-tile border border-line bg-subtle px-2.5 py-1.5 font-mono text-supporting leading-relaxed text-ink">
       {children}
     </code>
   );

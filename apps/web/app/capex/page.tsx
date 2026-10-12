@@ -87,9 +87,9 @@ export default function CapexPage() {
         <div className="space-y-6">
           <Callout tone={worth ? "info" : "warn"}>
             <p data-testid="capex-recommendation">{capex.recommendation ?? (worth ? null : t("capex.notWorth"))}</p>
-            {capex.estimate_note ? <p className="mt-1 text-xs">{capex.estimate_note}</p> : null}
+            {capex.estimate_note ? <p className="mt-1 text-meta">{capex.estimate_note}</p> : null}
             {capex.as_of_day !== undefined ? (
-              <p className="mt-1 text-xs" data-testid="capex-as-of">
+              <p className="mt-1 text-meta" data-testid="capex-as-of">
                 {t("capex.asOf", { when: whenText(capex.as_of_day, today, t) })}
               </p>
             ) : null}
@@ -117,7 +117,7 @@ export default function CapexPage() {
           </dl>
 
           <Card flat id="structures" title={t("capex.structures")} subtitle={t("capex.structures.sub", { limit: capex.dscr_limit_display })}>
-            <p className="mb-2 text-xs text-ink-3">{t("dscr.readingNote")}</p>
+            <p className="mb-2 text-meta text-ink-3">{t("dscr.readingNote")}</p>
             <TableWrap label={t("capex.structures")}>
               <table className={`${tableCls} min-w-[50rem]`}>
                 <caption className="sr-only">{t("capex.structures")}</caption>
@@ -160,7 +160,7 @@ export default function CapexPage() {
                             <td key={m} className={`${tdCls} text-right tabular-nums`}>
                               {cell ? (
                                 <span
-                                  className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-xs font-semibold ${
+                                  className={`inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-meta font-semibold ${
                                     cell.passes ? "bg-ok-bg text-ok-fg" : "bg-bad-bg text-bad-fg"
                                   }`}
                                   title={cell.passes ? t("capex.passes") : t("capex.fails")}
@@ -184,9 +184,9 @@ export default function CapexPage() {
                               {!s.feasible ? t("capex.infeasible") : selected || worth ? t("capex.feasible") : t("capex.notRecommended")}
                             </Badge>
                           )}
-                          <p className="mt-1 text-xs text-ink-2">{s.note}</p>
+                          <p className="mt-1 text-meta text-ink-2">{s.note}</p>
                           {s.extra_cost_vs_selected_display ? (
-                            <p className="mt-1 text-xs font-medium text-warn-fg">
+                            <p className="mt-1 text-meta font-medium text-warn-fg">
                               {t("capex.dearer", { amount: s.extra_cost_vs_selected_display })}
                             </p>
                           ) : null}
@@ -217,7 +217,7 @@ export default function CapexPage() {
                 {t("capex.noFile")}
               </p>
             )}
-            <p className="mt-3 text-xs text-ink-2">{t("capex.apply.hint")}</p>
+            <p className="mt-3 text-meta text-ink-2">{t("capex.apply.hint")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button
                 variant="primary"
@@ -248,7 +248,7 @@ export default function CapexPage() {
               ) : null}
             </div>
             {application?.approval_id ? (
-              <p className="mt-2 text-xs text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p>
+              <p className="mt-2 text-meta text-ink-2">{t("capex.applied.body", { id: application.approval_id })}</p>
             ) : null}
           </Card>
 
@@ -285,8 +285,8 @@ export default function CapexPage() {
             </ul>
             {capex.assumptions?.length ? (
               <details className="mt-3 text-sm">
-                <summary className="cursor-pointer text-xs font-medium text-brand-700">{t("biz.capex.basis.full")}</summary>
-                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-xs text-ink-2" data-testid="capex-assumptions">
+                <summary className="cursor-pointer text-meta font-medium text-brand-700">{t("biz.capex.basis.full")}</summary>
+                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-meta text-ink-2" data-testid="capex-assumptions">
                   {capex.assumptions.map((a) => (
                     <li key={a}>{a}</li>
                   ))}
@@ -303,7 +303,7 @@ export default function CapexPage() {
               subtitle={file.style}
               actions={<Badge tone="warn">{t("capex.file.status")}</Badge>}
             >
-              <p className="mb-3 text-xs text-ink-2" data-testid="file-as-of">
+              <p className="mb-3 text-meta text-ink-2" data-testid="file-as-of">
                 {t("capex.file.asOf", { when: whenText(file.generated_day, today, t) })}
               </p>
               <BorrowerFileSections sections={file.sections} />
@@ -331,14 +331,14 @@ export default function CapexPage() {
                         </Button>
                       ) : null,
                     )}
-                    {file.pdf_note ? <span className="text-xs text-ink-3">{file.pdf_note}</span> : null}
+                    {file.pdf_note ? <span className="text-meta text-ink-3">{file.pdf_note}</span> : null}
                   </>
                 ) : (
-                  <p className="text-xs text-ink-3">{t("capex.file.mockDownload")}</p>
+                  <p className="text-meta text-ink-3">{t("capex.file.mockDownload")}</p>
                 )}
               </div>
               {file.provenance ? (
-                <p className="mt-2 text-xs text-ink-2" data-testid="file-provenance">
+                <p className="mt-2 text-meta text-ink-2" data-testid="file-provenance">
                   {t("capex.file.provenance", {
                     when: whenText(file.provenance.generated_day, today, t),
                     state: file.provenance.state_version,

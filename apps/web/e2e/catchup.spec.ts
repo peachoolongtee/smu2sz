@@ -91,5 +91,5 @@ test("receivables and reconciliation list the bank's reference on a receipt that
   await page.goto("/receivables");
   await expect(page.getByTestId("receipt-rec-receipt-1")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("receipt-ref-rec-receipt-1")).toContainText("DEMO-RCPT-1");
-  await expect(page.getByTestId("recv-RCV-A")).toContainText("2 days late");
+  await expect(page.getByTestId("recv-RCV-A")).toContainText("Overdue");
 });

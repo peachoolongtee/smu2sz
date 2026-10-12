@@ -41,7 +41,7 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 hover:bg-subtle [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 flex-1 basis-56">
                   <span className="block text-sm font-medium text-ink">{f.name}</span>
-                  <span className="block text-xs text-ink-2">
+                  <span className="block text-supporting text-ink-2">
                     {[hasRate ? t("biz.facility.rate", { rate: r.cost_display }) : null, t("biz.facility.speed", { ttc: r.time_to_cash_display })].filter(Boolean).join(" · ")}
                   </span>
                 </span>
@@ -52,25 +52,25 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
               <div className="space-y-2 border-t border-line px-3 py-3 text-sm">
                 <dl className="grid gap-2 sm:grid-cols-3">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.what")}</dt>
+                    <dt className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.what")}</dt>
                     <dd className="mt-0.5 text-ink">{t(`biz.kind.${f.kind}.what` as DictKey)}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.good")}</dt>
+                    <dt className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.good")}</dt>
                     <dd className="mt-0.5 text-ink">{t(`biz.kind.${f.kind}.good` as DictKey)}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.watch")}</dt>
+                    <dt className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.facility.watch")}</dt>
                     <dd className="mt-0.5 text-ink">{t(`biz.kind.${f.kind}.watch` as DictKey)}</dd>
                   </div>
                 </dl>
-                <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+                <p className="flex flex-wrap gap-x-4 gap-y-1 text-supporting text-ink-2">
                   <span>{t("fund.limit")}: <span className="font-medium tabular-nums text-ink">{f.limit_display}</span></span>
                   <span>{t("biz.drawn")}: <span className="font-medium tabular-nums text-ink">{f.drawn_display}</span></span>
                   {f.collateral ? <span className="font-medium text-warn-fg">{t("biz.facility.collateral")}</span> : null}
                   {f.personal_guarantee ? <span className="font-medium text-warn-fg">{t("biz.facility.guarantee")}</span> : null}
                 </p>
-                <p className="break-words text-xs text-ink-3">{r.reason}</p>
+                <p className="break-words text-supporting text-ink-3">{r.reason}</p>
               </div>
             </details>
           </li>

@@ -12,6 +12,8 @@ statement, and the sum of the engine's own postings of one day (the same `net` t
     cash.events_rail                    at most six key events in the picture window, with the lowest point as one
     cash.counterfactual_series, _label  the grey line (the books without the funding the plan created, or doing nothing) and what it is
     cash.stress_available, cash.stress  the buyer paid 30 days late (behind the exposure flag)
+    cash.pending, cash.receipts_legend_text  the reply FLOW recommends, drawn as an alternative until the buyer accepts it
+    (every receipt event of a series, and the rail's receipt rows, carry `basis` and `basis_text`: what the receipt rests on)
     attention                           one primary at a time, the rest of the queue in order
     funding_line                        the plan's state as one sentence, with the cost split
     deals_card, receivables_card, changes_card
@@ -21,13 +23,16 @@ Presentation only: nothing here evaluates, stores, logs, prices or decides.
 
 from __future__ import annotations
 
+import copy
 import importlib
 import logging
 import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
+from app.api.financing_words import State, state_of, state_word
 from app.api.home import _lowest_ahead, _series
 from app.api.presentation import (
     buyer_of_receivable,
@@ -40,18 +45,23 @@ from app.api.presentation import (
     when_text,
 )
 from app.api.presentation import tick_label as _short
+from app.api.receipt_basis import RECEIPT_KINDS, BasisReader, annotate
 from app.books import Books
+from app.config import get_settings
 from app.decisions.identity import deal_id
 from app.decisions.state import DealState, FundingState
 from app.domain.models import FacilityKind, FinancialState, LedgerEventKind, Mandate, Mode, ObligationType
 from app.domain.money import fmt_yuan
 from app.financial import EngineError, project
 from app.financial.lots import ensure_lots
+from app.strategy import words as basis_words
 from app.strategy.cache import AnswerCache, cache_key
 
 log = logging.getLogger("termsledger.decisions")
 
 MAX_RAIL = 6
+MAX_LEG_FACTS = 3
+_LANDING_KINDS = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
 MAX_CHANGES = 3
 _RECEIPTS = (LedgerEventKind.RECEIPT, LedgerEventKind.EARLY_RECEIPT)
 _CHARGES = (LedgerEventKind.INTEREST, LedgerEventKind.FEE)
@@ -84,10 +94,17 @@ class HomeRead:
     changes: list[dict[str, Any]]
     record: Any | None  # the decision record's context
     open_decisions: list[dict[str, Any]]
+    basis: BasisReader | None = None  # what each receipt rests on, when it could be read
+    partial: Any | None = None  # the home's `Partial`, for a supporting read that fails inside the hybrid
 
     @property
     def state(self) -> FinancialState:
         return self.books.state
+
+    @property
+    def waiting(self) -> bool:
+        """The plan that is ready waits for the owner's approval rather than for a go-ahead."""
+        return bool(self.action and self.action.get("pending_approval_id"))
 
     @property
     def floor(self) -> int:
@@ -133,15 +150,9 @@ def _layer(module: str) -> Any | None:
 
 
 def buyer_short(name: str, lang: str = "en") -> str:
-    """The name an owner says aloud: its first word ("Foshan Home Retail Co." -> "Foshan"); a one-word name stays whole. In Chinese the
-    buyer keeps the name the books give it, as every other Chinese sentence of the home says it."""
-    if lang == "zh":
-        return name
-    shared = _layer("app.strategy.words")  # the exposure layer's own, once it is on this branch
-    if shared is not None:
-        return str(shared.buyer_short(name))
-    words = name.replace(",", " ").split()  # until then, the same rule
-    return words[0] if words else name
+    """The name an owner says aloud: its first word ("Foshan Home Retail Co." -> "Foshan"), the same in both languages (the one helper of
+    `app.strategy.words`; a one-word name stays whole)."""
+    return basis_words.buyer_short(name)
 
 
 def _source(name: str, lang: str = "en") -> str:
@@ -340,6 +351,13 @@ def _main_event(events: list[Any]) -> Any | None:
     return max(pool, key=lambda e: (abs(e.amount_fen), e.label)) if pool else None
 
 
+def _cause_event(events: list[Any]) -> Any | None:
+    """The posting that causes the day's low: the largest outflow (a receipt that day does not cause a low), else, with no outflow, the
+    day's largest posting."""
+    out = [e for e in events if e.amount_fen < 0 and e.kind not in _CHARGES and e.kind != LedgerEventKind.OPENING]
+    return min(out, key=lambda e: (e.amount_fen, e.label)) if out else _main_event(events)
+
+
 def _flow_kind(label: str, amount_fen: int) -> str:
     low = label.lower()
     if low.startswith("payroll"):
@@ -361,11 +379,15 @@ def _event_kind(e: Any) -> str:
     return _flow_kind(e.label, e.amount_fen)
 
 
-def _label(kind: str, e: Any, c: HomeRead) -> str:
+def _label(kind: str, e: Any, c: HomeRead, planned: bool = False) -> str:
     lang, state = c.lang, c.state
     if kind == "landing":
         what = (t(lang, "invoice financing", "发票融资") if e.kind == LedgerEventKind.ADVANCE
                 else t(lang, f"the {_source(facility_name(state, e.ref), lang)} draw", f"{_source(facility_name(state, e.ref), lang)}提款"))
+        if planned:  # the plan has not run: nothing arrives unless the owner runs it (or approves it)
+            if c.waiting:
+                return t(lang, f"{what} would arrive, if you approve the plan", f"{what}将到账，前提是您批准方案")
+            return t(lang, f"{what} would arrive, if you run the plan", f"{what}将到账，前提是您执行方案")
         return t(lang, f"{what} arrives", f"{what}到账")
     if kind == "payroll":
         return t(lang, "payroll is paid", "发放工资")
@@ -385,6 +407,29 @@ def _label(kind: str, e: Any, c: HomeRead) -> str:
         return t(lang, "a supplier payment goes out", "支付供应商款项")
     name = in_language(in_words(state, e.label.split(" (")[0].split(", ")[0]), lang, state) or ""
     return t(lang, f"{name.lower()} is paid", f"支付{name}")
+
+
+def _cause_label(kind: str, e: Any, c: HomeRead, planned: bool) -> str:
+    """What the lowest point's row names: the event that causes it, in its own words."""
+    if kind == "debt":
+        return t(c.lang, "a loan repayment goes out", "一笔贷款还款支出")
+    return _label(kind, e, c, planned)
+
+
+def _lowest_note(c: HomeRead, after: int) -> str:
+    """"cash at its lowest, ¥300k, at your minimum": the one figure the lowest point has, and where it stands against the minimum."""
+    where = (t(c.lang, "at your minimum", "正好是您的最低现金") if after == c.floor else room_text(after, c.floor, c.lang))
+    return t(c.lang, f"cash at its lowest, {_short(after)}, {where}", f"现金降到最低，{_short(after)}，{where}")
+
+
+def _effect_rows(c: HomeRead, d: Any) -> list[dict[str, str]]:
+    """The day's effect as a table, from the figures the paragraph uses: cash before, cash after, the minimum, and the room above it."""
+    gap = d.closing_fen - c.floor
+    return [{"label": t(c.lang, "Cash before", "此前现金"), "display": _short(d.opening_fen)},
+            {"label": t(c.lang, "Cash after", "此后现金"), "display": _short(d.closing_fen)},
+            {"label": t(c.lang, "Minimum reserve", "最低现金储备"), "display": _short(c.floor)},
+            {"label": (t(c.lang, "Cash above reserve", "高于储备的现金") if gap >= 0 else t(c.lang, "Cash below reserve", "低于储备的现金")),
+             "display": _short(abs(gap))}]
 
 
 def _noun(kind: str, lang: str) -> str:
@@ -486,7 +531,7 @@ def _lowest_explain(c: HomeRead, day: Any, main: Any | None, kind: str | None, g
     return text
 
 
-def _rail(c: HomeRead, line: Any, grey: Any | None, grey_kind: str) -> list[dict[str, Any]]:
+def _rail(c: HomeRead, line: Any, grey: Any | None, grey_kind: str, reader: BasisReader | None = None) -> list[dict[str, Any]]:
     """The key events of the picture window on the line the page draws, and the lowest point ahead (which the window may not reach: then
     the rail runs past it), ascending."""
     end = c.today + c.picture_days
@@ -503,27 +548,41 @@ def _rail(c: HomeRead, line: Any, grey: Any | None, grey_kind: str) -> list[dict
             weights[d.day] = abs(main.amount_fen)
     chosen = sorted(sorted(weights, key=lambda day: (-weights[day], day))[:MAX_RAIL - 1] + [low_day])
     grey_close = {d.day: d.closing_fen for d in grey.days} if grey is not None else {}
+    # what the plan ready (not run) adds to the books: its landings are only planned
+    # (two identical landings are two events: the plan's are those the books do not already hold, counted)
+    already = Counter((d.day, e.kind, e.ref, e.amount_fen) for d in c.traj.days for e in d.events) if c.plan_traj is not None else Counter()
+    line_count = Counter((d.day, e.kind, e.ref, e.amount_fen) for d in line.days for e in d.events)
     out: list[dict[str, Any]] = []
     for day_no in chosen:
         d = by_day[day_no]
-        main = _main_event(d.events)
+        main = _cause_event(d.events) if day_no == low_day else _main_event(d.events)
         kind = _event_kind(main) if main is not None else None
         net = sum(e.amount_fen for e in d.events)
+        planned = False
+        if main is not None and kind == "landing" and c.plan_traj is not None:
+            ident = (d.day, main.kind, main.ref, main.amount_fen)
+            planned = line_count[ident] > already[ident]
+        note = None
         if day_no == low_day:
             event_kind = "lowest"
-            label = t(c.lang, "cash is at its lowest", "现金降到最低点")
+            # the row names the event that causes the low, with its amount; the low itself is the note, never a second number
+            label = (_cause_label(kind, main, c, planned) if main is not None and kind is not None
+                     else t(c.lang, "cash is at its lowest", "现金降到最低点"))
+            note = _lowest_note(c, d.closing_fen)
             explain = _lowest_explain(c, d, main, kind, grey, grey_kind)
         else:
             assert main is not None and kind is not None
             event_kind = kind
-            label = _label(kind, main, c)
+            label = _label(kind, main, c, planned)
             explain = _explain(c, d, kind, main, grey_close, grey_kind)
+        said = reader.fields(main) if reader is not None and main is not None and main.kind in RECEIPT_KINDS else {}
         out.append({"key": f"day-{day_no}", "day": day_no, "when": when_text(day_no, c.today, c.lang), "kind": event_kind,
-                    "label": label, "amount_fen": main.amount_fen if main is not None else 0,
+                    "basis": said.get("basis"), "basis_text": said.get("basis_text"),
+                    "label": label, "note": note, "planned": planned, "amount_fen": main.amount_fen if main is not None else 0,
                     "amount_short": _signed(main.amount_fen) if main is not None else "¥0", "net_short": _signed(net),
                     "cash_after_fen": d.closing_fen, "cash_after_short": _short(d.closing_fen),
                     "room_after_fen": d.closing_fen - c.floor, "room_after_short": room_text(d.closing_fen, c.floor, c.lang),
-                    "tone": _tone(d.closing_fen, c.floor), "explain": explain})
+                    "tone": _tone(d.closing_fen, c.floor), "explain": explain, "effect_rows": _effect_rows(c, d)})
     return out
 
 
@@ -542,6 +601,15 @@ def _stress_buyer(c: HomeRead, primary_buyer: str | None) -> str | None:
 
 
 _STRESS: AnswerCache[dict[str, Any]] = AnswerCache()
+
+
+def _net_later(c: HomeRead, buyer_id: str, delay: int) -> str | None:
+    """What the buyer's open invoices leave the owner `delay` days after the day each is priced on, in the buyer route's own words
+    (`exposure_words.net_later`: one function for the Home and the buyer's pages); None when the buyer owes nothing."""
+    from app.api.exposure_words import net_later
+
+    said = net_later(c.state, buyer_id, c.today, delay, c.lang)
+    return said["net_later_text"] if said is not None else None
 
 
 def _stress(c: HomeRead, buyer_id: str | None) -> dict[str, Any] | None:
@@ -568,10 +636,14 @@ def _stress(c: HomeRead, buyer_id: str | None) -> dict[str, Any] | None:
                         if e.kind == LedgerEventKind.RECEIPT and buyer_of_receivable(c.state, e.ref) == buyer_id), None)
         moved = (receipt + delay) if receipt is not None else row.lowest_day
         needed = max(row.lowest_day, moved) - c.today + 4
+        name = party_name(c.state, buyer_id)
+        sentence = getattr(exposure, "stress_sentence", None)
         return {"delay_days": delay, "buyer": buyer_short(party_name(c.state, buyer_id), c.lang), "buyer_id": buyer_id, "series": line,
                 "lowest_fen": row.lowest_fen, "lowest_short": _short(row.lowest_fen),
                 "lowest_when": when_text(row.lowest_day, c.today, c.lang), "breach_days": row.breach_days,
                 "need_fen": row.need_fen, "need_short": _short(row.need_fen), "plan_text": row.funding_text,
+                "text": sentence(row, name, c.today, c.floor, c.lang) if sentence is not None else None,
+                "funding_text": row.funding_text, "net_later_text": _net_later(c, buyer_id, delay),
                 "assumption_text": in_words(c.state, row.assumption), "window_days_needed": max(1, min(c.mandate.horizon_days, needed))}
 
     try:
@@ -583,14 +655,96 @@ def _stress(c: HomeRead, buyer_id: str | None) -> dict[str, Any] | None:
         return None
 
 
-def cash_block(c: HomeRead, stress_buyer: str | None) -> dict[str, Any]:
+def _moved_by_reply(c: HomeRead, deal: _Deal) -> Counter[tuple[int, str, int]] | None:
+    """The receipts the reply's own obligations produce that the books do not hold, as (day, kind, amount) counted: the books with the
+    reply's obligations and no funding, projected by the engine, less the books' own receipts. Only these are pending on the buyer; the
+    funding legs of the reply's plan (an early-pay leg, a discounted bill) are FLOW's to run whatever the buyer says. None when the
+    reply cannot be projected or found."""
+    from app.api.decisions import latest_verdict_for
+
+    verdict = latest_verdict_for(c.rt, deal.offer_id)
+    counter = next((x for x in verdict.counters if deal.pick is not None and x.id == deal.pick.get("key")), None) if verdict else None
+    if counter is None:
+        return None
+    try:
+        traj = project(c.state, c.books.with_(counter.obligations), [], Mode.CONSERVATIVE, c.mandate.horizon_days, c.floor)
+    except EngineError:
+        log.exception("the recommended reply could not be projected for the home")
+        return None
+
+    def receipts(t_: Any) -> Counter[tuple[int, str, int]]:
+        return Counter((d.day, e.kind.value, e.amount_fen) for d in t_.days if d.day >= c.today for e in d.events if e.kind in RECEIPT_KINDS)
+
+    return receipts(traj) - receipts(c.traj)
+
+
+def _pending(c: HomeRead, deals: list[_Deal] | None) -> dict[str, Any] | None:
+    """The reply FLOW recommends, as an alternative to the plan line and never the plan: the picture's own series for that path (copied,
+    the picture's cache is shared), with the receipts the reply's obligations move marked PENDING. Present while an open offer has a
+    sendable reply that no agreement records; absent once the buyer accepts (the agreement then moves the receipts and they are AGREED)
+    or the offer closes. A receipt the reply leaves alone keeps the basis the books give it (matched by day, kind and amount against the
+    trajectory); a funding leg of the reply's plan stays bare."""
+    reader = c.basis
+    deal = next((d for d in deals or [] if reader is not None and d.pick is not None and d.pick.get("kind") == "reply"
+                 and d.pick.get("sendable") and d.pick.get("series")), None)
+    if deal is None or deal.pick is None or reader is None:
+        return None
+    moved = _moved_by_reply(c, deal)
+    if moved is None:
+        return None
+    option = str(deal.pick.get("label") or "")
+    known: dict[tuple[int, str, int], list[Any]] = {}
+    for d in c.traj.days:
+        if d.day >= c.today:
+            for e in d.events:
+                if e.kind in RECEIPT_KINDS:
+                    known.setdefault((d.day, e.kind.value, e.amount_fen), []).append(reader.of(e))
+    kinds = {k.value for k in RECEIPT_KINDS}
+    series = copy.deepcopy(deal.pick["series"])
+    rows: list[dict[str, Any]] = []
+    for row in series:
+        for e in row["events"]:
+            if e["kind"] not in kinds:
+                continue
+            key = (row["day"], e["kind"], e["amount_fen"])
+            if moved[key] > 0:  # the reply's obligations produce this receipt
+                moved[key] -= 1
+                discount = e["kind"] == LedgerEventKind.DISCOUNT.value
+                text = basis_words.pending_text(c.lang, deal.buyer, option, amount_fen=e["amount_fen"], days_after=row["day"] - c.today,
+                                                discount=discount)
+                e["basis"], e["basis_text"] = basis_words.PENDING, text
+                rows.append({"day": row["day"], "when": when_text(row["day"], c.today, c.lang), "kind": e["kind"],
+                             "label_short": t(c.lang, "Early-payment discount", "提前付款折扣") if discount else e["label_short"],
+                             "amount_fen": e["amount_fen"], "amount_short": e["amount_short"],
+                             "basis": basis_words.PENDING, "basis_text": text})
+            elif known.get(key):  # the books already hold this receipt: the reply leaves it alone
+                b = known[key].pop(0)
+                if b is not None:
+                    e["basis"], e["basis_text"] = b.code, reader.text(b)
+    return {"label": basis_words.pending_label(c.lang, deal.buyer, option), "series": series, "receipt_rows": rows,
+            "legend_text": basis_words.receipts_legend(c.lang, deal.buyer, option)}
+
+
+def _guarded(c: HomeRead, read: Any) -> Any:
+    """A read of what the receipts rest on: whatever fails is logged and named in `partial` (never the summary), and the picture stands
+    without it."""
+    try:
+        return read()
+    except Exception:
+        log.exception("the basis of the receipts could not be read for the home")
+        if c.partial is not None:
+            c.partial.add("receipt_basis")
+        return None
+
+
+def cash_block(c: HomeRead, stress_buyer: str | None, deals: list[_Deal] | None = None) -> dict[str, Any]:
     lots, receipts = _pending_lots(c.state, c.today), _next_receipts(c)
     tone = {"SAFE": "ok", "WATCH": "warn"}.get(c.status, "bad")
     line = c.plan_traj if c.plan_traj is not None else c.traj
     low = _lowest_ahead(line, c.today)  # one lowest point on the page: the line's, for the fact and for the rail
     grey, grey_kind = _grey_line(c)
     stress = _stress(c, stress_buyer)
-    rail = _rail(c, line, grey, grey_kind)
+    rail = _rail(c, line, grey, grey_kind, c.basis)
     out: dict[str, Any] = {
         "status_word": c.status_text, "status_tone": tone,
         **_position(c, lots, receipts, low), "assumptions": _assumptions(c, lots, receipts),
@@ -600,13 +754,24 @@ def cash_block(c: HomeRead, stress_buyer: str | None) -> dict[str, Any]:
     }
     if grey is not None:  # the grey line and its words go together: no series, no label
         out["counterfactual_series"] = _series(c.state, grey, c.lang, c.today)
+        if c.basis is not None:
+            _guarded(c, lambda: annotate(out["counterfactual_series"], grey, c.basis))
         out["counterfactual_label"] = {
             "ran": t(c.lang, "without FLOW's financing plan (a comparison, not a choice you still have)",
                      "没有 FLOW 融资方案的情形（仅供对比，不是您还能选择的做法）"),
             "proposed": t(c.lang, "without the plan FLOW proposes (a comparison)", "不采用 FLOW 建议方案的情形（仅供对比）"),
             "nothing": t(c.lang, "if you did nothing", "如果您什么都不做")}[grey_kind]
+    if c.plan_traj is not None:  # the plan line's legend: until its operations execute it is a question, then it is the executed plan
+        out["plan_line_label"] = (t(c.lang, "If you approve FLOW's plan", "如果您批准 FLOW 的方案") if c.waiting
+                                  else t(c.lang, "If you run FLOW's plan", "如果您执行 FLOW 的方案"))
+    elif _plan_has_run(c.state):
+        out["plan_line_label"] = t(c.lang, "With FLOW's plan", "采用 FLOW 的方案")
     if stress is not None:
         out["stress"] = stress
+    pending = _guarded(c, lambda: _pending(c, deals))
+    if pending is not None:  # a reply is waiting on the buyer: drawn dashed, with the sentence that tells it from the solid line
+        out["receipts_legend_text"] = pending.pop("legend_text")
+        out["pending"] = pending
     return out
 
 
@@ -841,7 +1006,7 @@ def funding_line(c: HomeRead) -> dict[str, Any]:
 
 def _item(key: str, kind: str, eyebrow: str, title: str, facts: list[dict[str, Any]], primary: tuple[str, str],
           secondary: tuple[str, str]) -> dict[str, Any]:
-    return {"key": key, "kind": kind, "eyebrow": eyebrow, "title": title, "facts": facts[:3],
+    return {"key": key, "kind": kind, "eyebrow": eyebrow, "title": title, "facts": facts,
             "primary": {"label": primary[0], "href": primary[1]}, "secondary": {"label": secondary[0], "href": secondary[1]}}
 
 
@@ -898,6 +1063,15 @@ def _deal_item(c: HomeRead, d: _Deal, count: int) -> dict[str, Any]:
                  (t(lang, "Why this?", "为什么？"), _link(deal_id(d.offer_id))))
 
 
+def _leg_fact(c: HomeRead, operation_kind: str, facility: str, amount_fen: int, when: str, state: State) -> dict[str, Any]:
+    """"¥150k today (planned)": one leg of the plan, its amount, when it lands, and the state word (`financing_words`)."""
+    lang = c.lang
+    name = {"DRAW_FACILITY": t(lang, "Credit line draw", "信用额度提款"),
+            "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "Invoice financing", "发票融资")}.get(operation_kind, _source(facility, lang))
+    word = state_word(lang, state)
+    return _fact(name, t(lang, f"{_short(amount_fen)} {when} ({word})", f"{_short(amount_fen)}，{when}（{word}）"))
+
+
 def _funding_item(c: HomeRead) -> dict[str, Any] | None:
     a = c.action
     if a is None or a["kind"] != "RESERVE_BREACH_AHEAD" or a.get("pending_approval_id"):
@@ -907,8 +1081,12 @@ def _funding_item(c: HomeRead) -> dict[str, Any] | None:
     title = c.headline + _sp(c.lang) + (t(lang, f"FLOW recommends securing {receive} of funding.", f"FLOW 建议筹措 {receive} 资金。") if receive
                                 else t(lang, "FLOW has a plan ready.", "FLOW 已准备好方案。"))
     facts = [_fact(t(lang, "Estimated cost", "预计成本"), str(a.get("cost_total_display")), "neutral")] if a.get("cost_total_display") else []
-    if a.get("lands_when"):
+    if a.get("lands_when"):  # the plain landing fact (the page's `next-action-lands`), then one fact per leg that lands
         facts.append(_fact(t(lang, "Funds arrive", "资金到账"), str(a["lands_when"]), "neutral"))
+    landing = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING_KINDS and leg.get("lands_when") and leg.get("amount_fen")]
+    for leg in landing[:MAX_LEG_FACTS]:  # what lands when, in the state word the financing is said in everywhere
+        facts.append(_leg_fact(c, leg["operation_kind"], leg["facility_name"], leg["amount_fen"], leg["lands_when"],
+                               state_of(None, planned=True)))
     facts.append(_fact(t(lang, "Authority", "授权"),
                        t(lang, "needs your approval", "需要您批准") if a["needs_owner"] else t(lang, "within your signed limits", "在您签署的授权内"),
                        "warn" if a["needs_owner"] else "ok"))
@@ -969,7 +1147,8 @@ def _landing_items(c: HomeRead) -> list[dict[str, Any]]:
         when, amount = when_text(lot.arrival_day, c.today, lang), _short(lot.remaining_fen)
         source = _source(facility_name(c.state, lot.facility_id), lang)
         title = t(lang, f"{amount} of funding from {source} arrives {when}.", f"来自{source}的 {amount} 资金将于{when}到账。")
-        facts = [_fact(t(lang, "Arrives", "到账时间"), when), _fact(t(lang, "From", "来源"), source)]
+        facts = [_leg_fact(c, "SUBMIT_INVOICE_FOR_FINANCING" if lot.receivable_id else "DRAW_FACILITY", source, lot.remaining_fen, when,
+                           state_of(lot)), _fact(t(lang, "From", "来源"), source)]
         out.append(_item(f"landing:{lot.id}", "landing",
                          t(lang, "1 funding landing is pending" if len(lots) == 1 else f"{len(lots)} funding landings are pending",
                            f"{len(lots)} 笔融资待到账"), title, facts,
@@ -1033,13 +1212,29 @@ def changes_card(c: HomeRead) -> dict[str, Any]:
     return {"rows": rows, "empty_text": t(c.lang, "Nothing has changed lately.", "最近没有变化。"), "href": "/activity"}
 
 
-def build(c: HomeRead) -> dict[str, Any]:
+def build(c: HomeRead, *, v2: bool = True) -> dict[str, Any]:
     """Everything the hybrid adds to `GET /home`: the cash block's new fields and the top-level blocks. When the deals could not be read
     (the decision record, which `partial` names) the queue cannot say "No urgent action required" and the deals card is absent."""
     deals = _deals(c)
     att = attention(c, deals or [])
     if deals is None:
         att = {**att, "none_text": None, "incomplete": True}
-    return {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None)), "attention": att,
-            "funding_line": funding_line(c), "deals_card": deals_card(c, deals) if deals is not None else None,
-            "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
+    line = funding_line(c)
+    out: dict[str, Any] = {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None), deals), "attention": att,
+                           "funding_line": line, "deals_card": deals_card(c, deals) if deals is not None else None,
+                           "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
+    if v2 and get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
+        out["home_v2"] = _guarded_v2(c, att, line)
+    return out
+
+
+def _guarded_v2(c: HomeRead, att: dict[str, Any], line: dict[str, Any]) -> dict[str, Any] | None:
+    from app.api import home_v2
+
+    try:
+        return home_v2.build(c, att, line)
+    except Exception:
+        log.exception("the Home V2 fields could not be built")
+        if c.partial is not None:
+            c.partial.add("home_v2")
+        return None

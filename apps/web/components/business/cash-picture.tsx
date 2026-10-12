@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { SegmentedButtons } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
 
@@ -18,7 +18,7 @@ import type { HomeSeriesPoint, PictureAxis } from "@/lib/types";
  * Labels that would overlap one already placed, a line or the edge of the plot are skipped; the chips below name every event.
  */
 export const PAD = { l: 10, r: 14, t: 24, b: 30 } as const;
-export const FONT = 12;
+export const FONT = 13;
 /** The window never shows fewer than this many days, nor more than the cap; past the last interesting day it keeps a few days of what follows. */
 const MIN_WINDOW = 30;
 const MAX_WINDOW = 60;
@@ -136,6 +136,8 @@ export interface CashPictureProps {
   captions?: ReactNode;
   /** A shorter name for the alternative on the toggle when its name on the line is long (a plan named by its sources). */
   toggleAlternativeLabel?: string;
+  /** The buyer's reply as an alternative (ticket #116): its own path, drawn dashed in the brand colour at 60% under its label, never as the plan line. */
+  pending?: { series: HomeSeriesPoint[]; label: string } | null;
   /** The server's y axis: its range is the scale (widened only if a line would leave it) and its labelled ticks are drawn in a gutter at the left. Without it the picture scales to its data and draws no ticks. */
   axis?: PictureAxis | null;
 }
@@ -145,7 +147,7 @@ export function linesDiffer(baseline: HomeSeriesPoint[], alternative: HomeSeries
   return Boolean(alternative?.length && alternative.some((p) => baseline.find((s) => s.day === p.day)?.closing_fen !== p.closing_fen));
 }
 
-export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel, axis }: CashPictureProps) {
+export function CashPicture({ baseline, alternative, baselineLabel, alternativeLabel, floorFen, floorLabel, markers, horizonDays, chips: withChips = true, ariaLabel, testIdPrefix, header, viewLabel, labelledBy, windowDays, resetKey, captions, toggleAlternativeLabel, axis, pending }: CashPictureProps) {
   const { t } = useI18n();
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
@@ -181,11 +183,12 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
 
   const baseSegs = segments(base, end);
   const planSegs = hasPlan && planPoints ? segments(planPoints.filter((p) => p.day >= today), end) : [];
+  const pendingSegs = pending?.series.length ? segments(pending.series.filter((p) => p.day >= today), end) : [];
 
   // Scale from the data: both lines in the window, zero and the reserve always inside, 8% of padding.
   // With the server's axis the domain is exactly its range, widened only for what is drawn (a line or the reserve), never for zero.
   const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
-  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v)];
+  const levels = [...(axisOk ? [] : [0]), floor, ...baseSegs.map((s) => s.v), ...planSegs.map((s) => s.v), ...pendingSegs.map((s) => s.v)];
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const pad = Math.max((hi - lo) * 0.08, 1);
@@ -240,6 +243,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   };
   addLine(baseSegs);
   if (showPlan) addLine(planSegs);
+  addLine(pendingSegs);
   obstacles.push({ x0: pl, x1: pr, y0: yOf(floor) - 2, y1: yOf(floor) + 2 });
   if (yLo < 0) obstacles.push({ x0: pl, x1: pr, y0: yOf(0) - 2, y1: yOf(0) + 2 });
   const placed: Label[] = [];
@@ -419,11 +423,11 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">{header}</div>
         {hasPlan ? (
-          <SegmentedButtons
+          <SegmentedTabs
             label={viewLabel ?? alternativeLabel}
             value={view}
             onChange={setView}
-            options={[
+            tabs={[
               { value: "nothing", label: baselineLabel, testId: "picture-view-nothing" },
               { value: "plan", label: toggleAlternativeLabel ?? alternativeLabel, testId: "picture-view-plan" },
             ]}
@@ -444,6 +448,17 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
               <line x1="1" x2="21" y1="4" y2="4" strokeWidth="3" strokeLinecap="round" className="stroke-ok-solid" />
             </svg>
             {alternativeLabel}
+          </li>
+        </ul>
+      ) : null}
+
+      {pendingSegs.length && pending ? (
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold text-ink-2" data-testid="picture-pending-legend">
+          <li className="flex items-center gap-2">
+            <svg width="22" height="8" aria-hidden className="shrink-0">
+              <line x1="1" x2="21" y1="4" y2="4" strokeWidth="3" strokeDasharray="6 3" className="stroke-brand-600" opacity={0.6} />
+            </svg>
+            {pending.label}
           </li>
         </ul>
       ) : null}
@@ -481,6 +496,9 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
               strokeWidth={showPlan ? 2.5 : 3.5}
               opacity={showPlan ? 0.6 : 1}
             />
+            {pendingSegs.length ? (
+              <path data-testid="picture-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} />
+            ) : null}
             {showPlan ? (
               <path data-testid="picture-line-plan" d={pathOf(planSegs)} pathLength={1} fill="none" strokeLinejoin="round" className={`stroke-ok-solid ${intro ? "picture-draw picture-draw-second" : ""}`} strokeWidth={3.5} />
             ) : null}

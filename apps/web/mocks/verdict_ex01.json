@@ -5911,6 +5911,7 @@
         "Draws ¥149,986.20 on the Bank credit line today",
         "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
       ],
+      "recheck_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
       "supplier_cost_display": "¥3,027.77",
       "forward_value_display": "¥0.00",
       "verdict_id": "VER-a899ca66120c",

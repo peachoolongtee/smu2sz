@@ -39,7 +39,7 @@ export function CashPicture({ h }: { h: HomeView }) {
       labelledBy="home-picture-title"
       header={
         <>
-          <h2 id="home-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+          <h2 id="home-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {cash.picture_title || t("biz.picture.title")}
           </h2>
           <dl className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1">

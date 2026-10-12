@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
 import { StageTrack } from "@/components/deals/stage-track";
 import { DealHeading } from "@/components/documents";
-import { Callout, Chip, StatePill, textLinkClass, type Tone } from "@/components/ui";
+import { Callout, Chip, textLinkClass, type Tone } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
 import type { DealTone, DealView } from "@/lib/types";
 import { whenText } from "@/lib/when";
@@ -31,12 +32,12 @@ const ACTOR: Record<"BUYER" | "AGENT" | "OWNER" | "BANK", string> = {
   OWNER: "bg-sec-recv-bg text-sec-recv-fg",
   BANK: "bg-sec-cash-bg text-sec-cash-fg",
 };
-const TH = "whitespace-nowrap border-b border-line px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-ink-3";
+const TH = "whitespace-nowrap border-b border-line px-2 py-1.5 text-left text-meta font-semibold uppercase tracking-wider text-ink-3";
 const TD = "border-b border-line p-2 align-top tabular-nums";
 
 function Tick({ kind }: { kind: keyof typeof TICK }) {
   return (
-    <span aria-hidden className={`inline-grid size-5 flex-none place-items-center rounded-pill text-xs font-bold ${TICK[kind].cls}`}>
+    <span aria-hidden className={`inline-grid size-5 flex-none place-items-center rounded-pill text-supporting font-bold ${TICK[kind].cls}`}>
       {TICK[kind].glyph}
     </span>
   );
@@ -63,13 +64,13 @@ function clauseHref(docId: string, focus: { span?: { start: number; end: number 
 function ClauseLink({ docId, clause, span, quote }: { docId: string | null; clause: string | null; span?: { start: number; end: number } | null; quote?: string }) {
   const { t } = useI18n();
   const label = clause ? (/^\d/.test(clause) ? t("deal.clause", { n: clause }) : clause) : t("deal.seeClause");
-  if (!docId) return clause ? <span className="font-mono text-xs text-ink-3">{label}</span> : null;
+  if (!docId) return clause ? <span className="font-mono text-meta text-ink-3">{label}</span> : null;
   return (
     <Link
       href={clauseHref(docId, { span, clause })}
       title={quote ? `“${quote}”` : undefined}
       aria-label={t("deal.openClause", { clause: label })}
-      className="motion-press hit inline-flex min-h-8 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-pill bg-sec-deals-bg px-2 font-mono text-xs font-semibold text-sec-deals-fg hover:underline"
+      className="motion-press hit inline-flex min-h-8 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-pill bg-sec-deals-bg px-2 font-mono text-meta font-semibold text-sec-deals-fg hover:underline"
     >
       {label}
       <span aria-hidden>↗</span>
@@ -110,9 +111,9 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
       {deal.pills?.length ? (
         <div className="flex flex-wrap gap-1.5" data-testid="deal-pills">
           {deal.pills.map((p) => (
-            <StatePill key={p.label} tone={toneOf(p.tone)}>
+            <StateWord key={p.label} tone={toneOf(p.tone)}>
               {p.label}
-            </StatePill>
+            </StateWord>
           ))}
         </div>
       ) : null}
@@ -120,14 +121,14 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
       <dl className="mt-2 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-3" data-testid="deal-facts">
         {here ? (
           <div>
-            <dt className="text-xs text-ink-3">{t("deal.facts.stage")}</dt>
+            <dt className="text-supporting text-ink-3">{t("deal.facts.stage")}</dt>
             <dd className="font-medium text-ink" data-testid="deal-stage-now">
-              {te("dealstage", here.key) || here.label} <span className="text-xs font-normal text-ink-3">· {te("dealstate", here.state)}</span>
+              {te("dealstage", here.key) || here.label} <span className="text-supporting font-normal text-ink-3">· {te("dealstate", here.state)}</span>
             </dd>
           </div>
         ) : null}
         <div className="min-w-0">
-          <dt className="text-xs text-ink-3">{t("deal.facts.contract")}</dt>
+          <dt className="text-supporting text-ink-3">{t("deal.facts.contract")}</dt>
           <dd className="break-words font-medium text-ink">
             {meta}
             {docId ? (
@@ -138,12 +139,12 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
                 </Link>
               </>
             ) : null}
-            {c?.replaces_text ? <span className="block text-xs font-normal text-ink-3" data-testid="deal-replaces">{c.replaces_text}</span> : null}
+            {c?.replaces_text ? <span className="block text-supporting font-normal text-ink-3" data-testid="deal-replaces">{c.replaces_text}</span> : null}
           </dd>
         </div>
         {deal.next_invoice ? (
           <div>
-            <dt className="text-xs text-ink-3">{t("deal.facts.invoice")}</dt>
+            <dt className="text-supporting text-ink-3">{t("deal.facts.invoice")}</dt>
             <dd className="font-medium tabular-nums text-ink" data-testid="deal-next-invoice">
               {[when(deal.next_invoice.when, deal.next_invoice.day), deal.next_invoice.amount_display].filter(Boolean).join(" · ")}
             </dd>
@@ -185,7 +186,7 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
               ))}
             </dl>
             {blanks.length ? (
-              <p className="mt-2 text-xs text-ink-3" data-testid="deal-blanks">
+              <p className="mt-2 text-supporting text-ink-3" data-testid="deal-blanks">
                 {t("deal.notInContractList", { list: blanks.map((b) => te("contractfield", b.field) || b.label).join(", ") })}
                 <span className="mt-1 block border-l-2 border-line-strong pl-2">{t("deal.notFoundHint")}</span>
               </p>
@@ -198,7 +199,7 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
             <div className="space-y-2" data-testid="deal-in-force">
               {changed.map((r) => (
                 <div key={r.key} className={`rounded-tile border px-3 py-2 ${r.vs_contract === "NOT_COMPARABLE" ? "border-line bg-subtle" : "border-warn-line bg-warn-bg/50"}`} data-vs={r.vs_contract}>
-                  <p className="text-xs font-bold text-ink">{r.label}</p>
+                  <p className="text-supporting font-bold text-ink">{r.label}</p>
                   <div className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 text-sm">
                     {r.vs_contract === "DIFFERENT" && r.contract_display ? (
                       <>
@@ -211,11 +212,11 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
                     </span>
                     <span className="font-semibold text-ink">{r.value_display}</span>
                   </div>
-                  {r.vs_contract_note ? <p className="mt-1 text-xs text-ink-3">{r.vs_contract_note}</p> : null}
+                  {r.vs_contract_note ? <p className="mt-1 text-supporting text-ink-3">{r.vs_contract_note}</p> : null}
                 </div>
               ))}
               {same.length ? (
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5 text-supporting">
                   <span className="mr-0.5 font-semibold text-ink-3">{t("deal.unchanged")}</span>
                   {same.map((r) => (
                     <span key={r.key} className="inline-flex items-center gap-1 rounded-pill border border-line bg-surface px-2 py-0.5 text-ink-2" data-vs={r.vs_contract}>
@@ -235,11 +236,11 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
             <ol className="relative grid gap-2.5 before:absolute before:bottom-3 before:left-3.5 before:top-3 before:w-px before:bg-line" data-testid="deal-changes">
               {deal.changes?.map((ch, i) => (
                 <li key={i} className="relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5">
-                  <span aria-hidden className={`z-10 grid size-7 place-items-center rounded-full text-xs font-bold ${ACTOR[ch.actor]}`}>
+                  <span aria-hidden className={`z-10 grid size-7 place-items-center rounded-full text-supporting font-bold ${ACTOR[ch.actor]}`}>
                     {te("deal.actor", ch.actor).slice(0, 1).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                    <p className="flex flex-wrap items-baseline gap-x-2 text-supporting">
                       <span className="font-bold text-ink">{ch.label}</span>
                       <span className="sr-only">{te("deal.actor", ch.actor)}</span>
                       <span className="text-ink-3">{when(ch.when, ch.day)}</span>
@@ -270,17 +271,17 @@ export function DealSummary({ deal, today }: { deal: DealView; today: number }) 
                       <tr key={inv.id} data-testid={`deal-invoice-${inv.id}`} data-status={inv.status}>
                         <td className={TD}>
                           {inv.label}
-                          <span className="block text-xs text-ink-3">{t("deal.issued", { when: when(inv.issue_when, inv.issue_day) })}</span>
+                          <span className="block text-supporting text-ink-3">{t("deal.issued", { when: when(inv.issue_when, inv.issue_day) })}</span>
                         </td>
                         <td className={`${TD} text-right`}>{inv.amount_display}</td>
                         <td className={`${TD} whitespace-nowrap`}>{when(inv.due_when, inv.due_day)}</td>
                         <td className={`${TD} text-right`}>{inv.outstanding_display}</td>
                         <td className={TD}>
-                          <StatePill tone={toneOf(inv.tone)} wrap={false}>
+                          <StateWord tone={toneOf(inv.tone)} wrap={false}>
                             {inv.status_text}
-                          </StatePill>
+                          </StateWord>
                           {inv.notes.map((n) => (
-                            <span key={n} className="block text-xs text-ink-3">
+                            <span key={n} className="block text-supporting text-ink-3">
                               {n}
                             </span>
                           ))}
@@ -345,7 +346,7 @@ function Owed({ title, items, docId }: { title: string; items: { text: string | 
   const { t } = useI18n();
   return (
     <>
-      <p className="mb-1 text-xs font-medium text-ink-2">{title}</p>
+      <p className="mb-1 text-supporting font-medium text-ink-2">{title}</p>
       {items.length ? (
         <ul className="grid gap-1.5">
           {items.map((it, i) => (

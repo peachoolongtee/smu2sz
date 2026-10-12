@@ -117,16 +117,16 @@ export default function ApprovalsPage() {
         <div className="max-w-4xl space-y-8">
           {waiting.length ? (
             <ul className="space-y-6" data-testid="approvals-waiting">
-              {waiting.map((a) => (
+              {waiting.map((a, i) => (
                 <li key={a.id} className="min-w-0">
-                  <ApprovalCard a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} cash={cash} headlineInPage={single?.id === a.id} />
+                  <ApprovalCard raised={i === 0} a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} cash={cash} headlineInPage={single?.id === a.id} />
                 </li>
               ))}
             </ul>
           ) : null}
           {decided.length ? (
             <section aria-labelledby="appr-decided-title" data-testid="approvals-decided">
-              <h2 id="appr-decided-title" className="border-b border-line-strong pb-2 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+              <h2 id="appr-decided-title" className="border-b border-line-strong pb-2 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
                 {t("biz.appr.decided.title")}
               </h2>
               <ul>

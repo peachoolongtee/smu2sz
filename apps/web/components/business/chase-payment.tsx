@@ -19,6 +19,10 @@ export function ChasePayment({
   list = false,
   top = false,
   className = "",
+  label,
+  variant = "secondary",
+  size = "sm",
+  scope: scopeName,
 }: {
   receivableId: string;
   buyer: string;
@@ -27,11 +31,18 @@ export function ChasePayment({
   /** The button beside the top action sentence above the summary: its own test ids and dialog ids again. */
   top?: boolean;
   className?: string;
+  /** The button's words when the server names the action ("Prepare reminder"); default "Chase payment". The dialog is the same handoff. */
+  label?: string;
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md";
+  /** Test-id and dialog-id scope when the control sits in a place of its own (the selected invoice). */
+  scope?: string;
 }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
-  const scope = top ? "top-" : list ? "list-" : "";
+  const scope = scopeName ?? (top ? "top-" : list ? "list-" : "");
+  const words = label ?? t("biz.chase.button");
   const title = `chase-${scope}title-${receivableId}`;
 
   useEffect(() => {
@@ -44,14 +55,15 @@ export function ChasePayment({
   return (
     <>
       <Button
-        size="sm"
+        size={size}
+        variant={variant}
         className={className}
         aria-haspopup="dialog"
-        aria-label={`${t("biz.chase.button")}: ${buyer}`}
+        aria-label={`${words}: ${buyer}`}
         onClick={() => setOpen(true)}
         data-testid={`chase-${scope}open-${receivableId}`}
       >
-        {t("biz.chase.button")}
+        {words}
       </Button>
       <dialog
         ref={ref}

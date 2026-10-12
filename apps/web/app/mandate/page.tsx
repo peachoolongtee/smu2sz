@@ -131,15 +131,15 @@ function MandateBody({ view }: { view: MandateView }) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card id="version" title={t("mandate.version")}>
           <p className="text-2xl font-semibold tabular-nums">v{m.version}</p>
-          <p className="mt-1 text-xs text-ink-3">{t("mandate.org", { org: m.org_id })}</p>
-          <p className="mt-2 text-xs text-ink-2">{t("mandate.versionNote")}</p>
+          <p className="mt-1 text-meta text-ink-3">{t("mandate.org", { org: m.org_id })}</p>
+          <p className="mt-2 text-meta text-ink-2">{t("mandate.versionNote")}</p>
         </Card>
         <Card id="signature" title={t("mandate.signature")}>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={sigTone}>{te("sigstatus", view.signature.status)}</Badge>
-            <span className="text-xs text-ink-3">{view.signature.algorithm}</span>
+            <span className="text-meta text-ink-3">{view.signature.algorithm}</span>
           </div>
-          <div className="mt-2 space-y-1 text-xs text-ink-2">
+          <div className="mt-2 space-y-1 text-meta text-ink-2">
             <p>{view.signature.key_fingerprint}</p>
             <p className="flex items-center gap-1">
               {t("mandate.sig")}: <Hash value={m.signature_hex} />
@@ -154,7 +154,7 @@ function MandateBody({ view }: { view: MandateView }) {
           <p className="mt-2 text-sm tabular-nums">
             {t("mandate.expiresOn", { day: view.validity.expires_day })}
           </p>
-          <p className="text-xs text-ink-3">
+          <p className="text-meta text-ink-3">
             {t("mandate.daysLeft", { n: view.validity.days_remaining, today: view.validity.current_day })}
           </p>
         </Card>

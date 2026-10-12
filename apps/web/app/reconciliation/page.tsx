@@ -29,7 +29,7 @@ export default function ReconciliationPage() {
       <PageHeader
         title={t("recon.title")}
         subtitle={t("recon.subtitle")}
-        actions={data ? <span className="text-xs text-ink-3">{t("recon.asof", { day: data.as_of_day })}</span> : undefined}
+        actions={data ? <span className="text-meta text-ink-3">{t("recon.asof", { day: data.as_of_day })}</span> : undefined}
       />
 
       {recon.error ? (
@@ -75,9 +75,9 @@ export default function ReconciliationPage() {
                       <tr key={r.entry_hash} className={r.flagged ? "bg-bad-bg/50" : ""} data-testid={`receipt-${r.op_id}`}>
                         <td className={tdCls}>
                           <p className="font-medium">{r.receivable_id}</p>
-                          <p className="text-xs text-ink-2">{r.detail}</p>
+                          <p className="text-meta text-ink-2">{r.detail}</p>
                           {r.bank_reference ? (
-                            <p className="mt-0.5 break-all font-mono text-xs text-ink-3" data-testid={`receipt-ref-${r.op_id}`}>
+                            <p className="mt-0.5 break-all font-mono text-meta text-ink-3" data-testid={`receipt-ref-${r.op_id}`}>
                               {t("recon.bankRef", { ref: r.bank_reference })}
                             </p>
                           ) : null}
@@ -124,7 +124,7 @@ export default function ReconciliationPage() {
                       <tr key={`${p.commitment_id}:${p.obligation_id}:${p.receivable_id}`} data-testid={`promised-${p.receivable_id}`} data-status={p.status}>
                         <td className={tdCls}>
                           <p className="font-medium">{p.receivable_id}</p>
-                          <p className="text-xs text-ink-2">{p.detail}</p>
+                          <p className="text-meta text-ink-2">{p.detail}</p>
                         </td>
                         <td className={`${tdCls} tabular-nums`}>{p.promised_day !== null ? t("common.dayN", { n: p.promised_day }) : t("common.none")}</td>
                         <td className={`${tdCls} text-right tabular-nums`}>{p.face_display}</td>

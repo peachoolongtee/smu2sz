@@ -11,7 +11,7 @@ import type { RefusalBlock } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 /** A fold inside the inbox list: its head spans the card, aligned with the rows. */
-const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-2 text-xs font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
+const foldHead = "hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-2 text-supporting font-medium text-brand-700 [&::-webkit-details-marker]:hidden";
 
 /** One buyer's messages, newest first; the first is the thread's row. */
 interface Thread {
@@ -121,7 +121,7 @@ export function InboxList({
         <span className="min-w-0 flex-1 basis-56">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className={`break-words text-sm text-ink ${read ? "font-medium" : "font-semibold"}`}>{m.company}</span>
-            <span className="text-xs text-ink-3">
+            <span className="text-supporting text-ink-3">
               {m.contact} · {te("inbox.role", m.role)}
             </span>
             {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : null}
@@ -130,7 +130,7 @@ export function InboxList({
           {/* The message being read is shown whole; the others keep to one line. */}
           <span className={`mt-0.5 block text-sm text-ink-2 ${isCurrent ? "break-words" : "truncate"}`}>{m.document.text.replace(/\s+/g, " ")}</span>
         </span>
-        <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-ink-3">
+        <span className="flex shrink-0 flex-col items-end gap-1 text-supporting text-ink-3">
           <span>{t("inbox.at", { when: whenText(m.document.received_day, today, t), time: m.time })}</span>
           {busy === m.id ? (
             <span className="font-medium text-brand-700">{t("inbox.reading")}</span>
@@ -170,7 +170,7 @@ export function InboxList({
   if (collapsed && !(business && known === null)) {
     return (
       <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line pb-2" data-testid="inbox-collapsed">
-        <h2 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
+        <h2 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{business ? t("biz.deals.inboxCount", { n: shown.length }) : t("biz.deals.simulatedInboxCount", { n: shown.length })}</h2>
         <Button size="sm" onClick={onExpand} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
           {t("biz.deals.backToInbox")}
         </Button>
@@ -212,7 +212,7 @@ export function InboxList({
           others.map(thread)
         )}
         {aside ? (
-          <li className="flex items-start gap-2 px-2 py-3 text-xs text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
+          <li className="flex items-start gap-2 px-2 py-3 text-supporting text-ink-2" data-testid="inbox-blocked" data-example={aside.example ? "true" : "false"}>
             <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-pill bg-bad-solid" />
             <span>
               {aside.text}{" "}

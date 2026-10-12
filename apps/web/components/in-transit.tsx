@@ -19,7 +19,7 @@ export function InTransit({ lots }: { lots: Lot[] }) {
       {lots.map((l) => (
         <span key={l.id} className="block" data-testid="in-transit-lot">
           <span className="font-semibold tabular-nums">{t("transit.lands", { amount: l.principal_display, n: l.arrival_day })}</span>
-          <span className="block text-xs font-normal text-ink-3">{t("transit.hint", { from: l.request_day, facility: l.facility_id })}</span>
+          <span className="block text-meta font-normal text-ink-3">{t("transit.hint", { from: l.request_day, facility: l.facility_id })}</span>
         </span>
       ))}
     </span>

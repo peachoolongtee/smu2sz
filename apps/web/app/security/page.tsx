@@ -184,8 +184,8 @@ export default function SecurityPage() {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <CodeBadge code={e.kind} tone="bad" />
-                    <span className="min-w-0 max-w-full break-words rounded-pill border border-ok-line bg-ok-bg px-2 py-0.5 text-xs font-medium text-ok-fg">{e.action_taken}</span>
-                    <span className="min-w-0 max-w-full break-all text-xs text-ink-3">
+                    <span className="min-w-0 max-w-full break-words rounded-pill border border-ok-line bg-ok-bg px-2 py-0.5 text-meta font-medium text-ok-fg">{e.action_taken}</span>
+                    <span className="min-w-0 max-w-full break-all text-meta text-ink-3">
                       {e.id} &middot; {t("common.dayN", { n: e.day })}
                       {e.trace_id ? ` · ${e.trace_id}` : ""}
                     </span>

@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { walkAway, sendCounter } from "./helpers";
+import { sendCounter, verdictHeading, walkAway } from "./helpers";
 
 /**
  * Deals in Business mode, one workspace in the server's order: one inbox thread per buyer (folded to one row once a deal is selected),
@@ -78,78 +78,47 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   // Opening a message reads it (no separate button); the inbox folds to one row; the ask is in plain words; the one Action is the check.
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toContainText("Inbox (3)");
-  await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("1.20% discount for paying the ¥420,000.00 invoice early");
-  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("60");
-  await expect(page.getByTestId("deal-ask-CONTINGENT_REBATE")).toContainText("1.00% rebate");
+  // (the queue's detail: the customer link, and the ask in one sentence made of the server's own words for the three terms)
+  await expect(page.getByTestId("queue-detail-customer")).toContainText("Foshan Home Retail Co.");
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("queue-ask")).toContainText("payment terms to 60 days");
+  await expect(page.getByTestId("queue-ask")).toContainText("a 1.00% rebate");
   const next = page.getByTestId("next-step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
 
-  // The workspace in the page's order: the verdict (the heading), the priced response (the bar), the picture and its columns, who and where, what they ask with
-  // what each costs, why it matters (folded).
-  // The heading is the server's short verdict (`headline_short`) with the figures in the quiet line beneath (`headline_note`); a server that sends neither (an older
-  // one, and today's mocks) gives the whole sentence as the heading and "Two replies are ready to send." as the line.
-  await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
-  await expect(page.getByTestId("deal-action")).toBeVisible();
-  const heading = (await page.getByTestId("deal-recommendation").innerText()).trim();
-  if (heading.startsWith("Don't accept as asked:")) {
-    expect(heading).toBe("Don't accept as asked: it would cost ¥28,326.92 over 12 months, above your ¥5,000.00 limit.");
-    await expect(page.getByTestId("deal-action")).toHaveText("Two replies are ready to send.");
-  } else {
-    expect(heading.split(/\s+/).length).toBeLessThanOrEqual(8);
-    expect(heading).not.toMatch(/[¥\d]/);
-    await expect(page.getByTestId("deal-action")).toContainText("¥28,326.92");
-    await expect(page.getByTestId("deal-action")).toContainText("¥5,000.00");
-  }
-  await expect(page.getByTestId("deal-needs-you")).toHaveText(/An offer is waiting for your reply/);
+  // The queue's detail in the board's order: the verdict (the heading, the server's short verdict), the ask, why (the server's reasons with the figures), the reply card, the cash on
+  // each path, then one fold. (The legacy page's "needs you" pill, quiet figures line, state chip, "Evaluated today" and the two closed asks and why folds have no counterpart: the list
+  // row says "Reply needed" and the recommendation, the why carries the figures, and the comparison fold below carries the costs.)
+  // The line says FLOW's short verdict (the server's) and, as its status, the record's own word for where the deal stands (a line not selected says the server's "needs you" words).
+  await expect(page.getByTestId("queue-row").first()).toContainText("Counter instead of accepting as asked");
+  await expect(page.getByTestId("deal-state-chip")).toHaveText(/Counter recommended/);
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
+  const heading = (await page.getByTestId("queue-heading").innerText()).trim();
+  expect(heading.split(/\s+/).length).toBeLessThanOrEqual(8);
+  expect(heading).not.toMatch(/[¥\d]/);
+  await expect(page.getByTestId("queue-why")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("queue-why")).toContainText("¥5,000.00");
   // The verdict is the page's one heading.
   await expect(page.locator("h1")).toHaveCount(1);
-  // The recommendation has its reason: the first of the server's reasons (behind the "Why it matters" fold) is not empty.
-  await expect(page.getByTestId("deal-why-reasons").locator("li").first()).not.toBeEmpty();
-  const tops = await page.evaluate(() => ["deal-recommendation-card", "counters", "deal-paths", "deal-selected", "deal-ask", "deal-why", "commitments", "deal-advanced"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
+  await expect(page.getByTestId("queue-why").locator("p").nth(1)).not.toBeEmpty();
+  const tops = await page.evaluate(() => ["queue-heading", "queue-ask", "queue-why", "queue-recommends", "deal-paths", "queue-compare", "queue-aside"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`)).map((el) => el?.getBoundingClientRect().top ?? -1));
   // (no agreement yet, so there is no commitments card)
   const present = tops.filter((y) => y >= 0);
   expect(present.length).toBe(7);
-  expect(present).toEqual([...present].sort((a, b) => a - b));
-  // The header: the buyer, when it came and when it was checked, and one chip for where the deal stands. No ask line: the asks card says it once.
-  await expect(page.locator("#deal-selected")).not.toContainText("Immediate discount · Terms extension · Contingent rebate");
-  // (the pill's tone glyph comes first; the words are exactly the server's)
-  await expect(page.getByTestId("deal-state-chip")).toHaveText(/^\S?\s?Counter recommended$/);
-  await expect(page.getByTestId("deal-evaluated")).toHaveText("Evaluated today");
-  // What they ask and what each costs sit behind a fold, closed (the paths' columns already say what each path costs).
-  const askFold = page.getByTestId("deal-ask-fold");
-  await expect(askFold).toHaveJSProperty("open", false);
-  await expect(askFold.locator("> summary")).toHaveText("What they ask, and what each costs you");
-  await askFold.locator("> summary").click();
-  // Buyer terms appear once: the server's sentence for the term, not again in a second card, the response or the header.
-  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toHaveText("The buyer gets 60-day payment terms on future invoices (ongoing, no end date)");
-  expect((await page.locator("main").innerText()).match(/60-day payment terms/g)).toHaveLength(1);
-  await expect(page.getByTestId("deal-asks").locator("li")).toHaveCount(3);
-  await expect(page.getByTestId("deal-parsed-terms")).toHaveCount(0);
-  await expect(page.getByTestId("deal-ask-label-IMMEDIATE_DISCOUNT")).toHaveText("Immediate discount");
-  // What it costs: the immediate discount on its own line, the forward lines and their total kept apart, never added together.
-  const immediate = page.getByTestId("deal-impact-immediate");
-  await expect(immediate).toContainText("Immediate discount");
-  await expect(immediate).toContainText("1.20%");
-  await expect(immediate.getByTestId("deal-impact-amount")).toHaveText("¥5,040.00");
-  await expect(immediate).toContainText("is not part of the forward figure");
-  const forward = page.getByTestId("deal-impact-forward");
-  await expect(forward).not.toContainText("¥5,040.00");
-  await expect(forward.getByTestId("deal-impact-TERMS_EXTENSION")).toContainText("¥24,326.92");
-  // The window the forward lines share is said once, above them.
-  await expect(forward.getByTestId("deal-impact-window")).toHaveText("Valued over the next 12 months at your cheapest committed source.");
-  await expect(forward.getByTestId("deal-impact-CONTINGENT_REBATE")).toContainText("¥4,000.00");
-  await expect(forward).toContainText("12-month forward total");
-  await expect(forward.getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
-  await expect(forward.getByTestId("deal-impact-cap")).toHaveText("Your limit: ¥5,000.00");
-  await expect(forward).toContainText("Over your limit");
-  await expect(forward.getByTestId("deal-impact-note")).toContainText("the two are not added together");
-  // Why it matters: the server's reasons, then the cash facts of the offer as asked: first breach and worst point are two named days.
-  await page.getByTestId("deal-why-fold").locator("> summary").click();
-  await expect(page.getByTestId("deal-why-reasons").locator("li")).toHaveText([
-    "The forward concessions in this offer come to ¥28,326.92, above your ¥5,000.00 limit.",
-    "Accepted as asked, cash would fall below your minimum in 47 days.",
-  ]);
+  expect(present.slice(0, 6)).toEqual([...present.slice(0, 6)].sort((a, b) => a - b));
+  // Buyer terms appear twice in the page's prose before any fold is opened, as the board has them: the list row's request and the ask sentence (the card and the why do not repeat them).
+  expect((await page.locator("main").innerText()).match(/payment terms to 60 days/g)).toHaveLength(2);
+  // The comparison fold is closed; opened, its table carries what each path costs (the immediate discount on its own row, the 12-month cost apart, never added) and the advanced details.
+  const compare = page.getByTestId("queue-compare");
+  await expect(compare).toHaveJSProperty("open", false);
+  await expect(compare.locator("> summary")).toHaveText("Compare accepting, countering and doing nothing");
+  await compare.locator("> summary").click();
+  await expect(page.getByTestId("queue-impact-once")).toContainText("¥5,040.00");
+  await expect(page.getByTestId("queue-impact-forward")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("queue-impact-financing")).toContainText("¥24,326.92");
+  await expect(page.getByTestId("queue-impact-limit")).toContainText("exceeded");
+  await expect(compare).toContainText("separate rows, never added");
+  // The cash facts of the offer as asked sit under the chart: the first reserve breach with the cash it falls to, the worst point, and the discount that costs more than it saves.
   const breach = page.getByTestId("deal-fact-cash");
   await expect(breach).toContainText("First reserve breach");
   await expect(breach).toContainText("in 47 days");
@@ -158,17 +127,18 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(worst).toContainText("Worst point");
   await expect(worst).toContainText("¥164,960.00");
   await expect(worst).toContainText("in 60 days");
-  // The three numbers are about the offer as the buyer asked for it, and the page says so.
   await expect(page.getByTestId("deal-if-accept")).toHaveText("If you accept the offer as asked:");
-  // The picture says the same in its own words: the decisive moment, the asked path's tile and its column's lowest point and first breach.
+  await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
+  // The cash facts of the offer as asked, in the table and on the picture: the lowest point and the first breach are two named days.
+  await expect(page.getByTestId("queue-impact-lowest")).toContainText("Lowest ¥165k, in 60 days");
+  await expect(page.getByTestId("queue-why")).toContainText("Accepted as asked, cash would fall below your minimum in 47 days.");
   await expect(page.getByTestId("path-moment")).toContainText("As asked, cash is below your minimum");
   await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
   await expect(page.getByTestId("path-col-lowest-0")).toHaveText("Lowest ¥165k, in 60 days");
   await expect(page.getByTestId("path-col-breach-0")).toContainText("in 47 days");
-  await expect(page.getByTestId("deal-discount-dearer")).toContainText("1.20% early-payment discount also costs more");
   // No engine count or code at level 1.
   await expect(page.locator("body")).not.toContainText("failed,");
-  await expect(page.locator("#deal-recommendation-card")).not.toContainText("REJECT");
+  await expect(page.locator("#queue-recommends, [data-testid=queue-recommends]")).not.toContainText("REJECT");
 
   // The reply: three paths on one chart, the recommended reply picked first. Option A's cost with its basis; Option B's net economic cost with both parts, never a bare zero.
   const response = page.locator("#counters");
@@ -187,53 +157,37 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await expect(page.getByTestId("path-col-forward-0")).toHaveText("¥28,326.92 over 12 months");
   await expect(page.getByTestId("path-col-once-0")).toHaveText("¥5,040.00 once");
 
-  // With the check done there is no Action left to take on this card: the response carries the page's one filled call ("Send this counter").
+  // With the check done there is no Action left to take on this card: the card carries the page's one filled call, and the send is one press behind it.
   await expect(next).toHaveCount(0);
+  await expect(page.getByTestId("queue-review-open")).toHaveClass(/bg-brand-600/);
+  await page.getByTestId("queue-review-open").click();
   await expect(response.getByTestId("deal-send")).toHaveClass(/bg-brand-600/);
+  await page.getByTestId("queue-review-close").click();
   // The jump band and the passive stage links are gone, and so is the step line.
   await expect(page.getByRole("link", { name: "See what we'd offer back" })).toHaveCount(0);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
-  // One fold holds the rest, in the sections the server names, closed.
-  const advanced = page.getByTestId("deal-advanced");
-  await expect(advanced).not.toHaveAttribute("open", "");
-  await expect(advanced.locator("> summary")).toHaveText("Advanced details");
-  await advanced.locator("> summary").click();
-  expect(await advanced.locator("[data-testid^='deal-adv-']").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).toEqual([
-    "deal-adv-parsed_obligations",
-    "deal-adv-source_text",
-    "deal-adv-checks",
-    "deal-adv-formula",
-    "deal-adv-engine_verdict",
-    "deal-adv-audit_evidence",
-  ]);
-  for (const key of ["parsed_obligations", "source_text", "checks", "formula", "engine_verdict", "audit_evidence"]) {
-    await expect(page.getByTestId(`deal-adv-${key}`)).not.toHaveAttribute("open", "");
-  }
-  await expect(page.getByTestId("deal-adv-parsed_obligations").locator("> summary")).toHaveText("How the agent read it");
-  await page.getByTestId("deal-adv-parsed_obligations").locator("> summary").click();
-  await expect(page.getByTestId("deal-parsed-list")).toContainText("Terms extension");
-  // Every check, the formulas and the engine's verdict.
-  await page.getByTestId("deal-adv-checks").locator("> summary").click();
-  await expect(page.getByTestId("deal-adv-checks").locator("> summary")).toContainText("Show all checks (8)");
-  await page.getByTestId("deal-adv-engine_verdict").locator("> summary").click();
-  await expect(page.getByTestId("deal-technical-summary")).toContainText("the engine's verdict");
-  await expect(page.getByTestId("deal-technical-summary")).toContainText("REJECT");
+  // The comparison fold holds the table and two closed folds, the buyer's message and the calculations; never the versions, the ids or the engine's checks (the legacy page's
+  // "How the agent read it", "Show all checks", the engine's verdict and the audit evidence have no counterpart here).
+  const evidence = page.getByTestId("queue-evidence");
+  expect(await evidence.locator("[data-testid^='deal-adv-']").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")))).toEqual(["deal-adv-source_text", "deal-adv-formula"]);
+  for (const key of ["source_text", "formula"]) await expect(page.getByTestId(`deal-adv-${key}`)).not.toHaveAttribute("open", "");
+  await expect(page.getByTestId("deal-adv-source_text").locator("> summary")).toHaveText("The buyer's message");
+  await expect(page.getByTestId("deal-adv-formula").locator("> summary")).toHaveText("Calculations");
+  await expect(page.getByTestId("deal-advanced")).toHaveCount(0);
+  await expect(page.getByTestId("deal-audit-evidence")).toHaveCount(0);
   // The calculation opens with the reading, the equation behind it.
   await page.getByTestId("deal-adv-formula").locator("> summary").click();
   const items = page.getByTestId("deal-calc-item");
   await expect(items.nth(1)).toContainText("60-day terms add 15 days of financing to 13 expected invoices");
   await expect(items.nth(1)).toContainText("¥24,326.92");
   await expect(items.nth(1).locator("details > summary")).toHaveText("Formula");
-  await page.getByTestId("deal-adv-audit_evidence").locator("> summary").click();
-  await expect(page.getByTestId("deal-audit-evidence")).toContainText("Decision record");
-  await advanced.locator("> summary").click();
-  // No empty commitments card; the page fits about two screens with the disclosures closed.
+  await page.getByTestId("deal-adv-formula").locator("> summary").click();
+  // No empty commitments card; the queue keeps the chart and its columns always visible, so with the folds closed it fits about four desktop screens (it was two before the chart stayed open).
+  await compare.locator("> summary").click();
   await expect(page.locator("#commitments")).toHaveCount(0);
-  await askFold.locator("> summary").click();
-  await page.getByTestId("deal-why-fold").locator("> summary").click();
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
-  // (the strategy build adds its "Before they ask" card to the page)
-  expect(height).toBeLessThanOrEqual(2 * 900 + 100 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
+  // (the strategy build adds its "Before they ask" card to the detail)
+  expect(height).toBeLessThanOrEqual(4 * 900 + (process.env.E2E_STRATEGY === "1" ? 250 : 0));
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
   // Reading the same message again costs nothing: it is shown, not read twice.
   await page.getByTestId("inbox-back").click();
@@ -241,6 +195,7 @@ test("opening a message reads it, and the evaluated deal is one workspace in the
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   // Sending the counter: the buyer's (simulated) answer comes back in words, and the next step is the agreement.
+  await page.getByTestId("queue-review-open").click();
   await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
   // Above the button, in 14 px ink: "This will" and what sending does, from the server's lines; the first press asks, the second sends.
   await expect(response.getByTestId("deal-send-scope")).toContainText("This will");
@@ -278,7 +233,7 @@ test("the picked path is the page's own state: reading another message and comin
   await inbox.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await page.getByTestId("path-col-pick-2").click();
-  await expect(page.getByTestId("path-reply")).toContainText("Option B");
+  await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
   // Read the other message of the thread: the paths are gone until it is checked.
   await page.getByTestId("inbox-back").click();
   await page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first().click();
@@ -294,7 +249,7 @@ test("the picked path is the page's own state: reading another message and comin
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByTestId("path-reply")).toContainText("Option A");
+  await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
 });
 
 test("Business mode never shows a sender the books have not vouched for, not even while they load", async ({ page }) => {
@@ -317,7 +272,7 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   const inbox = page.getByTestId("inbox-list");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // The demo's negotiation panel runs a buyer who refuses (Demo views; the Business page only sends to a buyer who accepts).
   await page.goto("/verdict");
   await page.getByLabel("Buyer refuses every counter").check();
@@ -350,13 +305,14 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
 
 test("?buyer= selects that buyer's deal: the chase dialog's thread link lands on the workspace", async ({ page }) => {
   await page.goto("/deals?buyer=BUYER-1");
-  await expect(page.locator("#deal-selected")).toContainText("Foshan Home Retail Co.");
+  await expect(page.getByTestId("queue-detail-customer")).toContainText("Foshan Home Retail Co.");
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toBeVisible();
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00");
   // A buyer the books do not know selects nothing.
   await page.evaluate(() => sessionStorage.clear());
   await page.goto("/deals?buyer=BUYER-NOBODY");
   await expect(page.getByTestId("inbox-list")).toBeVisible();
+  await expect(page.getByTestId("queue-detail")).toHaveCount(0);
   await expect(page.locator("#deal-selected")).toHaveCount(0);
 });
 
@@ -365,6 +321,7 @@ test("the confirm step asks how the simulated buyer leans; a buyer who holds fir
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   const response = page.locator("#counters");
+  await page.getByTestId("queue-review-open").click();
   await response.getByTestId("deal-send").click();
   const box = response.getByTestId("deal-send-confirm-box");
   await expect(box).toContainText("Simulated buyer");

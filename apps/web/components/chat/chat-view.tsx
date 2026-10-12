@@ -34,7 +34,7 @@ function Bubble({ from, children, label }: { from: "user" | "error"; children: R
           from === "user" ? "bg-brand-600 text-white" : "border border-bad-line bg-bad-bg text-bad-fg"
         }`}
       >
-        <p className={`mb-0.5 text-xs font-semibold uppercase tracking-wide ${from === "user" ? "text-white" : ""}`}>{label}</p>
+        <p className={`mb-0.5 text-meta font-semibold uppercase tracking-wide ${from === "user" ? "text-white" : ""}`}>{label}</p>
         {children}
       </div>
     </div>
@@ -98,7 +98,7 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
   if (prompts.length === 0) return null;
   return (
     <div>
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.suggested")}</p>
+      <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("chat.suggested")}</p>
       {/* The chips wrap: a row that scrolls sideways hides questions off the edge. In the panel the rows are capped and scroll up and down. */}
       <ul className={`flex flex-wrap gap-2 ${compact ? "max-h-32 overflow-y-auto pb-1" : ""}`}>
         {prompts.map((p) => (
@@ -111,7 +111,7 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
                 if (p.counterparty) setCounterparty(p.counterparty);
                 void sendMessage(p.text, p.text, role);
               }}
-              className="motion-press max-w-full rounded-pill border border-line-ui bg-surface px-3 py-1.5 touch:min-h-11 text-left text-xs font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+              className="motion-press max-w-full rounded-pill border border-line-ui bg-surface px-3 py-1.5 touch:min-h-11 text-left text-meta font-medium text-ink-2 hover:bg-subtle hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="line-clamp-2 break-words">{t(p.label)}</span>
             </button>
@@ -128,7 +128,7 @@ function Discussing({ echo }: { echo: NlContextEcho }) {
   const what = echo.counterparty_name ? t("chat.discussing.offer", { who: echo.counterparty_name }) : echo.invoice_id ? t("chat.discussing.invoice") : null;
   if (!what) return null;
   return (
-    <p className="text-xs text-ink-3" data-testid="chat-discussing">
+    <p className="text-meta text-ink-3" data-testid="chat-discussing">
       {t("chat.discussing", { what })}
     </p>
   );
@@ -184,7 +184,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
         )}
         {role === "COUNTERPARTY" ? (
           <div>
-            <label htmlFor={`chat-cp-${variant}`} className="mb-0.5 block text-xs font-medium text-ink-3">
+            <label htmlFor={`chat-cp-${variant}`} className="mb-0.5 block text-meta font-medium text-ink-3">
               {t("chat.counterparty")}
             </label>
             <select
@@ -207,7 +207,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
         </Button>
       </div>
 
-      {business ? null : <p className="text-xs text-ink-3">{role === "OWNER" ? t("chat.hint.owner") : t("chat.hint.buyer")}</p>}
+      {business ? null : <p className="text-meta text-ink-3">{role === "OWNER" ? t("chat.hint.owner") : t("chat.hint.buyer")}</p>}
 
       <div
         ref={logRef}

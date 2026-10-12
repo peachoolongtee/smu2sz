@@ -68,7 +68,7 @@ export function DemoStepper() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {/* The navy strip above the page already says DEMO on a phone, where the six scene buttons need the whole width. */}
-          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white max-sm:hidden">
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-meta font-bold uppercase tracking-wide text-white max-sm:hidden">
             {t("demo.label")}
           </span>
           <ol className="flex flex-wrap items-center gap-1" aria-label={t("demo.scenes")}>
@@ -107,11 +107,11 @@ export function DemoStepper() {
                 {te("demo.step", current.id)}
               </p>
               {/* What the server just told this step, in two lines at most; the full sentence is the tooltip and the story page's. */}
-              <p className="line-clamp-2 text-xs text-ink-2" title={narration} data-testid="demo-step-narration">
+              <p className="line-clamp-2 text-meta text-ink-2" title={narration} data-testid="demo-step-narration">
                 {narration}
               </p>
               {current.link ? (
-                <Link href={current.link.route} className="mt-0.5 inline-block text-xs font-medium text-brand-700 underline underline-offset-2" data-testid="demo-step-link">
+                <Link href={current.link.route} className="mt-0.5 inline-block text-meta font-medium text-brand-700 underline underline-offset-2" data-testid="demo-step-link">
                   {t(current.link.label)}
                 </Link>
               ) : null}
@@ -121,7 +121,7 @@ export function DemoStepper() {
           )}
           {/* A reload in the middle of a step leaves the books where the step stopped: say so, never unlock silently. */}
           {!demo.busy && demo.running !== null ? (
-            <p className="mt-0.5 text-xs font-medium text-warn-fg" data-testid="demo-interrupted">
+            <p className="mt-0.5 text-meta font-medium text-warn-fg" data-testid="demo-interrupted">
               {t("demo.interrupted", { n: demo.running + 1 })}
             </p>
           ) : null}
@@ -152,7 +152,7 @@ export function DemoStepper() {
         </div>
       </div>
       {demo.error ? (
-        <p role="alert" className="mt-1.5 rounded-tile max-sm:mr-12 border border-bad-line bg-bad-bg px-2.5 py-1.5 text-xs text-bad-fg">
+        <p role="alert" className="mt-1.5 rounded-tile max-sm:mr-12 border border-bad-line bg-bad-bg px-2.5 py-1.5 text-meta text-bad-fg">
           {demo.error}
         </p>
       ) : null}

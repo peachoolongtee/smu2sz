@@ -107,7 +107,7 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
         )}
         {autonomy?.gaps.length ? (
           <div data-testid="autonomy-gaps">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-warn-fg">{t("autonomy.gaps")}</p>
+            <p className="mb-1 text-meta font-semibold uppercase tracking-wide text-warn-fg">{t("autonomy.gaps")}</p>
             <ul className="list-disc pl-5 text-sm text-warn-fg">
               {autonomy.gaps.map((g) => (
                 <li key={g}>{g}</li>
@@ -125,7 +125,7 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
 
         {ok ? (
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("autonomy.tests")}</p>
+            <p className="mb-1 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("autonomy.tests")}</p>
             {checksInReply ? (
               <ul className="divide-y divide-line">
                 {checks.map(({ code, check }) => (
@@ -134,7 +134,7 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
                       <>
                         <div className="min-w-0 flex-1 basis-64">
                           <p className="text-sm font-medium">{check.label}</p>
-                          {check.formula ? <p className="mt-0.5 font-mono text-xs text-ink-3">{check.formula}</p> : null}
+                          {check.formula ? <p className="mt-0.5 font-mono text-meta text-ink-3">{check.formula}</p> : null}
                         </div>
                         <p className="text-sm tabular-nums">
                           <span className="font-semibold">{check.observed}</span>
@@ -143,7 +143,7 @@ export function AutonomyPanel({ outcome, tier, summary, passedChecks, autonomyEl
                       </>
                     ) : (
                       <p className="text-sm text-ink-3">
-                        <span className="font-mono text-xs">{code}</span>: {t("autonomy.notReported")}
+                        <span className="font-mono text-meta">{code}</span>: {t("autonomy.notReported")}
                       </p>
                     )}
                   </li>

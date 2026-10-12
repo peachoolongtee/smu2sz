@@ -94,6 +94,56 @@ export const ChatIcon = (p: P) => (
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const DashedRingIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" strokeDasharray="2.2 2.2" />
+  </svg>
+);
+export const RingIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+  </svg>
+);
+export const RingDotIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const CheckCircleIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M5.4 8.2l1.8 1.8 3.4-3.6" />
+  </svg>
+);
+export const HourglassIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 2.5h7M4.5 13.5h7M5 2.5c0 3 3 3.5 3 5.5s-3 2.5-3 5.5M11 2.5c0 3-3 3.5-3 5.5s3 2.5 3 5.5" />
+  </svg>
+);
+export const DocumentIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 2h5.5L12.5 5v9H4z" />
+    <path d="M9.5 2v3h3M6 8.5h4.5M6 11h4.5" />
+  </svg>
+);
+export const TwoRingsIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="6" cy="8" r="3.6" />
+    <circle cx="10" cy="8" r="3.6" />
+  </svg>
+);
+export const ListIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8M2.5 4.5h.01M2.5 8h.01M2.5 11.5h.01" />
+  </svg>
+);
+export const CalendarIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+    <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
+  </svg>
+);
 export const ChevronRightIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M6 3.5L10.5 8 6 12.5" />

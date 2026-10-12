@@ -5,6 +5,7 @@ import { filledBrand, runPlan, walkStory } from "./helpers";
 import day0 from "../mocks/home_summary_day0.json";
 import day0Zh from "../mocks/home_summary_day0_zh.json";
 import afterFund from "../mocks/home_summary_after_fund.json";
+import afterFundZh from "../mocks/home_summary_after_fund_zh.json";
 
 /**
  * The Home hybrid (board "Home E"): the position, the attention card, the picture with the event rail, the three cards.
@@ -41,7 +42,10 @@ function stressOf(lang: "en" | "zh") {
     lowest_when: lang === "zh" ? "32 天后" : "in 32 days",
     breach_days: 14,
     need_short: "¥120k",
-    plan_text: lang === "zh" ? "FLOW 会先动用您信用额度的剩余部分。" : "FLOW would draw the rest of your credit line first.",
+    // The sentences are the server's (a fixture written the way the API writes them): the page shows them as they are and composes none.
+    text: lang === "zh" ? "现金将在 32 天后降至 -¥108k，有 14 天低于您的最低现金储备，还差 ¥120k。" : "Cash would fall to -¥108k in 32 days, below your minimum for 14 days, and ¥120k would be uncovered.",
+    funding_text: lang === "zh" ? "FLOW 会先动用您信用额度的剩余部分。" : "FLOW would draw the rest of your credit line first.",
+    net_later_text: lang === "zh" ? "晚到的款项到账后，现金回到 ¥312k。" : "Once the late payment arrives, cash is back to ¥312k.",
     assumption_text: lang === "zh" ? "假设佛山晚付 30 天，其余款项都按期到账。" : "Assumes Foshan pays 30 days after the due date, and every other payment arrives as scheduled.",
     window_days_needed: 62,
   };
@@ -88,7 +92,7 @@ test("section 1: the status word, one h1 with the conditional heading, the note,
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(c.headline_conditional);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "ACTION_NEEDED");
   await expect(page.getByTestId("home-status-word")).toHaveText("Action needed");
-  await expect(page.getByTestId("home-read-when")).toHaveText("· read today");
+  await expect(page.getByTestId("home-read-when")).toHaveText("Read today");
   await expect(page.getByTestId("home-note")).toHaveText(c.headline_note);
   await expect(page.getByTestId("home-assumptions")).not.toHaveAttribute("open", "");
   await page.getByTestId("home-assumptions").locator("> summary").click();
@@ -124,8 +128,8 @@ test("section 2: the plan is the one raised card and the page's only filled prim
   // The facts the funding line already says (the cost, who decides) are not repeated; when the funds arrive is the server's own text, on the card.
   const facts = card.getByTestId("home-attention-facts");
   await expect(facts).not.toContainText(a.facts[0].label); // "Estimated cost"
-  await expect(facts).not.toContainText(a.facts[2].value); // "within your signed limits"
-  await expect(card.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(facts).not.toContainText(a.facts[a.facts.length - 1].value); // Authority is the last fact: "within your signed limits"
+  await expect(card.getByTestId("next-action-lands")).toHaveText("in 3 days"); // the plain "Funds arrive" fact, beside the per-leg facts
   expect(await filledBrand(page)).toBe(1);
   const run = card.getByTestId("fix-open-ALERT-RESERVE-12");
   await expect(run).toHaveText("Run funding plan");
@@ -175,7 +179,7 @@ test("section 2: once the plan has run the funding on its way is said once, quie
   await expect(page.getByTestId("home-attention-link")).not.toHaveCSS("background-color", "rgb(3, 104, 233)");
   expect(await filledBrand(page)).toBe(0);
   // Said once on the card (the facts row); the "Arriving next" tile and the rail keep it, the title and the plan's sentence do not repeat it.
-  await expect(page.getByTestId("next-action-lands")).toHaveText("in 3 days");
+  await expect(page.getByTestId("next-action-lands")).toHaveText(afterFund.attention.items[0].facts[0].value); // the quiet card's first fact: the leg and when it lands
   await expect(page.getByTestId("home-attention-title")).toHaveCount(0);
   await expect(page.getByTestId("home-funding-text")).toHaveCount(0);
   await expect(page.getByTestId("home-funding-costs")).toContainText(afterFund.funding_line.cost_total_display);
@@ -228,8 +232,9 @@ test("section 3: the rail lists the events in order, the lowest point is among t
     await expect(row).toContainText(e.label, { ignoreCase: true });
     await expect(page.getByTestId(`rail-amount-${i}`)).toHaveText(e.amount_short);
   }
-  // The lowest row alone carries the amber note.
-  await expect(page.getByTestId(`rail-note-${LOWEST}`)).toHaveText(events[LOWEST].room_after_short);
+  // The lowest row alone carries the amber note: the server's own sentence for it, under its label.
+  await expect(page.getByTestId(`rail-note-${LOWEST}`)).toHaveText(events[LOWEST].note!);
+  await expect(page.getByTestId(`rail-note-${LOWEST}`)).toHaveText("cash at its lowest, ¥300k, at your minimum");
   await expect(page.getByTestId(`rail-note-${LOWEST}`)).toHaveClass(/text-warn-fg/);
   await expect(page.locator('[data-testid^="rail-note-"]')).toHaveCount(1);
   // The first event is chosen to begin with; its mark is filled, the others are outlines.
@@ -298,7 +303,7 @@ test("section 3: over the plot the dotted cursor follows the pointer with the li
   const tooltip = page.getByTestId("home-tooltip");
   await expect(tooltip).toBeVisible();
   // The figures are the series' own strings, for the plan line and the dashed comparison.
-  await expect(tooltip).toContainText("With FLOW's plan");
+  await expect(tooltip).toContainText("If you run FLOW's plan");
   await expect(tooltip).toContainText(day0.cash.counterfactual_label);
   await expect(tooltip).toContainText(/¥[\d,.]+/);
   // No day word is made in the browser: a day with no event of its own shows the figures only.
@@ -325,7 +330,7 @@ test("section 3: no event labels or chips on the plot, the comparison line is na
   await expect(page.getByTestId("home-line-plan")).toHaveCount(1);
   await expect(page.getByTestId("home-line-counter")).toHaveCount(1);
   await expect(page.getByTestId("home-legend")).toContainText(day0.cash.counterfactual_label);
-  await expect(page.getByTestId("home-legend")).toContainText("With FLOW's plan");
+  await expect(page.getByTestId("home-legend")).toContainText("If you run FLOW's plan");
   await expect(page.getByTestId("home-reserve")).toHaveCount(1);
   await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
   expect(await page.getByTestId("picture-ytick").count()).toBeGreaterThan(2);
@@ -337,7 +342,7 @@ test("section 3: no event labels or chips on the plot, the comparison line is na
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", String(day0.cash.picture_days));
   // After the plan has run there is one line and no view toggle; the comparison keeps its words from the server.
   await runPlan(page, "ALERT-RESERVE-12");
-  await expect(page.getByTestId("home-legend")).toContainText("Projected cash");
+  await expect(page.getByTestId("home-legend")).toContainText("With FLOW's plan");
   await expect(page.getByTestId("picture-view-plan")).toHaveCount(0);
   await expect(page.getByTestId("home-legend")).toContainText(afterFund.cash.counterfactual_label);
 });
@@ -347,9 +352,17 @@ test("section 3: the window switch widens the picture", async ({ page }) => {
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "36");
   await page.getByTestId("home-window-60").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
-  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("aria-selected", "true");
   await page.getByTestId("home-window-120").click();
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "120");
+  // The window switch is a SegmentedTabs tablist (#112): tabs of 44 px, one tab stop, the arrows move the choice.
+  await expect(page.getByRole("tablist").filter({ has: page.getByTestId("home-window-60") })).toBeVisible();
+  await expect(page.getByTestId("home-window-60")).toHaveAttribute("role", "tab");
+  expect((await page.getByTestId("home-window-60").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByTestId("home-window-120").focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "60");
+  await expect(page.getByTestId("home-window-60")).toBeFocused();
 });
 
 test("section 3: the scenario switch is absent while the server says stress is not available", async ({ page }) => {
@@ -373,12 +386,10 @@ test("section 3: the late scenario draws the stress line dashed red, replaces th
   await expect(page.getByTestId("home-line-plan")).toHaveCount(0);
   // The panel: the server's assumption and the stress sentence (lowest, breach days, need, plan).
   await expect(page.getByTestId("stress-assumption")).toContainText("Assumes Foshan pays 30 days after the due date");
-  const sentence = page.getByTestId("stress-sentence");
-  await expect(sentence).toContainText("Cash would fall to");
-  await expect(sentence).toContainText("in 32 days");
-  await expect(sentence).toContainText("14 days");
-  await expect(sentence).toContainText("¥120k");
-  await expect(sentence).toContainText("FLOW would draw the rest of your credit line first.");
+  // The sentence is the server's three strings in order, composed by nothing in the browser.
+  await expect(page.getByTestId("stress-sentence")).toHaveText(
+    "Cash would fall to -¥108k in 32 days, below your minimum for 14 days, and ¥120k would be uncovered. FLOW would draw the rest of your credit line first. Once the late payment arrives, cash is back to ¥312k.",
+  );
   await expect(page.getByTestId("rail-explain")).toHaveCount(0);
   // The window widened to the days needed, with one line saying so.
   await expect(picture).toHaveAttribute("data-window", "62");
@@ -493,18 +504,18 @@ test("a phone (390 x 844): the primary is in the first screen, the rail sits bel
   await page.getByTestId(`rail-row-${LOWEST}`).click();
   await expect(page.getByTestId("rail-explain")).toHaveText(rail0Explain(LOWEST));
   // The h1 is 24 px here.
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "24px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "26px");
 });
 
 const rail0Explain = (i: number) => rail(day0)[i].explain;
 
-test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 34 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
+test("desktop: the picture and the rail sit side by side with the rail 312 px wide, the h1 is 36 px at weight 800, and the primary is in the first screen at 1366 x 768", async ({ page }) => {
   await open(page);
   const chart = (await page.getByTestId("home-chart").boundingBox())!;
   const rail = (await page.getByTestId("home-rail").boundingBox())!;
   expect(rail.x).toBeGreaterThanOrEqual(chart.x + chart.width);
   expect(Math.round(rail.width)).toBe(312);
-  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "34px");
+  await expect(page.getByTestId("home-headline")).toHaveCSS("font-size", "36px");
   await expect(page.getByTestId("home-headline")).toHaveCSS("font-weight", "800");
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -517,7 +528,7 @@ test("Chinese: the same sections, every label and word in Chinese, the server's 
   const c = day0Zh.cash;
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(c.headline_conditional);
   await expect(page.getByTestId("home-status-word")).toHaveText(c.status_word);
-  await expect(page.getByTestId("home-read-when")).toHaveText("· 今天读取");
+  await expect(page.getByTestId("home-read-when")).toHaveText("今天读取");
   await expect(page.getByTestId("home-assumptions").locator("> summary")).toHaveText("预测所依据的假设");
   await expect(page.getByTestId("home-facts").locator("> div")).toHaveCount(3);
   await expect(page.getByTestId("home-attention-eyebrow")).toHaveText(day0Zh.attention.items[0].eyebrow);
@@ -533,8 +544,7 @@ test("Chinese: the same sections, every label and word in Chinese, the server's 
   await expect(page.getByTestId("home-window-60")).toHaveText("60 天");
   await expect(page.getByTestId("home-legend")).toContainText(c.counterfactual_label);
   await page.getByTestId("home-scenario-late").click();
-  await expect(page.getByTestId("stress-sentence")).toContainText("现金将");
-  await expect(page.getByTestId("stress-sentence")).toContainText("14 天");
+  await expect(page.getByTestId("stress-sentence")).toHaveText("现金将在 32 天后降至 -¥108k，有 14 天低于您的最低现金储备，还差 ¥120k。 FLOW 会先动用您信用额度的剩余部分。 晚到的款项到账后，现金回到 ¥312k。");
   await expect(page.getByTestId("home-widened")).toHaveText("为显示这笔晚到的款项，已展开到 62 天。");
   await expect(page.getByTestId("home-card-deals")).toContainText("您的交易");
   await expect(page.getByTestId("home-card-receivables")).toContainText("应收款");
@@ -565,7 +575,7 @@ test("section 3: a rail longer than the picture widens the window with its own o
   await expect(page.getByTestId("home-event-picture")).toHaveAttribute("data-window", "62");
   await expect(page.getByTestId("home-widened")).toHaveText("Showing 62 days so every key event appears.");
   // The owner's own choices stay what they are: the first window is still the one pressed.
-  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("home-window-36")).toHaveAttribute("aria-selected", "true");
 });
 
 test("section 3: reduced motion carries no transition on the cursor; with motion allowed it eases", async ({ page }) => {
@@ -613,7 +623,7 @@ test("the older Home renders exactly when the server sends none of the hybrid's 
   await expect(page.getByTestId("home-next-action").getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(page.getByTestId("home-picture")).toBeVisible();
   await expect(page.getByTestId("picture-chips")).toContainText("Payroll");
-  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("picture-view-plan")).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("home-cash")).toHaveText("¥400k");
   await expect(page.getByTestId("home-floor")).toHaveText("¥300k");
   await expect(page.getByTestId("home-deals")).toBeVisible();
@@ -656,8 +666,168 @@ test("a phone (390 x 844), English, after the plan has run: the landing line is 
   expect(link.y + link.height).toBeLessThanOrEqual(844 - 72);
 });
 
+test("the plan line's legend is the server's: a question before the plan runs, the executed plan after", async ({ page }) => {
+  await open(page);
+  expect(day0.cash.plan_line_label).toBe("If you run FLOW's plan");
+  await expect(page.getByTestId("home-legend-main")).toHaveText("If you run FLOW's plan");
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
+  expect(afterFund.cash.plan_line_label).toBe("With FLOW's plan");
+  await expect(page.getByTestId("home-legend-main")).toHaveText("With FLOW's plan");
+});
+
+test("a landing that only the plan would bring says 'planned' beside its amount; once the plan has run the word is gone", async ({ page }) => {
+  await open(page);
+  const events = rail(day0);
+  const planned = events.flatMap((e, i) => (e.planned ? [i] : []));
+  expect(planned).toEqual([0, 1]); // the credit line draw and the invoice financing
+  for (const i of planned) {
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveText("planned");
+    // It is a StateWord (#112): the state and its tone on the element, a glyph beside the word (the word is never colour alone).
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-state", "planned");
+    await expect(page.getByTestId(`rail-planned-${i}`)).toHaveAttribute("data-tone", "info");
+    await expect(page.getByTestId(`rail-planned-${i}`).locator("svg[aria-hidden=true]")).toHaveCount(1);
+    await expect(page.getByTestId(`rail-row-${i}`)).toContainText("would arrive, if you run the plan");
+  }
+  await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(2);
+  // A quiet word, not a badge: no fill, no border.
+  await expect(page.getByTestId("rail-planned-0")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.getByTestId("rail-planned-0")).toHaveCSS("border-top-width", "0px");
+  await runPlan(page, "ALERT-RESERVE-12");
+  await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
+  await expect(page.locator('[data-testid^="rail-row-"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(0);
+  await expect(page.getByTestId("rail-row-0")).toContainText("arrives");
+  await expect(page.getByTestId("rail-row-0")).not.toContainText("would arrive");
+});
+
+test("the funding item has one fact per leg, and five facts fit the card on a desktop and wrap cleanly on a phone", async ({ page }) => {
+  await open(page);
+  const a = day0.attention.items[0];
+  const legs = a.facts.filter((f) => /\(planned\)$/.test(f.value));
+  expect(legs.map((f) => f.value)).toEqual(["¥150k today (planned)", "¥255k in 3 days (planned)"]);
+  const facts = page.getByTestId("home-attention-facts");
+  const legDds = facts.locator("dd").filter({ hasText: /\(planned\)/ });
+  await expect(legDds).toHaveText(legs.map((f) => f.value));
+  for (const f of legs) await expect(facts.locator("dt").filter({ hasText: f.label })).toHaveCount(1);
+  // Five facts (the cap), the funding line saying none of them.
+  const five = ["Credit line draw", "Invoice financing", "Second invoice financing", "Third invoice financing", "Fourth invoice financing"].map((label, i) => ({ label, value: `¥${(i + 1) * 100}k ${i === 0 ? "today" : `in ${i + 2} days`} (planned)`, tone: "neutral" }));
+  const patched = { attention: { ...day0.attention, items: [{ ...a, facts: five }] } };
+  for (const [w, h] of [
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    const ctx = await page.context().browser()!.newContext({ viewport: { width: w, height: h }, reducedMotion: "reduce", baseURL: new URL(page.url()).origin });
+    const p = await ctx.newPage();
+    await p.addInitScript(([key, value]) => {
+      sessionStorage.setItem(key as string, JSON.stringify(value));
+      sessionStorage.setItem("tl-owner-auth", JSON.stringify({ token: "mock-owner" }));
+    }, [PATCH_KEY, patched] as const);
+    await p.goto("/");
+    const dl = p.getByTestId("home-attention-facts");
+    await expect(dl.locator("dd")).toHaveCount(5);
+    const box = (await dl.boundingBox())!;
+    const card = (await p.getByTestId("home-next-action").boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(card.x + card.width + 1);
+    for (let i = 0; i < 5; i++) {
+      const b = (await dl.locator("dd").nth(i).boundingBox())!;
+      expect(b.x + b.width, `fact ${i} at ${w}`).toBeLessThanOrEqual(card.x + card.width + 1);
+      expect(b.x, `fact ${i} at ${w}`).toBeGreaterThanOrEqual(card.x - 1);
+    }
+    expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    if (w >= 1024) expect(box.height, "five facts take at most two lines on a desktop").toBeLessThanOrEqual(90);
+    await ctx.close();
+  }
+});
+
+test("every event's inspector shows the effect table (four rows, the server's) above its sentence", async ({ page }) => {
+  await open(page);
+  const events = rail(day0);
+  for (const [i, e] of events.entries()) {
+    await page.getByTestId(`rail-row-${i}`).click();
+    const rows = page.getByTestId("rail-effect-row");
+    expect(e.effect_rows).toHaveLength(4);
+    await expect(rows).toHaveCount(4);
+    await expect(rows.locator("th")).toHaveText(e.effect_rows.map((r) => r.label));
+    await expect(rows.locator("td")).toHaveText(e.effect_rows.map((r) => r.display));
+    await expect(page.getByTestId("rail-explain")).toHaveText(e.explain);
+    // The table is above the paragraph.
+    const t = (await page.getByTestId("rail-effect").boundingBox())!;
+    const x = (await page.getByTestId("rail-explain").boundingBox())!;
+    expect(t.y + t.height).toBeLessThanOrEqual(x.y + 1);
+  }
+  // Label left, figure right, tabular figures at 14 px.
+  const cell = page.getByTestId("rail-effect-row").first().locator("td");
+  await expect(cell).toHaveCSS("text-align", "right");
+  await expect(cell).toHaveCSS("font-size", "14px");
+  await expect(page.getByTestId("rail-effect")).toHaveCSS("font-variant-numeric", /tabular-nums/);
+});
+
+test("a phone (390 x 844): the effect table is the same four rows and stays inside the width", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  const e = rail(day0)[LOWEST];
+  await page.getByTestId(`rail-row-${LOWEST}`).click();
+  await expect(page.getByTestId("rail-effect-row")).toHaveCount(4);
+  await expect(page.getByTestId("rail-effect-row").locator("td")).toHaveText(e.effect_rows.map((r) => r.display));
+  const t = (await page.getByTestId("rail-effect").boundingBox())!;
+  expect(t.x + t.width).toBeLessThanOrEqual(390);
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId("rail-planned-0")).toBeVisible();
+  const row = (await page.getByTestId("rail-row-1").boundingBox())!;
+  expect(row.x + row.width).toBeLessThanOrEqual(390);
+});
+
+test("Chinese: the plan line's legend, the planned word, the lowest note, the leg facts and the effect table, as the Chinese read says them", async ({ page }) => {
+  await open(page, { lang: "zh" });
+  const c = day0Zh.cash;
+  const events = c.events_rail;
+  // The legend: a question before the plan runs, the executed plan after.
+  expect(c.plan_line_label).toBe("如果您执行 FLOW 的方案");
+  await expect(page.getByTestId("home-legend-main")).toHaveText("如果您执行 FLOW 的方案");
+  // The planned word on the two landing rows.
+  const planned = events.flatMap((e, i) => (e.planned ? [i] : []));
+  expect(planned).toEqual([0, 1]);
+  for (const i of planned) await expect(page.getByTestId(`rail-planned-${i}`)).toHaveText("计划中");
+  await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(2);
+  // The lowest row's note, the server's sentence.
+  const low = events.findIndex((e) => e.kind === "lowest");
+  await expect(page.getByTestId(`rail-note-${low}`)).toHaveText(events[low].note!);
+  // One fact per leg.
+  const a = day0Zh.attention.items[0];
+  const legs = a.facts.filter((f) => /（计划中）$/.test(f.value));
+  expect(legs).toHaveLength(2);
+  await expect(page.getByTestId("home-attention-facts").locator("dd").filter({ hasText: /（计划中）/ })).toHaveText(legs.map((f) => f.value));
+  // The effect table: the four rows of each event, equal to the read, above the sentence.
+  for (const [i, e] of events.entries()) {
+    await page.getByTestId(`rail-row-${i}`).click();
+    await expect(page.getByTestId("rail-effect-row")).toHaveCount(4);
+    await expect(page.getByTestId("rail-effect-row").locator("th")).toHaveText(e.effect_rows.map((r) => r.label));
+    await expect(page.getByTestId("rail-effect-row").locator("td")).toHaveText(e.effect_rows.map((r) => r.display));
+    await expect(page.getByTestId("rail-explain")).toHaveText(e.explain);
+  }
+  // After the plan has run: the executed plan's legend, and no planned word.
+  await runPlan(page, "ALERT-RESERVE-12");
+  expect(afterFundZh.cash.plan_line_label).toBe("采用 FLOW 的方案");
+  await expect(page.getByTestId("home-legend-main")).toHaveText("采用 FLOW 的方案");
+  await expect(page.locator('[data-testid^="rail-planned-"]')).toHaveCount(0);
+});
+
+test("a phone (390 x 844), Chinese: the effect table and the planned rows stay inside the width", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, { lang: "zh" });
+  await page.getByTestId("rail-row-2").click();
+  await expect(page.getByTestId("rail-effect-row")).toHaveCount(4);
+  const t = (await page.getByTestId("rail-effect").boundingBox())!;
+  expect(t.x + t.width).toBeLessThanOrEqual(390);
+  await expect(page.getByTestId("rail-planned-0")).toHaveText("计划中");
+  expect(await overflowX(page)).toBeLessThanOrEqual(1);
+});
+
 test("axe: no serious or critical finding on the hybrid Home, in both scenarios, at 1440 and at 390", async ({ page }) => {
   const scan = async (label: string) => {
+    // Under reduced motion a fold's opacity still eases (#112): read the settled colours.
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
     const result = await new AxeBuilder({ page }).analyze();
     const bad = result.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(bad.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), label).toEqual([]);

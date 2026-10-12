@@ -37,12 +37,12 @@ export function ChatPanel() {
           aria-label={t("chat.open")}
           onClick={() => setPanelOpen(true)}
           data-testid="chat-open"
-          className="ask-trigger motion-press fixed z-40 flex min-h-10 flex-col items-center justify-center gap-0.5 text-xs font-medium text-ink-2 hover:text-ink touch:min-h-11 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:rounded-pill sm:border sm:border-transparent sm:bg-brand-600 sm:px-4 sm:text-sm sm:text-white sm:shadow-pop sm:hover:bg-brand-700 sm:hover:text-white"
+          className="ask-trigger motion-press fixed z-40 flex min-h-10 flex-col items-center justify-center gap-0.5 text-meta font-medium text-ink-2 hover:text-ink touch:min-h-11 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:rounded-pill sm:border sm:border-transparent sm:bg-brand-600 sm:px-4 sm:text-sm sm:text-white sm:shadow-pop sm:hover:bg-brand-700 sm:hover:text-white"
         >
           <ChatIcon className="size-5 text-brand-600 sm:size-4 sm:text-white" />
           {/* A phone's cell is 56 px wide: the short word there, the full name from sm (the button's name is always the full one). */}
           <span aria-hidden className="sm:hidden">{t("chat.open.short")}</span>
-          <span aria-hidden className="hidden sm:inline">{t("chat.open")}</span>
+          <span aria-hidden className="ask-label hidden sm:inline">{t("chat.open")}</span>
         </button>
       )}
       <dialog

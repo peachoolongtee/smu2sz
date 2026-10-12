@@ -1464,7 +1464,7 @@
   "explain_en": {
     "session_id": "rec-ex01-why",
     "turn": 2,
-    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: cap=¥5,000.00; contingent_gains_ignored=¥0.00; existing=¥0.00; firm_gains_netted=¥0.00; netting_rule=only FIRM gains offset concessions; contingent gains count as zero.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: baseline_closing_cash=¥635,000.00; closing_cash=¥209,960.00; covenant_pro_forma_dscr=1.92x; covenant_pro_forma_leverage=1.47x; covenant_pro_forma_leverage_basis=projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m). Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: break_even=0.8832%; break_even_bp_floor=88; break_even_days=30; days_early=30; discount=1.20%.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%; plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥28,326.92 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+    "reply": "Verdict REJECT (TIER_1): AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN. REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. The cure cannot run today: Submit RI:BUYER-1:32 to FAC-IF for a ¥135,040.00 advance: RI:BUYER-1:32 is not an invoice I can finance today; it is issued on day 32.\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\nForward concessions total ¥28,326.92 against the ¥5,000.00 cap.\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
     "intent": "EXPLAIN",
     "lang": "en",
     "plan": [],
@@ -1486,15 +1486,15 @@
           "cure_note": null,
           "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
           "inputs": {
-            "cap": "¥5,000.00",
-            "contingent_gains_ignored": "¥0.00",
-            "existing": "¥0.00",
-            "firm_gains_netted": "¥0.00",
-            "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero",
-            "new_concessions": "¥28,326.92",
             "scope": "aggregate",
+            "existing": "¥0.00",
+            "new_concessions": "¥28,326.92",
+            "firm_gains_netted": "¥0.00",
+            "contingent_gains_ignored": "¥0.00",
             "total": "¥28,326.92",
-            "total_fen": "2832692"
+            "total_fen": "2832692",
+            "cap": "¥5,000.00",
+            "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
           },
           "spans": [
             {
@@ -1523,27 +1523,27 @@
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
           "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
           "inputs": {
-            "baseline_closing_cash": "¥635,000.00",
-            "closing_cash": "¥209,960.00",
-            "covenant_pro_forma_dscr": "1.92x",
-            "covenant_pro_forma_leverage": "1.47x",
-            "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
-            "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
-            "covenant_pro_forma_leverage_month": "1",
-            "cure_executable_now": "false",
-            "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
-            "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
             "day": "47",
-            "days_below_floor": "15",
-            "max_shortfall": "¥135,040.00",
-            "max_shortfall_day": "60",
+            "closing_cash": "¥209,960.00",
+            "baseline_closing_cash": "¥635,000.00",
             "min_cash": "¥300,000.00",
-            "mode": "CONSERVATIVE",
-            "recovery_day": "62",
-            "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
             "shortfall": "¥90,040.00",
             "shortfall_fen": "9004000",
-            "structural_cost_per_invoice": "¥1,871.30"
+            "max_shortfall": "¥135,040.00",
+            "max_shortfall_day": "60",
+            "recovery_day": "62",
+            "days_below_floor": "15",
+            "mode": "CONSERVATIVE",
+            "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
+            "structural_cost_per_invoice": "¥1,871.30",
+            "covenant_pro_forma_dscr": "1.92x",
+            "covenant_pro_forma_leverage": "1.47x",
+            "covenant_pro_forma_leverage_month": "1",
+            "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
+            "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+            "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+            "cure_executable_now": "false",
+            "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
           },
           "spans": [],
           "cure_cost_display": "¥2,406.67"
@@ -1560,15 +1560,15 @@
           "cure_note": null,
           "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
           "inputs": {
-            "break_even": "0.8832%",
-            "break_even_bp_floor": "88",
-            "break_even_days": "30",
-            "days_early": "30",
             "discount": "1.20%",
+            "days_early": "30",
+            "receivable_id": "RCV-A",
             "implied_annual_rate": "14.7773%",
             "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
-            "receivable_id": "RCV-A",
-            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+            "break_even": "0.8832%",
+            "break_even_bp_floor": "88",
+            "break_even_days": "30"
           },
           "spans": [
             {
@@ -1591,11 +1591,11 @@
           "cure_note": null,
           "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required",
           "inputs": {
+            "plan_with_offer": "committed plan: ¥1,468.05",
+            "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58",
             "cost_with_offer": "¥6,508.05",
             "cost_without_offer": "¥3,873.58",
-            "legs": "RCV-A at 1.20%",
-            "plan_with_offer": "committed plan: ¥1,468.05",
-            "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58"
+            "legs": "RCV-A at 1.20%"
           },
           "spans": [
             {
@@ -1936,7 +1936,7 @@
   "explain_zh": {
     "session_id": "rec-ex01-why-zh",
     "turn": 2,
-    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: cap=¥5,000.00; contingent_gains_ignored=¥0.00; existing=¥0.00; firm_gains_netted=¥0.00; netting_rule=only FIRM gains offset concessions; contingent gains count as zero.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: baseline_closing_cash=¥635,000.00; closing_cash=¥209,960.00; covenant_pro_forma_dscr=1.92x; covenant_pro_forma_leverage=1.47x; covenant_pro_forma_leverage_basis=projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m). Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: break_even=0.8832%; break_even_bp_floor=88; break_even_days=30; days_early=30; discount=1.20%.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%; plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥28,326.92，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
+    "reply": "结论 REJECT（TIER_1）：AGG_CONCESSION_EXCEEDED, RESERVE_BREACH, DISCOUNT_ABOVE_BREAK_EVEN, EARLY_PAY_DEARER_THAN_PLAN。REJECT: AGG_CONCESSION_EXCEEDED (¥28,326.92 vs ¥5,000.00); RESERVE_BREACH@47 (curable at ¥2,406.67; the cure cannot run today); DISCOUNT_ABOVE_BREAK_EVEN (1.20% vs < 0.88%); EARLY_PAY_DEARER_THAN_PLAN (¥6,508.05 vs < ¥3,873.58). Forward concessions ¥28,326.92 against ¥5,000.00. Covenants hold: DSCR_MIN 1.92x, LEVERAGE_MAX 1.47x. Price-adjustment counter at 55 days, not 60: 60-day terms cannot be funded from committed sources: the shortfall of ¥85,000.00 on day 47 has no cure. Option B passes its own re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Counters: Option A, Option B. 该处理方案今天无法执行：将 RI:BUYER-1:32 提交 FAC-IF 融资，预付 ¥135,040.00：RI:BUYER-1:32 目前还不能用来融资，它将于第 32 天开出。\n- AGG_CONCESSION_EXCEEDED: Forward concessions (all buyers) would reach ¥28,326.92, above the cap. Observed ¥28,326.92 vs limit ¥5,000.00. Formula: existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00. Inputs: scope=aggregate; existing=¥0.00; new_concessions=¥28,326.92; firm_gains_netted=¥0.00; contingent_gains_ignored=¥0.00.\n- RESERVE_BREACH day 47: Under this offer projected cash falls below the reserve on day 47. Observed ¥209,960.00 vs limit ¥300,000.00. Formula: closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00. Inputs: day=47; closing_cash=¥209,960.00; baseline_closing_cash=¥635,000.00; min_cash=¥300,000.00; shortfall=¥90,040.00. Curable for ¥2,406.67.\n- DISCOUNT_ABOVE_BREAK_EVEN: Early settlement at 1.20% costs more than financing the invoice: break-even 0.88%. Observed 1.20% vs limit < 0.88%. Formula: d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods). Inputs: discount=1.20%; days_early=30; receivable_id=RCV-A; implied_annual_rate=14.7773%; line_plus_partial_at_offered_rate=¥841.64 + ¥3,097.17 = ¥3,938.81.\n- EARLY_PAY_DEARER_THAN_PLAN: The early payment costs ¥6,508.05, not less than the plan without it (¥3,873.58). Observed ¥6,508.05 vs limit < ¥3,873.58. Formula: C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required. Inputs: plan_with_offer=committed plan: ¥1,468.05; plan_without_offer=committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58; cost_with_offer=¥6,508.05; cost_without_offer=¥3,873.58; legs=RCV-A at 1.20%.\n- Forward value ¥24,326.92 (terms extension priced as a loan: committed marginal source: Invoice financing (onboarded platform) 10.8417%): Σ over 13 invoices (issued days 2 to 362; window days 0 to 364) of face × 15/365 × ≈10.8417% = 24,326.92\n- Forward value ¥4,000.00 (contingent rebate counted at maximum): 1% × 400,000.00 = 4,000.00\n远期让步合计 ¥28,326.92，上限 ¥5,000.00。\n- Option A: Early settlement at 0.85% is cheaper than financing the invoice on the marginal committed source; the line covers the rest of the near-term gap. Formula: break-even: d/(1−d) < c, c = 10.8417% × 30/365 = 0.8911% → d < 0.8832%; largest whole-5bp rate below it = 0.85%. Face: (near-term need ¥405,000.00 − committed line ¥150,000.00) / (1 − 0.85%) = ¥257,186.08 → up to ¥257,200.00 (rounded up to a whole ¥100, at most the invoice). Cost: discount ¥2,186.20 + funding the rest of the gap ¥841.57 (committed plan: ¥841.57) = ¥3,027.77\n- Option B: The price adjustment covers the per-invoice cost of funding the longer terms on the marginal committed source, so the net forward concession is about zero; on current books with these terms the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46) keeps the reserve. The offered 60-day terms fail their own re-check; 55 days is the longest that passes. Re-checked as an offer, its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today). Formula: smallest whole-5bp rate r with r × ¥420,000.00 >= per-invoice funding cost ¥1,247.53: 0.30% → ¥1,260.00 per invoice. 12-month: extension ¥16,217.95 + price adjustment −¥16,380.00 = −¥162.05 (cost to the supplier ¥0.00). Funded on current books with these terms by the router's committed plan (committed plan: ¥899.51 + ¥2,806.95 = ¥3,706.46), cost ¥3,706.46. Re-check: its terms leave a shortfall of ¥85,000.00 on day 47, funded by the plan: committed plan: ¥1,570.36 (cannot run today)",
     "intent": "EXPLAIN",
     "lang": "zh",
     "plan": [],
@@ -1958,15 +1958,15 @@
           "cure_note": null,
           "formula": "existing + new concessions + FIRM gains <= cap: ¥0.00 + ¥28,326.92 + (¥0.00) = ¥28,326.92 > ¥5,000.00",
           "inputs": {
-            "cap": "¥5,000.00",
-            "contingent_gains_ignored": "¥0.00",
-            "existing": "¥0.00",
-            "firm_gains_netted": "¥0.00",
-            "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero",
-            "new_concessions": "¥28,326.92",
             "scope": "aggregate",
+            "existing": "¥0.00",
+            "new_concessions": "¥28,326.92",
+            "firm_gains_netted": "¥0.00",
+            "contingent_gains_ignored": "¥0.00",
             "total": "¥28,326.92",
-            "total_fen": "2832692"
+            "total_fen": "2832692",
+            "cap": "¥5,000.00",
+            "netting_rule": "only FIRM gains offset concessions; contingent gains count as zero"
           },
           "spans": [
             {
@@ -1995,27 +1995,27 @@
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
           "formula": "closing_cash(day 47) >= min_cash: ¥209,960.00 < ¥300,000.00, shortfall ¥90,040.00",
           "inputs": {
-            "baseline_closing_cash": "¥635,000.00",
-            "closing_cash": "¥209,960.00",
-            "covenant_pro_forma_dscr": "1.92x",
-            "covenant_pro_forma_leverage": "1.47x",
-            "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
-            "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
-            "covenant_pro_forma_leverage_month": "1",
-            "cure_executable_now": "false",
-            "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
-            "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
             "day": "47",
-            "days_below_floor": "15",
-            "max_shortfall": "¥135,040.00",
-            "max_shortfall_day": "60",
+            "closing_cash": "¥209,960.00",
+            "baseline_closing_cash": "¥635,000.00",
             "min_cash": "¥300,000.00",
-            "mode": "CONSERVATIVE",
-            "recovery_day": "62",
-            "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
             "shortfall": "¥90,040.00",
             "shortfall_fen": "9004000",
-            "structural_cost_per_invoice": "¥1,871.30"
+            "max_shortfall": "¥135,040.00",
+            "max_shortfall_day": "60",
+            "recovery_day": "62",
+            "days_below_floor": "15",
+            "mode": "CONSERVATIVE",
+            "rule": "charged to the offer only where its cash is below the floor and below the no-offer baseline",
+            "structural_cost_per_invoice": "¥1,871.30",
+            "covenant_pro_forma_dscr": "1.92x",
+            "covenant_pro_forma_leverage": "1.47x",
+            "covenant_pro_forma_leverage_month": "1",
+            "covenant_pro_forma_leverage_debt": "¥1,590,040.00",
+            "covenant_pro_forma_leverage_basis": "projection with the offer and its committed plan: highest month-end debt / (12 × EBITDA_m)",
+            "cure_plan": "committed plan: ¥2,406.67 (cannot run today)",
+            "cure_executable_now": "false",
+            "cure_not_executable_reason": "Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32"
           },
           "spans": [],
           "cure_cost_display": "¥2,406.67"
@@ -2032,15 +2032,15 @@
           "cure_note": null,
           "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
           "inputs": {
-            "break_even": "0.8832%",
-            "break_even_bp_floor": "88",
-            "break_even_days": "30",
-            "days_early": "30",
             "discount": "1.20%",
+            "days_early": "30",
+            "receivable_id": "RCV-A",
             "implied_annual_rate": "14.7773%",
             "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
-            "receivable_id": "RCV-A",
-            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+            "break_even": "0.8832%",
+            "break_even_bp_floor": "88",
+            "break_even_days": "30"
           },
           "spans": [
             {
@@ -2063,11 +2063,11 @@
           "cure_note": null,
           "formula": "C1 = interest + fees + discounts with the offer = ¥6,508.05; C0 = the same without the early payment = ¥3,873.58; C1 < C0 required",
           "inputs": {
+            "plan_with_offer": "committed plan: ¥1,468.05",
+            "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58",
             "cost_with_offer": "¥6,508.05",
             "cost_without_offer": "¥3,873.58",
-            "legs": "RCV-A at 1.20%",
-            "plan_with_offer": "committed plan: ¥1,468.05",
-            "plan_without_offer": "committed plan: ¥1,467.62 + ¥2,405.96 = ¥3,873.58"
+            "legs": "RCV-A at 1.20%"
           },
           "spans": [
             {
@@ -2851,15 +2851,15 @@
           "cure_note": null,
           "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
           "inputs": {
-            "break_even": "0.8832%",
-            "break_even_bp_floor": "88",
-            "break_even_days": "30",
-            "days_early": "30",
             "discount": "1.20%",
+            "days_early": "30",
+            "receivable_id": "RCV-A",
             "implied_annual_rate": "14.7773%",
             "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
-            "receivable_id": "RCV-A",
-            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+            "break_even": "0.8832%",
+            "break_even_bp_floor": "88",
+            "break_even_days": "30"
           },
           "spans": [
             {
@@ -2882,11 +2882,11 @@
           "cure_note": null,
           "formula": "C1 = interest + fees + discounts with the offer = ¥5,040.00; C0 = the same without the early payment = ¥3,113.93; C1 < C0 required",
           "inputs": {
+            "plan_with_offer": "no funding needed",
+            "plan_without_offer": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
             "cost_with_offer": "¥5,040.00",
             "cost_without_offer": "¥3,113.93",
-            "legs": "RCV-A at 1.20%",
-            "plan_with_offer": "no funding needed",
-            "plan_without_offer": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "legs": "RCV-A at 1.20%"
           },
           "spans": [
             {
@@ -4038,7 +4038,7 @@
     "parse_source": "rules",
     "trace_id": "rec-fund:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund:t1:0443afc5c068",
+    "decision_id": "nl:rec-fund:t1:1fb9dd1a730c",
     "decision_recorded": true
   },
   "status": {
@@ -4956,15 +4956,15 @@
           "cure_note": null,
           "formula": "d < c/(1+c), c = marginal source's cost share for 30 days (1 × 30-day periods)",
           "inputs": {
-            "break_even": "0.8832%",
-            "break_even_bp_floor": "88",
-            "break_even_days": "30",
-            "days_early": "30",
             "discount": "1.20%",
+            "days_early": "30",
+            "receivable_id": "RCV-A",
             "implied_annual_rate": "14.7773%",
             "line_plus_partial_at_offered_rate": "¥841.64 + ¥3,097.17 = ¥3,938.81",
-            "receivable_id": "RCV-A",
-            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "router_optimum": "¥841.64 + ¥2,272.29 = ¥3,113.93",
+            "break_even": "0.8832%",
+            "break_even_bp_floor": "88",
+            "break_even_days": "30"
           },
           "spans": [
             {
@@ -4987,11 +4987,11 @@
           "cure_note": null,
           "formula": "C1 = interest + fees + discounts with the offer = ¥5,040.00; C0 = the same without the early payment = ¥3,113.93; C1 < C0 required",
           "inputs": {
+            "plan_with_offer": "no funding needed",
+            "plan_without_offer": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93",
             "cost_with_offer": "¥5,040.00",
             "cost_without_offer": "¥3,113.93",
-            "legs": "RCV-A at 1.20%",
-            "plan_with_offer": "no funding needed",
-            "plan_without_offer": "committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93"
+            "legs": "RCV-A at 1.20%"
           },
           "spans": [
             {
@@ -6840,7 +6840,7 @@
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund-zh:t1:22563aa1c4d0",
+    "decision_id": "nl:rec-fund-zh:t1:f07644e50450",
     "decision_recorded": true
   },
   "status_zh": {

@@ -73,7 +73,7 @@ export function SuggestionCost({ s }: { s: SuggestedOperation }) {
   const { t } = useI18n();
   if (!s.cost_display) return null;
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2" data-testid="suggestion-cost">
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-2" data-testid="suggestion-cost">
       <span className="font-medium text-ink">{t("alerts.cost", { cost: s.cost_display })}</span>
       {s.cost_formula ? <span className="break-words font-mono text-ink-3">{s.cost_formula}</span> : null}
       {s.above_apr_cap ? <Badge tone="warn">{t("alerts.aboveCap")}</Badge> : null}
@@ -86,7 +86,7 @@ export function ZeroFloorNote({ alert }: { alert: AlertItem }) {
   const { t } = useI18n();
   if (alert.inputs?.cure_restores_reserve !== "false") return null;
   return (
-    <p className="mt-1 text-xs font-medium text-warn-fg" data-testid="cure-not-restoring">
+    <p className="mt-1 text-supporting font-medium text-warn-fg" data-testid="cure-not-restoring">
       {t("alerts.zero.note", { short: alert.inputs.residual_shortfall ?? "", day: alert.inputs.zero_day ?? "" })}
     </p>
   );
@@ -128,7 +128,7 @@ export function AlertCure({
   const infoKey = INFO_ONLY[alert.kind];
   if (infoKey) {
     return (
-      <p className="mt-2 text-xs text-ink-3" data-testid="alert-info-only">
+      <p className="mt-2 text-supporting text-ink-3" data-testid="alert-info-only">
         {t(infoKey)}
       </p>
     );
@@ -136,7 +136,7 @@ export function AlertCure({
   const waiting = pendingApprovalFor(alert, approvals);
   if (waiting) {
     return (
-      <div className="mt-2 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-xs text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
+      <div className="mt-2 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-supporting text-warn-fg" role="status" data-testid={`alert-waiting-${alert.id}`}>
         <p className="font-semibold">{t("alerts.waiting", { id: waiting.id })}</p>
         <p className="mt-0.5">{t("alerts.waiting.body")}</p>
         <Link href={approvalHref(waiting.id)} className="mt-1 inline-block font-medium underline underline-offset-2" data-testid={`alert-approval-link-${alert.id}`}>
@@ -150,7 +150,7 @@ export function AlertCure({
   return (
     <div className="mt-2 space-y-2">
       {needsApproval ? (
-        <p className="text-xs font-medium text-warn-fg" data-testid={`alert-needs-approval-${alert.id}`}>
+        <p className="text-supporting font-medium text-warn-fg" data-testid={`alert-needs-approval-${alert.id}`}>
           {cap ? t("alerts.needsApproval", { cap }) : t("alerts.aboveCap")}
         </p>
       ) : null}
@@ -214,7 +214,7 @@ export function FixResult({
   // The one thing that happened is "it waits for your approval": the next-step tile and the decision row already say that, once each.
   if (business && result.pending_approval && !result.executed && !result.refused) return null;
   return (
-    <section aria-label={t("alerts.fix.title")} className={flat ? "space-y-2 border-t border-line-strong pt-3" : "space-y-2 rounded-card border border-line bg-surface p-4 shadow-card"} data-testid="fix-result" role="status">
+    <section aria-label={t("alerts.fix.title")} className={flat ? "space-y-2 border-t border-line-strong pt-3" : "card-standard space-y-2 p-4"} data-testid="fix-result" role="status">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{t("alerts.fix.title")}</h3>
         {/* On a Business page only the counts that are not zero: "0 refused" is noise. */}
@@ -243,19 +243,19 @@ function AlertChanged({ changed }: { changed: AlertChangedDetail }) {
       data-testid="fix-changed"
     >
       <h3 className="text-sm font-semibold">{t("alerts.changed.title")}</h3>
-      <p className="text-xs">{t("alerts.changed.body")}</p>
+      <p className="text-supporting">{t("alerts.changed.body")}</p>
       {now ? (
         <div className="rounded-tile border border-warn-line bg-surface px-3 py-2 text-ink" data-testid="fix-changed-alert">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("alerts.changed.now")}</p>
+          <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("alerts.changed.now")}</p>
           <p className="mt-1 text-sm font-medium">{now.title}</p>
-          <p className="mt-1 break-words text-xs text-ink-2">{now.detail}</p>
+          <p className="mt-1 break-words text-supporting text-ink-2">{now.detail}</p>
           {now.suggested.map((s, i) => (
             <SuggestionCost key={`${s.operation_kind}-${i}`} s={s} />
           ))}
           <ZeroFloorNote alert={now} />
         </div>
       ) : (
-        <p className="text-xs font-medium" data-testid="fix-changed-gone">
+        <p className="text-supporting font-medium" data-testid="fix-changed-gone">
           {t("alerts.changed.gone")}
         </p>
       )}

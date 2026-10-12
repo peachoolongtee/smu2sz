@@ -189,7 +189,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -485,7 +487,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -789,7 +793,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1077,7 +1083,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -1394,7 +1402,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -1714,7 +1724,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -2018,7 +2030,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -2306,7 +2320,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -2674,7 +2690,11 @@
         "day": 34,
         "when": "today",
         "kind": "lowest",
+        "basis": null,
+        "basis_text": null,
         "label": "cash is at its lowest",
+        "note": "cash at its lowest, ¥300k, at your minimum",
+        "planned": false,
         "amount_fen": 0,
         "amount_short": "¥0",
         "net_short": "¥0",
@@ -2684,6 +2704,24 @@
         "room_after_short": "¥0 above your minimum",
         "tone": "warn",
         "explain": "This is the lowest point on your cash line: ¥300k, ¥0 above your minimum. Without the plan FLOW proposes, the lowest point would be ¥100k in 8 days.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥300k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "¥0.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -2693,7 +2731,11 @@
         "day": 37,
         "when": "in 3 days",
         "kind": "landing",
-        "label": "invoice financing arrives",
+        "basis": null,
+        "basis_text": null,
+        "label": "invoice financing would arrive, if you approve the plan",
+        "note": null,
+        "planned": true,
         "amount_fen": 20000000,
         "amount_short": "+¥200k",
         "net_short": "+¥200k",
@@ -2703,6 +2745,24 @@
         "room_after_short": "¥200k above your minimum",
         "tone": "ok",
         "explain": "Cash rises from ¥300k to ¥500k. Your minimum is ¥300k, so ¥200k of room remains.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥500k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥200k"
+          }
+        ],
         "amount_display": "¥200,000.00",
         "cash_after_display": "¥500,000.00",
         "room_after_display": "¥200,000.00"
@@ -2712,7 +2772,11 @@
         "day": 42,
         "when": "in 8 days",
         "kind": "payroll",
+        "basis": null,
+        "basis_text": null,
         "label": "payroll is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -20000000,
         "amount_short": "−¥200k",
         "net_short": "−¥200k",
@@ -2722,6 +2786,24 @@
         "room_after_short": "¥0 above your minimum",
         "tone": "warn",
         "explain": "Cash falls from ¥500k to ¥300k. Your minimum is ¥300k, so there is no room left. Without the plan FLOW proposes, payroll would take cash to ¥100k, below your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥500k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥300k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥0"
+          }
+        ],
         "amount_display": "−¥200,000.00",
         "cash_after_display": "¥300,000.00",
         "room_after_display": "¥0.00"
@@ -2731,7 +2813,11 @@
         "day": 47,
         "when": "in 13 days",
         "kind": "receipt",
+        "basis": "OWED",
+        "basis_text": "owed: invoiced 32 days ago, due in 13 days",
         "label": "Foshan pays",
+        "note": null,
+        "planned": false,
         "amount_fen": 42000000,
         "amount_short": "+¥420k",
         "net_short": "+¥118k",
@@ -2741,6 +2827,24 @@
         "room_after_short": "¥118k above your minimum",
         "tone": "ok",
         "explain": "Foshan pays ¥420k, and ¥202k of it repays the invoice financing, leaving ¥218k. Cash rises from ¥300k to ¥418k, ¥118k above your minimum.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥418k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥118k"
+          }
+        ],
         "amount_display": "¥420,000.00",
         "cash_after_display": "¥418,217.81",
         "room_after_display": "¥118,217.81"
@@ -2750,7 +2854,11 @@
         "day": 60,
         "when": "in 26 days",
         "kind": "debt",
+        "basis": null,
+        "basis_text": null,
         "label": "debt service is paid",
+        "note": null,
+        "planned": false,
         "amount_fen": -4500000,
         "amount_short": "−¥45k",
         "net_short": "−¥45k",
@@ -2760,6 +2868,24 @@
         "room_after_short": "¥73k above your minimum",
         "tone": "ok",
         "explain": "Cash falls from ¥418k to ¥373k. Your minimum is ¥300k, so ¥73k of room remains.",
+        "effect_rows": [
+          {
+            "label": "Cash before",
+            "display": "¥418k"
+          },
+          {
+            "label": "Cash after",
+            "display": "¥373k"
+          },
+          {
+            "label": "Minimum reserve",
+            "display": "¥300k"
+          },
+          {
+            "label": "Cash above reserve",
+            "display": "¥73k"
+          }
+        ],
         "amount_display": "−¥45,000.00",
         "cash_after_display": "¥373,217.81",
         "room_after_display": "¥73,217.81"
@@ -2905,7 +3031,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 32 days ago, due in 13 days"
           },
           {
             "kind": "FLOW",
@@ -3201,7 +3329,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "OWED",
+            "basis_text": "owed: invoiced 2 days ago, due in 43 days"
           },
           {
             "kind": "INTEREST",
@@ -3505,7 +3635,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -3793,7 +3925,9 @@
             "label_short": "Receipt from Foshan Home Retail Co.",
             "amount_fen": 42000000,
             "amount_display": "¥420,000.00",
-            "amount_short": "¥420k"
+            "amount_short": "¥420k",
+            "basis": "SCHEDULED",
+            "basis_text": "scheduled: not yet invoiced"
           }
         ],
         "net_fen": 42000000,
@@ -3964,6 +4098,7 @@
       }
     ],
     "counterfactual_label": "without the plan FLOW proposes (a comparison)",
+    "plan_line_label": "If you approve FLOW's plan",
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",

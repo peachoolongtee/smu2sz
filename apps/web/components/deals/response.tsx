@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { obligationSentence } from "@/components/deals/commitments";
 import { authorityText, authorityTone } from "@/components/deals/path-columns";
 import { ActionBar } from "@/components/business/action-bar";
-import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, StatePill, textLinkClass } from "@/components/ui";
+import { Badge, Button, Callout, Card, ErrorState, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
+import { StateWord } from "@/components/ui/state-word";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation } from "@/lib/demo-store";
@@ -62,11 +63,11 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
               {e.net_words ?? e.net_display}
             </dd>
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
+          <div className="mt-1 flex items-baseline justify-between gap-3 text-supporting text-ink-3">
             <dt>{t("biz.deals.fundingCost")}</dt>
             <dd className="tabular-nums">{e.funding_cost_display}</dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+          <div className="flex items-baseline justify-between gap-3 text-supporting text-ink-3">
             <dt>{t("biz.deals.offset")}</dt>
             <dd className="tabular-nums">−{e.offset_display}</dd>
           </div>
@@ -74,9 +75,9 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
       ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
       <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.optionDetails", { label: c.label })}>
-        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
+        <p className="mt-2 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
         <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
-        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
+        <p className="mt-3 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-ink-2" data-testid="deal-option-terms">
           {c.obligations.map((o) => (
             <li key={o.id}>{obligationSentence(o, t, te, today)}</li>
@@ -196,7 +197,7 @@ function SendControl({ c, lines, primary, filled = primary, sending, busy, onSen
           </p>
           <p className="mt-0.5 text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="text-xs font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
+            <span className="text-supporting font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
             <Segmented<BuyerProfile>
               label={t("biz.deals.send.profile")}
               name={`deal-buyer-profile-${c.id}`}
@@ -235,7 +236,7 @@ function SendControl({ c, lines, primary, filled = primary, sending, busy, onSen
             {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: name })}
           </Button>
           {held ? (
-            <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+            <span className="text-supporting font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
               {t("biz.deals.send.blocked")}
             </span>
           ) : null}
@@ -282,6 +283,8 @@ export function RecommendedResponse({
   compareOpen,
   onCompareChange,
   reply,
+  bare = false,
+  onBusy,
 }: {
   v: VerdictView;
   offerId: string;
@@ -293,6 +296,10 @@ export function RecommendedResponse({
   onCompareChange?: (open: boolean) => void;
   /** The path picked on the paths picture: the card is then the reply bar for that path (and the counter cards are not shown). */
   reply?: { path: PicturePath; recommended: PicturePath | null; onBack: () => void };
+  /** With `reply`: only the send (what it does, the confirm, the refusals and slow notices) in a plain block, for a card that already says the reply. */
+  bare?: boolean;
+  /** Told whenever a send or a check is in flight, so the page can hold what would unmount it. */
+  onBusy?: (busy: boolean) => void;
 }) {
   const { t } = useI18n();
   // On a phone the generic line under the title gives way to the answer: the Send button comes up the page.
@@ -309,6 +316,11 @@ export function RecommendedResponse({
   // The send ran out of time: it may have landed. Retry reads the deal's record and the books again and sends nothing.
   const [slow, setSlow] = useState(false);
   const [rechecked, setRechecked] = useState(false);
+  const inFlight = sending !== null || checking;
+  useEffect(() => {
+    onBusy?.(inFlight);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the flight, not the callback
+  }, [inFlight]);
   const changed = refused && refused.key === shownKey ? refused.detail : null;
   // What the owner is looking at, and what the send will carry: the evaluation's, or the current proposal the API sent back.
   const shown = changed && changed.counters.length ? { verdictId: changed.verdict_id ?? v.id, stateVersion: changed.state_version, counters: changed.counters as Counter[] } : { verdictId: v.id, stateVersion: v.state_version, counters: v.counters as Counter[] };
@@ -375,6 +387,29 @@ export function RecommendedResponse({
     // Who decides: the server's class and words (else the earlier sentence), in the class's tone: the same tone as the path's column.
     const tone = authorityTone(path);
     const decides = authorityText(path);
+    if (bare) {
+      return (
+        <div id="counters" className="space-y-3" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
+          {changed ? <CounterChanged detail={changed} onCheck={() => void checkAgain()} checking={checking} /> : null}
+          {canSend ? <SendControl key={counter.id} c={counter} lines={pricedLines(counter)} primary={path.recommended} filled sending={sending === counter.id} busy={busy} onSend={(profile) => void send(counter, profile)} /> : null}
+          {slow ? (
+            <SlowNotice
+              message={t("err.timeout_write")}
+              onRetry={() => {
+                setSlow(false);
+                setRechecked(true);
+                bump();
+              }}
+            />
+          ) : rechecked && !error ? (
+            <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="slow-checked">
+              {t("biz.slow.checked")}
+            </p>
+          ) : null}
+          {error ? <ErrorState error={error} /> : null}
+        </div>
+      );
+    }
     return (
       <ActionBar id="counters" aria-labelledby="path-reply-title" data-testid="path-reply" data-counters={changed && changed.counters.length ? "current" : "evaluated"} data-path={path.key === "asked" ? "asked" : path.recommended ? "recommended" : "other"}>
         {changed ? (
@@ -383,13 +418,13 @@ export function RecommendedResponse({
           </div>
         ) : null}
         <div className="min-w-0 flex-[2_1_20rem]">
-          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
+          <p className={`text-meta font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
           <h2 id="path-reply-title" className="mt-1 text-pretty text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="path-reply-text">
             {path.sendable ? (path.reply_text ?? decides) : decides}
           </h2>
           {path.sendable ? (
             <p className="mt-1.5" data-testid="path-reply-decides" data-authority={path.authority ?? ""}>
-              <StatePill tone={tone}>{decides}</StatePill>
+              <StateWord tone={tone}>{decides}</StateWord>
             </p>
           ) : null}
         </div>
@@ -401,7 +436,7 @@ export function RecommendedResponse({
               {t("biz.deals.reply.back", { label: reply.recommended.label })}
             </Button>
           ) : mode === "demo" ? (
-            <p className="text-xs text-ink-3">
+            <p className="text-supporting text-ink-3">
               {t("biz.deals.negotiateHint")}{" "}
               <Link href="/verdict#negotiation" className={textLinkClass}>
                 {t("biz.deals.negotiateLink")}
@@ -470,7 +505,7 @@ export function RecommendedResponse({
           </Button>
         ) : null}
         {mode === "demo" ? (
-          <p className="text-xs text-ink-3">
+          <p className="text-supporting text-ink-3">
             {t("biz.deals.negotiateHint")}{" "}
             <Link href="/verdict#negotiation" className={textLinkClass}>
               {t("biz.deals.negotiateLink")}

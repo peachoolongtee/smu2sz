@@ -61,8 +61,10 @@ from app.api.presentation import (
 from app.api.presentation import (
     needs_owner_reason as needs_owner_reason_words,
 )
+from app.api.receipt_basis import BasisReader, agreement_days, annotate
 from app.api.runtime import get_runtime
 from app.books import current_books
+from app.config import get_settings
 from app.decisions.identity import deal_id, decision_id_for
 from app.domain.models import (
     FinancialState,
@@ -745,7 +747,11 @@ class Partial:
 
     LABELS: ClassVar[dict[str, tuple[str, str]]] = {"decision_record": ("the record of your decisions", "您的决策记录"),
               "reconciliation": ("the check of receipts against promises", "收款与约定的核对"),
-              "summary": ("the summary of what needs you", "待办事项摘要")}
+              "summary": ("the summary of what needs you", "待办事项摘要"),
+              "receipt_basis": ("what each receipt rests on", "每笔收款的依据"),
+              "home_v2": ("the Home V2 summary", "新版首页摘要"),
+              "offer_picture": ("the cash picture of an open offer", "未决报价的现金图景"),
+              "customer_shares": ("each customer's share of what you are owed", "各客户占您应收款的比例")}
 
     def __init__(self) -> None:
         self.missing: list[str] = []
@@ -1101,6 +1107,12 @@ def _decision_record(rt: Any, lang: str, ctx: Any = None, partial: Partial | Non
 
 @router.get("/home")
 def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
+    return read_home(lang, since_day)
+
+
+def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True) -> dict[str, Any]:
+    """The Home read. `v2=False` leaves out the Home V2 fields even with FEATURE_HOME_V2 on: a caller that reads only the company's status,
+    plan and approvals (the worklist) neither pays for them nor depends on them."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
@@ -1144,6 +1156,16 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         reconciled = _new_reconciled(rt.store)
         record = _context(rt, partial, found, reconciled)
         basis = forecast_basis(books.state, rt.store, traj, action, today, lang, record.entries if record is not None else None)
+        receipt_reader: BasisReader | None = None
+        try:  # what each receipt rests on is a supporting read: the series stand without it, and the home says so
+            entries = record.entries if record is not None else read_entries(rt.store.operations())[0]
+            receipt_reader = BasisReader(books, today, lang, agreement_days(entries, rt.store.commitments()))
+            annotate(series, traj, receipt_reader)
+            annotate(plan_series, plan_traj, receipt_reader)
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the basis of the receipts could not be read for the home")
+            partial.add("receipt_basis")
+            receipt_reader = None
         queue = _approvals(books.state, books.with_([]), mandate, approvals, found, today, lang,
                            use_router=rt.settings.features.debt_desk, commitments=rt.store.commitments())
         causality = Causality(record, forecast_of(traj, today, mandate.min_cash_fen), today, lang)
@@ -1173,7 +1195,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                 rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
                 action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
                 low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
-                changes=changes, record=record, open_decisions=open_decisions))
+                changes=changes, record=record, open_decisions=open_decisions, basis=receipt_reader, partial=partial), v2=v2)
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the home summary could not be built")
             partial.add("summary")
@@ -1242,6 +1264,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "deals_card": hybrid["deals_card"],
         "receivables_card": hybrid["receivables_card"],
         "changes_card": hybrid["changes_card"],
+        **({"home_v2": hybrid.get("home_v2")} if v2 and get_settings().features.home_v2 else {}),  # FEATURE_HOME_V2: with it off the read carries no V2 field
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),

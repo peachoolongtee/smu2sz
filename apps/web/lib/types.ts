@@ -864,6 +864,8 @@ export interface DealWorkspace {
     send_scope: string;
     /** What sending does, one line each (the agreement it records, the funding it draws or requests, the estimated cost); absent when there is no counter or in older recordings. */
     send_scope_lines?: string[] | null;
+    /** One sentence on what the send re-checks (the books are read again; if they moved, the new figures are shown first). Not sent yet: the queue shows it only when present. */
+    recheck_text?: string | null;
     supplier_cost_display: string;
     forward_value_display: string;
     verdict_id: string;
@@ -1884,6 +1886,140 @@ export interface ReceivableWorth {
   hypothetical: true;
 }
 
+// ------------------------------------------------------------------ GET /receivables (map #88, ticket #107): Receivables in three layers
+// Every field is optional: a section renders only when the server sends it, the old page being the fallback. Every word and figure is the
+// server's string; the browser compares and computes none of them.
+
+export type FinancingState = "ARRANGED" | "RECEIVED" | "REPAID" | "NONE";
+export type CollectionState = "CURRENT" | "DUE_SOON" | "OVERDUE" | "PROMISE_MISSED";
+export type CollectionActionKind = "VIEW_TERMS" | "PREPARE_REMINDER" | "CHASE";
+
+/** What one invoice leaves the owner if it is paid on the due day, with the server's words for it. */
+export interface ReceivableNet {
+  net_display?: string;
+  /** "about ¥163k" */
+  net_short?: string;
+  /** "if Foshan pays on the due day" */
+  condition_text?: string;
+  /** "¥257,186.08 repays the financing received 29 days earlier, with its charges"; null without financing. */
+  repays_text?: string | null;
+  /** The financing's state and day for the breakdown's repayment line ("arranged, expected in 3 days"). */
+  repays_note?: string | null;
+  /** "about ¥1,870 more for every 30 days late"; null when a late day adds nothing. */
+  per_period_text?: string | null;
+  /** What the receipt leaves owed by the owner when it falls short; null otherwise. */
+  owed_text?: string | null;
+  /** The invoice is marked financed but no financing is on record: shown in place of the net, whose figures are then before any financing. */
+  financing_unrecorded?: boolean;
+  unrecorded_text?: string | null;
+  /** Arranged / Received / Repaid; null without financing. */
+  financing_state_text?: string | null;
+  claim_display?: string;
+  charges_display?: string;
+  advance_display?: string;
+}
+
+export interface ReceivableRow {
+  receivable_id: string;
+  /** The outstanding at a glance ("¥420k"). */
+  amount_short?: string;
+  /** "about ¥163k": also on the row itself. */
+  net_short?: string;
+  /** The standing sentence about a receipt that falls short ("If the receipt falls short, what is left is owed by you."). */
+  recourse_text?: string;
+  /** The record of the executed financing request for this invoice; null when there is none to open. */
+  financing_href?: string | null;
+  buyer_id?: string;
+  buyer_name?: string;
+  /** "the ¥420,000.00 invoice to Foshan Home Retail Co." */
+  invoice?: string;
+  outstanding_display?: string;
+  face_display?: string;
+  due_when?: string;
+  /** What the payment rests on and the server's sentence for it ("owed: invoiced 13 days ago, due in 32 days"), the same words the cash picture says. */
+  basis?: ReceiptBasis | null;
+  basis_text?: string | null;
+  past_due?: boolean;
+  net?: ReceivableNet;
+  financing_state?: FinancingState;
+  governed_by?: { terms_label?: string; terms_text?: string; contract_ref?: string | null };
+  early_payment?: { agreed?: boolean; text?: string };
+  pending_counter?: { decision_id?: string; text?: string } | null;
+  collection_state?: CollectionState;
+  collection_state_text?: string;
+  collection_action?: { primary?: CollectionActionKind; label?: string; others?: { action: CollectionActionKind; label: string }[] };
+}
+
+export interface ReceivablesRead {
+  day?: Day;
+  lang?: "en" | "zh";
+  state_version?: number;
+  last_read_when?: string | null;
+  /** Supporting reads the server could not make (the reconciliation): the rows stand without them and the page says so. */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
+  rows?: ReceivableRow[];
+  summary?: {
+    outstanding_total_display?: string;
+    next_expected?: { when_text?: string; amount_display?: string; amount_short?: string; /** "Foshan Home Retail Co.", or several names in one sentence. */ buyer_name?: string } | null;
+    /** What the financing against these invoices still stands at. */
+    financing_total_display?: string;
+    /** The counts, written by the server (never added up here): the open invoices, those overdue, those financed, and "1 invoice · nothing overdue". */
+    invoice_count?: number;
+    overdue_count?: number;
+    financed_count?: number;
+    count_text?: string;
+    /** The page's two heading lines, chosen and written by the server ("¥420k expected from Foshan." and "About ¥163k becomes available at collection, after the financing is repaid."); the second is null when there is nothing to add. */
+    headline?: string | null;
+    headline_second?: string | null;
+    /** "¥420,000 more is scheduled to be invoiced in 2 days; it is not owed yet": billing that is not a receivable yet, so it has no row. Absent when there is none. */
+    scheduled_note?: string | null;
+    net_total_display?: string;
+    /** "if every invoice is paid on its due day" */
+    net_total_text?: string;
+  };
+}
+
+/** The late-payment test of one buyer (GET /decisions/{id}/exposure, flag `exposure`): only what the Receivables aside reads. */
+export interface BuyerStressRow {
+  delay_days?: number;
+  available?: boolean;
+  unavailable_text?: string | null;
+  /** "−¥250k" and "in 60 days" */
+  lowest_short?: string;
+  lowest_when?: string;
+  /** "in 12 days": present when cash falls below the minimum on the late path, null when it does not. */
+  first_breach_when?: string | null;
+  /** "about ¥160,940, a month later": what the buyer's open invoices leave the owner a month after the late day. */
+  net_later_text?: string | null;
+  /** "Cash is below your minimum on 65 days. No committed plan covers the ¥550,000.00 shortfall..." */
+  funding_text?: string;
+  text?: string;
+  assumption?: string;
+  /** The late path's cash, day by day from the opening of the books: the Cash page draws it as the stressed line. Absent when the test is unavailable. */
+  series?: { day: Day; closing_fen: Fen; closing_display: string }[];
+  /** How many days the late path stays under the minimum, and the day it is lowest (placement only; the words are `text` and `lowest_when`). */
+  breach_days?: number;
+  lowest_day?: number;
+  /** What the shortfall needs ("¥550,000.00"). */
+  need_display?: string;
+}
+
+/** GET /buyers/{id}/exposure and GET /decisions/{id}/exposure (flag `exposure`): the buyer's concentration, payment history and late-payment test. */
+export interface BuyerExposureView {
+  decision_id?: string;
+  buyer_id?: string;
+  buyer_name?: string;
+  /** "Foshan", when the server sends the short name. */
+  buyer_short?: string;
+  concentration?: { buyer_name?: string; sentence?: string; ar_text?: string };
+  payments?: { sentence?: string };
+  stress?: { delay_days?: number; now?: BuyerStressRow };
+  /** Present when the query carried `customer`, `invoice` or `decision`: where the page that sent the owner here is. */
+  context?: { back?: { label: string; href: string } | null };
+  /** The day the books were read on. */
+  day?: Day;
+}
+
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */
 export interface ReceivablesWorthView {
   rows: ReceivableWorth[];
@@ -2318,12 +2454,39 @@ export interface PictureAxis {
   max_display?: string;
 }
 
+/**
+ * What a receipt rests on, as the server read the books (ticket #116): OWED (an issued invoice under the terms in force), SCHEDULED (a recurring billing not yet
+ * invoiced), AGREED (timing or amount from a recorded agreement) or PENDING (only if the buyer accepts the reply). The words are `basis_text`; the code only
+ * chooses how a mark or a row is drawn.
+ */
+export type ReceiptBasis = "OWED" | "SCHEDULED" | "AGREED" | "PENDING";
+
+/** The buyer's reply as an alternative to the plan: the picture's own series for that path (drawn dashed, never as the plan line) and the receipts it moves. */
+export interface HomePending {
+  /** "If Foshan accepts Option A" */
+  label?: string | null;
+  series?: HomeSeriesPoint[] | null;
+  receipt_rows?: {
+    day: Day;
+    /** "in 2 days" */
+    when?: string;
+    kind: string;
+    label_short?: string;
+    amount_fen?: Fen;
+    amount_short?: string;
+    amount_display?: string;
+    basis?: ReceiptBasis | null;
+    /** "if Foshan accepts Option A: ¥257,200 paid 2 days after the offer" */
+    basis_text?: string | null;
+  }[];
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
   closing_fen: Fen;
   closing_display: string;
-  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string }[];
+  events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
   net_display?: string;
@@ -2489,6 +2652,15 @@ export interface HomeRailEvent {
   explain: string;
   /** A day with several events (a receipt and a repayment) is one event; its net. */
   net_short?: string | null;
+  /** The lowest point's own sentence ("cash at its lowest, ¥300k, at your minimum"), under its label. Only on the lowest row. */
+  note?: string | null;
+  /** A landing the plan would bring if the owner runs it (the plan has not run): said with the financing state word, never as a fact. */
+  planned?: boolean;
+  /** On a receipt: what it rests on, and the server's sentence for it ("owed: invoiced 13 days ago, due in 32 days"). Absent or null on any other event. */
+  basis?: ReceiptBasis | null;
+  basis_text?: string | null;
+  /** The day's effect as a table, from the figures the paragraph uses (cash before, cash after, the minimum, the room), label and figure as the server wrote them. */
+  effect_rows?: { label: string; display: string }[];
 }
 
 /** "What if the buyer pays late": the stress series and the sentences the server wrote for it. Behind a flag; absent when off. */
@@ -2502,6 +2674,11 @@ export interface HomeStress {
   breach_days: number;
   need_short?: string | null;
   plan_text?: string | null;
+  /** The stress sentence the server wrote: the lowest point, the breach days and the uncovered amount. The browser composes none of it. */
+  text?: string | null;
+  /** What funds it (the server's sentence), and, when the money comes in later anyway, what the net is then. */
+  funding_text?: string | null;
+  net_later_text?: string | null;
   assumption_text: string;
   /** How many days the picture must show to include the moved receipt. */
   window_days_needed?: number;
@@ -2632,6 +2809,9 @@ export interface HomeView {
     /** The baseline projection ("if you do nothing") and the same books with the recommended plan applied. The chart draws these. */
     series: HomeSeriesPoint[];
     plan_series: HomeSeriesPoint[] | null;
+    /** While a reply to the buyer's offer waits to be accepted: that path as an alternative (never the plan), and the sentence that says what solid and dashed mean. Absent otherwise. */
+    pending?: HomePending | null;
+    receipts_legend_text?: string | null;
     /** The picture's y axis (range and labelled ticks), how many days it shows and its title ("Your cash, next 36 days"); absent from an older server. */
     axis?: PictureAxis | null;
     /** The same axis for each window the picture can show, keyed by days as a string ("30", "60", "120" and the picture's own). */
@@ -2663,6 +2843,8 @@ export interface HomeView {
     facts?: HomeFact[];
     /** Section 3, the picture: the key events (the rail and the numbered marks), the name of the dashed comparison line, and the late-payment scenario. */
     events_rail?: HomeRailEvent[];
+    /** The plan line's legend ("If you run FLOW's plan" before the run, "With FLOW's plan" after); absent with no plan. */
+    plan_line_label?: string | null;
     /** How many days from today the rail spans (the lowest point stays on it even past the picture's window). */
     events_rail_days?: number;
     /** The books without the whole plan (or without any action): drawn dashed grey with `counterfactual_label`. Both absent when there is nothing to compare. */
@@ -2939,6 +3121,8 @@ export interface DealView {
 /** A buyer's open offer on the deals read (GET /deals): what it asks, FLOW's read, the cost against the owner's limit and the five-step track. */
 export interface OpenOffer {
   offer_id: string;
+  /** Where the page was opened from (when it was opened with `customer` or `invoice`): the label and the href, the server's. */
+  context?: { back?: { label: string; href: string } };
   verdict_id: string | null;
   received_when: string;
   asks_text: string;
@@ -2956,6 +3140,13 @@ export interface OpenOffer {
   replies_ready: number;
   stages: { key: "received" | "analysed" | "reply_ready" | "sent" | "agreed"; label: string; state: StageState }[];
   tone: DealTone;
+}
+
+/** What the Deals page was opened with (`customer`, `invoice`, `path`): the server answers with `open_offer.context.back` for the buyer it names. */
+export interface DealsContext {
+  customer?: string | null;
+  invoice?: string | null;
+  path?: string | null;
 }
 
 export interface DealsView {
@@ -3315,4 +3506,198 @@ export interface PictureMoment {
   word?: string | null;
   /** What moved cash that day, in words with their amounts, per path key, in the server's path order. Absent when the server has none. */
   events_text?: Record<string, string[]> | null;
+}
+
+// ------------------------------------------------------------------ buyer exposure (flag `exposure`; GET /offers/{offer_id}/exposure)
+
+/** One day of a stressed cash line (the home point shape, display strings included). */
+export interface ExposureStressPoint {
+  day: Day;
+  closing_fen: Fen;
+  closing_display: string;
+}
+
+/** The late-payment test for one path: the server's sentence, the lowest point and the series that draws it. Every word is the server's. */
+export interface ExposureStress {
+  delay_days: number;
+  lowest_fen: Fen | null;
+  lowest_day: Day | null;
+  breach_days: number | null;
+  available: boolean;
+  unavailable_text: string | null;
+  lowest_short?: string | null;
+  lowest_when?: string | null;
+  first_breach_when?: string | null;
+  text?: string;
+  funding_text?: string;
+  assumption?: string;
+  series?: ExposureStressPoint[];
+}
+
+/** One capacity window (a facility's or a limit's room before and after), with the server's words. */
+export interface ExposureWindow {
+  dimension: string;
+  label: string;
+  today_text: string | null;
+  after_text: string | null;
+  lowest_text: string | null;
+  recovers_when: string | null;
+  recovery_assumed_text: string | null;
+  facility_name: string | null;
+  reading_text: string | null;
+}
+
+/** What a path leaves of the room for another payment, FLOW alone: the figure and its words. */
+export interface ExposureSpare {
+  x_star_fen: Fen;
+  figure_short: string;
+  today_short: string;
+  x_star_display: string;
+  today_display: string;
+  shape_text: string;
+  binding_text: string | null;
+}
+
+export interface ExposureCapacity {
+  available: boolean;
+  unavailable_text: string | null;
+  before: { windows: ExposureWindow[] } | null;
+  after: { windows: ExposureWindow[] } | null;
+  spare: ExposureSpare | null;
+}
+
+/** One path's words on the exposure read (the comparison table's cells). */
+export interface ExposurePathWords {
+  key: string;
+  kind: "asked" | "reply" | "do_nothing";
+  label: string;
+  lowest_display?: string | null;
+  lowest_when?: string | null;
+  lowest_when_text?: string | null;
+  limit_word?: string | null;
+  limit_text?: string | null;
+  share_after_text?: string | null;
+}
+
+/** What the aside says about the customer: the server's words (the contribution needs the economics inputs, so it can be absent). */
+export interface CustomerContextWords {
+  contribution_display?: string | null;
+  contribution_note?: string | null;
+  owes_display: string;
+  share_text: string;
+  profile_href: string;
+}
+
+/** GET /offers/{offer_id}/exposure?lang=: what the deal does to the exposure to one buyer, for every path of the offer at once. Read-only context, never a verdict. */
+export interface ExposureView {
+  offer_id: string;
+  buyer_id: string;
+  buyer_name: string;
+  response: string;
+  lang: "en" | "zh";
+  buyer: { id: string; name: string };
+  /**
+   * The offer's paths in the server's order; `key` is "asked" or a counter's id (the keys of the offer picture's paths), then "do_nothing" last: words only, with no band, stress or
+   * capacity entry and no line on the chart. Each carries the server's words for the comparison table; a null `limit_word` means the picture gives the path no class.
+   */
+  paths: ExposurePathWords[];
+  concentration: {
+    buyer_name: string;
+    ar_buyer_display: string;
+    ar_total_display: string;
+    ar_share_display: string;
+    ar_text: string;
+    receipts_text: string;
+    sentence: string;
+  };
+  payments: { sentence: string; insufficient: boolean };
+  payments_note: string | null;
+  stress: { delay_days: number; now: ExposureStress; paths: Record<string, ExposureStress | null> };
+  capacity: Record<string, ExposureCapacity | null>;
+  /** Contribution, set only with the economics flag (phase 2); absent or null otherwise. */
+  economics?: { annual_text?: string | null; contribution_display?: string | null; estimated?: boolean; sentence?: string | null; context_text?: string | null } | null;
+  customer_context?: CustomerContextWords | null;
+  flag: { material: boolean; text: string };
+  /** The band's sentences: the concentration, then the stress and the capacity for the leading path and for every path. */
+  band: { concentration: string; stress: string; capacity: string | null; by_path: Record<string, { stress: string; capacity: string | null } | null> };
+  day: Day;
+}
+
+// ------------------------------------------------------------------ the customer overview (map #88, ticket #108): GET /customers/{id}/overview
+
+/** The tone the overview gives a figure or a row; the browser only picks the colour. */
+export type OverviewTone = "neutral" | "ok" | "warn" | "bad";
+
+/** One of the four figures: relationship value, outstanding, financing linked, share of what you are owed. Every string is the server's. */
+export interface OverviewFigure {
+  key: string;
+  label: string;
+  value_display: string;
+  note: string;
+  tone: OverviewTone;
+}
+
+/** A labelled row of the economics or the exposure panel. `note` is the quiet sentence after the value (where it came from, what it means), when there is one. */
+export interface OverviewRow {
+  key: string;
+  label: string;
+  value_display: string;
+  note: string | null;
+  tone: OverviewTone;
+}
+
+/** A link the server built, with the buyer, the invoice or the stress it opens on already in the href. */
+export interface OverviewAction {
+  key: string;
+  label: string;
+  href: string;
+}
+
+/** The one commercial decision waiting for the owner; `primary` opens it on Deals with the recommended path selected. */
+export interface OverviewDecision {
+  /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read). */
+  kind?: "counter" | "request" | "offer_received";
+  eyebrow: string;
+  text: string;
+  headline_short?: string | null;
+  authority_text?: string | null;
+  primary: { label: string; href: string };
+  secondary: OverviewAction[];
+}
+
+export interface OverviewHistoryRow {
+  when_text: string;
+  text: string;
+  /** Where the row opens (the deal, its record, the documents), or null for a row that is only said; `link_label` says where. */
+  href: string | null;
+  link_label?: string | null;
+}
+
+/** GET /customers/{id}/overview?lang&decision&path&invoice. Each section is rendered only when its field is present. */
+export interface CustomerOverviewView {
+  customer_id: string;
+  name: string;
+  lang: "en" | "zh";
+  day: Day;
+  state_version: number;
+  summary_text?: string;
+  figures?: OverviewFigure[];
+  decision?: OverviewDecision | null;
+  /** The line shown instead of the decision card when nothing waits. */
+  none_text?: string | null;
+  /** The actions that remain: view the invoices, stress-test payment (the second only while the exposure read is on). */
+  actions?: OverviewAction[];
+  economics?: OverviewRow[];
+  economics_note?: string | null;
+  edit_label?: string | null;
+  /** Where the customer's facts are edited; the link is shown only when this is non-null. */
+  edit_href?: string | null;
+  /** The exposure panel; null while the exposure read is off, and then `note` says why. */
+  exposure?: { rows: OverviewRow[]; same_figures_note?: string | null } | null;
+  note?: string | null;
+  /** Present when a supporting read failed and the page is not whole (never cached by the server). */
+  partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
+  history?: OverviewHistoryRow[];
+  /** `back` is built by the server from the query the page was opened with. */
+  context?: { back: { label: string; href: string } };
 }

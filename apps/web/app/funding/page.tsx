@@ -97,7 +97,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                   <tr key={row.facility.id} className={selected ? "bg-brand-50" : ""} data-testid={`menu-${row.facility.id}`}>
                     <th scope="row" className={`${tdCls} sticky left-0 z-10 min-w-40 text-left font-medium ${selected ? "bg-brand-50" : "bg-surface"}`}>
                       {row.facility.name}
-                      <span className="mt-0.5 block font-mono text-xs font-normal text-ink-3">{row.facility.id}</span>
+                      <span className="mt-0.5 block font-mono text-meta font-normal text-ink-3">{row.facility.id}</span>
                       {selected ? <Badge tone="brand" className="mt-1">{t("fund.inPlan")}</Badge> : null}
                     </th>
                     <td className={`${tdCls} min-w-36`}>{row.cost_display}</td>
@@ -106,7 +106,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                       <FacilityStatusBadge status={row.facility.status} />
                     </td>
                     <td className={`${tdCls} whitespace-nowrap text-right tabular-nums`}>{row.facility.limit_display}</td>
-                    <td className={`${tdCls} min-w-36 text-xs text-ink-2`}>
+                    <td className={`${tdCls} min-w-36 text-meta text-ink-2`}>
                       <Disclosure summary={t("biz.details.plan")} testId={`menu-covenant-${row.facility.id}`}>
                         {row.covenant_effect}
                       </Disclosure>
@@ -126,7 +126,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                           <Badge tone="warn">{t("plan.needsApproval")}</Badge>
                         </p>
                       ) : null}
-                      <p className="mt-1 text-xs text-ink-2">{row.reason}</p>
+                      <p className="mt-1 text-meta text-ink-2">{row.reason}</p>
                     </td>
                   </tr>
                 );
@@ -147,7 +147,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
             </dl>
             <div className="mt-3 space-y-2">
               <Formula>{m.break_even_formula}</Formula>
-              <p className="text-xs text-ink-2">{m.excluded_note}</p>
+              <p className="text-meta text-ink-2">{m.excluded_note}</p>
             </div>
           </Card>
 
@@ -173,7 +173,7 @@ function FundingBody({ view, basis, snapshot }: { view: FundingView; basis: "COM
                 <li key={c.label} className="flex flex-col gap-1.5 py-2">
                   <div className="min-w-0">
                     <p className={`text-sm ${c.selected ? "font-semibold" : ""}`}>{c.label}</p>
-                    <p className="text-xs text-ink-3">{c.note}</p>
+                    <p className="text-meta text-ink-3">{c.note}</p>
                     <PlanNotes
                       className="mt-1"
                       needsApproval={c.needs_owner_approval}

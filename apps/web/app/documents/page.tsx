@@ -126,7 +126,7 @@ function Documents() {
                         <button type="button" onClick={() => open(d.id)} className="text-left font-medium text-brand-700 underline underline-offset-2">
                           {d.title}
                         </button>
-                        <span className="block break-words text-xs text-ink-3">{d.summary}</span>
+                        <span className="block break-words text-meta text-ink-3">{d.summary}</span>
                       </td>
                       <td className={tdCls}>{d.counterparty_name}</td>
                       <td className={`${tdCls} whitespace-nowrap`}>{whenWords(d.uploaded_when, d.uploaded_day, today, t)}</td>
@@ -164,7 +164,7 @@ function DemoDocuments({
   return (
     <section className="min-w-0">
       <h3 className="text-sm font-semibold text-ink">{t("docs.demo")}</h3>
-      <p className="mt-0.5 text-xs text-ink-3">{t("docs.demo.hint")}</p>
+      <p className="mt-0.5 text-meta text-ink-3">{t("docs.demo.hint")}</p>
       {fixtures.error ? (
         <div className="mt-3">
           <ErrorState error={fixtures.error} onRetry={fixtures.reload} />
@@ -192,7 +192,7 @@ function DemoDocuments({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">{f.title}</p>
-                  <p className="text-xs text-ink-3">
+                  <p className="text-meta text-ink-3">
                     {te("dockind", f.kind)} · {nameOf(f.counterparty_id)}
                   </p>
                 </div>
@@ -315,7 +315,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
       <h3 className="text-sm font-bold text-ink">{t("docs.own")}</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor={kindId} className="mb-1 block text-xs font-bold text-ink-2">
+          <label htmlFor={kindId} className="mb-1 block text-meta font-bold text-ink-2">
             {t("docs.kind")}
           </label>
           <select id={kindId} value={kind} onChange={(e) => setKind(e.target.value as DocumentKind)} className={field}>
@@ -327,7 +327,7 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           </select>
         </div>
         <div>
-          <label htmlFor={partyId} className="mb-1 block text-xs font-bold text-ink-2">
+          <label htmlFor={partyId} className="mb-1 block text-meta font-bold text-ink-2">
             {t("docs.counterparty")}
           </label>
           <select id={partyId} value={chosen} onChange={(e) => setParty(e.target.value)} className={field}>
@@ -360,14 +360,14 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           </svg>
         </span>
         <p className="mt-3 text-base font-bold text-ink">{busy ? t("docs.drop.reading", { name: busy }) : over ? t("docs.drop.active") : t("docs.drop.title")}</p>
-        <p className="mt-1 max-w-md text-xs text-ink-3">{t("docs.drop.sub")}</p>
+        <p className="mt-1 max-w-md text-meta text-ink-3">{t("docs.drop.sub")}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
           <Button size="sm" onClick={() => input.current?.click()} disabled={busy !== null}>
             {t("docs.drop.choose")}
           </Button>
-          {file && !busy ? <span className="max-w-56 truncate text-xs font-bold text-ink-2">{file.name}</span> : null}
+          {file && !busy ? <span className="max-w-56 truncate text-meta font-bold text-ink-2">{file.name}</span> : null}
         </div>
-        <label htmlFor={fileId} className="mt-3 block text-xs text-ink-3">
+        <label htmlFor={fileId} className="mt-3 block text-meta text-ink-3">
           {t("docs.file")}
         </label>
         <input
@@ -378,13 +378,13 @@ function UploadForm({ parties, onRead }: { parties: Counterparty[]; onRead: (req
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="sr-only"
         />
-        <p className="mt-1 text-xs text-ink-3">{t("docs.drop.demoHint")}</p>
+        <p className="mt-1 text-meta text-ink-3">{t("docs.drop.demoHint")}</p>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button variant="primary" loading={busy !== null && busy !== t("docs.demo")} disabled={!file || !chosen} onClick={() => void upload()} data-testid="doc-upload">
           {t("docs.upload")}
         </Button>
-        {API_MODE === "mock" ? <span className="text-xs text-ink-3">{t("docs.mockUpload")}</span> : null}
+        {API_MODE === "mock" ? <span className="text-meta text-ink-3">{t("docs.mockUpload")}</span> : null}
       </div>
       {error ? (
         <div className="mt-3">

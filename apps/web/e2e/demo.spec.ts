@@ -1,9 +1,11 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { STORY_STEPS, stripOf, walkStory } from "./helpers";
+import { STORY_STEPS, stripOf, verdictHeading, walkStory } from "./helpers";
 
 /** Since Wave 3 the Inbox folds to one row once a deal is selected: open it before reading which message is current. */
 async function expectSelectedMessage(page: Page, id: string): Promise<void> {
+  // (the page waits for the deal's exposure read before it shows the queue; the inbox is folded or open once it has)
+  await expect(page.getByTestId("inbox-collapsed").or(page.getByTestId(`inbox-msg-${id}`))).toBeVisible();
   if (await page.getByTestId("inbox-collapsed").isVisible().catch(() => false)) await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId(`inbox-msg-${id}`)).toHaveAttribute("aria-current", "true");
 }
@@ -53,13 +55,15 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await expect(stripOf(page)).toContainText(`step 1 of ${STORY_STEPS}`);
   await expect(narration).toContainText("Offer from Foshan Home Retail Co.");
   await expectSelectedMessage(page, "EX01");
-  await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("1.20% discount for paying the ¥420,000.00 invoice early");
-  await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("60");
+  // (the queue says the ask once, in the server's words for the three terms)
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("queue-ask")).toContainText("payment terms to 60 days");
 
   // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
   await walkStory(page, 1, 1);
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  await expect(page.getByTestId("deal-impact-forward").getByTestId("deal-impact-total")).toHaveText("¥28,326.92");
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
+  await expect(page.getByTestId("queue-why")).toContainText("¥28,326.92");
   await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
   await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");

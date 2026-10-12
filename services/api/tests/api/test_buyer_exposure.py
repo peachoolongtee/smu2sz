@@ -161,6 +161,47 @@ def test_it_is_cached_like_the_overview_and_a_change_reads_again(api: TestClient
     assert _buyer(api)["stress"]["now"]["net_later_text"] != first["stress"]["now"]["net_later_text"] and len(calls) == 4
 
 
+def test_the_back_link_follows_the_origin_and_is_built_after_the_cache(api: TestClient) -> None:
+    """The Cash page opened from a stress link goes back to where the owner came from: the deal, the invoice, or the customer."""
+    assert "context" not in _buyer(api)
+    offer = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
+    deal = f"deal%3A{offer}"
+    # a deal (with its path): back to the deal, whatever else the query carries
+    for extra in ({}, {"invoice": "RCV-A"}):
+        back = _buyer(api, customer="BUYER-1", decision=f"deal:{offer}", path="counter:0", **extra)["context"]["back"]
+        assert back == {"label": "Back to the Foshan deal", "href": f"/deals?decision={deal}&path=counter%3A0&customer=BUYER-1"}
+    assert _buyer(api, "zh", customer="BUYER-1", decision=f"deal:{offer}")["context"]["back"] == {"label": "返回与Foshan的交易", "href": f"/deals?decision={deal}&customer=BUYER-1"}
+    # an invoice and no deal: back to Receivables with it selected
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-A")["context"]["back"] == {"label": "Back to the invoice", "href": "/receivables?invoice=RCV-A&customer=BUYER-1"}
+    assert _buyer(api, "zh", invoice="RCV-A")["context"]["back"] == {"label": "返回发票", "href": "/receivables?invoice=RCV-A&customer=BUYER-1"}
+    # the customer alone: back to the Customer page
+    assert _buyer(api, customer="BUYER-1")["context"]["back"] == {"label": "Back to Foshan", "href": "/customers/BUYER-1"}
+    assert _buyer(api, "zh", customer="BUYER-1")["context"]["back"] == {"label": "返回Foshan", "href": "/customers/BUYER-1"}
+    # another buyer's page, a deal or invoice that is nobody's: nothing to go back to, and nothing echoed
+    for query in ({"customer": "BUYER-2"}, {"invoice": "RCV-NOPE"}, {"decision": "deal:OFF-nope"}, {"customer": "BUYER-2", "invoice": "RCV-NOPE"}):
+        assert "context" not in _buyer(api, **query)
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-NOPE")["context"]["back"]["href"] == "/customers/BUYER-1"
+    plain = _buyer(api)
+    assert {k: v for k, v in _buyer(api, customer="BUYER-1").items() if k not in ("context", "computed_in_seconds")} == {k: v for k, v in plain.items() if k != "computed_in_seconds"}
+
+
+def test_an_explicit_origin_decides_the_back_link(api: TestClient) -> None:
+    """`from` = deal | invoice | customer names the page that sent the owner; without it the query's own rule stands (the test above)."""
+    offer = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
+    everything = {"customer": "BUYER-1", "invoice": "RCV-A", "decision": f"deal:{offer}", "path": "counter:0"}
+    hrefs = {origin: _buyer(api, **everything, **{"from": origin})["context"]["back"]["href"] for origin in ("deal", "invoice", "customer")}
+    assert hrefs == {"deal": f"/deals?decision=deal%3A{offer}&path=counter%3A0&customer=BUYER-1",
+                     "invoice": "/receivables?invoice=RCV-A&customer=BUYER-1", "customer": "/customers/BUYER-1"}
+    # the Customer page's own link carries an invoice and says it is the customer: back to the customer, not Receivables
+    assert _buyer(api, "zh", customer="BUYER-1", invoice="RCV-A", **{"from": "customer"})["context"]["back"] == {"label": "返回Foshan", "href": "/customers/BUYER-1"}
+    # no `from`: the decision, then the invoice, then the customer
+    assert _buyer(api, **everything)["context"]["back"]["href"].startswith("/deals?")
+    assert _buyer(api, customer="BUYER-1", invoice="RCV-A")["context"]["back"]["href"].startswith("/receivables?")
+    # an origin the query cannot support falls back to the rule; one that is not an origin is refused
+    assert _buyer(api, customer="BUYER-1", **{"from": "deal"})["context"]["back"]["href"] == "/customers/BUYER-1"
+    assert api.get("/buyers/BUYER-1/exposure", params={"from": "home"}).status_code == 422
+
+
 # ---------------------------------------------------------------- GET /receivables: the words the page dashed out
 
 

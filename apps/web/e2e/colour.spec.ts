@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { filledBrand } from "./helpers";
+import { filledBrand, openReview } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -49,9 +49,10 @@ test("the Home headline sits on the canvas with no card; the status is a tone do
   expect(contrast(await color(page.getByTestId("home-note")), CANVAS)).toBeGreaterThan(4.5);
   // The headline is one colour: the server's sentence is never parsed or part-coloured.
   expect(await page.getByTestId("home-headline").evaluate((el) => el.children.length)).toBe(0);
-  // The plan bar is the one raised surface: a frosted fill (translucent, not opaque) and the deepest shadow.
+  // The plan bar is the one raised surface, a DecisionCard (#112): a solid white fill (no frost) and its one soft shadow.
   const bar = page.getByTestId("home-next-action");
-  expect(await bar.evaluate((el) => getComputedStyle(el).backgroundColor)).toMatch(/\/ 0\.84\)$/);
+  expect(await bar.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+  expect(await bar.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
   // Calm when healthy: the dot turns amber, and there is still no deep block.
   await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
@@ -66,7 +67,7 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   for (const [path, expected, loaded] of [
     ["/", 1, "[data-testid=home-next-action]"],
     ["/cash", 1, "[data-testid=cash-forecast]"],
-    ["/receivables", 0, "[data-testid=recv-summary]"],
+    ["/receivables", 1, "[data-testid=recv3-page]"], // the one primary is "Explore the cash impact"
     ["/activity", 0, "#activity-timeline"],
   ] as const) {
     await page.goto(path);
@@ -80,6 +81,8 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   await page.goto("/deals");
   await page.getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  // (the queue's card carries the one filled button, "Review and send the counter"; opened, the send takes its place)
+  await openReview(page);
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   // The channel chip is neutral, not the "fine" green (the inbox is one row until it is asked for).

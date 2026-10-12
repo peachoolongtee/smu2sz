@@ -1,11 +1,11 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openStoryFold, STORY_STEPS, walkStory } from "./helpers";
+import { openStoryFold, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
 const ENGINE_ROUTES = ["/demo", "/chat", "/mandate", "/inbox", "/documents", "/trajectory", "/funding", "/verdict", "/capex", "/ledger", "/approvals", "/security", "/evidence"];
-const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits"];
+const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/customers/BUYER-1"];
 
 async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -91,8 +91,11 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
   for (const route of BUSINESS_ROUTES) {
     await page.goto(route);
     await expect(page.locator("h1")).toHaveCount(1);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const covered = await page.evaluate(() => {
+    // The h1 is there before the page's data is: wait for the reads to settle, then scroll and measure until the measure holds (content that arrives late grows the page under the scroll).
+    await page.waitForLoadState("networkidle");
+    const measure = () =>
+      page.evaluate(() => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
       const chat = document.querySelector('[data-testid="chat-open"]')!.getBoundingClientRect();
       const bar = document.querySelector('[data-testid="tab-bar"]');
       const barTop = bar && getComputedStyle(bar).display !== "none" ? bar.getBoundingClientRect().top : innerHeight;
@@ -106,7 +109,7 @@ test("the last content clears the bottom bar and Ask FLOW on every Business page
         return hitsChat || r.bottom > barTop;
       }).length;
     });
-    expect(covered, `${route}: controls under the bar or Ask FLOW at the end of the page`).toBe(0);
+    await expect.poll(measure, { message: `${route}: controls under the bar or Ask FLOW at the end of the page`, timeout: 8000 }).toBe(0);
   }
 });
 
@@ -147,7 +150,9 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
         const h = document.elementFromPoint(x, y);
         return !h || x < 0 || y < 0 || x >= innerWidth || y >= innerHeight || el.contains(h) || h.contains(el);
       };
-      return Array.from(document.querySelectorAll("header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a"))
+      // On Receivables the links are checked too (every customer name is a link that carries its own 44 px hit area).
+      const links = location.pathname === "/receivables" ? ", main a" : "";
+      return Array.from(document.querySelectorAll(`header a, header button, header summary, header label, main button, main summary, nav[data-testid=tab-bar] a${links}`))
         .filter((el) => (el as HTMLElement).offsetParent !== null && !(el.closest("details:not([open])") && el.tagName !== "SUMMARY"))
         .filter((el) => {
           // Measured where a finger would meet it: scrolled to the middle of the window, clear of the fixed tab bar.
@@ -213,12 +218,14 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // One order at every width (the DOM order is the visual order): the folded inbox row, the verdict (the heading), the reply bar, the picture with its columns,
-  // who and where, what they ask and cost, why it matters (folded).
-  const ids = ["inbox-collapsed", "deal-recommendation-card", "counters", "deal-paths", "deal-selected", "deal-ask", "deal-why", "deal-advanced"];
+  // One order per width (the DOM order is the visual order): the verdict (the heading), what they ask, why, the reply card, the picture with its columns, the comparison fold;
+  // the folded inbox row is above them on a desktop and after them on a phone or a short window (its place moves in the DOM, so the focus order follows).
+  const phoneWidth = (page.viewportSize()?.width ?? 1440) < 1024 || (page.viewportSize()?.height ?? 900) <= 800;
+  const detail = ["queue-heading", "queue-ask", "queue-why", "queue-recommends", "deal-paths", "queue-compare"];
+  const ids = phoneWidth ? [...detail, "inbox-collapsed"] : ["inbox-collapsed", ...detail];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
@@ -279,19 +286,19 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  const rec = (await topOf(page, "deal-recommendation-card"))!;
-  const send = await page.getByTestId("deal-send").boundingBox();
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  const rec = (await topOf(page, "queue-heading"))!;
+  const send = await page.getByTestId("queue-review-open").boundingBox();
   const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const asks = (await topOf(page, "deal-ask"))!;
-  expect(inbox.top, "the inbox is one folded row above the buyer").toBeLessThan((await topOf(page, "deal-selected"))!.top);
+  const asks = (await topOf(page, "queue-ask"))!;
+  expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
-  expect(send, "the bound Send is on the page").not.toBeNull();
-  expect(send!.y + send!.height, "the Send button is inside the first 915 px").toBeLessThanOrEqual(915);
+  expect(send, "the review button is on the page").not.toBeNull();
+  expect(send!.y + send!.height, "the review button is inside the first 915 px").toBeLessThanOrEqual(915);
   expect(send!.y + send!.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
-  expect(asks.top, "the asks come after the priced response").toBeGreaterThan(send!.y + send!.height);
+  expect(asks.top, "the ask comes before the reply card (the board's order)").toBeLessThan(send!.y);
   measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
   // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
@@ -326,9 +333,9 @@ test("on a desktop the Deals workspace keeps the server's order and the inbox ro
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(page.getByTestId("deal-recommendation")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const selected = (await topOf(page, "deal-selected"))!;
+  const selected = (await topOf(page, "queue-heading"))!;
   expect(inbox.top).toBeLessThan(selected.top);
 });
 
@@ -386,12 +393,12 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
 });
 
-test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {
+test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "the phone has its own check");
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto("/receivables");
-  await expect(page.getByTestId("recv-open-list")).toBeVisible();
-  await expect(page.locator("#recv-open table")).toBeHidden();
+  await expect(page.getByTestId("recv3-list")).toBeVisible();
+  await expect(page.getByRole("columnheader").first()).toBeHidden();
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 

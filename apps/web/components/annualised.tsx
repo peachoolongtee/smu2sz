@@ -23,7 +23,7 @@ export function AnnualisedLine({ leg }: { leg: AnnualisedLeg }) {
         <Formula>{leg.formula}</Formula>
       </div>
       {leg.compare_to.length ? (
-        <ul className="mt-1.5 space-y-0.5 text-xs text-ink-2">
+        <ul className="mt-1.5 space-y-0.5 text-meta text-ink-2">
           {leg.compare_to.map((c) => (
             <li key={c.label}>{t("annualised.against", { label: c.label, rate: c.annual_rate_display })}</li>
           ))}
@@ -55,7 +55,7 @@ export function AnnualisedCompact({ legs }: { legs: AnnualisedLeg[] }) {
   const { t } = useI18n();
   if (!legs.length) return null;
   return (
-    <ul className="space-y-0.5 text-xs text-ink-2" data-testid="chat-annualised">
+    <ul className="space-y-0.5 text-meta text-ink-2" data-testid="chat-annualised">
       {legs.map((l) => (
         <li key={l.obligation_id} title={l.formula}>
           {t("annualised.leg", { discount: l.discount_display, rcv: l.receivable_id })}{" "}

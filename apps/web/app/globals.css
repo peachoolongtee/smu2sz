@@ -11,6 +11,9 @@
   }
 }
 
+/* `laptop:` is the width of a laptop screen, 1024 to 1366 px: the sidebar can collapse to its icons here (components/app-shell.tsx). */
+@custom-variant laptop (@media (min-width: 64rem) and (max-width: 85.375rem));
+
 /* `short:` is a window at most 800 px tall (a 768 px laptop): the hero and the next-step card tighten so the priced action reaches the first screen. */
 @custom-variant short (@media (max-height: 800px));
 
@@ -32,9 +35,11 @@
   --color-canvas: #f5f7fb;
   --color-surface: #ffffff;
   --color-subtle: #eff3f8;
-  --color-line: #e6eaf0;
+  --color-line: #e6e9ef;
   --color-line-strong: #d3d9e2; /* dividers between dense rows: decoration, not a boundary that must be seen */
   --color-line-ui: #768399; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.4:1 on subtle */
+
+  --color-track: #eef1f5; /* the segmented control's track (components/ui/segmented-tabs.tsx) */
 
   --color-ink: #24324a;
   --color-ink-2: #4d5767;
@@ -94,7 +99,7 @@
   --color-chart-reserve: #a3241a;
   --color-chart-danger: #fdecea;
   --color-chart-worst: #b7791f;
-  --color-chart-grid: #e6eaf0;
+  --color-chart-grid: #e6e9ef;
   --color-chart-axis: #5a6577;
   /* The deal picture's series hues (the chart hues): turquoise, purple, sky, navy. Never a status. */
   --color-chart-teal: #38d0c7;
@@ -107,8 +112,10 @@
   --color-focus: #0368e9;
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.5:1: the ring turns white inside it */
 
-  /* Shadows: a card rests on a hairline; a lifted row, tile or option takes one step; a sheet or menu takes the pop. */
-  --shadow-card: 0 1px 2px rgb(36 50 74 / 0.05), 0 6px 14px -10px rgb(36 50 74 / 0.12);
+  /* Shadows: a standard card rests on a hairline alone (no shadow); a decision card takes --shadow-decision; a lifted row, tile or option takes one
+     step; a sheet or menu takes the pop. --shadow-pill is the one-pixel edge under a segmented control's selected pill. */
+  --shadow-decision: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.06);
+  --shadow-pill: 0 1px 1px rgb(16 24 40 / 0.08);
   --shadow-lift: 0 2px 4px rgb(36 50 74 / 0.06), 0 12px 22px -14px rgb(36 50 74 / 0.22);
   --shadow-pop: 0 4px 8px rgb(36 50 74 / 0.06), 0 18px 36px -12px rgb(36 50 74 / 0.24);
   /* The Demo strip fixed to the bottom of a phone: the same soft shadow, cast upward. */
@@ -117,17 +124,58 @@
   /* One radius scale: 8 px controls (buttons, toggles, fields), 14 px cards, 10 px inner tiles and rows, and a pill for badges, chips, avatars and the segmented track. */
   --radius-pill: 9999px;
   --radius-card: 14px;
+  --radius-decision: 16px;
   --radius-tile: 10px;
   --radius-control: 8px;
 
-  /* Motion scale: ease-out, under 300 ms, transform and opacity only (the one exception is a disclosure's height). */
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur-fast: 120ms;
-  --dur: 200ms;
-  --dur-slow: 280ms;
+  /* The type scale: seven roles, each a size (a line height beside it), and nothing in between. Two of them are the app's own text-xs / text-sm
+     (the utilities text-meta / text-body are the same sizes). The headline is 26 px on a phone, 34 px from `md` and 36 px from `lg` (:root below), the
+     major value 24 / 28 / 30 (tabular numerals, `.type-value`, never above 30 beside a headline). Supporting 13 px is the floor for any financial qualification: a figure, a rate, a
+     "limit: at least 1.25x", the words that say what a number is against. Metadata (11 to 12 px) is a label, a time or a legend and never a
+     figure or a qualification. The kit classes at the end of @layer components (.type-headline and the rest) add the face, weight and tracking
+     a role always has. */
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
+  --text-supporting: 0.8125rem;
+  --text-supporting--line-height: 1.125rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-body-lg: 0.9375rem;
+  --text-body-lg--line-height: 1.375rem;
+  --text-card-title: 1rem;
+  --text-card-title--line-height: 1.375rem;
+  --text-section: clamp(1.125rem, 1.05rem + 0.25vw, 1.25rem);
+  --text-section--line-height: 1.3;
+  --text-value: 1.5rem;
+  --text-value--line-height: 1.1;
+  --text-headline: 1.625rem;
+  --text-headline--line-height: 1.15;
+
+  /* Motion tokens: six durations and two easings, and nothing else moves the app. Every transition and animation names one of them
+     (a delay is a multiple of --dur-instant or a stagger of 30 ms). Transform and opacity only (a disclosure's height and the cash
+     picture's stroke draw are the two deliberate exceptions). Under prefers-reduced-motion only opacity transitions remain
+     (the block at the end of this file; components read the same signal through lib/use-reduced-motion.ts).
+       instant   80 ms   a press, a toggle's mark
+       fast     140 ms   a hover, a colour, the segmented pill sliding
+       dur      220 ms   a switch, a sheet, a disclosure, a detail replacing in place
+       expanded 280 ms   a card or row arriving, a panel sliding in, a chart cursor
+       scenario 350 ms   a scenario or window switch: the figures that change update together
+       narrative 500 ms  the one story the Home picture tells (the line draws, the first breach pulses)
+     --ease-ui is the one ease-out; --ease-select an ease-out that settles without overshoot (a pill must never leave its track on a multi-tab jump) for a choice settling into place. */
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --ease-select: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-expanded: 280ms;
+  --dur-scenario: 350ms;
+  --dur-narrative: 500ms;
   /* Tailwind's own transition-colors / -opacity / -transform take the kit's timing, not its 150 ms default. */
   --default-transition-duration: var(--dur);
-  --default-transition-timing-function: var(--ease-out);
+  --default-transition-timing-function: var(--ease-ui);
+  /* The two loading indicators (a skeleton's breathing, a spinner's turn) take their periods from the scale too. */
+  --animate-pulse: pulse calc(var(--dur-narrative) * 4) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin: spin calc(var(--dur-narrative) * 2) linear infinite;
 
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
   --color-new: #7c4ddb;
@@ -145,6 +193,24 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
+}
+
+/* The headline and the major value step with the screen: the headline 26 / 34 / 36 px (phone / md / lg), the value 24 / 28 / 30 px, so the headline always dominates a value beside it; the rest of the scale is fixed. */
+@media (min-width: 40rem) {
+  :root {
+    --text-value: 1.75rem;
+  }
+}
+@media (min-width: 48rem) {
+  :root {
+    --text-headline: 2.125rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --text-value: 1.875rem;
+    --text-headline: 2.25rem;
+  }
 }
 
 /* An owner who chose Demo mode or Chinese: the server's Business/English first paint stays hidden until the shell has hydrated into
@@ -254,16 +320,6 @@ input[type="radio"] {
   }
 }
 
-/* The soft background's slow drift. */
-@keyframes biz-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3rem, 2rem, 0) scale(1.08);
-  }
-}
-
 /* The status dot's one pulse: a ring that grows out of the dot and fades. */
 @keyframes dot-pulse {
   from {
@@ -279,12 +335,26 @@ input[type="radio"] {
 @layer components {
   /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
   .motion-reveal {
-    animation: biz-reveal var(--dur-slow) var(--ease-out) backwards;
+    animation: biz-reveal var(--dur-expanded) var(--ease-ui) backwards;
+  }
+
+  /* The Deals queue: a selected deal replaces the detail with one quick fade (--dur, 150 to 200 ms); what is inside it does not reveal again on top of it. */
+  .motion-select {
+    animation: biz-reveal var(--dur) var(--ease-ui) backwards;
+  }
+  .motion-select .motion-reveal,
+  .motion-select .motion-rise > * {
+    animation: none;
+  }
+
+  /* One thing replacing another in place (the chosen invoice's detail): the same arrival at the base duration, 200 ms. */
+  .motion-swap {
+    animation: biz-reveal var(--dur) var(--ease-ui) backwards;
   }
 
   /* Rows of a list (up to eight) rise one after the other; a ninth row and beyond just appear. */
   .motion-rise > * {
-    animation: biz-rise var(--dur-slow) var(--ease-out) backwards;
+    animation: biz-rise var(--dur-expanded) var(--ease-ui) backwards;
   }
   .motion-rise > :nth-child(2) { animation-delay: 30ms; }
   .motion-rise > :nth-child(3) { animation-delay: 60ms; }
@@ -298,9 +368,9 @@ input[type="radio"] {
   /* Rows, tiles and option rows that lead somewhere lift 1 px and take the next shadow step, on devices that really hover. */
   .motion-lift {
     transition:
-      transform var(--dur) var(--ease-out),
-      box-shadow var(--dur) var(--ease-out),
-      background-color var(--dur) var(--ease-out);
+      transform var(--dur) var(--ease-ui),
+      box-shadow var(--dur) var(--ease-ui),
+      background-color var(--dur) var(--ease-ui);
   }
   @media (hover: hover) and (pointer: fine) {
     .motion-lift:hover {
@@ -312,12 +382,12 @@ input[type="radio"] {
   /* Pill buttons answer the press, and ease their colour. */
   .motion-press {
     transition:
-      transform var(--dur-fast) var(--ease-out),
-      background-color var(--dur) var(--ease-out),
-      border-color var(--dur) var(--ease-out),
-      color var(--dur) var(--ease-out),
-      box-shadow var(--dur) var(--ease-out),
-      opacity var(--dur) var(--ease-out);
+      transform var(--dur-fast) var(--ease-ui),
+      background-color var(--dur) var(--ease-ui),
+      border-color var(--dur) var(--ease-ui),
+      color var(--dur) var(--ease-ui),
+      box-shadow var(--dur) var(--ease-ui),
+      opacity var(--dur) var(--ease-ui);
   }
   .motion-press:not(:disabled):active {
     transform: scale(0.98);
@@ -325,18 +395,18 @@ input[type="radio"] {
 
   /* A dialog card arriving (the walkthrough): opacity and scale only, so its own placement is left alone. */
   .motion-pop {
-    animation: tour-in var(--dur) var(--ease-out) backwards;
+    animation: tour-in var(--dur) var(--ease-ui) backwards;
   }
 
   /* The chat slide-over and any panel that enters from the right edge. */
   .motion-panel[open] {
-    animation: tl-slide-in var(--dur-slow) var(--ease-out) backwards;
+    animation: tl-slide-in var(--dur-expanded) var(--ease-ui) backwards;
   }
 
   /* The sheet under the account button, and any menu that drops from a button. */
   .motion-sheet {
     transform-origin: top right;
-    animation: sheet-in var(--dur) var(--ease-out) backwards;
+    animation: sheet-in var(--dur) var(--ease-ui) backwards;
   }
 
   /* The status dot's single pulse (ACTION_NEEDED and CRITICAL only; the class is not set for the others). */
@@ -346,12 +416,72 @@ input[type="radio"] {
     inset: 0;
     border-radius: var(--radius-pill);
     background: currentColor;
-    animation: dot-pulse 900ms var(--ease-out) 400ms 1 backwards;
+    animation: dot-pulse var(--dur-narrative) var(--ease-ui) var(--dur-scenario) 1 backwards;
   }
 
   /* A sliding thumb or indicator: it moves by transform only. */
   .motion-slide {
-    transition: transform var(--dur) var(--ease-out);
+    transition: transform var(--dur) var(--ease-ui);
+  }
+
+  /* The three card types (components/ui.tsx: Card, DecisionCard, SelectedCard), one class each. A standard card is a hairline and nothing
+     else; a decision card is raised on one soft shadow and carries the page's one strong action; a selected card is the tinted card
+     with the 3 px accent rule (the choice the detail beside it is about). */
+  .card-standard {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .card-decision {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-decision);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-decision);
+  }
+  .card-selected {
+    border: 1px solid var(--color-brand-100);
+    border-left: 3px solid var(--color-brand-600);
+    border-radius: var(--radius-card);
+    background: var(--color-brand-50);
+  }
+
+  /* A scrolling track says there is more: its edge fades out on the side that has more (a mask, not a colour; SegmentedTabs sets data-fade). */
+  .seg-scroll[data-fade="end"] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+  .seg-scroll[data-fade="start"] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2rem), transparent);
+  }
+  .seg-scroll[data-fade="both"] {
+    mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  }
+  /* The type roles that carry more than a size (the face, the weight, the tracking): the Home headline and every page title, a major value, a section title and a card
+     title. Body, supporting and metadata are the utilities text-body / text-supporting / text-meta alone. A figure is always tabular. */
+  .type-headline {
+    font-family: var(--font-display);
+    font-size: var(--text-headline);
+    line-height: var(--text-headline--line-height);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  .type-value {
+    font-size: var(--text-value);
+    line-height: var(--text-value--line-height);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .type-section {
+    font-family: var(--font-display);
+    font-size: var(--text-section);
+    line-height: var(--text-section--line-height);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .type-card-title {
+    font-size: var(--text-card-title);
+    line-height: var(--text-card-title--line-height);
+    font-weight: 700;
   }
 
   /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the
@@ -415,14 +545,111 @@ input[type="radio"] {
   }
 }
 
+/* The selected row of a list is the same selection as the selected card: the brand tint and the 3 px rule (the row has a transparent 3 px left border to take it). Outside the layers, so it wins over the row's own border colour. */
+.row-selected {
+  border-left-color: var(--color-brand-600);
+  background: var(--color-brand-50);
+}
+
+/* The segmented pill is shown once measured (data-pill on its track); until then (the server's markup, the first frame) the chosen tab draws it. Outside the layers, so it wins over the utilities. */
+.seg-track:not([data-pill]) > span[aria-hidden] {
+  display: none;
+}
+.seg-track:not([data-pill]) .seg-tab[aria-selected="true"] {
+  border-color: var(--color-line);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pill);
+}
+
+/* The toggle's tooltip: its name beside the button on hover and on keyboard focus, in the expanded sidebar and the collapsed one alike (opacity only). */
+.side-tip {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  z-index: 50;
+  translate: 0 -50%;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  padding: 0.375rem 0.75rem;
+  box-shadow: var(--shadow-pop);
+  color: var(--color-ink);
+  font-size: var(--text-supporting);
+  font-weight: 600;
+  transition: opacity var(--dur-fast) var(--ease-ui);
+}
+.side-tip-host:hover .side-tip,
+.side-tip-host:focus-visible .side-tip {
+  opacity: 1;
+}
+
+/* The collapsible sidebar (components/app-shell.tsx, BusinessShell), outside the layers so it wins over the utilities on the same elements. Only on a laptop (1024 to 1366 px) and only with <html data-sidebar="collapsed"> (set by the toggle and,
+   before the first paint, by lib/pre-hydration.ts): the column narrows to 4.5 rem, each destination is its icon, and its word is a label that appears beside the icon on hover
+   and on keyboard focus (opacity only). The link keeps its full accessible name; the Ask FLOW pill shrinks to its icon; a count becomes a small badge on the icon's corner. */
+@media (min-width: 64rem) and (max-width: 85.375rem) {
+  html[data-sidebar="collapsed"] .shell-grid {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+  html[data-sidebar="collapsed"] .side-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  html[data-sidebar="collapsed"] .side-link .side-label {
+    position: absolute;
+    left: calc(100% + 0.5rem);
+    top: 50%;
+    z-index: 50;
+    translate: 0 -50%;
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 0;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    padding: 0.375rem 0.75rem;
+    box-shadow: var(--shadow-pop);
+    color: var(--color-ink);
+    font-weight: 600;
+    transition: opacity var(--dur-fast) var(--ease-ui);
+  }
+  html[data-sidebar="collapsed"] .side-link:hover .side-label,
+  html[data-sidebar="collapsed"] .side-link:focus-visible .side-label {
+    opacity: 1;
+  }
+  html[data-sidebar="collapsed"] .side-count {
+    position: absolute;
+    top: 0.125rem;
+    right: 0.5rem;
+    margin-left: 0;
+  }
+  html[data-sidebar="collapsed"] .side-foot {
+    display: none;
+  }
+  html[data-sidebar="collapsed"] .side-toggle {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  html[data-sidebar="collapsed"] .ask-trigger {
+    left: 1.125rem;
+    width: 2.5rem;
+    padding-inline: 0;
+  }
+  html[data-sidebar="collapsed"] .ask-trigger .ask-label {
+    display: none;
+  }
+}
+
 /* Disclosures: the body is a one-row grid that opens from 0fr to 1fr (the same height animation for every <details>; the
    inner box clips while it moves). `@starting-style` covers browsers that render a closed <details> as display: none. */
 .disclosure-body {
   display: grid;
   grid-template-rows: 0fr;
   transition:
-    grid-template-rows var(--dur) var(--ease-out),
-    opacity var(--dur) var(--ease-out);
+    grid-template-rows var(--dur) var(--ease-ui),
+    opacity var(--dur) var(--ease-ui);
   opacity: 0;
 }
 /* A fold's chevron turns with its own <details> only, never with an open fold around it (components/business/kit.tsx). */
@@ -452,43 +679,11 @@ details:not(.menu, :has(> .disclosure-body))::details-content {
   block-size: 0;
   overflow: clip;
   transition:
-    block-size var(--dur) var(--ease-out),
+    block-size var(--dur) var(--ease-ui),
     content-visibility var(--dur) allow-discrete;
 }
 details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   block-size: auto;
-}
-
-/* The soft background behind the Business pages (components/business/backdrop.tsx): two blurred discs, in the Home and
-   Cash tints, far below the text's contrast limit (ink-3 stays above 4.5:1 on the strongest point of either). They drift
-   very slowly: one 40 s drift, then they rest where they are (a 64 px blur that animates forever is paint work for the life of the
-   tab). The Cash disc is left out on a phone, where the tab bar covers it anyway. Cards stay solid on top. */
-.biz-disc {
-  position: absolute;
-  border-radius: var(--radius-pill);
-  filter: blur(64px);
-  opacity: 0.35;
-  animation: biz-drift 40s ease-in-out 1 forwards;
-}
-.biz-disc-home {
-  top: -8rem;
-  left: -10rem;
-  width: 38rem;
-  height: 32rem;
-  background: color-mix(in srgb, var(--color-sec-home-solid) 12%, var(--color-canvas));
-}
-.biz-disc-cash {
-  right: -12rem;
-  bottom: -10rem;
-  width: 40rem;
-  height: 30rem;
-  background: color-mix(in srgb, var(--color-sec-cash-solid) 12%, var(--color-canvas));
-  animation-delay: -20s;
-}
-@media (max-width: 39.999rem) {
-  .biz-disc-cash {
-    display: none;
-  }
 }
 
 /* The cash picture's one draw (components/home/cash-picture.tsx): the do-nothing line draws first, the plan after it, each about 900 ms, then the
@@ -510,21 +705,21 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 .picture-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: picture-draw 900ms var(--ease-out) forwards;
+  animation: picture-draw var(--dur-narrative) var(--ease-ui) forwards;
 }
 .picture-draw-second {
-  animation-delay: 900ms;
+  animation-delay: var(--dur-narrative);
 }
 .picture-fade {
   opacity: 0;
-  animation: picture-fade 400ms var(--ease-out) forwards;
+  animation: picture-fade var(--dur-scenario) var(--ease-ui) forwards;
 }
 /* The first breach's one pulse, on an SVG circle (the HTML dot uses .motion-pulse). */
 .picture-pulse {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: dot-pulse 900ms var(--ease-out) 1200ms 1 forwards;
+  animation: dot-pulse var(--dur-narrative) var(--ease-ui) calc(var(--dur-narrative) * 2) 1 forwards;
 }
 
 /* A plotted bar (Deals: what each ask costs) grows from its left edge once, by transform; reduced motion leaves it full at once. */
@@ -538,7 +733,7 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 }
 .motion-grow {
   transform-origin: left center;
-  animation: bar-grow var(--dur-slow) var(--ease-out) 200ms backwards;
+  animation: bar-grow var(--dur-expanded) var(--ease-ui) var(--dur-fast) backwards;
 }
 
 /* The ellipsis stays hidden until reduced motion asks for it. This base rule must come before the media block: equal
@@ -547,7 +742,9 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   display: none;
 }
 
-/* Reduced motion: no transforms, no waiting, no looping. Durations drop to 0.001 ms so a finished state is the only state. */
+/* Reduced motion: no transforms, no waiting, no looping. Animations end at once (0.001 ms) so a finished state is the only state; of the
+   transitions only opacity remains, at the duration its own token gave it (a colour, a transform, a height and a grid track change
+   at once). Components that choose in script (the chart cursors, the segmented pill) read the same signal through use-reduced-motion.ts. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -555,7 +752,7 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     animation-duration: 0.001ms !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-property: opacity !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
@@ -563,8 +760,9 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   .motion-press:not(:disabled):active {
     transform: none !important;
   }
-  .biz-disc {
-    animation: none !important;
+  /* A native <details> body opens by height through ::details-content, which the universal selector above does not reach: it opens at once. */
+  details::details-content {
+    transition: none !important;
   }
   /* A frozen arc is no feedback: the busy state is an ellipsis instead. */
   .spinner {

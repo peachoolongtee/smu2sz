@@ -38,17 +38,24 @@ from app.api.offer_picture import (
     _next_invoice_day,
     cached_picture,
 )
-from app.api.presentation import Lang, buyer_of_receivable, fmt_short, party_name, t, when_text
+from app.api.presentation import (
+    Lang,
+    buyer_of_receivable,
+    deal_back_label,
+    fmt_short,
+    party_name,
+    t,
+    when_text,
+)
 from app.books import Books
 from app.decisions.identity import offer_id_of
 from app.domain.models import FinancialState, LedgerEventKind, Mandate, Mode
-from app.domain.money import fmt_yuan_about
 from app.financial import EngineError, project
 from app.strategy.concentration import concentration
 from app.strategy.exposure import DO_NOTHING
 from app.strategy.inputs import CustomerInputs
 from app.strategy.net import net_at_collection
-from app.strategy.words import buyer_short, share_text
+from app.strategy.words import buyer_short, net_later_text, share_text
 
 log = logging.getLogger("termsledger.decisions")
 
@@ -206,6 +213,25 @@ def query_buyer(state: FinancialState, customer: str | None, invoice: str | None
     return customer if customer in buyer_ids else owner_of if owner_of in buyer_ids else None
 
 
+def _deal_of(rt: Any, buyer: str, decision: str | None) -> bool:
+    """The query's `decision` is a plain key of a deal this buyer is the counterparty of (anything else is ignored, never echoed)."""
+    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
+    offer = rt.store.get_offer(offer_id) if offer_id else None
+    return offer is not None and offer.counterparty_id == buyer
+
+
+def _invoice_of(state: FinancialState, buyer: str, invoice: str | None) -> bool:
+    """The query's `invoice` is one of this buyer's receivables."""
+    return bool(invoice) and any(x.id == invoice and x.counterparty_id == buyer for x in state.receivables)
+
+
+def _customer_link(state: FinancialState, lang: Lang, buyer: str, query: list[str]) -> dict[str, str]:
+    """The Customer page's link, "Back to {who}": the one set of words, carrying `query` when it has any."""
+    who = buyer_short(party_name(state, buyer))
+    return {"label": t(lang, f"Back to {who}", f"返回{who}"),
+            "href": f"/customers/{quote(buyer, safe='')}" + (f"?{'&'.join(query)}" if query else "")}
+
+
 def customer_back(rt: Any, state: FinancialState, lang: Lang, *, customer: str | None, invoice: str | None, decision: str | None,
                   path: str | None) -> dict[str, str] | None:
     """Where a Deals page opened from the customer's page goes back to: that page, carrying the deal (and the path) and the invoice the
@@ -216,17 +242,34 @@ def customer_back(rt: Any, state: FinancialState, lang: Lang, *, customer: str |
     if buyer is None:
         return None
     query: list[str] = []
-    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
-    offer = rt.store.get_offer(offer_id) if offer_id else None
-    if offer is not None and offer.counterparty_id == buyer and decision:
+    if decision and _deal_of(rt, buyer, decision):
         query.append(f"decision={quote(decision, safe='')}")
         if path and _SAFE.fullmatch(path):
             query.append(f"path={quote(path, safe='')}")
-    if invoice and any(x.id == invoice and x.counterparty_id == buyer for x in state.receivables):
+    if invoice and _invoice_of(state, buyer, invoice):
         query.append(f"invoice={quote(invoice, safe='')}")
-    who = buyer_short(party_name(state, buyer))
-    return {"label": t(lang, f"Back to {who}", f"返回{who}"),
-            "href": f"/customers/{quote(buyer, safe='')}" + (f"?{'&'.join(query)}" if query else "")}
+    return _customer_link(state, lang, buyer, query)
+
+
+def origin_back(rt: Any, state: FinancialState, lang: Lang, buyer_id: str, *, customer: str | None, invoice: str | None, decision: str | None,
+                path: str | None, origin: str | None = None) -> dict[str, str] | None:
+    """Where the Cash page opened from a stress link goes back to. `origin` (`from` in the query: deal | invoice | customer) says which page sent
+    the owner and decides when it names a target the query supports; without it the query decides: a deal of this buyer's (`decision`, with its
+    `path`) back to the deal, else an invoice of this buyer's back to Receivables with it selected, else the customer when the query names this
+    buyer back to the Customer page. A part that names another buyer's is ignored, never echoed; None when nothing names this buyer."""
+    quoted = quote(buyer_id, safe="")
+    targets: dict[str, dict[str, str]] = {}
+    if decision and _deal_of(rt, buyer_id, decision):
+        tail = f"&path={quote(path, safe='')}" if path and _SAFE.fullmatch(path) else ""
+        who = buyer_short(party_name(state, buyer_id))
+        targets["deal"] = {"label": deal_back_label(lang, who), "href": f"/deals?decision={quote(decision, safe='')}{tail}&customer={quoted}"}
+    if invoice and _invoice_of(state, buyer_id, invoice):
+        targets["invoice"] = {"label": t(lang, "Back to the invoice", "返回发票"), "href": f"/receivables?invoice={quote(invoice, safe='')}&customer={quoted}"}
+    if customer == buyer_id:
+        targets["customer"] = _customer_link(state, lang, buyer_id, [])
+    if origin in targets:
+        return targets[origin]
+    return next((targets[k] for k in ("deal", "invoice", "customer") if k in targets), None)
 
 
 # ---------------------------------------------------------------- the stress row's net a month later
@@ -239,6 +282,4 @@ def net_later(state: FinancialState, buyer_id: str, today: int, delay: int, lang
     if not owed:
         return None
     total = sum(net_at_collection(state, r, max(today, r.due_day) + delay).net_fen for r in owed)
-    when = t(lang, "a month later", "一个月后") if delay == 30 else t(lang, f"{delay} days later", f"{delay} 天后")
-    return {"net_later_fen": total,
-            "net_later_text": t(lang, f"about {fmt_yuan_about(total)}, {when}", f"约 {fmt_yuan_about(total)}，{when}")}
+    return {"net_later_fen": total, "net_later_text": net_later_text(lang, total, delay)}

@@ -2,9 +2,12 @@
 
 import { useId, useRef, useState } from "react";
 import { FONT, PAD, r1, segments, textWidth, useWidth, type Seg } from "@/components/business/cash-picture";
-import { SegmentedButtons } from "@/components/ui";
+import { BasisLine, BasisRows, type BasisRow } from "@/components/home/receipt-basis";
+import { CheckIcon, ClockIcon } from "@/components/icons";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { StateWord } from "@/components/ui/state-word";
 import { useI18n } from "@/lib/i18n";
-import type { HomeRailEvent, HomeSeriesPoint, HomeView } from "@/lib/types";
+import type { HomeRailEvent, HomeSeriesPoint, HomeStress, HomeView } from "@/lib/types";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 /**
@@ -15,6 +18,9 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
  * returns to the chosen one. Pointing at the plot moves the dotted cursor with the pointer and shows the lines' figures; leaving returns the cursor
  * to the chosen event. The late-payment scenario draws the server's stress series dashed red in place of the plan line, replaces the panel with the
  * server's assumption and the stress sentence, and widens the window to the days the server says it needs; switching back restores everything.
+ * While a reply to the buyer's offer waits (`cash.pending`) its path is a third line, dashed in the brand colour at 60% and named in the legend, with the server's
+ * sentence for the dashed line under the picture and the receipts it would move listed beneath; it is never the plan line, and the late scenario leaves it out.
+ * A receipt says what it rests on (`basis_text`) in its rail row and in the tooltip; a scheduled one is a grey mark and a quieter word.
  *
  * Every word and figure is a string the server sent; `*_fen` and `day` numbers only place a mark (INVARIANT 13).
  */
@@ -28,10 +34,11 @@ const MARK: Record<Mark, { line: string; ink: string; solid: string; chip: strin
   red: { line: "stroke-bad-solid", ink: "fill-bad-fg", solid: "fill-bad-fg stroke-bad-fg", chip: "border-bad-solid text-bad-fg bg-surface", chipOn: "border-bad-fg bg-bad-fg text-surface" },
 };
 
-/** The mark's tone from the server's kind and tone: the lowest point amber, landings and receipts green, the rest grey; red only where the server says cash is under the minimum. */
+/** The mark's tone from the server's kind and tone: the lowest point amber, landings and receipts green (a scheduled receipt, not yet invoiced, grey), the rest grey; red only where the server says cash is under the minimum. */
 function markOf(e: HomeRailEvent): Mark {
   if (e.tone === "bad") return "red";
   if (e.kind === "lowest") return "amber";
+  if (e.kind === "receipt" && e.basis === "SCHEDULED") return "grey";
   return e.kind === "landing" || e.kind === "receipt" ? "green" : "grey";
 }
 
@@ -54,7 +61,19 @@ export function eventPictureReady(h: HomeView): boolean {
   return Boolean(h.cash.events_rail?.length && line?.some((p) => p.day >= h.day));
 }
 
-export function EventPicture({ h }: { h: HomeView }) {
+/**
+ * A late-payment test the page read itself (the Cash page's stress link: `GET /buyers/{id}/exposure`), drawn in place of the home's own `cash.stress`: the
+ * same stressed line, switch and panel. `sentence` is the server's stress sentence for the panel and `lines` the sentences that follow it (the net a month
+ * later, the financing's charges); `startLate` opens the picture on the late scenario.
+ */
+export interface LateRead {
+  stress: HomeStress;
+  sentence: string;
+  lines?: string[];
+  startLate?: boolean;
+}
+
+export function EventPicture({ h, lateRead }: { h: HomeView; lateRead?: LateRead }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const hintId = useId();
@@ -69,14 +88,15 @@ export function EventPicture({ h }: { h: HomeView }) {
   // The chosen event is kept by its key, so a re-read that reorders or drops events never moves the choice to another one.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [preview, setPreview] = useState<number | null>(null);
-  const [scenario, setScenario] = useState<"expected" | "late">("expected");
+  const [scenario, setScenario] = useState<"expected" | "late">(lateRead?.startLate ? "late" : "expected");
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; day: number } | null>(null);
   const [focused, setFocused] = useState(false);
 
   const n = rail.length;
   // The switch needs the server's stress, its series and the delay it is about; without any of them there is no scenario to offer.
-  const stress = cash.stress_available && cash.stress?.series?.length && cash.stress.delay_days ? cash.stress : null;
+  const own = lateRead ? lateRead.stress : cash.stress_available ? cash.stress : null;
+  const stress = own?.series?.length && own.delay_days ? own : null;
   if (scenario === "late" && stress === null) setScenario("expected");
   const late = scenario === "late" && stress !== null;
   const chosen = Math.max(rail.findIndex((e) => e.key === selectedKey), 0);
@@ -88,10 +108,13 @@ export function EventPicture({ h }: { h: HomeView }) {
   // (the books without the whole plan, or without any action) and exists only with its label: no series, no legend entry.
   const planSeries = cash.plan_series?.length ? cash.plan_series : cash.series;
   const counterSeries = cash.counterfactual_series?.length ? cash.counterfactual_series : null;
-  const planName = cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected");
+  const planName = cash.plan_line_label || (cash.plan_series?.length ? t("biz.picture.plan") : t("biz.forecast.projected"));
   const lateName = stress ? t("home.hy.scenario.late", { buyer: stress.buyer ?? "", n: stress.delay_days ?? 0 }).trim() : "";
   const mainSeries = late && stress ? stress.series : planSeries;
   const counterName = cash.counterfactual_label || t("biz.forecast.nothing");
+  // The buyer's reply as an alternative: drawn only with its series and its label, and never in the late scenario (that line is the stressed plan).
+  const pending = !late && cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
+  const pendingSeries = pending?.series ?? null;
 
   // ---- the window: the server's picture window, 60 and 120 days; the late scenario widens it to the days the server says it needs
   const base = cash.picture_days || 30;
@@ -106,17 +129,18 @@ export function EventPicture({ h }: { h: HomeView }) {
 
   const mainPts = mainSeries.filter((p) => p.day >= today);
   if (!mainPts.length) return null;
-  const lastData = Math.max(today + 1, ...[mainSeries, counterSeries ?? []].map((s) => s[s.length - 1]?.day ?? today));
+  const lastData = Math.max(today + 1, ...[mainSeries, counterSeries ?? [], pendingSeries ?? []].map((s) => s[s.length - 1]?.day ?? today));
   const end = Math.min(today + windowDays, lastData, today + (cash.horizon_days || windowDays));
   const last = Math.max(end - today, 1);
   const mainSegs = segments(mainPts, end);
   const counterSegs = counterSeries ? segments(counterSeries.filter((p) => p.day >= today), end) : null;
+  const pendingSegs = pendingSeries ? segments(pendingSeries.filter((p) => p.day >= today), end) : null;
   const planSegs = late ? segments(planSeries.filter((p) => p.day >= today), end) : mainSegs;
 
   // ---- the scale: the server's axis for this window (widened only for what is drawn)
   const axis = cash.axes?.[String(windowDays)] ?? cash.axis ?? null;
   const axisOk = Boolean(axis && axis.ticks.length && axis.max_fen > axis.min_fen);
-  const levels = [floor, ...mainSegs.map((s) => s.v), ...(counterSegs ?? []).map((s) => s.v)];
+  const levels = [floor, ...mainSegs.map((s) => s.v), ...(counterSegs ?? []).map((s) => s.v), ...(pendingSegs ?? []).map((s) => s.v)];
   const lo = Math.min(...levels, ...(axisOk ? [] : [0]));
   const hi = Math.max(...levels);
   const yLo = axisOk && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
@@ -178,6 +202,7 @@ export function EventPicture({ h }: { h: HomeView }) {
   const dots = cursorDay === null ? [] : [
     { key: "main", y: yOf(valueAt(mainSegs, cursorDay)), cls: late ? "fill-bad-solid" : "fill-brand-600" },
     ...(counterSegs ? [{ key: "counter", y: yOf(valueAt(counterSegs, cursorDay)), cls: "fill-ink-3" }] : []),
+    ...(pendingSegs ? [{ key: "pending", y: yOf(valueAt(pendingSegs, cursorDay)), cls: "fill-brand-600/60" }] : []),
   ];
 
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -192,6 +217,8 @@ export function EventPicture({ h }: { h: HomeView }) {
   const stepDays = [5, 10, 20, 30].find((s) => (s / last) * (pr - pl) >= 76) ?? 30;
   const ticks: number[] = [today];
   for (let d = today + stepDays; d <= end; d += stepDays) ticks.push(d);
+  // The last label is anchored to the right edge: the one before it gives way when the two would touch (the widened late picture only; Home's axis is as it was).
+  if (lateRead && ticks.length > 2 && ticks[ticks.length - 1] === end && ((end - ticks[ticks.length - 2]) / last) * (pr - pl) < 96) ticks.splice(ticks.length - 2, 1);
   const reserveText = t("biz.picture.reserve", { amount: cash.floor_short });
 
   // ---- pointing
@@ -218,9 +245,14 @@ export function EventPicture({ h }: { h: HomeView }) {
   const tipEvent = tipAt ? rail.find((e) => e.day === tipAt.day) : undefined;
   const flip = tipAt ? tipAt.x > W * 0.55 : false;
   const lines = [
-    { key: "main", name: late ? lateName : planName, series: mainSeries, dash: late ? "dashed" : "solid", swatch: late ? "stroke-bad-solid" : "stroke-brand-600" },
-    ...(counterSeries ? [{ key: "counter", name: counterName, series: counterSeries, dash: "dashed", swatch: "stroke-ink-3" }] : []),
+    { key: "main", name: late ? lateName : planName, series: mainSeries, dash: late ? "dashed" : "solid", swatch: late ? "stroke-bad-solid" : "stroke-brand-600", opacity: 1 },
+    ...(counterSeries ? [{ key: "counter", name: counterName, series: counterSeries, dash: "dashed", swatch: "stroke-ink-3", opacity: 1 }] : []),
+    ...(pending && pendingSeries ? [{ key: "pending", name: pending.label ?? "", series: pendingSeries, dash: "dashed", swatch: "stroke-brand-600", opacity: 0.6 }] : []),
   ];
+  // The receipts the reply would move, in the server's words; listed under the picture beside the sentence that says what dashed means.
+  const pendingRows: BasisRow[] = (pending?.receipt_rows ?? []).flatMap((r, i) =>
+    r.basis_text ? [{ key: `${r.day}-${r.kind}-${i}`, label: r.label_short ?? "", amount: r.amount_short, when: r.when, text: r.basis_text, basis: r.basis }] : [],
+  );
 
   const onRailKey = (e: React.KeyboardEvent<HTMLElement>, i: number) => {
     const by = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
@@ -231,34 +263,31 @@ export function EventPicture({ h }: { h: HomeView }) {
   };
 
   const panelTitle = late ? lateName : event ? `${event.label}, ${event.when}` : "";
-  const lowestLine = stress ? t("home.hy.stress.lowest", { amount: stress.lowest_short, when: stress.lowest_when }) : "";
-  const breachLine = stress && stress.breach_days > 0 ? t("home.hy.stress.breach", { n: stress.breach_days }) : "";
-  const needLine = stress && stress.breach_days > 0 && stress.need_short ? t("home.hy.stress.need", { amount: stress.need_short }) : "";
 
   return (
     <section aria-labelledby="home-picture-title" className="space-y-3" data-testid="home-event-picture" data-scenario={late ? "late" : "expected"} data-window={windowDays}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <h2 id="home-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <h2 id="home-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
           {cash.picture_title && windowDays === (cash.picture_days || 30) ? cash.picture_title : t("biz.picture.title")}
         </h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {stress ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("home.hy.scenario")}
               value={scenario}
               onChange={setScenario}
-              options={[
-                { value: "expected", label: t("home.hy.scenario.expected"), testId: "home-scenario-expected" },
-                { value: "late", label: lateName, testId: "home-scenario-late" },
+              tabs={[
+                { value: "expected", label: t("home.hy.scenario.expected"), icon: CheckIcon, testId: "home-scenario-expected" },
+                { value: "late", label: lateName, icon: ClockIcon, testId: "home-scenario-late" },
               ]}
             />
           ) : null}
           {windows.length > 1 ? (
-            <SegmentedButtons
+            <SegmentedTabs
               label={t("biz.forecast.horizon")}
               value={wanted}
               onChange={setChosenWindow}
-              options={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
+              tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))}
             />
           ) : null}
         </div>
@@ -275,7 +304,7 @@ export function EventPicture({ h }: { h: HomeView }) {
             {lines.map((l) => (
               <li key={l.key} className="flex items-center gap-2" data-testid={`home-legend-${l.key}`}>
                 <svg width="22" height="8" aria-hidden className="shrink-0">
-                  <line x1="1" x2="21" y1="4" y2="4" strokeWidth={l.key === "main" ? 3 : 2} strokeLinecap={l.dash === "dashed" ? "butt" : "round"} strokeDasharray={l.dash === "dashed" ? (l.key === "main" ? "6 3" : "4 3") : undefined} className={l.swatch} />
+                  <line x1="1" x2="21" y1="4" y2="4" strokeWidth={l.key === "main" ? 3 : 2} strokeLinecap={l.dash === "dashed" ? "butt" : "round"} strokeDasharray={l.dash === "dashed" ? (l.key === "main" ? "6 3" : "4 3") : undefined} opacity={l.opacity} className={l.swatch} />
                 </svg>
                 {l.name}
               </li>
@@ -333,7 +362,7 @@ export function EventPicture({ h }: { h: HomeView }) {
 
                 {cursorX !== null ? (
                   <g data-testid="home-cursor" data-day={cursorDay ?? undefined} className="pointer-events-none">
-                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-slow) ease-out"} style={{ transform: `translateX(${cursorX}px)` }}>
+                    <g className={reduced || tip ? undefined : "transition-transform duration-(--dur-expanded) ease-ui"} style={{ transform: `translateX(${cursorX}px)` }}>
                       <rect x={-7} width={14} y={pt - 6} height={pb - pt + 6} className="fill-ink/6" />
                       <line x1={0} x2={0} y1={pt - 6} y2={pb} className="stroke-ink" strokeWidth={1.5} strokeDasharray="3 4" />
                     </g>
@@ -341,6 +370,7 @@ export function EventPicture({ h }: { h: HomeView }) {
                 ) : null}
 
                 {counterSegs ? <path data-testid="home-line-counter" d={pathOf(counterSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={2} className="stroke-ink-3" opacity={0.9} /> : null}
+                {pendingSegs ? <path data-testid="home-line-pending" d={pathOf(pendingSegs)} fill="none" strokeLinejoin="miter" strokeDasharray="6 5" strokeWidth={3} className="stroke-brand-600" opacity={0.6} /> : null}
                 <path
                   data-testid={late ? "home-line-late" : "home-line-plan"}
                   d={pathOf(mainSegs)}
@@ -355,7 +385,7 @@ export function EventPicture({ h }: { h: HomeView }) {
                 {cursorX !== null ? (
                   <g className="pointer-events-none">
                     {dots.map((d) => (
-                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-slow) ease-out"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
+                      <circle key={d.key} data-testid="home-dot" cx={0} cy={0} r={4.5} className={`${d.cls} stroke-surface ${reduced || tip ? "" : "transition-transform duration-(--dur-expanded) ease-ui"}`} strokeWidth={2} style={{ transform: `translate(${cursorX}px, ${d.y}px)` }} />
                     ))}
                   </g>
                 ) : null}
@@ -388,7 +418,7 @@ export function EventPicture({ h }: { h: HomeView }) {
               <div
                 aria-hidden
                 data-testid="home-tooltip"
-                className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-pop"
+                className="pointer-events-none absolute z-10 w-48 rounded-tile border border-line-strong bg-surface p-2.5 text-supporting shadow-pop"
                 style={{ left: tipAt.x + (flip ? -12 : 12), top: Math.min(Math.max(tipAt.y - 12, 4), Math.max(H - 112, 4)), transform: flip ? "translateX(-100%)" : undefined }}
               >
                 {/* The day's words are the server's (the rail's `when`); a day with no event of its own has no day word, only the figures. */}
@@ -397,11 +427,16 @@ export function EventPicture({ h }: { h: HomeView }) {
                     <span className="first-letter:uppercase">{tipEvent.label}</span>, {tipEvent.when}
                   </p>
                 ) : null}
+                {tipEvent?.basis_text ? (
+                  <p className="mt-0.5 text-supporting leading-snug text-ink-2" data-testid="home-tooltip-basis">
+                    {tipEvent.basis_text}
+                  </p>
+                ) : null}
                 {lines.map((l) => (
                   <p key={l.key} className="mt-1 flex items-center justify-between gap-2 tabular-nums">
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-ink-2">
                       <svg width="14" height="6" aria-hidden className="shrink-0">
-                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} className={l.swatch} />
+                        <line x1="0" x2="14" y1="3" y2="3" strokeWidth={2.5} strokeDasharray={l.dash === "dashed" ? "4 2" : undefined} opacity={l.opacity} className={l.swatch} />
                       </svg>
                       <span className="truncate">{l.name}</span>
                     </span>
@@ -411,6 +446,14 @@ export function EventPicture({ h }: { h: HomeView }) {
               </div>
             ) : null}
           </div>
+
+          {/* What solid and dashed mean, in the server's sentence, and the receipts the dashed line would move. Present only while a reply waits for the buyer. */}
+          {pending && cash.receipts_legend_text ? (
+            <p className="text-supporting leading-snug text-ink-2" data-testid="home-receipts-legend">
+              {cash.receipts_legend_text}
+            </p>
+          ) : null}
+          {pending ? <BasisRows rows={pendingRows} label={pending.label ?? ""} pending testId="home-pending-rows" /> : null}
 
           {/* The same picture as a table, for a screen reader and anyone who prefers numbers: each key event and the lines' cash that day. */}
           <div className="sr-only">
@@ -448,12 +491,17 @@ export function EventPicture({ h }: { h: HomeView }) {
                 <h3 className="text-sm font-bold text-ink" data-testid="rail-panel-title">
                   {lateName}
                 </h3>
-                <p className="text-[0.9375rem] text-ink-2" data-testid="stress-assumption">
+                <p className="text-body-lg text-ink-2" data-testid="stress-assumption">
                   {stress.assumption_text}
                 </p>
-                <p className="text-[0.9375rem] font-medium text-ink" data-testid="stress-sentence">
-                  {[lowestLine, breachLine, needLine, stress.plan_text].filter(Boolean).join(" ")}
+                <p className="text-body-lg font-medium text-ink" data-testid="stress-sentence">
+                  {lateRead ? lateRead.sentence : [stress.text, stress.funding_text ?? stress.plan_text, stress.net_later_text].filter(Boolean).join(" ")}
                 </p>
+                {lateRead?.lines?.map((line, i) => (
+                  <p key={i} className="text-body-lg text-ink-2" data-testid="stress-line">
+                    {line}
+                  </p>
+                ))}
               </div>
             ) : event ? (
               <div className="space-y-1.5">
@@ -461,7 +509,21 @@ export function EventPicture({ h }: { h: HomeView }) {
                   <span className="tabular-nums">{shown + 1}.</span>
                   <span className="first-letter:uppercase">{panelTitle}</span>
                 </h3>
-                <p className="text-pretty text-[0.9375rem] font-medium leading-snug text-ink" data-testid="rail-explain">
+                {event.effect_rows?.length ? (
+                  <table className="w-full max-w-sm text-sm tabular-nums" data-testid="rail-effect">
+                    <tbody>
+                      {event.effect_rows.map((r, ri) => (
+                        <tr key={ri} className="border-b border-line last:border-b-0" data-testid="rail-effect-row">
+                          <th scope="row" className="py-1 pr-4 text-left font-normal text-ink-2">
+                            {r.label}
+                          </th>
+                          <td className="py-1 text-right font-bold text-ink">{r.display}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
+                <p className="text-pretty text-body-lg font-medium leading-snug text-ink" data-testid="rail-explain">
                   {event.explain}
                 </p>
               </div>
@@ -473,8 +535,8 @@ export function EventPicture({ h }: { h: HomeView }) {
         </div>
 
         <div className="min-w-0" data-testid="home-rail">
-          <h3 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.rail")}</h3>
-          {late ? <p className="mt-1 text-xs text-ink-3">{t("home.hy.rail.late")}</p> : null}
+          <h3 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.rail")}</h3>
+          {late ? <p className="mt-1 text-supporting text-ink-3">{t("home.hy.rail.late")}</p> : null}
           <ol className="mt-2 space-y-1.5" onPointerLeave={() => setPreview(null)}>
             {rail.map((e, i) => {
               const c = MARK[markOf(e)];
@@ -497,20 +559,34 @@ export function EventPicture({ h }: { h: HomeView }) {
                   >
                     {/* The chosen row also has a bar at its left edge: the choice is not told by colour alone, and it stays while another row is previewed. */}
                     {i === chosen ? <span aria-hidden className="absolute inset-y-1.5 left-0 w-0.75 rounded-pill bg-brand-600" data-testid={`rail-chosen-${i}`} /> : null}
-                    <span aria-hidden className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill border-2 text-xs font-extrabold tabular-nums ${on ? c.chipOn : c.chip}`}>
+                    <span aria-hidden className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill border-2 text-meta font-extrabold tabular-nums ${on ? c.chipOn : c.chip}`}>
                       {i + 1}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="min-w-0 break-words text-sm font-semibold text-ink first-letter:uppercase">{e.label}</span>
-                        <span className="shrink-0 text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
-                          {e.amount_short}
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-extrabold tabular-nums text-ink" data-testid={`rail-amount-${i}`}>
+                            {e.amount_short}
+                          </span>
+                          {/* A landing that only the plan would bring: the financing state word, quietly (a word, never a badge). */}
+                          {e.planned ? (
+                            <StateWord state="planned" testId={`rail-planned-${i}`} className="justify-end">
+                              {t("home.hy.planned")}
+                            </StateWord>
+                          ) : null}
                         </span>
                       </span>
-                      <span className="block text-xs text-ink-3">{e.when}</span>
-                      {lowest && e.room_after_short ? (
-                        <span className={`mt-0.5 block text-xs font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
-                          {e.room_after_short}
+                      <span className="block text-supporting text-ink-3">{e.when}</span>
+                      {/* What the receipt rests on, in the server's sentence; a scheduled one (not invoiced yet) is a shade quieter. */}
+                      {e.basis_text ? (
+                        <BasisLine basis={e.basis} testId={`rail-basis-${i}`} className="mt-0.5">
+                          {e.basis_text}
+                        </BasisLine>
+                      ) : null}
+                      {lowest && (e.note || e.room_after_short) ? (
+                        <span className={`mt-0.5 block text-supporting font-semibold ${e.tone === "bad" ? "text-bad-fg" : "text-warn-fg"}`} data-testid={`rail-note-${i}`}>
+                          {e.note || e.room_after_short}
                         </span>
                       ) : null}
                     </span>

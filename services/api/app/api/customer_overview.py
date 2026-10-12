@@ -13,6 +13,8 @@ One page's read, composed from reads the other pages already make; nothing is pr
                     the exposure layer's own block (`app.strategy.exposure`); null, with the top-level `note` (the field the page reads), while FEATURE_EXPOSURE is off
     history         the open offer, the buyer's entries in the log, the terms in force
     context.back    {label, href} built from the query: `decision` (+ `path`) back to /deals, `invoice` back to /receivables
+    context.customer, .deal, .scenario   the selections the page was opened with (Home V2's URL state): this customer; the `decision` when it
+                    names one of this buyer's offers, else null; the `scenario` when there is such a deal, else null
 
 The sources are `inputs_from_store` (customer inputs and their provenance), `receivable_rows` (the net, the financing state, the
 agreement, the pending counter), `deal_offers.open_offers` and the offer picture (the recommended path, its cost and authority), the
@@ -27,24 +29,34 @@ Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); n
 share of the buyer's sales is never stated unless the concentration holds it. Cached on the books, the mandate, the day, the
 commitments, the buyer, the language, the inputs, the log and the flag (the query only builds `context`, outside the cache).
 Context, not mandate: nothing here changes a verdict, a cap or what FLOW may do alone.
+
+State (ticket #120): each figure, each exposure row and each history row carries `state` (lower case: planned | arranged | received |
+repaid | current | due_soon | overdue | promise_missed, else `none`) and `state_text` (its word, "" for none), so the page can draw the one
+state word (StateWord). Nothing is derived here: a financing state is `financing_words.state_of` (through `financing_state_words`; PLANNED
+for an invoice of the buyer's that the plan FLOW has ready, and not run, would finance), a collection state is the receivable rows' own
+`collection_state` and `collection_state_text` (the worst of the open invoices for the Outstanding figure). Where the states of several
+invoices differ the figure says none, as its text says "more than one state".
 """
 
 from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Any, Literal, Protocol
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.alerts import alerts
 from app.api.auth import require_owner
 from app.api.deal_offers import open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
+from app.api.financing_words import State, state_of, state_word
+from app.api.home import next_action
 from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
-from app.api.presentation import Lang, agreement_words, event_words, party_name, t, when_text
+from app.api.presentation import Lang, agreement_words, deal_back_label, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
 from app.api.workspace import _months
@@ -130,6 +142,7 @@ class _Read:
     picture: dict[str, Any] | None  # the offer picture, when it could be read
     conc: dict[str, Any] | None  # the concentration (strategy.types.Concentration as the exposure block carries it); None when unreadable
     exposure: dict[str, Any] | None  # the exposure block, when the flag is on and it could be read
+    planned: dict[str, int] = field(default_factory=dict)  # invoice -> the advance the plan FLOW has ready (not run) would take on it
 
     @property
     def recommended(self) -> dict[str, Any] | None:
@@ -360,11 +373,69 @@ def _economics(r: _Read) -> tuple[list[dict[str, Any]], str]:
     return rows, note
 
 
+# ---------------------------------------------------------------- the state words (ticket #120)
+
+NO_STATE: dict[str, str] = {"state": "none", "state_text": ""}
+_COLLECTION_ORDER = ("PROMISE_MISSED", "OVERDUE", "DUE_SOON", "CURRENT")  # the worst first: an overdue invoice outranks one not yet due
+
+
+def _financing_word(lang: Lang, state: State) -> dict[str, str]:
+    """The financing state as the page draws it: `state` lower case, `state_text` the word the receivable rows say it with
+    ("Arranged", "已安排"); none for no financing."""
+    word = state_word(lang, state)
+    return {"state": state.lower(), "state_text": _up(word)} if word else NO_STATE
+
+
+def _collection(row: dict[str, Any]) -> dict[str, str]:
+    """An invoice's collection state: the receivable row's own `collection_state` and `collection_state_text`."""
+    return {"state": str(row["collection_state"]).lower(), "state_text": str(row["collection_state_text"])}
+
+
+def _worst_collection(rows: list[dict[str, Any]]) -> dict[str, str]:
+    """The collection state of the open invoices taken together: the worst of the rows' own, none without an open invoice."""
+    if not rows:
+        return NO_STATE
+    return _collection(min(rows, key=lambda x: _COLLECTION_ORDER.index(x["collection_state"])))
+
+
+def _financed(r: _Read) -> list[dict[str, Any]]:
+    return [x for x in r.rows if x["financing_state"] in ("ARRANGED", "RECEIVED")]
+
+
+def _financing_state(r: _Read) -> dict[str, str]:
+    """The one state of the buyer's financing: the state of the advance lot behind the financed invoices (`state_of`, the function `financing_state_words` says it
+    with) when they share one; PLANNED when none is financed yet and the ready plan would finance one of the buyer's invoices
+    (`state_of(None, planned=True)`); none when nothing is financed, when the invoices are in more than one state (as the text says) or when
+    an invoice is marked financed with no advance on record."""
+    financed = _financed(r)
+    if financed:
+        if len({x["financing_state"] for x in financed}) > 1:
+            return NO_STATE
+        first = next(x for x in r.state.receivables if x.id == financed[0]["receivable_id"])
+        return _financing_word(r.lang, state_of(advance_lot(r.state, first)))
+    if any(x["net"].get("unrecorded_text") for x in r.rows):
+        return NO_STATE
+    if _planned_rows(r):
+        return _financing_word(r.lang, state_of(None, planned=True))
+    return NO_STATE
+
+
+def _planned_rows(r: _Read) -> list[dict[str, Any]]:
+    """The buyer's open invoices the ready plan would finance, when none is financed yet and none is marked financed without a record."""
+    if _financed(r) or any(x["net"].get("unrecorded_text") for x in r.rows):
+        return []
+    return [x for x in r.rows if x["receivable_id"] in r.planned]
+
+
+def _if_plan_runs(lang: Lang) -> str:
+    return t(lang, "if you run the plan · not counted as cash", "执行方案后才会到账 · 不计入现金")
+
+
 # ---------------------------------------------------------------- the four figures
 
 
-def _figure(key: str, label: str, value: str, note: str, tone: str = "neutral") -> dict[str, Any]:
-    return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone}
+def _figure(key: str, label: str, value: str, note: str, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
+    return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone, **(state or NO_STATE)}
 
 
 def _outstanding(r: _Read) -> dict[str, Any]:
@@ -379,28 +450,34 @@ def _outstanding(r: _Read) -> dict[str, Any]:
         note = t(lang, f"{whole_yuan(sum(x['outstanding_fen'] for x in late))} overdue", f"其中 {whole_yuan(sum(x['outstanding_fen'] for x in late))} 已逾期")
         if waiting:
             note += t(lang, f"; next due {waiting[0]['due_when']}", f"；下一笔{waiting[0]['due_when']}到期")
-        return _figure("outstanding", label, whole_yuan(total), note, "bad")
+        return _figure("outstanding", label, whole_yuan(total), note, "bad", _worst_collection(r.rows))
     lead = "due" if len(r.rows) == 1 else "next due"
     return _figure("outstanding", label, whole_yuan(total),
-                   t(lang, f"{lead} {r.rows[0]['due_when']}, nothing overdue", f"{r.rows[0]['due_when']}到期，没有逾期"))
+                   t(lang, f"{lead} {r.rows[0]['due_when']}, nothing overdue", f"{r.rows[0]['due_when']}到期，没有逾期"),
+                   state=_worst_collection(r.rows))
 
 
 def _financing(r: _Read) -> dict[str, Any]:
     lang = r.lang
     label = t(lang, "Financing linked", "已关联的融资")
-    financed = [x for x in r.rows if x["financing_state"] in ("ARRANGED", "RECEIVED")]
+    financed = _financed(r)
+    state = _financing_state(r)
     unrecorded = next((x["net"]["unrecorded_text"] for x in r.rows if x["net"].get("unrecorded_text")), None)
     if not financed and unrecorded:  # marked financed, no advance on record: said so, never counted
-        return _figure("financing", label, t(lang, "Not on record", "无记录"), unrecorded, "warn")
+        return _figure("financing", label, t(lang, "Not on record", "无记录"), unrecorded, "warn", state)
+    planned = _planned_rows(r)
+    if planned:  # the plan is ready and has not run: its advance, said as planned and never counted
+        return _figure("financing", label, whole_yuan(sum(r.planned[x["receivable_id"]] for x in planned)), _if_plan_runs(lang), state=state)
     if not financed:
         return _figure("financing", label, t(lang, "None", "无"),
-                       t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"))
+                       t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"), state=state)
     total = sum(x["net"]["advance_fen"] for x in financed)
     states = {x["financing_state"] for x in financed}
     if len(states) > 1:
-        return _figure("financing", label, whole_yuan(total), t(lang, "in more than one state; see the invoices", "处于不同阶段，详见发票"))
+        return _figure("financing", label, whole_yuan(total), t(lang, "in more than one state; see the invoices", "处于不同阶段，详见发票"),
+                       state=state)
     first = next(x for x in r.state.receivables if x.id == financed[0]["receivable_id"])
-    return _figure("financing", label, whole_yuan(total), financing_state_words(lang, advance_lot(r.state, first), r.today)["text"])
+    return _figure("financing", label, whole_yuan(total), financing_state_words(lang, advance_lot(r.state, first), r.today)["text"], state=state)
 
 
 def _share(r: _Read) -> dict[str, Any]:
@@ -546,8 +623,8 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
 # ---------------------------------------------------------------- the exposure panel
 
 
-def _row(key: str, label: str, value: str, note: str | None = None, tone: str = "neutral") -> dict[str, Any]:
-    return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone}
+def _row(key: str, label: str, value: str, note: str | None = None, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
+    return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone, **(state or NO_STATE)}
 
 
 def _stress_value(row: dict[str, Any], lang: Lang) -> tuple[str, str]:
@@ -571,13 +648,22 @@ def _stress_value(row: dict[str, Any], lang: Lang) -> tuple[str, str]:
 
 def _financing_row(r: _Read) -> dict[str, Any]:
     lang = r.lang
-    financed = [x for x in r.rows if x["financing_state"] in ("ARRANGED", "RECEIVED")]
+    financed = _financed(r)
     label = t(lang, "Financing", "融资")
     unrecorded = next((x["net"]["unrecorded_text"] for x in r.rows if x["net"].get("unrecorded_text")), None)
+    state_words = _financing_state(r)
     if not financed and unrecorded:
-        return _row("financing", label, unrecorded, None, "warn")
+        return _row("financing", label, unrecorded, None, "warn", state_words)
+    planned = _planned_rows(r)
+    if planned:
+        advance = sum(r.planned[x["receivable_id"]] for x in planned)
+        face = sum(x["outstanding_fen"] for x in planned)
+        value = (t(lang, f"{whole_yuan(advance)} against the {whole_yuan(face)} invoice", f"{whole_yuan(advance)}，以 {whole_yuan(face)} 的发票做融资")
+                 if len(planned) == 1 else
+                 t(lang, f"{whole_yuan(advance)} against {len(planned)} invoices", f"{whole_yuan(advance)}，以 {len(planned)} 张发票做融资"))
+        return _row("financing", label, value, _if_plan_runs(lang), state=state_words)
     if not financed:
-        return _row("financing", label, t(lang, "none against this customer's invoices", "没有以该客户发票做的融资"))
+        return _row("financing", label, t(lang, "none against this customer's invoices", "没有以该客户发票做的融资"), state=state_words)
     advance = sum(x["net"]["advance_fen"] for x in financed)
     face = sum(x["outstanding_fen"] for x in financed)
     net = sum(x["net"]["net_fen"] for x in financed)
@@ -591,7 +677,7 @@ def _financing_row(r: _Read) -> dict[str, Any]:
     parts = [state_text,
              t(lang, "repaid from the receipt", "由回款偿还"),
              t(lang, f"{_about_short(net, lang)} then becomes available cash", f"之后约有 {fmt_yuan_about(net)} 成为可用现金")]
-    return _row("financing", label, value, t(lang, "; ", "；").join(p for p in parts if p))
+    return _row("financing", label, value, t(lang, "; ", "；").join(p for p in parts if p), state=state_words)
 
 
 def _about_short(fen: int, lang: Lang) -> str:
@@ -674,34 +760,39 @@ def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str]) -
     return any(cid in message for cid in agreements)
 
 
-def _financing_event(r: _Read, e: LoggedEntry) -> str | None:
-    """An invoice-financing entry in the financing words' own state (arranged, received, repaid), never "drawn" for a lot whose cash
-    has not landed. None when the entry names no invoice the books know."""
+def _financing_event(r: _Read, e: LoggedEntry) -> tuple[str, dict[str, str]] | None:
+    """(the sentence, the state) of an invoice-financing entry in the financing words' own state (arranged, received, repaid), never
+    "drawn" for a lot whose cash has not landed; a request with no lot yet has no state. None when the entry names no invoice the books know."""
     lang = r.lang
     rcv = next((x for x in r.state.receivables if x.id == (e.payload or {}).get("receivable_id")), None)
     advance = (e.payload or {}).get("advance_fen")
     if rcv is None or not isinstance(advance, int):
         return None
     lot = advance_lot(r.state, rcv)
-    words = financing_state_words(lang, lot, r.today, repaid=lot is None and rcv.status != "FINANCED")
+    repaid = lot is None and rcv.status != "FINANCED"
+    words = financing_state_words(lang, lot, r.today, repaid=repaid)
+    state = _financing_word(lang, state_of(lot, repaid=repaid))
     amount, face = whole_yuan(advance), whole_yuan(rcv.face_fen)
     if words["state"] == "NONE":
-        return t(lang, f"Invoice financing of {amount} was requested against the {face} invoice.",
-                 f"已就 {face} 的发票申请 {amount} 的融资。")
+        return (t(lang, f"Invoice financing of {amount} was requested against the {face} invoice.",
+                  f"已就 {face} 的发票申请 {amount} 的融资。"), state)
     tail = words["text"].removeprefix(t(lang, "financing ", "融资"))
-    return t(lang, f"Invoice financing of {amount} against the {face} invoice: {tail}.", f"以 {face} 的发票做 {amount} 的融资：{tail}。")
+    return t(lang, f"Invoice financing of {amount} against the {face} invoice: {tail}.", f"以 {face} 的发票做 {amount} 的融资：{tail}。"), state
 
 
-def _receipt_event(r: _Read, e: LoggedEntry) -> str | None:
-    """A receipt as the receipt: its amount and the invoice, never the bank's reference (an id has no place in a Business sentence)."""
+def _receipt_event(r: _Read, e: LoggedEntry) -> tuple[str, dict[str, str]] | None:
+    """(the sentence, the state) of a receipt as the receipt: its amount and the invoice, never the bank's reference (an id has no place
+    in a Business sentence). The state is the collection state of the invoice if it is still to collect (the rows' own), else none."""
     lang = r.lang
     p = e.payload or {}
     rcv = next((x for x in r.state.receivables if x.id == p.get("receivable_id")), None)
     amount = p.get("amount_fen")
     if not isinstance(amount, int) or rcv is None:
         return None
-    return t(lang, f"The receipt of {whole_yuan(amount)} against the {whole_yuan(rcv.face_fen)} invoice came in.",
-             f"已收到 {whole_yuan(amount)}，对应 {whole_yuan(rcv.face_fen)} 的发票。")
+    open_row = next((x for x in r.rows if x["receivable_id"] == rcv.id), None)
+    return (t(lang, f"The receipt of {whole_yuan(amount)} against the {whole_yuan(rcv.face_fen)} invoice came in.",
+              f"已收到 {whole_yuan(amount)}，对应 {whole_yuan(rcv.face_fen)} 的发票。"),
+            _collection(open_row) if open_row is not None else NO_STATE)
 
 
 def _agreement_event(r: _Read, e: LoggedEntry) -> str | None:
@@ -717,7 +808,7 @@ def _history(r: _Read) -> list[dict[str, Any]]:
         o = r.offer
         asked = (t(lang, f"Asked for {o['asks_text']}. ", f"对方提出：{o['asks_text']}。") if o["asks_text"] else "")
         out.append({"when_text": _up(o["received_when"] or when_text(r.today, r.today, lang)), "text": asked + o["action_text"],
-                    "href": f"/deals?decision={_quoted(r.decision_id() or '')}", "link_label": t(lang, "The deal", "该交易")})
+                    "href": f"/deals?decision={_quoted(r.decision_id() or '')}", "link_label": t(lang, "The deal", "该交易"), **NO_STATE})
     state, ctx = r.state, r.ctx
     rids = {x.id for x in state.receivables if x.counterparty_id == r.buyer_id}
     agreements = {c.id for c in ctx.commitments if c.counterparty_id == r.buyer_id}
@@ -731,9 +822,10 @@ def _history(r: _Read) -> list[dict[str, Any]]:
         words = event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                             approval_id=e.result.approval_id, day=e.day, today=r.today, lang=lang,
                             decided=e.result.approval_id in decided, agreements=names, window_live=False)
-        text = (_financing_event(r, e) if e.kind == "SUBMIT_INVOICE_FOR_FINANCING"
-                else _receipt_event(r, e) if e.kind == "RECEIVE_PAYMENT"
-                else _agreement_event(r, e) if e.kind in _AGREEMENTS and e.result.status == OperationStatus.EXECUTED else None)
+        said = (_financing_event(r, e) if e.kind == "SUBMIT_INVOICE_FOR_FINANCING"
+                else _receipt_event(r, e) if e.kind == "RECEIVE_PAYMENT" else None)
+        text, words_of = said if said is not None else (
+            _agreement_event(r, e) if e.kind in _AGREEMENTS and e.result.status == OperationStatus.EXECUTED else None, NO_STATE)
         text = text or t(lang, " ", "").join(x.strip() for x in (words["event_text"], words["event_detail"]) if x)
         if not text:
             continue
@@ -742,14 +834,14 @@ def _history(r: _Read) -> list[dict[str, Any]]:
         agreement = e.kind in _AGREEMENTS
         label = t(lang, "The agreement", "协议") if agreement else t(lang, "The record", "记录")
         out.append({"when_text": _up(when_text(e.day, r.today, lang)), "text": text, "href": href,
-                    "link_label": label if href else None})
+                    "link_label": label if href else None, **words_of})
     if r.rows:
         g = r.rows[0]["governed_by"]
         out.append({"when_text": t(lang, "In force", "现行"),
                     "text": t(lang, f"{g['terms_text']}; early payment: {r.rows[0]['early_payment']['text']}",
                               f"{g['terms_text']}；提前付款：{r.rows[0]['early_payment']['text']}"),
                     "href": "/documents" if g["contract_ref"] else None,
-                    "link_label": t(lang, "The terms", "条款") if g["contract_ref"] else None})
+                    "link_label": t(lang, "The terms", "条款") if g["contract_ref"] else None, **NO_STATE})
     return out
 
 
@@ -777,6 +869,32 @@ def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: 
     except EngineError:
         log.exception("the exposure could not be read for the customer overview")
         return None
+
+
+def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, Any]], today: int, lang: Lang) -> tuple[dict[str, int], bool]:
+    """(the buyer's invoices the ready plan would finance, each with its advance, whether it could be read): the invoice-financing legs of the plan the Home shows
+    as its next action (`home.next_action`, the same reading), for the buyer's invoices still to collect that are not financed yet. A plan
+    that has run is not a plan (its alert is gone and its lots are the books'). Nothing is read when no such invoice is open."""
+    if not any(x["financing_state"] not in ("ARRANGED", "RECEIVED") for x in rows):
+        return {}, True
+    try:
+        mandate = rt.store.get_mandate()
+        found = alerts(state, mandate, rt.store, rt.day)
+        books = current_books(state, rt.store.commitments())
+        action = next_action(books.state, books.with_([]), mandate, found, rt.store.approvals(), today, state.state_version, lang,
+                             use_router=rt.settings.features.debt_desk)
+    except EngineError:
+        log.exception("the plan could not be read for the customer overview")
+        return {}, False
+    if action is None or action["kind"] != "RESERVE_BREACH_AHEAD":
+        return {}, True
+    mine = {x["receivable_id"] for x in rows}
+    out: dict[str, int] = {}
+    for leg in action["legs"]:
+        rid = leg.get("receivable_id")
+        if leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and rid in mine and isinstance(leg.get("amount_fen"), int):
+            out[rid] = out.get(rid, 0) + leg["amount_fen"]
+    return out, True
 
 
 def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool]:
@@ -811,8 +929,10 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
         except EngineError:
             log.exception("the concentration could not be read for the customer overview")
             shares, whole = None, False
+    planned, planned_read = _planned_financing(rt, state, rows, today, lang)
+    whole = whole and planned_read
     r = _Read(rt=rt, lang=lang, state=state, today=today, buyer_id=buyer_id, name=name, who=buyer_short(name), rows=rows, inputs=inputs,
-              ctx=ctx, offer=offer, offer_state=offer_state, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block)
+              ctx=ctx, offer=offer, offer_state=offer_state, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block, planned=planned)
     econ_rows, econ_note = _economics(r)
     actions = _actions(r)
     decision, none_text = _decision(r, actions)
@@ -870,16 +990,39 @@ def _back(rt: Runtime, state: FinancialState, buyer_id: str, who: str, lang: Lan
     offer = rt.store.get_offer(offer_id) if offer_id else None
     if offer is not None and offer.counterparty_id == buyer_id:
         tail = f"&path={_quoted(path)}" if path and _SAFE.fullmatch(path) else ""
-        return {"label": t(lang, f"Back to the {who} deal", f"返回与{who}的交易"), "href": f"/deals?decision={_quoted(decision or '')}{tail}"}
+        return {"label": deal_back_label(lang, who), "href": f"/deals?decision={_quoted(decision or '')}{tail}"}
     if invoice and any(x.id == invoice and x.counterparty_id == buyer_id for x in state.receivables):
         return {"label": t(lang, "Back to the invoices", "返回发票"),
                 "href": f"/receivables?customer={_quoted(buyer_id)}&invoice={_quoted(invoice)}"}
     return {"label": t(lang, "Back to Deals", "返回交易"), "href": "/deals"}
 
 
+def _selected_deal(rt: Runtime, buyer_id: str, decision: str | None) -> str | None:
+    """The deal the page was opened on, when the query names one of this buyer's offers (else None, never echoed)."""
+    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
+    offer = rt.store.get_offer(offer_id) if offer_id else None
+    return decision if offer is not None and offer.counterparty_id == buyer_id else None
+
+
+_SCENARIO = re.compile(r"asked|counter:[0-9]{1,3}")
+
+
+def _selected_scenario(rt: Runtime, deal: str | None, scenario: str | None) -> str | None:
+    """The scenario the page was opened on, validated as the exposure reads validate `response`: `asked`, or `counter:<k>` when the deal's
+    verdict has a k-th counter-offer; none without a deal (a scenario is of a deal), and never an echo of anything else."""
+    if deal is None or not scenario or not _SCENARIO.fullmatch(scenario):
+        return None
+    if scenario == "asked":
+        return scenario
+    offer_id = offer_id_of(deal)
+    verdict = latest_verdict_for(rt, offer_id) if offer_id else None
+    return scenario if verdict is not None and int(scenario.split(":")[1]) < len(verdict.counters) else None
+
+
 @router.get("/customers/{customer_id}/overview")
 def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), decision: str | None = Query(None, max_length=120),
-                 path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120)) -> dict[str, Any]:
+                 path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
+                 scenario: str | None = Query(None, max_length=120)) -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state = rt.store.get_state()
@@ -888,4 +1031,6 @@ def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), deci
             raise HTTPException(404, detail={"code": "CUSTOMER_NOT_FOUND", "message": f"There is no customer {customer_id} on the books."})
         body = _cached(rt, customer_id, lang)
         back = _back(rt, state, customer_id, buyer_short(buyer.name), lang, decision, path, invoice)
-    return {**body, "context": {"back": back}}
+        deal = _selected_deal(rt, customer_id, decision)
+    # the three selections (Home V2's URL state), echoed when they name this buyer's: a `scenario` needs a deal to be a scenario of
+    return {**body, "context": {"back": back, "customer": customer_id, "deal": deal, "scenario": _selected_scenario(rt, deal, scenario)}}

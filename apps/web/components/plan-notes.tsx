@@ -27,13 +27,13 @@ export function PlanNotes({
   return (
     <div className={`space-y-1 ${className}`} data-testid="plan-notes">
       {needsApproval ? (
-        <p className="text-xs text-warn-fg" data-testid="plan-needs-approval">
+        <p className="text-supporting text-warn-fg" data-testid="plan-needs-approval">
           <Badge tone="warn">{t("plan.needsApproval")}</Badge>
           {approvalReason ? <span className="ml-1.5 break-words">{approvalReason}</span> : null}
         </p>
       ) : null}
       {blocked ? (
-        <p className="text-xs text-ink-2" data-testid="plan-not-executable">
+        <p className="text-supporting text-ink-2" data-testid="plan-not-executable">
           <Badge tone="neutral">{t("plan.notExecutable")}</Badge>
           {notExecutableReason ? <span className="ml-1.5 break-words">{notExecutableReason}</span> : null}
         </p>

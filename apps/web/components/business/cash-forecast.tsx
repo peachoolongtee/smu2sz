@@ -3,7 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { CashPicture, linesDiffer } from "@/components/business/cash-picture";
 import { Disclosure } from "@/components/business/kit";
-import { SegmentedButtons } from "@/components/ui";
+import { BasisRows, type BasisRow } from "@/components/home/receipt-basis";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { versusMinimum } from "@/lib/minimum";
 import type { HomeSeriesPoint, HomeView, PictureAxis } from "@/lib/types";
@@ -37,11 +38,11 @@ function defaultHorizon(h: HomeView): Horizon {
 function Fact({ label, children, caption, testId }: { label: string; children: ReactNode; caption?: ReactNode; testId?: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-semibold text-ink-3">{label}</dt>
+      <dt className="text-supporting font-semibold text-ink-3">{label}</dt>
       <dd className="font-display text-lg font-extrabold tabular-nums tracking-[-0.01em] text-ink" data-testid={testId}>
         {children}
       </dd>
-      {caption ? <dd className="text-xs text-ink-3">{caption}</dd> : null}
+      {caption ? <dd className="text-supporting text-ink-3">{caption}</dd> : null}
     </div>
   );
 }
@@ -133,6 +134,7 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
           alternativeLowestLabel: chosen?.lowestShort ? t("biz.picture.lowest", { amount: chosen.lowestShort }) : null,
         }}
         horizonDays={cash.horizon_days}
+        pending={cash.pending?.series?.length && cash.pending.label ? { series: cash.pending.series, label: cash.pending.label } : null}
         axis={chosen?.series ? (chosen.axes?.[String(horizon)] ?? chosen.axis ?? cash.axes?.[String(horizon)] ?? cash.axis) : (cash.axes?.[String(horizon)] ?? cash.axis)}
         windowDays={horizon}
         resetKey={chosen?.key ?? ""}
@@ -143,20 +145,21 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
         labelledBy="cash-picture-title"
         header={
           <>
-            <h2 id="cash-picture-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            <h2 id="cash-picture-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {t("biz.picture.title")}
             </h2>
             {figures}
           </>
         }
       />
+      <ReceiptBasisBlock h={h} horizon={horizon} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm text-ink-2">{t("biz.forecast.caption", { n: horizon })}</span>
-        <SegmentedButtons
+        <SegmentedTabs
           label={t("biz.forecast.horizon")}
           value={horizon}
           onChange={setHorizon}
-          options={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
+          tabs={HORIZONS.map((n) => ({ value: n, label: t("biz.forecast.days", { n }), testId: `forecast-horizon-${n}` }))}
         />
       </div>
       {cash.forecast_basis ? <ForecastBasis basis={cash.forecast_basis} /> : null}
@@ -165,11 +168,51 @@ export function CashForecast({ h, chosen }: { h: HomeView; chosen: ChosenLine | 
   );
 }
 
+/**
+ * What each receipt in the window rests on (ticket #116), in the server's words, the same sentences the Home's rail rows say; while a reply waits for the buyer,
+ * the sentence that says what the dashed line means and the receipts it would move. Nothing is drawn while the server sent no basis.
+ */
+function ReceiptBasisBlock({ h, horizon }: { h: HomeView; horizon: number }) {
+  const { t } = useI18n();
+  const cash = h.cash;
+  const to = h.day + Math.min(horizon, cash.horizon_days);
+  const rows: BasisRow[] = cash.series
+    .filter((p) => p.day >= h.day && p.day <= to)
+    .flatMap((p) =>
+      p.events.flatMap((e, i) =>
+        e.basis_text && e.basis !== "PENDING"
+          ? [{ key: `${p.day}-${e.kind}-${i}`, label: e.label_short ?? e.label, amount: e.amount_short, when: p.day === h.day ? t("biz.when.today") : t("biz.when.inDays", { n: p.day - h.day }), text: e.basis_text, basis: e.basis }]
+          : [],
+      ),
+    );
+  const pending = cash.pending?.series?.length && cash.pending.label ? cash.pending : null;
+  const pendingRows: BasisRow[] = (pending?.receipt_rows ?? []).flatMap((r, i) =>
+    r.basis_text ? [{ key: `${r.day}-${r.kind}-${i}`, label: r.label_short ?? "", amount: r.amount_short, when: r.when, text: r.basis_text, basis: r.basis }] : [],
+  );
+  if (!rows.length && !pending) return null;
+  return (
+    <div className="space-y-2.5" data-testid="cash-receipt-basis">
+      {rows.length ? (
+        <>
+          <h3 className="text-sm font-bold text-ink">{t("biz.cash.receipts")}</h3>
+          <BasisRows rows={rows} label={t("biz.cash.receipts")} testId="cash-receipts" />
+        </>
+      ) : null}
+      {pending && cash.receipts_legend_text ? (
+        <p className="text-supporting leading-snug text-ink-2" data-testid="cash-receipts-legend">
+          {cash.receipts_legend_text}
+        </p>
+      ) : null}
+      {pending ? <BasisRows rows={pendingRows} label={pending.label ?? ""} pending testId="cash-pending-rows" /> : null}
+    </div>
+  );
+}
+
 /** What the forecast counts, as the server's facts: the scheduled receipts, the overdue left out, confirmed against expected receipts, the repayment it assumes. */
 function ForecastBasis({ basis }: { basis: NonNullable<HomeView["cash"]["forecast_basis"]> }) {
   const { t } = useI18n();
   return (
-    <Disclosure testId="cash-forecast-basis" className="border-t border-line text-xs" summary={t("biz.forecast.basis")}>
+    <Disclosure testId="cash-forecast-basis" className="border-t border-line text-supporting" summary={t("biz.forecast.basis")}>
       <div className="mt-2 space-y-2 text-ink-2">
         <ul className="list-disc space-y-0.5 pl-5">
           {basis.scheduled_receipts_counted ? <li>{t("biz.forecast.basis.scheduled")}</li> : null}
@@ -202,7 +245,7 @@ function ForecastTable({ h, alternative, alternativeLabel, baselineLabel, horizo
   const plan = (day: number) => alternative?.find((x) => x.day === day);
   const withPlan = linesDiffer(h.cash.series, alternative);
   return (
-    <Disclosure testId="cash-forecast-table" className="border-t border-line text-xs" summary={t("biz.forecast.table")}>
+    <Disclosure testId="cash-forecast-table" className="border-t border-line text-supporting" summary={t("biz.forecast.table")}>
       <div className="mt-2 max-h-64 overflow-auto">
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 bg-canvas text-ink-2">
