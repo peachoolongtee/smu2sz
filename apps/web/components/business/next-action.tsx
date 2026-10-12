@@ -14,6 +14,63 @@ import type { AlertItem, HomeNextAction } from "@/lib/types";
 const PART = ["bg-brand-600", "bg-brand-300", "bg-chart-teal", "bg-chart-purple"];
 
 /**
+ * The confirm-and-run control of a plan, shared by the plan bar and Home's attention card (so the two cannot drift): the primary (the first press
+ * asks, with what is received and what it costs; or, while the plan waits for the owner, the waiting state and the link to the approval) and the
+ * confirmation group that holds the second press, which submits the same bound request as the alerts page. Same test ids in both places.
+ */
+export function usePlanRun(a: HomeNextAction, stateVersion: number, fixer: ReturnType<typeof useFixAlert>) {
+  const { t } = useI18n();
+  // The alerts route takes the alert as shown; the home's next action carries the same suggestions and version.
+  const asAlert = { id: a.alert_id, suggested: a.suggestions } as unknown as AlertItem;
+  const waiting = a.pending_approval_id;
+  // Running a plan moves money: the first press shows what will happen, the second runs exactly the plan shown.
+  const [confirming, setConfirming] = useState(false);
+  const costTotal = a.cost_total_display ?? a.cost_display;
+  const confirmBody = a.needs_owner
+    ? t("biz.confirm.bodyQueue")
+    : a.receive_display && costTotal
+      ? t("biz.confirm.body", { amount: a.receive_display, cost: costTotal })
+      : costTotal
+        ? t("biz.confirm.bodyCost", { cost: costTotal })
+        : "";
+
+  const panel =
+    confirming && !waiting ? (
+      <div className="rounded-tile border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`confirm-${a.alert_id}-title`} data-testid={`fix-confirm-${a.alert_id}`}>
+        <p id={`confirm-${a.alert_id}-title`} className="font-semibold text-ink">
+          {a.needs_owner ? t("biz.confirm.titleQueue") : t("biz.confirm.title")}
+        </p>
+        {confirmBody ? <p className="mt-0.5 text-sm text-ink-2">{confirmBody}</p> : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="primary" loading={fixer.busyId === a.alert_id} disabled={fixer.busyId !== null} onClick={() => void fixer.fix(asAlert, stateVersion).then(() => setConfirming(false))} data-testid={`fix-${a.alert_id}`}>
+            {a.needs_owner ? t("biz.confirm.goQueue") : t("biz.confirm.go")}
+          </Button>
+          <Button variant="secondary" disabled={fixer.busyId !== null} onClick={() => setConfirming(false)} data-testid={`fix-cancel-${a.alert_id}`}>
+            {t("biz.confirm.cancel")}
+          </Button>
+        </div>
+      </div>
+    ) : null;
+
+  const primary = waiting ? (
+    <>
+      <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
+        <p className="font-semibold">{t("alerts.waiting.short")}</p>
+      </div>
+      {/* The one primary while the plan waits for the owner: the question to answer. */}
+      <ButtonLink href={approvalHref(waiting)} variant="primary" data-testid={`alert-approval-link-${a.alert_id}`}>
+        {t("biz.review")}
+      </ButtonLink>
+    </>
+  ) : confirming ? null : (
+    <Button variant="primary" onClick={() => setConfirming(true)} data-testid={`fix-open-${a.alert_id}`}>
+      {a.needs_owner ? t("biz.queueForMe") : t("biz.runPlan")}
+    </Button>
+  );
+  return { primary, panel, waiting, costTotal };
+}
+
+/**
  * Level 2: the best next step, in the server's words, reduced to what the owner decides on: what it is, what it costs,
  * when the money is available and who decides. "Details" adds, in reading order: before and after side by side (with what you
  * receive and the lowest cash after), the cost of each part, and why in one sentence; the reasoning, the formula, each part's
@@ -27,20 +84,8 @@ const PART = ["bg-brand-600", "bg-brand-300", "bg-chart-teal", "bg-chart-purple"
 export function NextActionBlock({ a, stateVersion, fixer, variant = "card", sticky = true }: { a: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert>; variant?: "card" | "bar"; /** The bar variant stays at the foot of the window from `lg` (Home); false keeps it in flow (Cash, whose picture it would cover). */ sticky?: boolean }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  // The alerts route takes the alert as shown; the home's next action carries the same suggestions and version.
-  const asAlert = { id: a.alert_id, suggested: a.suggestions } as unknown as AlertItem;
-  const waiting = a.pending_approval_id;
   const bar = variant === "bar";
-  // Running a plan moves money: the first press shows what will happen, the second runs exactly the plan shown.
-  const [confirming, setConfirming] = useState(false);
-  const costTotal = a.cost_total_display ?? a.cost_display;
-  const confirmBody = a.needs_owner
-    ? t("biz.confirm.bodyQueue")
-    : a.receive_display && costTotal
-      ? t("biz.confirm.body", { amount: a.receive_display, cost: costTotal })
-      : costTotal
-        ? t("biz.confirm.bodyCost", { cost: costTotal })
-        : "";
+  const { primary, panel: confirmPanel, costTotal } = usePlanRun(a, stateVersion, fixer);
 
   const details = (summary: string, className: string) => (
       <Disclosure summary={summary} className={className} testId="next-action-details">
@@ -145,46 +190,14 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
       </Disclosure>
   );
 
-  const confirmPanel =
-    confirming && !waiting ? (
-        <div className="rounded-tile border border-brand-100 bg-brand-50 p-4" role="group" aria-labelledby={`confirm-${a.alert_id}-title`} data-testid={`fix-confirm-${a.alert_id}`}>
-          <p id={`confirm-${a.alert_id}-title`} className="font-semibold text-ink">
-            {a.needs_owner ? t("biz.confirm.titleQueue") : t("biz.confirm.title")}
-          </p>
-          {confirmBody ? <p className="mt-0.5 text-sm text-ink-2">{confirmBody}</p> : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="primary" loading={fixer.busyId === a.alert_id} disabled={fixer.busyId !== null} onClick={() => void fixer.fix(asAlert, stateVersion).then(() => setConfirming(false))} data-testid={`fix-${a.alert_id}`}>
-              {a.needs_owner ? t("biz.confirm.goQueue") : t("biz.confirm.go")}
-            </Button>
-            <Button variant="secondary" disabled={fixer.busyId !== null} onClick={() => setConfirming(false)} data-testid={`fix-cancel-${a.alert_id}`}>
-              {t("biz.confirm.cancel")}
-            </Button>
-          </div>
-        </div>
-    ) : null;
-
   const actions = (
     <>
-        {waiting ? (
-          <>
-            <div className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg" role="status" data-testid={`alert-waiting-${a.alert_id}`}>
-              <p className="font-semibold">{t("alerts.waiting.short")}</p>
-            </div>
-            {/* The one primary while the plan waits for the owner: the question to answer. */}
-            <ButtonLink href={approvalHref(waiting)} variant="primary" data-testid={`alert-approval-link-${a.alert_id}`}>
-              {t("biz.review")}
-            </ButtonLink>
-          </>
-        ) : confirming ? null : (
-          <Button variant="primary" onClick={() => setConfirming(true)} data-testid={`fix-open-${a.alert_id}`}>
-            {a.needs_owner ? t("biz.queueForMe") : t("biz.runPlan")}
-          </Button>
-        )}
-        {pathname === "/cash" ? null : (
-          <ButtonLink href="/cash#cash-options" data-testid="next-action-alternatives">
-            {t("biz.compare")}
-          </ButtonLink>
-        )}
+      {primary}
+      {pathname === "/cash" ? null : (
+        <ButtonLink href="/cash#cash-options" data-testid="next-action-alternatives">
+          {t("biz.compare")}
+        </ButtonLink>
+      )}
     </>
   );
 
