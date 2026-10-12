@@ -3,6 +3,9 @@
     ARRANGED  the lot exists, its cash has not landed        "Never the word advanced for an unlanded lot"
     RECEIVED  the cash has landed: it is in the account from that day
     REPAID    a receipt cleared the claim
+    NONE      no financing (and no word)
+
+`state_of` is the one function that says which, for the net at collection, the rows and every sentence.
 
 The states are never mixed in one sentence. A leaf module (domain imports only) so that the Chinese engine templates, the
 presentation helpers and the strategy words can all use the one vocabulary without an import cycle.
@@ -14,19 +17,23 @@ from typing import Literal
 
 from app.domain.models import FundingLot
 
-State = Literal["ARRANGED", "RECEIVED", "REPAID"]
+State = Literal["ARRANGED", "RECEIVED", "REPAID", "NONE"]
 
 _WORD: dict[State, tuple[str, str]] = {
+    "NONE": ("", ""),
     "ARRANGED": ("arranged", "已安排"),
     "RECEIVED": ("received", "已到账"),
     "REPAID": ("repaid", "已还清"),
 }
 
 
-def state_of(lot: FundingLot | None) -> State:
-    """The state of an advance lot by the lot itself: not landed -> ARRANGED; landed and still on the lender's books ->
-    RECEIVED; no lot left (a receipt cleared it) -> REPAID."""
-    if lot is None or lot.remaining_fen <= 0:
+def state_of(lot: FundingLot | None, *, repaid: bool = False) -> State:
+    """The state of an advance by its lot: not landed -> ARRANGED; landed and still on the lender's books -> RECEIVED; a lot with
+    nothing left -> REPAID. With no lot the books keep no trace of a cleared advance, so the caller that read the log says whether
+    one was repaid (`repaid`): REPAID then, else NONE (never financed)."""
+    if lot is None:
+        return "REPAID" if repaid else "NONE"
+    if lot.remaining_fen <= 0:
         return "REPAID"
     return "RECEIVED" if lot.settled else "ARRANGED"
 
@@ -50,10 +57,11 @@ def _distance(day: int, today: int, lang: str) -> str:
     return f"{-n} 天前" if lang == "zh" else f"{-n} days ago"
 
 
-def financing_state_words(lang: str, lot: FundingLot | None, today: int) -> dict[str, str]:
+def financing_state_words(lang: str, lot: FundingLot | None, today: int, *, repaid: bool = False) -> dict[str, str]:
     """`state`, `word` and `text` for an advance lot as of `today`: "financing arranged, expected in 3 days", "financing received
-    29 days ago", "financing repaid". The caller passes the lot it holds; no lot (or nothing left on it) reads as REPAID."""
-    state = state_of(lot)
+    29 days ago", "financing repaid". The caller passes the lot it holds (and `repaid` when the log says a cleared advance had none left);
+    no financing at all reads as NONE with no words."""
+    state = state_of(lot, repaid=repaid)
     word = state_word(lang, state)
     zh = lang == "zh"
     if state == "ARRANGED" and lot is not None:
@@ -62,8 +70,10 @@ def financing_state_words(lang: str, lot: FundingLot | None, today: int) -> dict
     elif state == "RECEIVED" and lot is not None:
         text = f"融资{word}（{_distance(lot.arrival_day, today, lang)}）" if zh else (
             f"financing {word} {_distance(lot.arrival_day, today, lang)}")
-    else:
+    elif state == "REPAID":
         text = f"融资{word}" if zh else f"financing {word}"
+    else:
+        text = ""
     return {"state": state, "word": word, "text": text}
 
 

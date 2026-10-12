@@ -14,13 +14,12 @@ Read-only and deterministic; nothing is stored, booked or sent. The sentences ar
 
 from __future__ import annotations
 
-from typing import Literal
-
+from app.api.financing_words import State, state_of
 from app.domain.models import Contract, Day, Facility, Fen, FinancialState, FundingLot, Receivable
 from app.financial import lots as funding_lots
 from app.financial.charges import fee_period_days
 
-FinancingState = Literal["ARRANGED", "RECEIVED", "REPAID", "NONE"]
+FinancingState = State  # one vocabulary (app.api.financing_words)
 
 
 class NetAtCollection(Contract):
@@ -38,13 +37,7 @@ class NetAtCollection(Contract):
     period_days: int  # the facility's fee period (0 without financing)
     arrival_day: Day | None  # the day the lot's cash lands / landed (None without financing)
     on_day: Day  # the day priced
-
-
-def lot_state(lot: FundingLot | None) -> FinancingState:
-    """The state of an advance lot: not landed -> ARRANGED; landed with something still owed -> RECEIVED; no lot -> NONE."""
-    if lot is None:
-        return "NONE"
-    return "RECEIVED" if lot.settled else "ARRANGED"
+    financing_unrecorded: bool = False  # the invoice is FINANCED but no advance is on record: priced before any financing
 
 
 def advance_lot(state: FinancialState, receivable: Receivable) -> FundingLot | None:
@@ -55,21 +48,22 @@ def advance_lot(state: FinancialState, receivable: Receivable) -> FundingLot | N
                  if x.receivable_id == receivable.id and x.remaining_fen > 0), None)
 
 
-def net_at_collection(state: FinancialState, receivable: Receivable, day: Day | None = None, *,
-                      financed_before: bool = False) -> NetAtCollection:
+def net_at_collection(state: FinancialState, receivable: Receivable, day: Day | None = None) -> NetAtCollection:
     """The net cash `receivable` leaves if paid in full on `day` (default: its due day).
 
-    `financed_before` says a receivable already settled was financed: once a receipt clears the advance the lot is gone and
-    the books keep no trace on the invoice, so a caller that read the log passes it and the state is REPAID."""
+    The state comes from the invoice's lot alone (`financing_words.state_of`): a cleared advance leaves no lot, so the state is
+    NONE here and the caller that read the log (the receivable rows) marks it REPAID. A FINANCED invoice with no lot is priced
+    before any financing and says so (`financing_unrecorded`), as the late-payment stress names it and leaves it as the books
+    count it."""
     on_day = receivable.due_day if day is None else day
     outstanding = receivable.outstanding_fen
     lot = advance_lot(state, receivable)
     if lot is None:
-        repaid = financed_before and outstanding <= 0
         return NetAtCollection(
-            face_fen=receivable.face_fen, outstanding_fen=outstanding, financing_state="REPAID" if repaid else "NONE",
+            face_fen=receivable.face_fen, outstanding_fen=outstanding, financing_state=state_of(None),
             advance_fen=0, charges_fen=0, claim_fen=0, net_fen=max(0, outstanding), owed_by_owner_fen=0,
-            per_period_more_fen=0, period_days=0, arrival_day=None, on_day=on_day)
+            per_period_more_fen=0, period_days=0, arrival_day=None, on_day=on_day,
+            financing_unrecorded=receivable.status == "FINANCED")
     f: Facility = next(x for x in state.facilities if x.id == lot.facility_id)
     interest, fee, _ = funding_lots.advance_charges(f, lot, on_day)
     charges = interest + fee
@@ -77,10 +71,10 @@ def net_at_collection(state: FinancialState, receivable: Receivable, day: Day | 
     period = fee_period_days(f)
     later_interest, later_fee, _ = funding_lots.advance_charges(f, lot, on_day + period)  # one whole period more
     return NetAtCollection(
-        face_fen=receivable.face_fen, outstanding_fen=outstanding, financing_state=lot_state(lot),
+        face_fen=receivable.face_fen, outstanding_fen=outstanding, financing_state=state_of(lot),
         advance_fen=lot.remaining_fen, charges_fen=charges, claim_fen=claim, net_fen=max(0, outstanding - claim),
         owed_by_owner_fen=max(0, claim - outstanding),
         per_period_more_fen=later_interest + later_fee - charges, period_days=period, arrival_day=lot.arrival_day, on_day=on_day)
 
 
-__all__ = ["FinancingState", "NetAtCollection", "advance_lot", "lot_state", "net_at_collection"]
+__all__ = ["FinancingState", "NetAtCollection", "advance_lot", "net_at_collection"]

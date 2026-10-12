@@ -87,12 +87,13 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
     financing_state_text one of Arranged / Received / Repaid (never mixed); None without financing
     per_period_text      "about ¥1,870 more for every 30 days late"; None when a late day adds nothing
     owed_text            what the receipt leaves owed by the owner, when it falls short of the claim; else None
+    unrecorded_text      says so when the invoice is marked financed but no advance is on record; else None
     """
     who = buyer_short(buyer_name)
     if net.on_day == due_day:
         on = t(lang, "on the due day", "在到期日")
-    elif net.on_day == today:
-        on = t(lang, "today", "今天")
+    elif net.on_day == today:  # an invoice already late is priced today, the first day it can be paid
+        on = t(lang, "today (it is already late)", "今天（已逾期）")
     else:
         on = when_text(net.on_day, today, lang)
     condition = t(lang, f"if {who} pays {on}", f"如果 {who} {on}付款")
@@ -116,13 +117,15 @@ def net_words(lang: Lang, net: NetAtCollection, *, buyer_name: str, today: int, 
     if net.per_period_more_fen > 0 and net.period_days > 0:
         per = t(lang, f"about {fmt_yuan_about(net.per_period_more_fen)} more for every {net.period_days} days late",
                 f"每晚 {net.period_days} 天，费用约增加 {fmt_yuan_about(net.per_period_more_fen)}")
-    word = state_word(lang, state) if state != "NONE" else None
+    word = state_word(lang, state) or None
+    unrecorded = (t(lang, "This invoice is marked as financed but no financing is on record, so the net shown is before any financing.",
+                    "这张发票已标记为融资，但没有融资记录，所以所示净额未扣除任何融资。") if net.financing_unrecorded else None)
     return {
         "net_display": fmt_yuan(net.net_fen),
         "net_short": t(lang, f"about {fmt_yuan_about(net.net_fen)}", f"约 {fmt_yuan_about(net.net_fen)}"),
         "condition_text": condition, "repays_text": repays,
         "financing_state_text": (word[:1].upper() + word[1:]) if word is not None and lang != "zh" else word,
-        "per_period_text": per, "owed_text": owed}
+        "per_period_text": per, "owed_text": owed, "unrecorded_text": unrecorded}
 
 
 __all__ = ["BP_FULL", "buyer_short", "financing_state_words", "invoice_label", "invoice_labels", "net_words", "share_bp", "share_text",
