@@ -2461,6 +2461,110 @@ export interface HomeReceivables {
   headline_tone?: "ok" | "warn" | "bad" | null;
 }
 
+/** A tone the server chose for a word, a figure or a mark. The browser never decides it. */
+export type HomeTone = "ok" | "warn" | "bad" | "neutral";
+
+/** One of the three position facts under the heading (cash today, the lowest point ahead, what arrives next). */
+export interface HomeFact {
+  key: string;
+  label: string;
+  value_short: string;
+  value_display?: string;
+  note?: string | null;
+  tone?: HomeTone;
+}
+
+/** One key event of the cash picture: a numbered row of the rail and a numbered mark on the line. Every word and figure is the server's; `day` only places the mark. */
+export interface HomeRailEvent {
+  key: string;
+  day: Day;
+  when: string;
+  kind: string;
+  label: string;
+  amount_short: string;
+  cash_after_short?: string;
+  room_after_short?: string | null;
+  tone?: HomeTone;
+  /** The panel's sentence under the picture while this event is chosen or previewed. */
+  explain: string;
+  /** A day with several events (a receipt and a repayment) is one event; its net. */
+  net_short?: string | null;
+}
+
+/** "What if the buyer pays late": the stress series and the sentences the server wrote for it. Behind a flag; absent when off. */
+export interface HomeStress {
+  delay_days?: number;
+  buyer?: string;
+  series: HomeSeriesPoint[];
+  lowest_short: string;
+  lowest_when: string;
+  breach_days: number;
+  need_short?: string | null;
+  plan_text?: string | null;
+  assumption_text: string;
+  /** How many days the picture must show to include the moved receipt. */
+  window_days_needed?: number;
+}
+
+export interface HomeAttentionFact {
+  label: string;
+  value: string;
+  tone?: HomeTone;
+}
+
+export interface HomeAttentionLink {
+  label: string;
+  href: string;
+}
+
+/** One thing waiting for the owner: a deal reply, a funding plan, an approval, a collection, a landing. */
+export interface HomeAttentionItem {
+  key: string;
+  kind: string;
+  eyebrow: string;
+  title: string;
+  facts?: HomeAttentionFact[];
+  primary?: HomeAttentionLink | null;
+  secondary?: HomeAttentionLink | null;
+}
+
+/** The queue of what needs the owner: one primary, the rest follow as a short list. */
+export interface HomeAttention {
+  items: HomeAttentionItem[];
+  primary_key: string | null;
+  none_text?: string | null;
+}
+
+/** The funding plan as one sentence with its two costs and who decides. */
+export interface HomeFundingLine {
+  state?: string;
+  text: string;
+  cost_leg_display?: string | null;
+  cost_leg_label?: string | null;
+  cost_total_display?: string | null;
+  cost_total_label?: string | null;
+  authority_text?: string | null;
+}
+
+export interface HomeDealsCardRow {
+  buyer: string;
+  status_text: string;
+  request_text?: string | null;
+  recommendation_text?: string | null;
+  href?: string | null;
+}
+
+export interface HomeReceivablesCard {
+  outstanding_short: string;
+  overdue_short: string;
+  next_text?: string | null;
+  financing_note?: string | null;
+  href?: string | null;
+}
+
+/** A recent change as a sentence; the server may send the bare sentence or the sentence with its when. */
+export type HomeChangesCardRow = string | { text: string; when?: string | null };
+
 export interface HomeView {
   day: Day;
   state_version: number;
@@ -2534,7 +2638,27 @@ export interface HomeView {
     /** When the books were last read, as a distance from today ("today"). */
     last_read_when?: string;
     last_read_day?: Day;
+    /** Section 1, the position: the status as a sentence-case word with its tone, the heading when the forecast depends on landings or receipts, the note under it and the assumptions behind it. */
+    status_word?: string;
+    status_tone?: HomeTone;
+    headline_conditional?: string | null;
+    headline_note?: string | null;
+    assumptions?: string[];
+    /** Three facts under the heading. */
+    facts?: HomeFact[];
+    /** Section 3, the picture: the key events (the rail and the numbered marks), the name of the dashed comparison line, and the late-payment scenario. */
+    events_rail?: HomeRailEvent[];
+    counterfactual_label?: string | null;
+    stress_available?: boolean;
+    stress?: HomeStress | null;
   };
+  /** Section 2: what needs the owner now, and the funding plan's line. */
+  attention?: HomeAttention | null;
+  funding_line?: HomeFundingLine | null;
+  /** Section 4: the three cards under the picture. */
+  deals_card?: HomeDealsCardRow[];
+  receivables_card?: HomeReceivablesCard | null;
+  changes_card?: HomeChangesCardRow[];
   next_action: HomeNextAction | null;
   approvals: HomeApproval[];
   pending_count: number;

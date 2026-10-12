@@ -6,6 +6,11 @@ import { ChangesBlock, DecisionsBlock, DetailsBlock, ReceivablesBlock } from "@/
 import { NextActionBlock } from "@/components/business/next-action";
 import { RemainingTaskBlock, WaitingOnBlock } from "@/components/business/open-decisions";
 import { CashPicture } from "@/components/home/cash-picture";
+import { AttentionCard } from "@/components/home/attention";
+import { ChangesCard, DealsCard, ReceivablesCard } from "@/components/home/cards";
+import { EventPicture } from "@/components/home/event-picture";
+import { HomePosition } from "@/components/home/position";
+import { Disclosure } from "@/components/business/kit";
 import { HomeDeals } from "@/components/home/deals";
 import { contractsOff } from "@/components/documents";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
@@ -69,29 +74,50 @@ export default function HomePage() {
   // The next step's card holds the question when its plan waits for approval; the decision card below would say it again.
   const cardHoldsApproval = Boolean(h?.next_action?.pending_approval_id) && (h?.approvals ?? []).every((a) => a.id === h?.next_action?.pending_approval_id);
 
+  // The Home hybrid: each of its sections renders when the server sent its field, and the old block stays as the fallback for an older answer.
+  const hasAttention = Boolean(h?.attention);
+  const hasCards = Boolean(h && (h.deals_card || h.receivables_card || h.changes_card));
   // A phone reads the answer, then the priced action (or the one remaining task), then what needs the owner, then who owes and what changed: the order of the parts changes, never what they say.
   const narrow = useNarrow();
-  const decisions = h && h.pending_count > 0 && !cardHoldsApproval ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
+  // The attention card holds every approval waiting (the queue), so the decisions block would say it again.
+  const decisions = h && !hasAttention && h.pending_count > 0 && !cardHoldsApproval ? <DecisionsBlock key="decisions" approvals={h.approvals} primary={!h.next_action} /> : null;
   // While an approval is open the waiting row would say it a third time.
   const shownChanges = withoutSuperseded(h?.changes ?? []).filter((c) => !(c.kind === "WAITING" && (h?.pending_count ?? 0) > 0));
-  const changes =
-    h && shownChanges.length ? (
-      <ChangesBlock key="changes" changes={shownChanges} sinceWhen={h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null} />
+  const sinceWhen = h && h.since_day !== null && h.since_day !== undefined ? t("biz.when.daysAgo", { n: Math.max(h.day - h.since_day, 0) }) : null;
+  const changes = h && shownChanges.length && !h.changes_card ? <ChangesBlock key="changes" changes={shownChanges} sinceWhen={sinceWhen} /> : null;
+  // Under the cards, "What changed" is a closed fold with the full list.
+  const changesFold =
+    h && hasCards && shownChanges.length ? (
+      <Disclosure key="changes-fold" testId="home-changes-fold" summary={t("biz.changes")} className="border-t border-line-strong pt-2">
+        <ChangesBlock changes={shownChanges} sinceWhen={sinceWhen} bare />
+      </Disclosure>
     ) : null;
-  const receivables = h ? (
-    <div key="receivables" className="min-w-0 space-y-3">
-      {/* A failed ranking is said, with Retry: the home is then not "nothing to collect". */}
-      {worthRead.error ? (
-        <div data-testid="home-worth-failed">
-          <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
-        </div>
-      ) : null}
-      <ReceivablesBlock r={h.receivables} worth={worth} />
+  const receivables =
+    h && !h.receivables_card ? (
+      <div key="receivables" className="min-w-0 space-y-3">
+        {/* A failed ranking is said, with Retry: the home is then not "nothing to collect". */}
+        {worthRead.error ? (
+          <div data-testid="home-worth-failed">
+            <ErrorState error={t("biz.recv.worth.failed")} onRetry={worthRead.reload} />
+          </div>
+        ) : null}
+        <ReceivablesBlock r={h.receivables} worth={worth} />
+      </div>
+    ) : null;
+
+  const action = h?.attention ? (
+    <AttentionCard key="attention" attention={h.attention} funding={h.funding_line} />
+  ) : h?.next_action ? (
+    <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
+  ) : null;
+  const picture = h ? h.cash.events_rail?.length ? <EventPicture key="picture" h={h} /> : <CashPicture key="picture" h={h} /> : null;
+  const cards = hasCards && h ? (
+    <div key="cards" className="grid gap-x-6 gap-y-5 md:grid-cols-3" data-testid="home-cards">
+      {h.deals_card ? <DealsCard rows={h.deals_card} /> : null}
+      {h.receivables_card ? <ReceivablesCard card={h.receivables_card} /> : null}
+      {h.changes_card ? <ChangesCard rows={h.changes_card} /> : null}
     </div>
   ) : null;
-
-  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
-  const picture = h ? <CashPicture key="picture" h={h} /> : null;
 
   return (
     <>
@@ -101,14 +127,15 @@ export default function HomePage() {
         <LoadingBlock rows={3} />
       ) : (
         <div className="space-y-5 sm:space-y-7" aria-busy={view.loading}>
-          <StatusBlock h={h} />
+          {h.cash.status_word ? <HomePosition h={h} /> : <StatusBlock h={h} />}
           <PartialRead partial={h.partial} onRetry={view.reload} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-          {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : null}
-          {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. */}
-          {narrow ? action : picture}
-          {narrow ? picture : action}
-          <HomeDeals deals={dealsRead.data?.deals} loading={dealsRead.loading} failed={Boolean(dealsRead.error) && !contractsOff(dealsRead.error)} onRetry={dealsRead.reload} />
+          {h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0 && !hasAttention} /> : null}
+          {/* A phone reads the answer, then the priced action, then the chart; from lg the chart comes first and the plan sits under it. The attention card always comes before the chart. */}
+          {narrow || hasAttention ? action : picture}
+          {narrow || hasAttention ? picture : action}
+          {h.deals_card ? null : <HomeDeals deals={dealsRead.data?.deals} loading={dealsRead.loading} failed={Boolean(dealsRead.error) && !contractsOff(dealsRead.error)} onRetry={dealsRead.reload} />}
+          {cards}
           {narrow ? (
             <>
               {decisions}
@@ -121,13 +148,15 @@ export default function HomePage() {
               {waitingOn.length ? <WaitingOnBlock decisions={waitingOn} /> : null}
               {/* An empty section is hidden: the absence of decisions or news is not itself news. */}
               {decisions}
-              <div className={`grid gap-6 ${changes ? "lg:grid-cols-2" : ""}`}>
-                {receivables}
-                {changes}
-              </div>
+              {receivables || changes ? (
+                <div className={`grid gap-6 ${receivables && changes ? "lg:grid-cols-2" : ""}`}>
+                  {receivables}
+                  {changes}
+                </div>
+              ) : null}
             </>
           )}
-          <DetailsBlock h={h} />
+          <DetailsBlock h={h} radarFold={hasCards} afterRadar={changesFold} />
         </div>
       )}
     </>
