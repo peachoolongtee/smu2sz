@@ -221,13 +221,17 @@ def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | N
     `gallop` the search first doubles its steps up from the first value (cheap when the boundary is near it, as for
     the terms, where a long extension is also the costliest evaluation). `hint_steps` is how many values past the
     hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one).
-    With `top_first` the top of the range is asked once the first value has passed: when it passes too, it is the
-    largest value and nothing lies past it (a lever with no wall inside its range is read in two evaluations instead of
-    a search; a lever that passes at both ends and fails between them is read as passing, which the lever does not do)."""
+    With `top_first` the top of the range is asked once the first value has passed: when it passes too, one probe in the
+    middle and the neighbour below the top are asked as well (the neighbour rule, read downward from a top that has no
+    value past it); when both pass, the top is the largest value, and when either fails the lever is not monotone between
+    its ends and is scanned whole (a lever with no wall inside its range is read in four evaluations instead of a search;
+    the weekly exhaustive scan, `scripts/envelope_monotone_scan.py`, guards what the probes do not cover)."""
     if not values or not ok(values[0]):
         return Found(None, True)
     if top_first and len(values) > 1 and ok(values[-1]):
-        return Found(values[-1], True)
+        if ok(values[len(values) // 2]) and ok(values[-2]):
+            return Found(values[-1], True)
+        return _scan_max(values, ok)
     if hint is not None and hint in values:
         i = values.index(hint)
         if ok(hint) and not any(ok(v) for v in values[i + 1: i + 1 + hint_steps]):
