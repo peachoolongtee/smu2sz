@@ -151,7 +151,7 @@ test("the approval question, its decided card with the execution summary, the re
   await expect(page.getByTestId("record-state")).toBeVisible();
   await scan(page, "decision record");
   await page.goto("/");
-  await expect(page.getByTestId("home-in-transit")).toBeVisible();
+  await expect(page.getByTestId("home-fact-arriving")).toBeVisible(); // the fact that says what is on its way
   await scan(page, "/ funding on its way");
   await page.goto("/cash");
   await expect(page.locator("h1").first()).toBeVisible();

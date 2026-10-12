@@ -2630,6 +2630,1340 @@
     },
     "last_read_when": "today",
     "last_read_day": 34,
+    "status_word": "Action needed",
+    "status_tone": "bad",
+    "headline_conditional": "Your cash reserve becomes unsafe in 8 days.",
+    "headline_note": "Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.",
+    "assumptions": [
+      "Foshan pays ¥420k in 13 days, as scheduled.",
+      "The scheduled payroll, supplier and debt payments are paid as entered."
+    ],
+    "facts": [
+      {
+        "key": "today",
+        "label": "Cash today",
+        "value_fen": 30000000,
+        "value_short": "¥300k",
+        "note": "¥0 above your minimum",
+        "tone": "warn",
+        "value_display": "¥300,000.00"
+      },
+      {
+        "key": "lowest",
+        "label": "Lowest point with the plan, today",
+        "when": "today",
+        "value_fen": 30000000,
+        "value_short": "¥300k",
+        "note": "¥0 above your minimum",
+        "tone": "warn",
+        "value_display": "¥300,000.00"
+      },
+      {
+        "key": "arriving",
+        "label": "Arriving next",
+        "tone": "neutral",
+        "value_fen": 42000000,
+        "value_short": "¥420k",
+        "note": "Foshan, in 13 days",
+        "value_display": "¥420,000.00"
+      }
+    ],
+    "events_rail": [
+      {
+        "key": "day-34",
+        "day": 34,
+        "when": "today",
+        "kind": "lowest",
+        "label": "cash is at its lowest",
+        "amount_fen": 0,
+        "amount_short": "¥0",
+        "net_short": "¥0",
+        "cash_after_fen": 30000000,
+        "cash_after_short": "¥300k",
+        "room_after_fen": 0,
+        "room_after_short": "¥0 above your minimum",
+        "tone": "warn",
+        "explain": "This is the lowest point on your cash line: ¥300k, ¥0 above your minimum. Without the plan FLOW proposes, the lowest point would be ¥100k in 8 days.",
+        "amount_display": "¥0.00",
+        "cash_after_display": "¥300,000.00",
+        "room_after_display": "¥0.00"
+      },
+      {
+        "key": "day-37",
+        "day": 37,
+        "when": "in 3 days",
+        "kind": "landing",
+        "label": "invoice financing arrives",
+        "amount_fen": 20000000,
+        "amount_short": "+¥200k",
+        "net_short": "+¥200k",
+        "cash_after_fen": 50000000,
+        "cash_after_short": "¥500k",
+        "room_after_fen": 20000000,
+        "room_after_short": "¥200k above your minimum",
+        "tone": "ok",
+        "explain": "Cash rises from ¥300k to ¥500k. Your minimum is ¥300k, so ¥200k of room remains.",
+        "amount_display": "¥200,000.00",
+        "cash_after_display": "¥500,000.00",
+        "room_after_display": "¥200,000.00"
+      },
+      {
+        "key": "day-42",
+        "day": 42,
+        "when": "in 8 days",
+        "kind": "payroll",
+        "label": "payroll is paid",
+        "amount_fen": -20000000,
+        "amount_short": "−¥200k",
+        "net_short": "−¥200k",
+        "cash_after_fen": 30000000,
+        "cash_after_short": "¥300k",
+        "room_after_fen": 0,
+        "room_after_short": "¥0 above your minimum",
+        "tone": "warn",
+        "explain": "Cash falls from ¥500k to ¥300k. Your minimum is ¥300k, so there is no room left. Without the plan FLOW proposes, payroll would take cash to ¥100k, below your minimum.",
+        "amount_display": "−¥200,000.00",
+        "cash_after_display": "¥300,000.00",
+        "room_after_display": "¥0.00"
+      },
+      {
+        "key": "day-47",
+        "day": 47,
+        "when": "in 13 days",
+        "kind": "receipt",
+        "label": "Foshan pays",
+        "amount_fen": 42000000,
+        "amount_short": "+¥420k",
+        "net_short": "+¥118k",
+        "cash_after_fen": 41821781,
+        "cash_after_short": "¥418k",
+        "room_after_fen": 11821781,
+        "room_after_short": "¥118k above your minimum",
+        "tone": "ok",
+        "explain": "Foshan pays ¥420k, and ¥202k of it repays the invoice financing, leaving ¥218k. Cash rises from ¥300k to ¥418k, ¥118k above your minimum.",
+        "amount_display": "¥420,000.00",
+        "cash_after_display": "¥418,217.81",
+        "room_after_display": "¥118,217.81"
+      },
+      {
+        "key": "day-60",
+        "day": 60,
+        "when": "in 26 days",
+        "kind": "debt",
+        "label": "debt service is paid",
+        "amount_fen": -4500000,
+        "amount_short": "−¥45k",
+        "net_short": "−¥45k",
+        "cash_after_fen": 37321781,
+        "cash_after_short": "¥373k",
+        "room_after_fen": 7321781,
+        "room_after_short": "¥73k above your minimum",
+        "tone": "ok",
+        "explain": "Cash falls from ¥418k to ¥373k. Your minimum is ¥300k, so ¥73k of room remains.",
+        "amount_display": "−¥45,000.00",
+        "cash_after_display": "¥373,217.81",
+        "room_after_display": "¥73,217.81"
+      }
+    ],
+    "events_rail_days": 30,
+    "stress_available": false,
+    "counterfactual_series": [
+      {
+        "day": 34,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 35,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 36,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 37,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 38,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 39,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 40,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 41,
+        "closing_fen": 30000000,
+        "closing_display": "¥300,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 42,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "events": [
+          {
+            "kind": "FLOW",
+            "label": "Payroll, month 2",
+            "label_short": "Payroll",
+            "amount_fen": -20000000,
+            "amount_display": "−¥200,000.00",
+            "amount_short": "−¥200k"
+          }
+        ],
+        "net_fen": -20000000,
+        "net_display": "−¥200,000.00",
+        "net_short": "−¥200k"
+      },
+      {
+        "day": 43,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 44,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 45,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 46,
+        "closing_fen": 10000000,
+        "closing_display": "¥100,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 47,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [
+          {
+            "kind": "RECEIPT",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 13 days from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "amount_short": "¥420k"
+          },
+          {
+            "kind": "FLOW",
+            "label": "Operating bill",
+            "label_short": "Operating bill",
+            "amount_fen": -10000000,
+            "amount_display": "−¥100,000.00",
+            "amount_short": "−¥100k"
+          }
+        ],
+        "net_fen": 32000000,
+        "net_display": "¥320,000.00",
+        "net_short": "¥320k"
+      },
+      {
+        "day": 48,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 49,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 50,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 51,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 52,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 53,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 54,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 55,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 56,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 57,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 58,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 59,
+        "closing_fen": 42000000,
+        "closing_display": "¥420,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 60,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [
+          {
+            "kind": "FLOW",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "amount_short": "−¥45k"
+          }
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
+      },
+      {
+        "day": 61,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 62,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 63,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 64,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 65,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 66,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 67,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 68,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 69,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 70,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 71,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 72,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 73,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 74,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 75,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 76,
+        "closing_fen": 37500000,
+        "closing_display": "¥375,000.00",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 77,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [
+          {
+            "kind": "RECEIPT",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 43 days from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "amount_short": "¥420k"
+          },
+          {
+            "kind": "INTEREST",
+            "label": "Interest, Bank credit line",
+            "label_short": "Interest",
+            "amount_fen": -202502,
+            "amount_display": "−¥2,025.02",
+            "amount_short": "−¥2k"
+          },
+          {
+            "kind": "REPAYMENT",
+            "label": "Repay Bank credit line",
+            "label_short": "Repayment",
+            "amount_fen": -14998620,
+            "amount_display": "−¥149,986.20",
+            "amount_short": "−¥150k"
+          }
+        ],
+        "net_fen": 26798878,
+        "net_display": "¥267,988.78",
+        "net_short": "¥268k"
+      },
+      {
+        "day": 78,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 79,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 80,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 81,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 82,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 83,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 84,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 85,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 86,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 87,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 88,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 89,
+        "closing_fen": 64298878,
+        "closing_display": "¥642,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 90,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [
+          {
+            "kind": "FLOW",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "amount_short": "−¥45k"
+          }
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
+      },
+      {
+        "day": 91,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 92,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 93,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 94,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 95,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 96,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 97,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 98,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 99,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 100,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 101,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 102,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 103,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 104,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 105,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 106,
+        "closing_fen": 59798878,
+        "closing_display": "¥597,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 107,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [
+          {
+            "kind": "RECEIPT",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 73 days from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "amount_short": "¥420k"
+          }
+        ],
+        "net_fen": 42000000,
+        "net_display": "¥420,000.00",
+        "net_short": "¥420k"
+      },
+      {
+        "day": 108,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 109,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 110,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 111,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 112,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 113,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 114,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 115,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 116,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 117,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 118,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 119,
+        "closing_fen": 101798878,
+        "closing_display": "¥1,017,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 120,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [
+          {
+            "kind": "FLOW",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "amount_short": "−¥45k"
+          }
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
+      },
+      {
+        "day": 121,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 122,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 123,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 124,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 125,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 126,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 127,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 128,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 129,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 130,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 131,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 132,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 133,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 134,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 135,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 136,
+        "closing_fen": 97298878,
+        "closing_display": "¥972,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 137,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [
+          {
+            "kind": "RECEIPT",
+            "label": "Receipt the ¥420,000.00 invoice to Foshan Home Retail Co. due in 103 days from Foshan Home Retail Co.",
+            "label_short": "Receipt from Foshan Home Retail Co.",
+            "amount_fen": 42000000,
+            "amount_display": "¥420,000.00",
+            "amount_short": "¥420k"
+          }
+        ],
+        "net_fen": 42000000,
+        "net_display": "¥420,000.00",
+        "net_short": "¥420k"
+      },
+      {
+        "day": 138,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 139,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 140,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 141,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 142,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 143,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 144,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 145,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 146,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 147,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 148,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 149,
+        "closing_fen": 139298878,
+        "closing_display": "¥1,392,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 150,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "events": [
+          {
+            "kind": "FLOW",
+            "label": "Debt service (principal), Existing equipment loan (rate 0%: a fixture assumption)",
+            "label_short": "Debt service",
+            "amount_fen": -4500000,
+            "amount_display": "−¥45,000.00",
+            "amount_short": "−¥45k"
+          }
+        ],
+        "net_fen": -4500000,
+        "net_display": "−¥45,000.00",
+        "net_short": "−¥45k"
+      },
+      {
+        "day": 151,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 152,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 153,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      },
+      {
+        "day": 154,
+        "closing_fen": 134798878,
+        "closing_display": "¥1,347,988.78",
+        "events": [],
+        "net_fen": 0,
+        "net_display": "¥0.00",
+        "net_short": "¥0.00"
+      }
+    ],
+    "counterfactual_label": "without the plan FLOW proposes (a comparison)",
     "cash_display": "¥300,000.00",
     "floor_display": "¥300,000.00",
     "lowest_display": "¥100,000.00",
@@ -2638,6 +3972,108 @@
     "first_breach_cash_display": "¥100,000.00",
     "min_dscr_display": "1.25×",
     "max_leverage_display": "2.50×"
+  },
+  "attention": {
+    "items": [
+      {
+        "key": "approval:APR-000001",
+        "kind": "approval",
+        "eyebrow": "1 approval needs you",
+        "title": "Approve ¥200,000.00 of invoice financing?",
+        "facts": [
+          {
+            "label": "Estimated cost",
+            "value": "¥1,782.19",
+            "tone": "neutral"
+          },
+          {
+            "label": "Funds arrive",
+            "value": "in 3 days",
+            "tone": "neutral"
+          },
+          {
+            "label": "If you approve",
+            "value": "Cash stays at or above your minimum cash reserve for the next 120 days.",
+            "tone": "ok"
+          }
+        ],
+        "primary": {
+          "label": "Review the approval",
+          "href": "/approvals#approval-APR-000001"
+        },
+        "secondary": {
+          "label": "Why this?",
+          "href": "/approvals#approval-APR-000001"
+        }
+      },
+      {
+        "key": "collection:BUYER-1",
+        "kind": "collection",
+        "eyebrow": "1 customer is late",
+        "title": "Foshan is 2 days late on ¥163k.",
+        "facts": [
+          {
+            "label": "Overdue",
+            "value": "¥163k",
+            "tone": "bad"
+          },
+          {
+            "label": "Late by",
+            "value": "2 days",
+            "tone": "bad"
+          }
+        ],
+        "primary": {
+          "label": "Chase the payment",
+          "href": "/receivables"
+        },
+        "secondary": {
+          "label": "Why this?",
+          "href": "/receivables"
+        }
+      }
+    ],
+    "primary_key": "approval:APR-000001",
+    "none_text": "No urgent action required."
+  },
+  "funding_line": {
+    "state": "none",
+    "text": "No funding is arranged yet. The plan waits for your approval.",
+    "cost_leg_display": "¥1,782.19",
+    "cost_leg_label": "the invoice-financing leg",
+    "cost_total_display": "¥1,782.19",
+    "cost_total_label": "the whole plan",
+    "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval."
+  },
+  "deals_card": {
+    "rows": [],
+    "empty_text": "No deals are open.",
+    "href": "/deals"
+  },
+  "receivables_card": {
+    "outstanding_short": "¥1,003k",
+    "overdue_short": "¥163k",
+    "next_text": "Foshan, ¥420k in 13 days",
+    "financing_note": null,
+    "href": "/receivables"
+  },
+  "changes_card": {
+    "rows": [
+      {
+        "id": "op:10",
+        "when": "today",
+        "text": "Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval.",
+        "kind": "WAITING"
+      },
+      {
+        "id": "alert:ALERT-PASTDUE-RCV-A",
+        "when": "2 days ago",
+        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "kind": "LATE"
+      }
+    ],
+    "empty_text": "Nothing has changed lately.",
+    "href": "/activity"
   },
   "next_action": {
     "alert_id": "ALERT-RESERVE-42",
@@ -2836,7 +4272,9 @@
   ],
   "receivables": {
     "open_count": 3,
+    "open_total_fen": 100280000,
     "open_total_display": "¥1,002,800.00",
+    "overdue_total_fen": 16280000,
     "overdue_total_display": "¥162,800.00",
     "past_due": [
       {

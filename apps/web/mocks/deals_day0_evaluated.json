@@ -373,6 +373,7 @@
         "action_text": "Two replies are ready to send.",
         "cost_display": "¥28,326.92",
         "cost_window_text": "over 12 months",
+        "limit_fen": 500000,
         "limit_display": "¥5,000.00",
         "over_limit": true,
         "replies_ready": 2,

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLOW Deals: the paid-late toggle on</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0368e9}a:hover{color:#0048a5}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="background: #f5f7fb; color: #24324a; font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; font-variant-numeric: tabular-nums">
+<main style="box-sizing: border-box; width: 100%; max-width: 1048px; margin: 0 auto; padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #5a6577">DEALS · FOSHAN HOME RETAIL CO. · THE PICTURE WITH THE STRESS TOGGLE ON</div>
+<h1 style="margin: 0; font-size: 24px; line-height: 1.2; font-weight: 800; letter-spacing: -0.02em">Counter instead of accepting as asked.</h1>
+</header>
+
+<section aria-labelledby="pic" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<h2 id="pic" style="margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .08em; color: #5a6577">YOUR CASH ON EACH PATH</h2>
+<div role="group" aria-label="What-if" style="display: inline-flex; gap: 8px">
+<button aria-pressed="true" style="display: inline-flex; align-items: center; gap: 8px; border: 1px solid #0368e9; border-radius: 999px; min-height: 36px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #e6f1ff; color: #0048a5"><span aria-hidden="true" style="width: 26px; height: 14px; border-radius: 999px; background: #0368e9; position: relative; display: inline-block"><span style="position: absolute; right: 2px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: #ffffff"></span></span>If Foshan pays 30 days late</button>
+<button aria-pressed="false" disabled style="display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d3d9e2; border-radius: 999px; min-height: 36px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #768399">If Foshan walks away · phase 3</button>
+</div>
+</div>
+<p style="margin: 0; padding: 8px 12px; border-radius: 10px; background: #fdf2d9; border: 1px solid #ecd092; color: #82490a; font-size: 13px; font-weight: 700">A test, not a forecast: every Foshan invoice paid 30 days late, on the path you picked (Option A). FLOW does not count on an early payment from Foshan in this test.</p>
+<svg viewBox="0 0 960 250" role="img" aria-label="The three cash lines, plus a dashed grey line for Option A if Foshan pays 30 days late, falling below zero on 30 November; the reserve dashed; the cursor at the stressed lowest point" style="width: 100%; height: auto; display: block">
+<text x="4" y="30" style="font-size: 11px; fill: #5a6577">¥800k</text>
+<text x="4" y="96" style="font-size: 11px; fill: #5a6577">¥400k</text>
+<text x="4" y="140" style="font-size: 11px; fill: #5a6577">¥300k</text>
+<text x="4" y="206" style="font-size: 11px; fill: #5a6577">¥0</text>
+<text x="4" y="240" style="font-size: 11px; fill: #a3241a">−¥250k</text>
+<line x1="56" y1="140" x2="940" y2="140" stroke="#b7791f" stroke-dasharray="6 4" stroke-width="1"></line>
+<line x1="56" y1="206" x2="940" y2="206" stroke="#d3d9e2" stroke-width="1"></line>
+<polyline fill="none" stroke="#d2362a" stroke-width="2" opacity="0.45" points="56,110 86,110 86,40 140,40 140,96 260,96 260,112 400,112 400,180 520,180 520,186 640,186 640,196 760,196 760,118 940,118"></polyline>
+<polyline fill="none" stroke="#5b2bbf" stroke-width="2" stroke-dasharray="7 4" opacity="0.45" points="56,110 86,110 86,40 140,40 140,96 260,96 260,112 400,112 400,128 520,128 520,132 640,132 640,138 760,138 760,112 940,112"></polyline>
+<polyline fill="none" stroke="#0a6b5f" stroke-width="3.5" points="56,110 86,110 86,40 140,40 140,96 260,96 260,112 400,112 400,60 520,60 520,64 640,64 640,70 760,70 760,68 940,68"></polyline>
+<polyline fill="none" stroke="#5a6577" stroke-width="2.5" stroke-dasharray="3 6" points="56,110 86,110 86,40 140,40 140,96 260,96 260,112 400,112 400,150 520,150 520,196 640,196 640,222 760,222 760,236 860,236 860,118 940,118"></polyline>
+<line x1="860" y1="18" x2="860" y2="244" stroke="#24324a" stroke-width="1.5" stroke-dasharray="3 3"></line>
+<circle cx="860" cy="236" r="5" fill="#5a6577"></circle>
+<circle cx="860" cy="68" r="5" fill="#0a6b5f"></circle>
+<text x="700" y="248" style="font-size: 11px; fill: #a3241a; font-weight: 700">Option A, paid late: lowest −¥250k on 30 Nov</text>
+<text x="56" y="224" style="font-size: 11px; fill: #5a6577">Today</text>
+<text x="900" y="20" style="font-size: 11px; fill: #5a6577">in 60 days</text>
+</svg>
+<div role="group" aria-label="Moments" style="display: flex; flex-wrap: wrap; gap: 8px">
+<button aria-pressed="false" style="border: 1px solid #768399; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Today</button>
+<button aria-pressed="false" style="border: 1px solid #768399; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Lowest, Option A and Option B</button>
+<button aria-pressed="false" style="border: 1px solid #768399; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Below the reserve</button>
+<button aria-pressed="false" style="border: 1px solid #768399; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Lowest, as asked</button>
+<button aria-pressed="true" style="border: 1px solid #0368e9; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #e6f1ff; color: #0048a5">Lowest, if paid late</button>
+<button aria-pressed="false" style="border: 1px solid #768399; border-radius: 10px; min-height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">Day 66</button>
+</div>
+<p style="margin: 0; min-height: 44px; font-size: 15px; font-weight: 600; line-height: 1.45">If Foshan paid 30 days late, Option A would reach −¥250,000 on 30 Nov: 65 days below your minimum, and no committed facility covers the ¥550,000. On time, Option A stays at ¥300k.</p>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+<div style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; opacity: .6"><div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a6577"><span aria-hidden="true" style="width: 14px; height: 3px; background: #d2362a; display: inline-block"></span>As they asked</div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em">¥165k</div></div>
+<div style="border: 1px solid #a6e0d7; border-radius: 12px; padding: 12px 14px; background: #ffffff"><div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a6577"><span aria-hidden="true" style="width: 14px; height: 3px; background: #0a6b5f; display: inline-block"></span>Option A, on time</div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em">¥300k</div></div>
+<div style="border: 1px solid #e1e6ee; border-radius: 12px; padding: 12px 14px; background: #ffffff; opacity: .6"><div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a6577"><span aria-hidden="true" style="width: 14px; height: 3px; background: #5b2bbf; display: inline-block"></span>Option B</div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em">¥300k</div></div>
+<div style="border: 1px solid #f1b9b2; border-radius: 12px; padding: 12px 14px; background: #fdecea"><div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a3241a"><span aria-hidden="true" style="width: 14px; height: 3px; background: #5a6577; display: inline-block"></span>Option A, paid late</div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #a3241a">−¥250k</div><div style="font-size: 12px; font-weight: 700; color: #a3241a">Below your minimum</div><div style="font-size: 12px; color: #a3241a">¥550,000 to cover; no committed plan</div></div>
+</div>
+<div style="font-size: 13px; font-weight: 700; color: #0048a5">&rsaquo; What moved cash on this day</div>
+<div style="font-size: 13px; color: #4d5767; line-height: 1.5; padding: 10px 12px; border: 1px solid #e1e6ee; border-radius: 10px; background: #ffffff">FLOW has no payments from Foshan yet to measure how it usually pays, so there is no "typical" case. The 30-day test uses your contractual dates. Once three invoices have been paid, the median delay appears here beside the test.</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1160}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

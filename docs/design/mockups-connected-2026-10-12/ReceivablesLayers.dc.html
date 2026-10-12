@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLOW Receivables in three layers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0368e9}a:hover{color:#0048a5}
+button{font-family:inherit;cursor:pointer}
+h1,h2,h3,.display{font-family:'Plus Jakarta Sans','Lato','Inter','PingFang SC',system-ui,sans-serif}
+.step{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#5a6577}
+.step i{width:8px;height:8px;border-radius:50%;background:#d3d9e2;display:inline-block}
+.step.on{color:#0048a5}.step.on i{background:#0368e9}
+.step.done{color:#0a6b5f}.step.done i{background:#12907f}
+</style>
+</helmet>
+<div style="background: #f5f7fb; color: #24324a; font-family: 'Lato', 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; font-variant-numeric: tabular-nums">
+<main style="box-sizing: border-box; width: 100%; max-width: 1180px; margin: 0 auto; padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5a6577"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #12907f; display: inline-block"></span><span style="font-weight: 700; color: #0a6b5f">On track</span><span>· read today</span></div>
+<h1 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -0.025em">¥420k expected from Foshan.<br>About ¥163k becomes available at collection, after the financing is repaid.</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4d5767">Nothing is overdue. The other ¥257k repays the financing you receive earlier, with its charges; it is not money lost.</p>
+</header>
+
+<section aria-label="Three layers" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="border: 1px solid #e1e6ee; border-radius: 14px; padding: 16px 18px; background: #ffffff"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">CUSTOMERS OWE YOU</div><div class="display" style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px">¥420,000</div><div style="font-size: 14px; color: #4d5767">1 invoice · nothing overdue</div></div>
+<div style="border: 1px solid #e1e6ee; border-radius: 14px; padding: 16px 18px; background: #ffffff"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">NEXT EXPECTED PAYMENT</div><div class="display" style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px">In 32 days</div><div style="font-size: 14px; color: #4d5767">¥420,000 from Foshan, on the due day</div></div>
+<div style="border: 1px solid #a6e0d7; border-radius: 14px; padding: 16px 18px; background: #ffffff"><div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">EXPECTED CASH AT COLLECTION</div><div class="display" style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: #0a6b5f; margin-top: 4px">about ¥162,814</div><div style="font-size: 14px; color: #4d5767">if paid on the due day</div></div>
+</section>
+
+<div role="group" aria-label="Filter" style="display: inline-flex; padding: 3px; border-radius: 999px; background: #e9eef5; border: 1px solid #d3d9e2; align-self: flex-start">
+<button aria-pressed="true" style="border: 0; border-radius: 999px; min-height: 34px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #ffffff; color: #24324a">All</button>
+<button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 34px; padding: 0 14px; font-size: 13px; font-weight: 600; background: transparent; color: #4d5767">Due soon</button>
+<button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 34px; padding: 0 14px; font-size: 13px; font-weight: 600; background: transparent; color: #4d5767">Overdue</button>
+<button aria-pressed="false" style="border: 0; border-radius: 999px; min-height: 34px; padding: 0 14px; font-size: 13px; font-weight: 600; background: transparent; color: #4d5767">Payment promises</button>
+</div>
+
+<section aria-label="Invoices" style="border: 1px solid #e1e6ee; border-radius: 14px; background: #ffffff; overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr 1fr 1fr; gap: 12px; padding: 10px 16px; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577; border-bottom: 1px solid #e6eaf0"><span>CUSTOMER</span><span>OUTSTANDING</span><span>DUE</span><span>FINANCING</span><span>NET TO YOU</span><span>STATUS</span></div>
+<a href="#rcva" aria-current="true" style="display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.3fr 1fr 1fr; gap: 12px; padding: 14px 16px; font-size: 14px; align-items: center; background: #eff3f8; border-left: 3px solid #0368e9; text-decoration: none; color: #24324a"><span style="font-weight: 700">Foshan Home Retail Co.</span><span style="font-weight: 700">¥420,000</span><span>in 32 days</span><span style="display: flex; flex-direction: column; gap: 3px"><span>¥255,000</span><span style="display: flex; gap: 10px"><span class="step on"><i></i>Arranged</span><span class="step"><i></i>Received</span><span class="step"><i></i>Repaid</span></span></span><span style="font-weight: 700; color: #0a6b5f">about ¥163k</span><span><span style="font-size: 12px; font-weight: 800; background: #e2f6f3; color: #0a6b5f; border-radius: 999px; padding: 3px 10px">Current</span></span></a>
+</section>
+
+<section id="rcva" aria-labelledby="sel" style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px; border: 1px solid #e1e6ee; border-radius: 16px; background: #ffffff; padding: 22px 24px">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">SELECTED INVOICE · <a href="CustomerOverview.dc.html" style="color: #0048a5; text-decoration: none">FOSHAN HOME RETAIL CO. &rsaquo;</a></div>
+<h2 id="sel" style="margin: 0; font-size: 21px; line-height: 1.3; font-weight: 800; letter-spacing: -0.02em">If Foshan pays ¥420,000 on the due day, about ¥162,814 becomes available cash.</h2>
+
+<div style="display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; font-size: 15px">
+<span>Invoice, due in 32 days</span><span class="display" style="font-weight: 700">¥420,000.00</span>
+<span style="color: #4d5767">Repays the financing <span style="font-size: 13px">· arranged today, expected in your account in 3 days</span></span><span class="display" style="font-weight: 700; color: #4d5767">− ¥255,000.00</span>
+<span style="color: #4d5767">Charges to the due day <span style="font-size: 13px">· as the agreement sets them; about ¥1,870 more for every 30 days late</span></span><span class="display" style="font-weight: 700; color: #4d5767">− ¥2,186.08</span>
+<span style="font-weight: 800; border-top: 1px solid #e1e6ee; padding-top: 8px">Expected cash at collection</span><span class="display" style="font-weight: 800; color: #0a6b5f; border-top: 1px solid #e1e6ee; padding-top: 8px">about ¥162,814</span>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.55; color: #4d5767">The financing is repaid from Foshan's receipt first; if the receipt falls short, what is left is owed by you. A late receipt keeps it running and adds charges under the agreement's own terms.</p>
+
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 14px">
+<dt style="color: #5a6577">Governed by</dt><dd style="margin: 0; font-weight: 700">Supply terms FHR-2026-07: 45 days from issue, no rebate <span style="font-weight: 400; color: #5a6577">· in force</span></dd>
+<dt style="color: #5a6577">Early payment</dt><dd style="margin: 0; font-weight: 700">none agreed on this invoice <span style="font-weight: 400; color: #5a6577">· the Option A counter, if sent and accepted, would apply to ¥257,200 of it</span></dd>
+<dt style="color: #5a6577">Payment history</dt><dd style="margin: 0; font-weight: 700">none yet from Foshan</dd>
+</dl>
+
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<a href="#terms" style="display: inline-flex; align-items: center; border: 1px solid #768399; border-radius: 10px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #ffffff; color: #24324a; text-decoration: none">View payment terms</a>
+<a href="#reminder" style="display: inline-flex; align-items: center; border: 1px solid #768399; border-radius: 10px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #ffffff; color: #24324a; text-decoration: none">Prepare a reminder</a>
+<a href="#financing" style="display: inline-flex; align-items: center; border: 1px solid #768399; border-radius: 10px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 700; background: #ffffff; color: #24324a; text-decoration: none">View the financing</a>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5a6577">The first action follows the invoice: once it is overdue, or a promise is missed, <strong>Chase payment</strong> takes its place.</p>
+</div>
+
+<aside style="display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #e1e6ee; padding-left: 24px">
+<div style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #5a6577">IF FOSHAN PAYS 30 DAYS LATE</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #4d5767">A test, not a forecast: the contractual due day plus 30 days, on this invoice and everything else Foshan owes in the window. FLOW counts no early payment in it.</p>
+<div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; align-items: baseline">
+<span style="color: #5a6577">Cash</span><span class="display" style="font-weight: 800; color: #a3241a">−¥250,000 on 30 Nov</span>
+<span style="color: #5a6577">Below your minimum</span><span style="font-weight: 700">65 days; ¥550,000 uncovered</span>
+<span style="color: #5a6577">This financing</span><span style="font-weight: 700">runs 30 days longer: about ¥1,870 more in charges</span>
+<span style="color: #5a6577">Net to you</span><span style="font-weight: 700">about ¥160,940, a month later</span>
+</div>
+<a href="Late.dc.html" style="display: inline-flex; align-items: center; border: 0; border-radius: 10px; min-height: 44px; padding: 0 16px; font-size: 14px; font-weight: 800; background: #0368e9; color: #ffffff; text-decoration: none; align-self: flex-start">Explore the cash impact</a>
+<div style="font-size: 13px; color: #5a6577; line-height: 1.5">Opens Cash with this invoice, Foshan and the financing selected; coming back keeps this invoice selected.</div>
+<div style="font-size: 13px; color: #5a6577; line-height: 1.5; padding-top: 8px; border-top: 1px solid #e1e6ee">Foshan is 100% of what you are owed today (one invoice). <a href="CustomerOverview.dc.html" style="font-weight: 700">The customer profile &rsaquo;</a></div>
+</aside>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1340}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

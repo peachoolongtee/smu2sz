@@ -13,6 +13,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+# The gross margin the Demo assumes for a customer whose owner has entered none (map #88): applied to any books, whatever the fixture is
+# called, always shown as "assumed for the Demo, not confirmed by you" and never stored or passed off as the owner's.
+DEMO_GROSS_MARGIN_BP = 2000
 _ALIASES = {"DEEPSEEK_API": "DEEPSEEK_API_KEY", "ANTHROPIC_KEY": "ANTHROPIC_API_KEY"}
 
 

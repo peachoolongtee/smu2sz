@@ -23,6 +23,7 @@ from app.api.auth import require_owner
 from app.api.causality import Causality, forecast_of, mark_changed
 from app.api.decisions import Reconciled, decision_summary, load_context, remaining_links, remaining_task_view
 from app.api.display import displayed
+from app.api.financing_words import financing_state_words
 from app.api.presentation import (
     COMMERCIAL_KINDS,
     RECOMMENDED_PLAN_KEY,
@@ -67,6 +68,7 @@ from app.domain.models import (
     FinancialState,
     FundingAction,
     FundingActionKind,
+    FundingLot,
     FundingPlan,
     LedgerEventKind,
     Mandate,
@@ -698,6 +700,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         "state_version": state_version,
         "suggestions": suggestions,
         "plan_series": plan_series,
+        "plan_traj": after_traj,
     }
 
 def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approvals: list[Any], found: list[Alert],
@@ -741,7 +744,8 @@ class Partial:
     `partial` names what could not be read so the page can say "Some supporting facts could not be read: ..." beside them."""
 
     LABELS: ClassVar[dict[str, tuple[str, str]]] = {"decision_record": ("the record of your decisions", "您的决策记录"),
-              "reconciliation": ("the check of receipts against promises", "收款与约定的核对")}
+              "reconciliation": ("the check of receipts against promises", "收款与约定的核对"),
+              "summary": ("the summary of what needs you", "待办事项摘要")}
 
     def __init__(self) -> None:
         self.missing: list[str] = []
@@ -998,7 +1002,8 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
         logging.getLogger("termsledger.decisions").exception("the reconciliation could not be read for the receivables")
         if partial is not None:
             partial.add("reconciliation")
-        return {"open_count": 0, "open_total_display": None, "overdue_total_display": None, "past_due": [], "next_receipt": None,
+        return {"open_count": 0, "open_total_fen": None, "open_total_display": None, "overdue_total_fen": None,
+                "overdue_total_display": None, "past_due": [], "next_receipt": None,
                 "promised": None, "lapsed_promises": 0,
                 "headline": t(lang, "Receivables could not be read just now.", "暂时无法读取应收款。"), "headline_tone": "warn",
                 "headline_note": None}
@@ -1022,10 +1027,16 @@ def _receivables(state: FinancialState, store: Any, today: int, lang: str, parti
         promise = {"receivable_id": p.receivable_id, "buyer_name": party_name(state, p.counterparty_id),
                    "expected_display": fmt_yuan(p.expected_fen), "promised_day": p.promised_day,
                    "when": when_text(p.promised_day, today, lang) if p.promised_day is not None else None}
-    return {"open_count": len(rows), "open_total_display": fmt_yuan(total),
-            "overdue_total_display": fmt_yuan(overdue), "past_due": past_due,
+    return {"open_count": len(rows), "open_total_fen": total, "open_total_display": fmt_yuan(total),
+            "overdue_total_fen": overdue, "overdue_total_display": fmt_yuan(overdue), "past_due": past_due,
             "next_receipt": nxt, "promised": promise, "lapsed_promises": report.lapsed_promises,
             **_receivables_headline(past_due, nxt, today, lang, no_plan, len(rows))}
+
+
+def _financing_fields(lot: FundingLot, today: int, lang: str) -> dict[str, str]:
+    """The lot's financing state in the one vocabulary (ARRANGED / RECEIVED / REPAID, `app.api.financing_words`)."""
+    words = financing_state_words(lang, lot, today)
+    return {"financing_state": words["state"], "financing_state_text": words["text"]}
 
 
 def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] | None:
@@ -1036,6 +1047,7 @@ def _in_transit(state: FinancialState, today: int, lang: str) -> dict[str, Any] 
     return {"total_display": fmt_yuan(total), "lots": [
         {"facility_name": facility_name(state, lot.facility_id), "amount_display": fmt_yuan(lot.remaining_fen),
          "arrival_day": lot.arrival_day, "arrival_when": when_text(lot.arrival_day, today, lang),
+         **_financing_fields(lot, today, lang),
          "headline": t(lang, f"{fmt_short(lot.remaining_fen)} funding arriving {when_text(lot.arrival_day, today, lang)}",
                        f"{fmt_short(lot.remaining_fen)} 资金将于{when_text(lot.arrival_day, today, lang)}到账")}
         for lot in sorted(lots, key=lambda lt: (lt.arrival_day, lt.id))]}
@@ -1117,6 +1129,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         action = next_action(books.state, books.with_([]), mandate, found, approvals, today, state.state_version, lang,
                               use_router=rt.settings.features.debt_desk)
         plan_series = action.pop("plan_series") if action is not None else None
+        plan_traj = action.pop("plan_traj") if action is not None else None
         if action is not None and action["kind"] == "RESERVE_BREACH_AHEAD" and words["plan_note"] is not None:
             # The readiness note follows the plan actually shown (router plan or cure), never the alert's own flag
             words["plan_note"] = (t(lang, "A funding plan is ready. It needs your approval because of its cost.",
@@ -1151,6 +1164,21 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
                        "available_display": fmt_yuan(max(f.limit_fen - f.drawn_fen, 0) if f.owner_approved else 0),
                        "lead_time_days": f.lead_time_days}
                       for f in state.facilities if f.status.value == "COMMITTED" and f.limit_fen > 0]
+        # imported here, after this module is loaded: the hybrid reads this module's own helpers
+        from app.api import home_hybrid
+
+        status_text = _status_text(status, found, lang)
+        try:  # the hybrid is a supporting read: the conclusion and the plan stand without it, and the home says so
+            hybrid: dict[str, Any] = home_hybrid.build(home_hybrid.HomeRead(
+                rt=rt, books=books, mandate=mandate, today=today, lang=lang, traj=traj, plan_traj=plan_traj, plan_series=plan_series,
+                action=action, status=status, status_text=status_text, headline=headline or "", note=note or "",
+                low=(low_fen, low_day), breach_day=breach_day, picture_days=picture_days, queue=queue, receivables=receivables,
+                changes=changes, record=record, open_decisions=open_decisions))
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the home summary could not be built")
+            partial.add("summary")
+            hybrid = {"cash": {}, "attention": None, "funding_line": None, "deals_card": None, "receivables_card": None,
+                      "changes_card": None}
     month1 = traj.months[0] if traj.months else None
     dscr = month1.dscr if month1 is not None else None
     dscr_text = f"{dscr.text}×" if dscr is not None else None
@@ -1161,7 +1189,7 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
         "state_version": state.state_version,
         "lang": lang,
         "status": status,
-        "status_text": _status_text(status, found, lang),
+        "status_text": status_text,
         "headline": headline,
         "note": note,
         "worst": words["worst"],
@@ -1207,7 +1235,13 @@ def get_home(lang: str = "en", since_day: int | None = None) -> dict[str, Any]:
             "picture_days": picture_days,
             "picture_title": t(lang, f"Your cash, next {picture_days} {'day' if picture_days == 1 else 'days'}", f"未来 {picture_days} 天的现金"),
             **basis,
+            **hybrid["cash"],
         },
+        "attention": hybrid["attention"],
+        "funding_line": hybrid["funding_line"],
+        "deals_card": hybrid["deals_card"],
+        "receivables_card": hybrid["receivables_card"],
+        "changes_card": hybrid["changes_card"],
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),

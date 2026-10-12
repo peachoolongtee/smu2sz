@@ -92,7 +92,8 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     assert h["note"].startswith("Cash stays at or above your ¥300k minimum cash reserve for the next 120 days.")
     assert h["cash"]["in_transit"]["lots"] == [{"facility_name": "Invoice financing (onboarded platform)",
                                                 "amount_display": "¥255,000.00", "arrival_day": 3, "arrival_when": "in 3 days",
-                                                "headline": "¥255k funding arriving in 3 days"}]
+                                                "headline": "¥255k funding arriving in 3 days", "financing_state": "ARRANGED",
+                                                "financing_state_text": "financing arranged, expected in 3 days"}]
     assert h["cash"]["plan_series"] is None
     kinds = [c["kind"] for c in h["changes"]]
     assert kinds == ["OPERATION", "OPERATION"] and "Bank credit line" in h["changes"][1]["text"]
@@ -108,6 +109,9 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     zh = client.get("/home?lang=zh").json()
     assert zh["cash"]["in_transit"]["lots"][0]["headline"] == "¥255k 资金将于3 天后到账"
     assert zh["changes"][1]["event_text"] == "已从Bank credit line提取 ¥150,000.00。资金今天已到账。"
+    assert zh["cash"]["in_transit"]["lots"][0]["financing_state_text"] == "融资已安排，预计3 天后到账"
+    # the unlanded advance is ARRANGED in Chinese too, never "advanced" (预支): one vocabulary for the financing
+    assert zh["changes"][0]["text"].endswith("申请融资 ¥255,000.00（融资已安排）；资金将于3 天后到账，不是今天")
 
 
 def test_a_queued_cure_is_a_question_with_its_cost_and_landing_day(client):

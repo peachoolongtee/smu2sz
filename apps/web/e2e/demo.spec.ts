@@ -91,7 +91,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   // Home detects the missed later receipt: the reserve breach and the cure priced above the autonomous ceiling, queued with the owner's click.
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
-  await expect(risk.getByTestId("next-action-needs-owner")).toContainText("15.00%");
+  await expect(risk.getByTestId("home-funding-authority")).toContainText("15.00%"); // who decides, under the card's hairline
   await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
   // Scene 5, the owner stays in control: the cure is queued, not run.
@@ -114,7 +114,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await walkStory(page, 1, 8);
   await expect(page).toHaveURL(/\/cash/);
   await expect(narration).toContainText("the funding has landed");
-  await expect(page.getByTestId("home-in-transit")).toHaveCount(0);
+  await expect(page.getByTestId("home-fact-tile-arriving")).toHaveCount(0); // (on the Cash page here, as before: the funding has landed)
 
   // Scene 6, outcome and proof: Home, then Activity with the evidence export beside it.
   await walkStory(page, 1, 9);

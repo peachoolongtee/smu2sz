@@ -381,10 +381,11 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The cash and the minimum sit beside the chart; the bar is sticky, so the primary stays in the first screen however far the page runs on.
-  await expect(page.getByTestId("home-floor")).toBeVisible();
+  // The minimum is named on the chart's own line, and today's cash is the first fact; the card is in the page's flow (not sticky), above the chart.
+  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
+  await expect(page.getByTestId("home-fact-today")).toBeVisible();
   await page.setViewportSize({ width: 1366, height: 900 });
-  await expect(page.getByTestId("home-floor")).toBeVisible();
+  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
 });
 
 test("at tablet width (820) the open invoices are a list, so the Buyer column is never clipped", async ({ page }, testInfo) => {

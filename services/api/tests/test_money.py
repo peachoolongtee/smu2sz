@@ -4,7 +4,17 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.domain.money import Ratio, bp, fmt_yuan, gross_up_face, post, round_half_up, simple_interest, yuan
+from app.domain.money import (
+    Ratio,
+    bp,
+    fmt_yuan,
+    fmt_yuan_about,
+    gross_up_face,
+    post,
+    round_half_up,
+    simple_interest,
+    yuan,
+)
 
 
 def test_half_up_both_signs():
@@ -39,3 +49,9 @@ def test_ratio_text():
 def test_post_is_nearest(n, d):
     x = Fraction(n, d)
     assert abs(Fraction(post(x)) - x) <= Fraction(1, 2)
+
+
+def test_fmt_yuan_about_rounds_half_up_to_the_scale_of_the_figure():
+    assert fmt_yuan_about(0) == "¥0" and fmt_yuan_about(749) == "¥7" and fmt_yuan_about(750) == "¥8"
+    assert fmt_yuan_about(187_049) == "¥1,870" and fmt_yuan_about(187_050) == "¥1,870" and fmt_yuan_about(187_500) == "¥1,880"
+    assert fmt_yuan_about(9_999_999) == "¥100,000" and fmt_yuan_about(16_300_000) == "¥163k" and fmt_yuan_about(-187_049) == "−¥1,870"
