@@ -462,8 +462,9 @@ def scenario_customer_loss(books: Books, buyer_id: str, day: int, *, lang: str =
     scenario = state.model_copy(update={
         "recurring_invoices": [ri for ri in state.recurring_invoices if ri.counterparty_id != buyer_id],
         "expected_orders": [o for o in state.expected_orders if o.counterparty_id != buyer_id]})
-    owed = sorted((r for r in state.receivables if r.counterparty_id == buyer_id and r.status in _OPEN and r.outstanding_fen > 0),
-                  key=lambda r: (r.due_day, r.id))
+    open_ = [r for r in state.receivables if r.counterparty_id == buyer_id and r.status in _OPEN and r.outstanding_fen > 0]
+    owed = sorted((r for r in open_ if r.due_day >= today), key=lambda r: (r.due_day, r.id))
+    late = sorted(r.id for r in open_ if r.due_day < today)  # past due: the conservative projection counts nothing from them
     who = buyer_short(name) if lang != "zh" else name
     if owed:
         total = whole_yuan(sum(r.outstanding_fen for r in owed))
@@ -472,6 +473,10 @@ def scenario_customer_loss(books: Books, buyer_id: str, day: int, *, lang: str =
         kept = t(lang, f"the {total} already invoiced ({dues_en}) is still paid.", f"已开票的 {total}（{dues_zh}）仍会照付。")
     else:
         kept = t(lang, "nothing already invoiced is left to pay.", "没有已开票但尚未支付的款项。")
+    if late:
+        kept += t(lang, f" {_capital(invoice_labels(state, late, today, 'en'))} {'is' if len(late) == 1 else 'are'} already past due "
+                        f"and {'stays' if len(late) == 1 else 'stay'} as the books count it.",
+                  f"{invoice_labels(state, late, today, 'zh')} 已经逾期，保持账面原有的计算方式。")
     assumption = t(lang, f"Scenario assumes {who} stops buying from you after today; {kept} This is not a prediction.",
                    f"本情景假设{who}从今天以后不再向您采购；{kept}这不是预测。")
     return ScenarioState(state=scenario, label=t(lang, f"{who} stops buying", f"{who}停止采购"), assumption=assumption,

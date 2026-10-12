@@ -189,6 +189,11 @@ def _projected_sales_fen(r: _Basis) -> int | None:
     return total or None
 
 
+def projected_sales_fen(state: FinancialState, buyer_id: str, today: int) -> int | None:
+    """The books' own projection of the buyer's sales over the next 12 months (`_projected_sales_fen`), whatever the owner entered."""
+    return _projected_sales_fen(Held(state, today, buyer_id, CustomerInputs()))
+
+
 def _sales(r: _Basis) -> tuple[int, CustomerInputRecord | None] | None:
     """(annual sales in fen, the owner's row when it is theirs): the owner's input overrides; else the books' projection (no row)."""
     rec = r.input(InputField.ANNUAL_SALES_FEN)

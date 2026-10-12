@@ -23,7 +23,7 @@ from tests.api.conftest import english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EX01 = {"fixture_id": "EX01_PACKAGE"}
-NAMES = ("Foshan Home Retail Co.", "Buyer early-payment offer")
+NAMES = ("Foshan Home Retail Co.", "Buyer early-payment offer", "Bank credit line", "Invoice financing (onboarded platform)")
 
 
 def _runtime() -> Runtime:
@@ -137,7 +137,7 @@ def test_the_customer_loss_figures_each_once(reads):
     assert (loss["receipts_before_fen"], loss["receipts_kept_fen"], loss["receipts_removed_fen"]) == (168_000_000, 42_000_000,
                                                                                                        126_000_000)
     assert loss["billings_removed_year_fen"] == 546_000_000 and loss["gross_profit_foregone_fen"] == 109_200_000
-    assert loss["gross_profit_estimated"] is True and loss["horizon_days"] == 120
+    assert loss["gross_profit_estimated"] is True and loss["billings_projected"] is True and loss["horizon_days"] == 120
     assert loss["receipts_text"] == "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives."
     assert loss["costs_text"] == ("Costs that would also stop are not modelled; the economic loss is the gross-profit figure, "
                                   "not the cash figure.")
@@ -176,9 +176,17 @@ def test_the_economics_context_is_labelled_and_only_with_the_flag(reads):
     assert asked["share_sentence"] == "That is about 2.6% of the ¥1,092,000 a year we estimate Foshan's orders bring you in gross profit."
     assert asked["note"] == "the margin is assumed for the Demo, not confirmed by you"
     assert _rows(reads["en"])["Option A"]["contribution_context"]["share_sentence"] is None  # no forward concession to share
+    assert _rows(reads["en"])["customer_loss"]["contribution_context"] is None  # the loss row says its gross profit once, in `loss`
+    zh = _rows(reads["zh"])["asked"]["contribution_context"]
+    assert (zh["label"], zh["note"]) == ("仅供参考，不是答应的理由", "毛利率为演示而假设，尚未经您确认")
+    assert zh["share_sentence"] == "约相当于我们估计Foshan Home Retail Co.订单每年为您带来的 ¥1,092,000 毛利的 2.6%。"
     off = _rows(reads["no_econ"])
     assert all(r["contribution_context"] is None for r in off.values())
-    assert off["customer_loss"]["loss"]["gross_profit_foregone_fen"] is None and off["customer_loss"]["loss"]["loss_text"] is None
+    loss = off["customer_loss"]["loss"]
+    # billings come from the books' own projection, flag or not; the gross profit needs the economics
+    assert loss["billings_removed_year_fen"] == 546_000_000 and loss["billings_projected"] is True
+    assert loss["gross_profit_foregone_fen"] is None
+    assert loss["loss_text"] == "About ¥5,460,000 a year of billings removed (projected from your books)." 
 
 
 def test_economics_changes_no_row_figure(reads):
@@ -190,16 +198,30 @@ def test_economics_changes_no_row_figure(reads):
 # ---------------------------------------------------------------- refused (brief D.4)
 
 
+def _strings(node: Any, skip: tuple[str, ...] = ()) -> list[str]:
+    """Every string in a body, at any depth (keys in `skip` left out)."""
+    if isinstance(node, str):
+        return [node]
+    if isinstance(node, dict):
+        return [s for k, v in node.items() if k not in skip for s in _strings(v, skip)]
+    if isinstance(node, list):
+        return [s for v in node for s in _strings(v, skip)]
+    return []
+
+
+# fields that are codes, ids or keys, never sentences
+_KEYS = ("key", "kind", "outcome", "required_tier", "codes", "offer_id", "id", "lang", "dimension", "facility_id", "buyer_id",
+         "criterion", "shape", "reading", "reason", "decision_id", "alerts_added", "alerts_removed", "label_code")
+
+
 PROBABILITY = re.compile(r"probab|likel|chance|expected value|odds|walks|weighted|可能性|概率|期望值", re.IGNORECASE)
 
 
 @pytest.mark.parametrize("name", ["en", "zh", "late", "late_zh"])
 def test_no_probability_no_walking_buyer_and_nothing_summed(reads, name):
     body = reads[name]
-    # the note states the refusal itself ("never weighted, never added across rows"); every other sentence is scanned
-    texts = [*[v for r in body["rows"] for k, v in r.items() if k.endswith("_text") and isinstance(v, str)],
-             *[r["loss"][k] for r in body["rows"] if r.get("loss") for k in ("receipts_text", "costs_text", "loss_text") if r["loss"][k]]]
-    for text in texts:
+    # the note states the refusal itself ("never weighted, never added across rows"); every other string, at any depth, is scanned
+    for text in _strings(body["rows"], _KEYS):
         assert not PROBABILITY.search(text), text
     for r in body["rows"]:
         assert not any(k in r for k in ("total_cost_fen", "expected_fen", "weight", "probability"))
@@ -210,12 +232,11 @@ def test_no_probability_no_walking_buyer_and_nothing_summed(reads, name):
 @pytest.mark.parametrize("name", ["zh", "late_zh"])
 def test_no_english_left_in_chinese(reads, name):
     body = reads[name]
-    texts = {"note": body["note"], "late": body["late_assumption_text"],
-             "rows": [{k: v for k, v in r.items() if (k.endswith("_text") or k in ("label",)) and isinstance(v, str)}
-                      for r in body["rows"]],
-             "loss": [{k: v for k, v in r["loss"].items() if k.endswith("_text") and v} for r in body["rows"] if r.get("loss")],
-             "flags": [r["plan_flags"]["words"] for r in body["rows"]]}
-    assert english_leaks(texts, NAMES) == []
+    texts = [s for s in _strings({k: v for k, v in body.items() if k != "buyer"}, _KEYS) if not s.startswith(("RI:", "RCV-", "CTR-", "OFF-"))]
+    assert english_leaks({"all": texts}, NAMES) == []
+    caps = {r["key"]: r["capacity"] for r in body["rows"]}
+    if body["late"]:
+        assert all(c["note"] == "按未晚付的账面计算。" for c in caps.values())
 
 
 # ---------------------------------------------------------------- the route's edges, the cache and the cost

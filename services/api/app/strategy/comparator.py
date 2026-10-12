@@ -30,7 +30,7 @@ from fractions import Fraction
 from typing import Any
 
 from app.api.display import displayed
-from app.api.presentation import option_label, party_name, t, when_text
+from app.api.presentation import buyer_of_receivable, option_label, party_name, t, when_text
 from app.books import Books, binds
 from app.domain.models import (
     Commitment,
@@ -76,9 +76,10 @@ class Year:
 
     contribution_fen: int
     sales_fen: int
-    assumed: bool
+    assumed: bool  # the margin is the Demo's assumption: the gross profit is ESTIMATED
     gross: bool
     share_of: Callable[[int], Fraction | None]
+    sales_projected: bool = True  # the sales behind the year are the books' projection, not the owner's figure
 
 
 @dataclass(frozen=True)
@@ -123,11 +124,13 @@ def _rows(books: Books, mandate: Mandate, day: int, offer: CompiledOffer, verdic
     except (ValueError, EngineError):
         out.append(_Row(ASKED, ASKED, t(lang, "As they asked", "按对方要求"), assumption_asked, None, verdict,
                         unavailable=t(lang, "FLOW cannot read the request against your books today.", "FLOW 今天无法按您的账目核算此请求。")))
-    recheck = counter_recheck(state, mandate, trusted_owner_key_hex=key_hex, day=day, commitments=commitments)
+    recheck: Any = None
     for c in verdict.counters:
         label = option_label(c.label, lang)
         assumption = t(lang, f"If {who} accepts {option_label(c.label, 'en')}.", f"如果{who}接受{option_label(c.label, 'zh')}。")
         try:
+            if recheck is None:
+                recheck = counter_recheck(state, mandate, trusted_owner_key_hex=key_hex, day=day, commitments=commitments)
             judged = recheck(c)
             bound = cap.resolve_package(books, mandate, c, day=day, commitments=commitments, trusted_owner_key_hex=key_hex)
             out.append(_Row(c.id, "reply", label, assumption, cap.books_with(books, bound), judged, _discounts(c.obligations)))
@@ -158,12 +161,10 @@ def _posted_discount(side: Books, mandate: Mandate, ids: Sequence[str]) -> int:
 def _buyer_receipts(side: Books, mandate: Mandate, buyer_id: str) -> int:
     """The buyer's receipts on the unfunded CONSERVATIVE projection from today to the end of the horizon."""
     state = side.state
-    ids = {r.id for r in state.receivables if r.counterparty_id == buyer_id}
     traj = project(state, side.with_([]), [], Mode.CONSERVATIVE, mandate.horizon_days, mandate.min_cash_fen)
     end = state.as_of_day + mandate.horizon_days
     return sum(e.amount_fen for d in traj.days if state.as_of_day <= d.day <= end for e in d.events
-               if e.kind in _RECEIPTS and e.amount_fen > 0 and e.ref is not None
-               and (e.ref in ids or e.ref.startswith(f"RI:{buyer_id}:")))
+               if e.kind in _RECEIPTS and e.amount_fen > 0 and buyer_of_receivable(state, e.ref) == buyer_id)
 
 
 def _flags(r: Reading, lang: str) -> dict[str, Any]:
@@ -231,13 +232,14 @@ def _loss_capacity(side: Books, mandate: Mandate, day: int, commitments: Sequenc
     except (ValueError, EngineError):
         return None
     return {"windows": [assembly.window_row(w, side, today, lang, mandate.horizon_days) for w in ba.before.windows],
-            "spare_fen": s.x_star_fen, "spare_text": s.refused_text or cap.shape_text(s.shape, s.criterion, lang)}
+            "spare_fen": s.x_star_fen,
+            "spare_text": cap.refused_sentence(lang) if s.x_star_fen is None else cap.shape_text(s.shape, s.criterion, lang)}
 
 
 def _context(row: _Row, figures: dict[str, Any], year: Year | None, name: str, lang: str) -> dict[str, Any] | None:
     """The economics, labelled as context: a year's gross profit from the buyer and, for a package with a forward concession, its
     share on a 12-month basis (`words.year_share_sentence`). Only when the contribution exists; never a reason to say yes."""
-    if year is None:
+    if year is None or row.kind == LOSS:  # the loss row states its gross profit once, in `loss`
         return None
     lang_ = "zh" if lang == "zh" else "en"
     forward = figures.get("concession_forward_fen") or 0
@@ -249,7 +251,8 @@ def _context(row: _Row, figures: dict[str, Any], year: Year | None, name: str, l
     }
 
 
-def _loss_figures(books: Books, side: Books, mandate: Mandate, buyer_id: str, year: Year | None, lang: str) -> dict[str, Any]:
+def _loss_figures(books: Books, side: Books, mandate: Mandate, buyer_id: str, year: Year | None, billings_fen: int | None,
+                  lang: str) -> dict[str, Any]:
     """D.3: billings removed, receipts removed within the horizon and gross profit foregone, each once, with the horizon printed beside
     the cash figure and the refusal of any figure net of costs. Read on the books as they stand and the loss copy (no late overlay)."""
     kept = _buyer_receipts(side, mandate, buyer_id)
@@ -261,18 +264,21 @@ def _loss_figures(books: Books, side: Books, mandate: Mandate, buyer_id: str, ye
         "receipts_text": t(lang, f"{whole_yuan(removed)} of receipts removed within the next {h} days; {whole_yuan(kept)} still arrives.",
                            f"未来 {h} 天内减少 {whole_yuan(removed)} 回款；仍会收到 {whole_yuan(kept)}。"),
         "horizon_days": h,
-        "billings_removed_year_fen": None, "billings_projected": None, "gross_profit_foregone_fen": None, "gross_profit_estimated": None,
-        "loss_text": None,
+        "billings_removed_year_fen": billings_fen, "billings_projected": True if billings_fen is not None else None,
+        "gross_profit_foregone_fen": None, "gross_profit_estimated": None,
+        "loss_text": (t(lang, f"About {whole_yuan(billings_fen)} a year of billings removed (projected from your books).",
+                        f"每年约 {whole_yuan(billings_fen)} 的开票额将不再有（根据您的账目推算）。") if billings_fen else None),
         "costs_text": t(lang, "Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure.",
                         "也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。"),
     }
     if year is not None:
         basis_en, basis_zh = ("gross profit", "毛利") if year.gross else ("contribution", "边际贡献")
-        out.update(billings_removed_year_fen=year.sales_fen, gross_profit_foregone_fen=year.contribution_fen,
-                   gross_profit_estimated=True,
+        est_en, est_zh = (" (estimated)", "（估算）") if year.assumed else ("", "")
+        out.update(billings_removed_year_fen=year.sales_fen, billings_projected=year.sales_projected,
+                   gross_profit_foregone_fen=year.contribution_fen, gross_profit_estimated=year.assumed,
                    loss_text=t(lang, f"About {whole_yuan(year.sales_fen)} a year of billings and about {whole_yuan(year.contribution_fen)} "
-                                     f"a year of {basis_en} foregone (estimated).",
-                               f"每年约 {whole_yuan(year.sales_fen)} 的开票额和约 {whole_yuan(year.contribution_fen)} 的{basis_zh}将不再有（估算）。"))
+                                     f"a year of {basis_en} foregone{est_en}.",
+                               f"每年约 {whole_yuan(year.sales_fen)} 的开票额和约 {whole_yuan(year.contribution_fen)} 的{basis_zh}将不再有{est_zh}。"))
     return out
 
 
@@ -280,16 +286,16 @@ def _loss_figures(books: Books, side: Books, mandate: Mandate, buyer_id: str, ye
 
 
 def _compute(rt: assembly.Source, books: Books, mandate: Mandate, day: int, offer: CompiledOffer, verdict: Verdict,
-             commitments: Sequence[Commitment], inputs: CustomerInputs, lang: str, late: int, year: Year | None) -> dict[str, Any]:
+             commitments: Sequence[Commitment], inputs: CustomerInputs, lang: str, late: int, year: Year | None,
+             billings_fen: int | None = None) -> dict[str, Any]:
     state = books.state
     today = max(day, state.as_of_day)
     buyer = offer.counterparty_id
     name = party_name(state, buyer)
     rows = _rows(books, mandate, day, offer, verdict, commitments, rt.owner_key_hex, lang)
-    try:  # the Phase 1 block: each path's capacity and spare room, cached by the exposure layer
-        block: dict[str, Any] | None = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, commitments, inputs, spare=True)
-    except (ValueError, EngineError):
-        block = None
+    # the Phase 1 block: each path's capacity and spare room, cached by the exposure layer; an engine error propagates (a 422), so no
+    # comparison without its capacity is ever cached
+    block: dict[str, Any] | None = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, commitments, inputs, spare=True)
 
     def overlay(side: Books) -> tuple[Books, str | None, str | None]:
         if not late:
@@ -318,7 +324,7 @@ def _compute(rt: assembly.Source, books: Books, mandate: Mandate, day: int, offe
                  "capacity": _capacity(row, block, loss_cap, late, lang),
                  "contribution_context": _context(row, figures, year, name, lang)}
         if row.kind == LOSS:
-            entry["loss"] = _loss_figures(books, row.books, mandate, buyer, year, lang)  # the cash view on the books, without the overlay
+            entry["loss"] = _loss_figures(books, row.books, mandate, buyer, year, billings_fen, lang)  # the cash view on the books, without the overlay
         out_rows.append(entry)
     return {
         "offer_id": offer.offer_id, "buyer": {"id": buyer, "name": name}, "lang": lang, "late": late,
@@ -331,7 +337,7 @@ def _compute(rt: assembly.Source, books: Books, mandate: Mandate, day: int, offe
 
 def compare(rt: assembly.Source, books: Books, mandate: Mandate, day: int, offer: CompiledOffer, verdict: Verdict,
             commitments: Sequence[Commitment], inputs: CustomerInputs, *, lang: str = "en", late: int = 0,
-            year: Year | None = None) -> dict[str, Any]:
+            year: Year | None = None, billings_fen: int | None = None) -> dict[str, Any]:
     """The comparator for `offer` (evaluated: `verdict` is its latest), its books those without the offer's own commitments. Cached by the
     books and their obligations, the mandate, the day, the commitments, the buyer, the verdict, the language, the inputs in force, the
     delay and whether a year is held (single-flight; a failure is never cached). `ValueError` for a delay other than 0 or 30;
@@ -341,9 +347,10 @@ def compare(rt: assembly.Source, books: Books, mandate: Mandate, day: int, offer
     lang = "zh" if lang == "zh" else "en"
     key = cache_key(books.state, mandate, day, commitments, "compare", "|".join(o.model_dump_json() for o in books.obligations),
                     offer.counterparty_id, lang, inputs.digest(), verdict.id, offer.offer_id, late,
-                    "" if year is None else f"{year.contribution_fen}:{year.sales_fen}:{year.assumed}:{year.gross}")
+                    "" if year is None else f"{year.contribution_fen}:{year.sales_fen}:{year.assumed}:{year.gross}:{year.sales_projected}",
+                    billings_fen)
     return _CACHE.get_or_compute(key, lambda: displayed(_compute(rt, books, mandate, day, offer, verdict, commitments, inputs, lang,
-                                                                 late, year)))
+                                                                 late, year, billings_fen)))
 
 
 __all__ = ["ASKED", "CURRENT", "LATE_DELAYS", "LOSS", "Year", "clear_cache", "compare"]

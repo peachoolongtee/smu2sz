@@ -66,6 +66,16 @@ def test_removing_an_expected_order_changes_no_cash(rt_day0, books_day0: Books):
     assert sc.assumption.endswith("nothing already invoiced is left to pay. This is not a prediction.")
 
 
+def test_an_invoice_already_past_due_is_not_called_still_paid(books_day0: Books):
+    late = [r.model_copy(update={"terms_days": r.terms_days - 40}) if r.id == "RCV-A" else r for r in books_day0.state.receivables]
+    books = replace(books_day0, state=books_day0.state.model_copy(update={"receivables": late}))
+    en = scenario_customer_loss(books, FOSHAN, 0).assumption
+    assert "still paid" not in en and "nothing already invoiced is left to pay." in en
+    assert "is already past due and stays as the books count it." in en
+    zh = scenario_customer_loss(books, FOSHAN, 0, lang="zh").assumption
+    assert "已经逾期，保持账面原有的计算方式。" in zh and english_leaks({"a": zh}, ("Foshan Home Retail Co.",)) == []
+
+
 def test_a_buyer_with_nothing_to_stop_or_unknown_is_refused(books_day0: Books):
     with pytest.raises(ValueError, match="no recurring invoice or expected order to stop"):
         scenario_customer_loss(books_day0, "BUYER-2", 0)

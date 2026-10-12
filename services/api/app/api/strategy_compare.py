@@ -21,7 +21,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.api.customer_overview import share_of_year, twelve_months_of, year_held
+from app.api.customer_overview import projected_sales_fen, share_of_year, twelve_months_of, year_held
 from app.api.decisions import latest_verdict_for
 from app.api.features import require_feature
 from app.api.runtime import Runtime, get_runtime
@@ -63,9 +63,11 @@ def _compare(rt: Runtime, offer: CompiledOffer, lang: Literal["en", "zh"], late:
         if held_year is not None:
             horizon, contribution = mandate.forward_concession_horizon_days, held_year.contribution_fen
             year = comparator.Year(contribution, held_year.sales_fen, held_year.assumed, held_year.gross,
-                                   lambda fen: share_of_year(twelve_months_of(fen, horizon), contribution))
+                                   lambda fen: share_of_year(twelve_months_of(fen, horizon), contribution), held_year.sales_projected)
+    billings = projected_sales_fen(state, offer.counterparty_id, max(day, state.as_of_day))  # the books' projection: no flag needed
     try:
-        body = comparator.compare(rt, books, mandate, day, offer, verdict, held, inputs, lang=lang, late=late, year=year)
+        body = comparator.compare(rt, books, mandate, day, offer, verdict, held, inputs, lang=lang, late=late, year=year,
+                                  billings_fen=billings)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
     return {**body, "state_version": state.state_version, "day": day}
