@@ -18,14 +18,17 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.api.customer_overview import twelve_months_of, year_held
 from app.api.display import displayed
 from app.api.features import require_feature
 from app.api.runtime import get_runtime
 from app.books import books_from_store
+from app.config import get_settings
 from app.financial import EngineError
 from app.strategy.cache import CACHE_SIZE, AnswerCache, cache_key
 from app.strategy.envelope import (
     AskFacts,
+    Economics,
     EnvelopeFacts,
     ZoneFacts,
     envelope_answer,
@@ -34,6 +37,7 @@ from app.strategy.envelope import (
     envelope_zone,
     out_of_range_facts,
 )
+from app.strategy.inputs import inputs_from_store
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -60,6 +64,7 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | Non
         mandate = rt.store.get_mandate()
         commitments = tuple(rt.store.commitments())
         day = rt.day
+        inputs = inputs_from_store(rt.store) if get_settings().features.customer_economics else None
     state = books.state
     if not any(c.id == buyer_id for c in state.counterparties):
         raise HTTPException(404, detail={"code": "BUYER_NOT_FOUND", "message": f"There is no buyer {buyer_id} on the books."})
@@ -106,6 +111,13 @@ def get_envelope(buyer_id: str, zone: int = Query(0, ge=0, le=1), ask: int | Non
         except ValueError:  # an ask package off the levers' grids: the same refusal the whole sweep would have given
             log.warning("envelope ask for %s is outside the levers' ranges", buyer_id, exc_info=True)
             facts, asked = out_of_range_facts(books, day=day, buyer_id=buyer_id), None
-    answer = envelope_answer(facts, lang, asked)
+    economics: Economics | None = None
+    if inputs is not None and not facts.refused:  # the economics line, composed from the Customer overview's one function
+        year = year_held(state, inputs, buyer_id, max(day, state.as_of_day))
+        if year is not None:
+            horizon = mandate.forward_concession_horizon_days
+            economics = Economics(year.contribution_fen, year.assumed, year.gross,
+                                  lambda fen: twelve_months_of(fen, horizon))
+    answer = envelope_answer(facts, lang, asked, economics)
     return {**displayed(answer.model_dump(mode="json")), "state_version": state.state_version, "day": day,
             "computed_in_seconds": round(time.perf_counter() - started, 3)}

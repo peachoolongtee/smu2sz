@@ -40,13 +40,14 @@ from app.domain.models import (
     Verdict,
     ViolationCode,
 )
-from app.domain.money import bp, fmt_pct, fmt_yuan
+from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_rounded
 from app.domain.ports import LedgerStore
 from app.financial import EngineError, value_concessions
 from app.funding import NoPermanentSourceError, marginal_cost, plan
 from app.funding.router import shared_runs
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
+from app.strategy.words import buyer_short, share_text, whole_yuan
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
 from app.verifier.evaluate import _evaluate, _Router
@@ -969,6 +970,10 @@ class EnvelopePackage(Contract):
     cap_fen: int | None = None  # class 3: the signed cap the package breaks
     cap_used_fen: int | None = None  # class 3: what the verifier counts against that cap
     over_cap_by_fen: int | None = None  # class 3: by how much
+    # class 3, and only with FEATURE_CUSTOMER_ECONOMICS on and a contribution held: what the package costs as a share of a year's
+    # gross profit from the buyer. Context, a sentence of its own: it never changes the class, the verdict or the cap
+    economics_sentence: str | None = None
+    economics_note: str | None = None  # "the margin is assumed for the Demo, not confirmed by you" while it is
 
 
 class EnvelopeLever(Contract):
@@ -1269,13 +1274,55 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
         over_cap_by_fen=over[1] - over[2] if over else None)
 
 
-def _over_your_limits(facts: EnvelopeFacts, lang: str) -> list[EnvelopePackage]:
+@dataclass(frozen=True)
+class Economics:
+    """A year of the buyer's gross profit, as the Customer overview reads it (`customer_overview.year_held`, the one margin and
+    contribution function), and its 12-month scaling of a forward concession (`customer_overview.twelve_months_of`): composed by
+    the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
+
+    contribution_fen: int
+    assumed: bool  # the margin is the Demo's default
+    gross: bool  # the basis word: gross profit (default) or contribution
+    year_of: Callable[[int], int]  # a forward concession over the mandate's horizon, on a 12-month basis
+
+
+def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) -> tuple[str | None, str | None]:
+    """(the sentence, the note). The share is the verdict's own forward concession on a 12-month basis over a year's gross
+    profit (brief C.2), at 1 dp with its bounds: "under 0.1%", and "more than 10 times" the year. None without a cost or a
+    positive year."""
+    year = eco.year_of(p.forward_total_fen)
+    if year <= 0 or eco.contribution_fen <= 0:
+        return None, None
+    ratio = Fraction(year, eco.contribution_fen)
+    who_en, who_zh = buyer_short(facts.buyer_name), facts.buyer_name
+    big = fmt_yuan_rounded(eco.contribution_fen)
+    basis_en, basis_zh = ("gross profit", "毛利") if eco.gross else ("contribution", "边际贡献")
+    bring_en = f"the {big} a year we estimate {who_en}'s orders bring you in {basis_en}"
+    bring_zh = f"我们估计{who_zh}订单每年为您带来的 {big} {basis_zh}"
+    if ratio > 10:
+        sentence = t(lang, f"That is more than 10 times {bring_en}.", f"超过{bring_zh}的 10 倍。")
+    elif ratio >= 1:
+        sentence = t(lang, f"That is more than all of {bring_en}.", f"超过{bring_zh}的全部。")
+    else:
+        share = share_text(ratio, lang)
+        sentence = (t(lang, f"That is {share} of {bring_en}.", f"相当于{bring_zh}的{share}。") if share.startswith(("under", "低于"))
+                    else t(lang, f"That is about {share} of {bring_en}.", f"约相当于{bring_zh}的 {share}。"))
+    note = t(lang, "the margin is assumed for the Demo, not confirmed by you", "毛利率为演示而假设，尚未经您确认")         if eco.assumed else None
+    return sentence, note
+
+
+def _over_your_limits(facts: EnvelopeFacts, lang: str, economics: Economics | None = None) -> list[EnvelopePackage]:
     """The class-3 group: the `terms_budget_ignored` maximum as one package, when it is over a cap you signed (when the
-    budget does not bind, the maximum is approved and there is nothing to list here)."""
+    budget does not bind, the maximum is approved and there is nothing to list here). With `economics` the package carries
+    its share of a year's gross profit, as a sentence of its own after the mandate's."""
     m = _lever_of(facts, "terms_budget_ignored")
     if m is None or m.at_max is None or authority_of(m.at_max) != "over_your_limits":
         return []
-    return [_package(facts, m.at_max, lang)]
+    pkg = _package(facts, m.at_max, lang)
+    if economics is not None:
+        sentence, note = _economics_words(facts, m.at_max, economics, lang)
+        pkg = pkg.model_copy(update={"economics_sentence": sentence, "economics_note": note})
+    return [pkg]
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -1488,11 +1535,6 @@ def _refusal(name: str, lang: str, reason: str = "no_lever") -> str:
              f"FLOW 目前没有可为{name}估值的账期、付款或返利杠杆。")
 
 
-def _whole_yuan(fen: int) -> str:
-    """A face on the whole-¥100 grid said without its fen ("¥240,200"); any other amount as `fmt_yuan` says it."""
-    return f"¥{fen // 100:,}" if fen >= 0 and fen % 100 == 0 else fmt_yuan(fen)
-
-
 def _ask_tail(authority: Authority | None, lang: str) -> tuple[str, str]:
     """Who decides, as the sentence's last clause: (the clause, the same clause as its own sentence)."""
     if authority == "flow_may":
@@ -1546,7 +1588,7 @@ def _ask_sentence(facts: EnvelopeFacts, ask: AskFacts, lang: str) -> str:
         return lead + gap + t(lang, f"Nothing within the ranges FLOW checks makes {n} days work on today's books.",
                               f"按今天的账面，在 FLOW 检查的范围内，没有方案能让 {n} 天账期可行。")
     s = early.setting
-    face, whole = _whole_yuan(s.face if s.face is not None else ask.receivable_face_fen), fmt_yuan(ask.receivable_face_fen)
+    face, whole = whole_yuan(s.face if s.face is not None else ask.receivable_face_fen), fmt_yuan(ask.receivable_face_fen)
     clause = _ask_tail(authority_of(early), lang)[0]
     if s.price:
         p = _pct(s.price)
@@ -1593,7 +1635,8 @@ def _card(facts: EnvelopeFacts, ask: AskFacts | None, lang: str) -> tuple[list[E
     return [_package(facts, p, lang, m) for p, m in on_card], [_package(facts, p, lang, m) for p, m in rest]
 
 
-def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None = None) -> EnvelopeAnswer:
+def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None = None,
+                    economics: Economics | None = None) -> EnvelopeAnswer:
     """The sweep's facts in words (`en` or `zh`)."""
     meta: dict[str, object] = {"buyer_id": facts.buyer_id, "buyer_name": facts.buyer_name,
                                "source_state_version": facts.source_state_version, "evaluations": facts.evaluations,
@@ -1611,7 +1654,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None
     return EnvelopeAnswer(
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
         money=_money(facts, lang), packages=card, more=more,
-        over_your_limits=_over_your_limits(facts, lang), ask=ask_answer(facts, ask, lang) if ask is not None else None,
+        over_your_limits=_over_your_limits(facts, lang, economics), ask=ask_answer(facts, ask, lang) if ask is not None else None,
         levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
         unlisted_counters=[_unlisted_sentence(c, lang) for c in facts.unlisted_counters],
         source_state_version=facts.source_state_version, evaluations=facts.evaluations,
@@ -1655,6 +1698,7 @@ def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None
 __all__ = [
     "AskAnswer",
     "AskFacts",
+    "Economics",
     "EnvelopeAnswer",
     "EnvelopeFacts",
     "EnvelopeLever",
