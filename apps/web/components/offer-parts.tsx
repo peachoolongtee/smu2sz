@@ -10,7 +10,7 @@ const contingencyTone: Record<Contingency, Tone> = { FIRM: "ok", CONTINGENT: "wa
 
 export function NumberChip({ n }: { n: number }) {
   return (
-    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-ink text-xs font-bold text-white">
+    <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-ink text-meta font-bold text-white">
       <span className="sr-only">#</span>
       {n}
     </span>
@@ -21,7 +21,7 @@ export function KindChip({ item }: { item: OfferItem }) {
   const { te } = useI18n();
   const label = item.group === "obligation" ? te("obligation", item.kind) : te("flag", item.kind);
   return (
-    <span className={`inline-flex items-center rounded-pill border px-2 py-0.5 text-xs font-semibold ${ANNOTATION_STYLE[item.kind].chip}`}>
+    <span className={`inline-flex items-center rounded-pill border px-2 py-0.5 text-meta font-semibold ${ANNOTATION_STYLE[item.kind].chip}`}>
       {label}
     </span>
   );
@@ -29,7 +29,7 @@ export function KindChip({ item }: { item: OfferItem }) {
 
 export function SpanQuote({ text }: { text: string }) {
   return (
-    <blockquote className="mt-2 border-l-2 border-line-strong pl-2.5 text-xs italic text-ink-2">
+    <blockquote className="mt-2 border-l-2 border-line-strong pl-2.5 text-meta italic text-ink-2">
       &ldquo;<span className="whitespace-pre-wrap">{text}</span>&rdquo;
     </blockquote>
   );
@@ -103,7 +103,7 @@ export function OfferItemCard({
         <KeyValueList items={rows.map((r) => ({ k: r.k, v: r.v }))} />
       </div>
       {unresolved.length ? (
-        <ul className="mt-2 list-disc pl-5 text-xs text-warn-fg">
+        <ul className="mt-2 list-disc pl-5 text-meta text-warn-fg">
           {unresolved.map((u) => (
             <li key={u}>{u}</li>
           ))}

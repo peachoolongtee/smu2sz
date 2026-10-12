@@ -104,7 +104,7 @@ export function PathColumns({
                 </>
               ) : (
                 <>
-                  <p className={net && !p.cost_total_display ? "text-xs text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
+                  <p className={net && !p.cost_total_display ? "text-supporting text-ink-3" : "sr-only"}>{net && !p.cost_total_display ? t("biz.deals.netCost") : t("biz.deals.paths.cost")}</p>
                   <p className={`text-2xl font-extrabold tracking-[-0.02em] tabular-nums ${tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid={`path-col-cost-${i}`}>
                     {total}
                   </p>
@@ -114,7 +114,7 @@ export function PathColumns({
                 </>
               )}
               {parts.length ? (
-                <dl className="mt-2 divide-y divide-line border-y border-line text-xs" data-testid={`path-col-components-${i}`}>
+                <dl className="mt-2 divide-y divide-line border-y border-line text-supporting" data-testid={`path-col-components-${i}`}>
                   {parts.map((c) => (
                     <div key={c.label} className="flex items-baseline justify-between gap-3 py-1">
                       <dt className="text-ink-3">{c.label}</dt>
@@ -127,7 +127,7 @@ export function PathColumns({
             <dl className="space-y-1.5 text-sm">
               {p.terms.map((term) => (
                 <div key={term.key} className="flex flex-wrap items-baseline gap-x-2">
-                  <dt className="text-xs text-ink-3">{term.label}</dt>
+                  <dt className="text-supporting text-ink-3">{term.label}</dt>
                   <dd className="font-bold text-ink">
                     {term.value_text}
                     {term.instead_of_text ? <span className="ml-1.5 font-semibold text-ink-3">{term.instead_of_text}</span> : null}
@@ -144,7 +144,7 @@ export function PathColumns({
                   </li>
                 ) : null}
                 {p.band_text ? (
-                  <li className="text-xs text-ink-3" data-testid={`path-col-band-${i}`}>
+                  <li className="text-supporting text-ink-3" data-testid={`path-col-band-${i}`}>
                     {p.band_text}
                   </li>
                 ) : null}

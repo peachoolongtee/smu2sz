@@ -86,7 +86,7 @@ function EvidenceBody({ text, onDownload }: { text: string; onDownload: () => vo
             { k: t("evid.first"), v: head ? [head.seq !== undefined ? `#${head.seq}` : null, head.kind].filter(Boolean).join(" ") : t("common.none") },
             { k: t("evid.last"), v: last ? [last.seq !== undefined ? `#${last.seq}` : null, last.kind].filter(Boolean).join(" ") : t("common.none") },
             { k: t("evid.head"), v: <Hash value={headHash} /> },
-            { k: t("evid.file"), v: <span className="font-mono text-xs">termsledger-evidence.jsonl</span> },
+            { k: t("evid.file"), v: <span className="font-mono text-meta">termsledger-evidence.jsonl</span> },
           ]}
         />
         <div className="mt-3">
@@ -98,7 +98,7 @@ function EvidenceBody({ text, onDownload }: { text: string; onDownload: () => vo
         <pre
           tabIndex={0}
           aria-label={t("evid.preview")}
-          className="max-h-96 overflow-auto rounded-tile border border-line bg-subtle p-3 font-mono text-xs leading-relaxed"
+          className="max-h-96 overflow-auto rounded-tile border border-line bg-subtle p-3 font-mono text-meta leading-relaxed"
         >
           {lines.join("\n")}
         </pre>

@@ -44,7 +44,7 @@ export function StatusBlock({ h }: { h: HomeView }) {
   return (
     <header aria-labelledby="home-status-title" className="motion-reveal flex flex-col items-start gap-2.5 short:gap-2" data-testid="home-status" data-status={h.status}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className={`inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-xs font-extrabold uppercase tracking-[0.06em] ${pill.box}`} data-testid="home-status-word">
+        <span className={`inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-meta font-extrabold uppercase tracking-[0.06em] ${pill.box}`} data-testid="home-status-word">
           {/* The dot repeats the pill's status as a mark; it pulses once when the status asks for the owner (never on a calm one). */}
           <span aria-hidden className={`relative size-1.5 shrink-0 rounded-pill ${pill.dot} ${pulses ? "motion-pulse" : ""}`} />
           {h.status_text ?? te("homestatus", h.status)}
@@ -52,10 +52,10 @@ export function StatusBlock({ h }: { h: HomeView }) {
         {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
         <ReadWhen when={h.cash.last_read_when} testId="home-read-when" />
       </div>
-      <h1 id="home-status-title" className="max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl" data-testid="home-headline">
+      <h1 id="home-status-title" className="type-headline max-w-4xl text-balance text-ink" data-testid="home-headline">
         {h.headline}
       </h1>
-      <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="home-note">
+      <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-body-lg sm:leading-normal" data-testid="home-note">
         {h.note}
       </p>
       {h.cash.in_transit ? <InTransit transit={h.cash.in_transit} /> : null}

@@ -35,7 +35,7 @@ function Section({ id, title, sub, children }: { id: string; title: string; sub?
         <h2 id={`${id}-title`} className="text-base font-extrabold text-ink">
           {title}
         </h2>
-        {sub ? <p className="text-xs text-ink-3">{sub}</p> : null}
+        {sub ? <p className="text-meta text-ink-3">{sub}</p> : null}
       </div>
       {children}
     </section>
@@ -47,7 +47,7 @@ function ApprovalLine({ o }: { o: OperationView }) {
   const { t } = useI18n();
   const href = o.decision_link?.href ?? (o.decision_id ? decisionHref(o.decision_id) : null);
   return (
-    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2" data-testid="activity-approval">
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-2" data-testid="activity-approval">
       <span className="font-medium text-ink">{o.approval_label}</span>
       {o.current_decision_state ? <span data-testid="activity-approval-state">{t("biz.activity.stateNow", { state: o.current_decision_state })}</span> : null}
       {href ? (
@@ -184,7 +184,7 @@ export default function ActivityPage() {
       ) : (
         <div className="space-y-8">
           <section id="activity-timeline" aria-label={t("biz.activity.rail")}>
-            <p className="mb-3 text-xs text-ink-3">{t("biz.activity.timeline.sub")}</p>
+            <p className="mb-3 text-meta text-ink-3">{t("biz.activity.timeline.sub")}</p>
             {showChips ? (
               <div role="group" aria-label={t("biz.activity.filter.label")} className="mb-4 flex flex-wrap gap-1.5" data-testid="activity-filters">
                 {([["all", t("biz.activity.filter.all"), entries], ...kinds.map((c) => [c, t(`biz.activity.filter.${c}`), counts[c]] as const)] as const).map(([id, label, n]) => (
@@ -199,7 +199,7 @@ export default function ActivityPage() {
               <div className="relative before:absolute before:bottom-2 before:left-4 before:top-2 before:w-px before:bg-line-strong" data-testid="activity-list">
                 {groups.map((g) => (
                   <div key={`${g.day}-${g.rows[0].seq}`} className="motion-rise" data-testid="activity-day">
-                    <h3 className="relative z-10 pb-1 pl-12 pt-5 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3 first:pt-0" data-testid="activity-day-caption">
+                    <h3 className="relative z-10 pb-1 pl-12 pt-5 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3 first:pt-0" data-testid="activity-day-caption">
                       <span className="inline-block first-letter:uppercase">{g.rows[0].day_when || whenText(g.day, today, t)}</span>
                     </h3>
                     <ol>
@@ -208,7 +208,7 @@ export default function ActivityPage() {
                           // Time passing is a thin separator on the rail carrying its sentence, not an entry.
                           <li key={`${o.seq}-${o.op_id}`} className="relative flex items-center gap-3 py-1.5" data-testid={`activity-${o.kind}`} data-status={o.status}>
                             <span aria-hidden className="relative z-10 ml-[11px] size-2.5 rounded-pill border-2 border-line-strong bg-canvas" />
-                            <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 break-words text-xs text-ink-3">
+                            <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 break-words text-meta text-ink-3">
                               <span data-testid="activity-event">{sentenceOf(o)}</span>
                               <span className="font-medium" data-testid="activity-op">
                                 {o.kind_text ?? kindLabel(o.kind)}
@@ -223,7 +223,7 @@ export default function ActivityPage() {
                                 {sentenceOf(o)}
                               </p>
                               {o.event_detail ? (
-                                <p className="mt-0.5 break-words text-xs text-ink-2" data-testid="activity-detail">
+                                <p className="mt-0.5 break-words text-meta text-ink-2" data-testid="activity-detail">
                                   {o.event_detail}
                                 </p>
                               ) : null}
@@ -233,7 +233,7 @@ export default function ActivityPage() {
                                 </p>
                               ) : null}
                               {o.what_remains ? (
-                                <p className="mt-0.5 break-words text-xs text-ink-2" data-testid="activity-remains">
+                                <p className="mt-0.5 break-words text-meta text-ink-2" data-testid="activity-remains">
                                   <span className="font-medium text-ink-3">{t("biz.activity.remains")}</span>
                                   {": "}
                                   {o.what_remains}
@@ -250,10 +250,10 @@ export default function ActivityPage() {
                                 ) : (
                                   <OpStatusBadge status={o.status} />
                                 )}
-                                <span className="text-xs text-ink-3" data-testid="activity-op">
+                                <span className="text-meta text-ink-3" data-testid="activity-op">
                                   {o.kind_text ?? kindLabel(o.kind)}
                                 </span>
-                                <span className="text-xs text-ink-3" data-testid="activity-actor">
+                                <span className="text-meta text-ink-3" data-testid="activity-actor">
                                   {ownerDecided(o) ? t("biz.activity.you") : te("actor", o.requested_by)}
                                 </span>
                               </p>
@@ -266,7 +266,7 @@ export default function ActivityPage() {
                               ) : null}
                               {/* The owner's decision on a contract the agent read: the entry opens the document it names. */}
                               {o.document_id ? (
-                                <Link href={`/documents?id=${o.document_id}`} className="mt-1 inline-block text-xs font-medium text-brand-700 underline underline-offset-2" data-testid="activity-document-link">
+                                <Link href={`/documents?id=${o.document_id}`} className="mt-1 inline-block text-meta font-medium text-brand-700 underline underline-offset-2" data-testid="activity-document-link">
                                   {t("deals.summary.contract")}
                                 </Link>
                               ) : null}
@@ -274,8 +274,8 @@ export default function ActivityPage() {
                             {/* One quiet toggle at the right opens the audit details (the executor's sentence, the ids, the tier and the hashes). */}
                             <Disclosure
                               bare
-                              className="col-span-2 text-xs"
-                              summaryClass="absolute right-0 top-2 inline-flex min-h-8 cursor-pointer list-none items-center gap-0.5 rounded-pill px-2.5 text-xs font-medium text-ink-3 hover:bg-subtle hover:text-ink touch:min-h-11 [&::-webkit-details-marker]:hidden"
+                              className="col-span-2 text-meta"
+                              summaryClass="absolute right-0 top-2 inline-flex min-h-8 cursor-pointer list-none items-center gap-0.5 rounded-pill px-2.5 text-meta font-medium text-ink-3 hover:bg-subtle hover:text-ink touch:min-h-11 [&::-webkit-details-marker]:hidden"
                               summary={
                                 <span className="inline-flex items-center gap-0.5" data-testid="activity-details-toggle">
                                   {t("biz.activity.details")}
@@ -285,13 +285,13 @@ export default function ActivityPage() {
                             >
                               <div className="pb-1 pl-12 pt-1">
                                 {o.decision_id && !o.approval_label ? (
-                                  <p className="pb-2 text-xs">
+                                  <p className="pb-2 text-meta">
                                     <Link href={o.decision_link?.href ?? decisionHref(o.decision_id)} className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11" data-testid="activity-record">
                                       {t("biz.activity.record")}
                                     </Link>
                                   </p>
                                 ) : null}
-                                <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 pb-1 text-xs text-ink-2">
+                                <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 pb-1 text-meta text-ink-2">
                                   <dt>{t("audit.executor")}</dt>
                                   <dd className="break-words" data-testid="activity-raw">
                                     {o.summary}
@@ -343,14 +343,14 @@ export default function ActivityPage() {
                       <span className="font-medium text-ink">
                         <CustomerName id={c.counterparty_id}>{buyerName(c.counterparty_id)}</CustomerName>
                       </span>
-                      <span className="block text-xs text-ink-3">
+                      <span className="block text-meta text-ink-3">
                         {t(c.expires_day < today ? "biz.activity.expired" : "biz.activity.expires", { when: whenText(c.expires_day, today, t) })} · {t("biz.activity.concessions")}: {c.forward_value_display}
                       </span>
                     </span>
                     <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
                     {/* The agreement's record ids are the audit level, never the row. */}
                     <Disclosure className="basis-full" summary={t("biz.auditDetails")}>
-                      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+                      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-meta text-ink-2">
                         <dt>{t("appr.commitment")}</dt>
                         <dd className="break-all font-mono" data-testid="activity-commitment-id">
                           {c.id}
@@ -399,7 +399,7 @@ export default function ActivityPage() {
                     <li key={e.id} className="py-3 text-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{te("secevent", e.kind)}</span>
-                        <span className="text-xs text-ink-3">{e.action_taken}</span>
+                        <span className="text-meta text-ink-3">{e.action_taken}</span>
                       </div>
                       <p className="mt-1 text-ink-2">{e.detail}</p>
                       {e.spans.map((s) => (
@@ -413,12 +413,12 @@ export default function ActivityPage() {
           )}
 
           {data.chain_scope_text && data.chain_text !== null ? (
-            <Disclosure testId="activity-chain-scope" className="text-xs" summary={t("biz.activity.chainScope")}>
+            <Disclosure testId="activity-chain-scope" className="text-meta" summary={t("biz.activity.chainScope")}>
               <p className="text-ink-2">{data.chain_scope_text}</p>
             </Disclosure>
           ) : null}
 
-          <p className="text-xs text-ink-3">
+          <p className="text-meta text-ink-3">
             {t("biz.activity.trail")}{" "}
             <Link href="/evidence" className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11">
               {t("biz.activity.trail.open")}

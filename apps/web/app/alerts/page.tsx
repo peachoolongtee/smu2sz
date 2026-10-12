@@ -44,7 +44,7 @@ export default function AlertsPage() {
         <LoadingBlock rows={3} />
       ) : (
         <div className="space-y-4">
-          <p className="text-xs text-ink-3">{t("alerts.basis", { basis: te("traj.modeName", data.basis), day: data.day })}</p>
+          <p className="text-meta text-ink-3">{t("alerts.basis", { basis: te("traj.modeName", data.basis), day: data.day })}</p>
           <FixResult result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {data.alerts.length === 0 ? (
             <EmptyState title={t("alerts.empty.title")} body={t("alerts.empty.body")} />
@@ -66,7 +66,7 @@ export default function AlertsPage() {
                       )}
                     </div>
                     {a.amount_display ? (
-                      <p className="mt-3 text-xs text-ink-3">
+                      <p className="mt-3 text-meta text-ink-3">
                         {t("alerts.amount")}
                         <span className="ml-2 text-lg font-semibold tabular-nums text-ink">{a.amount_display}</span>
                       </p>
@@ -79,7 +79,7 @@ export default function AlertsPage() {
                     ) : null}
                     {a.suggested.length ? (
                       <div className="mt-4">
-                        <h3 className="text-xs font-semibold text-ink-3">{t("alerts.suggested")}</h3>
+                        <h3 className="text-meta font-semibold text-ink-3">{t("alerts.suggested")}</h3>
                         <ul className="mt-1.5 space-y-1.5">
                           {a.suggested.map((s, i) => (
                             <li key={`${s.operation_kind}-${i}`} className="rounded-tile border border-line bg-subtle px-3 py-2 text-sm">
@@ -87,7 +87,7 @@ export default function AlertsPage() {
                                 <span className="font-medium">{te("opkind", s.operation_kind)}</span>
                                 {s.amount_display ? <span className="font-semibold tabular-nums">{s.amount_display}</span> : null}
                               </div>
-                              <p className="mt-0.5 text-xs text-ink-2">
+                              <p className="mt-0.5 text-meta text-ink-2">
                                 {[s.facility_id, s.receivable_id].filter(Boolean).join(" · ")}
                                 {s.facility_id || s.receivable_id ? " · " : ""}
                                 {s.note}

@@ -26,10 +26,10 @@ export function CurrentFunding({ h }: { h: HomeView }) {
                 <p className="text-sm font-semibold tabular-nums text-ink">
                   {lot.remaining_display ?? lot.amount_display} <span className="font-normal text-ink-2">{lot.facility_name}</span>
                   {lot.remaining_display && lot.remaining_display !== lot.amount_display ? (
-                    <span className="ml-1.5 text-xs font-normal text-ink-3" data-testid="cash-lot-of">{t("biz.cash.lot.of", { amount: lot.amount_display })}</span>
+                    <span className="ml-1.5 text-supporting font-normal text-ink-3" data-testid="cash-lot-of">{t("biz.cash.lot.of", { amount: lot.amount_display })}</span>
                   ) : null}
                 </p>
-                <p className="text-xs text-ink-3">
+                <p className="text-supporting text-ink-3">
                   {lot.opening ? t("biz.cash.lot.opening") : lot.landed ? t("biz.cash.lot.landed", { when: lot.arrival_when }) : t("biz.cash.lot.arrives", { when: lot.arrival_when })}
                 </p>
 
@@ -47,7 +47,7 @@ export function CurrentFunding({ h }: { h: HomeView }) {
         <dl className="mt-3 grid gap-2 border-t border-line pt-3 sm:grid-cols-2" data-testid="cash-current-facilities">
           {drawn.map((f) => (
             <div key={f.id} className="text-sm">
-              <dt className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-ink-3">
+              <dt className="flex flex-wrap items-center gap-1.5 text-supporting font-medium text-ink-3">
                 {f.name}
                 {/* The line's state in a word, only when it says something the figures below do not stress: at or over its limit. */}
                 {f.limit_fen && f.drawn_fen !== undefined && f.drawn_fen >= f.limit_fen ? (

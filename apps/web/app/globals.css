@@ -125,6 +125,29 @@
   --radius-tile: 10px;
   --radius-control: 8px;
 
+  /* The type scale: seven roles, each a size (a line height beside it), and nothing in between. Two of them are the app's own text-xs / text-sm
+     (the utilities text-meta / text-body are the same sizes). The headline is 24 px on a phone, 30 px from `sm` and 34 px from `lg` (:root below), the
+     major value 28 to 32 (tabular numerals, `.type-value`). Supporting 13 px is the floor for any financial qualification: a figure, a rate, a
+     "limit: at least 1.25x", the words that say what a number is against. Metadata (11 to 12 px) is a label, a time or a legend and never a
+     figure or a qualification. The kit classes at the end of @layer components (.type-headline and the rest) add the face, weight and tracking
+     a role always has. */
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
+  --text-supporting: 0.8125rem;
+  --text-supporting--line-height: 1.25rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-body-lg: 0.9375rem;
+  --text-body-lg--line-height: 1.375rem;
+  --text-card-title: 1rem;
+  --text-card-title--line-height: 1.375rem;
+  --text-section: clamp(1.125rem, 1.05rem + 0.25vw, 1.25rem);
+  --text-section--line-height: 1.3;
+  --text-value: clamp(1.75rem, 1.55rem + 0.6vw, 2rem);
+  --text-value--line-height: 1.1;
+  --text-headline: 1.5rem;
+  --text-headline--line-height: 1.15;
+
   /* Motion tokens: six durations and two easings, and nothing else moves the app. Every transition and animation names one of them
      (a delay is a multiple of --dur-instant or a stagger of 30 ms). Transform and opacity only (a disclosure's height and the cash
      picture's stroke draw are the two deliberate exceptions). Under prefers-reduced-motion only opacity transitions remain
@@ -167,6 +190,18 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
+}
+
+/* The headline's size steps with the screen (24 / 30 / 34 px); the rest of the scale is fixed. */
+@media (min-width: 40rem) {
+  :root {
+    --text-headline: 1.875rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --text-headline: 2.125rem;
+  }
 }
 
 /* An owner who chose Demo mode or Chinese: the server's Business/English first paint stays hidden until the shell has hydrated into
@@ -399,6 +434,35 @@ input[type="radio"] {
     border-left: 3px solid var(--color-brand-600);
     border-radius: var(--radius-card);
     background: var(--color-brand-50);
+  }
+
+  /* The type roles that carry more than a size (the face, the weight, the tracking): the Home headline and every page title, a major value, a section title and a card
+     title. Body, supporting and metadata are the utilities text-body / text-supporting / text-meta alone. A figure is always tabular. */
+  .type-headline {
+    font-family: var(--font-display);
+    font-size: var(--text-headline);
+    line-height: var(--text-headline--line-height);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  .type-value {
+    font-size: var(--text-value);
+    line-height: var(--text-value--line-height);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .type-section {
+    font-family: var(--font-display);
+    font-size: var(--text-section);
+    line-height: var(--text-section--line-height);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .type-card-title {
+    font-size: var(--text-card-title);
+    line-height: var(--text-card-title--line-height);
+    font-weight: 700;
   }
 
   /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the

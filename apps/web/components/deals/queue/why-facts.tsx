@@ -19,7 +19,7 @@ export function WhyFacts({ v, today }: { v: VerdictView; today: number }) {
     <div className="space-y-2 border-t border-line pt-3" data-testid="queue-facts">
       {tr && breach !== null ? (
         <>
-          <p className="text-[0.8125rem] text-ink-2" data-testid="deal-if-accept">
+          <p className="text-supporting text-ink-2" data-testid="deal-if-accept">
             {t("biz.deals.ifAccept")}
           </p>
           <dl className="divide-y divide-line border-y border-line text-sm">
@@ -27,14 +27,14 @@ export function WhyFacts({ v, today }: { v: VerdictView; today: number }) {
               <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
               <dd className="m-0 text-right">
                 <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
-                {tr.first_breach_cash ? <span className="block text-[0.8125rem] text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
+                {tr.first_breach_cash ? <span className="block text-supporting text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
               </dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
               <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
               <dd className="m-0 text-right">
                 <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
-                <span className="block text-[0.8125rem] text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
+                <span className="block text-supporting text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
               </dd>
             </div>
           </dl>

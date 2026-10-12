@@ -63,7 +63,7 @@ export function InvoiceList({
       ) : (
         <div role="table" aria-label={t("recv3.list.label")} className="card-standard overflow-hidden">
           <div role="rowgroup">
-            <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
+            <div role="row" className={`hidden gap-x-4 border-b border-l-[3px] border-b-line-strong border-l-transparent bg-subtle px-4 py-2 text-meta font-semibold uppercase tracking-wide text-ink-3 lg:grid ${COLS}`}>
               <span role="columnheader">{t("recv3.col.customer")}</span>
               <span role="columnheader">{t("recv3.col.outstanding")}</span>
               <span role="columnheader">{t("recv3.col.due")}</span>
@@ -150,5 +150,5 @@ export function InvoiceList({
 
 /** The column's name on a phone, where the header row is hidden. */
 function Label({ children }: { children: string }) {
-  return <span className="mb-0.5 block text-xs font-semibold uppercase tracking-wide text-ink-3 lg:hidden">{children}</span>;
+  return <span className="mb-0.5 block text-meta font-semibold uppercase tracking-wide text-ink-3 lg:hidden">{children}</span>;
 }

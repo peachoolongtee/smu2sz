@@ -49,7 +49,7 @@ export function AllChecks({ v }: { v: VerdictView }) {
 export function EngineVerdictLine({ v }: { v: VerdictView }) {
   const { t } = useI18n();
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3" data-testid="deal-technical-summary">
+    <div className="flex flex-wrap items-center gap-2 text-supporting text-ink-3" data-testid="deal-technical-summary">
       <span className="font-medium">{t("biz.deals.engineVerdict")}:</span> <OutcomeBadge outcome={v.outcome} /> <span>{v.summary}</span>
     </div>
   );

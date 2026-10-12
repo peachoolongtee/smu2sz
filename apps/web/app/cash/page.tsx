@@ -40,12 +40,12 @@ function FundingSources({ facilities, menu }: { facilities: HomeView["facilities
           <li key={f.id} className="py-3" data-testid={`cash-facility-${f.id}`}>
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
               <span className="text-sm font-semibold text-ink">{f.name}</span>
-              {ttc ? <span className="text-xs text-ink-3">{t("biz.facility.speed", { ttc })}</span> : null}
+              {ttc ? <span className="text-supporting text-ink-3">{t("biz.facility.speed", { ttc })}</span> : null}
             </div>
             <div role="img" aria-label={`${t("biz.cash.sources.used")}: ${f.drawn_display} / ${f.limit_display}`} className="mt-1.5 h-1.5 max-w-md rounded-pill bg-subtle" data-testid="cash-facility-bar" data-pct={Math.round(pct)}>
               <div className="h-full rounded-pill bg-brand-600" style={{ width: `${pct}%` }} />
             </div>
-            <dl className="mt-1.5 flex flex-wrap gap-x-6 gap-y-0.5 text-xs text-ink-2">
+            <dl className="mt-1.5 flex flex-wrap gap-x-6 gap-y-0.5 text-supporting text-ink-2">
               <div className="flex gap-1.5"><dt>{t("fund.limit")}</dt><dd className="font-semibold tabular-nums text-ink">{f.limit_display}</dd></div>
               <div className="flex gap-1.5"><dt>{t("biz.drawn")}</dt><dd className="font-semibold tabular-nums text-ink">{f.drawn_display}</dd></div>
               <div className="flex gap-1.5"><dt>{t("biz.available")}</dt><dd className="font-semibold tabular-nums text-ink">{f.available_display}</dd></div>
@@ -158,11 +158,11 @@ function Cash() {
     <LoadingBlock rows={2} />
   ) : (
     <>
-      {covered && snapshot ? <p className="mb-3 text-xs text-ink-3">{t("fund.snapshot")}</p> : null}
+      {covered && snapshot ? <p className="mb-3 text-supporting text-ink-3">{t("fund.snapshot")}</p> : null}
       <FundingOptions rows={rows} menu={plan.data.menu} recommendedKey={recommendedKey} orderText={plan.data.comparison_order_text} chosenKey={chosen?.key ?? null} onChoose={setPicked} />
       {/* A server that names each row's role has already said so in the alternative's pill, so the grey note would say it twice. */}
       {h?.next_action?.cheaper_option && !plan.data.comparison?.some((c) => c.role) ? (
-        <p className="mt-3 text-xs text-ink-3" data-testid="cash-cheaper-option">
+        <p className="mt-3 text-supporting text-ink-3" data-testid="cash-cheaper-option">
           {t("biz.cheaper", { cost: h.next_action.cheaper_option.cost_total_display, n: h.next_action.cheaper_option.approvals })}
         </p>
       ) : null}
@@ -182,7 +182,7 @@ function Cash() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-ink-3">
+          <p className="text-supporting text-ink-3">
             <Link href="/funding" className={textLinkClass}>
               {t("biz.cash.fullDesk")}
             </Link>
@@ -206,16 +206,16 @@ function Cash() {
       {late && !stressed ? (
         <div className="space-y-1.5 border-l-2 border-line-strong pl-3" data-testid="cash-stress-fallback">
           <h2 className="text-sm font-bold text-ink">{t("cash.stress.heading")}</h2>
-          <p className="text-[0.9375rem] font-medium text-ink">{late.sentence}</p>
+          <p className="text-body-lg font-medium text-ink">{late.sentence}</p>
           {late.lines?.map((line, i) => (
-            <p key={i} className="text-[0.9375rem] text-ink-2">
+            <p key={i} className="text-body-lg text-ink-2">
               {line}
             </p>
           ))}
         </div>
       ) : null}
       {/* What the line counts, in the server's words. */}
-      <p className="text-xs text-ink-3">{h.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}</p>
+      <p className="text-supporting text-ink-3">{h.cash.forecast_basis_text ?? t("biz.cash.forecast.sub")}</p>
     </section>
   ) : null;
   // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
@@ -235,15 +235,15 @@ function Cash() {
               <Badge tone={statusTone}>{h.status_text ?? te("homestatus", h.status)}</Badge>
               {/* How fresh the conclusion is: the server's own "when" for the read the figures come from. */}
               {h.cash.last_read_when ? (
-                <p className="text-xs text-ink-3" data-testid="cash-read-when">
+                <p className="text-supporting text-ink-3" data-testid="cash-read-when">
                   {t("biz.cash.readWhen", { when: h.cash.last_read_when })}
                 </p>
               ) : null}
             </div>
-            <h1 className="max-w-4xl text-balance font-display text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.025em] text-ink sm:text-4xl lg:text-[2.5rem] short:lg:text-4xl" data-testid="cash-headline">
+            <h1 className="type-headline max-w-4xl text-balance text-ink" data-testid="cash-headline">
               {h.headline}
             </h1>
-            <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-[1.0625rem] sm:leading-normal" data-testid="cash-note">
+            <p className="max-w-3xl text-pretty text-base text-ink-2 sm:text-body-lg sm:leading-normal" data-testid="cash-note">
               {h.note}
             </p>
             {curve ? (
@@ -316,7 +316,7 @@ function Cash() {
                     {t("biz.readings.now", { dscr: h.cash.dscr_text ?? t("common.none"), lev: h.cash.leverage_text ?? t("common.none") })}
                   </p>
                 ) : null}
-                <p className="mb-3 text-xs text-ink-3">{t("biz.readings.note")}</p>
+                <p className="mb-3 text-supporting text-ink-3">{t("biz.readings.note")}</p>
                 <TableWrap label={t("biz.readings")}>
                   <table className={tableCls}>
                     <thead>
@@ -352,14 +352,14 @@ function Cash() {
                 {t("biz.cash.whatif.open")}
                 <ChevronRightIcon />
               </Link>
-              <p className="text-xs text-ink-3">{t("biz.cash.whatif.sub")}</p>
+              <p className="text-supporting text-ink-3">{t("biz.cash.whatif.sub")}</p>
             </div>
             <div id="cash-capex" className="min-w-0">
               <Link href="/capex" className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`}>
                 {t("biz.cash.capex.open")}
                 <ChevronRightIcon />
               </Link>
-              <p className="text-xs text-ink-3">{t("biz.cash.capex.sub")}</p>
+              <p className="text-supporting text-ink-3">{t("biz.cash.capex.sub")}</p>
             </div>
           </nav>
         </div>

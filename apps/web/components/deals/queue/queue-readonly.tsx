@@ -22,17 +22,17 @@ export function QueueReadOnly({ deal, tab, today, customerHref }: { deal: DealVi
           {deal.counterparty_name} ›
         </Link>
       </p>
-      <h2 tabIndex={-1} className="text-balance font-display text-lg font-extrabold leading-tight tracking-tight text-ink sm:text-[1.625rem]" data-testid="queue-heading">
+      <h2 tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
         {deal.counterparty_name}
       </h2>
       {tab === "agreed" ? (
         <>
-          {deal.label ? <p className="text-sm text-ink-2 sm:text-[0.9375rem]">{deal.label}</p> : null}
+          {deal.label ? <p className="text-sm text-ink-2 sm:text-body-lg">{deal.label}</p> : null}
           <DealSummary deal={deal} today={today} />
         </>
       ) : (
         <>
-          <p className="text-sm text-ink-2 sm:text-[0.9375rem]">{t("dq.setup.request")}. {t("dq.rec.setup")}.</p>
+          <p className="text-sm text-ink-2 sm:text-body-lg">{t("dq.setup.request")}. {t("dq.rec.setup")}.</p>
           <div>
             <ButtonLink href="/documents" variant="secondary">
               {t("dq.setup.add")}

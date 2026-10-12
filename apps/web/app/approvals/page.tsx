@@ -126,7 +126,7 @@ export default function ApprovalsPage() {
           ) : null}
           {decided.length ? (
             <section aria-labelledby="appr-decided-title" data-testid="approvals-decided">
-              <h2 id="appr-decided-title" className="border-b border-line-strong pb-2 text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+              <h2 id="appr-decided-title" className="border-b border-line-strong pb-2 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
                 {t("biz.appr.decided.title")}
               </h2>
               <ul>

@@ -116,7 +116,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
   const row = ({ a, l }: (typeof rows)[number], shared: string | null = null) => (
     <li key={a.obligation_id} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-1" data-testid={l ? `deal-impact-${a.type}` : undefined} data-horizon={l?.horizon}>
       <div className="min-w-0 flex-[2_1_18rem]">
-        <p className="text-xs font-semibold text-ink-3" data-testid={`deal-ask-label-${a.type}`}>
+        <p className="text-supporting font-semibold text-ink-3" data-testid={`deal-ask-label-${a.type}`}>
           {a.label}
         </p>
         <p className="text-sm font-medium text-ink sm:text-base" data-testid={`deal-ask-${a.type}`}>
@@ -133,7 +133,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
               {l.amount_display ?? "—"}
             </p>
           </div>
-          {shared === null ? <p className="mt-1 text-pretty text-xs text-ink-3">{l.window_text}</p> : null}
+          {shared === null ? <p className="mt-1 text-pretty text-supporting text-ink-3">{l.window_text}</p> : null}
         </div>
       ) : null}
     </li>
@@ -151,7 +151,7 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
           {/* The window the ongoing lines share is the quiet caption of that group, attached to its first row. */}
           <div className={immediate.length ? "mt-3 border-t border-line" : ""}>
             {sharedWindow ? (
-              <p className="pt-2 text-xs font-medium text-ink-3" data-testid="deal-impact-window">
+              <p className="pt-2 text-supporting font-medium text-ink-3" data-testid="deal-impact-window">
                 {sharedWindow}
               </p>
             ) : null}
@@ -167,11 +167,11 @@ export function WorkspaceAsksCost({ ws, v, children, folded = false }: { ws: Dea
             <div className="my-2">
               <Bar part={totalFen} whole={scale} tone={fi.over_cap ? "bad" : "brand"} limit={cap} />
             </div>
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-2">
               <span data-testid="deal-impact-cap">{t("biz.deals.fact.limit", { cap: fi.cap_display })}</span>
               {fi.over_cap ? <Badge tone="bad">{t("biz.deals.impact.overCap")}</Badge> : null}
             </p>
-            <p className="mt-1 text-xs text-ink-3" data-testid="deal-impact-note">
+            <p className="mt-1 text-supporting text-ink-3" data-testid="deal-impact-note">
               {fi.total_note}
             </p>
           </div>
@@ -224,14 +224,14 @@ export function WorkspaceWhy({ ws, v, today, settled = false, facts = true, fold
               <dt className="text-ink-2">{t("biz.deals.fact.breach")}</dt>
               <dd className="text-right">
                 <span className="font-semibold tabular-nums text-bad-fg">{whenText(breach, today, t)}</span>
-                {tr.first_breach_cash ? <span className="block text-xs text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
+                {tr.first_breach_cash ? <span className="block text-supporting text-ink-3">{t("biz.deals.fact.breachCash", { amount: tr.first_breach_cash.text })}</span> : null}
               </dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2" data-testid="deal-fact-worst">
               <dt className="text-ink-2">{t("biz.deals.fact.worst")}</dt>
               <dd className="text-right">
                 <span className="font-semibold tabular-nums text-ink">{tr.min_cash.text}</span>
-                <span className="block text-xs text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
+                <span className="block text-supporting text-ink-3">{whenText(tr.min_cash_day, today, t)}</span>
               </dd>
             </div>
           </dl>
@@ -306,7 +306,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealW
                   <span className="font-semibold tabular-nums">{c.value_display}</span>
                 </div>
                 <Disclosure className="mt-1.5" summary={t("common.formula")}>
-                  <p className="mt-1 text-xs text-ink-3">{c.basis}</p>
+                  <p className="mt-1 text-supporting text-ink-3">{c.basis}</p>
                   <div className="mt-1">
                     <Formula>{c.formula}</Formula>
                   </div>
@@ -324,7 +324,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealW
           </div>
         ))}
         {v.plan ? <PlanCard plan={v.plan} id="deal-plan" /> : null}
-        <p className="text-xs text-ink-3">
+        <p className="text-supporting text-ink-3">
           <Link href="/verdict" className={textLinkClass}>
             {t("biz.deals.fullVerdict")}
           </Link>
@@ -333,7 +333,7 @@ export function AdvancedDetails({ ws, v, offer, items, asks, only }: { ws: DealW
     ),
     engine_verdict: <EngineVerdictLine v={v} />,
     audit_evidence: (
-      <div className="space-y-2 text-xs text-ink-2" data-testid="deal-audit-evidence">
+      <div className="space-y-2 text-supporting text-ink-2" data-testid="deal-audit-evidence">
         <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5">
           {v.decision_id ? (
             <>

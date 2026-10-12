@@ -19,7 +19,7 @@ const TONE: Record<NonNullable<Cell["tone"]>, string> = { bad: "font-bold text-b
  * compared here); a cell the server has no word for reads as a dash, never as a figure of the page's own. One-off and 12-month costs stay on their own rows.
  */
 /** A header cell: 13 px, never wrapped; the first one sticks to the left edge when the table scrolls sideways on a phone. */
-const th = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-[0.8125rem] font-semibold text-ink-2";
+const th = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-supporting font-semibold text-ink-2";
 const sticky = "sticky left-0 z-10";
 
 export function ImpactTable({ asked, reply, exposure, verdict, buyer, windowDays }: { asked: PicturePath; reply: PicturePath; exposure: ExposureView; verdict: VerdictView; buyer: string; /** The picture's window in days (the server's `picture_days`), said in the lowest-cash row. */ windowDays: number | null }) {
@@ -91,7 +91,7 @@ export function ImpactTable({ asked, reply, exposure, verdict, buyer, windowDays
                       <span className="sr-only">{t("dq.nodata")}</span>
                     </>
                   )}
-                  {c.note ? <span className="block text-[0.8125rem] font-normal text-ink-2">{c.note}</span> : null}
+                  {c.note ? <span className="block text-supporting font-normal text-ink-2">{c.note}</span> : null}
                 </td>
               ))}
             </tr>

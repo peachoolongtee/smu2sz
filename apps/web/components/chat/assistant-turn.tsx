@@ -53,7 +53,7 @@ function PlanList({ plan }: { plan: NlPlanStep[] }) {
   const { t, te } = useI18n();
   return (
     <section aria-label={t("chat.plan")} data-testid="chat-plan">
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.plan")}</h3>
+      <h3 className="mb-1 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("chat.plan")}</h3>
       <ol className="space-y-1.5">
         {plan.map((s) => (
           <li key={s.step} className="flex items-start gap-2 text-sm" data-testid={`plan-step-${s.step}`} data-status={s.status}>
@@ -62,9 +62,9 @@ function PlanList({ plan }: { plan: NlPlanStep[] }) {
               {t(`chat.plan.status.${s.status}` as DictKey)}
             </Badge>
             <div className="min-w-0">
-              <span className="mr-1.5 text-xs font-medium text-ink-3">{te("opkind", s.kind) || s.kind}</span>
+              <span className="mr-1.5 text-meta font-medium text-ink-3">{te("opkind", s.kind) || s.kind}</span>
               <StepText text={s.description} />
-              {s.condition ? <p className="text-xs text-ink-3">{t("chat.plan.condition", { c: s.condition })}</p> : null}
+              {s.condition ? <p className="text-meta text-ink-3">{t("chat.plan.condition", { c: s.condition })}</p> : null}
             </div>
           </li>
         ))}
@@ -94,24 +94,24 @@ function VerdictBlock({ verdict }: { verdict: NlVerdict }) {
           <ul className="mt-1.5 space-y-2">
             {verdict.violations.map((v) => (
               <li key={v.code} className="rounded-tile border border-line bg-subtle px-2.5 py-2">
-                <p className="font-mono text-xs font-semibold text-ink">{v.code}</p>
+                <p className="font-mono text-meta font-semibold text-ink">{v.code}</p>
                 <p className="mt-0.5 break-words text-ink-2">{v.message}</p>
                 {v.observed || v.limit ? (
-                  <p className="mt-0.5 text-xs text-ink-3">
+                  <p className="mt-0.5 text-meta text-ink-3">
                     {v.observed ? `${t("chat.verdict.observed")}: ${v.observed}` : null}
                     {v.observed && v.limit ? " · " : null}
                     {v.limit ? `${t("chat.verdict.limit")}: ${v.limit}` : null}
                   </p>
                 ) : null}
                 {v.curable && v.cure_cost_display ? (
-                  <p className="mt-0.5 text-xs text-ok-fg">{t("chat.verdict.curable", { cost: v.cure_cost_display })}</p>
+                  <p className="mt-0.5 text-meta text-ok-fg">{t("chat.verdict.curable", { cost: v.cure_cost_display })}</p>
                 ) : null}
               </li>
             ))}
           </ul>
         </Disclosure>
       ) : (
-        <p className="text-xs text-ink-3">{te("outcome", verdict.outcome)}</p>
+        <p className="text-meta text-ink-3">{te("outcome", verdict.outcome)}</p>
       )}
     </section>
   );
@@ -125,7 +125,7 @@ function OperationAudit({ o }: { o: NlOperation }) {
   const { t, te } = useI18n();
   return (
     <Disclosure className="mt-1" testId="op-audit" summary={t("biz.auditDetails")}>
-      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-meta text-ink-2">
         <dt>{t("audit.executor")}</dt>
         <dd className="break-words" data-testid="op-raw">{o.message_when || o.message}</dd>
         <dt>{t("audit.opId")}</dt>
@@ -154,7 +154,7 @@ export function OperationList({ operations, business = false }: { operations: Nl
   const { t, te } = useI18n();
   return (
     <section aria-label={t("chat.ops")} data-testid="chat-ops">
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("chat.ops")}</h3>
+      <h3 className="mb-1 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("chat.ops")}</h3>
       <ul className="space-y-2">
         {operations.map((o) => (
           <li key={`${o.op_id}-${o.seq ?? ""}-${o.status}`}>
@@ -171,7 +171,7 @@ export function OperationList({ operations, business = false }: { operations: Nl
               <OperationResultBox status={o.status} message={o.message} approvalId={o.approval_id} testId={`chat-op-${o.kind}`} kind={o.kind}>
                 <span className="text-sm font-medium text-ink">{te("opkind", o.kind) || o.kind}</span>
                 <TierBadge tier={o.tier} />
-                {o.seq !== null ? <span className="text-xs text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
+                {o.seq !== null ? <span className="text-meta text-ink-3">{t("chat.ops.seq", { n: o.seq })}</span> : null}
                 <Hash value={o.entry_hash} />
               </OperationResultBox>
             )}
@@ -241,8 +241,8 @@ export function AssistantTurn({
         <div role="alert" className="rounded-tile border border-bad-line bg-bad-bg px-3 py-2 text-sm text-bad-fg" data-testid="chat-security">
           <p className="font-semibold">{t("chat.security.title", { n: r.security_events.length })}</p>
           <p className="mt-0.5">{t("chat.security.body")}</p>
-          <p className="mt-1 break-all font-mono text-xs">{r.security_events.join(", ")}</p>
-          <Link href="/security" className="mt-1 inline-block text-xs font-medium underline">
+          <p className="mt-1 break-all font-mono text-meta">{r.security_events.join(", ")}</p>
+          <Link href="/security" className="mt-1 inline-block text-meta font-medium underline">
             {t("chat.security.open")}
           </Link>
         </div>
@@ -304,7 +304,7 @@ export function AssistantTurn({
       ) : r.awaiting_confirmation ? (
         <section className="rounded-tile border border-warn-line bg-warn-bg px-3 py-2" data-testid="chat-awaiting" aria-label={t("chat.awaiting")}>
           <p className="text-sm font-medium text-warn-fg">{t("chat.awaiting")}</p>
-          <p className="mt-0.5 text-xs text-warn-fg">{t("chat.awaiting.hint")}</p>
+          <p className="mt-0.5 text-meta text-warn-fg">{t("chat.awaiting.hint")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button variant="primary" size="sm" disabled={!active || busy} onClick={() => onSend(zh ? "执行" : "go ahead", goLabel)} data-testid="chat-goahead">
               {goLabel}
@@ -326,7 +326,7 @@ export function AssistantTurn({
           {r.plan.length ? <PlanList plan={r.plan} /> : null}
           {r.operations.length ? <OperationList operations={r.operations} business={business} /> : null}
           {ranNothing ? (
-            <p className="text-xs font-medium text-ink-2" data-testid="chat-nothing-executed">
+            <p className="text-meta font-medium text-ink-2" data-testid="chat-nothing-executed">
               {t("chat.ops.none")}
             </p>
           ) : null}

@@ -40,7 +40,7 @@ export function InvoiceDetail({
 
   return (
     <div className="min-w-0 space-y-4" data-testid="recv3-detail" data-receivable={row.receivable_id}>
-      <p id="recv3-detail-eyebrow" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+      <p id="recv3-detail-eyebrow" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
         {t("recv3.detail.eyebrow")}
         {buyer ? (
           <>

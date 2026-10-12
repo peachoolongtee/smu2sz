@@ -68,7 +68,7 @@ export function DealHeading({
         ) : null}
         {/* The eyebrow says what the line is: where the deal stands once it has an outcome, FLOW's recommendation while there is one and no pill. */}
         {v && (outcome || !pill) ? (
-          <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3" data-testid="deal-eyebrow">
+          <span className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3" data-testid="deal-eyebrow">
             {outcome ? t("biz.deals.stands") : t("biz.deals.recommends")}
           </span>
         ) : null}
@@ -117,7 +117,7 @@ function DealMoney({ record }: { record: DecisionView }) {
     <dl className="mt-2 space-y-1.5 border-t border-line pt-2 text-sm" data-testid="deal-money" data-tone={tone}>
       {lines.length ? (
         <div className="flex flex-wrap gap-x-3">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("deal.money")}</dt>
+          <dt className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("deal.money")}</dt>
           <dd className={landed ? "font-medium text-ok-fg" : "text-ink"} data-testid="deal-money-lines">
             {lines.map((l) => (
               <span key={l.key} className="mr-2 inline-block">
@@ -129,7 +129,7 @@ function DealMoney({ record }: { record: DecisionView }) {
       ) : null}
       {left ? (
         <div className="flex flex-wrap gap-x-3">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("common.left")}</dt>
+          <dt className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("common.left")}</dt>
           <dd className="text-ink" data-testid="deal-left">
             {left}
           </dd>

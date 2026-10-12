@@ -28,7 +28,7 @@ export function QueueAside({ exposure, customerHref, stressHref, pathLabel }: { 
             <dt className="text-ink-3">{t("dq.aside.contribution")}</dt>
             <dd className="m-0" data-testid="aside-contribution">
               <span className="font-display text-base font-extrabold tabular-nums text-ink">{cc.contribution_display}</span>
-              {cc.contribution_note ? <span className="block text-[0.8125rem] font-semibold text-warn-fg" data-testid="aside-contribution-note">{cc.contribution_note}</span> : null}
+              {cc.contribution_note ? <span className="block text-supporting font-semibold text-warn-fg" data-testid="aside-contribution-note">{cc.contribution_note}</span> : null}
             </dd>
           </>
         ) : null}
@@ -44,11 +44,11 @@ export function QueueAside({ exposure, customerHref, stressHref, pathLabel }: { 
       <Link href={customerHref} className="text-sm font-bold text-brand-700 hover:underline focus-visible:underline" data-testid="aside-profile">
         {t("dq.aside.profile")} ›
       </Link>
-      <p className="border-t border-line pt-2.5 text-[0.8125rem] leading-relaxed text-ink-2">{t("dq.aside.context", { buyer })}</p>
-      <Link href={stressHref} className="text-[0.8125rem] font-bold text-brand-700 hover:underline focus-visible:underline" data-testid="aside-stress">
+      <p className="border-t border-line pt-2.5 text-supporting leading-relaxed text-ink-2">{t("dq.aside.context", { buyer })}</p>
+      <Link href={stressHref} className="text-supporting font-bold text-brand-700 hover:underline focus-visible:underline" data-testid="aside-stress">
         {t("dq.aside.late", { buyer, n: exposure.stress.delay_days })} ›
       </Link>
-      <p className="text-[0.8125rem] leading-relaxed text-ink-3">{pathLabel ? t("dq.aside.keeps", { label: pathLabel }) : t("dq.aside.keepsDeal")}</p>
+      <p className="text-supporting leading-relaxed text-ink-3">{pathLabel ? t("dq.aside.keeps", { label: pathLabel }) : t("dq.aside.keepsDeal")}</p>
     </aside>
   );
 }

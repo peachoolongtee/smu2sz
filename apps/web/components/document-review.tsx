@@ -182,9 +182,9 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
       className={`rounded-tile border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${lit === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
     >
       <div className="flex flex-wrap items-baseline gap-2">
-        <span className="inline-grid min-w-5 place-items-center rounded-pill bg-ink px-1.5 text-xs font-bold leading-5 text-white">{it.n}</span>
-        <span className="text-xs font-medium text-ink-3">{it.label}</span>
-        <span className={`ml-auto rounded-pill border px-2 text-xs font-medium ${ANNOTATION_STYLE[it.kind].chip}`}>{te("termkind", it.kind)}</span>
+        <span className="inline-grid min-w-5 place-items-center rounded-pill bg-ink px-1.5 text-meta font-bold leading-5 text-white">{it.n}</span>
+        <span className="text-meta font-medium text-ink-3">{it.label}</span>
+        <span className={`ml-auto rounded-pill border px-2 text-meta font-medium ${ANNOTATION_STYLE[it.kind].chip}`}>{te("termkind", it.kind)}</span>
       </div>
       <p className="mt-1 break-words text-sm font-medium text-ink">{it.value}</p>
       <ClauseQuote clause={it.clause} quote={it.quote} />
@@ -201,12 +201,12 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             <span data-testid="doc-ai-label">
               <Badge tone={d.status === "CONFIRMED" ? "ok" : "info"}>{d.status === "CONFIRMED" ? t("docs.confirmedLabel") : t("docs.aiLabel")}</Badge>
             </span>
-            <span className="text-xs text-ink-3" data-testid="doc-reading">
+            <span className="text-meta text-ink-3" data-testid="doc-reading">
               {readingSaid}
             </span>
           </div>
           {d.replaces_text || d.superseded_by_text ? (
-            <p className="mt-2 text-xs text-ink-2" data-testid="doc-replaces">
+            <p className="mt-2 text-meta text-ink-2" data-testid="doc-replaces">
               {[d.replaces_text, d.superseded_by_text].filter(Boolean).join(" · ")}
             </p>
           ) : null}
@@ -217,7 +217,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
                 <ul className="list-disc space-y-1 pl-5">
                   {d.flags.map((f, i) => (
                     <li key={i}>
-                      {f.note} <span className="text-xs">“{f.quote}”</span>
+                      {f.note} <span className="text-meta">“{f.quote}”</span>
                     </li>
                   ))}
                 </ul>
@@ -225,8 +225,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             </div>
           ) : null}
           {/* The ids, the entry number, who read it and the hash of the text are the audit level, not the page. */}
-          <Disclosure className="mt-3 text-xs" summary={t("biz.auditDetails")} testId="doc-audit">
-            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+          <Disclosure className="mt-3 text-meta" summary={t("biz.auditDetails")} testId="doc-audit">
+            <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-meta text-ink-2">
               <dt>{t("docs.tech.id")}</dt>
               <dd className="break-all font-mono" data-testid="doc-id">
                 {d.id}
@@ -275,7 +275,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
               <h2 id="doc-decide-title" className="font-display text-xl font-extrabold tracking-[-0.02em] text-ink sm:text-2xl">
                 {t("docs.decide")}
               </h2>
-              <p id={hintId} className="mt-1 text-sm text-ink-2 max-sm:text-xs">
+              <p id={hintId} className="mt-1 text-sm text-ink-2 max-sm:text-meta">
                 {t("docs.decide.hint")}
               </p>
               {lender && d.suggested_facility_id ? (
@@ -283,7 +283,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
                   <input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} data-testid="doc-link" aria-describedby={linkHintId} className="mt-0.5 size-5 shrink-0" />
                   <span>
                     {facility ? t("docs.link", { name: facility }) : t("docs.link.generic")}
-                    <span id={linkHintId} className="block text-xs text-ink-3 max-sm:sr-only">
+                    <span id={linkHintId} className="block text-meta text-ink-3 max-sm:sr-only">
                       {t("docs.link.hint")}
                     </span>
                   </span>
@@ -381,7 +381,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
             </div>
             <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t("docs.legend")}>
               {kinds.map((k) => (
-                <li key={k} className={`rounded-pill border px-2 py-0.5 text-xs font-medium ${ANNOTATION_STYLE[k].chip}`}>
+                <li key={k} className={`rounded-pill border px-2 py-0.5 text-meta font-medium ${ANNOTATION_STYLE[k].chip}`}>
                   {te("termkind", k)}
                 </li>
               ))}
@@ -401,7 +401,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
                   {d.blanks.map((b) => (
                     <li key={b.field} className="text-sm">
                       <span className="font-medium text-ink">{te("contractfield", b.field) || b.label}</span>
-                      <span className="block text-xs text-ink-3">{b.reason}</span>
+                      <span className="block text-meta text-ink-3">{b.reason}</span>
                     </li>
                   ))}
                 </ul>
@@ -415,7 +415,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
                   <div className="mt-3">
                     <TableWrap label={facility ? t("docs.compare", { name: facility }) : t("docs.compare.generic")}>
                       <table className={tableCls} data-testid="doc-compare">
-                        <caption className="px-3 py-2 text-left text-xs font-medium text-ink-2">{facility ? t("docs.compare", { name: facility }) : t("docs.compare.generic")}</caption>
+                        <caption className="px-3 py-2 text-left text-meta font-medium text-ink-2">{facility ? t("docs.compare", { name: facility }) : t("docs.compare.generic")}</caption>
                         <thead>
                           <tr>
                             <th className={thCls}>{t("docs.col.term")}</th>

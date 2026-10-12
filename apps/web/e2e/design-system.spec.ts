@@ -107,3 +107,68 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
   expect(styles.live?.blur).toBe("none");
   expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
 });
+
+/** Visible text smaller than 13 px that carries a figure (an amount, a rate, a multiple, a thousands group): the floor for a financial qualification is 13 px. */
+const smallFinancialText = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => {
+    const figure = /[¥$€%×]|\d,\d{3}/;
+    const found: string[] = [];
+    document.querySelectorAll("details").forEach((d) => (d.open = true));
+    const walker = document.createTreeWalker(document.querySelector("main") ?? document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const text = (n.textContent ?? "").trim();
+      const el = n.parentElement;
+      if (!text || !el || el.closest("svg, script, style, sup") || !figure.test(text)) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      const s = getComputedStyle(el);
+      if (parseFloat(s.fontSize) < 13 && s.textTransform !== "uppercase") found.push(`${s.fontSize} ${el.closest("[data-testid]")?.getAttribute("data-testid") ?? el.tagName}: ${text.slice(0, 60)}`);
+    }
+    return found;
+  });
+
+test("type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
+  const vars = await page.evaluate(() => {
+    const probe = (v: string) => {
+      const el = document.createElement("div");
+      el.style.fontSize = `var(${v})`;
+      document.body.append(el);
+      const px = parseFloat(getComputedStyle(el).fontSize);
+      el.remove();
+      return px;
+    };
+    return Object.fromEntries(["--text-meta", "--text-supporting", "--text-body", "--text-body-lg", "--text-card-title", "--text-section", "--text-value", "--text-headline"].map((v) => [v, probe(v)]));
+  });
+  expect(vars["--text-meta"]).toBe(12);
+  expect(vars["--text-supporting"]).toBe(13);
+  expect(vars["--text-body"]).toBe(14);
+  expect(vars["--text-body-lg"]).toBe(15);
+  expect(vars["--text-card-title"]).toBe(16);
+  expect(vars["--text-section"]).toBeGreaterThanOrEqual(17);
+  expect(vars["--text-section"]).toBeLessThanOrEqual(20);
+  expect(vars["--text-value"]).toBeGreaterThanOrEqual(28);
+  expect(vars["--text-value"]).toBeLessThanOrEqual(36);
+  // The Home headline is 34 px on a desktop, 30 px at tablet width and 24 px on a phone, and a major value is tabular.
+  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(34);
+  await page.setViewportSize({ width: 820, height: 900 });
+  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(30);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.getByTestId("home-headline").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(24);
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const found: Record<string, string[]> = {};
+  for (const [name, path] of [["Home", "/"], ["Cash", "/cash"], ["Receivables", "/receivables"], ["Customer", "/customers/BUYER-1"]] as const) {
+    await page.goto(path);
+    await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });
+    await page.waitForTimeout(400);
+    found[name] = await smallFinancialText(page);
+  }
+  await page.goto("/deals");
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await page.getByTestId("queue-check-button").click();
+  await expect(page.getByTestId("queue-heading")).toBeVisible({ timeout: 15_000 });
+  found.Deals = await smallFinancialText(page);
+  expect(found).toEqual({ Home: [], Cash: [], Receivables: [], Customer: [], Deals: [] });
+});

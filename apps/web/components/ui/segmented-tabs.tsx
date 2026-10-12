@@ -106,7 +106,7 @@ export function SegmentedTabs<T extends string | number>({
                 <span
                   data-testid={o.badgeTestId}
                   data-tone={o.badgeTone ?? "neutral"}
-                  className={`grid h-5 min-w-5 place-items-center rounded-pill px-1.5 text-[0.8125rem] font-bold leading-none tabular-nums ${BADGE_CLASS[o.badgeTone ?? "neutral"]}`}
+                  className={`grid h-5 min-w-5 place-items-center rounded-pill px-1.5 text-supporting font-bold leading-none tabular-nums ${BADGE_CLASS[o.badgeTone ?? "neutral"]}`}
                 >
                   {o.badge}
                 </span>

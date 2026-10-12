@@ -67,7 +67,7 @@ export function OperationResultBox({
         <OperationStatePill status={status} />
       </div>
       {waiting && approvalId ? (
-        <p className="mt-1 text-xs font-medium text-ink-2" data-testid="op-waiting">
+        <p className="mt-1 text-meta font-medium text-ink-2" data-testid="op-waiting">
           {showId ? <>{t("opstate.approval", { id: approvalId })} · </> : null}
           <Link href={approvalHref(approvalId)} className="underline underline-offset-2" data-testid="op-approval-link">
             {t("opstate.open")}
@@ -75,7 +75,7 @@ export function OperationResultBox({
         </p>
       ) : null}
       {message ? (
-        <p className={`mt-1 break-words text-xs ${status === "REFUSED" ? "font-medium text-ink" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
+        <p className={`mt-1 break-words text-meta ${status === "REFUSED" ? "font-medium text-ink" : "text-ink-2"}`} data-testid={status === "REFUSED" ? "op-reason" : undefined}>
           {status === "REFUSED" ? `${t("opstate.reason")}: ` : ""}
           {message}
         </p>

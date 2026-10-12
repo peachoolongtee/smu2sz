@@ -99,7 +99,7 @@ const avatarTone: Record<AvatarTone, string> = {
 /** A small round disc: one or two letters or a glyph, tinted by what it means (a status) or whose it is (a hue). */
 export function Avatar({ children, tone = "neutral" }: { children: ReactNode; tone?: AvatarTone }) {
   return (
-    <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-pill text-xs font-bold ${avatarTone[tone]}`}>
+    <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-pill text-supporting font-bold ${avatarTone[tone]}`}>
       {children}
     </span>
   );
@@ -148,13 +148,13 @@ export function Row({
       {avatar}
       <span className="min-w-0 flex-1">
         <span className="block break-words text-sm font-medium text-ink" data-testid={titleTestId}>{title}</span>
-        {sub ? <span className={`mt-0.5 block text-xs ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-ink-3"}`}>{sub}</span> : null}
+        {sub ? <span className={`mt-0.5 block text-supporting ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : "text-ink-3"}`}>{sub}</span> : null}
         {children}
       </span>
       {right !== undefined || rightSub !== undefined ? (
         <span className="shrink-0 text-right">
           {right !== undefined ? <span className="block text-sm font-semibold tabular-nums text-ink">{right}</span> : null}
-          {rightSub !== undefined ? <span className="block text-xs text-ink-3">{rightSub}</span> : null}
+          {rightSub !== undefined ? <span className="block text-supporting text-ink-3">{rightSub}</span> : null}
         </span>
       ) : null}
       {href ? <ChevronRightIcon className="shrink-0 text-ink-3" /> : null}

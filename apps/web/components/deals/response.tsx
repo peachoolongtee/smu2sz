@@ -62,11 +62,11 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
               {e.net_words ?? e.net_display}
             </dd>
           </div>
-          <div className="mt-1 flex items-baseline justify-between gap-3 text-xs text-ink-3">
+          <div className="mt-1 flex items-baseline justify-between gap-3 text-supporting text-ink-3">
             <dt>{t("biz.deals.fundingCost")}</dt>
             <dd className="tabular-nums">{e.funding_cost_display}</dd>
           </div>
-          <div className="flex items-baseline justify-between gap-3 text-xs text-ink-3">
+          <div className="flex items-baseline justify-between gap-3 text-supporting text-ink-3">
             <dt>{t("biz.deals.offset")}</dt>
             <dd className="tabular-nums">−{e.offset_display}</dd>
           </div>
@@ -74,9 +74,9 @@ function CounterBusinessCard({ c, recommended, today, action }: { c: Counter; re
       ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
       <Disclosure testId="deal-option-details" className="mt-3 text-sm" summary={t("biz.deals.optionDetails", { label: c.label })}>
-        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
+        <p className="mt-2 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.whyWorks")}</p>
         <p className="mt-1 text-ink-2">{c.rationale_when ?? c.rationale}</p>
-        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
+        <p className="mt-3 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.deals.sourceTerms")}</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-ink-2" data-testid="deal-option-terms">
           {c.obligations.map((o) => (
             <li key={o.id}>{obligationSentence(o, t, te, today)}</li>
@@ -196,7 +196,7 @@ function SendControl({ c, lines, primary, filled = primary, sending, busy, onSen
           </p>
           <p className="mt-0.5 text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="text-xs font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
+            <span className="text-supporting font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
             <Segmented<BuyerProfile>
               label={t("biz.deals.send.profile")}
               name={`deal-buyer-profile-${c.id}`}
@@ -235,7 +235,7 @@ function SendControl({ c, lines, primary, filled = primary, sending, busy, onSen
             {sending ? t("biz.deals.sending") : t("biz.deals.sendOption", { label: name })}
           </Button>
           {held ? (
-            <span className="text-xs font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
+            <span className="text-supporting font-medium text-warn-fg" role="status" data-testid="deal-send-blocked">
               {t("biz.deals.send.blocked")}
             </span>
           ) : null}
@@ -417,7 +417,7 @@ export function RecommendedResponse({
           </div>
         ) : null}
         <div className="min-w-0 flex-[2_1_20rem]">
-          <p className={`text-xs font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
+          <p className={`text-meta font-extrabold uppercase tracking-[0.08em] ${tone === "bad" ? "text-bad-fg" : tone === "warn" ? "text-warn-fg" : tone === "neutral" ? "text-ink-3" : "text-brand-700"}`}>{eyebrow}</p>
           <h2 id="path-reply-title" className="mt-1 text-pretty text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="path-reply-text">
             {path.sendable ? (path.reply_text ?? decides) : decides}
           </h2>
@@ -435,7 +435,7 @@ export function RecommendedResponse({
               {t("biz.deals.reply.back", { label: reply.recommended.label })}
             </Button>
           ) : mode === "demo" ? (
-            <p className="text-xs text-ink-3">
+            <p className="text-supporting text-ink-3">
               {t("biz.deals.negotiateHint")}{" "}
               <Link href="/verdict#negotiation" className={textLinkClass}>
                 {t("biz.deals.negotiateLink")}
@@ -504,7 +504,7 @@ export function RecommendedResponse({
           </Button>
         ) : null}
         {mode === "demo" ? (
-          <p className="text-xs text-ink-3">
+          <p className="text-supporting text-ink-3">
             {t("biz.deals.negotiateHint")}{" "}
             <Link href="/verdict#negotiation" className={textLinkClass}>
               {t("biz.deals.negotiateLink")}

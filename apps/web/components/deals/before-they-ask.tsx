@@ -10,7 +10,7 @@ import type { EnvelopeLeverView, EnvelopePackageView, EnvelopeView } from "@/lib
 import { useAsync } from "@/lib/use-async";
 
 /** The eyebrow and the small headings inside the details: the same quiet label the response cards use. */
-const labelCls = "text-xs font-semibold uppercase tracking-wide text-ink-3";
+const labelCls = "text-meta font-semibold uppercase tracking-wide text-ink-3";
 
 function LeverTable({ levers }: { levers: EnvelopeLeverView[] }) {
   const { t } = useI18n();
@@ -26,11 +26,11 @@ function LeverTable({ levers }: { levers: EnvelopeLeverView[] }) {
               <span className="shrink-0 text-right font-semibold tabular-nums text-ink">{l.maximum_display}</span>
             </div>
             {l.wall_words ? (
-              <p className="mt-1 text-xs text-ink-2">
+              <p className="mt-1 text-supporting text-ink-2">
                 {t("biz.strategy.envelope.col.wall")}: {l.wall_words}
               </p>
             ) : null}
-            <p className="mt-0.5 text-xs text-ink-2">
+            <p className="mt-0.5 text-supporting text-ink-2">
               {t("biz.strategy.envelope.col.next")}: {l.next_step_sentence}
             </p>
           </li>
@@ -79,7 +79,7 @@ function Packages({ packages, unlisted }: { packages: EnvelopePackageView[]; unl
   return (
     <div className="mt-4">
       <h3 className={labelCls}>{t("biz.strategy.envelope.packages")}</h3>
-      <p className="mt-1 text-xs text-ink-3">{t("biz.strategy.envelope.packages.sub")}</p>
+      <p className="mt-1 text-supporting text-ink-3">{t("biz.strategy.envelope.packages.sub")}</p>
       <ul className="mt-2 divide-y divide-line" data-testid="envelope-packages">
         {packages.map((p, i) => (
           <li key={i} className="py-2 text-sm text-ink" data-testid="envelope-package">
@@ -89,7 +89,7 @@ function Packages({ packages, unlisted }: { packages: EnvelopePackageView[]; unl
         ))}
       </ul>
       {unlisted.map((sentence, i) => (
-        <p key={i} className="mt-2 text-xs text-ink-2" data-testid="envelope-unlisted">
+        <p key={i} className="mt-2 text-supporting text-ink-2" data-testid="envelope-unlisted">
           {sentence}
         </p>
       ))}
@@ -105,7 +105,7 @@ function Zone({ zone }: { zone: EnvelopeView["zone"] }) {
   return (
     <Disclosure className="mt-4" testId="envelope-zone" summary={t("biz.strategy.envelope.zone")}>
       <TableWrap label={t("biz.strategy.envelope.zone.label")}>
-        <table className={`${tableCls} text-xs`}>
+        <table className={`${tableCls} text-supporting`}>
           <thead>
             <tr>
               <th scope="col" className={zoneTh}>
@@ -220,7 +220,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
     <Card flat id="deal-envelope" title={eyebrow} actions={<Chip title={t("biz.strategy.envelope.hypothetical.title")}>{t("biz.strategy.envelope.hypothetical")}</Chip>}>
       <Ceilings levers={e.levers} />
       {/* The three tiles carry the figures, so the server's `primary` sentence (the same three, said again) is not drawn. */}
-      <p className="mt-3 text-xs text-ink-3" data-testid="envelope-caption">
+      <p className="mt-3 text-supporting text-ink-3" data-testid="envelope-caption">
         {t("biz.strategy.envelope.caption")}
       </p>
       <p className="mt-2 text-sm text-ink-2" data-testid="envelope-reason">
@@ -230,7 +230,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
         {e.money}
       </p>
       <Disclosure className="mt-2" testId="envelope-details" summary={t("biz.strategy.envelope.details")}>
-        <p className="text-xs text-ink-3" data-testid="envelope-estimate-note">
+        <p className="text-supporting text-ink-3" data-testid="envelope-estimate-note">
           <span className="font-semibold">{t("biz.strategy.envelope.hypothetical")}</span> {t("biz.strategy.envelope.hypothetical.title")}
         </p>
         <LeverTable levers={e.levers} />
@@ -238,7 +238,7 @@ export function BeforeTheyAsk({ buyerId }: { buyerId: string }) {
         {e.zone.length ? <Zone zone={e.zone} /> : null}
       </Disclosure>
       {mode === "demo" && e.computed_in_seconds > 0 ? (
-        <p className="mt-2 text-xs text-ink-3" data-testid="envelope-computed">
+        <p className="mt-2 text-supporting text-ink-3" data-testid="envelope-computed">
           {t("biz.strategy.envelope.computed", { s: e.computed_in_seconds.toFixed(1) })}
         </p>
       ) : null}

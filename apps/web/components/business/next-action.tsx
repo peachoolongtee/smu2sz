@@ -104,14 +104,14 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
           {/* Before and after, side by side: the one comparison the owner reads first. */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-tile bg-bad-bg/60 p-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-bad-fg">{t("biz.ifNothing")}</p>
+              <p className="text-meta font-bold uppercase tracking-wide text-bad-fg">{t("biz.ifNothing")}</p>
               <p className="mt-1 text-ink" data-testid="next-action-if-nothing">{a.if_nothing}</p>
             </div>
             <div className="rounded-tile bg-ok-bg/70 p-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-ok-fg">{t("biz.afterPlan")}</p>
+              <p className="text-meta font-bold uppercase tracking-wide text-ok-fg">{t("biz.afterPlan")}</p>
               <p className="mt-1 text-ink" data-testid="next-action-after">{a.after}</p>
               {a.receive_display || a.after_lowest_short ? (
-                <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
+                <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-supporting">
                   {a.receive_display ? (
                     <div className="flex items-baseline gap-1.5">
                       <dt className="text-ink-3">{t("biz.receive")}</dt>
@@ -131,7 +131,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
           {/* The cost by part: the source in bold, its terms in one quiet line (the full words are its title). */}
           {a.cost_breakdown.length > 1 ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-ink-3">{t("biz.costTotal")}</p>
+              <p className="text-meta font-bold uppercase tracking-wide text-ink-3">{t("biz.costTotal")}</p>
               <ul className="mt-1.5 divide-y divide-line rounded-tile border border-line px-3" data-testid="next-action-cost-breakdown">
                 {a.cost_breakdown.map((c, i) => {
                   const label = c.label.replace(/:\s*$/, "");
@@ -143,7 +143,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
                       <span className="min-w-0">
                         <span className="block font-bold text-ink">{source}</span>
                         {terms ? (
-                          <span className="block truncate text-xs text-ink-3" title={terms}>
+                          <span className="block truncate text-supporting text-ink-3" title={terms}>
                             {terms}
                           </span>
                         ) : null}
@@ -162,7 +162,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
           ) : null}
           {/* Why, in one sentence; the reasoning, the formula, each part's arrival and the cost's assumptions fold under it. */}
           <div data-testid="next-action-why">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-3">{t("biz.why")}</p>
+            <p className="text-meta font-bold uppercase tracking-wide text-ink-3">{t("biz.why")}</p>
             <p className="mt-1 text-ink">{a.why}</p>
             <Disclosure summary={t("biz.calculation")} className="mt-1" testId="next-action-calc-fold">
               <div className="space-y-2 text-ink-2" data-testid="next-action-calc">
@@ -173,7 +173,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
                   {a.legs.map((leg) => (
                     <li key={leg.index} className="flex flex-wrap items-baseline justify-between gap-2 rounded-tile border border-line px-3 py-1.5">
                       <span>{leg.label}</span>
-                      <span className="text-xs text-ink-3">
+                      <span className="text-supporting text-ink-3">
                         {leg.cost_display ? t("alerts.cost", { cost: leg.cost_display }) : t("biz.noStatedCost")}
                         {leg.lands_day !== null ? ` · ${t("biz.landsShort", { when: leg.lands_when ?? "" })}` : ""}
                       </span>
@@ -181,7 +181,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
                   ))}
                 </ul>
                 {a.cost_basis ? (
-                  <p className="text-xs text-ink-3" data-testid="next-action-cost-basis">{a.cost_basis}</p>
+                  <p className="text-supporting text-ink-3" data-testid="next-action-cost-basis">{a.cost_basis}</p>
                 ) : null}
               </div>
             </Disclosure>
@@ -209,8 +209,8 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
       <>
         <ActionBar flow={!sticky} aria-labelledby="home-action-title" data-testid="home-next-action" data-alert={a.alert_id}>
           <div className="flex min-w-0 flex-[2_1_20rem] flex-col gap-1.5">
-            <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
-            <h2 id="home-action-title" className="text-balance font-display text-xl font-extrabold leading-snug tracking-[-0.01em] text-ink sm:text-[1.375rem]" data-testid="next-action-title">
+            <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-brand-700">{t("biz.recommended.short")}</p>
+            <h2 id="home-action-title" className="type-section text-balance text-ink" data-testid="next-action-title">
               {a.outcome_title}
             </h2>
             {a.components.length ? (
@@ -236,15 +236,15 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
           <dl className="flex min-w-0 flex-[1_1_14rem] flex-wrap gap-x-7 gap-y-3">
             {costTotal ? (
               <div>
-                <dt className="text-xs font-semibold text-ink-3">{t("biz.costTotal")}</dt>
+                <dt className="text-supporting font-semibold text-ink-3">{t("biz.costTotal")}</dt>
                 <dd className="text-xl font-extrabold tabular-nums text-ink" data-testid="next-action-cost">
                   {costTotal}
                 </dd>
-                {a.rate_text ? <dd className="text-xs text-ink-3">{a.cost_days ? t("biz.costRate", { rate: a.rate_text, days: a.cost_days }) : t("biz.costRateOnly", { rate: a.rate_text })}</dd> : null}
+                {a.rate_text ? <dd className="text-supporting text-ink-3">{a.cost_days ? t("biz.costRate", { rate: a.rate_text, days: a.cost_days }) : t("biz.costRateOnly", { rate: a.rate_text })}</dd> : null}
               </div>
             ) : null}
             <div className="min-w-0 max-w-64">
-              <dt className="text-xs font-semibold text-ink-3">{t("biz.plan.approval")}</dt>
+              <dt className="text-supporting font-semibold text-ink-3">{t("biz.plan.approval")}</dt>
               {a.needs_owner ? (
                 <dd className="font-bold text-warn-fg" data-testid="next-action-needs-owner">
                   {t("biz.needsYou")}
@@ -268,7 +268,7 @@ export function NextActionBlock({ a, stateVersion, fixer, variant = "card", stic
 
   return (
     <section aria-labelledby="home-action-title" className="card-standard p-4 short:p-3" data-testid="home-next-action" data-alert={a.alert_id}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
+      <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.recommended.short")}</p>
       <h2 id="home-action-title" className="mt-1 text-balance text-xl font-semibold leading-snug text-ink" data-testid="next-action-title">
         {a.outcome_title}
       </h2>

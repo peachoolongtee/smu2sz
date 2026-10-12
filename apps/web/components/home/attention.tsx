@@ -111,7 +111,7 @@ export function AttentionCard({
     const link = main.primary ?? main.secondary;
     return (
       <section aria-label={t("home.hy.attention")} className="motion-reveal space-y-2 border-y border-line-strong py-3" data-testid="home-attention" data-state="info" data-kind={main.kind}>
-        <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3" data-testid="home-attention-eyebrow">
+        <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3" data-testid="home-attention-eyebrow">
           {main.eyebrow}
         </p>
         {/* Said once, here: when the funds arrive and from where (the plan's sentence and the title would repeat it; the "Arriving next" tile and the rail's first row keep it too). */}
@@ -119,7 +119,7 @@ export function AttentionCard({
           <dl className="flex flex-wrap gap-x-8 gap-y-1" data-testid="home-attention-facts">
             {main.facts.map((f, i) => (
               <div key={f.label} className="min-w-0">
-                <dt className="text-xs font-semibold text-ink-3">{f.label}</dt>
+                <dt className="text-supporting font-semibold text-ink-3">{f.label}</dt>
                 <dd className="text-sm font-bold tabular-nums text-ink" data-testid={i === 0 ? "next-action-lands" : undefined}>
                   {f.value}
                 </dd>
@@ -127,7 +127,7 @@ export function AttentionCard({
             ))}
           </dl>
         ) : (
-          <p className="text-[0.9375rem] font-semibold text-ink" data-testid="home-attention-title">
+          <p className="text-body-lg font-semibold text-ink" data-testid="home-attention-title">
             {main.title}
           </p>
         )}
@@ -152,17 +152,17 @@ export function AttentionCard({
       {/* The card that holds the plan's run control is the page's "next action" (the handle the specs and the demo know it by). */}
       <ActionBar flow data-testid={runs ? "home-next-action" : "home-attention-card"} data-alert={runs?.alert_id}>
         <div className="w-full min-w-0 space-y-2.5 sm:space-y-3">
-          <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-warn-fg" data-testid="home-attention-eyebrow">
+          <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-warn-fg" data-testid="home-attention-eyebrow">
             {main.eyebrow}
           </p>
-          <h2 className="max-w-3xl text-pretty text-lg font-extrabold leading-snug text-ink sm:text-xl" data-testid="home-attention-title">
+          <h2 className="type-section max-w-3xl text-pretty text-ink" data-testid="home-attention-title">
             {trimmed(main.title, heading)}
           </h2>
           {facts.length ? (
             <dl className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-2" data-testid="home-attention-facts">
               {facts.map((f, i) => (
                 <div key={f.label} className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-                  <dt className="shrink-0 text-xs font-semibold text-ink-3">{f.label}</dt>
+                  <dt className="shrink-0 text-supporting font-semibold text-ink-3">{f.label}</dt>
                   <dd className={`break-words text-right text-sm font-bold sm:text-left sm:text-base tabular-nums ${FACT_TONE[f.tone ?? "neutral"]}`} data-testid={runs?.lands_when && f.value.includes(runs.lands_when) && !facts.slice(0, i).some((g) => g.value.includes(runs.lands_when ?? "")) ? "next-action-lands" : undefined}>
                     {f.value}
                   </dd>
@@ -247,7 +247,7 @@ function Queue({ items }: { items: HomeAttentionItem[] }) {
   const { t } = useI18n();
   return (
     <div className="text-sm text-ink-2" data-testid="home-attention-queue">
-      <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.also")}</p>
+      <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("home.hy.also")}</p>
       <ol className="mt-1 list-decimal space-y-0.5 pl-5 marker:text-ink-3">
         {items.map((i) => (
           <li key={i.key} data-testid={`home-queue-${i.key}`}>

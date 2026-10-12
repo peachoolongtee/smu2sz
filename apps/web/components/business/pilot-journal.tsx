@@ -29,7 +29,7 @@ export function PilotJournal() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-ink">{te("biz.pilot.answer", e.answer)}</span>
                 <Chip>{te("biz.pilot.choice", e.choice)}</Chip>
-                <span className="text-xs text-ink-3">
+                <span className="text-supporting text-ink-3">
                   {t("biz.pilot.week", { n: e.week })} · {t("biz.pilot.recorded", { date: e.recorded_on })}
                 </span>
               </div>
@@ -44,7 +44,7 @@ export function PilotJournal() {
                 </dd>
               </dl>
               <Disclosure className="mt-1" summary={t("biz.auditDetails")}>
-                <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-xs text-ink-2">
+                <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-supporting text-ink-2">
                   <dt>{t("biz.pilot.sme")}</dt>
                   <dd className="break-all">{e.sme}</dd>
                   <dt>{t("biz.pilot.snapshot")}</dt>

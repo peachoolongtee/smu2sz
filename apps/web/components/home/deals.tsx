@@ -63,14 +63,14 @@ function DealRow({ deal }: { deal: DealView }) {
         </div>
         <div className="grid gap-x-9 gap-y-3 md:grid-cols-2" data-testid={`home-deal-offer-${deal.counterparty_id}`}>
           <div className="min-w-0">
-            <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.asks")}</h4>
+            <h4 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.asks")}</h4>
             <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-asks">
               {open.asks_text}
             </p>
           </div>
           {readParts.length ? (
             <div className="min-w-0">
-              <h4 className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.read")}</h4>
+              <h4 className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("biz.homeDeals.read")}</h4>
               <p className="mt-1 break-words text-sm text-ink" data-testid="home-deal-read">
                 {readParts.map((part, i) => (
                   <span key={i}>
@@ -149,7 +149,7 @@ export function HomeDeals({ deals, loading, failed, onRetry }: { deals: DealView
   return (
     <section aria-labelledby="home-deals-title" className="pt-1" data-testid="home-deals">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="home-deals-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <h2 id="home-deals-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
           {t("biz.homeDeals.title")}
         </h2>
         <Link href="/deals" className={`${textLinkClass} text-sm font-bold`} data-testid="home-deals-all">

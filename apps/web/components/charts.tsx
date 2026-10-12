@@ -42,7 +42,7 @@ function ChartTooltip({ active, payload, dayLabel, series }: TooltipProps) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-xs shadow-md">
+    <div className="max-w-64 rounded-tile border border-line-strong bg-surface p-2.5 text-meta shadow-md">
       <p className="font-semibold text-ink">
         {dayLabel} {row.day}
       </p>

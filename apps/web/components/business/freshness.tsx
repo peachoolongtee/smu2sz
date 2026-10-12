@@ -11,7 +11,7 @@ export function ReadWhen({ when, testId = "read-when", deep = false, className =
   const { t } = useI18n();
   if (!when) return null;
   return (
-    <p className={`text-xs ${deep ? "text-on-deep-muted" : "text-ink-3"} ${className}`} data-testid={testId}>
+    <p className={`text-supporting ${deep ? "text-on-deep-muted" : "text-ink-3"} ${className}`} data-testid={testId}>
       {t("biz.readWhen", { when })}
     </p>
   );

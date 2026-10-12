@@ -60,7 +60,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
                   <Avatar tone="warn"><ClockIcon /></Avatar>
                   <span className="min-w-0 flex-1">
                     <span className="block break-words text-sm font-medium text-ink">{a.headline}</span>
-                    <span className="mt-0.5 block text-xs text-ink-3">
+                    <span className="mt-0.5 block text-supporting text-ink-3">
                       {[a.cost_display ? t("alerts.cost", { cost: a.cost_display }) : null, a.lands_day !== null ? t("biz.landsShort", { when: a.lands_when ?? "" }) : null, a.protects].filter(Boolean).join(" · ")}
                     </span>
                   </span>
@@ -71,7 +71,7 @@ export function DecisionsBlock({ approvals, primary = false }: { approvals: Home
                     {t("biz.review")}
                   </span>
                 ) : (
-                  <span className="text-xs font-medium text-brand-700">{t("biz.review")}</span>
+                  <span className="text-supporting font-medium text-brand-700">{t("biz.review")}</span>
                 )}
               </Link>
             </li>
@@ -204,7 +204,7 @@ export function DetailsBlock({ h, radarFold = false, afterRadar }: { h: HomeView
       ) : null}
       {h.warnings.length && !radarFold ? (
         <section aria-labelledby="home-radar-title" className="motion-reveal" data-testid="home-radar">
-          <h2 id="home-radar-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+          <h2 id="home-radar-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.radar")}
           </h2>
           {warnings}
@@ -214,7 +214,7 @@ export function DetailsBlock({ h, radarFold = false, afterRadar }: { h: HomeView
       <Disclosure testId="home-details" summary={t("biz.details")} className="border-t border-line-strong pt-2">
       <div className="space-y-5">
         <section>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.facilities")}</h3>
+          <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.facilities")}</h3>
           <TableWrap label={t("biz.facilities")}>
             <table className={tableCls}>
               <thead>
@@ -241,22 +241,22 @@ export function DetailsBlock({ h, radarFold = false, afterRadar }: { h: HomeView
           </TableWrap>
         </section>
         <section>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("biz.readings")}</h3>
+          <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.readings")}</h3>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="text-xs text-ink-3">{t("biz.dscr")}</dt>
+              <dt className="text-supporting text-ink-3">{t("biz.dscr")}</dt>
               <dd className="font-semibold tabular-nums" data-testid="home-dscr">{h.cash.dscr_text ?? t("common.none")}</dd>
-              <dd className="text-xs text-ink-3">{t("home.position.limitMin", { limit: h.cash.min_dscr_display })}</dd>
+              <dd className="text-supporting text-ink-3">{t("home.position.limitMin", { limit: h.cash.min_dscr_display })}</dd>
             </div>
             <div>
-              <dt className="text-xs text-ink-3">{t("biz.leverage")}</dt>
+              <dt className="text-supporting text-ink-3">{t("biz.leverage")}</dt>
               <dd className="font-semibold tabular-nums" data-testid="home-leverage">{h.cash.leverage_text ?? t("common.none")}</dd>
-              <dd className="text-xs text-ink-3">{t("home.position.limitMax", { limit: h.cash.max_leverage_display })}</dd>
+              <dd className="text-supporting text-ink-3">{t("home.position.limitMax", { limit: h.cash.max_leverage_display })}</dd>
             </div>
           </dl>
-          <p className="mt-2 text-xs text-ink-3">{t("biz.readings.note")}</p>
+          <p className="mt-2 text-supporting text-ink-3">{t("biz.readings.note")}</p>
         </section>
-        <p className="text-xs text-ink-3">
+        <p className="text-supporting text-ink-3">
           {h.note_basis}{" "}
           <Link href="/cash" className={textLinkClass}>
             {t("biz.openCash")}

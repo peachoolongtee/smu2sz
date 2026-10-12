@@ -206,10 +206,10 @@ export function WhoPaysWhen({
   return (
     <section aria-labelledby="recv-pic-title" className="space-y-2.5" data-testid="recv-picture">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 id="recv-pic-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+        <h2 id="recv-pic-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
           {t("biz.recv.pic.title")}
         </h2>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-2" data-testid="recv-picture-legend">
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-supporting text-ink-2" data-testid="recv-picture-legend">
           {(["late", "soon", "later", "promised"] as const).map((s) => (
             <li key={s} className="flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="-8 -8 16 16" aria-hidden>

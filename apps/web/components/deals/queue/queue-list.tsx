@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { QUEUE_TABS, type QueueTab } from "./model";
 
 /** The small-caps label of a tile, a column and an aside: 13 px, the page's one eyebrow style. */
-export const eyebrowCls = "text-[0.8125rem] font-extrabold uppercase tracking-[0.06em]";
+export const eyebrowCls = "text-supporting font-extrabold uppercase tracking-[0.06em]";
 
 /** One line of the list, every word already said: the page builds it from the server's reads and the dictionary, the list only lays it out. */
 export interface ListItem {
@@ -101,7 +101,7 @@ export function QueueList({ tab, items, emptyText }: { tab: QueueTab; items: (Li
               </span>
               <span role="cell" className="min-w-0 justify-self-end lg:col-start-5 lg:row-start-1 lg:justify-self-start">
                 <span data-testid={it.statusState ? "deal-state-chip" : undefined} data-state={it.statusState ?? undefined}>
-                  <StatePill tone={it.statusTone} wrap={false} className="!text-[0.8125rem]">{it.status}</StatePill>
+                  <StatePill tone={it.statusTone} wrap={false} >{it.status}</StatePill>
                 </span>
               </span>
               {/* On a phone the selected line gives its request to the detail right below (the ask sentence says it in full), which brings the primary up the screen. */}

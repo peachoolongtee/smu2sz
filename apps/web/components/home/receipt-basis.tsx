@@ -16,7 +16,7 @@ export function BasisLine({ basis, children, testId, className = "" }: { basis?:
       {children}
     </StateWord>
   ) : (
-    <span className={`block text-[0.8125rem] leading-snug text-ink-2 ${className}`} data-testid={testId} data-basis={basis ?? undefined}>
+    <span className={`block text-supporting leading-snug text-ink-2 ${className}`} data-testid={testId} data-basis={basis ?? undefined}>
       {children}
     </span>
   );

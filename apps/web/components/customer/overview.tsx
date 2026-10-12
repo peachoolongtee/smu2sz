@@ -17,8 +17,8 @@ const inlineLink = "font-bold text-brand-700 underline underline-offset-2 hover:
 function Figure({ figure }: { figure: OverviewFigure }) {
   return (
     <div className="min-w-0 lg:border-r lg:border-line lg:px-5 lg:first:pl-0 lg:last:border-r-0" data-testid={`customer-figure-${figure.key}`}>
-      <dt className="text-[13px] font-extrabold uppercase tracking-[0.08em] text-ink-3">{figure.label}</dt>
-      <dd className={`mt-1 break-words font-display text-xl font-extrabold tabular-nums tracking-[-0.02em] sm:text-2xl ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
+      <dt className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{figure.label}</dt>
+      <dd className={`mt-1 break-words type-value font-display ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
         {figure.value_display}
       </dd>
       <dd className="mt-0.5 break-words text-sm text-ink-2" data-testid={`customer-figure-${figure.key}-note`}>
@@ -53,7 +53,7 @@ function Decision({ view }: { view: CustomerOverviewView }) {
     <Card tone="warn" id="customer-decision" labelledBy="customer-decision-title">
       <div className="grid gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1fr)_auto]" data-testid="customer-decision">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <h2 id="customer-decision-title" className="text-xs font-extrabold uppercase tracking-[0.08em] text-warn-fg">
+          <h2 id="customer-decision-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-warn-fg">
             {decision.eyebrow}
           </h2>
           <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="customer-decision-text">
@@ -203,7 +203,7 @@ export function CustomerOverview({ view, onRetry }: { view: CustomerOverviewView
     <div className="space-y-6" data-testid="customer-overview">
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("customer.title")}</p>
+          <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("customer.title")}</p>
           {back ? (
             <Link href={back.href} className="motion-press hit -mr-2 inline-flex min-h-8 items-center gap-1 rounded-pill px-2 text-sm font-bold text-brand-700 underline underline-offset-2 hover:bg-brand-50" data-testid="customer-back">
               <ArrowLeftIcon width={14} height={14} />

@@ -39,11 +39,11 @@ export function HomePosition({ h }: { h: HomeView }) {
           </>
         ) : null}
       </p>
-      <h1 id="home-status-title" className="max-w-4xl text-balance font-display text-2xl font-extrabold leading-[1.15] tracking-[-0.025em] text-ink sm:text-[2.125rem]" data-testid="home-headline">
+      <h1 id="home-status-title" className="type-headline max-w-4xl text-balance text-ink" data-testid="home-headline">
         {heading}
       </h1>
       {cash.headline_note ? (
-        <p className="max-w-3xl text-pretty text-[0.9375rem] leading-snug text-ink-2 sm:leading-normal" data-testid="home-note">
+        <p className="max-w-3xl text-pretty text-body-lg leading-snug text-ink-2 sm:leading-normal" data-testid="home-note">
           {cash.headline_note}
         </p>
       ) : null}

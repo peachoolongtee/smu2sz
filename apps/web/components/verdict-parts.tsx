@@ -28,16 +28,16 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
         {v.curable === false ? <Badge>{t("verdict.notCurable")}</Badge> : null}
       </div>
       <p className="mt-2 text-sm font-medium">{business && v.message_when ? v.message_when : v.message}</p>
-      {v.code === "DSCR_BREACH" ? <p className="text-xs text-ink-3">{t("dscr.readingNote")}</p> : null}
+      {v.code === "DSCR_BREACH" ? <p className="text-meta text-ink-3">{t("dscr.readingNote")}</p> : null}
 
       {v.observed || v.limit ? (
         <dl className="mt-3 grid grid-cols-2 gap-3">
           <div>
-            <dt className="text-xs text-ink-3">{t("verdict.observed")}</dt>
+            <dt className="text-meta text-ink-3">{t("verdict.observed")}</dt>
             <dd className="text-lg font-semibold tabular-nums text-bad-fg">{v.observed ?? t("common.none")}</dd>
           </div>
           <div>
-            <dt className="text-xs text-ink-3">{t("verdict.limit")}</dt>
+            <dt className="text-meta text-ink-3">{t("verdict.limit")}</dt>
             <dd className="text-lg font-semibold tabular-nums">{v.limit ?? t("common.none")}</dd>
           </div>
         </dl>
@@ -45,15 +45,15 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
 
       {v.formula ? (
         <div className="mt-3">
-          <p className="mb-1 text-xs font-semibold text-ink-3">{t("common.formula")}</p>
+          <p className="mb-1 text-meta font-semibold text-ink-3">{t("common.formula")}</p>
           <Formula>{v.formula}</Formula>
         </div>
       ) : null}
 
       {inputs.length ? (
         <div className="mt-3">
-          <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.inputs")}</p>
-          <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-tile border border-line bg-subtle px-3 py-2 font-mono text-xs">
+          <p className="mb-1 text-meta font-semibold text-ink-3">{t("verdict.inputs")}</p>
+          <dl className="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-tile border border-line bg-subtle px-3 py-2 font-mono text-meta">
             {inputs.map(([k, val]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-3">{k}</dt>
@@ -67,7 +67,7 @@ export function ViolationCard({ v, today: todayProp }: { v: Displayed<Violation>
       {v.curable && v.cure_cost_display ? (
         <div className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-fg">
           <p className="font-semibold">{t("verdict.cureCost", { cost: v.cure_cost_display })}</p>
-          {v.cure_note ? <p className="mt-0.5 text-xs">{business && v.cure_note_when ? v.cure_note_when : v.cure_note}</p> : null}
+          {v.cure_note ? <p className="mt-0.5 text-meta">{business && v.cure_note_when ? v.cure_note_when : v.cure_note}</p> : null}
         </div>
       ) : null}
 
@@ -87,7 +87,7 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-semibold">{c.label}</h3>
         <div className="text-right">
-          <p className="text-xs text-ink-3">{t("verdict.counter.cost")}</p>
+          <p className="text-meta text-ink-3">{t("verdict.counter.cost")}</p>
           <p className="text-lg font-semibold tabular-nums">{c.supplier_cost_display}</p>
         </div>
       </div>
@@ -99,7 +99,7 @@ export function CounterCard({ c, legs = [] }: { c: Displayed<CounterProposal>; l
         </div>
       ))}
       <div className="mt-3">
-        <p className="mb-1 text-xs font-semibold text-ink-3">{t("verdict.counter.priced")}</p>
+        <p className="mb-1 text-meta font-semibold text-ink-3">{t("verdict.counter.priced")}</p>
         <Formula>{c.formula}</Formula>
       </div>
     </li>
@@ -114,13 +114,13 @@ export function OperationsList({ ops }: { ops: OperationView[] }) {
       {ops.map((o) => (
         <li key={`${o.seq}-${o.op_id}`} className="space-y-1 px-3 py-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-ink-3">#{o.seq}</span>
+            <span className="font-mono text-meta text-ink-3">#{o.seq}</span>
             <span className="text-sm font-medium">{te("opkind", o.kind)}</span>
             <TierBadge tier={o.tier} explain />
             <OpStatusBadge status={o.status} />
           </div>
           <p className="text-sm text-ink-2">{o.summary}</p>
-          <p className="flex flex-wrap items-center gap-1 text-xs text-ink-3">
+          <p className="flex flex-wrap items-center gap-1 text-meta text-ink-3">
             {t("ledger.hash")}: <Hash value={o.entry_hash} />
           </p>
         </li>

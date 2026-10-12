@@ -60,12 +60,12 @@ export function StateWord({
   const mark = glyph ? <Glyph className={`mt-px size-3.5 shrink-0 ${variant === "pill" ? "" : TONE_MARK[t]}`} /> : null;
   const shape =
     variant === "pill"
-      ? `inline-flex max-w-full items-center gap-1.5 rounded-pill border px-2.5 py-0.5 text-[0.8125rem] font-medium ${PILL[t]}`
+      ? `inline-flex max-w-full items-center gap-1.5 rounded-pill border px-2.5 py-0.5 text-supporting font-medium ${PILL[t]}`
       : variant === "line"
-        ? `flex items-start gap-1.5 text-[0.8125rem] leading-snug ${state === "scheduled" ? "text-ink-3" : "text-ink-2"}`
+        ? `flex items-start gap-1.5 text-supporting leading-snug ${state === "scheduled" ? "text-ink-3" : "text-ink-2"}`
         : variant === "step"
           ? `inline-flex items-start gap-1.5 ${TONE_INK[t]}`
-          : `inline-flex items-start gap-1.5 text-[0.8125rem] font-medium ${TONE_INK[t]}`;
+          : `inline-flex items-start gap-1.5 text-supporting font-medium ${TONE_INK[t]}`;
   return (
     <span data-testid={testId} data-state={state} data-tone={t} {...data} className={`${shape} ${className}`}>
       {mark}

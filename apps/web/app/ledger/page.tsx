@@ -54,14 +54,14 @@ export default function LedgerPage() {
                   <tbody>
                     {data.commitments.map((c) => (
                       <tr key={c.id}>
-                        <td className={`${tdCls} font-mono text-xs`}>{c.id}</td>
+                        <td className={`${tdCls} font-mono text-meta`}>{c.id}</td>
                         <td className={tdCls}>{c.counterparty_id}</td>
                         <td className={tdCls}>
                           <Badge tone={c.status === "ACTIVE" || c.status === "ACCEPTED" ? "ok" : "neutral"}>{te("commitment", c.status)}</Badge>
                         </td>
                         <td className={`${tdCls} tabular-nums`}>{t("common.dayN", { n: c.expires_day })}</td>
                         <td className={`${tdCls} text-right tabular-nums`}>{c.forward_value_display}</td>
-                        <td className={`${tdCls} font-mono text-xs`}>{c.nonce}</td>
+                        <td className={`${tdCls} font-mono text-meta`}>{c.nonce}</td>
                         <td className={tdCls}>
                           <Hash value={c.terms_hash} />
                         </td>
@@ -86,7 +86,7 @@ export default function LedgerPage() {
                     {data.chain_valid ? <CheckIcon /> : <XIcon />}
                     {data.chain_valid ? t("ledger.chainValid") : t("ledger.chainBroken")}
                   </Badge>
-                  <span className="text-xs text-ink-3">{t("ledger.entries", { n: data.chain_length })}</span>
+                  <span className="text-meta text-ink-3">{t("ledger.entries", { n: data.chain_length })}</span>
                 </div>
               ) : undefined
             }
@@ -112,7 +112,7 @@ export default function LedgerPage() {
                         <td className={`${tdCls} tabular-nums`}>{o.seq}</td>
                         <td className={`${tdCls} min-w-72`}>
                           <p className="font-medium">{te("opkind", o.kind)}</p>
-                          <p className="text-xs text-ink-2">{o.summary}</p>
+                          <p className="text-meta text-ink-2">{o.summary}</p>
                           {o.violations.length ? (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {o.violations.map((v) => (

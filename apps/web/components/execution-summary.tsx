@@ -27,19 +27,19 @@ export function ExecutionSummary({ data }: { data: ExecutionSummaryData }) {
         </p>
         <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
           <div className="min-w-0">
-            <dt className="mb-1 text-xs font-medium text-ink-3">{t("verdict.exec.agreement")}</dt>
+            <dt className="mb-1 text-supporting font-medium text-ink-3">{t("verdict.exec.agreement")}</dt>
             <dd data-testid="execution-agreement">
               <StatePill tone={agreementTone[data.agreement]}>{data.agreement_text ?? te("execagree", "none")}</StatePill>
             </dd>
           </div>
           <div className="min-w-0">
-            <dt className="mb-1 text-xs font-medium text-ink-3">{t("verdict.exec.waiting")}</dt>
+            <dt className="mb-1 text-supporting font-medium text-ink-3">{t("verdict.exec.waiting")}</dt>
             <dd className="text-ink" data-testid="execution-settlement">
               {data.waiting_text}
             </dd>
           </div>
           <div className="min-w-0 sm:col-span-2">
-            <dt className="mb-1 text-xs font-medium text-ink-3">{t("verdict.exec.funding")}</dt>
+            <dt className="mb-1 text-supporting font-medium text-ink-3">{t("verdict.exec.funding")}</dt>
             <dd data-testid="execution-funding">
               {data.funding.length ? (
                 <ul className="space-y-2">
@@ -61,14 +61,14 @@ export function ExecutionSummary({ data }: { data: ExecutionSummaryData }) {
           </div>
           {data.lots.length ? (
             <div className="min-w-0 sm:col-span-2">
-              <dt className="mb-1 text-xs font-medium text-ink-3">{t("verdict.exec.cash")}</dt>
+              <dt className="mb-1 text-supporting font-medium text-ink-3">{t("verdict.exec.cash")}</dt>
               <dd data-testid="execution-lots">
                 <ul className="space-y-1">
                   {data.lots.map((l, i) => (
                     <li key={i} className="flex flex-wrap items-baseline gap-x-2">
                       <span className="font-semibold tabular-nums text-ink">{l.amount_display}</span>
                       <span className="text-ink-2">{l.facility_name}</span>
-                      <span className={`text-xs font-medium ${l.landed ? "text-ok-fg" : "text-ink-3"}`}>{l.landed ? t("deal.cashReceived", { when: l.arrival_when }) : t("deal.cashArrives", { when: l.arrival_when })}</span>
+                      <span className={`text-supporting font-medium ${l.landed ? "text-ok-fg" : "text-ink-3"}`}>{l.landed ? t("deal.cashReceived", { when: l.arrival_when }) : t("deal.cashArrives", { when: l.arrival_when })}</span>
                     </li>
                   ))}
                 </ul>

@@ -75,7 +75,7 @@ export function Badge({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-xs font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-supporting font-medium ${wrap ? "max-w-full" : "whitespace-nowrap"} ${toneBadge[tone]} ${className}`}
     >
       {mark ? <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${mark}`} /> : null}
       {children}
@@ -94,7 +94,7 @@ export function StatePill({ tone, children, testId, wrap = true, className = "" 
   return (
     <span data-testid={testId} data-tone={tone}>
       <Badge tone={tone} dot={false} wrap={wrap} className={className}>
-        <span aria-hidden className="text-xs leading-none">
+        <span aria-hidden className="text-supporting leading-none">
           {toneGlyph[tone]}
         </span>
         {children}
@@ -138,7 +138,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-3">
         {chip ? <PageIcon section={section} icon={icon} /> : null}
         <div className="min-w-0">
-          <h1 className={`text-balance font-display text-2xl font-extrabold tracking-[-0.02em] text-ink sm:text-[1.75rem] ${chip ? "leading-10" : ""}`}>{title}</h1>
+          <h1 className={`type-headline text-balance text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
           {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
@@ -181,10 +181,10 @@ export function Card({
         {title ? (
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line-strong pb-2">
             <div className="min-w-0">
-              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-xs font-extrabold uppercase tracking-[0.08em] text-ink-3">
+              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
                 {title}
               </h2>
-              {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
+              {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
             </div>
             {actions}
           </div>
@@ -202,10 +202,10 @@ export function Card({
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="text-balance text-base font-bold text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="type-card-title text-balance text-ink">
               {title}
             </h2>
-            {subtitle ? <p className="mt-0.5 text-pretty text-xs text-ink-3">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
           </div>
           {actions}
         </div>
@@ -310,22 +310,22 @@ export function Stat({
   const box = bare ? "border-t border-line-strong" : deep ? "bg-on-deep/10" : tint && tone !== "neutral" ? `border ${toneSurface[tone]}` : "border border-line bg-surface";
   return (
     <div className={`min-w-0 ${bare ? "py-2.5" : "rounded-tile px-4 py-3"} ${press ? "motion-lift relative hover:bg-subtle" : ""} ${row ? "max-sm:flex max-sm:flex-wrap max-sm:items-baseline max-sm:justify-between max-sm:gap-x-3 max-sm:py-1.5" : ""} ${box} ${className}`} data-testid={rootTestId}>
-      <dt className={`text-xs font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
-      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"}`}>
+      <dt className={`text-meta font-semibold uppercase tracking-wide ${deep ? "text-on-deep-muted" : "text-ink-3"}`}>{label}</dt>
+      <dd className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-semibold tabular-nums ${row ? "max-sm:mt-0 max-sm:justify-end max-sm:text-right" : ""} ${size === "lg" ? "type-value" : "text-section"}`}>
         <span className={`min-w-0 break-words ${deep ? toneOnDeep[tone] : toneText[tone]}`} data-testid={testId}>
           {value}
         </span>
         {delta ? (
-          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-xs font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
+          <span className={`inline-flex items-center whitespace-nowrap rounded-pill border px-2 py-0.5 text-supporting font-medium ${deep ? "border-on-deep/20 bg-on-deep/10 text-on-deep" : toneBadge[deltaTone]}`}>{delta}</span>
         ) : null}
       </dd>
       {note ? (
-        <dd className={`mt-0.5 text-xs ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
+        <dd className={`mt-0.5 text-supporting ${row ? "max-sm:mt-0 max-sm:basis-full" : ""} ${deep ? "text-on-deep-muted" : "text-ink-3"}`} data-testid={captionTestId}>
           {note}
         </dd>
       ) : null}
       {press ? (
-        <dd className="mt-0.5 text-xs">
+        <dd className="mt-0.5 text-meta">
           <button type="button" onClick={press.onPress} className="rounded-pill font-medium text-brand-700 underline underline-offset-2 after:absolute after:inset-0 after:rounded-tile" data-testid={press.testId}>
             {press.label}
           </button>
@@ -352,7 +352,7 @@ const variantClass: Record<ButtonVariant, string> = {
  */
 export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
+    size === "sm" ? "min-h-8 px-3 text-meta touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${variantClass[variant]} ${className}`;
 }
 
@@ -380,12 +380,12 @@ export function Button({
 /** A pill that toggles (a preset, a scene): the selected one takes the brand tint and a brand boundary, the rest are secondary buttons. */
 export function toggleClass(active: boolean, size: ButtonSize = "md", className = ""): string {
   return `motion-press inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-control border font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
-    size === "sm" ? "min-h-8 px-3 text-xs touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
+    size === "sm" ? "min-h-8 px-3 text-meta touch:min-h-11" : "min-h-10 px-4 text-sm touch:min-h-11"
   } ${active ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line-ui bg-surface text-ink hover:bg-subtle"} ${className}`;
 }
 
 /** A quiet text link in a card's header or a sentence (the "open" links): brand-700 on white is 8.5:1. */
-export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-xs font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
+export const textLinkClass = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-meta font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50";
 
 /** A link in a button's shape (a navigation that is the page's next step). */
 export function ButtonLink({ variant = "secondary", size = "md", className = "", ...rest }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: ButtonSize }) {
@@ -514,7 +514,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
   );
 }
 
-const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-xs font-medium transition-colors";
+const segmentedOption = "hit relative z-10 grid min-h-8 cursor-pointer place-items-center whitespace-nowrap rounded-pill px-3.5 text-supporting font-medium transition-colors";
 
 /** Radio-group segmented control. Native radios give arrow-key navigation for free. */
 export function Segmented<T extends string>({
@@ -600,7 +600,7 @@ export function TableWrap({ label, children }: { label: string; children: ReactN
 }
 
 export const tableCls = "w-full border-collapse text-left text-sm [&_tbody_tr:last-child_td]:border-b-0 [&_tbody_tr:last-child_th]:border-b-0";
-export const thCls = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-xs font-semibold text-ink-2";
+export const thCls = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-supporting font-semibold text-ink-2";
 export const tdCls = "border-b border-line px-3 py-2 align-top";
 
 /** Shortened hash with the full value on hover and a copy button. */
@@ -610,7 +610,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
   if (!value) return <span className="text-ink-3">{t("common.none")}</span>;
   const short = value.length > 20 ? `${value.slice(0, 10)}…${value.slice(-6)}` : value;
   return (
-    <span className={`inline-flex items-center gap-1 font-mono text-xs ${className}`}>
+    <span className={`inline-flex items-center gap-1 font-mono text-meta ${className}`}>
       <span title={value}>{short}</span>
       <button
         type="button"
@@ -631,7 +631,7 @@ export function Hash({ value, className = "" }: { value: string | null; classNam
 
 export function Formula({ children }: { children: ReactNode }) {
   return (
-    <code className="block break-words rounded-tile border border-line bg-subtle px-2.5 py-1.5 font-mono text-xs leading-relaxed text-ink">
+    <code className="block break-words rounded-tile border border-line bg-subtle px-2.5 py-1.5 font-mono text-supporting leading-relaxed text-ink">
       {children}
     </code>
   );
