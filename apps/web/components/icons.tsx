@@ -94,6 +94,17 @@ export const ChatIcon = (p: P) => (
     <path d="M2.5 3.5h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H7l-3 2.5v-2.5H2.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
   </svg>
 );
+export const ListIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8M2.5 4.5h.01M2.5 8h.01M2.5 11.5h.01" />
+  </svg>
+);
+export const CalendarIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+    <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
+  </svg>
+);
 export const ChevronRightIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M6 3.5L10.5 8 6 12.5" />

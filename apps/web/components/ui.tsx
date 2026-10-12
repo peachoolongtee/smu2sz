@@ -506,7 +506,7 @@ function SegmentedTrack({ count, index, role, label, children }: { count: number
     >
       <span
         aria-hidden
-        className={`motion-slide pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill bg-surface shadow-card ${index < 0 ? "opacity-0" : ""}`}
+        className={`motion-slide pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc((100%-0.25rem)/var(--n))] rounded-pill bg-surface shadow-pill ${index < 0 ? "opacity-0" : ""}`}
         style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
       />
       {children}

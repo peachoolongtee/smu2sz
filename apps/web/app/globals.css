@@ -36,6 +36,8 @@
   --color-line-strong: #d3d9e2; /* dividers between dense rows: decoration, not a boundary that must be seen */
   --color-line-ui: #768399; /* borders that must be seen (inputs, secondary buttons, the segmented track): 3.8:1 on white, 3.4:1 on subtle */
 
+  --color-track: #eef1f5; /* the segmented control's track (components/ui/segmented-tabs.tsx) */
+
   --color-ink: #24324a;
   --color-ink-2: #4d5767;
   --color-ink-3: #5a6577;
@@ -108,9 +110,9 @@
   --color-focus-on-deep: #ffffff; /* brand blue on the deep block is 2.5:1: the ring turns white inside it */
 
   /* Shadows: a standard card rests on a hairline alone (no shadow); a decision card takes --shadow-decision; a lifted row, tile or option takes one
-     step; a sheet or menu takes the pop. --shadow-card is the one-pixel edge under a segmented pill (it is not a card's shadow). */
+     step; a sheet or menu takes the pop. --shadow-pill is the one-pixel edge under a segmented control's selected pill. */
   --shadow-decision: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.06);
-  --shadow-card: 0 1px 2px rgb(36 50 74 / 0.05), 0 6px 14px -10px rgb(36 50 74 / 0.12);
+  --shadow-pill: 0 1px 1px rgb(16 24 40 / 0.08);
   --shadow-lift: 0 2px 4px rgb(36 50 74 / 0.06), 0 12px 22px -14px rgb(36 50 74 / 0.22);
   --shadow-pop: 0 4px 8px rgb(36 50 74 / 0.06), 0 18px 36px -12px rgb(36 50 74 / 0.24);
   /* The Demo strip fixed to the bottom of a phone: the same soft shadow, cast upward. */
