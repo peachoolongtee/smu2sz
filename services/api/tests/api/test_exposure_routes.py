@@ -560,3 +560,20 @@ def test_the_chinese_read_of_a_buyer_with_owner_input_and_an_aggregate_is_in_chi
     zh = api.get(f"/decisions/deal:{offer_id}/exposure?lang=zh").json()
     assert english_leaks(zh, NAMES) == []
     assert zh["payments"]["owner_delay_text"] == "通常的延迟：15 天，估计值，不是记录（FLOW 的收款记录太少，无法衡量）。"
+
+
+# ---------------------------------------------------------------- the selections echoed (Home V2: customer, deal, scenario)
+
+
+def test_both_deal_reads_echo_the_customer_the_deal_and_the_scenario_beside_the_back_link(api: TestClient, offer_id: str) -> None:
+    api.post(f"/offers/{offer_id}/evaluate", json=EX01)
+    got = api.get(f"/offers/{offer_id}/exposure", params={"response": "asked", "customer": "BUYER-1"}).json()["context"]
+    assert got == {"back": got["back"], "customer": "BUYER-1", "deal": f"deal:{offer_id}", "scenario": "asked"}
+    assert got["back"]["href"].startswith("/customers/BUYER-1")
+    counter = api.get(f"/offers/{offer_id}/exposure", params={"response": "counter:1", "customer": "BUYER-1"}).json()["context"]
+    assert counter["scenario"] == "counter:1"
+    by_decision = api.get(f"/decisions/deal:{offer_id}/exposure", params={"customer": "BUYER-1"}).json()["context"]
+    assert (by_decision["customer"], by_decision["deal"], by_decision["scenario"]) == ("BUYER-1", f"deal:{offer_id}", "asked")
+    # a bare read has no context at all (the contract before the echoes), and the buyer-keyed read has no deal to echo
+    assert "context" not in api.get(f"/offers/{offer_id}/exposure").json()
+    assert "context" not in api.get("/buyers/BUYER-1/exposure").json()

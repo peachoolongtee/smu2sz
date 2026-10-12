@@ -30,7 +30,8 @@ back to the deal (`/deals?decision=&path=&customer=`), else an `invoice` back to
 The deal reads also carry, per path, the Deals queue's words (`paths[*].lowest_display`, `lowest_when`, `lowest_when_text`, `limit_word`,
 `limit_text`, `share_after_text`; `app.api.exposure_words`) and a `do_nothing` path, `customer_context` (the Customer overview's own
 contribution function), all worked out once with the cached block (`deal_words`), and, when the query carries `customer` or `invoice`,
-`context.back` to the customer's page. `limit_word` is null (with `limit_text`) for a reply the picture cannot draw or price and for
+`context.back` to the customer's page. Both also echo the three selections beside `context.back` (so only when the query carries `customer` or `invoice`; a bare read has no
+`context`): `customer` (the offer's buyer), `deal` (the deal's decision id) and `scenario` (the path read, `asked` for the decision read). `limit_word` is null (with `limit_text`) for a reply the picture cannot draw or price and for
 `do_nothing`. `do_nothing` carries words only: its entries in `stress.paths`, `capacity` and `band.by_path` are explicit nulls.
 
 Read-only and hypothetical: nothing is written, logged or stored; concentration, payment behaviour, stress and capacity are context,
@@ -127,9 +128,20 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
             "state_version": state.state_version, "day": day}
 
 
-def _respond(core: dict[str, Any], started: float, back: dict[str, str] | None = None, **ids: str) -> dict[str, Any]:
+def _respond(core: dict[str, Any], started: float, back: dict[str, str] | None = None, echo: dict[str, str] | None = None,
+             **ids: str) -> dict[str, Any]:
+    """The body, with `context` only when the query asked for a way back (as before): {back, customer, deal, scenario}, the last three
+    being the selections Home V2 keeps in its URL (`echo`: the offer's buyer, the deal and the scenario read). A bare read has no context."""
     body = displayed({**ids, **core, "computed_in_seconds": round(time.perf_counter() - started, 3)})
-    return {**body, "context": {"back": back}} if back is not None else body
+    if back is None:
+        return body
+    return {**body, "context": {"back": back, **(echo or {})}}
+
+
+def _selected(offer: CompiledOffer, scenario: str) -> dict[str, str]:
+    """The three selections this read is about: the offer's buyer, the deal (its decision id) and the scenario (the path whose stress and
+    capacity sentences lead: `asked` or a counter key)."""
+    return {"customer": offer.counterparty_id, "deal": deal_id(offer.offer_id), "scenario": scenario}
 
 
 def _back(rt: Runtime, offer: CompiledOffer, lang: Literal["en", "zh"], customer: str | None, invoice: str | None, path: str | None
@@ -151,7 +163,7 @@ def get_offer_exposure(offer_id: str, response: str = Query("asked"), lang: Lite
     offer = _offer(rt, offer_id)
     _check_response(rt, offer_id, response)
     core = _answer(rt, offer, response, lang, bool(spare))
-    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), offer_id=offer_id)
+    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), _selected(offer, response), offer_id=offer_id)
 
 
 @router.get("/decisions/{decision_id}/exposure")
@@ -168,7 +180,8 @@ def get_decision_exposure(decision_id: str, lang: Literal["en", "zh"] = Query("e
     if offer is None:
         raise _not_found("DECISION_NOT_FOUND", f"There is no deal decision {decision_id}, so there is no buyer to show exposure for.")
     core = _answer(rt, offer, "asked", lang, bool(spare))
-    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), decision_id=decision_id, offer_id=offer.offer_id)
+    return _respond(core, started, _back(rt, offer, lang, customer, invoice, path), _selected(offer, "asked"), decision_id=decision_id,
+                    offer_id=offer.offer_id)
 
 
 # ---------------------------------------------------------------- the buyer-keyed read (no deal needed)
