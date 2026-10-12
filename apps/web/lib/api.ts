@@ -24,6 +24,7 @@ import type {
   BankReceiptResult,
   BorrowerFileRequest,
   BorrowerFileView,
+  BuyerExposureView,
   ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
@@ -55,7 +56,6 @@ import type {
   EnvelopeView,
   PilotJournalView,
   PriceCurveView,
-  BuyerExposureView,
   ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
@@ -216,6 +216,16 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
   return isMock ? (await mock()).getReceivables(lang) : (await live()).getReceivables(lang);
 }
 
+/** The page context a read carries so the server can write the way back (`context.back`): the same four keys the connected pages share in the address. */
+export interface ExposureContext {
+  customer?: string | null;
+  invoice?: string | null;
+  decision?: string | null;
+  path?: string | null;
+  /** The page that sent the owner (`deal`, `invoice` or `customer`); the server's back link follows it when the other parts support it. */
+  from?: "deal" | "invoice" | "customer" | null;
+}
+
 /**
  * GET /decisions/{id}/exposure (flag `exposure`): what a deal does to the exposure to its buyer, of which the Receivables aside reads the
  * 30-day late-payment test, the concentration and the payment history. Null when the feature is off or the decision names no buyer.
@@ -227,9 +237,10 @@ export async function getDecisionExposure(decisionId: string, lang: "en" | "zh")
 /**
  * GET /buyers/{id}/exposure?lang= (flag `exposure`): the buyer's concentration, payment history and 30-day late-payment test on the books as they
  * stand, with no deal needed. Null when the feature is off or the buyer is unknown. The spare-capacity search is not asked for (`spare=0`).
+ * With a `context` the read also carries `context.back` (where the page the owner came from is).
  */
-export async function getBuyerExposure(buyerId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
-  return isMock ? (await mock()).getBuyerExposure(buyerId, lang) : (await live()).getBuyerExposure(buyerId, lang);
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
+  return isMock ? (await mock()).getBuyerExposure(buyerId, lang, context) : (await live()).getBuyerExposure(buyerId, lang, context);
 }
 
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Null as above. */

@@ -52,6 +52,7 @@
 // the opening books with the buyer's early-payment message open (the row carries pending_counter) and receivables/exposure_offer[_zh].json the
 // exposure of that deal's decision (the aside's late-payment test). buyer_exposure[_zh] and buyer_exposure_day34[_zh] are GET /buyers/BUYER-1/exposure on
 // the opening books and on day 34 (the same test with no deal). The API needs FEATURE_EXPOSURE=1 for these.
+// buyer_exposure[_zh].json alone: --buyer-exposure (the same GET /buyers/BUYER-1/exposure, on the opening books; the API needs FEATURE_EXPOSURE=1).
 //
 // --overview records ONLY apps/web/mocks/customer_overview.json and exits (GET /customers/BUYER-1/overview, ticket #108): for each moment the
 // mock chooses among (lib/mock/handlers.ts overviewMoment), { en, zh } of { view, backs }, where `backs` holds the back link the server builds for
@@ -79,13 +80,14 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
 const OUT = resolve(arg("--out", join(here, "..", "mocks")));
 const STRATEGY = process.argv.includes("--strategy");
 const OVERVIEW = process.argv.includes("--overview");
+const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -269,6 +271,14 @@ async function recvRead(point) {
   }
 }
 
+// --buyer-exposure: buyer_exposure[_zh].json and nothing else, on the opening books.
+if (BUYER_EXPOSURE) {
+  await live.demoReset();
+  await buyerExposure("buyer_exposure");
+  for (const name of Object.keys(files).sort()) write(name, files[name]);
+  console.log(`recorded ${written.length} buyer-exposure files into ${OUT} from ${API}`);
+  process.exit(0);
+}
 // --strategy: the nine strategy recordings and nothing else (see the header). The recorder's own day-0, day-34 and day-34-approved states.
 if (STRATEGY) {
   const BUYER = "BUYER-1";

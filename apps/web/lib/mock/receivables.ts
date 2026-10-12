@@ -7,6 +7,7 @@
  * offer's decision and is served for it only. `tl-mock-receivables-absent` = "1" makes the route absent (null), as on a server without it.
  */
 
+import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type { BuyerExposureView, ReceivablesRead } from "../types";
 import { mockClock, receivablesPoint, type ReceivablesPoint } from "./home";
@@ -102,13 +103,32 @@ export async function mockReceivables(dealt: boolean, lang: "en" | "zh"): Promis
   return patched({ ...clone<ReceivablesRead>(recorded), day: mockClock().day });
 }
 
-/** GET /buyers/{id}/exposure: BUYER-1's recording, taken on the opening books and on day 34's; any other buyer has none (null, as the server's 404 reads). */
-export async function mockBuyerExposure(buyerId: string, lang: "en" | "zh", news: boolean): Promise<BuyerExposureView | null> {
-  if (buyerId !== "BUYER-1") return null;
+/**
+ * GET /buyers/{id}/exposure: BUYER-1's recording, taken on the opening books and on day 34's; any other buyer has none (null, as the server's 404 reads).
+ * The page context the read was asked with is kept in the session (`LAST_EXPOSURE_CONTEXT_KEY`, as JSON) so a spec can see what reached the request; the
+ * recording carries no `context.back` (it was taken with no context), so `tl-mock-buyer-exposure` lays one over it: "off" answers null (the feature
+ * off), "fail" answers 503, a JSON object is merged deep into the recorded read. A spec that uses it says so: a temporary in-spec patch.
+ */
+export const BUYER_EXPOSURE_KEY = "tl-mock-buyer-exposure";
+export const LAST_EXPOSURE_CONTEXT_KEY = "tl-mock-last-exposure-context";
+
+export async function mockBuyerExposure(buyerId: string, lang: "en" | "zh", news: boolean, context?: ExposureContext): Promise<BuyerExposureView | null> {
+  let raw: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.setItem(LAST_EXPOSURE_CONTEXT_KEY, JSON.stringify(Object.fromEntries(Object.entries(context ?? {}).filter(([, v]) => v))));
+      raw = window.sessionStorage.getItem(BUYER_EXPOSURE_KEY);
+    } catch {
+      /* no storage: no patch */
+    }
+  }
+  if (raw === "fail") throw new ApiError(503, "The late-payment test is unavailable");
+  if (raw === "off" || buyerId !== "BUYER-1") return null;
   const file = news
     ? await (lang === "zh" ? import("../../mocks/buyer_exposure_day34_zh.json") : import("../../mocks/buyer_exposure_day34.json"))
     : await (lang === "zh" ? import("../../mocks/buyer_exposure_zh.json") : import("../../mocks/buyer_exposure.json"));
-  return clone<BuyerExposureView>(file.default);
+  const view = clone<BuyerExposureView>(file.default);
+  return raw ? (merge(view, JSON.parse(raw)) as BuyerExposureView) : view;
 }
 
 /** GET /decisions/{id}/exposure: the recording of the open offer's decision; any other decision names no buyer (404, as the server answers) and the aside shows no result. */

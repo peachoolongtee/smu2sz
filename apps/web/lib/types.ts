@@ -1988,6 +1988,13 @@ export interface BuyerStressRow {
   funding_text?: string;
   text?: string;
   assumption?: string;
+  /** The late path's cash, day by day from the opening of the books: the Cash page draws it as the stressed line. Absent when the test is unavailable. */
+  series?: { day: Day; closing_fen: Fen; closing_display: string }[];
+  /** How many days the late path stays under the minimum, and the day it is lowest (placement only; the words are `text` and `lowest_when`). */
+  breach_days?: number;
+  lowest_day?: number;
+  /** What the shortfall needs ("¥550,000.00"). */
+  need_display?: string;
 }
 
 /** GET /buyers/{id}/exposure and GET /decisions/{id}/exposure (flag `exposure`): the buyer's concentration, payment history and late-payment test. */
@@ -2000,6 +2007,10 @@ export interface BuyerExposureView {
   concentration?: { buyer_name?: string; sentence?: string; ar_text?: string };
   payments?: { sentence?: string };
   stress?: { delay_days?: number; now?: BuyerStressRow };
+  /** Present when the query carried `customer`, `invoice` or `decision`: where the page that sent the owner here is. */
+  context?: { back?: { label: string; href: string } | null };
+  /** The day the books were read on. */
+  day?: Day;
 }
 
 /** GET /receivables/worth (flag `collections_worth`): the open receivables ranked by what collecting each saves. Hypothetical. */

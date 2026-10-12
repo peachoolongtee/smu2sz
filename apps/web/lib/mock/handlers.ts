@@ -7,6 +7,7 @@
 import { sha256 } from "js-sha256";
 import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
+import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
   ActRequest,
@@ -764,9 +765,9 @@ export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead
 }
 
 /** GET /buyers/{id}/exposure: the recording for BUYER-1 (the opening books' before day 34, day 34's from it); any other buyer is unknown (null). */
-export async function getBuyerExposure(buyerId: string, lang: "en" | "zh"): Promise<BuyerExposureView | null> {
+export async function getBuyerExposure(buyerId: string, lang: "en" | "zh", context?: ExposureContext): Promise<BuyerExposureView | null> {
   await delay();
-  return receivablesMock.mockBuyerExposure(buyerId, lang, home.mockClock().day >= home.NEWS_DAY);
+  return receivablesMock.mockBuyerExposure(buyerId, lang, home.mockClock().day >= home.NEWS_DAY, context);
 }
 
 /** GET /decisions/{id}/exposure: the recorded exposure of the open offer's decision; any other decision answers 404 (null: no result in the aside). */
