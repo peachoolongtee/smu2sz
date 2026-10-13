@@ -15,6 +15,10 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
                           approval), the very parts `action.text` is built from; empty when the action carries no funding plan.
+                          `action.approval_text` is the approval in one sentence: the approval fact's own value while the plan is ready to run
+                          ("No approval needed"), "Needs your approval before it runs" while it waits for the owner (APPROVE_PLAN), null when
+                          the action has no plan to state it for (no control, or a step with no approval fact); `action.approval_needed` is
+                          true only while the plan waits for the owner's approval (APPROVE_PLAN).
                           `action.legs` [{label, amount_display, lands_when, cost_display, repaid_when, state, state_text, authority_text}] is the
                           plan one entry per landing leg, in the sentence's order: PLANNED while the plan is ready, ARRANGED once it ran and
                           RECEIVED once the leg's cash landed (`state_of`); `cost_display` is the engine's own line for that action (null where it
@@ -346,9 +350,19 @@ def _consequence_text(c: HomeRead) -> str | None:
 
 def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:
     out = _action_body(c, att)
+    out["approval_text"], out["approval_needed"] = _approval_words(c.lang, out)
     out["consequence_text"] = _consequence_text(c)
     out["legs"], out["cost_basis_text"] = _action_legs(c, out, funding_line)
     return out
+
+
+def _approval_words(lang: str, action: dict[str, Any]) -> tuple[str | None, bool]:
+    """(`action.approval_text`, `action.approval_needed`): a plan waiting for the owner says so; a plan ready to run states its approval
+    fact's own value; an action with no plan, or no approval fact to state, has no text."""
+    if action["control"] == "APPROVE_PLAN":
+        return t(lang, "Needs your approval before it runs", "需要您批准后才会执行"), True
+    fact = next((f["value"] for f in action["facts"] if f["label"] == t(lang, "Approval", "批准")), None)
+    return (fact if action["control"] == "RUN_PLAN" else None), False
 
 
 def _action_body(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
