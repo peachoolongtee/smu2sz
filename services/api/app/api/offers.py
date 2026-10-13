@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -11,11 +12,12 @@ from pydantic import BaseModel
 from app.api.auth import counterparty_for_key, is_agent, require_owner
 from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
+from app.api.presentation import abstention_words, business_text
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
-from app.domain.models import SourceDocument
+from app.domain.models import CompiledOffer, SourceDocument
 from app.persistence import OfferVersionConflict
 
 router = APIRouter()
@@ -62,14 +64,24 @@ def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
 @router.post("/offers")
 def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
                x_agent_key: str | None = Header(default=None),
-               x_counterparty_key: str | None = Header(default=None)) -> dict:
+               x_counterparty_key: str | None = Header(default=None), lang: Literal["en", "zh"] = "en") -> dict:
     rt = get_runtime()
     if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key) or counterparty_for_key(x_counterparty_key)):
         enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
-    return intake_offer(rt, body)
+    return intake_offer(rt, body, lang)
 
 
-def intake_offer(rt: Runtime, body: OfferIn) -> dict:
+def _offer_view(rt: Runtime, offer: CompiledOffer, channels: Mapping[str, str], lang: str) -> dict:
+    """The offer as stored, with each abstention's reason in the owner's words beside it (`reason_when`; null where there is no sentence)."""
+    view = displayed(json.loads(offer.model_dump_json()))
+    state = rt.store.get_state()
+    for raw, said in zip(offer.abstentions, view.get("abstentions") or [], strict=False):
+        said["reason_when"] = (abstention_words(raw.reason, {channels[s.doc_id] for s in raw.spans if s.doc_id in channels}, "zh" if lang == "zh" else "en")
+                               or business_text(state, raw.reason, rt.day, "zh" if lang == "zh" else "en"))
+    return view
+
+
+def intake_offer(rt: Runtime, body: OfferIn, lang: str = "en") -> dict:
     """Compile the documents and store the offer: the part of POST /offers after the caller is known. The demo's seed replay
     (`app.api.demo_seed`) takes the same path, so a seeded offer is the offer the route would have stored."""
     docs, cp = _docs(body)
@@ -80,7 +92,8 @@ def intake_offer(rt: Runtime, body: OfferIn) -> dict:
         raise HTTPException(409, {"code": "OFFER_VERSION_CONFLICT", "offer_id": offer.offer_id}) from None
     for d in docs:
         rt.documents[d.doc_id] = d
-    return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": [json.loads(d.model_dump_json()) for d in docs]}
+    return {"offer": _offer_view(rt, offer, {d.doc_id: d.channel for d in docs}, lang),
+            "documents": [json.loads(d.model_dump_json()) for d in docs]}
 
 
 @router.get("/offers/{offer_id}", dependencies=[Depends(require_owner)])
@@ -98,7 +111,7 @@ def get_offer(offer_id: str, lang: Literal["en", "zh"] = "en", *, sel: Annotated
         latest = latest_verdict_for(rt, offer_id)
         documents = [json.loads(rt.documents[d].model_dump_json()) for d in offer.doc_ids if d in rt.documents]
         context = build_context(rt, lang, sel, page="offer", buyer=offer.counterparty_id, deal=deal_id(offer_id))
-    return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": documents,
+    return {"offer": _offer_view(rt, offer, {d["doc_id"]: d["channel"] for d in documents}, lang), "documents": documents,
             "latest_verdict_id": latest.id if latest is not None else None, "decision_id": deal_id(offer_id), "context": context}
 
 

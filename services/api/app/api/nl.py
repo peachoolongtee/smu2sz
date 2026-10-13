@@ -63,7 +63,15 @@ def _owner_reads(rt, business: bool = False) -> OwnerReads:
     def words(text: str, lang: str) -> str:
         return business_text(rt.store.get_state(), text, rt.day, "zh" if lang == "zh" else "en") or text
 
-    return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict, business=business)
+    def queue(lang: str):
+        from app.api import worklist
+
+        try:
+            return worklist.queue(rt, "zh" if lang == "zh" else "en")
+        except HTTPException:
+            return None
+
+    return OwnerReads(home=home, words=words, latest_verdict=rt.latest_verdict, queue=queue, business=business)
 
 
 def _confirmable(body: NlRequest, owner: bool) -> PendingPlan | None:

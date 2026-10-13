@@ -72,7 +72,7 @@ test("every suggested question is one the API's rules read (the same list as tes
 
 test("Customer and Activity have prompts of their own, each one the API's rules read", () => {
   assert.deepEqual(ids(business("/customers/BUYER-1", FULL)), ["page-owes", "page-overdue", "page-late", "page-waiting"]);
-  assert.deepEqual(ids(business("/activity", FULL)), ["page-changed", "page-waiting", "page-latepay"]);
+  assert.deepEqual(ids(business("/activity", FULL)), ["page-changed", "page-waiting", "page-latepay", "page-owes"]);
   const py = readFileSync(fileURLToPath(new URL("../../../services/api/tests/nl/test_business_page_prompts.py", import.meta.url)), "utf8");
   for (const page of ["/customers/BUYER-2", "/activity"]) for (const lang of ["en", "zh"]) for (const p of business(page, FULL, lang)) assert.ok(py.includes(`"${p.text}"`), `${lang} ${p.text}`);
 });

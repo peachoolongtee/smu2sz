@@ -33,7 +33,7 @@ const isMissing = (e: unknown) => e instanceof ApiError && e.status === 404;
 export function useNegotiation(decision: string | null): Negotiation {
   const { lang } = useI18n();
   const offerId = offerOf(decision);
-  const offerRead = useAsync(async () => (offerId ? { offerId, offer: await getOffer(offerId).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null), [offerId]);
+  const offerRead = useAsync(async () => (offerId ? { offerId, offer: await getOffer(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null), [offerId, lang]);
   const offerFor = offerRead.data && offerRead.data.offerId === offerId ? offerRead.data : undefined;
   const offer = offerFor?.offer ?? null;
   const record = useDecision(decision && offerId ? decision : null);

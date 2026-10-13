@@ -36,7 +36,7 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands 
   return (
     <section aria-labelledby={bare ? undefined : `quote-${id}`} aria-label={bare ? t("appr.quote.title") : undefined} className={bare ? "mt-2" : "mt-4 border-t border-line pt-3"} data-testid="approval-quote">
       {bare ? null : (
-        <h3 id={`quote-${id}`} className="mb-1.5 text-meta font-medium text-ink-3">
+        <h3 id={`quote-${id}`} className="mb-1.5 text-supporting font-medium text-ink-3">
           {quote.recorded && quote.quoted_when ? t("appr.quote.when", { when: quote.quoted_when }) : t("appr.quote.title")}
         </h3>
       )}
@@ -65,12 +65,12 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands 
               ) : null}
             </ul>
           ) : null}
-          {quote.rate_basis ? <p className="text-meta text-ink-2">{quote.rate_basis}</p> : null}
-          {quote.cost_note ? <p className="text-meta text-ink-2">{quote.cost_note}</p> : null}
-          {quote.lands_when && !lines.length && !hideLands ? <p className="text-meta text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
+          {quote.rate_basis ? <p className="text-supporting text-ink-2">{quote.rate_basis}</p> : null}
+          {quote.cost_note ? <p className="text-supporting text-ink-2">{quote.cost_note}</p> : null}
+          {quote.lands_when && !lines.length && !hideLands ? <p className="text-supporting text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
           {quote.actual?.length ? (
             <div data-testid="approval-quote-actual">
-              <p className="text-meta font-medium text-ink-3">{t("appr.quote.actual")}</p>
+              <p className="text-supporting font-medium text-ink-3">{t("appr.quote.actual")}</p>
               <ul className="mt-0.5 space-y-0.5">
                 {quote.actual.map((x) => (
                   <li key={x.op_id} className="text-ink">
@@ -174,7 +174,7 @@ export function ApprovalCard({
       v: (
         <span data-testid="approval-cost">
           {p.cost_display}
-          {p.rate_text ? <span className={`font-normal text-ink-3 ${priced ? "block text-meta" : "ml-1"}`}>{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
+          {p.rate_text ? <span className={`font-normal text-ink-3 ${priced ? "block text-supporting" : "ml-1"}`}>{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
         </span>
       ),
     });
@@ -209,7 +209,7 @@ export function ApprovalCard({
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-3">
           {keyFacts.map((f, i) => (
             <div key={i} className="min-w-0">
-              <dt className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{f.k}</dt>
+              <dt className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{f.k}</dt>
               <dd className="mt-0.5 break-words font-display text-xl font-extrabold tabular-nums tracking-[-0.01em] text-ink">{f.v}</dd>
             </div>
           ))}
@@ -219,7 +219,7 @@ export function ApprovalCard({
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           {otherFacts.map((f, i) => (
             <div key={i} className="min-w-0">
-              <dt className="text-meta font-medium text-ink-3">{f.k}</dt>
+              <dt className="text-supporting font-medium text-ink-3">{f.k}</dt>
               <dd className="break-words font-semibold tabular-nums text-ink">{f.v}</dd>
             </div>
           ))}
@@ -239,7 +239,7 @@ export function ApprovalCard({
       <div className="border-t border-line pt-3">
         {gate.available ? (
           <section aria-labelledby={`terms-${a.id}`} data-testid="approval-terms">
-            <h3 id={`terms-${a.id}`} className="mb-1.5 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            <h3 id={`terms-${a.id}`} className="mb-1.5 text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {isPending ? t("appr.agreeTo") : t("appr.agreedTo")}
             </h3>
             {p?.terms?.length ? (
@@ -296,10 +296,10 @@ export function ApprovalCard({
     <Disclosure className="border-t border-line pt-1" testId={`approval-toggle-${a.id}`} summary={t("biz.auditDetails")}>
       <div className="space-y-4" data-testid={`approval-detail-${a.id}`}>
         <section aria-label={t("appr.what")}>
-          <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
+          <h3 className="mb-1.5 text-supporting font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
           <KeyValueList
             items={[
-              { k: t("common.id"), v: <span className="font-mono text-meta">{a.id}</span> },
+              { k: t("common.id"), v: <span className="font-mono text-supporting">{a.id}</span> },
               { k: t("appr.operation"), v: te("opkind", a.operation_kind) || a.operation_kind },
               ...names,
               ...(a.amount_display ? [{ k: t("item.amount"), v: a.amount_display }] : []),
@@ -310,14 +310,14 @@ export function ApprovalCard({
                   ? t("appr.requestedWhen", { when: p.created_when, who: te("actor", op?.requested_by ?? a.requested_by) })
                   : t("appr.requestedValue", { day: a.created_day, who: te("actor", op?.requested_by ?? a.requested_by) }),
               },
-              { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-meta text-ink-2">{te("tier.short", a.tier)}</span></span> },
-              ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-meta">{a.op_id}</span> }] : []),
+              { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-supporting text-ink-2">{te("tier.short", a.tier)}</span></span> },
+              ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-supporting">{a.op_id}</span> }] : []),
             ]}
           />
         </section>
         {a.reason && p?.reason && a.reason !== p.reason ? (
           <section aria-label={t("appr.why")}>
-            <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
+            <h3 className="mb-1.5 text-supporting font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
             <p className="text-sm text-ink-2">{a.reason}</p>
           </section>
         ) : null}
@@ -372,7 +372,7 @@ export function ApprovalCard({
         {factsBlock}
 
         <dl className="border-t border-line pt-3">
-          <dt className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.why")}</dt>
+          <dt className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.why")}</dt>
           <dd className="mt-1 text-pretty text-ink" data-testid="approval-reason">
             {reasonText}
           </dd>
@@ -385,14 +385,14 @@ export function ApprovalCard({
           <dl className="grid gap-x-8 gap-y-3 border-t border-line pt-3 text-sm sm:grid-cols-2">
             {afterText ? (
               <div>
-                <dt className="text-meta font-medium text-ink-3">{t("biz.after")}</dt>
+                <dt className="text-supporting font-medium text-ink-3">{t("biz.after")}</dt>
                 <dd className="text-ink" data-testid="approval-after">
                   {afterText}
                 </dd>
               </div>
             ) : null}
             <div>
-              <dt className="text-meta font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+              <dt className="text-supporting font-medium text-ink-3">{t("biz.ifDecline")}</dt>
               <dd className="text-ink-2" data-testid="approval-if-decline">
                 {declineText}
               </dd>
@@ -423,7 +423,7 @@ export function ApprovalCard({
         {stateChip}
       </div>
       <div className="space-y-1 text-sm" data-testid={`approval-outcome-${a.id}`} data-execution={execution ?? ""}>
-        <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.result")}</p>
+        <p className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.result")}</p>
         {approvedButRefused ? (
           <div role="status" data-testid={`approval-refused-${a.id}`}>
             <p className="break-words text-ink" data-testid={`approval-result-${a.id}`}>
@@ -449,7 +449,7 @@ export function ApprovalCard({
           </p>
         ) : null}
         {/* The day of a decision is shown only when the API recorded it for that decision. */}
-        <p className="text-meta text-ink-3" data-testid={`approval-decided-${a.id}`}>
+        <p className="text-supporting text-ink-3" data-testid={`approval-decided-${a.id}`}>
           {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
         </p>
       </div>
@@ -457,7 +457,7 @@ export function ApprovalCard({
       {termsBlock}
       {quoteFold}
       <dl>
-        <dt className="text-meta font-medium text-ink-3">{t("appr.why")}</dt>
+        <dt className="text-supporting font-medium text-ink-3">{t("appr.why")}</dt>
         <dd className="text-sm text-ink" data-testid="approval-reason">
           {reasonText}
         </dd>
@@ -507,7 +507,7 @@ function ApprovalPicture({ a, cash, after, decline }: { a: ApprovalView; cash: A
       labelledBy={`approval-${a.id}-picture-title`}
       header={
         <>
-          <h3 id={`approval-${a.id}-picture-title`} className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
+          <h3 id={`approval-${a.id}-picture-title`} className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.appr.pic.title")}
           </h3>
           <dl className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
@@ -531,14 +531,14 @@ function ApprovalPicture({ a, cash, after, decline }: { a: ApprovalView; cash: A
       captions={
         <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-meta font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+            <dt className="text-supporting font-medium text-ink-3">{t("biz.ifDecline")}</dt>
             <dd className="text-ink-2" data-testid="approval-if-decline">
               {decline}
             </dd>
           </div>
           {after ? (
             <div>
-              <dt className="text-meta font-medium text-ink-3">{t("biz.after")}</dt>
+              <dt className="text-supporting font-medium text-ink-3">{t("biz.after")}</dt>
               <dd className="text-ink" data-testid="approval-after">
                 {after}
               </dd>

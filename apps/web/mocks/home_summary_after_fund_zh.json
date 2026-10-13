@@ -3561,6 +3561,145 @@
     "empty_text": "最近没有变化。",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": null,
+    "upcoming": [
+      {
+        "label": "发票融资到账",
+        "amount_display": "+¥255k",
+        "when": "3 天后",
+        "kind": "inflow"
+      },
+      {
+        "label": "发放工资",
+        "amount_display": "−¥340k",
+        "when": "12 天后",
+        "kind": "outflow"
+      },
+      {
+        "label": "支付供应商款项",
+        "amount_display": "−¥120k",
+        "when": "20 天后",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "可用现金",
+        "value_display": "¥550,000",
+        "note": "比您 ¥300k 的最低现金高 ¥250k",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 55000000,
+          "min_display": "¥300k",
+          "headroom_text": "+¥250k",
+          "cash_display": "¥550,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "未来最低现金",
+        "value_display": "¥300,000",
+        "note": "30 天后达到您的最低现金 · 当前账目，方案已执行",
+        "short_note": "30 天后正好是最低现金",
+        "tone": "warn",
+        "with_plan_hint": "未应用任何假设。",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "ARRANGED",
+        "eyebrow": "已安排的融资",
+        "value_display": "待到账 ¥255,000",
+        "note": "¥150k 信用额度提款已到账（今天） · ¥255k 发票融资预计 3 天后到账",
+        "status_text": "已安排",
+        "hint": "到账后才计入现金。"
+      }
+    },
+    "action": {
+      "variant": "QUIET",
+      "key": null,
+      "tone": "ok",
+      "eyebrow": "公司层面没有需要您处理的事项",
+      "title": "按已执行的方案，您的现金是安全的。",
+      "text": "接下来：¥255k 将于 3 天后到账；Foshan将于 32 天后支付 ¥420k（应收）。",
+      "facts": [],
+      "primary": null,
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": null,
+      "legs": [
+        {
+          "label": "信用额度提款",
+          "amount_display": "¥150,000",
+          "amount_fen": 15000000,
+          "lands_when": "今天",
+          "lands_day": 0,
+          "cost_display": "¥841.64",
+          "repaid_when": "32 天后",
+          "state": "RECEIVED",
+          "state_text": "已到账",
+          "authority_text": "在您签署的授权内，您无需做任何事。",
+          "share_text": "37%"
+        },
+        {
+          "label": "发票融资",
+          "amount_display": "¥255,000",
+          "amount_fen": 25500000,
+          "lands_when": "3 天后",
+          "lands_day": 3,
+          "cost_display": "¥2,272.29",
+          "repaid_when": null,
+          "state": "ARRANGED",
+          "state_text": "已安排",
+          "authority_text": "在您签署的授权内，您无需做任何事。",
+          "share_text": "63%"
+        }
+      ],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "公司现金预测",
+      "legend": [
+        {
+          "label": "当前账目 · 方案已执行",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "最低点 · 30 天后",
+        "projected_display": "¥300,000",
+        "minimum_display": "¥300,000",
+        "third_label": "高于您的最低现金",
+        "third_display": "¥0",
+        "note": "正好在您的最低现金上；预测期内没有低于它的时候。"
+      },
+      "lowest": {
+        "cause": "一笔贷款还款支出"
+      },
+      "scenario_title_text": null,
+      "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
+    },
+    "links": [
+      {
+        "label": "现金的去向",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "融资额度余量",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "应收款的到期时间",
+        "href": "/receivables"
+      },
+      {
+        "label": "全部交易",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": null,
   "approvals": [],
   "pending_count": 0,

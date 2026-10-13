@@ -160,8 +160,14 @@ test("Investigate on request: every response in one table with its basis words, 
   await expect(page.getByTestId("path-reply-back")).toHaveText("Back to Option A");
   await openReviewFor(page);
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option B to Foshan");
+  // The review reads Option B's own receipt (the server priced every sendable reply), not Option A's and not words composed from the path.
+  const receiptB = (await page.getByTestId("commitment-receipt").textContent())!;
+  await expect(page.getByTestId("deal-unpriced")).toHaveCount(0);
   await page.getByTestId("queue-review-close").click();
   await page.getByTestId("path-reply-back").click();
+  await openReviewFor(page);
+  expect((await page.getByTestId("commitment-receipt").textContent())!, "Option A's receipt is not Option B's").not.toBe(receiptB);
+  await page.getByTestId("queue-review-close").click();
   await expect(page.getByTestId("deal-recommends-title")).toHaveText("What we recommend · Option A");
   // The chart is asked for on its own.
   await expect(page.getByTestId("deal-chart")).toHaveCount(0);

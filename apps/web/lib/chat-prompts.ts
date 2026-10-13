@@ -127,11 +127,13 @@ const PAGE: Record<string, Record<Lang, Prompt[]>> = {
       { id: "page-changed", label: "chat.p.page.changed", text: "What changed today?" },
       { id: "page-waiting", label: "chat.p.page.waiting", text: "What are we waiting for?" },
       { id: "page-latepay", label: "chat.p.page.latepay", text: "Which payments are late?" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "Who owes us money?" },
     ],
     zh: [
       { id: "page-changed", label: "chat.p.page.changed", text: "今天有什么变化？" },
       { id: "page-waiting", label: "chat.p.page.waiting", text: "我们在等什么？" },
       { id: "page-latepay", label: "chat.p.page.latepay", text: "哪些回款没到？" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "谁欠我们钱？" },
     ],
   },
   "/cash": {

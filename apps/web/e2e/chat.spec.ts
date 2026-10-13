@@ -322,8 +322,9 @@ test("the chat button says Ask FLOW, and a Business page offers only the questio
   await page.goto("/deals");
 
   const open = page.getByTestId("chat-open");
-  await expect(open).toContainText("Ask FLOW");
-  await expect(open).not.toContainText("Ask the agent");
+  // The entry is named "Ask FLOW" (the header's icon from lg, the pill or the bar's cell below it); it never says "Ask the agent".
+  await expect(open).toHaveAttribute("aria-label", "Ask FLOW");
+  await expect(open).not.toHaveAttribute("aria-label", /Ask the agent/);
   await open.click();
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   const chips = panel.locator('[data-testid^="prompt-"]');

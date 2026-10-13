@@ -7893,7 +7893,7 @@
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of a 1.00% rebate"
           }
         ],
@@ -9909,7 +9909,7 @@
           {
             "key": "early_payment",
             "label": "Early payment",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of 1.20% off ¥420,000.00"
           },
           {
@@ -20216,7 +20216,7 @@
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 1.00% 返利"
           }
         ],
@@ -22232,7 +22232,7 @@
           {
             "key": "early_payment",
             "label": "提前付款",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 ¥420,000.00 减免 1.20%"
           },
           {

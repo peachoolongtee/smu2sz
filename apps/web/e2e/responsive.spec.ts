@@ -62,7 +62,7 @@ test("Business navigation: five pills on a desktop, the same five tabs on a phon
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "Business" })).toBeAttached();
-  await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
+  await expect(page.getByTestId("chat-open")).toHaveAttribute("aria-label", "Ask FLOW");
   await expect(page.getByTestId("chat-open")).toBeInViewport();
   // Ask FLOW never covers content: on a phone it is the bar's last cell (beside the five tabs, not over one); from sm a pill above the bar.
   const chat = (await page.getByTestId("chat-open").boundingBox())!;

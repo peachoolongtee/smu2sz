@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from app.api.decisions import Context
-from app.api.presentation import business_action, when_text
+from app.api.presentation import business_action, lapsed_offer_text, when_text
 from app.api.presentation import t as say
 from app.api.workspace import _months
 from app.deals import _join, _obligation_text
@@ -133,6 +133,30 @@ def open_deals(ctx: Context, lang: str) -> list[tuple[dict[str, Any], DealState,
             found.append((ds, ds.offer))
     found.sort(key=lambda pair: (pair[0].updated_seq, pair[0].decision_id))
     return [(_open_offer(ctx, ds, offer, lang), ds.state, ds) for ds, offer in found]
+
+
+def lapsed_offers(ctx: Context, lang: str) -> dict[str, tuple[dict[str, Any], DealState]]:
+    """The newest lapsed offer of each buyer (its reply was ready, but the invoice it was about has been settled since), by counterparty id.
+    It is shown only where nothing else of the buyer's is open: it is nothing to do and nothing to wait for. Every figure of a reply is null."""
+    found: dict[str, tuple[Any, Any]] = {}
+    for ds, _inp in ctx.states().values():
+        if ds.family != "DEAL" or ds.offer is None or ds.state != DealState.LAPSED:
+            continue
+        cp = ds.offer.counterparty_id
+        if cp not in found or ds.updated_seq > found[cp][0].updated_seq:
+            found[cp] = (ds, ds.offer)
+    return {cp: (_lapsed_offer(ctx, offer, ds, lang), DealState.LAPSED) for cp, (ds, offer) in found.items()}
+
+
+def _lapsed_offer(ctx: Context, offer: Any, ds: Any, lang: str) -> dict[str, Any]:
+    asked = [_obligation_text(o, lang, ctx.today, ctx.state) for o in offer.obligations if o.type != ObligationType.CLAIMED_PRIOR_CONCESSION]
+    cap = ctx.mandate.max_aggregate_forward_concession_fen
+    return {
+        "offer_id": offer.offer_id, "verdict_id": ds.verdict.id if ds.verdict is not None else None,
+        "received_when": when_text(offer.received_day, ctx.today, lang) if offer.received_day is not None else None,
+        "asks_text": _join(asked, lang) if asked else None, "read_text": None, "headline_short": None, "headline_note": None,
+        "action_text": lapsed_offer_text(lang, ctx.lapsed_by.get(ds.decision_id, True)), "cost_display": None, "cost_window_text": None, "limit_fen": cap,
+        "limit_display": fmt_yuan(cap), "over_limit": False, "replies_ready": 0, "stages": [], "tone": "info"}
 
 
 def _open_offer(ctx: Context, ds: Any, offer: Any, lang: str) -> dict[str, Any]:

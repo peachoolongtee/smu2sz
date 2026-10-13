@@ -155,7 +155,9 @@ def test_the_counts_equal_the_rows_and_the_alert_is_counted_nowhere(api: TestCli
         if moment == "after":
             _run_plan(api)
         w = _get(api)
-        assert w["counts"] == {"needs_you": len(w["needs_you"]), "waiting": len(w["waiting"]), "customers": len(w["customers"])}
+        # the queue's counts: a promise is an Agreements row there, so Waiting counts the rest of the `waiting` rows
+        assert w["counts"] == {"needs_you": len(w["needs_you"]), "waiting": len([r for r in w["waiting"] if r["kind"] != "PROMISE"]),
+                               "agreements": len([r for r in w["waiting"] if r["kind"] == "PROMISE"]), "customers": len(w["customers"])}
         assert w["counts"]["customers"] == 2
         assert all(k not in {i["key"] for i in w["needs_you"] + w["waiting"]} for k in ("company-cash",))
 
@@ -213,7 +215,8 @@ def test_a_promised_payment_waits_and_is_not_cash(api: TestClient) -> None:
     assert (wait["kind"], wait["severity"], wait["subject_text"]) == ("PROMISE", "CAUTION", "Foshan · Payment promised")
     assert (wait["status_text"], wait["consequence_text"]) == ("Expected today · ¥255k", "Not counted as cash until it arrives.")
     assert wait["expected_day"] == 2
-    assert next(c for c in w["customers"] if c["customer_id"] == "BUYER-1")["status_text"] == "1 waiting"
+    # a promise is counted under agreements as the queue counts it, not as waiting; the row still says the payment is promised
+    assert next(c for c in w["customers"] if c["customer_id"] == "BUYER-1")["status_text"] == "1 payment promised"
 
 
 def test_the_plan_waiting_on_approval_is_the_alerts_and_not_a_row_of_needs_you(api: TestClient) -> None:

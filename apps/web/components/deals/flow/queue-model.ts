@@ -1,4 +1,5 @@
 import { customerHref } from "@/lib/customer-href";
+import { offerOf } from "@/lib/selection";
 import type { CustomersView, DealView, DealsQueue, DealsView, QueueRowView, WorklistCustomer, WorklistNeedsRow, WorklistView, WorklistWaitingRow } from "@/lib/types";
 import type { StateTone } from "@/components/ui/state-word-model";
 
@@ -95,9 +96,12 @@ export function tabOf(raw: string | null): TabKey | null {
   return raw && (TABS as string[]).includes(raw) ? (raw as TabKey) : null;
 }
 
-/** The record id of the deal a row stands for (`deal:<offer>`): the row's own, from the record; null for a row that is not a negotiation (an approval, a collection, a customer to set up). */
+/**
+ * The record id of the deal a row stands for (`deal:<offer>`): the row's own, from the record; null for a row that is not a negotiation. A funding request (`approval:APR-…`) has a
+ * decision id too, but it is not a deal and selects nothing here: only a `deal:` id selects in place.
+ */
 export function rowDecision(row: Pick<QueueRowView, "decision_id">): string | null {
-  return row.decision_id ?? null;
+  return offerOf(row.decision_id) ? (row.decision_id ?? null) : null;
 }
 
 /** Which tier holds the negotiation with this decision id, if any (so a selection from the address opens its own tab). */
@@ -108,8 +112,8 @@ export function tierOfDecision(q: Queue, decision: string | null): Tier | null {
 }
 
 /**
- * Where a row leads. A negotiation, an agreement and a promise (each has the deal's record id) select in place, the address taking its customer, decision and invoice. Any other
- * task leads where the server says it is done (the approval, the invoice, the customer's page); the server wrote those links with the row's own customer and invoice.
+ * Where a row leads. A negotiation, an agreement and a promise (each has a `deal:` record id) select in place, the address taking its customer, decision and invoice. Any other
+ * task (an approval, a collection, a settlement) is a link to where the server says it is done (the approval, the invoice, the customer's page); the server wrote those links with the row's own customer and invoice.
  */
 export type RowTarget = { kind: "select"; customer: string | null; decision: string; invoice: string | null } | { kind: "go"; href: string };
 

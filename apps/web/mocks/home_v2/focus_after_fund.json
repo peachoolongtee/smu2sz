@@ -168,13 +168,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "Back to Deals",
             "href": "/deals"
           },
-          "customer": "BUYER-1",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       },
       "BUYER-2": {
@@ -206,7 +210,7 @@
           {
             "key": "financing",
             "label": "Financing linked",
-            "value_display": "None",
+            "value_display": null,
             "note": "nothing is financed against Dongguan's invoices",
             "tone": "neutral",
             "state": "none",
@@ -305,13 +309,17 @@
         "history": [],
         "partial": null,
         "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "Back to Deals",
             "href": "/deals"
           },
-          "customer": "BUYER-2",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       }
     },
@@ -486,13 +494,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "返回交易",
             "href": "/deals"
           },
-          "customer": "BUYER-1",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       },
       "BUYER-2": {
@@ -524,7 +536,7 @@
           {
             "key": "financing",
             "label": "已关联的融资",
-            "value_display": "无",
+            "value_display": null,
             "note": "没有以Dongguan的发票做融资",
             "tone": "neutral",
             "state": "none",
@@ -623,13 +635,17 @@
         "history": [],
         "partial": null,
         "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "返回交易",
             "href": "/deals"
           },
-          "customer": "BUYER-2",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       }
     },

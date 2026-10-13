@@ -267,7 +267,7 @@ def test_the_repayment_alert_cure_runs_after_yes_run_it(client, rt):
 def test_the_status_read_in_english_and_chinese_and_raw_without_the_mode(client, rt):
     _day34(client, rt)
     _say(client, "what needs me today?", "st0")
-    aid = _say(client, "Yes, run it", "st0")["operations"][0]["approval_id"]
+    assert _say(client, "Yes, run it", "st0")["operations"][0]["approval_id"]  # the plan is queued for the owner
     en = _say(client, "show cash status", "st1")
     assert en["reply"].splitlines() == [
         "Cash today is ¥300,000.00; your minimum cash reserve is ¥300,000.00.",
@@ -276,12 +276,12 @@ def test_the_status_read_in_english_and_chinese_and_raw_without_the_mode(client,
         "Leverage is highest at 1.49× in month 1; your maximum is 2.50×.",
         "Future concessions given: ¥0.00 of your ¥5,000 limit.",
         "Drawn: ¥149,986.20 on the Bank credit line.",
-        f"1 item waits for your approval ({aid})."]
+        "1 item waits for your approval."]  # an approval's id is not a Business word
     zh = _say(client, "show cash status", "st2", "zh")
     assert zh["reply"].splitlines() == [
         "今天现金 ¥300,000.00；您的最低现金储备为 ¥300,000.00。", "现金将低于最低现金储备：8 天后缺 ¥200,000.00。",
         "偿债覆盖率（DSCR）最低 1.91×（第 3 月），下限 1.25×。", "杠杆率最高 1.49×（第 1 月），上限 2.50×。",
-        "已给出的远期让步：¥0.00，上限 ¥5,000。", "已提款：Bank credit line ¥149,986.20。", f"1 项待您审批（{aid}）。"]
+        "已给出的远期让步：¥0.00，上限 ¥5,000。", "已提款：Bank credit line ¥149,986.20。", "1 项待您审批。"]
     for reply in (en["reply"], zh["reply"]):
         _owner_words(reply)
     raw = _say(client, "show cash status", "st3", mode=None)

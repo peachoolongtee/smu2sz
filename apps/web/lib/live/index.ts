@@ -67,6 +67,8 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
+  WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
 } from "../types";
@@ -124,9 +126,9 @@ export const live = {
     }),
 
   /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
-  getOffer: async (offerId: string): Promise<OfferView> => {
+  getOffer: async (offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> => {
     try {
-      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}${lang === "zh" ? "?lang=zh" : ""}`);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
       throw e;
@@ -238,13 +240,13 @@ export const live = {
   /** POST /alerts/{id}/act: executes the alert's cure as the agent. The body always binds the act to what was shown (409 ALERT_CHANGED when the books moved). */
   actOnAlert: (id: string, bound: ActRequest) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { body: bound, ownerOn403: true }),
 
-  /** POST /whatif; the customer and decision it is run for ride in the query (the server echoes what it honoured in `context`; a server that does not read them ignores them). */
-  whatIf: (params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}) => {
-    const q = new URLSearchParams();
-    if (scope.customer) q.set("customer", scope.customer);
-    if (scope.decision) q.set("decision", scope.decision);
-    return http<WhatIfResult>("POST", `/whatif${q.size ? `?${q}` : ""}`, { body: params });
-  },
+  /** POST /whatif on the invoice of the negotiation addressed (`offer_id` in the body; none: the books' first buyer with a recurring invoice), the words in `lang`. A buyer the sandbox cannot value as a whole answers `available: false` and says why. */
+  whatIf: (params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}) =>
+    http<WhatIfResult | WhatIfUnscoped>("POST", `/whatif?lang=${scope.lang ?? "en"}`, { body: scope.offerId ? { ...params, offer_id: scope.offerId } : params }),
+
+  /** GET /whatif/presets on the addressed negotiation's invoice: `available`, `invoice_text` and `scope_text` say which invoice the sandbox would act on, or why it has none (then no presets). */
+  whatIfScope: (offerId: string, lang: "en" | "zh" = "en") =>
+    http<WhatIfScope>("GET", `/whatif/presets?offer_id=${enc(offerId)}&lang=${lang}`),
 
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });

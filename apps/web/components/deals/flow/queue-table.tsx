@@ -17,6 +17,8 @@ const COLS = "grid-cols-[minmax(0,1fr)_auto] @xl:grid-cols-[minmax(0,1fr)_7.5rem
 /** The subject with the customer's name as the link: "Foshan · Payment terms" links "Foshan"; a subject that does not start with the short name is linked whole. */
 function Subject({ row, decision, invoice }: { row: QueueRowView; decision: string | null; invoice: string | null }) {
   const short = row.customer_short;
+  // A row with no customer (a funding request) has no name link: plain text, so a click on the words reaches the row's own link.
+  if (!row.customer_id) return <span className="font-bold text-ink">{row.subject_text}</span>;
   const link = (children: string) => (
     <CustomerName id={row.customer_id} decision={decision} invoice={invoice} className="pointer-events-auto relative z-10 font-bold text-ink" testId="queue-customer">
       {children}
@@ -59,7 +61,7 @@ function TaskRow({ tier, row, selected, locked, onSelect }: { tier: Exclude<Tier
             <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
             {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
           </p>
-          {row.differentiator_text ? <p className="text-supporting italic text-ink-3">“{row.differentiator_text}”</p> : null}
+          {row.differentiator_text ? <p className="text-supporting italic text-ink-3" data-testid="queue-differentiator">{row.differentiator_text}</p> : null}
           {row.consequence_text ? <p className="text-supporting text-ink-3">{row.consequence_text}</p> : null}
         </div>
         {/* Wide pane: the next step has its own column. Narrow pane: it sits under the pill at the right. */}
@@ -201,7 +203,8 @@ export function QueuePanel({
           }
         />
       ) : null}
-      <div className="mt-4 -mx-1 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] [&>div]:w-max [&>div]:min-w-full">
+      {/* The five tabs do not fit one line in this card (440 px at 1440, 390 on a phone, longer words in zh): the row wraps, so every tab is visible and reachable and none is cut. */}
+      <div className="mt-4" data-testid="queue-tabs">
         <UnderlineTabs label={t("deals.tabs")} value={tab} onChange={onTab} tabs={tabs} />
       </div>
       {onlyCustomer ? (

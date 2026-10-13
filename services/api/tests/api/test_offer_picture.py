@@ -159,8 +159,8 @@ def test_each_path_has_the_three_term_rows_with_what_it_replaces(client):
 
     assert rows(asked) == [("60 days", None), ("1.20% off ¥420,000.00", None), ("1.00% rebate", None)]
     assert rows(opt_a) == [("45 days", "instead of 60"), ("0.85% off ¥257,200.00", "instead of 1.20% off ¥420,000.00"),
-                           ("None", "instead of a 1.00% rebate")]
-    assert rows(opt_b) == [("55 days", "instead of 60"), ("None", "instead of 1.20% off ¥420,000.00"),
+                           (None, "instead of a 1.00% rebate")]  # a term the path does not carry is null, never the word "None"
+    assert rows(opt_b) == [("55 days", "instead of 60"), (None, "instead of 1.20% off ¥420,000.00"),
                            ("0.30% price rise", "instead of a 1.00% rebate")]
 
 

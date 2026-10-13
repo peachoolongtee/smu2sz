@@ -89,6 +89,10 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   // One press sends: the receipt on screen is the review, there is no second confirmation.
   await sendCounter(page);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
+  // What ran is the server's own summary, said once under the result; the agreement receipt's "Runs now" line is the same summary, not the state word "Agreed".
+  await expect(page.getByTestId("deal-sent-ran")).toHaveText("Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.");
+  await expect(page.getByTestId("deal-agreement-receipt").getByTestId("receipt-line-executes_now")).toContainText("Agreement with Foshan Home Retail Co. recorded.");
+  await expect(page.getByTestId("deal-agreement-receipt").getByTestId("receipt-line-executes_now")).not.toHaveText(/Runs now\s*Agreed$/);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await expect(page.getByTestId("deal-send")).toHaveCount(0);
   await expect(page.getByTestId("queue-review-open")).toHaveCount(0);
@@ -158,6 +162,7 @@ test("the simulated buyer's lean is chosen in the review; a buyer who holds firm
   await expect(box.getByTestId("deal-send-refusal")).toContainText("there is no deal");
   await sendCounter(page);
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer refused every counter. Nothing was agreed.");
+  await expect(page.getByTestId("deal-sent-ran")).toHaveText("Funding of ¥405,000.00 was requested; ¥255,000.00 is on its way and lands in 3 days.");
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
   await expect(page.getByTestId("deal-send")).toHaveCount(0);
 });

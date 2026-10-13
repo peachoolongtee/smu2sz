@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { apiMode, getApprovals, getNavCounts } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
+import { useWide } from "@/lib/use-narrow";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
 import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
+import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
@@ -416,15 +418,19 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
   const rail = useRail();
+  // From `lg` Ask FLOW is an input in the header (the floating pill is gone); a phone and a tablet keep the pill and the bottom bar's "Ask".
+  const wide = useWide() && pathname !== "/chat";
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
       <Tour />
       <header className="sticky top-0 z-30 bg-canvas">
-        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
           <Brand href="/" />
-          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+          {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
+          {wide ? <AskHeaderInput /> : null}
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
             <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
@@ -524,7 +530,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           <div aria-hidden className="w-12 shrink-0 sm:hidden" />
         </div>
       </nav>
-      <ChatPanel />
+      <ChatPanel headerEntry={wide} />
     </div>
   );
 }

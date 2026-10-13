@@ -430,7 +430,13 @@ OVERDUE_ASK = _re(
     r"\bwhat(?:['’]s| is| are)\s+(?:overdue|late|past due)\b", r"\bwhat\s+is\s+overdue\b", r"\bwho\s+(?:is|are)\s+(?:late|overdue)\b",
     r"\bwho\s+(?:should|do)\s+(?:i|we)\s+(?:chase|call|follow up|remind|collect)\b", r"\bchase\s+first\b",
     r"\bwho\s+(?:has not|hasn'?t|haven'?t)\s+paid\b", r"\bwho\s+to\s+chase\b",
+    r"\b(?:which|what|any)\b.{0,20}\b(?:invoices?|payments?|receipts?|receivables?)\b.{0,25}\b(?:late|overdue|past due)\b",
     r"逾期", r"先催", r"该催", r"催(?:收|款|哪)", r"谁(?:还)?没(?:有)?付")
+OWED_ASK = _re(
+    r"\bwho\s+(?:still\s+)?owes?\s+(?:us|me)\b", r"\bwho\s+(?:still\s+)?owes?\s+(?:the\s+)?(?:company|business)\b",
+    r"\bhow\s+much\b.{0,25}\b(?:owed|do\s+(?:they|customers|buyers|our\s+customers)\s+owe)\b",
+    r"\bwho\s+hasn'?t\s+paid\s+us\s+yet\b",
+    r"谁欠(?:我们|我)?(?:的)?(?:多少)?钱", r"谁欠(?:我们|我)", r"(?:客户|买方|买家).{0,6}欠(?:我们)?(?:多少)?(?:钱|款)")
 LATE_PAYMENT_ASK = _re(
     r"\b(?:late|delayed?|overdue|slips?|slipped|doesn'?t arrive|does not arrive|never arrives?)\b.{0,40}\b(?:payment|invoice|receipt|receivable)s?\b",
     r"\b(?:payment|invoice|receipt|receivable)s?\b.{0,40}\b(?:is|are|comes?|arrives?|gets?)\b.{0,6}\b(?:late|delayed|overdue)\b",

@@ -66,7 +66,7 @@
     "requested_by": "AGENT",
     "message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
     "summary": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
-    "message_when": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed",
+    "message_when": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits",
     "event_text": "You approved an application for ¥600,000.00 on Equipment term loan.",
     "event_detail": null,
     "decision_id": "approval:APR-000001"

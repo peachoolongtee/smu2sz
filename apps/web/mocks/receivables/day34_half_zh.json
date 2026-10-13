@@ -49,6 +49,9 @@
       },
       "net_short": "约 ¥291k",
       "recourse_text": "如果回款不足，差额由您承担。",
+      "breakdown": [],
+      "net_after_repayment_display": "约 ¥291k",
+      "collection_due_text": "已逾期 2 天",
       "financing_state": "NONE",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -131,6 +134,9 @@
       },
       "net_short": "约 ¥420k",
       "recourse_text": "如果回款不足，差额由您承担。",
+      "breakdown": [],
+      "net_after_repayment_display": "约 ¥420k",
+      "collection_due_text": "13 天后",
       "financing_state": "NONE",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -209,6 +215,9 @@
       },
       "net_short": "约 ¥420k",
       "recourse_text": "如果回款不足，差额由您承担。",
+      "breakdown": [],
+      "net_after_repayment_display": "约 ¥420k",
+      "collection_due_text": "43 天后",
       "financing_state": "NONE",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -270,5 +279,14 @@
   "partial": null,
   "last_read_when": "今天",
   "last_read_day": 34,
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  },
   "computed_in_seconds": 0
 }

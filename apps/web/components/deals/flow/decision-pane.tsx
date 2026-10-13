@@ -30,7 +30,7 @@ export interface DealView {
   late: boolean;
 }
 
-const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED"]);
+const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
 
 /** A sentence the server wrote opens with a capital in the place it stands. */
 const upper = "first-letter:uppercase";
@@ -48,13 +48,18 @@ function SendResult({ n }: { n: NegotiationView }) {
   const { t } = useI18n();
   const deal = n.outcome === "DEAL";
   const accepted = n.rounds.find((r) => r.buyer_response === "ACCEPT");
-  const ran = n.operations.filter((o) => o.status === "EXECUTED");
+  const summary = n.execution?.summary_text || null;
   return (
     <div role="status" className="mt-4 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-sent">
       <p className="font-bold text-ink" data-testid="deal-negotiation">
         {deal ? t("biz.deals.dealDone", { counter: accepted?.counter_label_when ?? accepted?.counter_label ?? "" }) : t("biz.deals.noDeal")}
       </p>
-      {!deal ? <p className="mt-1 text-ink-2">{ran.length ? t("biz.deals.gapFunded") : t("biz.deals.nothingChanged")}</p> : null}
+      {/* What ran, in the server's own words (the negotiation result's execution summary); the web adds no sentence of its own about the funding. */}
+      {summary ? (
+        <p className="mt-1 text-ink-2" data-testid="deal-sent-ran">
+          {summary}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -202,7 +207,8 @@ export function DecisionPane({
     </div>
   );
   if (n.error && !offer) return <ErrorState error={n.error} onRetry={n.reload} />;
-  if (n.missing || mismatch || (irrelevantText && !offer)) return ask(irrelevantText ?? t("deals.irrelevant"));
+  // A decision that is not a deal (`approval:…`, anything else) names no negotiation: ask at once, never wait for a read that will not come.
+  if (!n.offerId || n.missing || mismatch || (irrelevantText && !offer)) return ask(irrelevantText ?? t("deals.irrelevant"));
   if (n.loading || !offer) return <LoadingBlock rows={4} label={t("hv2.focus.working")} />;
 
   const record = n.record ?? null;
@@ -356,9 +362,9 @@ export function DecisionPane({
               </p>
             ) : null}
             {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.length ? (
+            {asked?.terms.some((x) => x.value_text) ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.map((x) => (
+                {asked.terms.filter((x) => x.value_text).map((x) => (
                   <div key={x.key} className="min-w-0">
                     <dt className="text-supporting text-ink-3">{x.label}</dt>
                     <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
@@ -385,9 +391,9 @@ export function DecisionPane({
               </p>
             ) : null}
             {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.length ? (
+            {asked?.terms.some((x) => x.value_text) ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.map((x) => (
+                {asked.terms.filter((x) => x.value_text).map((x) => (
                   <div key={x.key} className="min-w-0">
                     <dt className="text-supporting text-ink-3">{x.label}</dt>
                     <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
@@ -399,13 +405,12 @@ export function DecisionPane({
 
           )}
 
-          {offer.offer.abstentions.length ? (
+          {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
+          {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
             <div data-testid="deal-abstentions">
               <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
                 <ul className="list-disc pl-5 text-sm">
-                  {offer.offer.abstentions.map((a) => (
-                    <li key={a.field}>{a.reason}</li>
-                  ))}
+                  {offer.offer.abstentions.map((a) => ((a.reason_when === undefined ? a.reason : a.reason_when) ? <li key={a.field}>{a.reason_when === undefined ? a.reason : a.reason_when}</li> : null))}
                 </ul>
                 <div className="mt-2">
                   <ButtonLink href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`}>{t("biz.deals.clarify")}</ButtonLink>
@@ -510,9 +515,31 @@ export function DecisionPane({
                   ) : null}
                 </div>
               ) : (
-                <div className="space-y-2 border-t border-line pt-5" data-testid="deal-no-reply">
+                <div className="space-y-2.5 border-t border-line pt-5" data-testid="deal-no-reply">
                   <h3 className="text-supporting font-bold text-ink-3">{t("dq.rec.plain")}</h3>
                   <p className="max-w-[68ch] text-[15px] leading-snug text-ink">{asked?.decides_text ?? t("glance.offer.none")}</p>
+                  {/* No reply FLOW can send: the ask itself is what the owner can accept or decline, so its authority, the server's words for what the owner can do, and its cost with the basis are
+                      still said. There is no commit control here (the route that would accept the ask as asked does not exist); nothing is invented. */}
+                  {asked ? (
+                    <div data-testid="queue-authority" data-authority={asked.authority ?? ""} data-tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>
+                      {asked.authority_text && asked.authority_text !== asked.decides_text ? <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_text}</StateWord> : null}
+                      {asked.authority_reason_text ? (
+                        <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
+                          {asked.authority_reason_text}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {asked && askCost ? (
+                    <dl className="grid gap-x-8 gap-y-3 pt-1 sm:grid-cols-2" data-testid="deal-costs">
+                      <div className="min-w-0" data-testid="deal-cost-asked">
+                        <dt className="text-supporting text-ink-3">{t("deals.cost.asked")}</dt>
+                        <dd className="m-0">
+                          <Cell value={askCost} sub={askBasis} bad={asked.authority === "over_limit"} />
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : null}
                 </div>
               )}
 

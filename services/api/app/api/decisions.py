@@ -34,6 +34,7 @@ from app.api.presentation import (
     facility_name,
     kind_text,
     lands_difference,
+    lapsed_offer_text,
     leg_words,
     obligation_sentence,
     option_label,
@@ -50,6 +51,7 @@ from app.api.presentation import (
 from app.api.receipt import agreement_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.books import Books, current_books
 from app.decisions import (
     DealState,
     DecisionInputs,
@@ -62,9 +64,9 @@ from app.decisions import (
 from app.decisions.facts import Fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
 from app.decisions.state import RESERVE_ALERT, RecordIndex, derive, newest_reserve_decision
-from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, OperationStatus
+from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, Mode, OperationStatus
 from app.domain.money import fmt_yuan
-from app.financial import EngineError
+from app.financial import EngineError, project
 from app.operations.log import LoggedEntry, read_entries
 from app.persistence.records import ApprovalRecord, DecisionFactRecord
 
@@ -102,6 +104,43 @@ def latest_verdict_for(rt: Runtime, offer_id: str):
     if verdict is None:
         verdict = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
     return verdict
+
+
+def offer_as_asked(state: FinancialState, mandate: Mandate, commitments: Sequence[Any], offer_id: str, verdict: Any) -> tuple[Books, Any | None]:
+    """(the books without this offer's own agreements, the cash trajectory of the offer as asked on them), the trajectory None when the offer
+    can no longer be drawn on today's books: the days it named have passed, or its invoice has changed since (an agreement made after it
+    settled the invoice). The one rule the offer picture and the decision record's LAPSED state both read."""
+    books = current_books(state, [c for c in commitments if c.offer_id != offer_id])
+    try:
+        return books, project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days,
+                              mandate.min_cash_fen)
+    except EngineError:
+        return books, None
+
+
+def is_lapsed(state: FinancialState, mandate: Mandate, commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
+    """Whether the offer's reply can no longer be drawn on today's books (`offer_as_asked` has no trajectory)."""
+    return offer_as_asked(state, mandate, commitments, offer_id, verdict)[1] is None
+
+
+def lapsed_conflict(rt: Runtime, offer_id: str, verdict: Any, lang: str) -> HTTPException | None:
+    """The 409 `OFFER_LAPSED` {code, message, message_when} an action on a lapsed offer answers with (the one the exposure routes give), else None.
+    A lapsed offer is closed: it is not evaluated again and nothing is sent on it. Call under `rt.lock`."""
+    if verdict is None:
+        return None
+    state, mandate, held = rt.store.get_state(), rt.store.get_mandate(), tuple(rt.store.commitments())
+    if not is_lapsed(state, mandate, held, offer_id, verdict):
+        return None
+    said = lapsed_offer_text("zh" if lang == "zh" else "en", lapsed_by_agreement(held, offer_id, verdict))
+    return HTTPException(409, detail={"code": "OFFER_LAPSED", "message": said, "message_when": said})
+
+
+def lapsed_by_agreement(commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
+    """Whether another agreement in force settled an invoice this offer was about (the usual cause of a lapse, and the one the state's sentence
+    names); false when the books moved otherwise (the invoice was financed, the days it named passed)."""
+    named = {o.base.receivable_id for o in verdict.bound_obligations if o.base.receivable_id}
+    live = (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE, CommitmentStatus.FULFILLED)
+    return any(c.offer_id != offer_id and c.status in live and any(o.base.receivable_id in named for o in c.obligations) for c in commitments)
 
 
 # ---------------------------------------------------------------- reading the stores once
@@ -151,6 +190,7 @@ class Context:
     report: Any
     _states: dict[str, tuple[DecisionState, DecisionInputs]] | None = field(default=None, repr=False)
     _index: RecordIndex | None = field(default=None, repr=False)
+    lapsed_by: dict[str, bool] = field(default_factory=dict, repr=False)  # a LAPSED decision -> whether another agreement settled its invoice
 
     @property
     def index(self) -> RecordIndex:
@@ -187,6 +227,21 @@ class Context:
             promised=self.promised, alerts=self.open_alerts, index=self.index,
         )
 
+    def lapse(self, ds: DecisionState) -> DecisionState:
+        """The decision as the books leave it: a negotiation whose reply was ready (RESPONSE_READY) but whose offer can no longer be drawn on
+        today's books is LAPSED, closed (nothing to do, nothing to wait for). Any other decision is returned as it is."""
+        if ds.family != "DEAL" or ds.state != DealState.RESPONSE_READY or ds.verdict is None or ds.offer is None:
+            return ds
+        try:
+            lapsed = is_lapsed(self.state, self.mandate, self.commitments, ds.offer.offer_id, ds.verdict)
+        except Exception:
+            log.exception("the offer of decision %s could not be checked against today's books", ds.decision_id)
+            return ds
+        if not lapsed:
+            return ds
+        self.lapsed_by[ds.decision_id] = lapsed_by_agreement(self.commitments, ds.offer.offer_id, ds.verdict)
+        return replace(ds, state=DealState.LAPSED, terminal=True)
+
     def states(self) -> dict[str, tuple[DecisionState, DecisionInputs]]:
         """Every decision's state. One that cannot be derived is logged and left out (and not tried again), so a bad entry
         never takes the list, the home or the queue down with it."""
@@ -209,7 +264,7 @@ class Context:
                     except Exception:
                         log.exception("decision %s could not be derived with its residual; it is left out", decision_id)
                         continue
-                out[decision_id] = (ds, inp)
+                out[decision_id] = (self.lapse(ds), inp)
             self._states = out
         return self._states
 
@@ -277,7 +332,7 @@ def waiting_view(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str
     name = _party_name(ctx, w)
     return {"code": w.code.value, "party": w.party.value, "party_name": name, "day": w.day,
             "when": when_text(w.day, ctx.today, lang) if w.day is not None else None,
-            "text": waiting_text(w.code.value, name or "", w.day, ctx.today, lang, family=ds.family)}
+            "text": waiting_text(w.code.value, name or "", w.day, ctx.today, lang, family=ds.family, lapsed=ds.state == DealState.LAPSED)}
 
 
 def _money_legs(ds: DecisionState) -> list[Any]:
@@ -335,7 +390,8 @@ def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang:
     residual = ds.residual is not None
     return {
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
-        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual),
+        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual,
+                                          lapsed_by_agreement=ctx.lapsed_by.get(ds.decision_id, True)),
         "state_tone": decision_state_tone(ds.state.value, awaited=waiting["party"] == Party.OWNER.value, residual=residual),
         "terminal": ds.terminal, "headline": _headline(ctx, ds, lang), "counterparty_name": _counterparty(ctx, ds),
         "amount_display": _amount_display(ctx, ds),
@@ -501,7 +557,7 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
                  "REJECTED": t(lang, "You declined it.", "您已拒绝。")}.get(approval or "")
     awaited = next((p["detail_when"] for p in promises if p.get("status") == "AWAITED" and p.get("detail_when")), None)
     return agreement_receipt(lang, buyer=party_name(ctx.state, c.counterparty_id), terms=_agreed_terms(ctx, c, lang),
-                             status_text=_status_text(c, ds, lang), forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
+                             status_text=execution_view(ctx, ds, lang)["summary_text"], forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
                              economic_effect_text=economic_effect_text(c, ctx.mandate.forward_concession_horizon_days, lang),
                              expires_when=when_text(c.expires_day, ctx.today, lang), authority_text=authority, awaited=awaited)
 
@@ -553,7 +609,7 @@ def remaining_task_view(ctx: Context, ds: DecisionState, inp: DecisionInputs, la
     if ds.residual is not None and w.code == WaitCode.OWNER_DECISION:
         text = remaining_task_words(ds.residual.shortfall_fen, ds.residual.starts_day, ctx.today, lang, ds.residual.committed_cure)
     else:
-        text = waiting_text(w.code.value, _party_name(ctx, w) or "", w.day, ctx.today, lang, family=ds.family)
+        text = waiting_text(w.code.value, _party_name(ctx, w) or "", w.day, ctx.today, lang, family=ds.family, lapsed=ds.state == DealState.LAPSED)
     return {"text": text, "code": w.code.value, "links": remaining_links(ctx, ds, lang) if ds.residual is not None and w.code == WaitCode.OWNER_DECISION else []}
 
 
@@ -660,7 +716,7 @@ def get_decision(decision_id: str, lang: str = "en", *, sel: Annotated[Selection
             if offer_id is None or ctx.offer(offer_id) is None:
                 raise HTTPException(404, {"code": "DECISION_NOT_FOUND", "decision_id": decision_id})
             inp = ctx.inputs_for(decision_id)
-            found = (derive(inp), inp)
+            found = (ctx.lapse(derive(inp)), inp)
         ds, inp = found
         subject = ds.offer if ds.offer is not None else ds.commitment
         context = build_context(rt, lang, sel, page="decision", buyer=subject.counterparty_id if subject is not None else None,

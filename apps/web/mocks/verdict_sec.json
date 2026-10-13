@@ -220,6 +220,7 @@
       "text": "Decline recommended"
     },
     "priced_response": null,
+    "priced_responses": [],
     "advanced": {
       "keys": {
         "parsed_obligations": [

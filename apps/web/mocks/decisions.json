@@ -113,7 +113,7 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
-          "executes_now_text": "Agreed",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
           "gross_display": null,
@@ -323,7 +323,7 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
-          "executes_now_text": "已达成协议",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
           "gross_display": null,
@@ -2745,7 +2745,7 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Fulfilled",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
           "gross_display": null,
@@ -2981,7 +2981,7 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "已履行",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
           "gross_display": null,
@@ -3219,7 +3219,7 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Early payment did not arrive",
+          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
           "gross_display": null,
@@ -3455,7 +3455,7 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "提前付款未到账",
+          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
           "gross_display": null,
@@ -4035,7 +4035,7 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Early payment did not arrive",
+          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
           "gross_display": null,
@@ -4245,7 +4245,7 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "提前付款未到账",
+          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
           "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
           "gross_display": null,
