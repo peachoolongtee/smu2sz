@@ -9,6 +9,10 @@ export function DecisionHighlight({
   title,
   line,
   facts,
+  hero,
+  middle,
+  stackMiddle = false,
+  note,
   children,
   testId,
   labelId,
@@ -17,6 +21,14 @@ export function DecisionHighlight({
   title: string;
   line?: string | null;
   facts?: { label: string; value: string }[];
+  /** The hero fact (the cost to the owner): a 13 px label, the figure at 28 px with a 2 px brand rule under it, and its basis word beside it in the quiet ink. */
+  hero?: { label: string; value: string; basis?: string | null; testId?: string };
+  /** Beside the hero fact: the funding, as a timeline or as text. */
+  middle?: ReactNode;
+  /** On a phone the middle goes under the hero fact (a list of rows) instead of beside it (a sentence). */
+  stackMiddle?: boolean;
+  /** One quiet line under the actions (who approves). */
+  note?: ReactNode;
   children?: ReactNode;
   testId?: string;
   labelId?: string;
@@ -34,7 +46,21 @@ export function DecisionHighlight({
           {line}
         </p>
       ) : null}
-      {facts?.length ? (
+      {hero ? (
+        <div className={`mt-3 grid gap-x-5 gap-y-3 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-4 sm:pt-3 ${stackMiddle ? "" : "max-sm:grid-cols-[auto_minmax(0,1fr)]"}`} data-testid="hv2-action-facts">
+          <div className="min-w-0">
+            <p className="text-supporting text-ink-3">{hero.label}</p>
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <span className="inline-block border-b-2 border-brand-600 pb-1 font-display text-[24px] font-bold leading-none sm:text-[28px] tracking-[-0.02em] tabular-nums text-ink" data-testid={hero.testId ?? "hv2-hero-value"}>
+                {hero.value}
+              </span>
+              {hero.basis ? <span className="text-supporting text-ink-2">{hero.basis}</span> : null}
+            </p>
+          </div>
+          {middle ? <div className={`min-w-0 sm:border-l sm:border-line-strong sm:pl-8 ${stackMiddle ? "" : "max-sm:border-l max-sm:border-line-strong max-sm:pl-4"}`}>{middle}</div> : null}
+        </div>
+      ) : null}
+      {!hero && facts?.length ? (
         <dl className="mt-3 grid grid-cols-2 gap-x-0 gap-y-2.5 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1.6fr)_auto] sm:gap-y-3 sm:pt-3" data-testid="hv2-action-facts">
           {facts.map((f, i) => (
             <div key={f.label} className={`min-w-0 sm:pr-6 ${i > 0 ? "sm:border-l sm:border-line-strong sm:pl-6" : ""} ${i === 1 ? "max-sm:order-last max-sm:col-span-2" : i === 2 ? "max-sm:border-l max-sm:border-line-strong max-sm:pl-4" : ""}`}>
@@ -45,6 +71,7 @@ export function DecisionHighlight({
         </dl>
       ) : null}
       {children ? <div className="mt-3 sm:mt-4">{children}</div> : null}
+      {note ? <div className="mt-3 text-supporting text-ink-2">{note}</div> : null}
     </section>
   );
 }

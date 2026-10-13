@@ -100,7 +100,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         <div className="min-w-0 space-y-4 sm:space-y-6">
           <CompanyStrip kpis={v2.kpis} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-          <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} onBack={focusing ? () => clear("action") : undefined} />
+          <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} fundingTotal={v2.kpis.funding.value_display} onBack={focusing ? () => clear("action") : undefined} />
           {narrow && worklist.data ? <WorklistSheet read={worklist.data} customers={customers.data ?? null} selection={selection} /> : null}
           {focusing ? (
             selection.decision ? (
