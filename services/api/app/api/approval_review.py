@@ -15,6 +15,8 @@ Added to each row of `GET /approvals/queue` (every existing field stays):
                       and the run's result: waiting is current/next/next, approved and sent is done/current/next, and a stage is never done before it is.
                       Null for a request that is not an application and for one that was declined or did not run (nothing was sent, so there is
                       nothing to follow)
+    deadline_text     when it has to be decided by, in relative words ("Expires in 5 days", "Cash needed in 12 days"), with `deadline_day`; both null
+                      for a decided approval and for one with no deadline (`deadline_view`)
     summary_rows      six rows {label, value_text} (Amount requested, Facility, What happens now, Does money move now, Who decides whether funds are offered,
                       What if you decline) from the row's receipt and presentation, for an approval waiting for the owner; null once it is decided or for an
                       agreement
@@ -28,7 +30,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from app.api.presentation import COMMERCIAL_KINDS, Lang, t
+from app.api.presentation import COMMERCIAL_KINDS, Lang, t, when_text
 
 APPLY, REPAY, DRAW, FINANCE = "APPLY_FOR_FACILITY", "REPAY_FACILITY", "DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"
 
@@ -119,6 +121,19 @@ def _summary_rows(kind: str, item: Mapping[str, Any], pres: Mapping[str, Any], r
             (t(lang, "Who decides whether funds are offered", "由谁决定是否提供资金"), decides),
             (t(lang, "What if you decline", "如果您拒绝"), pres.get("if_decline"))]
     return [{"label": label, "value_text": value or None} for label, value in rows]
+
+
+def deadline_view(kind: str, day: int | None, today: int, lang: Lang) -> dict[str, Any]:
+    """When a waiting approval has to be decided by, in relative words: an agreement "Expires in 5 days", a funding request "Cash needed in 12 days"
+    (the day the decision record is waiting on the owner for); both null when it has none."""
+    if day is None:
+        return {"deadline_day": None, "deadline_text": None}
+    when = when_text(day, today, lang)
+    if kind in COMMERCIAL_KINDS:
+        text = t(lang, f"Expires {when}", f"{when}到期")
+    else:
+        text = t(lang, f"Cash needed {when}", f"{when}需要资金到位")
+    return {"deadline_day": day, "deadline_text": text}
 
 
 def approval_review(lang: Lang, *, item: Mapping[str, Any]) -> dict[str, Any]:

@@ -107,6 +107,12 @@ def _terms_in_force(state: Any, buyer: str | None) -> int | None:
     return ri.terms_days if ri is not None else None
 
 
+def _current_terms_text(state: Any, buyer: str | None, lang: str) -> str | None:
+    """The buyer's current payment terms in words ("45 days"), null when the books hold none."""
+    days = _terms_in_force(state, buyer)
+    return None if days is None else say(lang, f"{days} {'day' if days == 1 else 'days'}", f"{days} 天")
+
+
 def _payment_days(state: Any, obligations: list[Any], buyer: str | None) -> int | None:
     """The payment terms of a path in days: its terms extension's target (or the terms in force plus its delta), else the terms in force."""
     in_force = _terms_in_force(state, buyer)
@@ -471,6 +477,20 @@ def _scenario_assumption(lang: str, kind: str, legs: str | None, *, funded: bool
     return say(lang, "Assumes the buyer accepts this reply; no new funding is needed.", "假设买方接受此回复；无需新增融资。")
 
 
+def _terms_delta(lang: str, days: int | None, current: int | None, kind: str) -> str | None:
+    """The timing diagram's label for a path: how far its payment terms are from the terms in force ("+15 days requested by buyer" for the offer as
+    asked, "+10 days in this counter" for a reply), "no change" at the terms in force; null when either is unknown."""
+    if days is None or current is None:
+        return None
+    if days == current:
+        return say(lang, "no change", "无变化")
+    n, longer = abs(days - current), days > current
+    sign = "+" if longer else "−"
+    if kind == "asked":
+        return say(lang, f"{sign}{n} {'day' if n == 1 else 'days'} requested by buyer", f"买方要求{'延长' if longer else '缩短'} {n} 天")
+    return say(lang, f"{sign}{n} {'day' if n == 1 else 'days'} in this counter", f"此还价{'延长' if longer else '缩短'} {n} 天")
+
+
 def _funding_short(lang: str, kind: str, legs: str | None, *, funded: bool, projected: bool = True) -> str | None:
     """The funding assumption of a path in a few words, for a comparison row: "No new funding" (the offer as asked, or a reply that needs none),
     "Funding plan required: ¥150k credit-line draw today" (a reply drawn with its own plan's legs), "No funding plan available" (a reply that
@@ -545,13 +565,13 @@ def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable:
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
                 lang: str, reason: str | None = None, recommended_reason: str | None = None,
                 scenario_assumption: str | None = None, ask: tuple[list[dict[str, str]], dict[str, str | None]] | None = None,
-                funding_assumption: str | None = None, terms_days: int | None = None,
+                funding_assumption: str | None = None, terms_days: int | None = None, terms_delta: str | None = None,
                 cost_rows: list[dict[str, Any]] | None = None, recommended_reason_kind: str | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
             "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason, "recommended_reason_kind": recommended_reason_kind,
-            "scenario_assumption_text": scenario_assumption, "funding_assumption_text": funding_assumption, "terms_days": terms_days,
+            "scenario_assumption_text": scenario_assumption, "funding_assumption_text": funding_assumption, "terms_days": terms_days, "terms_delta_text": terms_delta,
             "cost_rows": cost_rows or [], "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
             "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band,
             "ask_breakdown": ask[0] if ask is not None else None, "ask_facts": ask[1] if ask is not None else None}
@@ -637,6 +657,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         breach_when=asked_view["first_breach_when"], band=band, lang=lang,
         scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang),
         funding_assumption=_funding_short(lang, "asked", None, funded=False), terms_days=_payment_days(state, bound, buyer),
+        terms_delta=_terms_delta(lang, _payment_days(state, bound, buyer), _terms_in_force(state, buyer), "asked"),
         cost_rows=_asked_cost_rows(verdict, bound, once, asked_total, asked_basis, months, lang))]
 
     by_id = {r["counter_id"]: r for r in replies}
@@ -698,6 +719,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
             recommended_reason_kind=(_reason_kind(breach is not None, reply_breach is not None, authority == OVER_LIMIT, r_authority)
                                      if recommended else None),
             scenario_assumption=assumed[c.id], funding_assumption=funding_said.get(c.id), terms_days=_payment_days(state, obligations, buyer),
+            terms_delta=_terms_delta(lang, _payment_days(state, obligations, buyer), _terms_in_force(state, buyer), "reply"),
             cost_rows=_reply_cost_rows(c, traj, state, mandate, months, lang)))
     return paths
 
@@ -957,6 +979,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                                         "此报价已无法按今天的账目绘制：它所说的日期已过，或发票自那时起已有变动。"),
                 "asked": None, "replies": [], "paths": [], "moments": [], "axis": None, "picture_days": None,
                 "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
+                "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
                 "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
     breach = first_breach_ahead(asked, today, floor)
     replies = []
@@ -1016,6 +1039,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "moments": moments,
         "picture_days": picture_days,
         "current_terms_days": _terms_in_force(books.state, offer.counterparty_id),
+        "current_terms_text": _current_terms_text(books.state, offer.counterparty_id, lang),
         "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, picture_days),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }

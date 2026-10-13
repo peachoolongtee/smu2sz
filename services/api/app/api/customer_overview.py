@@ -971,9 +971,27 @@ def _largest(r: _Read) -> dict[str, Any] | None:
     return max(r.rows, key=lambda x: (x["outstanding_fen"], -x["due_day"]), default=None)
 
 
-def _step(key: str, label: str, amount: int | str | None, when: str | None = None, note: str | None = None) -> dict[str, Any]:
+def _step(key: str, label: str, amount: int | str | None, when: str | None = None, note: str | None = None,
+          href: str | None = None) -> dict[str, Any]:
     shown = fmt_yuan(amount) if isinstance(amount, int) else amount
-    return {"key": key, "label": label, "amount_display": shown, "when_text": when, "note": note}
+    return {"key": key, "label": label, "amount_display": shown, "when_text": when, "note": note, "href": href}
+
+
+def _invoice_href(r: _Read, row: dict[str, Any]) -> str:
+    return f"/receivables?customer={_quoted(r.buyer_id)}&invoice={_quoted(row['receivable_id'])}&from=customer"
+
+
+def _financing_href(r: _Read, row: dict[str, Any], leg: dict[str, Any] | None) -> str | None:
+    """Where the financing of an invoice is: the decision record of the request that financed it, else the facility it is drawn on (the lot's, or
+    while the plan is only ready the plan's), on the Cash page."""
+    if row.get("financing_href"):
+        return str(row["financing_href"])
+    facility = leg.get("facility_id") if leg is not None else None
+    if facility is None and row["financing_state"] in ("ARRANGED", "RECEIVED"):
+        receivable = next((x for x in r.state.receivables if x.id == row["receivable_id"]), None)
+        lot = advance_lot(r.state, receivable) if receivable is not None else None
+        facility = lot.facility_id if lot is not None else None
+    return f"/cash#facility-{_quoted(str(facility))}" if facility else None
 
 
 def _due_words(row: dict[str, Any], lang: Lang) -> str:
@@ -994,10 +1012,12 @@ def _receivable_flow(r: _Read) -> list[dict[str, Any]]:
     lang, who = r.lang, r.who
     owed = int(row["outstanding_fen"])
     net = row["net"]
-    pays = _step("customer_pays", t(lang, f"{who} pays the invoice", f"{who}支付发票"), owed, _due_words(row, lang))
-    first = _step("owed", t(lang, f"{who} owes you", f"{who}应付给您"), owed)
+    invoice = _invoice_href(r, row)
+    pays = _step("customer_pays", t(lang, f"{who} pays the invoice", f"{who}支付发票"), owed, _due_words(row, lang), href=invoice)
+    first = _step("owed", t(lang, f"{who} owes you", f"{who}应付给您"), owed, href=invoice)
     financed = row["financing_state"] in ("ARRANGED", "RECEIVED")
     leg = r.planned_legs.get(row["receivable_id"])
+    money = _financing_href(r, row, leg)
     if not financed and leg is None:
         return [first, pays]
     claim: int | None
@@ -1029,11 +1049,40 @@ def _receivable_flow(r: _Read) -> list[dict[str, Any]]:
                        f"{whole_yuan(advance)} 垫款，加 {fmt_yuan(claim - advance)} 费用") if claim is not None else None)
     day = _due_words(row, lang)
     return [first,
-            _step("financing", label, advance, None, note),
-            _step("arrives", t(lang, "The financing arrives", "融资到账"), advance, arrives),
+            _step("financing", label, advance, None, note, money),
+            _step("arrives", t(lang, "The financing arrives", "融资到账"), advance, arrives, href=money),
             pays,
-            _step("repayment", t(lang, "Repayment and fees", "还款与费用"), claim, t(lang, f"out of the payment, {day}", f"从回款中扣除，{day}"), fees_note),
+            _step("repayment", t(lang, "Repayment and fees", "还款与费用"), claim, t(lang, f"out of the payment, {day}", f"从回款中扣除，{day}"), fees_note, money),
             _step("net", t(lang, "Net available at collection", "回款后可用的净额"), net_text, day, row["net"]["condition_text"])]
+
+
+def _links(r: _Read, rows: list[dict[str, Any]], primary: dict[str, Any] | None) -> list[dict[str, str]]:
+    """The chain the flow belongs to, as links: the negotiation, its invoice, its financing and the payment's status (each only where the page has
+    one): the primary decision (else the first open negotiation), the largest open invoice, the financing of that invoice and the invoice's
+    payment state."""
+    lang = r.lang
+    out: list[dict[str, str]] = []
+    row = _largest(r)
+    first = next((x for x in rows if x["is_primary"]), rows[0] if rows else None)
+    if first is not None:
+        decision = primary["decision_id"] if primary is not None else first["decision_id"]
+        out.append({"label": t(lang, "The negotiation", "谈判"), "href": f"/deals?customer={_quoted(r.buyer_id)}&decision={_quoted(decision)}"})
+    if row is not None:
+        out.append({"label": t(lang, "The invoice", "发票"), "href": _invoice_href(r, row)})
+        money = _financing_href(r, row, r.planned_legs.get(row["receivable_id"]))
+        if money is not None and (row["financing_state"] in ("ARRANGED", "RECEIVED") or row["receivable_id"] in r.planned_legs):
+            out.append({"label": t(lang, "The financing", "融资"), "href": money})
+        out.append({"label": t(lang, f"Payment status: {row['collection_state_text']}", f"付款状态：{row['collection_state_text']}"),
+                    "href": _invoice_href(r, row)})
+    return out
+
+
+def _proportion(r: _Read) -> float | None:
+    """The customer's share of what is owed as a number from 0 to 1, the same fen the share word is built from (null where the word is not)."""
+    c = r.conc
+    if c is None or c["is_aggregate"] or c["ar_total_fen"] <= 0:
+        return None
+    return round(c["ar_buyer_fen"] / c["ar_total_fen"], 6)
 
 
 def _exposure_comparison(r: _Read) -> dict[str, Any] | None:
@@ -1279,14 +1328,14 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
     econ_rows, econ_note = _economics(r)
     actions = _actions(r)
     decision, none_text = _decision(r, actions)
-    figures = [_value_figure(r, _contribution_fen(r)), _outstanding(r), _financing(r), _share(r)]
+    figures = [_value_figure(r, _contribution_fen(r)), _outstanding(r), _financing(r), {**_share(r), "proportion": _proportion(r)}]
     negotiations, primary, others = _open_negotiations(r)
     return {
         "customer_id": buyer_id, "name": name, "lang": lang, "day": today, "state_version": state.state_version,
         "summary_text": t(lang, "What this relationship is worth, and what it puts at risk.", "这段客户关系的价值，以及它带来的风险。"),
         "figures": figures,
         "relationship_text": _relationship_text(r, _contribution_fen(r), len(negotiations)),
-        "receivable_flow": _receivable_flow(r),
+        "receivable_flow": _receivable_flow(r), "links": _links(r, negotiations, primary),
         "exposure_comparison": _exposure_comparison(r),
         "open_negotiations": negotiations, "primary_decision": primary, "other_open_count": others,
         "decision": decision, "none_text": none_text if decision is None else None, "actions": actions,

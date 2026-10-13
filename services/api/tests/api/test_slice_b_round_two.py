@@ -490,7 +490,7 @@ def test_the_flow_follows_the_plan_from_planned_to_arranged(api: TestClient) -> 
     _busy(api)
     flow = _overview(api, "BUYER-1")["receivable_flow"]
     assert [s["key"] for s in flow] == ["owed", "financing", "arrives", "customer_pays", "repayment", "net"]
-    assert all(set(s) == {"key", "label", "amount_display", "when_text", "note"} for s in flow)
+    assert all(set(s) == {"key", "label", "amount_display", "when_text", "note", "href"} for s in flow)
     by = {s["key"]: s for s in flow}
     assert by["owed"]["amount_display"] == "¥420,000.00" and by["owed"]["label"] == "Foshan owes you"
     assert by["financing"]["label"] == "Financing planned" and by["financing"]["amount_display"] == "¥336,000.00"
@@ -520,7 +520,7 @@ def test_the_flow_in_both_languages(api: TestClient, lang: str) -> None:
                                                                                                                   "¥336,000.00", "¥420,000.00"]
     assert all(s["when_text"] is None or s["when_text"] == s["when_text"].strip() for s in flow)  # no stray space before a Chinese distance
     if lang == "zh":
-        assert not english_leaks({"f": flow}, NAMES)
+        assert not english_leaks({"f": flow}, NAMES, raw_fields=[HREFS])
         assert {s["key"]: s["when_text"] for s in flow}["arrives"] == "执行方案后 3 天后到账"
 
 
@@ -665,3 +665,158 @@ def test_a_quote_with_terms_shows_them_and_drops_the_not_confirmed_sentence() ->
                                  {"label": "Basis", "value_text": "11.2% a year"}]
     assert approval_review("en", item={"kind": "APPLY_FOR_FACILITY", "status": "PENDING", "quote": {"lines": [{"amount_display": "¥1"}]},
                                        "presentation": {}, "receipt": None})["terms_state_text"] == APPLY_EN["terms_state_text"]
+
+
+# ---------------------------------------------------------------- the web's six words
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_picture_names_the_current_terms_and_how_far_each_path_is_from_them(api: TestClient, lang: str) -> None:
+    offer_id, _ = _golden(api, lang)
+    pic = api.get(f"/offers/{offer_id}/picture", params={"lang": lang}).json()
+    assert pic["current_terms_text"] == {"en": "45 days", "zh": "45 天"}[lang] and pic["current_terms_days"] == 45
+    asked, a, b = pic["paths"]
+    assert [p["terms_delta_text"] for p in (asked, a, b)] == {
+        "en": ["+15 days requested by buyer", "no change", "+10 days in this counter"],
+        "zh": ["买方要求延长 15 天", "无变化", "此还价延长 10 天"]}[lang]
+    if lang == "zh":
+        assert not english_leaks({"d": [p["terms_delta_text"] for p in pic["paths"]], "c": pic["current_terms_text"]}, NAMES)
+
+
+def test_a_path_with_unknown_terms_has_no_delta_and_a_shorter_term_says_so() -> None:
+    from app.api.offer_picture import _terms_delta
+
+    assert _terms_delta("en", None, 45, "asked") is None and _terms_delta("en", 60, None, "reply") is None
+    assert _terms_delta("en", 30, 45, "asked") == "−15 days requested by buyer" and _terms_delta("zh", 30, 45, "reply") == "此还价缩短 15 天"
+    assert _terms_delta("en", 46, 45, "reply") == "+1 day in this counter"
+
+
+def test_the_busy_pictures_carry_the_current_terms_text_or_null(api: TestClient) -> None:
+    _busy(api)
+    for deal in api.get("/deals").json()["deals"]:
+        if deal["open_offer"] is None:
+            continue
+        pic = api.get(f"/offers/{deal['open_offer']['offer_id']}/picture").json()
+        assert (pic["current_terms_text"] is None) == (pic["current_terms_days"] is None)
+        if pic["current_terms_days"] is not None:
+            assert pic["current_terms_text"] == f"{pic['current_terms_days']} days"
+            for p in pic["paths"]:
+                assert (p["terms_delta_text"] is None) == (p["terms_days"] is None)
+
+
+def test_the_share_figure_carries_the_proportion_the_word_is_built_from(api: TestClient) -> None:
+    _busy(api)
+    ov = _overview(api, "BUYER-1")
+    fig = {f["key"]: f for f in ov["figures"]}
+    assert 0 <= fig["share"]["proportion"] <= 1 and f"{fig['share']['proportion'] * 100:.1f}%" == fig["share"]["value_display"] == "54.5%"
+    assert all("proportion" not in f for k, f in fig.items() if k != "share")
+    assert _overview(api, "BUYER-1", "zh")["figures"][3]["proportion"] == fig["share"]["proportion"]
+
+
+def test_the_golden_story_owes_all_of_it_to_foshan(api: TestClient) -> None:
+    _golden(api)
+    assert {f["key"]: f for f in _overview(api, "BUYER-1")["figures"]}["share"]["proportion"] == 1.0
+
+
+def test_aggregate_buyers_have_no_proportion() -> None:
+    from types import SimpleNamespace
+
+    assert customer_overview._proportion(SimpleNamespace(conc={"is_aggregate": True, "ar_total_fen": 10, "ar_buyer_fen": 5})) is None
+    assert customer_overview._proportion(SimpleNamespace(conc={"is_aggregate": False, "ar_total_fen": 0, "ar_buyer_fen": 0})) is None
+    assert customer_overview._proportion(SimpleNamespace(conc=None)) is None
+
+
+def test_the_flow_steps_and_the_links_carry_their_pages(api: TestClient) -> None:
+    _busy(api)
+    invoice = "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+    ov = _overview(api, "BUYER-1")
+    by = {s["key"]: s["href"] for s in ov["receivable_flow"]}
+    assert by == {"owed": invoice, "financing": "/cash#facility-FAC-IF", "arrives": "/cash#facility-FAC-IF", "customer_pays": invoice,
+                  "repayment": "/cash#facility-FAC-IF", "net": None}
+    deal = ov["primary_decision"]["decision_id"]
+    assert ov["links"] == [{"label": "The negotiation", "href": f"/deals?customer=BUYER-1&decision={quote(deal, safe='')}"},
+                           {"label": "The invoice", "href": invoice}, {"label": "The financing", "href": "/cash#facility-FAC-IF"},
+                           {"label": "Payment status: Not due yet", "href": invoice}]
+    a = api.get("/home").json()["next_action"]  # run the plan: the financing is then a request on the record
+    assert api.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()["executed"] == 2
+    ran = _overview(api, "BUYER-1")
+    # the plan's requests have no record the owner can open yet, so the step points at the facility the lot was drawn on
+    assert {s["key"]: s["href"] for s in ran["receivable_flow"]}["financing"] == "/cash#facility-FAC-IF"
+    assert [lk["label"] for lk in ran["links"]] == ["The negotiation", "The invoice", "The financing", "Payment status: Not due yet"]
+    zh = _overview(api, "BUYER-1", "zh")["links"]
+    assert [lk["label"] for lk in zh] == ["谈判", "发票", "融资", "付款状态：未到期"]
+
+
+def test_the_links_hold_only_what_exists(api: TestClient) -> None:
+    _golden(api)
+    assert _overview(api, "BUYER-2")["links"] == []  # no invoice, no financing, no negotiation
+    assert _overview(api, "BUYER-1")["links"][0]["label"] == "The negotiation"
+    _busy(api)
+    dong = _overview(api, "BUYER-2")["links"]  # an overdue invoice and an open offer, nothing financed
+    assert [lk["label"] for lk in dong] == ["The negotiation", "The invoice", "Payment status: Overdue"]
+    assert dong[1]["href"] == "/receivables?customer=BUYER-2&invoice=RCV-B1&from=customer"
+
+
+def test_queue_rows_say_when_they_last_moved(api: TestClient) -> None:
+    _busy(api)
+    q = _queue(api)
+    rows = [*q["needs_you"], *q["waiting"], *q["agreements"]]
+    assert all(set(r) >= {"last_activity_day", "last_activity_text"} for r in rows)
+    for r in rows:
+        assert (r["last_activity_day"] is None) == (r["last_activity_text"] is None)
+        if r["kind"] in ("DECISION", "BUYER_REPLY"):
+            assert r["last_activity_day"] == 0 and r["last_activity_text"] == "today"
+        if r["kind"] == "COLLECTION":
+            assert r["last_activity_day"] < 0 and r["last_activity_text"].endswith("days ago")
+    work = api.get("/worklist").json()
+    assert all(r["last_activity_day"] == 0 for r in work["needs_you"] if r["kind"] == "DECISION")
+    assert all("last_activity_text" in r for r in work["waiting"])
+    zh = _queue(api, "zh")
+    assert {r["last_activity_text"] for r in zh["needs_you"] if r["kind"] == "DECISION"} == {"今天"}
+
+
+def test_an_agreements_row_says_when_it_last_moved(api: TestClient) -> None:
+    _busy(api)
+    agree_on_rcv_a(api)
+    rows = [r for r in _queue(api)["agreements"] if r["kind"] == "AGREEMENT"]
+    assert rows and all(r["last_activity_day"] == 0 and r["last_activity_text"] == "today" for r in rows)
+
+
+def _queued_counter(api: TestClient) -> None:
+    from app.api.runtime import get_runtime
+
+    api.post("/demo/reset", json={})
+    offer_id = api.post("/offers", json=EX01).json()["offer"]["offer_id"]
+    ev = api.post(f"/offers/{offer_id}/evaluate", json=EX01).json()
+    verdict = ev.get("verdict", ev)
+    commitment = get_runtime().executor.propose_commitment(verdict["id"], expires_day=14, counter_id=verdict["counters"][1]["id"])
+    version = api.get("/mandate").json()["mandate"]["version"]
+    r = api.post("/operations", headers={"X-Agent-Key": "demo-agent-key"}, json={
+        "kind": "RECORD_COMMITMENT", "op_id": "rec-1", "idempotency_key": "rec-1", "mandate_version": version, "requested_by": "AGENT",
+        "commitment_id": commitment.id, "nonce": commitment.nonce})
+    assert r.json()["result"]["status"] == "PENDING_APPROVAL", r.text
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_a_waiting_agreement_says_when_it_expires_and_a_decided_one_says_nothing(api: TestClient, lang: str) -> None:
+    _queued_counter(api)
+    item = api.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
+    assert (item["deadline_day"], item["deadline_text"]) == (14, {"en": "Expires in 14 days", "zh": "14 天后到期"}[lang])
+    assert item["commit_label"] == {"en": "Authorize the agreement", "zh": "授权记录协议"}[lang]
+    assert api.post(f"/approvals/{item['id']}", json={"decision": "REJECT"}).status_code == 200
+    after = api.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
+    assert after["deadline_text"] is None and after["deadline_day"] is None
+
+
+def test_an_approval_with_no_deadline_says_none_and_the_words_are_by_kind() -> None:
+    from app.api.approval_review import deadline_view
+
+    assert deadline_view("APPLY_FOR_FACILITY", None, 0, "en") == {"deadline_day": None, "deadline_text": None}
+    assert deadline_view("DRAW_FACILITY", 12, 0, "en")["deadline_text"] == "Cash needed in 12 days"
+    assert deadline_view("DRAW_FACILITY", 0, 0, "zh")["deadline_text"] == "今天需要资金到位"
+    assert deadline_view("RECORD_COMMITMENT", 1, 0, "en")["deadline_text"] == "Expires tomorrow"
+
+
+def test_the_busy_application_has_no_deadline(api: TestClient) -> None:
+    item = _apply(api, "en")
+    assert item["deadline_text"] is None and item["deadline_day"] is None
