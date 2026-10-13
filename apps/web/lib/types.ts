@@ -2799,6 +2799,10 @@ export interface HomeV2Action {
   cost_basis_text?: string | null;
   /** The funding plan's legs, for the timeline; absent until the server sends them (the funding fact is then the text). */
   legs?: HomeV2Leg[] | null;
+  /** The approval in one sentence ("No approval needed", "Needs your approval before it runs"); null when the action carries no plan. */
+  approval_text?: string | null;
+  /** True exactly when the owner must approve before it runs (the line is then in the warn form). */
+  approval_needed?: boolean;
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
   facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";

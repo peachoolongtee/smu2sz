@@ -92,10 +92,12 @@ export function HomeV2ActionBar({
   const facts = factsOf(action);
   // The card is compact: the title, one line that reconciles with the strip (the server's `consequence_text`; until it sends it, the Home read's note), the three facts in one row
   // (the cost to the owner as the hero figure, the funding timing) and the actions. The funding timing carries the composition of the plan (hover or focus, a tap, `?funding=1`).
-  // Who approves is one 13 px line under the actions, in both forms: the check glyph and the server's sentence in the quiet ink, or the warn glyph and the sentence in the warn tone when the owner must approve.
+  // Who approves is one 13 px line under the actions, in both forms: the check glyph and the server's `approval_text` in the quiet ink, or the warn glyph and the text in the warn tone when `approval_needed`; none when the text is null.
   const three = facts?.length === 3 ? facts : null;
   const legs = action.legs?.length ? action.legs : null;
-  const needsOwner = Boolean(nextAction?.needs_owner);
+  // The approval line is the server's two fields: `approval_text` (null: no line) and `approval_needed` (true: the warn form, false: the tick form).
+  const approvalText = action.approval_text ?? null;
+  const needsOwner = approvalText !== null && action.approval_needed === true;
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="action" className="outline-none">
       <div data-testid={run ? "home-next-action" : "home-attention-card"} data-alert={run?.alert_id}>
@@ -112,10 +114,10 @@ export function HomeV2ActionBar({
           }
           below={three && legs && funding.open ? <FundingComposition legs={legs} total={fundingTotal ?? ""} id={`${uid}-comp`} labelledBy={`${uid}-fact`} basis={action.cost_basis_text} pointer={funding.pointer} /> : undefined}
           note={
-            three ? (
+            approvalText ? (
               <p className={`flex items-center gap-1.5 ${needsOwner ? "font-semibold text-warn-fg" : ""}`} data-testid="hv2-approval" data-needs-owner={needsOwner}>
                 {needsOwner ? <AlertIcon className="size-3.5 shrink-0 text-warn-solid" /> : <CheckIcon className="size-3.5 shrink-0 text-ok-solid" />}
-                {three[2].value}
+                {approvalText}
               </p>
             ) : undefined
           }

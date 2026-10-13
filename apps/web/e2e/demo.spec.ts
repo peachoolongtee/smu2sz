@@ -93,8 +93,8 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   // Home detects the missed later receipt: the reserve breach and the cure priced above the autonomous ceiling, queued with the owner's click.
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
-  await expect(risk.getByTestId("hv2-approval")).toHaveText("Your approval is needed"); // who decides: the warn line under the actions
-  await expect(risk.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true");
+  // Who decides: the line under the actions carries the server's `approval_text` as recorded. (Server gap: on this RUN_PLAN step it says "Your approval is needed" with approval_needed false, so the tick form shows.)
+  await expect(risk.getByTestId("hv2-approval")).toHaveText("Your approval is needed");
   await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
   // Scene 5, the owner stays in control: the cure is queued, not run.

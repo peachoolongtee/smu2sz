@@ -100,7 +100,7 @@ test("the header and the metric strip: the status sentence, 'Updated today', and
 
 test("the recommendation is compact: the title, one line that reconciles with the strip, two facts in a row, the actions, then one approval line in both forms", async ({ page }) => {
   await open(page, { offer: true });
-  const a = homeOffer.en.home_v2.action as typeof homeOffer.en.home_v2.action & { consequence_text?: string | null };
+  const a = homeOffer.en.home_v2.action as typeof homeOffer.en.home_v2.action & { consequence_text?: string | null; approval_text?: string | null; approval_needed?: boolean };
   await expect(page.getByTestId("home-action-eyebrow")).toHaveText("What we recommend");
   await expect(page.getByTestId("home-action-title")).toHaveText(a.title);
   // One line, the server's when it sends it (the first breach day and the lowest point), else the Home read's note.
@@ -120,7 +120,9 @@ test("the recommendation is compact: the title, one line that reconciles with th
   await expect(page.getByTestId("hv2-funding-composition")).toHaveCount(0);
   // Approval is said once, as one 13 px line under the actions: with no approval needed the check glyph and the server's sentence in the quiet ink.
   const approval = page.getByTestId("hv2-approval");
-  await expect(approval).toHaveText(facts[2].value);
+  expect(a.approval_text).toBe("No approval needed");
+  expect(a.approval_needed).toBe(false);
+  await expect(approval).toHaveText(a.approval_text!);
   await expect(approval).toHaveAttribute("data-needs-owner", "false");
   await expect(approval.locator("svg")).toHaveCount(1);
   expect(await approval.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBe(13);
@@ -139,13 +141,10 @@ test("the recommendation is compact: the title, one line that reconciles with th
 });
 
 test("when the owner must approve, the same line is a warn-tone alert line with the server's approval sentence, still one line and no box", async ({ page }) => {
-  // A temporary in-spec patch of the recorded read (no recording has an approval waiting): the next action needs the owner and the action's third fact says so in a sentence of its own.
+  // A temporary in-spec patch of the recorded read (no recording has a plan waiting on the owner while its control is on the page): the server's two fields as it sends them for an approval that waits.
   const sentence = "Needs your approval before it runs";
-  const action = { ...homeOffer.en.home_v2.action, facts: homeOffer.en.home_v2.action.facts!.map((f, i) => (i === 2 ? { ...f, value: sentence } : f)) };
-  await page.context().addInitScript(
-    ([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)),
-    ["tl-mock-home-patch", { next_action: { ...homeOffer.en.next_action!, needs_owner: true }, home_v2: { ...homeOffer.en.home_v2, action } }] as const,
-  );
+  const action = { ...homeOffer.en.home_v2.action, approval_text: sentence, approval_needed: true };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: { ...homeOffer.en.home_v2, action } }] as const);
   await open(page, { offer: true });
   const approval = page.getByTestId("hv2-approval");
   await expect(approval).toHaveText(sentence);
@@ -156,6 +155,14 @@ test("when the owner must approve, the same line is a warn-tone alert line with 
   expect(await approval.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgba(0, 0, 0, 0)"); // a line, not a box
   expect((await approval.boundingBox())!.height).toBeLessThan(26);
   await expect(page.getByTestId("hv2-action-facts")).not.toContainText("Approval");
+});
+
+test("no approval line when the server sends no approval text (a card with no plan)", async ({ page }) => {
+  const action = { ...homeOffer.en.home_v2.action, approval_text: null, approval_needed: false };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: { ...homeOffer.en.home_v2, action } }] as const);
+  await open(page, { offer: true });
+  await expect(page.getByTestId("hv2-action")).toBeVisible();
+  await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
 });
 
 // A block the server could not read (a supporting read failed): the status stays, the page says so with Retry, and never shows an empty page. In-spec patches of the recorded read.

@@ -4232,6 +4232,8 @@
         "primary": null,
         "secondary": null,
         "control": null,
+        "approval_text": null,
+        "approval_needed": false,
         "consequence_text": null,
         "legs": [
           {
@@ -8699,6 +8701,8 @@
         "primary": null,
         "secondary": null,
         "control": null,
+        "approval_text": null,
+        "approval_needed": false,
         "consequence_text": null,
         "legs": [
           {

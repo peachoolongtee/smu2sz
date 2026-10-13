@@ -181,15 +181,16 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
   for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
-  // The approval is one line under the actions in both forms: the quiet check line, or (the owner must approve) the warn line with the server's sentence.
-  if (v2.action.variant === "ACTION" && v2.action.facts?.length === 3) {
+  // The approval is one line under the actions, bound to the server's two fields: the tick form for text with approval_needed false, the warn form when true, none for null.
+  if (v2.action.variant === "ACTION") {
     const line = page.getByTestId("hv2-approval");
-    await expect(line).toHaveText(v2.action.facts[2].value);
-    await expect(line).toHaveAttribute("data-needs-owner", String(Boolean(h.next_action?.needs_owner)));
-    await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
+    if (v2.action.approval_text) {
+      await expect(line).toHaveText(v2.action.approval_text);
+      await expect(line).toHaveAttribute("data-needs-owner", String(v2.action.approval_needed === true));
+    } else await expect(line).toHaveCount(0);
+    if (v2.action.facts?.length === 3) await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
+    if (v2.action.control === "APPROVE_PLAN") expect(v2.action.approval_needed, "a plan that waits for the owner").toBe(true);
   }
-  // Where the server sends no facts (06b: a standalone application waits, and the action is a link to the approval) it sends no approval sentence either, and the page does not write one.
-  if (v2.action.variant === "ACTION" && !v2.action.facts?.length) await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
 }
 
@@ -286,6 +287,13 @@ for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
       }
       if (s.name.startsWith("06a")) expect(w.needs_you[0].customer_id).toBeNull();
       if (s.name.startsWith("06b")) for (const f of reads.home[lang].home_v2!.action.facts ?? [reads.home[lang].home_v2!.action]) await expect(page.getByTestId("hv2-action")).toContainText("value" in f ? f.value : f.text);
+      if (s.name.startsWith("06b")) {
+        // The approval line is PRESENT in the warn form, with the server's sentence in the language on screen.
+        const line = page.getByTestId("hv2-approval");
+        await expect(line).toHaveAttribute("data-needs-owner", "true");
+        await expect(line).toHaveText(lang === "zh" ? "需要您批准后才会执行" : "Needs your approval before it runs");
+        expect(reads.home[lang].home_v2!.action.approval_needed).toBe(true);
+      }
       if (s.name.startsWith("07")) await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText(label(lang, "hv2.metric.funding"));
     });
   });
