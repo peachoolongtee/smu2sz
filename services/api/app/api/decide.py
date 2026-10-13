@@ -244,8 +244,27 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         except Exception:
             logging.getLogger("termsledger.decisions").exception("the send plan could not be read for %s", offer_id)
     view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer,
-                                        commitments=rt.store.commitments(), send_plan=send_plan)
+                                        commitments=rt.store.commitments(), send_plan=send_plan,
+                                        authority_text=_who_decides(rt, offer_id, view, lang))
     return view
+
+
+def _who_decides(rt: Runtime, offer_id: str, view: dict, lang: str) -> str | None:
+    """The sentence the offer picture gives the first reply (who decides it), for the send receipt: the picture's own words, read from the
+    picture the page will read next (it is cached by the verdict just stored). None when there is no reply to send or the picture cannot be read."""
+    if not view["counters"] or view["business_action"] != "counter":
+        return None
+    # imported here: the picture reads the decision record, which reads this module
+    from app.api.offer_picture import cached_picture
+
+    try:
+        with rt.lock:
+            pic = cached_picture(rt, offer_id, lang)
+        path = next((p for p in pic.get("paths") or [] if p["key"] == view["counters"][0]["id"]), None)
+        return str(path["decides_text"]) if path is not None and path.get("decides_text") else None
+    except Exception:  # a supporting read: the receipt then carries no authority line rather than a guess
+        logging.getLogger("termsledger.decisions").exception("the picture could not be read for the send receipt of %s", offer_id)
+        return None
 
 
 def _cured(bundle, books: Books, mandate) -> dict | None:
@@ -565,6 +584,11 @@ def _add_series(rows: list[dict], actions_by_key: dict[str, list], found: list, 
         row["series"] = _series(state, traj, lang, from_day=today)
 
 
+def _speed(days: int, lang: str) -> str:
+    """How fast a source turns into cash, in the page's language ("same day", "3 days", "当天", "3 天")."""
+    return t(lang, "same day" if days == 0 else f"{days} day" if days == 1 else f"{days} days", "当天" if days == 0 else f"{days} 天")
+
+
 @router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
 def router_plan(lang: str = "en") -> dict:
     """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
@@ -589,7 +613,7 @@ def router_plan(lang: str = "en") -> dict:
         menu.append({
             "facility": displayed(json.loads(fac[r.facility_id].model_dump_json())),
             "cost_display": r.all_in_display, "rate_basis": r.rate_basis,
-            "time_to_cash_display": "same day" if r.time_to_cash_days == 0 else f"{r.time_to_cash_days} days",
+            "time_to_cash_display": _speed(r.time_to_cash_days, lang),
             "covenant_effect": "; ".join(r.covenant_notes) or ("counts in leverage" if r.counts_in_leverage else "no debt"),
             "admissible": r.admissible_for_need, "needs_owner_approval": r.needs_owner_approval,
             "reason_codes": [c.value for c in r.reasons],

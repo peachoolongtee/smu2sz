@@ -3,14 +3,16 @@ current books. Owner only: it discloses a buyer's contract terms."""
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.auth import require_feature, require_owner
 from app.api.deal_offers import with_offers
 from app.api.exposure_words import customer_back, query_buyer
 from app.api.runtime import get_runtime
+from app.api.selection import Selection, build_context, selection
+from app.api.worklist import queue
 from app.deals import deal_summary, deals
 from app.decisions.identity import deal_id
 
@@ -35,18 +37,16 @@ def _with_back(rt: Any, rows: list[dict[str, Any]], lang: Literal["en", "zh"], c
 
 
 @router.get("/deals")
-def list_deals(lang: Literal["en", "zh"] = "en", customer: str | None = Query(None, max_length=120),
-               invoice: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120)) -> dict:
+def list_deals(lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict:
     rt = get_runtime()
     with rt.lock:
         rows = with_offers(rt, deals(rt.store, rt.day, lang), lang)
-        _with_back(rt, rows, lang, customer, invoice, path)
-        return {"day": rt.day, "lang": lang, "deals": rows}
+        _with_back(rt, rows, lang, sel.customer, sel.invoice, sel.path)
+        return {"day": rt.day, "lang": lang, "deals": rows, "queue": queue(rt, lang), "context": build_context(rt, lang, sel, page="deals")}
 
 
 @router.get("/deals/{counterparty_id}")
-def get_deal(counterparty_id: str, lang: Literal["en", "zh"] = "en", customer: str | None = Query(None, max_length=120),
-             invoice: str | None = Query(None, max_length=120), path: str | None = Query(None, max_length=120)) -> dict:
+def get_deal(counterparty_id: str, lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict:
     rt = get_runtime()
     with rt.lock:
         state = rt.store.get_state()
@@ -54,5 +54,5 @@ def get_deal(counterparty_id: str, lang: Literal["en", "zh"] = "en", customer: s
             raise HTTPException(404, {"code": "UNKNOWN_BUYER", "message": f"{counterparty_id} is not a buyer on your "
                                                                           f"registry"})
         rows = with_offers(rt, [deal_summary(rt.store, counterparty_id, rt.day, lang)], lang)
-        _with_back(rt, rows, lang, customer, invoice, path)
-        return {"day": rt.day, "lang": lang, "deal": rows[0]}
+        _with_back(rt, rows, lang, sel.customer, sel.invoice, sel.path)
+        return {"day": rt.day, "lang": lang, "deal": rows[0], "context": build_context(rt, lang, sel, page="deals", buyer=counterparty_id)}

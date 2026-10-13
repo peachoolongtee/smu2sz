@@ -50,6 +50,12 @@ Ordering (deterministic; `order`, pinned by tests). Five tiers, then within a ti
 APPROVAL's the day the agreement expires, a COLLECTION's the day the invoice fell due. `is_new` is true when the item arrived after the
 `since_day` the page last read (without `since_day`, nothing is new). `why_first_text` says why the first row is first, by its tier.
 
+`queue` (Deals, ticket #127; not part of `GET /worklist`): the same rows, one per task, by who owes the next step, in three tiers: `needs_you`
+(the rows above), `waiting` (BUYER_REPLY and SETTLEMENT) and `agreements` (AGREEMENT, one per agreed deal, and PROMISE: the promised payment of
+an agreement stays a row of the tier it belongs to). Each row carries its own identity (`decision_id`, `invoice_id`, `approval_id`: null where
+the task has none) and a `href` that selects that task in Deals, or opens the page where it is done, with the row's own customer, decision and
+invoice, never another row's.
+
 Every sentence is written for `lang` through `t(lang, en, zh)` (INVARIANT 13); no id appears in a sentence (keys and hrefs carry them).
 No hidden degradation: a supporting read that fails (an offer picture, a customer's share, the Home's own, the receivable rows') is named in
 one merged `partial` on the body, the row words say the effect could not be read, and the read is returned and never cached; a figure that is
@@ -70,7 +76,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.auth import require_owner
 from app.api.customer_overview import customer_context
 from app.api.deal_offers import open_deals
-from app.api.decisions import Context, load_context
+from app.api.decisions import Context, _agreed_terms, _status_text, approval_decision, load_context
 from app.api.display import displayed
 from app.api.financing_words import financing_state_words, state_of
 from app.api.home import Partial, read_home
@@ -80,6 +86,7 @@ from app.api.presentation import (
     COMMERCIAL_KINDS,
     Lang,
     buyer_of_receivable,
+    decision_state_text,
     find_agreement,
     party_name,
     t,
@@ -550,6 +557,110 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
     return [row for _, row in sorted(rows, key=lambda x: x[0])]
 
 
+# ---------------------------------------------------------------- the queue (Deals)
+
+NEEDS_YOU_TIER, WAITING_TIER, AGREEMENTS_TIER = "NEEDS_YOU", "WAITING", "AGREEMENTS"
+
+
+def _qs(**pairs: str | None) -> str:
+    """A query string of the pairs that are set, each value quoted."""
+    return "&".join(f"{k}={quote(v, safe='')}" for k, v in pairs.items() if v)
+
+
+def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
+    """AGREEMENT: one row per deal in force (the decision record's AGREED), newest first, with the terms agreed in the row's consequence."""
+    found = [ds for ds, _inp in ctx.states().values() if ds.family == "DEAL" and ds.state == DealState.AGREED and ds.offer is not None]
+    out = []
+    for ds in sorted(found, key=lambda d: (-d.updated_seq, d.decision_id)):
+        offer = ds.offer
+        if offer is None:
+            continue
+        cid = offer.counterparty_id
+        who = buyer_short(party_name(ctx.state, cid))
+        c = ds.commitment
+        out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
+                    "subject_text": f"{who} · {_topic(offer, lang)}",
+                    "status_text": _status_text(c, ds, lang) if c is not None else decision_state_text("DEAL", ds.state.value, lang),
+                    "consequence_text": t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else "",
+                    "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
+                    "differentiator_text": None, "decision_id": ds.decision_id})
+    return out
+
+
+def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, Any]], alert: dict[str, Any] | None,
+           late: list[dict[str, Any]], customers: int) -> dict[str, Any]:
+    """The Deals queue from the rows `_build` already made: one row per task in three tiers by who owes the next step. A negotiation is a
+    row of its own offer (never one per customer); an offer waiting on the owner's approval is the approval's row, in Needs you, worded
+    as the decision record words it ("Waiting for your approval"); a promise moves to Agreements with the deal it belongs to."""
+    approvals = {a.id: a for a in ctx.approvals}
+    commitments = {c.id: c for c in ctx.commitments}
+    promised = {(p.commitment_id, p.obligation_id): p for p in ctx.promised}
+    oldest_late = {cid: min((r for r in late if r["buyer_id"] == cid), key=lambda r: (r["due_day"], r["receivable_id"]))["receivable_id"]
+                   for cid in {r["buyer_id"] for r in late}}
+
+    def refs(key: str, cid: str | None) -> tuple[str | None, str | None, str | None]:
+        """(decision, invoice, approval) of a row by its key: the identity the record gives it."""
+        kind, _, rest = key.partition(":")
+        if kind in ("deal", "buyer-reply"):
+            return deal_id(rest), None, None
+        if kind == "approval":
+            rec = approvals.get(rest)
+            try:
+                op = json.loads(rec.op_json) if rec is not None else {}
+            except ValueError:
+                op = {}
+            rid = op.get("receivable_id") if isinstance(op, dict) else None
+            return (approval_decision(rec, ctx.commitments) if rec is not None else None), (rid if isinstance(rid, str) else None), rest
+        if kind == "collection" and cid is not None:
+            return None, oldest_late.get(cid), None
+        if kind == "promise":
+            cmt, _, ob = rest.partition(":")
+            p = promised.get((cmt, ob))
+            c = commitments.get(cmt)
+            return (deal_id(c.offer_id) if c is not None else None), (p.receivable_id if p is not None else None), None
+        if kind == "agreement":
+            return rest, None, None
+        return None, None, None
+
+    def href(kind: str, cid: str | None, decision: str | None, invoice: str | None, approval: str | None, fallback: str) -> str:
+        if kind == "APPROVAL" and approval:
+            return f"/approvals#approval-{quote(approval, safe='')}"
+        if kind == "COLLECTION" and cid:
+            return f"/receivables?{_qs(customer=cid, invoice=invoice, **{'from': 'deals'})}"
+        if kind == "SETUP" and cid:
+            return f"/customers/{quote(cid, safe='')}?from=deals"
+        if kind in ("DECISION", "BUYER_REPLY", "AGREEMENT", "PROMISE") and cid and decision:
+            return f"/deals?{_qs(customer=cid, decision=decision, invoice=invoice if kind == 'PROMISE' else None)}"
+        return fallback
+
+    def item(row: dict[str, Any], tier: str) -> dict[str, Any]:
+        cid = row.get("customer_id")
+        decision, invoice, approval = refs(row["key"], cid)
+        who = row.get("customer_short") or (buyer_short(party_name(ctx.state, cid)) if cid else None)
+        status = row["status_text"]
+        if row["kind"] == "APPROVAL":  # the one word the record uses for a state that waits on the owner
+            status = t(lang, "Waiting for your approval", "等待您批准")
+        return {"key": row["key"], "kind": row["kind"], "tier": tier, "customer_id": cid, "customer_short": who,
+                "subject_text": row["subject_text"], "status_text": status, "consequence_text": row["consequence_text"],
+                "severity": row["severity"], "deadline_day": row.get("deadline_day"), "expected_day": row.get("expected_day"),
+                "differentiator_text": row.get("differentiator_text"), "decision_id": decision, "invoice_id": invoice, "approval_id": approval,
+                "href": href(row["kind"], cid, decision, invoice, approval, row.get("href") or "/deals")}
+
+    needs_rows = [item(_needs_item(r, False, None, lang), NEEDS_YOU_TIER) for r in needs]
+    waits = [w for w in waiting if w["kind"] != "PROMISE"]
+    promises = [w for w in waiting if w["kind"] == "PROMISE"]
+    waiting_rows = [item(w, WAITING_TIER) for w in waits]
+    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]]
+    return {
+        "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows), "customers": customers},
+        "alert": alert, "needs_you": needs_rows, "waiting": waiting_rows, "agreements": agreement_rows,
+        "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
+                                 else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
+        "waiting_empty_text": t(lang, "Nothing is waiting on anyone else.", "目前没有在等待他人的事项。"),
+        "agreements_empty_text": t(lang, "No agreement is in force.", "目前没有生效的协议。"),
+    }
+
+
 # ---------------------------------------------------------------- reading
 
 
@@ -582,7 +693,9 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] 
     for _view, _st, ds in deals:
         negotiations[ds.offer.counterparty_id] = negotiations.get(ds.offer.counterparty_id, 0) + 1
     customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations, partial)
+    late = [r for r in body["rows"] if r["collection_state"] in ("OVERDUE", "PROMISE_MISSED")]
     return {
+        "queue": _queue(ctx, lang, needs_sorted, waiting_sorted, alert, late, len(customers)),
         "lang": lang, "day": ctx.today, "state_version": ctx.state.state_version, "alert": alert,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
                                  else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
@@ -608,6 +721,11 @@ def _cached(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any]
     if whole:
         _CACHE.put(key, body)
     return body
+
+
+def queue(rt: Runtime, lang: Lang) -> dict[str, Any]:
+    """The Deals queue (call under `rt.lock`): the worklist's own rows in the three tiers `GET /deals` serves."""
+    return displayed(_cached(rt, lang, None)["queue"])  # type: ignore[no-any-return]
 
 
 def counts(rt: Runtime, lang: Lang) -> dict[str, int]:

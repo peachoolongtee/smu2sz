@@ -12,7 +12,7 @@ from bisect import bisect_right
 from collections import Counter, OrderedDict
 from fractions import Fraction
 from functools import reduce
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -34,8 +34,10 @@ from app.api.presentation import (
 )
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
+from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
     FundingActionKind,
@@ -684,7 +686,7 @@ def _word(kind: str, n: int, crossing: str, lang: str, lowest_of: list[str] | No
         if crossing == "both":  # one path goes below the reserve on the day another comes back above it
             return say(lang, "Paths cross the reserve", "路径穿过储备")
         return say(lang, "Below the reserve", "低于储备") if crossing == "down" else say(lang, "Back above the reserve", "回到储备之上")
-    return say(lang, f"Day {n}", f"第 {n} 天")
+    return say(lang, f"End, {_chip(n, lang).lower()}", f"终点，{_chip(n, lang)}")  # a distance from today, never a day number
 
 
 def _who_decides(lang: str, live: list[dict[str, Any]], names: dict[str, str]) -> str:
@@ -806,7 +808,8 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
             text = f"{text} {who}" if who else text
         have = [k for k in _KINDS if k in kinds[d]]
         kind = have[0] if have else "end"
-        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "decisive": d == decisive,
+        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "when": when_text(d, today, lang),
+                    "decisive": d == decisive,
                     "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
                                 [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
                                 if named and d in lowest_by_day else None), "text": text, "values": values,
@@ -923,9 +926,12 @@ def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
 
 
 @router.get("/offers/{offer_id}/picture")
-def get_picture(offer_id: str, lang: str = "en") -> dict[str, Any]:
-    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only."""
+def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
+    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only. `context` is the
+    URL contract's (`app.api.selection`): the selections this offer honours, the way back, and what it could not use."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
-        return cached_picture(rt, offer_id, lang)
+        offer = rt.store.get_offer(offer_id)
+        context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
+        return {**cached_picture(rt, offer_id, lang), "context": context}
