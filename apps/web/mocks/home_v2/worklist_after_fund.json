@@ -10,6 +10,7 @@
       "customers": 2
     },
     "needs_you": [],
+    "needs_you_empty_text": "Nothing needs a decision from you.",
     "waiting": [
       {
         "key": "settlement:alert:ALERT-RESERVE-12:v1:plan:1",
@@ -66,6 +67,7 @@
       "customers": 2
     },
     "needs_you": [],
+    "needs_you_empty_text": "没有需要您决定的事项。",
     "waiting": [
       {
         "key": "settlement:alert:ALERT-RESERVE-12:v1:plan:1",

@@ -395,7 +395,7 @@ test("search narrows the rows already fetched, by the customers' search terms", 
 
 test("day 0 with nothing open: Needs you is empty in words and the customers are listed", async ({ page }) => {
   await open(page);
-  await expect(page.getByTestId("home-worklist-alert")).toContainText(worklistDay0.en.alert.text);
+  await expect(page.getByTestId("home-worklist-alert")).toContainText((worklistDay0.en.alert as { text: string; pending_text?: string | null }).pending_text ?? worklistDay0.en.alert.text);
   await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("0");
   // Nothing in the queue: the server's alert-aware words when it sends them ("Nothing else needs you." while the plan waits for the owner's go), else the plain ones.
   const empty = (worklistDay0.en as typeof worklistDay0.en & { needs_you_empty_text?: string | null }).needs_you_empty_text;
@@ -708,7 +708,7 @@ test("zh parity: the strip, the recommendation, the worklist and the deal in Chi
   await expect(page.getByTestId("hv2-inspector-note")).toHaveText(v2.chart.lowest_inspector.note);
   await expect(page.getByTestId("home-legend")).toContainText("取决于方案执行");
   const w = worklistOffer.zh;
-  await expect(page.getByTestId("home-worklist-alert")).toContainText(w.alert.text);
+  await expect(page.getByTestId("home-worklist-alert")).toContainText((w.alert as { text: string; pending_text?: string | null }).pending_text ?? w.alert.text);
   await expect(page.getByTestId("home-worklist-row").first()).toContainText(w.needs_you[0].subject_text);
   await expect(page.getByTestId("home-worklist-search")).toHaveAttribute("placeholder", "搜索客户或交易");
   await expect(page.getByTestId("home-tab-waiting")).toContainText("等待中");

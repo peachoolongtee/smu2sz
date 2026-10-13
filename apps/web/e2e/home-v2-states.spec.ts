@@ -306,7 +306,7 @@ test(STATES[12].name, async ({ request, context }) => {
     await expect(page.getByTestId("home-action-back")).toBeVisible();
     expect(await filledBrand(page)).toBe(0);
     const again = phone(width) ? await worklist(page, width, lang, reads.work[lang]) : page.getByTestId("home-worklist-panel");
-    await expect(again.getByTestId("home-worklist-alert")).toContainText(reads.work[lang].alert!.text);
+    await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
     await expect(again.getByTestId("home-tab-needs_you-badge")).toHaveText(String(reads.work[lang].counts.needs_you));
   });
 });

@@ -118,7 +118,7 @@ export function WorklistAlertLine({ tone, eyebrow, text, action, describedBy, no
   return (
     <div role="group" aria-label={eyebrow} aria-describedby={describedBy} data-testid={testId} data-tone={tone} className={`mt-3 border-l-2 py-0.5 pl-3 text-sm text-ink-2 ${tone === "bad" ? "border-bad-solid" : "border-warn-solid"}`}>
       <p className="text-pretty">
-        <b className="font-bold text-ink">{eyebrow}.</b> {text}
+        <b className="font-bold text-ink">{eyebrow}</b> <span aria-hidden className="text-ink-3">·</span> {text}
       </p>
       <div className="mt-0.5">{action}</div>
       {note}
