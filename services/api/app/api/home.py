@@ -1212,7 +1212,7 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
     dscr_text = f"{dscr.text}×" if dscr is not None else None
     lev = month1.leverage if month1 is not None else None
     leverage_text = f"{lev.text}×" if lev is not None else None
-    return displayed({
+    out: dict[str, Any] = displayed({
         "day": today,
         "state_version": state.state_version,
         "lang": lang,
@@ -1287,3 +1287,14 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
                         "基于今日账目的保守预测：未确认的收款不计入。"),
         "partial": partial.view(lang),
     })
+    if v2 and out.get("home_v2") is not None:  # the line under the headline counts the worklist from this finished read, once
+        from app.api import home_v2
+
+        with rt.lock:
+            try:
+                out["home_v2"]["summary_text"] = home_v2.summary_text(rt, out, lang, reconciled)
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("the worklist could not be counted for the Home V2 summary")
+                partial.add("home_v2")
+                out["partial"] = partial.view(lang)
+    return out
