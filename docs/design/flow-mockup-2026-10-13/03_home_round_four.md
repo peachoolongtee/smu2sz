@@ -66,3 +66,22 @@ cash + shortfall; zh).
 ## Gates
 Focused: the Home batch under mock (re-recorded `--home-v2` once the words land), `home-v2-states` live (+ the busy alert-row
 case), `ask-header`, design-system; the full pair at the merge.
+
+## 6. Be intentional (owner, after reading §1): a chart only where it adds clarity
+Owner: "make sure the pie charts and donuts actually add visual clarity to what I intend to showcase; if not, replace them with
+other visualisation techniques, animations or other graphs; if text is the best way, that is fine." The lead's rules, which
+amend §1:
+- A donut ONLY for shares of one whole with two to six slices that are all worth reading. "What you are owed, by customer"
+  (three customers, the selected one lifted, clicks that select) qualifies and stays. Reserve vs buffer does NOT: two slices
+  repeat the thin bar the card already has. The deal's ask breakdown (99% / 1%) does NOT: a 1% slice says nothing.
+- A stacked or segmented BAR for parts along a line of money: the funding legs (§3) and the deal's "¥420,000 invoice → ¥5,040
+  discount → ¥414,960 net" (the selected deal card's donut becomes this bar, the amounts the server's `ask_breakdown` rows,
+  animated in from the left on first paint, each segment clickable to show its row's sentence).
+- A step line for money over time (the outlook, as today). Text when one number says it.
+- So on selection: the Cash available card keeps its figure and bar and gains ONE marker on the bar for the selected item's
+  effect: for a deal, the as-asked lowest cash and the recommended reply's lowest cash (the picture's `paths[*]` lowest words,
+  two labelled ticks, the recommended in purple, animated sliding into place), with the sentence "As asked ¥165k in 60 days
+  · Option A ¥300k in 30 days" under it (server words); for an invoice, the net after repayment as the tick; for a customer,
+  no marker (the owed donut carries the story). The server words batch 9 (cash composition) is cancelled: nothing new is
+  needed for this.
+- Every motion: `--dur` 200–300 ms, opacity or a single transform, none under reduced motion; never a decorative animation.
