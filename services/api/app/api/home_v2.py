@@ -19,8 +19,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           plan one entry per landing leg, in the sentence's order: PLANNED while the plan is ready, ARRANGED once it ran and
                           RECEIVED once the leg's cash landed (`state_of`); `cost_display` is the engine's own line for that action (null where it
                           priced none), `repaid_when` a draw's repayment day (null otherwise); `lands_day` (days from today) and `amount_fen` are the timeline's
-                          data, never shown. `action.cost_basis_text` is the cost's basis: "once, nothing ongoing" (the picture's words) when every
-                          leg's cost is one priced figure that ends, else the plan's own basis sentence; null with no cost. Legs empty with no plan, ready or run.
+                          data, never shown. `action.cost_basis_text` is the plan's own basis sentence for its cost (how it is estimated; the final interest depends on the
+                          actual repayment day); null with no cost and once the plan has run. Legs empty with no plan, ready or run.
     chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
                           `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none) and, on a read made with
                           `?decision=` (and `?scenario=late`), `scenario_title_text` ("Foshan · Payment terms · As they asked vs Option A ·
@@ -290,40 +290,22 @@ def _leg(c: HomeRead, *, kind: str, amount_fen: int, lands_day: int, lands_when:
             "state": state, "state_text": _cap(state_word(lang, state)), "authority_text": authority}
 
 
-def _one_off(kind: str, cost_fen: int | None, repay_day: int | None) -> bool:
-    """A leg whose cost is one priced figure with an end: the engine priced it, and a draw has the day it is repaid."""
-    return cost_fen is not None and (kind != "DRAW_FACILITY" or repay_day is not None)
-
-
-def _cost_basis(c: HomeRead, legs: list[tuple[str, int | None, int | None]], has_cost: bool, plan_basis: str | None) -> str | None:
-    """The plan cost's basis, in the picture's words for a one-off cost ("once, nothing ongoing", `offer_picture`) when every leg's cost is
-    one priced figure that ends (`_one_off`); else the plan's own basis sentence (the hybrid's `cost_basis`), None when it has none. None with
-    no cost at all."""
-    if not has_cost:
-        return None
-    if all(_one_off(kind, cost, repay) for kind, cost, repay in legs):
-        return t(c.lang, "once, nothing ongoing", "一次性，之后无持续成本")
-    return plan_basis or None
-
-
 def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, Any] | None) -> tuple[list[dict[str, Any]], str | None]:
-    """(`action.legs`, `action.cost_basis_text`). One leg per leg that lands, in the order the sentence says them. The plan that is ready: its
+    """(`action.legs`, `action.cost_basis_text`): the basis is the plan's own sentence (the hybrid's `cost_basis`: how the cost is estimated and
+    that the final interest depends on the actual repayment day), null with no cost and once the plan has run (no basis sentence is carried then).
+    One leg per leg that lands, in the order the sentence says them. The plan that is ready: its
     own actions, PLANNED. Once it has run (and nothing else is the action): the stored quote's legs with their lots, ARRANGED until the cash
     lands, RECEIVED once it has (`state_of`). A leg's cost is the engine's own line for that action, null where it priced none (never a share
     of the total); a draw's repayment day is the one the plan or the quote carries."""
     a = c.action
     out: list[dict[str, Any]] = []
-    costs: list[tuple[str, int | None, int | None]] = []
-    plan_basis: str | None = None
-    has_cost = False
+    basis: str | None = None
     if _is_plan(a) and a is not None:
         authority = str(a.get("authority_text") or "")
-        has_cost = bool(a.get("cost_total_display"))
-        plan_basis = str(a["cost_basis"]) if has_cost and a.get("cost_basis") else None
+        basis = str(a["cost_basis"]) if a.get("cost_total_display") and a.get("cost_basis") else None
         for leg in _landing_legs(a):
             out.append(_leg(c, kind=leg["operation_kind"], amount_fen=int(leg["amount_fen"]), lands_day=int(leg["lands_day"]), lands_when=str(leg["lands_when"]),
                             cost_fen=leg.get("cost_fen"), repay_day=leg.get("cost_due_day"), state=state_of(None, planned=True), authority=authority))
-            costs.append((leg["operation_kind"], leg.get("cost_fen"), leg.get("cost_due_day")))
     elif action["variant"] == "QUIET" and funding_line is not None and funding_line["state"] in ("arranged", "landed"):
         ds = _quote_of(c)
         for leg in ds.quote.legs if ds is not None and ds.quote is not None else ():
@@ -333,9 +315,7 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
                 continue
             out.append(_leg(c, kind=leg.kind, amount_fen=leg.amount_fen, lands_day=day, lands_when=None, cost_fen=leg.cost_fen,
                             repay_day=leg.cost_end_day, state=state_of(lot, repaid=lot is None), authority=str(funding_line["authority_text"] or "")))
-            costs.append((leg.kind, leg.cost_fen, leg.cost_end_day))
-    has_cost = has_cost or any(cost is not None for _, cost, _ in costs)
-    return out, _cost_basis(c, costs, has_cost, plan_basis)
+    return out, basis
 
 
 def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:

@@ -23,7 +23,7 @@ from tests.api.conftest import english_leaks, figures
 from tests.api.test_home import _exhaust_line
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
-NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan"]
+NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Bank credit line"]  # the books' own proper names
 HREFS = r".*href"
 
 
@@ -540,6 +540,11 @@ def test_the_chart_title_moves_no_figure(api: TestClient) -> None:
 # ---------------------------------------------------------------- action.legs: the plan, leg by leg
 
 
+BASIS_EN = ("Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest "
+            "depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid.")
+BASIS_ZH = "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。"
+
+
 LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text"]
 
 
@@ -564,7 +569,7 @@ def test_the_legs_on_day_zero_are_the_plans_two_planned_legs_and_leave_the_sente
                               " · cost ¥3,113.93 · no approval needed.")
     assert [f["value"] for f in action["facts"]] == ["¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
                                                      "No approval needed"]
-    assert action["cost_basis_text"] == "once, nothing ongoing"
+    assert action["cost_basis_text"] == BASIS_EN  # the plan's own basis sentence, not a made-up one-off
     # the legs' costs are the engine's own lines: they are the plan's cost and no share of it is made up here
     assert ["¥841.64", "¥2,272.29"] == [leg["cost_display"] for leg in legs]
 
@@ -578,7 +583,7 @@ def test_the_legs_in_chinese_on_day_zero(api: TestClient) -> None:
     assert english_leaks(legs) == [] and [leg["cost_display"] for leg in legs] == ["¥841.64", "¥2,272.29"]
     assert [(leg["lands_day"], leg["amount_fen"]) for leg in legs] == [(0, 15_000_000), (3, 25_500_000)]
     zh_action = _v2(api, "zh")["action"]
-    assert zh_action["cost_basis_text"] == "一次性，之后无持续成本" and english_leaks(zh_action["cost_basis_text"]) == []
+    assert zh_action["cost_basis_text"] == BASIS_ZH and english_leaks(zh_action["cost_basis_text"], NAMES) == []
 
 
 def test_after_the_plan_runs_the_draw_has_landed_and_the_financing_is_arranged(api: TestClient) -> None:
@@ -594,7 +599,7 @@ def test_after_the_plan_runs_the_draw_has_landed_and_the_financing_is_arranged(a
         ("Invoice financing", "¥255,000", "in 3 days", "¥2,272.29", None, "ARRANGED", "Arranged")]
     assert {leg["authority_text"] for leg in legs} == {"Within your signed limits; nothing for you to do."}
     assert [(leg["lands_day"], leg["amount_fen"]) for leg in legs] == [(0, 15_000_000), (3, 25_500_000)]
-    assert action["cost_basis_text"] == "once, nothing ongoing" and _v2(api, "zh")["action"]["cost_basis_text"] == "一次性，之后无持续成本"
+    assert action["cost_basis_text"] is None and _v2(api, "zh")["action"]["cost_basis_text"] is None  # the plan ran: no basis sentence is carried
 
 
 def test_after_the_plan_runs_the_legs_in_chinese(api: TestClient) -> None:
@@ -617,7 +622,7 @@ def test_once_the_invoice_financing_lands_both_legs_are_received(api: TestClient
     assert [leg["cost_display"] for leg in en] == ["¥841.64", "¥2,272.29"] and english_leaks(zh) == []
     assert [(leg["lands_day"], leg["amount_fen"]) for leg in en] == [(-4, 15_000_000), (-1, 25_500_000)]
     assert [leg["lands_day"] for leg in zh] == [-4, -1]
-    assert _v2(api)["action"]["cost_basis_text"] == "once, nothing ongoing"
+    assert _v2(api)["action"]["cost_basis_text"] is None
 
 
 def test_the_legs_are_empty_when_nothing_is_a_plan_ready_or_run() -> None:
@@ -647,11 +652,11 @@ def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_appr
                      "cost_display": None, "repaid_when": None, "state": "PLANNED", "state_text": "Planned",
                      "authority_text": "Needs your approval: its cost."}]
     assert basis is None  # no cost at all: no basis
-    # a cost with an unpriced leg is not a one-off: the plan's own basis sentence stands; a draw with no repayment day is not one either
+    # a cost: the plan's own basis sentence, whatever the legs; no cost: none
     _, basis = home_v2._action_legs(plan("¥100.00", financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
-    draw = {"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 2, "cost_fen": 100, "cost_due_day": None}
+    draw = {"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 2, "cost_fen": 100, "cost_due_day": 30}
     _, basis = home_v2._action_legs(plan("¥1.00", draw), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
-    _, basis = home_v2._action_legs(plan("¥1.00", {**draw, "cost_due_day": 30}), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
-    assert basis == "once, nothing ongoing"
+    _, basis = home_v2._action_legs(plan(None, draw), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert basis is None
