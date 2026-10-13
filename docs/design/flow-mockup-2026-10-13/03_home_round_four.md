@@ -85,3 +85,16 @@ amend §1:
   no marker (the owed donut carries the story). The server words batch 9 (cash composition) is cancelled: nothing new is
   needed for this.
 - Every motion: `--dur` 200–300 ms, opacity or a single transform, none under reduced motion; never a decorative animation.
+
+## 7. The deal view's right column is one card (owner, after seeing round four's screenshot 02; lead's recommendation chosen)
+Owner: "what you are owed by customers is presented in a very awkward manner; if the cash available today is of no use to the
+current information in the deal it can be left on the default view and replaced." Decision: on a DEAL selection the right
+column is ONE card, "Cash impact of this deal": the deal's own cash as the step chart (as asked in grey, FLOW's reply in purple,
+the minimum as the hairline, the 36/60/120 window control as on the company chart), and under it the two lowest points named in
+the server's words ("As asked ¥11k in 30 days · Option A ¥300k in 30 days"; the recommended in purple), then one quiet line
+"Company cash stays separate from selected deals." The company cash card (with its ticks) and the owed-by-customer donut leave
+the deal view. The deal card and this card share one height (the taller decides; ≤ 600 px). The Deal context panel beside the
+worklist keeps the customer line, the stage, Customer profile and the evidence disclosure; the deal's cash block that round
+four put there is removed (it is now the right card). The donut stays for a CUSTOMER selection, where shares are the story,
+with the cash card beside the customer card as today. Nothing changes for the default view. Specs: the deal view at 1440/1100/
+820/390 shows exactly one card right of the deal card, its chart and the two named points; the customer view unchanged.
