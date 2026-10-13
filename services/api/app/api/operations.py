@@ -13,6 +13,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import Alert, alerts
 from app.api.approval_lines import FUNDING_KINDS, NO_LINES, approval_lines
+from app.api.approval_review import approval_review
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
 from app.api.decisions import approval_decision, execution_view, load_context, quote_for, record_fact
 from app.api.home import cure_after
@@ -295,6 +296,7 @@ def _approvals_queue(rt, lang: str) -> dict:
             except Exception:
                 log.exception("approval %s: the decision record could not be read", a.id)
         d["receipt"] = approval_receipt(lang, item=d, pres=d["presentation"]) if d.get("presentation") is not None else None
+        d.update(approval_review(lang, item=d))
         out.append(d)
     return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}
 
