@@ -283,37 +283,100 @@ def _next(lang: str, available: bool, cur: int | None, books: _Books, rejected: 
     return {"label": label, "action": sid, "href": None, "hint_text": hint, "owner": False}
 
 
-def _lost(rt: Runtime, books: _Books, scenes: dict[str, str], steps: dict[str, str], lang: str) -> tuple[list[str], str]:
-    """What the main books would lose if the alternate scenario were loaded now, counted from the books as they stand."""
+def _counts(rt: Runtime, books: _Books) -> dict[str, int]:
+    """What the loaded books hold that a reset discards, counted from the stores (offers FLOW has read and priced, agreements, approvals,
+    the approvals still waiting, record entries other than the sample documents, security events, the clock)."""
     store = rt.store
     verdict_offers = {v.offer_id for v in store.verdicts()} | {c.offer_id for c in store.commitments() if c.offer_id}
-    offers = len(verdict_offers | ({books.offer_id} if books.holds["ask"] else set()))
-    agreements = len(store.commitments())
     approvals = store.approvals()
-    waiting = sum(1 for a in approvals if a.status == ApprovalStatus.PENDING)
-    entries = sum(1 for o, _, _ in books.ops if o.kind not in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT"))
-    scenes_run = sum(1 for sc in SCENES if any(steps[s] == "done" for s, scene, *_ in STEPS if scene == sc))
+    return {"offers": len(verdict_offers | ({books.offer_id} if books.holds["ask"] else set())), "agreements": len(store.commitments()),
+            "approvals": len(approvals), "waiting": sum(1 for a in approvals if a.status == ApprovalStatus.PENDING),
+            "entries": sum(1 for o, _, _ in books.ops if o.kind not in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT")),
+            "security": len(store.security_events()), "day": rt.day}
+
+
+def _beyond(rt: Runtime, books: _Books) -> dict[str, int]:
+    """The counts beyond a fresh reset of the loaded scenario: the main scenario starts with none; an alternate one with what its seed
+    wrote (counted when it was loaded; unknown after a restart, when everything counts)."""
+    base = rt.demo_baseline.get(rt.scenario, {}) if rt.scenario != MAIN else {}
+    return {k: max(0, v - base.get(k, 0)) for k, v in _counts(rt, books).items()}
+
+
+def _lost(rt: Runtime, books: _Books, steps: dict[str, str], lang: str) -> list[str]:
+    """What a reset or swap of the loaded books would lose, in words, each with its count; empty when nothing is beyond a fresh reset."""
+    c = _beyond(rt, books)
     items: list[str] = []
+    scenes_run = sum(1 for sc in SCENES if any(steps[s] == "done" for s, scene, *_ in STEPS if scene == sc))
     if scenes_run:
         items.append(t(lang, f"Your place in the story: {scenes_run} of {len(SCENES)} scenes have run.", f"您在故事中的进度：已运行 {scenes_run} / {len(SCENES)} 个场景。"))
-    if offers:
-        items.append(t(lang, f"{_plural(offers, 'offer', 'offers')} FLOW has read and priced.", f"FLOW 已读取并定价的 {offers} 份报价。"))
-    if agreements:
-        items.append(t(lang, f"{_plural(agreements, 'agreement', 'agreements')} on the books.", f"账目中的 {agreements} 项协议。"))
-    if approvals:
-        extra = t(lang, f", {waiting} still waiting for you", f"，其中 {waiting} 项仍在等您") if waiting else ""
-        items.append(t(lang, f"{_plural(len(approvals), 'approval', 'approvals')}{extra}.", f"{len(approvals)} 项批准事项{extra}。"))
-    if entries:
-        items.append(t(lang, f"{_plural(entries, 'entry', 'entries')} in the record.", f"记录中的 {entries} 条记录。"))
-    if rt.day > 0:
-        items.append(t(lang, f"The clock goes back to the start: {rt.day} days of simulated time are undone.", f"时钟回到起点：模拟的 {rt.day} 天被撤销。"))
-    if not items:
-        return ([t(lang, "Nothing has been done yet, so nothing is lost.", "目前还没有做任何事，所以不会损失任何内容。")],
-                t(lang, "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
-                  "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。"))
-    body = " ".join(items)
-    return items, t(lang, f"Loading it replaces the main books. You would lose: {body} Restoring puts the main books back at the start of the story, not where you left them.",
-                    f"加载它会替换主账目。您将失去：{body}恢复主账目会回到故事的起点，而不是您离开时的状态。")
+    if c["offers"]:
+        items.append(t(lang, f"{_plural(c['offers'], 'offer', 'offers')} FLOW has read and priced.", f"FLOW 已读取并定价的 {c['offers']} 份报价。"))
+    if c["agreements"]:
+        items.append(t(lang, f"{_plural(c['agreements'], 'agreement', 'agreements')} on the books.", f"账目中的 {c['agreements']} 项协议。"))
+    if c["approvals"]:
+        extra = t(lang, f", {c['waiting']} still waiting for you", f"，其中 {c['waiting']} 项仍在等您") if c["waiting"] else ""
+        items.append(t(lang, f"{_plural(c['approvals'], 'approval', 'approvals')}{extra}.", f"{c['approvals']} 项批准事项{extra}。"))
+    if c["entries"]:
+        items.append(t(lang, f"{_plural(c['entries'], 'entry', 'entries')} in the record.", f"记录中的 {c['entries']} 条记录。"))
+    if c["security"]:
+        items.append(t(lang, f"{_plural(c['security'], 'security event', 'security events')} in the record.", f"记录中的 {c['security']} 条安全事件。"))
+    if c["day"]:
+        items.append(t(lang, f"The clock goes back to the start: {c['day']} days of simulated time are undone.", f"时钟回到起点：模拟的 {c['day']} 天被撤销。"))
+    return items
+
+
+def lost_anything(rt: Runtime) -> bool:
+    """True when a reset of the loaded books would discard something beyond what a fresh reset holds."""
+    with rt.lock:
+        books = _read_books(rt)
+        return bool(_lost(rt, books, _states(_with_views(books.holds, None), rt.scenario == MAIN)[0], "en"))
+
+
+def _declined_current(lang: str, step: tuple[str, str, bool, bool]) -> dict[str, Any]:
+    """`current` once the owner declined the cure: the plan does not wait any more, and the story cannot go on."""
+    return {"scene_id": step[1], "step_id": step[0], "title_text": t(lang, "The cure was declined", "解决方案已被拒绝"),
+            "text": t(lang, "You declined the funding plan, so it did not run and nothing was financed. The story cannot go on from here; start it again from fresh books.",
+                      "您拒绝了融资方案，因此它没有执行，也没有任何融资。故事无法从这里继续；请从全新的账目重新开始。"),
+            "owner": False, "owner_text": None}
+
+
+def _guard_error(code: str, en: str, zh: str, lang: str, **extra: Any) -> HTTPException:
+    return HTTPException(409, {"code": code, "message": en, "message_when": t(lang, en, zh), **extra})
+
+
+def check_books_unchanged(rt: Runtime, from_scenario: str | None, confirm_loss: str | None, lang: str) -> None:
+    """The optional guard of `POST /demo/reset` and `POST /demo/restore` (call under `rt.lock`): a caller that names the scenario it
+    believes is loaded (`from_scenario`) is refused when the books are another, and, when something would be lost, unless it sent
+    `confirm_loss=1`. Without `from_scenario` nothing is checked (every existing caller)."""
+    if from_scenario is None:
+        return
+    if from_scenario != rt.scenario:
+        raise _guard_error("BOOKS_CHANGED", "The books changed since this page was read; nothing was reset.",
+                           "自您查看此页面以来，账目已发生变化；未重置任何内容。", lang, scenario=rt.scenario)
+    if confirm_loss != "1":
+        books = _read_books(rt)
+        items = _lost(rt, books, _states(_with_views(books.holds, None), rt.scenario == MAIN)[0], lang)
+        if items:
+            raise _guard_error("LOSS_NOT_CONFIRMED", "Resetting would discard work on these books and it was not confirmed; nothing was reset.",
+                               "重置会丢弃这些账目上的工作，而这一点尚未确认；未重置任何内容。", lang, loss_items=items)
+
+
+def _books_block(rt: Runtime, books: _Books, steps: dict[str, str], lang: str) -> dict[str, Any]:
+    main = rt.scenario == MAIN
+    items = _lost(rt, books, steps, lang)
+    nothing = not items
+    if nothing:
+        items = [t(lang, "Nothing has been done yet, so nothing is lost." if main else "Nothing has been done on these books yet, so nothing is lost.",
+                   "目前还没有做任何事，所以不会损失任何内容。" if main else "这些账目上还没有做任何事，所以不会损失任何内容。")]
+    return {
+        "scenario": rt.scenario, "main": main, "nothing_to_lose": nothing,
+        "loss_title_text": t(lang, "What the main books lose" if main else "What these books lose", "主账目会失去什么" if main else "这些账目会失去什么"),
+        "loss_items": items,
+        "reset_confirm_title_text": t(lang, "Reset the books?" if main else "Reset these books?", "重置账目？" if main else "重置这些账目？"),
+        "reset_confirm_label": t(lang, "Reset the books" if main else "Reset these books", "重置账目" if main else "重置这些账目"),
+        "reset_cancel_label": t(lang, "Keep the books", "保留账目"),
+        "reset_keeps_text": t(lang, "A reset puts the books back at their start; it does not bring back what is listed above.",
+                              "重置会让账目回到起点，上面列出的内容不会恢复。")}
 
 
 def _scope(rt: Runtime, lang: str) -> str:
@@ -356,9 +419,11 @@ def _ago(at: float, lang: str) -> str:
 def note_scenario_change(rt: Runtime, before: str, after: str) -> None:
     """Remember that the books were swapped to another scenario, or the main ones restored (a reset wipes the operations log, so the
     note lives on the runtime). Re-running the main story on the main books is not a swap."""
-    if before == after:
-        return
     with rt.lock:
+        if after != MAIN:  # what this scenario's fresh reset holds, so a later reset is compared with it
+            rt.demo_baseline[after] = _counts(rt, _read_books(rt))
+        if before == after:
+            return
         rt.demo_history.append({"kind": "restore" if after == MAIN else "swap", "scenario": after, "at": time.time()})
         del rt.demo_history[:-20]
 
@@ -383,10 +448,16 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
         rejected = bool(main and books.cure is not None and books.cure.status == ApprovalStatus.REJECTED)
         complete = main and cur is None
         results, proof = _results_and_proof(rt, books, scenes, lang) if main else ({}, {})
-        loss_items, loss_text = _lost(rt, books, scenes, steps, lang) if main else (
-            [t(lang, "Anything you did on these alternate books.", "您在这些备用账目上做过的任何事。")],
-            t(lang, "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
-              "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。"))
+        block = _books_block(rt, books, steps, lang)
+        loss_items = block["loss_items"]
+        if main:
+            loss_text = (t(lang, "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
+                           "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。") if block["nothing_to_lose"]
+                         else t(lang, f"Loading it replaces the main books. You would lose: {' '.join(loss_items)} Restoring puts the main books back at the start of the story, not where you left them.",
+                                f"加载它会替换主账目。您将失去：{' '.join(loss_items)}恢复主账目会回到故事的起点，而不是您离开时的状态。"))
+        else:
+            loss_text = t(lang, "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
+                          "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。")
         chain = chain_fields(rt.store.verify_chain(), len(books.ops), lang)
         scope = _scope(rt, lang) if not main else t(lang, "A company with several customers, open negotiations, an approval waiting for you and overdue invoices.",
                                                     "一家有多位客户、多项进行中的谈判、待您批准的事项和逾期发票的公司。")
@@ -410,7 +481,8 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
                     "steps": [{"id": sid, "label": t(lang, _STEP[sid][0], _STEP[sid][1]), "state": steps[sid], "owner": owner}
                               for sid, scene, _, owner in STEPS if scene == sc],
                     "proof": proof.get(sc, [])} for i, sc in enumerate(SCENES)],
-        "current": ({"scene_id": cur_step[1], "step_id": cur_step[0], "title_text": t(lang, *_SCENE[cur_step[1]]),
+        "current": (_declined_current(lang, cur_step) if rejected and cur_step is not None else
+                    {"scene_id": cur_step[1], "step_id": cur_step[0], "title_text": t(lang, *_SCENE[cur_step[1]]),
                      "text": t(lang, _STEP[cur_step[0]][2], _STEP[cur_step[0]][3]), "owner": cur_step[3],
                      "owner_text": (t(lang, "The approval is your own click. This story never presses it for you; open the approval and decide.",
                                       "批准是您自己的一次点击。这个故事绝不会代您点击；请打开批准事项并作出决定。") if cur_step[3] else None)}
@@ -418,7 +490,7 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
         "next": _next(lang, main, cur, books, rejected),
         "alternate": {
             "label": t(lang, "Load alternate scenario", "加载备用场景"), "scenario": ALTERNATE, "title_text": alt_title, "scope_text": scope,
-            "loss_title_text": t(lang, "What the main books lose", "主账目会失去什么"), "loss_items": loss_items, "loss_preview_text": loss_text,
+            "loss_title_text": t(lang, "What the main books lose", "主账目会失去什么"), "loss_items": loss_items, "nothing_to_lose": block["nothing_to_lose"], "loss_preview_text": loss_text,
             "keeps_text": t(lang, "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
                             "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。"),
             "confirm_title_text": t(lang, f"Load the {alt_title.lower()}?", f"加载“{alt_title}”？"),
@@ -430,12 +502,13 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
             "restore_text": t(lang, "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
                               "让主账目回到故事的起点。您在备用账目上做过的事不会保留。"),
             "history": history},
+        "books": block,
         "operator_tools": {
             "label": t(lang, "Operator tools", "操作工具"), "hint_text": t(lang, "Clock, reset, engine views", "时钟、重置、引擎页面"),
             "groups": [
                 {"key": "clock", "label": t(lang, "The clock", "时钟"),
                  "items": [{"label": t(lang, "Advance 1 day", "推进 1 天"), "action": "advance:1"}, {"label": t(lang, "Advance 7 days", "推进 7 天"), "action": "advance:7"}]},
-                {"key": "books", "label": t(lang, "The books", "账目"), "items": [{"label": t(lang, "Reset the books", "重置账目"), "action": "reset"}],
+                {"key": "books", "label": t(lang, "The books", "账目"), "items": [{"label": t(lang, "Reset the books", "重置账目"), "action": "reset", "replaces_books": True}],
                  "note_text": t(lang, "Clears every deal, operation and approval of this session.", "清除本次会话的所有交易、操作和批准事项。")},
                 {"key": "engine", "label": t(lang, "Engine views", "引擎页面"), "items": [{"label": t(lang, en, zh), "href": href} for en, zh, href in _ENGINE]}]},
         "proof": {"title_text": t(lang, "Proof", "证明"),
@@ -456,22 +529,27 @@ def get_demo_story(lang: str = "en", seen: str | None = None) -> dict[str, Any]:
 
 
 @router.post("/demo/restore")
-def demo_restore(lang: str = "en") -> dict[str, Any]:
-    """Put the main books back through the existing `rt.reset_demo("golden_sme")`, and say where the story stands."""
+def demo_restore(lang: str = "en", from_scenario: str | None = None, confirm_loss: str | None = None) -> dict[str, Any]:
+    """Put the main books back through the existing `rt.reset_demo("golden_sme")`, and say where the story stands. `from_scenario` and
+    `confirm_loss` are the optional stale-page guard (`check_books_unchanged`). The history notes a restore only when the scenario really
+    changed or the reset discarded something (a restore of untouched main books is not an event)."""
     from app.api.demo_seed import DemoSeedError
     from app.api.runtime import ResetRefused
 
     lang = "zh" if lang == "zh" else "en"
     rt = get_runtime()
     try:
-        rt.reset_demo(MAIN)
+        with rt.lock:
+            check_books_unchanged(rt, from_scenario, confirm_loss, lang)
+            before, discarded = rt.scenario, lost_anything(rt)
+            rt.reset_demo(MAIN)
+            if before != MAIN or discarded:
+                rt.demo_history.append({"kind": "restore", "scenario": MAIN, "at": time.time()})
+                del rt.demo_history[:-20]
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
         raise HTTPException(500, {"code": "DEMO_SEED_FAILED", "step": e.step, "message": str(e)}) from e
-    with rt.lock:
-        rt.demo_history.append({"kind": "restore", "scenario": MAIN, "at": time.time()})
-        del rt.demo_history[:-20]
     return {"ok": True, "scenario": MAIN, "day": rt.day,
             "restored_text": t(lang, "The main books are back at the start of the story.", "主账目已回到故事的起点。"),
             "story": build_story(rt, lang)}

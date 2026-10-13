@@ -316,3 +316,130 @@ def test_each_step_has_its_own_hint_and_the_owner_step_says_the_plan_waits(api: 
     for sid in ("approve",):
         en = demo_story.t("en", demo_story._STEP[sid][2], demo_story._STEP[sid][3])
         assert "outside what FLOW may run alone" in en and "approval card" in en
+
+
+# ---------------------------------------------------------------- the verifier's attack on "the main books cannot be silently replaced"
+
+
+def _counts(rt: Runtime) -> tuple[int, int, int, int, str]:
+    return len(rt.store.operations()), len(rt.store.approvals()), len(rt.store.commitments()), len(rt.store.security_events()), rt.scenario
+
+
+def _wrong_token(n: int) -> None:
+    from app.main import app
+
+    for _ in range(n):
+        assert TestClient(app, headers={"X-Owner-Token": "wrong"}).get("/home").status_code == 401
+
+
+def test_security_events_are_part_of_what_a_reset_loses(api: TestClient, rt: Runtime) -> None:
+    api.post("/demo/reset")
+    assert _story(api)["alternate"]["nothing_to_lose"] is True
+    _wrong_token(3)
+    assert len(rt.store.security_events()) == 3
+    body = _story(api)
+    assert body["alternate"]["nothing_to_lose"] is False and body["books"]["nothing_to_lose"] is False
+    assert "3 security events in the record." in body["alternate"]["loss_items"] and "nothing is lost" not in " ".join(body["alternate"]["loss_items"])
+    assert "3 条安全事件" in " ".join(_story(api, lang="zh")["books"]["loss_items"])
+    # the attack-message scene: the offer and the events it recorded are both named
+    sec = api.post("/offers", json={"fixture_id": "SEC_DEMO_FASTCAPITAL"}).json()["offer"]["offer_id"]
+    api.post(f"/offers/{sec}/evaluate", json={"fixture_id": "SEC_DEMO_FASTCAPITAL"})
+    items = " ".join(_story(api)["books"]["loss_items"])
+    assert f"{len(rt.store.security_events())} security events" in items
+    api.post("/demo/restore")
+    assert len(rt.store.security_events()) == 0 and _story(api)["books"]["nothing_to_lose"] is True
+
+
+def test_the_books_block_on_main_and_busy(api: TestClient, rt: Runtime) -> None:
+    fresh = _story(api)["books"]
+    assert fresh["scenario"] == "golden_sme" and fresh["main"] is True and fresh["nothing_to_lose"] is True
+    assert fresh["reset_confirm_title_text"] == "Reset the books?" and fresh["reset_confirm_label"] == "Reset the books"
+    assert fresh["loss_title_text"] == "What the main books lose" and fresh["reset_cancel_label"] and fresh["reset_keeps_text"]
+    reset = next(i for g in _story(api)["operator_tools"]["groups"] for i in g["items"] if i.get("action") == "reset")
+    assert reset["replaces_books"] is True
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    played = _story(api)
+    assert played["books"]["nothing_to_lose"] is False and played["books"]["loss_items"] == played["alternate"]["loss_items"]
+    assert "1 agreement on the books." in played["books"]["loss_items"]
+    api.post("/demo/reset", params={"scenario": "busy"})
+    busy = _story(api)
+    # a freshly loaded busy company has nothing beyond what its own seed wrote
+    assert busy["books"]["scenario"] == "busy" and busy["books"]["main"] is False and busy["books"]["nothing_to_lose"] is True
+    assert busy["books"]["reset_confirm_title_text"] == "Reset these books?" and busy["alternate"]["nothing_to_lose"] is True
+    _wrong_token(1)
+    after = _story(api)
+    assert after["books"]["nothing_to_lose"] is False and "1 security event in the record." in after["books"]["loss_items"]
+    zh = _story(api, lang="zh")
+    assert zh["books"]["reset_confirm_title_text"] == "重置这些账目？"
+    _words(zh, "zh")
+
+
+def test_a_stale_page_cannot_swap_the_books(api: TestClient, rt: Runtime) -> None:
+    # a page was read on the busy books; meanwhile the books were restored and the story walked
+    api.post("/demo/reset", params={"scenario": "busy"})
+    api.post("/demo/restore")
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    before = _counts(rt)
+    r = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "busy", "confirm_loss": "1", "lang": "en"})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_CHANGED"
+    assert r.json()["detail"]["message_when"] == "The books changed since this page was read; nothing was reset."
+    zh = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "busy", "lang": "zh"}).json()["detail"]
+    assert zh["code"] == "BOOKS_CHANGED" and "账目已发生变化" in zh["message_when"] and zh["message"].endswith("nothing was reset.")
+    restore = api.post("/demo/restore", params={"from_scenario": "busy", "confirm_loss": "1"})
+    assert restore.status_code == 409 and restore.json()["detail"]["code"] == "BOOKS_CHANGED"
+    assert _counts(rt) == before
+    # the right scenario, but the loss is not confirmed
+    for call in (lambda **k: api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme", **k}),
+                 lambda **k: api.post("/demo/restore", params={"from_scenario": "golden_sme", **k})):
+        r = call()
+        assert r.status_code == 409 and r.json()["detail"]["code"] == "LOSS_NOT_CONFIRMED"
+        assert "1 agreement on the books." in r.json()["detail"]["loss_items"] and r.json()["detail"]["message_when"].endswith("nothing was reset.")
+        assert call(confirm_loss="0").status_code == 409
+        assert _counts(rt) == before
+    ok = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme", "confirm_loss": "1"})
+    assert ok.status_code == 200 and rt.scenario == "busy"
+    ok = api.post("/demo/restore", params={"from_scenario": "busy", "confirm_loss": "1"})
+    assert ok.status_code == 200 and rt.scenario == "golden_sme" and ok.json()["story"]["main"] is True
+
+
+def test_nothing_to_lose_needs_no_confirmation_and_old_callers_are_unchanged(api: TestClient, rt: Runtime) -> None:
+    assert api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme"}).status_code == 200  # fresh books
+    assert api.post("/demo/restore", params={"from_scenario": "busy"}).status_code == 200  # a fresh busy company loses nothing
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    assert api.post("/demo/reset", params={"scenario": "golden_sme"}).status_code == 200  # no parameters: as it always was
+    assert len(rt.store.commitments()) == 0
+    assert api.post("/demo/restore").status_code == 200
+
+
+def test_the_history_notes_only_a_real_change(api: TestClient, rt: Runtime) -> None:
+    api.post("/demo/restore")  # untouched main books: nothing to note
+    assert rt.demo_history == []
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    api.post("/demo/restore")  # the reset discarded an agreement: that is worth saying
+    assert [h["kind"] for h in rt.demo_history] == ["restore"]
+    api.post("/demo/reset", params={"scenario": "busy"})
+    api.post("/demo/restore")
+    assert [h["kind"] for h in rt.demo_history] == ["restore", "swap", "restore"]
+
+
+def test_a_declined_cure_has_its_own_words(api: TestClient, rt: Runtime) -> None:
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    api.post("/clock/advance", json={"to_day": 34})
+    _queue(api)
+    waiting = _story(api, seen="cash")
+    assert "waits for the owner" in waiting["current"]["text"] and waiting["current"]["owner_text"]
+    assert api.post(f"/approvals/{rt.store.approvals()[0].id}", json={"decision": "REJECT"}).status_code == 200
+    for lang, word in (("en", "declined"), ("zh", "拒绝")):
+        body = _story(api, seen="cash", lang=lang)
+        cur = body["current"]
+        assert word in cur["title_text"] and word in cur["text"] and cur["owner"] is False and cur["owner_text"] is None
+        assert "waits" not in cur["text"] and "open the approval" not in cur["text"].lower()
+        assert body["next"]["action"] == "restart"
+        _words(body, lang)

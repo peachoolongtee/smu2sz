@@ -59,6 +59,8 @@ class Runtime:
     # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
     # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
     demo_history: list[dict[str, Any]] = field(default_factory=list)
+    # What a fresh reset of an alternate scenario holds, counted just after the reset (`app.api.demo_story`); the main scenario's is empty.
+    demo_baseline: dict[str, dict[str, int]] = field(default_factory=dict)
 
     def clock(self) -> int:
         return self.day
