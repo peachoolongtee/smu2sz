@@ -3,6 +3,10 @@ mean, whether the terms are confirmed, where the request stands, and the six row
 
 Added to each row of `GET /approvals/queue` (every existing field stays):
 
+    title_text        what the approval asks the owner to authorize, as a statement: "Apply for ¥200,000 in working-capital financing" (the old
+                      question headline is gone from the item: `presentation.headline` says the same)
+    decided_text      what came of it once answered ("You authorized the application; FLOW sent it to the lender.", "You declined; the application
+                      was not sent."), null while it waits (`presentation.headline` says it too)
     commit_label      the button, naming the act: "Authorize the application" (APPLY_FOR_FACILITY), "Authorize the repayment" (REPAY_FACILITY), and for the
                       other kinds the act they are ("Authorize the draw", "Authorize the financing request", "Authorize the agreement")
     authorize_text    the first sentence: for an application, "Approval sends an application to the lender. It does not mean the loan is approved or
@@ -30,7 +34,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from app.api.presentation import COMMERCIAL_KINDS, Lang, t, when_text
+from app.api.presentation import COMMERCIAL_KINDS, Lang, decided_text, t, when_text
 
 APPLY, REPAY, DRAW, FINANCE = "APPLY_FOR_FACILITY", "REPAY_FACILITY", "DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"
 
@@ -147,6 +151,8 @@ def approval_review(lang: Lang, *, item: Mapping[str, Any]) -> dict[str, Any]:
     commercial = kind in COMMERCIAL_KINDS
     pair = _AUTHORIZE.get(kind)
     return {
+        "title_text": pres.get("title_text"),
+        "decided_text": decided_text(kind, status, pres.get("execution_status"), lang),
         "commit_label": commit_label(kind, lang),
         "authorize_text": t(lang, *pair) if pair is not None else None,
         "terms_state_text": t(lang, *_NOT_CONFIRMED) if kind == APPLY and not terms else None,

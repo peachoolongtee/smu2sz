@@ -183,7 +183,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                 "obligation_id": cv.obligation_id, "type": kind, "label": _label(kind, lang), "horizon": "FORWARD",
                 "amount_fen": cv.value_fen, "amount_display": fmt_yuan(cv.value_fen),
                 "window_text": t(lang, f"Valued over the next {months} months at your cheapest committed source.",
-                                 f"按您最便宜的已承诺资金来源，估值期为未来 {months} 个月。"),
+                                 f"按您最便宜的已承诺资金来源估值，期限为未来 {months} 个月。"),
                 "basis": cv.basis, "basis_when": business_text(state, cv.basis, today, lang)})
     fc = view["forward_concession"]
     impact = {

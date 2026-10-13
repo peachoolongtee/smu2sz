@@ -35,7 +35,7 @@ from app.api.presentation import (
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
-from app.api.workspace import _months, _posted_discount
+from app.api.workspace import _months, _posted_discount, _send_runs_funding
 from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
@@ -506,14 +506,15 @@ def _funding_short(lang: str, kind: str, legs: str | None, *, funded: bool, proj
     return say(lang, "No new funding", "不新增融资")
 
 
-def _cost_row(key: str, label: str, fen: int | None, basis: str) -> dict[str, Any]:
-    return {"key": key, "label": label, "amount_display": fmt_yuan(fen) if fen is not None else None, "basis_text": basis}
+def _cost_row(key: str, label: str, fen: int | None, basis: str, note: str | None = None) -> dict[str, Any]:
+    return {"key": key, "label": label, "amount_display": fmt_yuan(fen) if fen is not None else None, "basis_text": basis, "note": note}
 
 
 def _cost_rows(lang: str, months: int, *, discount: int | None, terms: int | None, rebate: int | None, price: int | None,
-               funding: int | None, total: str | None, total_basis: str) -> list[dict[str, Any]]:
+               funding: int | None, total: str | None, total_basis: str, funding_note: str | None = None) -> list[dict[str, Any]]:
     """The cost of a path as table rows: the immediate discount, the forward payment-term cost, the rebate, the funding cost and the total,
-    each `{key, label, amount_display, basis_text}`. An amount is null where the path has no such component (the offer as asked carries no
+    each `{key, label, amount_display, basis_text, note}`. `note` is null except on the funding row of a reply whose plan cannot run when it is sent
+    ("if the plan runs; it cannot run today"): the cost is still the plan's, and the table says what the send receipt says. An amount is null where the path has no such component (the offer as asked carries no
     funding cost; a reply with no rebate has none). Each component says its own horizon ("once", "over 12 months"); the total's basis is the
     path's `cost_basis_text`, word for word, and the horizons are not normalised: the parts are never added here. A path that offsets its
     cost with a price rise carries one more row, `price_offset`, between the rebate and the funding cost."""
@@ -524,8 +525,8 @@ def _cost_rows(lang: str, months: int, *, discount: int | None, terms: int | Non
             _cost_row("rebate", say(lang, "Rebate", "返利"), rebate, over)]
     if price is not None:
         rows.append(_cost_row("price_offset", say(lang, "Offset by the price adjustment", "价格调整的抵补"), price, over))
-    rows.append(_cost_row("funding", say(lang, "Funding cost", "融资成本"), funding, once))
-    rows.append({"key": "total", "label": say(lang, "Total", "合计"), "amount_display": total, "basis_text": total_basis})
+    rows.append(_cost_row("funding", say(lang, "Funding cost", "融资成本"), funding, once, funding_note if funding is not None else None))
+    rows.append({"key": "total", "label": say(lang, "Total", "合计"), "amount_display": total, "basis_text": total_basis, "note": None})
     return rows
 
 
@@ -588,7 +589,7 @@ def _asked_cost_rows(verdict: Any, bound: list[Any], once: int, total: str | Non
                       rebate=forward["rebate"], price=forward["price"], funding=None, total=total, total_basis=basis)
 
 
-def _reply_cost_rows(c: Any, traj: Any, state: Any, mandate: Any, months: int, lang: str) -> list[dict[str, Any]]:
+def _reply_cost_rows(c: Any, traj: Any, state: Any, mandate: Any, months: int, lang: str, runs_on_send: bool = True) -> list[dict[str, Any]]:
     """The cost rows of a reply: its immediate discount as its own projection posts it, its obligations' forward values (the valuation behind
     `cost_components`), the rest of its immediate cost as the funding cost (the verifier's figure for the reply less the discount, never
     priced again here), and the total with the basis the reply already states."""
@@ -609,14 +610,15 @@ def _reply_cost_rows(c: Any, traj: Any, state: Any, mandate: Any, months: int, l
         forward["payment_terms"] = eco["funding_cost_fen"] if forward["payment_terms"] is not None else None
         forward["price"] = eco["offset_fen"]
     total, basis = _cost_basis(once, c.forward_value_fen, months, bool(eco is not None and eco["is_net"]), lang)
+    note = None if runs_on_send else say(lang, "if the plan runs; it cannot run today", "若方案得以执行才会产生；今天无法执行")
     return _cost_rows(lang, months, discount=discount, terms=forward["payment_terms"], rebate=forward["rebate"], price=forward["price"],
-                      funding=funding, total=total, total_basis=basis)
+                      funding=funding, total=total, total_basis=basis, funding_note=note)
 
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
            breach: tuple[int, int] | None, replies: list[dict[str, Any]], trajs: dict[str, Any], flagged: set[str],
            rechecked: dict[str, Any], plan_costs: dict[str, int], assumed: dict[str, str],
-           funding_said: dict[str, str | None]) -> list[dict[str, Any]]:
+           funding_said: dict[str, str | None], send_runs: dict[str, bool]) -> list[dict[str, Any]]:
     """One entry per line on the chart: the offer as asked, then each reply in the verdict's order, with every word its column says.
     Each figure and word is the verdict's, the workspace's or the executor's own (see the comment on each). `flagged` holds the ids of
     the replies whose funding plan needs the owner's approval; `rechecked` the verifier's verdict on each reply as an agreement."""
@@ -720,7 +722,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
                                      if recommended else None),
             scenario_assumption=assumed[c.id], funding_assumption=funding_said.get(c.id), terms_days=_payment_days(state, obligations, buyer),
             terms_delta=_terms_delta(lang, _payment_days(state, obligations, buyer), _terms_in_force(state, buyer), "reply"),
-            cost_rows=_reply_cost_rows(c, traj, state, mandate, months, lang)))
+            cost_rows=_reply_cost_rows(c, traj, state, mandate, months, lang, send_runs.get(c.id, True))))
     return paths
 
 
@@ -988,6 +990,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
     assumed: dict[str, str] = {}  # each reply's scenario assumption: the legs of its own funding plan, or why it has none
     funding_said: dict[str, str | None] = {}  # the same, in the short form a comparison row reads
+    send_runs: dict[str, bool] = {}  # whether each reply's funding plan can run when it is sent (the receipt's `executes_now_text` says the same)
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
         label = option_label(c.label, lang)
@@ -1004,6 +1007,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
             continue
         trajs[c.id] = traj
         plan_costs[c.id] = funding.total_cost_fen
+        send_runs[c.id] = _send_runs_funding(funding)
         legs = _plan_legs(actions, today, lang)
         assumed[c.id] = _scenario_assumption(lang, "reply", legs, funded=funding.need_fen != 0)
         funding_said[c.id] = _funding_short(lang, "reply", legs, funded=funding.need_fen != 0)
@@ -1026,7 +1030,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
-    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said)
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
     _same_day_comparison(paths, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)

@@ -39,31 +39,32 @@ def test_an_approved_a_declined_and_a_refused_card_read_in_the_past_tense(client
     row = _queue(client)[0]
     client.post(f"/approvals/{row['id']}", json={"decision": "APPROVE"})
     en, zh = [client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]["presentation"] for lang in ("en", "zh")]
-    assert en["headline"] == "You approved ¥155,013.80 of invoice financing." and zh["headline"] == "您已批准 ¥155,013.80 的发票融资。"
+    assert en["headline"] == "You authorized the financing request; FLOW sent it to the lender."
+    assert zh["headline"] == "您已授权该融资申请；FLOW 已将其提交给贷款方。"
     assert en["next_step_text"] is None and en["next_step_href"] is None
 
     _walk(client)
     _act(client)
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "REJECT"})
     en, zh = [client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]["presentation"] for lang in ("en", "zh")]
-    assert en["headline"] == "You declined ¥155,013.80 of invoice financing." and zh["headline"] == "您已拒绝 ¥155,013.80 的发票融资。"
+    assert en["headline"] == "You declined; the request was not sent." and zh["headline"] == "您已拒绝；该申请未提交。"
 
     _walk(client)
     _act(client)
     client.post("/clock/advance", json={"to_day": 91})
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
     en, zh = [client.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]["presentation"] for lang in ("en", "zh")]
-    assert en["headline"] == "Approved, but it did not run: ¥155,013.80 of invoice financing."
-    assert zh["headline"] == "已批准，但未能执行：¥155,013.80 的发票融资。"
+    assert en["headline"] == "You authorized the financing request, but it could not run. No money moved."
+    assert zh["headline"] == "您已授权该融资申请，但未能执行。资金未动。"
     assert (en["next_step_text"], en["next_step_href"]) == ("Renew your signed limits, then ask FLOW to try again.", "/limits")
     assert (zh["next_step_text"], zh["next_step_href"]) == ("请续签您的授权，然后让 FLOW 重试。", "/limits")
 
 
-def test_a_waiting_card_keeps_its_question_and_has_no_next_step(client):
+def test_a_waiting_card_states_what_it_asks_and_has_no_next_step(client):
     _walk(client)
     _act(client)
     en = client.get("/approvals/queue").json()["approvals"][0]["presentation"]
-    assert en["headline"] == "Approve ¥155,013.80 of invoice financing?" and en["next_step_text"] is None
+    assert en["headline"] == en["title_text"] == "Request ¥155,013.80 of invoice financing" and en["next_step_text"] is None
 
 
 def test_the_signed_limits_are_named_in_words_not_as_a_mandate_version(client):
@@ -136,4 +137,4 @@ def test_a_decided_agreement_is_in_the_past_tense_and_has_no_button_label(client
     _queue_agreement(client)
     client.post(f"/approvals/{_queue(client)[0]['id']}", json={"decision": "APPROVE"})
     en = client.get("/approvals/queue").json()["approvals"][0]["presentation"]
-    assert en["headline"] == "You approved the agreement with Foshan Home Retail Co." and en["approve_label"] is None
+    assert en["headline"] == "You authorized the agreement; FLOW recorded it." and en["approve_label"] is None

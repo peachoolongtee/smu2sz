@@ -982,7 +982,7 @@ _NOTES = {
 
 @rule(rf"draw requested (?P<w>{WHEN}); the router sizes and prices the final plan")
 def _draw_requested(m: re.Match[str]) -> str:
-    return f"{when_zh(m['w'])}提出提款申请；最终方案由路由器确定规模并定价"
+    return f"{when_zh(m['w'])}提出提款申请；最终方案的规模和定价另行确定"
 
 
 @rule(r"Terms stay at (?P<d>\d+) days(?:, (?P<rebate>no rebate))?")
@@ -1103,7 +1103,7 @@ def _offered_fail(m: re.Match[str]) -> str:
 
 @rule(r"on current books with these terms the router's committed plan \((?P<plan>.+)\) keeps the reserve")
 def _router_keeps(m: re.Match[str]) -> str:
-    return f"按目前账目和这些条款，路由器的已承诺方案（{tr(m['plan'])}）可保住储备"
+    return f"按目前账目和这些条款，已承诺方案（{tr(m['plan'])}）可保住储备"
 
 
 @rule(rf"(?:Re-checked as an offer|Option B passes its own re-check), its terms leave a shortfall of (?P<amt>{M}) (?P<w>{WHEN}), funded by the plan: (?P<plan>.+)")
@@ -1196,7 +1196,7 @@ def _loan_component(m: re.Match[str]) -> str:
 
 @rule(r"Router optimum")
 def _router_optimum(m: re.Match[str]) -> str:
-    return "路由器最优方案"
+    return "最优融资方案"
 
 
 @rule(r"No funding needed")
@@ -1313,7 +1313,7 @@ def _chk_min_cash_observed(m: re.Match[str]) -> str:
 
 @rule(r"Early payment against the router's plan")
 def _chk_early_vs_plan(m: re.Match[str]) -> str:
-    return "提前付款与融资路由方案的对比"
+    return "提前付款与融资方案的对比"
 
 
 @rule(r"no admissible plan without the offer")

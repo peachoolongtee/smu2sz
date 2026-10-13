@@ -275,4 +275,4 @@ def test_after_the_send_the_receipt_says_what_ran_not_the_state_word(api: TestCl
     detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
     said = detail["agreement"]["receipt"]["executes_now_text"]
     assert said == detail["execution"]["summary_text"] and said != detail["agreement"]["status_text"]
-    assert said.endswith({"en": "The gap was not funded: the router's plan could not run today.", "zh": "缺口未获融资：路由方案今天无法执行。"}[lang])
+    assert said.endswith({"en": "The gap was not funded: today's funding plan could not run.", "zh": "缺口未获融资：今天的融资方案无法执行。"}[lang])
