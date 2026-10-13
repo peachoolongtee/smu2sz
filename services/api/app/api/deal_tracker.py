@@ -30,11 +30,15 @@ from app.api.selection import Selection, build_context, selection
 from app.decisions import DealState, DecisionInputs, DecisionState, FundingState
 from app.decisions.identity import offer_id_of
 from app.decisions.state import RESERVE_ALERT, derive
-from app.domain.models import CommitmentStatus, ObligationType
+from app.domain.models import CommitmentStatus, ObligationType, OperationStatus
 from app.domain.money import fmt_yuan
 from app.strategy.receivable_rows import collection_action, collection_state
 
 log = logging.getLogger("termsledger.tracker")
+
+# The owner's current choice: funding the records relate to a deal is counted in its cost only when it followed this buyer's late payment
+# (and only in one tracker). Set False and no related funding is counted; it is still shown, with `cost.related_fen`.
+COUNT_RELATED_FUNDING = True
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 _WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
@@ -102,7 +106,7 @@ def _owner_title(ob: Any, lang: str) -> str:
     return t(lang, "A further promise to the buyer", "对买方的另一项承诺")
 
 
-def _stages(rt: Any, ctx: Context, buyer: str, lang: str, promised: list[Any], ended: bool) -> list[dict[str, Any]]:
+def _stages(rt: Any, ctx: Context, buyer: str, lang: str, early_kinds: list[str], ended: bool) -> list[dict[str, Any]]:
     """The contract stages the deal row builds when a confirmed contract is on the books (its keys and words); else the same stages, in the
     same words (the first, contract read, is the contract's and does not apply). Whichever the source, the STATES follow the tracker's one
     flag: ENDED means every stage is done (missed or part where a promise was missed or part kept), LIVE means collecting is the one stage
@@ -121,13 +125,12 @@ def _stages(rt: Any, ctx: Context, buyer: str, lang: str, promised: list[Any], e
     else:
         keys = [("negotiated", t(lang, "Terms negotiated", "条款已谈判")), ("early_payment", t(lang, "Early payment in", "提前付款到账")),
                 ("collecting", t(lang, "Collecting", "催收中")), ("fulfilled", t(lang, "Fulfilled", "已履行完毕"))]
-    seen = {p.status for p in promised}
-    if "LAPSED" in seen:
+    if "missed" in early_kinds:
         early = "missed"
-    elif "SETTLED_OTHERWISE" in seen or "AWAITED" in seen:
+    elif "part" in early_kinds or "awaited" in early_kinds:
         early = "part"
     else:
-        early = "done" if seen or ended else "todo"
+        early = "done" if early_kinds or ended else "todo"
     out = []
     for k, label in keys:
         if k == "early_payment":
@@ -142,15 +145,38 @@ def _stages(rt: Any, ctx: Context, buyer: str, lang: str, promised: list[Any], e
     return out
 
 
-def _booked_discounts(ctx: Context, c: Any, promised: list[Any]) -> dict[Any, int]:
-    """The discount booked under the agreement, by the receipt that booked it (a receipt's own figure outranks the promise's, never both)."""
+def _executed_seqs(ctx: Context) -> set[int]:
+    """The log positions of the operations that ran. A refused, queued or duplicate entry is not a payment."""
+    return {e.seq for e in ctx.entries if e.result.status == OperationStatus.EXECUTED}
+
+
+def _receipts(ctx: Context) -> list[Any]:
+    """The reconciliation's receipts that an executed operation booked: the only receipts any figure, day or lateness here comes from."""
+    ran = _executed_seqs(ctx)
+    return [r for r in ctx.receipts if r.seq in ran]
+
+
+def _receipt_days(ctx: Context) -> dict[str, int]:
+    """The latest day an executed receipt was booked against each invoice."""
+    out: dict[str, int] = {}
+    for r in _receipts(ctx):
+        if r.day is not None:
+            out[r.receivable_id] = max(out.get(r.receivable_id, r.day), r.day)
+    return out
+
+
+def _booked_discounts(ctx: Context, promised: list[Any]) -> dict[Any, int]:
+    """The discount booked under the agreement, by the receipt that gave it. A discount is booked only when cash shows it: for a promise the
+    reconciliation matched as honoured (RECEIVED), the face it settled less the cash received, never more than the posted discount. An
+    invoice paid at face gave none; a receipt's own `agreed_discount_fen` is a reference figure and is not read."""
+    by_seq = {r.seq: r for r in _receipts(ctx)}
     booked: dict[Any, int] = {}
     for p in promised:
-        if p.status == "RECEIVED":
-            booked[p.receipt_seq if p.receipt_seq is not None else f"p:{p.obligation_id}"] = p.discount_fen
-    for r in ctx.receipts:
-        if getattr(r, "commitment_id", None) == c.id and r.status == "MATCHED" and r.agreed_discount_fen > 0:
-            booked[r.seq] = r.agreed_discount_fen
+        r = by_seq.get(p.receipt_seq) if p.status == "RECEIVED" and p.receipt_seq is not None else None
+        if r is not None:
+            given = max(0, min(p.discount_fen, p.face_fen - r.received_fen))
+            if given:
+                booked[r.seq] = given
     return booked
 
 
@@ -162,37 +188,59 @@ def _deal_receivables(ctx: Context, c: Any, promised: list[Any]) -> list[Any]:
     return rows
 
 
-def _buyer_promises(ctx: Context, c: Any, promised: list[Any], receivables: list[Any], buyer: str, lang: str) -> list[dict[str, Any]]:
+def _early_zh(ctx: Context, p: Any) -> str:
+    when = when_text(p.promised_day, ctx.today, "zh") if p.promised_day is not None else ""
+    inv = invoice_words(ctx.state, p.receivable_id, "zh")
+    amount = fmt_yuan(p.expected_fen)
+    return {"AWAITED": f"约定于{when}到账的 {amount} 提前付款尚未到账。",
+            "RECEIVED": f"已收到约定的 {amount} 提前付款。",
+            "LAPSED": f"约定于{when}到账的 {amount} 提前付款没有到账；{inv}将回到原来的到期日。",
+            "SETTLED_OTHERWISE": f"{inv}已结清，但并非按约定的 {amount} 提前付款。"}.get(p.status, "")
+
+
+def _buyer_promises(ctx: Context, promised: list[Any], receivables: list[Any], buyer: str, lang: str) -> list[dict[str, Any]]:
     agreements = {x.id: party_name(ctx.state, x.counterparty_id) for x in ctx.commitments}
     who = t(lang, "The buyer", "买方")
     out: list[dict[str, Any]] = []
-    table = {"RECEIVED": ("kept", "ok", t(lang, "Kept", "已兑现")), "AWAITED": ("awaited", "neutral", t(lang, "Awaited", "等待中")),
-             "LAPSED": ("missed", "bad", t(lang, "Missed", "已错过")), "SETTLED_OTHERWISE": ("part", "warn", t(lang, "Part kept", "部分兑现"))}
+    table = {"RECEIVED": ("kept", "ok", t(lang, "Kept", "已兑现"), "paid_early"),
+             "AWAITED": ("awaited", "neutral", t(lang, "Awaited", "等待中"), "awaited"),
+             "LAPSED": ("missed", "bad", t(lang, "Missed", "已错过"), "missed"),
+             "SETTLED_OTHERWISE": ("part", "warn", t(lang, "Part kept", "部分兑现"), "part")}
     paid_on = _receipt_days(ctx)
-    day_of = {r.seq: r.day for r in ctx.receipts if r.day is not None}
+    day_of = {r.seq: r.day for r in _receipts(ctx) if r.day is not None}
+    by_id = {r.id: r for r in receivables}
 
     def days_late(n: int) -> str:
         return t(lang, f"{n} {'day' if n == 1 else 'days'} late", f"逾期 {n} 天")
 
     for p in promised:
-        state, tone, word = table.get(p.status, ("awaited", "neutral", t(lang, "Awaited", "等待中")))
-        detail = reconciliation_words(ctx.state, p.detail, ctx.today, promise=True, lang=lang, agreements=agreements) or ""
+        state, tone, word, kind = table.get(p.status, ("awaited", "neutral", t(lang, "Awaited", "等待中"), "awaited"))
+        detail = (_early_zh(ctx, p) if lang == "zh" else
+                  reconciliation_words(ctx.state, p.detail, ctx.today, promise=True, lang=lang, agreements=agreements)) or ""
         arrived = day_of.get(p.receipt_seq) if p.receipt_seq is not None else None
+        rec = by_id.get(p.receivable_id)
         if state == "kept" and arrived is not None and p.promised_day is not None and arrived > p.promised_day:
             late = arrived - p.promised_day  # a promise met after its day is not kept
-            state, tone, word = "paid_late", "warn", t(lang, "Paid late", "逾期支付")
+            state, tone, word, kind = "paid_late", "warn", t(lang, "Paid late", "逾期支付"), "paid_late"
             detail = t(lang, f"The early payment of {fmt_yuan(p.expected_fen)} was due {when_text(p.promised_day, ctx.today, lang)} and "
                              f"arrived {when_text(arrived, ctx.today, lang)}, {days_late(late)}.",
                        f"{fmt_yuan(p.expected_fen)} 的提前付款应于{when_text(p.promised_day, ctx.today, lang)}到账，"
                        f"实际于{when_text(arrived, ctx.today, lang)}到账，{days_late(late)}。")
+        elif (p.status != "RECEIVED" and rec is not None and p.promised_day is not None and rec.face_fen - rec.settled_fen <= 0
+              and paid_on.get(rec.id, p.promised_day + 1) <= p.promised_day):
+            # the buyer paid everything on or before the promised day, only without the discount: the promise was kept
+            state, tone, word, kind = "kept", "ok", t(lang, "Paid in full, without the discount", "已全额付清（未享受折扣）"), "full"
+            detail = t(lang, f"The buyer paid {invoice_words(ctx.state, rec.id, lang)} in full on or before the day promised, without taking the discount.",
+                       f"买方在约定日期当天或之前已付清{invoice_words(ctx.state, rec.id, lang)}的全款，但没有享受折扣。")
         out.append({"party": "buyer", "party_text": who,
                     "title_text": t(lang, f"Pay {fmt_yuan(p.expected_fen)} early", f"提前支付 {fmt_yuan(p.expected_fen)}"),
                     "detail_text": detail, "state": state, "state_word": word, "tone": tone,
-                    "evidence_href": _entry_href(p.receipt_seq) if state in ("kept", "part", "paid_late") else None,
-                    "_seq": p.receipt_seq})
+                    "evidence_href": _entry_href(p.receipt_seq) if state in ("kept", "part", "paid_late") and p.receipt_seq is not None else None,
+                    "_kind": kind})
     for r in receivables:
         owed = r.face_fen - r.settled_fen
         words = invoice_words(ctx.state, r.id, lang)
+        kind = "invoice"
         if r.status == "SETTLED" or owed <= 0:
             state, tone, word = "kept", "ok", t(lang, "Kept", "已兑现")
             detail = t(lang, f"{words[:1].upper()}{words[1:]} has been paid.", f"{words}已付清。")
@@ -203,6 +251,10 @@ def _buyer_promises(ctx: Context, c: Any, promised: list[Any], receivables: list
                                  f"{when_text(paid, ctx.today, lang)}, {days_late(paid - r.due_day)}.",
                            f"{words}应于{when_text(r.due_day, ctx.today, lang)}付清，实际于{when_text(paid, ctx.today, lang)}付清，"
                            f"{days_late(paid - r.due_day)}。")
+        elif r.status not in ("OPEN", "FINANCED"):
+            state, tone, word = "failed", "bad", t(lang, "Failed", "已失败")
+            detail = t(lang, f"{fmt_yuan(owed)} on {words} can no longer be collected: the invoice failed.",
+                       f"{words}的 {fmt_yuan(owed)} 已无法收回：这张发票已失败。")
         else:
             state = "late" if r.due_day < ctx.today else "awaited"
             tone, word = ("bad", t(lang, "Late", "已逾期")) if state == "late" else ("neutral", t(lang, "Awaited", "等待中"))
@@ -213,7 +265,7 @@ def _buyer_promises(ctx: Context, c: Any, promised: list[Any], receivables: list
         out.append({"party": "buyer", "party_text": who, "title_text": t(lang, "Pay the invoice by its due date", "按期支付发票款项"),
                     "detail_text": detail, "state": state, "state_word": word, "tone": tone,
                     "evidence_href": f"/receivables?invoice={quote(r.id, safe='')}&customer={quote(buyer, safe='')}",
-                    "_seq": None})
+                    "_kind": kind})
     return out
 
 
@@ -241,23 +293,10 @@ def _owner_promises(ctx: Context, ds: DecisionState, promised: list[Any], lang: 
     return out
 
 
-def _receipt_days(ctx: Context) -> dict[str, int]:
-    """The latest day a receipt was booked against each invoice."""
-    out: dict[str, int] = {}
-    for r in ctx.receipts:
-        if r.day is not None:
-            out[r.receivable_id] = max(out.get(r.receivable_id, r.day), r.day)
-    return out
-
-
-def _late_on(receivables: list[Any], promised: list[Any], day: int, paid_on: dict[str, int]) -> bool:
-    """Whether a payment of these invoices was missed or late on `day`: an invoice past its due day and still unpaid then (unpaid now, or
-    paid only after `day`), or an early payment that lapsed before it."""
-    for r in receivables:
-        unpaid_then = r.face_fen - r.settled_fen > 0 or paid_on.get(r.id, -1) >= day
-        if r.due_day < day and unpaid_then:
-            return True
-    return any(p.status == "LAPSED" and p.promised_day is not None and p.promised_day < day for p in promised)
+def _late_on(receivables: list[Any], day: int, paid_on: dict[str, int]) -> bool:
+    """Whether one of these invoices was late on `day`: past its due day and unpaid by the executed receipts then (unpaid now, or paid only on
+    or after `day`). A lapsed early promise before the due day is not lateness."""
+    return any(r.due_day < day and (r.face_fen - r.settled_fen > 0 or paid_on.get(r.id, -1) >= day) for r in receivables)
 
 
 def _quoted_day(ctx: Context, fid: str, fds: DecisionState) -> int | None:
@@ -268,103 +307,140 @@ def _quoted_day(ctx: Context, fid: str, fds: DecisionState) -> int | None:
 
 
 def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -> list[dict[str, Any]]:
-    """A funding decision the records link to this deal: an invoice advance on one of its invoices (QUOTED), or the cure of a reserve
-    shortfall quoted while this buyer's payment was missed or late (ATTRIBUTED). The figure is the plan's stored quoted cost; no link, no
-    line. A shortfall cure is COUNTED in this deal's cost only when this deal's buyer was the only buyer with a late or missed payment on
-    the day it was quoted, and this deal the only one of that buyer's with one: otherwise the line stays, uncounted (`actual_fen` null),
-    so that no cure is counted in the cost of two deals."""
+    """Every funding decision after the agreement that the records relate to this deal becomes a line, with its `relation`:
+    `after_late_payment` (on the day it was quoted this buyer was the only buyer with a late invoice, and this deal the only late deal of that
+    buyer) or `secured_on_invoice` (an advance on one of this deal's invoices). Its figure is the plan's stored quoted cost. The records do
+    not show how much of it this deal caused, so the line says so. A line is COUNTED in the deal's cost only under `COUNT_RELATED_FUNDING`,
+    only for `after_late_payment`, and in at most one tracker: when two deals could claim it, neither counts it."""
     c = ds.commitment
     assert c is not None
     buyer = c.counterparty_id
     paid_on = _receipt_days(ctx)
+    agreed = next((o.day for o in ds.ops if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and o.day is not None), None)
 
     def mine(commitment: Any, day: int) -> bool:
         promised = [p for p in ctx.promised if p.commitment_id == commitment.id]
-        return _late_on(_deal_receivables(ctx, commitment, promised), promised, day, paid_on)
+        return _late_on(_deal_receivables(ctx, commitment, promised), day, paid_on)
 
     out: list[dict[str, Any]] = []
     for fid, (fds, _inp) in ctx.states().items():
         q = fds.quote
         if fds.family != "FUNDING" or q is None or fds.state in (FundingState.DECLINED, FundingState.FAILED):
             continue
-        advance = any(leg.receivable_id in rids for leg in q.legs)
-        cause = counted = False
-        why = ""
         qday = _quoted_day(ctx, fid, fds)
-        if not advance and q.alert_kind == RESERVE_ALERT and qday is not None:
-            late_buyers = {x.counterparty_id for x in ctx.state.receivables if _late_on([x], [], qday, paid_on)}
-            late_buyers |= {p.counterparty_id for p in ctx.promised if _late_on([], [p], qday, paid_on)}
-            cause = buyer in late_buyers and mine(c, qday)
-            if cause:
+        if agreed is not None and qday is not None and qday < agreed:
+            continue
+        secured = any(leg.receivable_id in rids for leg in q.legs)
+        late_cause = unique = False
+        why = ""
+        if q.alert_kind == RESERVE_ALERT and qday is not None:
+            late_buyers = {x.counterparty_id for x in ctx.state.receivables if _late_on([x], qday, paid_on)}
+            late_cause = buyer in late_buyers and mine(c, qday)
+            if late_cause:
                 others = [x for x in ctx.commitments if x.counterparty_id == buyer and x.id != c.id
                           and x.status != CommitmentStatus.PROPOSED and mine(x, qday)]
                 if late_buyers != {buyer}:
                     why = "buyers"
                 elif others:
                     why = "deals"
-                counted = not why
-        if not (advance or cause):
+                unique = not why
+        if not (late_cause or secured):
             continue
+        relation = "after_late_payment" if late_cause else "secured_on_invoice"
         pending = fds.state == FundingState.AUTHORIZATION_REQUIRED
         cost = q.total_cost_fen
         extra = (t(lang, " Interest on the draw itself is not in that figure.", "借款本身的利息不含在该数字中。")
                  if q.cost_note == "draw_interest_excluded" else "")
-        if cause:
+        if relation == "after_late_payment":
             certainty = "ATTRIBUTED"
-            certainty_text = t(lang, "FLOW arranged this funding after this buyer's payment was late, and the records do not tie the funding to "
-                                     "this deal by itself: it is a real cost of your company's, attributed to this deal by its cause. It is "
-                                     "the cost FLOW quoted; the charge itself is not yet booked.",
-                               "FLOW 是在这位买方付款逾期之后安排的这笔融资，记录本身并不能把这笔融资与这笔交易直接对应：这是贵公司的真实成本，按其起因归于这笔交易。"
+            certainty_text = t(lang, "FLOW arranged this funding after this buyer's payment was late. The records do not show how much of it this "
+                                     "deal caused. It is the cost FLOW quoted; the charge itself is not yet booked.",
+                               "FLOW 是在这位买方付款逾期之后安排的这笔融资。记录并没有显示其中有多少是这笔交易造成的。"
                                "这是 FLOW 报出的成本，费用本身尚未入账。")
         else:
             certainty = "QUOTED"
-            certainty_text = t(lang, "The cost FLOW quoted for funding against this deal's invoice; the charge itself is not yet booked.",
-                               "FLOW 为这笔交易的发票融资所报的成本；费用本身尚未入账。")
-        counts = (not cause) or counted
-        if not counts:
-            note = (t(lang, "This funding followed late payments from several buyers, so it is not counted in this deal's cost.",
-                      "这笔融资是在多位买方逾期付款之后安排的，因此不计入这笔交易的成本。") if why == "buyers"
-                    else t(lang, "This funding followed late payments on several of this buyer's deals, so it is not counted in this deal's cost.",
-                           "这笔融资是在这位买方多笔交易逾期付款之后安排的，因此不计入这笔交易的成本。"))
+            certainty_text = t(lang, "This funding is secured on one of this deal's invoices. The records do not show how much of it this deal "
+                                     "caused. It is the cost FLOW quoted; the charge itself is not yet booked.",
+                               "这笔融资以这笔交易的一张发票作担保。记录并没有显示其中有多少是这笔交易造成的。"
+                               "这是 FLOW 报出的成本，费用本身尚未入账。")
+        eligible = COUNT_RELATED_FUNDING and relation == "after_late_payment" and unique
+        if not eligible:
+            if relation == "secured_on_invoice":
+                note = t(lang, "This funding is secured on this deal's invoice. It is shown with the deal but not counted in its cost.",
+                         "这笔融资以这笔交易的发票作担保。它与这笔交易一并显示，但不计入其成本。")
+            elif why == "buyers":
+                note = t(lang, "This funding followed late payments from several buyers, so it is not counted in this deal's cost.",
+                         "这笔融资是在多位买方逾期付款之后安排的，因此不计入这笔交易的成本。")
+            elif why == "deals":
+                note = t(lang, "This funding followed late payments on several of this buyer's deals, so it is not counted in this deal's cost.",
+                         "这笔融资是在这位买方多笔交易逾期付款之后安排的，因此不计入这笔交易的成本。")
+            else:
+                note = t(lang, "FLOW is set not to count related funding in a deal's cost, so this is shown but not counted.",
+                         "FLOW 目前设置为不把相关融资计入交易成本，因此这笔融资仅显示，不计入。")
         elif cost is None:
             note = t(lang, "Not measured yet: no cost was quoted for this funding.", "尚未衡量：这笔融资没有报出成本。")
         elif pending:
             note = t(lang, f"Quoted at {fmt_yuan(cost)}; it counts only once you approve it.", f"已报价 {fmt_yuan(cost)}；您批准后才会计入。")
         else:
             note = None
-        shown = counts and not pending and cost is not None
+        shown = eligible and not pending and cost is not None
         out.append({
             "key": "funding" if not out else f"funding_{len(out) + 1}",
-            "label": (t(lang, "Funding to cover the shortfall this deal left", "弥补这笔交易所致缺口的融资") if cause
-                      else t(lang, "Funding against this deal's invoice", "以这笔交易的发票办理的融资")),
+            "label": (t(lang, "Funding after this buyer's late payment", "这位买方逾期付款之后的融资") if relation == "after_late_payment"
+                      else t(lang, "Funding secured on this deal's invoice", "以这笔交易的发票作担保的融资")),
             "expected_fen": 0, "expected_display": fmt_yuan(0),
             "actual_fen": cost if shown else None, "actual_display": fmt_yuan(cost) if shown and cost is not None else None,
             "actual_note_text": note, "certainty": certainty, "certainty_text": certainty_text + extra,
             "tone": "bad" if shown else "neutral", "evidence_href": f"/decisions/{quote(fid, safe=':')}",
-            "_pending": pending, "_pending_fen": cost if (pending and counts) else None,
+            "relation": relation, "counted": shown, "related_fen": cost, "related_display": _money(cost),
+            "_pending": pending, "_pending_fen": cost if (pending and eligible) else None,
         })
     return out
 
 
-def _state_text(ctx: Context, promised: list[Any], receivables: list[Any], ended: bool, funding_done: bool, funding_pending: bool,
-                lang: str) -> str:
+def _planned_funding(ds: DecisionState, lang: str) -> tuple[dict[str, Any] | None, int | None]:
+    """The funding FLOW planned for the rest of the gap when the deal was agreed (the sent counter's stored gap plan): its stored cost, and
+    whether its operations ran. Returns the line and the planned (expected) component."""
+    s = ds.sent
+    gp = s.gap_plan if s is not None else None
+    if s is None or gp is None or gp.total_cost_fen is None:
+        return None, None
+    ran = bool(s.funding_op_ids) and all(any(o.op_id == i and o.status == OperationStatus.EXECUTED for o in ds.ops) for i in s.funding_op_ids)
+    cost = gp.total_cost_fen
+    line = {
+        "key": "planned_funding", "label": t(lang, "Funding planned when you agreed", "达成协议时计划的融资"),
+        "expected_fen": cost, "expected_display": fmt_yuan(cost),
+        "actual_fen": cost if ran else None, "actual_display": fmt_yuan(cost) if ran else None,
+        "actual_note_text": None if ran else t(lang, "The funding planned when you agreed was not run.", "达成协议时计划的融资没有执行。"),
+        "certainty": "QUOTED",
+        "certainty_text": t(lang, "The cost FLOW planned for funding the rest of the gap when you agreed; the charge itself is not yet booked.",
+                            "达成协议时 FLOW 为弥补其余缺口计划的融资成本；费用本身尚未入账。"),
+        "tone": "neutral", "evidence_href": None, "relation": None, "counted": ran,
+    }
+    return line, cost
+
+
+def _state_text(ctx: Context, kinds: list[str], receivables: list[Any], funding_done: bool, funding_pending: bool, lang: str) -> str:
     """What has happened so far, in one or two sentences, from the promises' and the invoices' own state. Never a bare status word."""
     today = ctx.today
-    early = {p.status for p in promised}
-    paid_early = "RECEIVED" in early
     first = ""
-    if paid_early:
-        first = t(lang, "The buyer paid the early part it promised.", "买方已支付它承诺提前支付的部分。")
-    elif "SETTLED_OTHERWISE" in early:
-        first = t(lang, "The buyer settled the early part, but not as agreed.", "买方结清了提前支付的部分，但并非按约定的方式。")
-    elif "LAPSED" in early:
-        first = t(lang, "The buyer's early payment did not arrive.", "买方承诺的提前付款没有到账。")
-    elif "AWAITED" in early:
-        first = t(lang, "The buyer's early payment is still awaited.", "买方承诺的提前付款仍在等待中。")
+    for kind in ("missed", "paid_late", "part", "full", "paid_early", "awaited"):
+        if kind in kinds:
+            first = {"missed": t(lang, "The buyer's early payment did not arrive.", "买方承诺的提前付款没有到账。"),
+                     "paid_late": t(lang, "The buyer paid the early part it promised, but after the day it promised.", "买方支付了承诺提前支付的部分，但晚于承诺的日期。"),
+                     "part": t(lang, "The buyer settled the early part, but not as agreed.", "买方结清了提前支付的部分，但并非按约定的方式。"),
+                     "full": t(lang, "The buyer paid the whole invoice in time, without taking the discount.", "买方按时付清了整张发票，但没有享受折扣。"),
+                     "paid_early": t(lang, "The buyer paid the early part it promised.", "买方已支付它承诺提前支付的部分。"),
+                     "awaited": t(lang, "The buyer's early payment is still awaited.", "买方承诺的提前付款仍在等待中。")}[kind]
+            break
+    paid_early = bool({"paid_early", "paid_late"} & set(kinds))
     unpaid = [r for r in receivables if r.status in ("OPEN", "FINANCED") and r.face_fen - r.settled_fen > 0]
+    failed = [r for r in receivables if r.status not in ("OPEN", "FINANCED", "SETTLED") and r.face_fen - r.settled_fen > 0]
     late = [r for r in unpaid if r.due_day < today]
     who = t(lang, "The rest of the invoice" if paid_early else "The invoice", "发票余款" if paid_early else "发票")
-    if not unpaid:
+    if failed:
+        second = t(lang, "An invoice on this deal can no longer be collected.", "这笔交易的一张发票已无法收回。")
+    elif not unpaid:
         second = t(lang, "Every invoice on this deal has been paid.", "这笔交易的所有发票都已付清。") if receivables else ""
     elif late:
         days = max(today - r.due_day for r in late)
@@ -393,8 +469,8 @@ def _state_text(ctx: Context, promised: list[Any], receivables: list[Any], ended
 
 def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]) -> dict[str, Any]:
     cost: dict[str, Any] = {"expected": None, "actual": None, "to_come": None, "unmeasured_fen": None, "unmeasured_display": None,
-            "difference_fen": None, "difference_display": None, "lines": [],
-            "method_text": None}
+                            "related_fen": None, "related_display": None, "difference_fen": None, "difference_display": None, "lines": [],
+                            "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
             "agreed_when": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
             "stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
@@ -427,43 +503,41 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     promised = [p for p in ctx.promised if getattr(p, "commitment_id", None) == c.id]
     receivables = _deal_receivables(ctx, c, promised)
     rids = {r.id for r in receivables}
+
+    # the promises
+    buyer_rows = _buyer_promises(ctx, promised, receivables, buyer, lang)
+    kinds = [r.pop("_kind") for r in buyer_rows]
+    early_kinds = kinds[:len(promised)]
+    states = [r["state"] for r in buyer_rows]
+    rows = [*buyer_rows, *_owner_promises(ctx, ds, promised, lang)]
+    kept = sum(1 for r in buyer_rows if r["state"] == "kept")  # met on or before its day
+    paid_late = sum(1 for r in buyer_rows if r["state"] == "paid_late")
+    total = len(buyer_rows)
+    lapsed = "missed" in states
+
+    # later funding, and whether the deal has ended
     fund = _funding_lines(ctx, ds, rids, lang)
     funding_pending = any(x["_pending"] for x in fund)
     funding_done = any(not x["_pending"] for x in fund)
-    unpaid = [r for r in receivables if r.status in ("OPEN", "FINANCED") and r.face_fen - r.settled_fen > 0]
-    # ENDED, the one flag the headline, the tone, the close-out and the stages read: the agreement is over (fulfilled, revoked or expired)
-    # AND every invoice of the deal is settled, no promise is awaited and no cure waits for the owner. Whatever the commitment's status, a
-    # deal with an unpaid or late invoice, an awaited promise or a cure waiting for the owner is LIVE.
-    ended = (c.status in (CommitmentStatus.FULFILLED, CommitmentStatus.REVOKED, CommitmentStatus.EXPIRED) and not unpaid
-             and not any(p.status == "AWAITED" for p in promised) and not funding_pending)
+    blocked = [r for r in receivables if r.status != "SETTLED" and r.face_fen - r.settled_fen > 0]
+    # ENDED, the one flag the headline, the tone, the close-out and the stages read: every invoice of the deal is settled (an invoice that
+    # failed is not), no cure waits for the owner, and either the deal has invoices that are all paid (whatever the commitment's status) or
+    # its agreement is over with no early payment awaited. Anything else is LIVE.
+    over_agreement = c.status in (CommitmentStatus.FULFILLED, CommitmentStatus.REVOKED, CommitmentStatus.EXPIRED)
+    ended = (not blocked and not funding_pending
+             and ((bool(receivables)) or (over_agreement and "awaited" not in early_kinds)))
 
-    # the cost expected at agreement, and the cost so far
+    # the cost expected at agreement, in the two components the accepted reply stores, and the cost so far
     expected = _expected(ds)
     terms = _short_terms(ctx, ds, lang)
-    booked = _booked_discounts(ctx, c, promised)
+    planned_line, planned_expected = _planned_funding(ds, lang)
+    concession_expected = expected - planned_expected if expected is not None and planned_expected is not None else expected
+    booked = _booked_discounts(ctx, promised)
     booked_fen = sum(booked.values())
-    lapsed = any(p.status == "LAPSED" for p in promised) or bool(c.lapsed_obligations)
-    if booked:
-        if expected is not None and expected > booked_fen and not ended:
-            gap = expected - booked_fen
-            note = t(lang, f"Not measured yet: {fmt_yuan(gap)} of the expected cost, which no record holds yet.",
-                     f"尚未衡量：预期成本中有 {fmt_yuan(gap)} 目前没有任何记录。")
-        elif expected is not None and expected > booked_fen:
-            note = t(lang, f"Not measured: {fmt_yuan(expected - booked_fen)} of the expected cost, which no record holds.",
-                     f"未能衡量：预期成本中有 {fmt_yuan(expected - booked_fen)} 没有任何记录。")
-        else:
-            note = None
-    elif lapsed:
-        note = t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
-                 "提前付款没有到账，因此这份协议下没有给出任何折扣。")
-    else:
-        note = t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。")
+    planned_actual = planned_line["actual_fen"] if planned_line is not None and planned_line["actual_fen"] is not None else 0
+    # what no record holds: the part of the expected concession that no promise's posted discount covers
+    unmeasured = (max(0, concession_expected - sum(p.discount_fen for p in promised)) if concession_expected is not None else None)
     first_seq = min((k for k in booked if isinstance(k, int)), default=None)
-    lapsed_discount = sum(p.discount_fen for p in promised if p.status == "LAPSED")
-    # the part of the expected cost that no record holds: what was quoted, less the discount booked and less the discount of a promise
-    # that lapsed (a record says it was never given)
-    unmeasured = max(0, expected - booked_fen - lapsed_discount) if expected is not None else None
-    unmeasured_rows = [ob for ob in c.obligations if ob.type in (ObligationType.CONTINGENT_REBATE, ObligationType.PRICE_ADJUSTMENT)]
     if not booked:
         note = (t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
                   "提前付款没有到账，因此这份协议下没有给出任何折扣。") if lapsed
@@ -475,44 +549,51 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                        f"尚未衡量：预期成本中有 {fmt_yuan(unmeasured)} 目前没有任何记录。"))
     else:
         note = None
-    if unmeasured_rows:
+    if any(ob.type in (ObligationType.CONTINGENT_REBATE, ObligationType.PRICE_ADJUSTMENT) for ob in c.obligations):
         more = t(lang, "A rebate or price change in the agreement is not measured yet.", "协议中的返利或价格调整尚未衡量。")
         note = f"{note} {more}" if note else more
     terms_line = {
         "key": "terms", "label": t(lang, "The terms you gave the buyer", "您给买方的条款"),
-        "expected_fen": expected, "expected_display": _money(expected), "actual_fen": booked_fen, "actual_display": fmt_yuan(booked_fen),
+        "expected_fen": concession_expected, "expected_display": _money(concession_expected),
+        "actual_fen": booked_fen, "actual_display": fmt_yuan(booked_fen),
         "actual_note_text": note, "certainty": "RECORDED",
-        "certainty_text": t(lang, "Booked: the discount the bank receipts under this agreement posted. The expected figure is the one FLOW quoted when you agreed.",
-                            "已入账：这份协议下银行收款所记的折扣。预期数字是您达成协议时 FLOW 报出的数字。"),
-        "tone": ("bad" if expected is not None and booked_fen > expected
-                 else "ok" if ended and not unmeasured and expected is not None else "neutral"),
+        "certainty_text": t(lang, "Booked: the discount the bank receipts under this agreement gave, the face they settled less the cash received. "
+                                  "The expected figure is the one FLOW quoted when you agreed.",
+                            "已入账：这份协议下银行收款实际给出的折扣，即所结清的面额减去收到的现金。预期数字是您达成协议时 FLOW 报出的数字。"),
+        "tone": ("bad" if concession_expected is not None and booked_fen > concession_expected
+                 else "ok" if ended and not unmeasured and concession_expected is not None else "neutral"),
         "evidence_href": _entry_href(first_seq),
     }
-    lines = [terms_line, *fund]
+    lines = [terms_line, *([planned_line] if planned_line is not None else []), *fund]
     actual = sum(x["actual_fen"] for x in lines if x["actual_fen"] is not None)
-    # the cost ON TOP of the agreed terms: what the counted funding lines add. Unsigned; it is not "actual minus expected", which would
-    # set the booked part of the terms against the whole expected cost.
+    # the cost ON TOP of the agreed terms: what the counted later funding lines add. Unsigned; it is not "actual minus expected".
     on_top = sum(x["actual_fen"] for x in fund if x["actual_fen"] is not None)
+    related = sum(x["related_fen"] for x in fund if x["related_fen"] is not None)
     pending_fen = sum(x["_pending_fen"] for x in fund if x["_pending_fen"] is not None)
     awaiting_fen = sum(p.discount_fen for p in promised if p.status == "AWAITED")
     for x in fund:
         x.pop("_pending_fen")
         x.pop("_pending")
-    over = expected is not None and booked_fen > expected
+    base = booked_fen + planned_actual
+    over = expected is not None and base > expected
     parts: list[str] = []
+    if planned_actual:
+        parts.append(t(lang, f"Includes {fmt_yuan(planned_actual)} of funding planned when you agreed.",
+                       f"其中包含达成协议时计划的 {fmt_yuan(planned_actual)} 融资成本。"))
     if on_top:
         parts.append(t(lang, f"Includes {fmt_yuan(on_top)} of funding on top of the terms you agreed.",
                        f"其中包含 {fmt_yuan(on_top)} 在您同意的条款之外的融资成本。"))
     if over and expected is not None:
-        parts.append(t(lang, f"The booked terms are {fmt_yuan(booked_fen - expected)} above the expected cost.",
-                       f"已入账的条款成本比预期高 {fmt_yuan(booked_fen - expected)}。"))
-    if unmeasured and (booked or on_top):
+        parts.append(t(lang, f"The booked cost is {fmt_yuan(base - expected)} above the expected cost.",
+                       f"已入账的成本比预期高 {fmt_yuan(base - expected)}。"))
+    if not booked:
+        parts.append(note or "")
+    if unmeasured and booked:
         parts.append(t(lang, f"{fmt_yuan(unmeasured)} of the expected cost is not measured yet.",
                        f"预期成本中有 {fmt_yuan(unmeasured)} 尚未衡量。"))
     if expected is None:
         parts.append(t(lang, "The cost expected at agreement was not recorded.", "达成协议时的预期成本没有记录。"))
-    if not booked and not on_top:
-        parts = [t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。")]
+    parts = [x for x in parts if x]
     actual_note = " ".join(parts) if lang != "zh" else "".join(parts)
     if on_top or over:
         tone = "bad"
@@ -537,22 +618,16 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         "actual": {"amount_fen": actual, "amount_display": fmt_yuan(actual), "note_text": actual_note, "tone": tone},
         "to_come": {"amount_fen": to_come_fen or None, "amount_display": _money(to_come_fen or None), "note_text": to_come_note},
         "unmeasured_fen": unmeasured, "unmeasured_display": _money(unmeasured),
+        "related_fen": related, "related_display": fmt_yuan(related),
         "difference_fen": on_top, "difference_display": fmt_yuan(on_top), "lines": lines,
-        "method_text": t(lang, "Expected is the cost FLOW quoted when you agreed. Cost so far adds up only what the records hold, and the part "
-                              "of the expected cost that no record measures is shown apart as not measured yet. The difference is the cost on "
-                              "top of the terms you agreed: the funding linked to this deal, not a comparison with the whole expected figure.",
-                        "预期成本是您达成协议时 FLOW 报出的成本。至今成本只累计记录中已有的内容，预期成本中没有记录衡量的部分会单独标明为尚未衡量。"
-                        "差额是在您同意的条款之外增加的成本：即与这笔交易相关的融资，而不是与整个预期数字的比较。"),
+        "method_text": t(lang, "Expected is the cost FLOW quoted when you agreed, in two parts: the concession you gave and the funding planned "
+                              "for the rest of the gap. Cost so far adds up only what the records hold; a part no record holds is shown apart as "
+                              "not measured. The difference is the funding counted on top of the terms you agreed; funding related to this deal "
+                              "is shown beside it, counted or not.",
+                        "预期成本是您达成协议时 FLOW 报出的成本，分为两部分：您给出的让步，以及为弥补其余缺口计划的融资。至今成本只累计记录中已有的内容；"
+                        "没有记录的部分会单独标明为未衡量。差额是在您同意的条款之外计入的融资；与这笔交易相关的融资无论是否计入，都会在旁边显示。"),
     }
 
-    # promises
-    buyer_rows = _buyer_promises(ctx, c, promised, receivables, buyer, lang)
-    rows = [*buyer_rows, *_owner_promises(ctx, ds, promised, lang)]
-    for r in rows:
-        r.pop("_seq", None)
-    kept = sum(1 for r in buyer_rows if r["state"] == "kept")  # met on or before its day
-    paid_late = sum(1 for r in buyer_rows if r["state"] == "paid_late")
-    total = len(buyer_rows)
     if total == 0:
         counts_text = t(lang, "The buyer has made no promise on this deal yet.", "买方在这笔交易中还没有作出承诺。")
     else:
@@ -566,9 +641,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
 
         pb = payment_behaviour(rt.store, books_from_store(rt.store), buyer, today, lang=lang)
         behaviour = None if pb.insufficient else pb.sentence
-    except Exception:  # noqa: BLE001  feature off or too few invoices: only the deal's own count
+    except Exception:  # noqa: BLE001  feature off or too few invoices: no behaviour sentence
         behaviour = None
-    buyer_view = {"text": f"{counts_text} {behaviour}".strip() if behaviour else counts_text,
+    buyer_view = {"text": behaviour,
                   "note_text": t(lang, "FLOW will show this beside the next offer from this buyer. It does not change what FLOW may accept on your behalf.",
                                  "FLOW 会在这位买方的下一份报价旁显示这些信息。它不会改变 FLOW 可以代您接受的范围。"),
                   "href": f"/customers/{quote(buyer, safe='')}"}
@@ -577,10 +652,11 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     agreed_when = when_text(accept.day, today, lang) if accept is not None else None
 
     # the state
-    states = [r["state"] for r in buyer_rows]
     nothing = not booked and not fund and all(s == "awaited" for s in states) and not lapsed
-    if "missed" in states or lapsed:
+    if "missed" in states:
         word, wtone = t(lang, "Promise missed", "承诺未兑现"), "bad"
+    elif "failed" in states:
+        word, wtone = t(lang, "Payment failed", "付款失败"), "bad"
     elif "late" in states:
         word, wtone = t(lang, "Payment late", "付款逾期"), "bad"
     elif "part" in states:
@@ -589,33 +665,33 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         word, wtone = t(lang, "Paid late", "逾期支付"), "warn"
     elif ended and ds.state == DealState.FULFILLED:
         word, wtone = t(lang, "Completed", "已完成"), "ok"
-    elif ended and c.status in (CommitmentStatus.REVOKED, CommitmentStatus.EXPIRED):
+    elif ended:
         word, wtone = t(lang, "Ended", "已结束"), "neutral"
     elif nothing:
         word, wtone = t(lang, "Waiting for the buyer", "等待买方"), "neutral"
     else:
         word, wtone = t(lang, "On plan", "按计划进行"), "ok"
-    state_text = _state_text(ctx, promised, receivables, ended, funding_done, funding_pending, lang)
+    state_text = _state_text(ctx, kinds, receivables, funding_done, funding_pending, lang)
     if ended:
         if expected is None:
             headline = t(lang, "This deal has closed", "这笔交易已结束")
         elif on_top > 0 or over:
             headline = t(lang, "This deal closed with extra cost on top of the terms you agreed", "这笔交易结束时，在您同意的条款之外还有额外成本")
-        elif lapsed or "missed" in states:
+        elif lapsed:
             headline = t(lang, "This deal ended with the buyer's promise missed", "这笔交易结束时买方未兑现承诺")
         elif unmeasured:
             headline = t(lang, "This deal has closed; part of its expected cost was never measured", "这笔交易已结束；预期成本中有一部分始终未能衡量")
-        elif booked_fen == expected:
+        elif base == expected:
             headline = t(lang, "This deal closed as expected", "这笔交易按预期结束")
         else:
             headline = t(lang, "This deal closed below the expected cost", "这笔交易结束时的成本低于预期")
-        en_parts = [f"This deal cost {fmt_yuan(actual)}" + (f" against {fmt_yuan(expected)} expected" if expected is not None else "")]
-        zh_parts = [f"这笔交易的成本为 {fmt_yuan(actual)}" + (f"，预期为 {fmt_yuan(expected)}" if expected is not None else "")]
+        sentence = f"This deal cost {fmt_yuan(actual)}" + (f" against {fmt_yuan(expected)} expected" if expected is not None else "")
+        sentence_zh = f"这笔交易的成本为 {fmt_yuan(actual)}" + (f"，预期为 {fmt_yuan(expected)}" if expected is not None else "")
         if on_top:
-            en_parts[0] += f", including {fmt_yuan(on_top)} of funding on top"
-            zh_parts[0] += f"，其中包含 {fmt_yuan(on_top)} 的额外融资成本"
-        sentence = en_parts[0] + (f"; {fmt_yuan(unmeasured)} of the expected cost was never measured" if unmeasured else "") + "."
-        sentence_zh = zh_parts[0] + (f"；预期成本中有 {fmt_yuan(unmeasured)} 始终未能衡量" if unmeasured else "") + "。"
+            sentence += f", including {fmt_yuan(on_top)} of funding on top"
+            sentence_zh += f"，其中包含 {fmt_yuan(on_top)} 的额外融资成本"
+        sentence += (f"; {fmt_yuan(unmeasured)} of the expected cost was never measured" if unmeasured else "") + "."
+        sentence_zh += (f"；预期成本中有 {fmt_yuan(unmeasured)} 始终未能衡量" if unmeasured else "") + "。"
         if expected is None:
             sentence += " The cost expected at agreement was not recorded."
             sentence_zh += "达成协议时的预期成本没有记录。"
@@ -629,7 +705,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
             headline = t(lang, "Nothing has happened on this deal yet", "这笔交易目前还没有任何进展")
         elif on_top > 0 or over:
             headline = t(lang, "This deal is costing more than you agreed to", "这笔交易的成本超出了您同意的范围")
-        elif "missed" in states or lapsed:
+        elif "failed" in states:
+            headline = t(lang, "An invoice on this deal failed", "这笔交易的一张发票已失败")
+        elif lapsed:
             headline = t(lang, "A promise on this deal was missed", "这笔交易中有一项承诺没有兑现")
         elif "late" in states:
             headline = t(lang, "The buyer is late on this deal", "买方在这笔交易上已逾期")
@@ -657,7 +735,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
         "agreed_when": agreed_when, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
-        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, promised, ended), "cost": cost, "promises": rows,
+        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, early_kinds, ended), "cost": cost, "promises": rows,
         "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",
@@ -686,4 +764,4 @@ def get_tracker(decision_id: str, lang: str = "en", *, sel: Annotated[Selection,
                                                      "FLOW 暂时无法绘制这笔交易的跟踪页面。"), context)
 
 
-__all__ = ["build_tracker", "router"]
+__all__ = ["COUNT_RELATED_FUNDING", "build_tracker", "router"]
