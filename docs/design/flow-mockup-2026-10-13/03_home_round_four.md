@@ -98,3 +98,17 @@ worklist keeps the customer line, the stage, Customer profile and the evidence d
 four put there is removed (it is now the right card). The donut stays for a CUSTOMER selection, where shares are the story,
 with the cash card beside the customer card as today. Nothing changes for the default view. Specs: the deal view at 1440/1100/
 820/390 shows exactly one card right of the deal card, its chart and the two named points; the customer view unchanged.
+
+## 8. The owed-by-customer donut lives on the default page too (owner, after §7)
+- The donut "What you are owed, by customer" is a card of its own in the right column, directly BELOW "Upcoming cash
+  movements", on the default page and on every selection (so it never moves): the three customers' slices and legend rows
+  from the `/customers` rows (`name`, `outstanding_display`, `share_text`), the selected customer's slice lifted when one is
+  selected, every slice and row a button that SELECTS that customer (the address changes to `?customer=`, the cards follow,
+  Dismiss and Escape revert as today). On a deal selection the centre names the deal's customer. With fewer than two
+  customers owed the card shows the one figure and no ring.
+- The side card that round four swapped in on selection is therefore gone: a customer selection shows the customer card
+  beside the cash card (as the default's left pair) and the donut stays in its place below the movements.
+- One more figure where the server already has the word: "Upcoming cash movements" gains a last row "Overdue from
+  customers ¥200k · 2 invoices" (the hybrid read's `overdue_short` and the collection rows' count), linking to Receivables
+  with `?from=home`; omitted when nothing is overdue. Facility headroom and "concessions promised against your limit" are
+  candidates for a later words batch (Cash and the envelope hold the figures); not in this round.
