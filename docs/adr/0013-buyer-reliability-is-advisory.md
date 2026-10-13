@@ -1,4 +1,4 @@
-# ADR-0011: Buyer reliability is learned from payments and stays advisory
+# ADR-0013: Buyer reliability is learned from payments and stays advisory
 
 Status: proposed, 13 Oct 2026 (branch `feat/agent-optimiser`). Owner: technical owner.
 
