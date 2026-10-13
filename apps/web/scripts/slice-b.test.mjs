@@ -11,6 +11,7 @@ const queue = await import("../components/deals/flow/queue-model.ts");
 const receiptModel = await import("../components/ui/commitment-receipt-model.ts");
 const receipt = await import("../lib/receipt.ts");
 const href = await import("../lib/customer-href.ts");
+const serverNull = await import("../lib/server-null.ts");
 const { en, zh } = await import("../lib/dictionary.ts");
 
 test("the six keys are the selection: read in the keys' order, only when set", () => {
@@ -159,4 +160,35 @@ test("the send's receipt is the server's block on the priced response of the ver
 
 test("every word the slice owns exists in both languages", () => {
   for (const key of Object.keys(en).filter((k) => /^(deals|receipt|chat\.scope|customer\.(fig|outstanding|allTasks)|whatif\.scope|appr\.receipt)/.test(k))) assert.ok(zh[key], key);
+});
+
+test("the owner's widened choice holds on the route it was made on and is void once it is cleared (the panel clears it when the route changes)", () => {
+  const params = new URLSearchParams("customer=B1&decision=deal%3AO");
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "decision");
+  scopeLib.chosenStore.set({ kind: "company" });
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "company");
+  // a kind the address does not hold is not offered, so the choice does not apply
+  assert.equal(scopeLib.resolveScope("/activity", new URLSearchParams("")).chosen.kind, "company");
+  scopeLib.chosenStore.set({ kind: "decision" });
+  assert.equal(scopeLib.resolveScope("/customers/B1", new URLSearchParams("")).chosen.kind, "customer");
+  scopeLib.chosenStore.set({ kind: null });
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "decision");
+  // the store keeps no route: nothing is remembered per route
+  assert.deepEqual(Object.keys(scopeLib.chosenStore.get()), ["kind"]);
+});
+
+test("the literal None is no word: a term or a figure that has it is read as null, and the other words pass untouched", () => {
+  assert.equal(serverNull.noWord("None"), null);
+  assert.equal(serverNull.noWord(" None "), null);
+  assert.equal(serverNull.noWord(""), null);
+  assert.equal(serverNull.noWord(null), null);
+  assert.equal(serverNull.noWord("0.85% off ¥257,200.00"), "0.85% off ¥257,200.00");
+  assert.equal(serverNull.noWord("None of the above"), "None of the above");
+  const pic = { paths: [{ key: "asked", terms: [{ key: "early_payment", value_text: "None", instead_of_text: null }, { key: "payment_terms", value_text: "75 days", instead_of_text: null }] }] };
+  const read = serverNull.readPicture(pic);
+  assert.deepEqual(read.paths[0].terms.map((t) => t.value_text), [null, "75 days"]);
+  assert.equal(serverNull.readPicture(null), null);
+  assert.equal(serverNull.readPicture({}).paths, undefined);
+  const view = { figures: [{ key: "financing", value_display: "None", note: "x" }, { key: "outstanding", value_display: "¥420,000", note: "y" }] };
+  assert.deepEqual(serverNull.readOverview(view).figures.map((f) => f.value_display), [null, "¥420,000"]);
 });

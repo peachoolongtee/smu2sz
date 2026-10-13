@@ -40,12 +40,16 @@ function FigureState({ figure }: { figure: OverviewFigure }) {
 function Figure({ figure, provenance }: { figure: OverviewFigure; provenance: string | null }) {
   const { t } = useI18n();
   const contribution = figure.key === "value";
+  // A figure with no value, no note and no state has nothing to say: it is left out, not drawn as a bare label.
+  if (!figure.value_display && !figure.note && !figure.state_text) return null;
   return (
     <div className="min-w-0 lg:border-r lg:border-line lg:px-5 lg:first:pl-0 lg:last:border-r-0" data-testid={`customer-figure-${figure.key}`}>
       <dt className="text-supporting font-bold text-ink-3">{contribution ? t("customer.fig.contribution") : figure.label}</dt>
-      <dd className={`mt-1 break-words type-value font-display ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
-        {figure.value_display}
-      </dd>
+      {figure.value_display ? (
+        <dd className={`mt-1 break-words type-value font-display ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
+          {figure.value_display}
+        </dd>
+      ) : null}
       <dd className="mt-0.5 break-words text-sm text-ink-2" data-testid={`customer-figure-${figure.key}-note`}>
         {figure.note}
       </dd>

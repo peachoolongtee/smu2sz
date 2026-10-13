@@ -47,13 +47,13 @@ function WhatIf() {
   return decision ? <Run key={decision} decision={decision} customer={sel.customer ?? null} /> : <Ask customer={sel.customer ?? null} lang={lang} t={t} />;
 }
 
-/** No negotiation named: ask which one, from the queue's own rows (one per negotiation). */
+/** No negotiation named: ask which one, from the queue's own rows that are negotiations (kind DECISION: a loan approval, a promise or an agreement is not one, though it may carry a record id). */
 function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"; t: ReturnType<typeof useI18n>["t"] }) {
   const deals = useAsync(() => getDeals(lang, {}).catch(() => null), [lang]);
   const needWorklist = deals.data !== undefined && !deals.data?.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang).catch(() => null) : Promise.resolve(null)), [lang, needWorklist]);
   const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, null, { agreedTerms: (x: string) => x, agreedRef: (x: string) => x });
-  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
+  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && x.row.kind === "DECISION" && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>
       <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />

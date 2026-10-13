@@ -149,7 +149,7 @@ export function Investigate({
   const term = (p: PicturePath, key: string) => p.terms.find((x) => x.key === key);
   const termCell = (p: PicturePath, key: string) => {
     const x = term(p, key);
-    return x ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>{NONE}</span>;
+    return x && (x.value_text || x.instead_of_text) ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>{NONE}</span>;
   };
 
   const columns: CompareColumn[] = [

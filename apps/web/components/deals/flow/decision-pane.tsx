@@ -356,9 +356,9 @@ export function DecisionPane({
               </p>
             ) : null}
             {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.length ? (
+            {asked?.terms.some((x) => x.value_text) ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.map((x) => (
+                {asked.terms.filter((x) => x.value_text).map((x) => (
                   <div key={x.key} className="min-w-0">
                     <dt className="text-supporting text-ink-3">{x.label}</dt>
                     <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
@@ -385,9 +385,9 @@ export function DecisionPane({
               </p>
             ) : null}
             {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.length ? (
+            {asked?.terms.some((x) => x.value_text) ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.map((x) => (
+                {asked.terms.filter((x) => x.value_text).map((x) => (
                   <div key={x.key} className="min-w-0">
                     <dt className="text-supporting text-ink-3">{x.label}</dt>
                     <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
@@ -399,7 +399,8 @@ export function DecisionPane({
 
           )}
 
-          {offer.offer.abstentions.length ? (
+          {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
+          {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
             <div data-testid="deal-abstentions">
               <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
                 <ul className="list-disc pl-5 text-sm">
@@ -510,9 +511,31 @@ export function DecisionPane({
                   ) : null}
                 </div>
               ) : (
-                <div className="space-y-2 border-t border-line pt-5" data-testid="deal-no-reply">
+                <div className="space-y-2.5 border-t border-line pt-5" data-testid="deal-no-reply">
                   <h3 className="text-supporting font-bold text-ink-3">{t("dq.rec.plain")}</h3>
                   <p className="max-w-[68ch] text-[15px] leading-snug text-ink">{asked?.decides_text ?? t("glance.offer.none")}</p>
+                  {/* No reply FLOW can send: the ask itself is what the owner can accept or decline, so its authority, the server's words for what the owner can do, and its cost with the basis are
+                      still said. There is no commit control here (the route that would accept the ask as asked does not exist); nothing is invented. */}
+                  {asked ? (
+                    <div data-testid="queue-authority" data-authority={asked.authority ?? ""} data-tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>
+                      {asked.authority_text && asked.authority_text !== asked.decides_text ? <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_text}</StateWord> : null}
+                      {asked.authority_reason_text ? (
+                        <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
+                          {asked.authority_reason_text}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {asked && askCost ? (
+                    <dl className="grid gap-x-8 gap-y-3 pt-1 sm:grid-cols-2" data-testid="deal-costs">
+                      <div className="min-w-0" data-testid="deal-cost-asked">
+                        <dt className="text-supporting text-ink-3">{t("deals.cost.asked")}</dt>
+                        <dd className="m-0">
+                          <Cell value={askCost} sub={askBasis} bad={asked.authority === "over_limit"} />
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : null}
                 </div>
               )}
 

@@ -3738,7 +3738,8 @@ export interface OfferPictureView {
 export interface PathTerm {
   key: string;
   label: string;
-  value_text: string;
+  /** Null when the reply or the ask has nothing to say for this term: the line is omitted (never the word "None"). */
+  value_text: string | null;
   instead_of_text: string | null;
 }
 
@@ -4003,7 +4004,8 @@ export type OverviewTone = "neutral" | "ok" | "warn" | "bad";
 export interface OverviewFigure {
   key: string;
   label: string;
-  value_display: string;
+  /** Null when there is no figure to show (the word "None" is not one): the value line is omitted. */
+  value_display: string | null;
   note: string;
   tone: OverviewTone;
   /** The one state vocabulary's key (lower case: planned, arranged, received, repaid, current, due_soon, overdue, promise_missed) and its word; `none` and "" when the figure has no state. */

@@ -201,7 +201,8 @@ export function QueuePanel({
           }
         />
       ) : null}
-      <div className="mt-4 -mx-1 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] [&>div]:w-max [&>div]:min-w-full">
+      {/* The five tabs do not fit one line in this card (440 px at 1440, 390 on a phone, longer words in zh): the row wraps, so every tab is visible and reachable and none is cut. */}
+      <div className="mt-4" data-testid="queue-tabs">
         <UnderlineTabs label={t("deals.tabs")} value={tab} onChange={onTab} tabs={tabs} />
       </div>
       {onlyCustomer ? (

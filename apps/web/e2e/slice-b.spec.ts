@@ -116,6 +116,91 @@ test.describe("mock", () => {
     await expect(page.getByRole("dialog", { name: "Ask FLOW" }).locator('[data-testid^="prompt-"]')).toHaveText(["What changed today?", "What are we waiting for?", "Which payments are late?"]);
   });
 
+  test("the queue's five tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
+    for (const lang of ["en", "zh"] as const) {
+      await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
+      for (const width of [1440, 820, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/deals");
+        const card = page.getByTestId("deals-queue");
+        await expect(card).toBeVisible();
+        const box = (await card.boundingBox())!;
+        for (const tab of ["all", "needs_you", "waiting", "agreements", "customers"]) {
+          const t = page.getByTestId(`queue-tab-${tab}`);
+          await expect(t, `${lang} ${width}: ${tab} is shown`).toBeVisible();
+          const b = (await t.boundingBox())!;
+          expect(b.x, `${lang} ${width}: ${tab} starts inside the card`).toBeGreaterThanOrEqual(box.x - 1);
+          expect(b.x + b.width, `${lang} ${width}: ${tab} ends inside the card`).toBeLessThanOrEqual(box.x + box.width + 1);
+        }
+        const tabs = page.getByTestId("queue-tabs");
+        expect(await tabs.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${lang} ${width}: the tab row does not scroll or clip`).toBe(true);
+        // The last tab is reachable by the pointer as it stands.
+        await page.getByTestId("queue-tab-customers").click();
+        await expect(page.getByTestId("queue-tab-customers")).toHaveAttribute("aria-selected", "true");
+      }
+    }
+  });
+
+  test("the scope chip's widened choice does not come back: Deals, widen to Company, Customer, Back, and the chip is the decision again", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("chat-open").click();
+    await page.getByTestId("chat-scope").getByRole("tab", { name: "Company" }).click();
+    await expect(await scope(page)).toHaveAttribute("data-kind", "company");
+    await page.keyboard.press("Escape");
+    // A client-side navigation (the customer's name is a link), then the browser's Back: the same address, a new visit.
+    await page.getByTestId("deal-selected-customer").click();
+    await expect(page).toHaveURL(/\/customers\/BUYER-1/);
+    await page.goBack();
+    await expect(page.getByTestId("deal-pane")).toBeVisible();
+    await page.getByTestId("chat-open").click();
+    await expect(await scope(page)).toHaveAttribute("data-kind", "decision");
+    // A choice made on this visit still holds while the owner stays on it.
+    await page.getByTestId("chat-scope").getByRole("tab", { name: "Customer" }).click();
+    await page.keyboard.press("Escape");
+    await page.getByTestId("chat-open").click();
+    await expect(await scope(page)).toHaveAttribute("data-kind", "customer");
+  });
+
+  test("no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount, Funding source and If you decline", async ({ page }) => {
+    const small = (el: Element) => parseFloat(getComputedStyle(el).fontSize) < 13;
+    await checkedDeal(page);
+    await page.getByTestId("deal-whatif").click();
+    await expect(page.getByTestId("whatif-outcome")).toBeVisible();
+    for (const text of [/^Now \d+ days/, /^Whole invoice/]) {
+      const el = page.getByText(text).first();
+      await expect(el).toBeVisible();
+      expect(await el.evaluate(small), String(text)).toBe(false);
+    }
+    // Everything in the figures strip that qualifies a figure (the limit, the headroom) is 13 px too.
+    const qualifiers = page.locator('[data-testid="whatif-outcome"] ~ * dd, main dd').filter({ hasText: /limit|headroom/i });
+    for (const el of await qualifiers.all()) expect(await el.evaluate(small)).toBe(false);
+    // The approval card.
+    await page.goto("/demo");
+    await page.getByTestId("more-run-capex").click();
+    await expect(page).toHaveURL(/\/capex/);
+    await page.goto("/approvals");
+    await page.goto("/capex");
+    await page.getByTestId("capex-apply").click();
+    await expect(page.getByTestId("capex-applied")).toBeVisible();
+    await page.goto("/approvals");
+    const card = page.locator("#approval-APR-000001");
+    for (const label of ["Amount", "Funding source", "If you decline"]) {
+      const el = card.getByText(label, { exact: true }).first();
+      await expect(el, label).toBeVisible();
+      expect(await el.evaluate(small), label).toBe(false);
+    }
+  });
+
+  test("a term or a figure the server has no word for is omitted, never the word None", async ({ page }) => {
+    await checkedDeal(page);
+    await expect(page.getByTestId("deal-pane").getByText("None", { exact: true })).toHaveCount(0);
+    await page.getByTestId("deal-compare-toggle").click();
+    await expect(page.getByTestId("deal-compare-table").getByText("None", { exact: true })).toHaveCount(0);
+    await page.goto("/customers/BUYER-1");
+    await expect(page.getByTestId("customer-figures")).toBeVisible();
+    await expect(page.locator("main").getByText("None", { exact: true })).toHaveCount(0);
+  });
+
   test("Receivables registers the invoice it shows as the scope, even when it is the default row", async ({ page }) => {
     await page.goto("/receivables");
     await expect(page.getByTestId("recv-RCV-A")).toBeVisible();
@@ -173,6 +258,39 @@ test.describe("live", () => {
     await expect(page).toHaveURL(/decision=deal%3AOFF-/);
     const chosen = new URL(page.url()).searchParams.get("decision");
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", chosen!);
+  });
+
+  test("the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button", async ({ page, request }) => {
+    await busy(request);
+    await page.goto("/deals");
+    await expect(page.getByTestId("queue-row").first()).toBeVisible();
+    const decisions = await page.locator('[data-testid="queue-row"][data-kind="DECISION"]:not([data-tier="agreements"])').count();
+    expect(await page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]').count(), "the busy books hold a loan approval").toBe(1);
+    await page.goto("/whatif");
+    await expect(page.getByTestId("whatif-choice")).toHaveCount(decisions);
+    await expect(page.getByTestId("whatif-choices")).not.toContainText(/loan|approval/i);
+
+    // An agreed negotiation: the agreement record, its terms, no "can't safely evaluate" and no Clarify.
+    await page.goto("/deals?tab=agreements");
+    await page.locator('[data-testid="queue-row"][data-kind="AGREEMENT"] [data-testid="queue-select"]').first().click();
+    await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await expect(page.getByTestId("deal-record")).toBeVisible();
+    await expect(page.getByTestId("deal-abstentions")).toHaveCount(0);
+    await expect(page.getByTestId("deal-pane")).not.toContainText(/can't safely evaluate/i);
+    await expect(page.getByRole("link", { name: "Clarify" })).toHaveCount(0);
+
+    // The Zhuhai ask needs approval and FLOW has no counter: the ask's own cost and basis are shown, the authority is said, and there is no commit control.
+    await page.goto("/deals?tab=needs_you");
+    await page.locator('[data-testid="queue-row"][data-kind="DECISION"]').filter({ hasText: "Zhuhai" }).getByTestId("queue-select").click();
+    const none = page.getByTestId("deal-no-reply");
+    await expect(none).toBeVisible();
+    await expect(none.getByTestId("deal-cost-asked")).toContainText(/¥\d/);
+    await expect(none.getByTestId("deal-cost-asked")).toContainText("over 12 months");
+    await expect(none).toContainText("you approve it first");
+    await expect(page.getByTestId("deal-send")).toHaveCount(0);
+    await expect(page.getByTestId("deal-review")).toHaveCount(0);
+    await expect(page.getByTestId("deal-pane")).not.toContainText(/\bNone\b/);
+    await expect(page.getByTestId("deal-ask-terms")).not.toContainText(/Early payment|Rebate or price/);
   });
 
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {
