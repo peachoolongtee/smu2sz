@@ -9,6 +9,8 @@ export type ShowKey = CardKey | "none";
 export interface CardHeadline {
   label: string;
   value: string | null;
+  /** The server's words that say what the figure covers ("over 12 months, plus ¥5,040.00 once", "in 60 days"): the horizons differ between the options, so each figure carries its own. */
+  note?: string | null;
 }
 
 /** A card's headline figures on one line: "Buyer request ¥28,327 · Option A ¥3,028"; a path with no figure is left out. */
@@ -17,10 +19,10 @@ function Headline({ items, testId }: { items: CardHeadline[]; testId: string }) 
   if (!shown.length) return null;
   return (
     <span className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-supporting text-ink-2" data-testid={testId}>
-      {shown.map((i, n) => (
+      {shown.map((i) => (
         <span key={i.label} className="min-w-0">
-          {n > 0 ? <span aria-hidden className="mr-2 text-ink-3">·</span> : null}
           {i.label} <b className="font-display text-base font-bold tabular-nums text-ink">{i.value}</b>
+          {i.note ? <span className="ml-1 text-ink-3">{i.note}</span> : null}
         </span>
       ))}
     </span>
@@ -69,7 +71,7 @@ export function AnalysisCards({
   const card = (key: CardKey, title: string, head: CardHeadline[], body: ReactNode) => {
     const on = open === key;
     return (
-      <section key={key} className={`flow-card flow-card-white min-w-0 p-4 sm:p-5 ${on ? "lg:col-span-2" : ""}`} data-testid={`deal-card-${key}`} data-open={on ? "true" : "false"}>
+      <section key={key} className="flow-card flow-card-white min-w-0 p-4 sm:p-5" data-testid={`deal-card-${key}`} data-open={on ? "true" : "false"}>
         <h3 className="m-0">
           <button
             type="button"
@@ -94,9 +96,10 @@ export function AnalysisCards({
       </section>
     );
   };
-  // The open card takes the full row (its table needs the width) and the folded one is a headline beside or under it; the order of the two never changes.
+  // The open card takes the wider column (its table needs the width) and the folded one is its headline beside it; the order of the two never changes, and with both folded they are equal.
+  const columns = open === "cost" ? "lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]" : open === "cash" ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2.4fr)]" : "lg:grid-cols-2";
   return (
-    <div className="grid gap-4 lg:grid-cols-2" role="group" data-testid="deal-cards">
+    <div className={`grid items-start gap-4 ${columns}`} role="group" data-testid="deal-cards">
       {card("cost", costTitle, cost, costBody)}
       {card("cash", cashTitle, cash, cashBody)}
     </div>

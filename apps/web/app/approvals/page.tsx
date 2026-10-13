@@ -3,7 +3,6 @@
 import "@/app/flow-look.css";
 import { useEffect, useState } from "react";
 import { ApprovalCard, type ApprovalCash } from "@/components/approval-card";
-import { ShieldCheckIcon } from "@/components/icons";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Badge, EmptyState, ErrorState, LoadingBlock, PageHeader, SlowNotice } from "@/components/ui";
 import { ReadWhen } from "@/components/business/freshness";
@@ -86,8 +85,6 @@ export default function ApprovalsPage() {
   return (
     <div className="flow-f min-w-0" data-testid="approvals-page">
       <PageHeader
-        section="home"
-        icon={ShieldCheckIcon}
         title={t("appr.title")}
         subtitle={t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}

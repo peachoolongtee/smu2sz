@@ -193,7 +193,9 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   const [pb, cb] = [await picture.boundingBox(), await card.getByTestId("approval-if-decline").boundingBox()];
   expect(cb!.y).toBeGreaterThan(pb!.y + 150);
   await expect(card.getByTestId("approval-after")).toBeVisible();
-  // A real quote's terms are shown on the waiting card itself, not folded; the one filled primary is Approve.
+  // The quote waits behind one fold in the application details; the one filled primary is Approve.
+  await expect(card.getByTestId("approval-quote")).toBeHidden();
+  await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   await expect(card.getByTestId("approval-quote")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
 });

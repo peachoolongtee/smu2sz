@@ -556,8 +556,8 @@ export function DecisionPane({
                 onShow={(k) => onView({ show: k })}
                 costTitle={t("deals.card.cost")}
                 cashTitle={t("deals.card.cash")}
-                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display }))}
-                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value }))}
+                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display, note: costHeadline(p).basis }))}
+                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value, note: lowest(p).sub }))}
                 costBody={
                   <div data-testid="deal-cost-section">
                     <p className="mb-2 text-supporting text-ink-3">{t("deals.cost.note")}</p>

@@ -416,7 +416,7 @@ export function ApprovalCard({
 
         <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
         {summary}
-        {/* A real quote's terms are shown while the request waits, not folded: the server's terms rows, else the stored quote as it is. */}
+        {/* A real quote's terms are shown while the request waits, not folded (the server's `terms_rows`); a stored quote with no terms of its own stays in the application details. */}
         {words.terms.length ? (
           <dl className="divide-y divide-line border-y border-line" aria-label={t("appr.quoted.title")} data-testid={`approval-terms-rows-${a.id}`}>
             {words.terms.map((r, i) => (
@@ -426,8 +426,6 @@ export function ApprovalCard({
               </div>
             ))}
           </dl>
-        ) : quoted ? (
-          <QuoteBlock id={a.id} quote={quote as ApprovalQuote} missing={null} hideLands={landsShown} />
         ) : null}
 
         {/* An agreement's terms come first at every width, then the one button that names what it does (ticket #128, audit UX03): the summary on screen is the review, and the button asks nothing more. */}
@@ -456,7 +454,7 @@ export function ApprovalCard({
                 </div>
               </dl>
             )}
-            {quoted && !words.terms.length ? null : quoteFold}
+            {words.terms.length ? null : quoteFold}
             <CommitmentReceipt receipt={a.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} omit={["authority"]} className="pt-1" />
           </div>
         </Disclosure>
