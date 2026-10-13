@@ -91,7 +91,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const alert = worklist.data?.alert ?? null;
   const pill = alert ? { tone: "amber" as PillTone, text: alert.kind_text ?? alert.eyebrow } : cash.status_word ? { tone: STATUS_PILL[cash.status_tone ?? "neutral"], text: cash.status_word } : null;
   const header = (
-    <header className="motion-reveal mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2 sm:mb-7 sm:gap-y-1.5" data-testid="home-status" data-status={h.status}>
+    <header className="motion-reveal mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2 sm:mb-7 sm:gap-y-1.5" data-testid="home-status" data-status={h.status}>
       <h1 className="font-display text-[24px] font-bold leading-[1.12] tracking-[-0.03em] text-ink sm:text-[36px] lg:text-[40px]" data-testid="hv2-headline">
         <span className="sr-only" data-testid="home-status-word">
           {cash.status_word ?? h.status_text}
@@ -176,7 +176,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           </div>
         </>
       ) : (
-        <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
           <CashCard kpis={v2.kpis} />
           {bar}
           {outlook}

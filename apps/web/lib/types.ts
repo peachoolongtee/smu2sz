@@ -1925,6 +1925,11 @@ export interface ReceivableRow {
   amount_short?: string;
   /** "about ¥163k": also on the row itself. */
   net_short?: string;
+  /** What the invoice's face becomes at collection: the financing repayment and the cash remaining, each with its share of the face; empty with no financing to repay. */
+  breakdown?: { label: string; amount_display: string; share_text: string }[];
+  /** The net's own word ("about ¥163k") and when it is collected ("In 32 days", "5 days overdue"). */
+  net_after_repayment_display?: string;
+  collection_due_text?: string;
   /** The standing sentence about a receipt that falls short ("If the receipt falls short, what is left is owed by you."). */
   recourse_text?: string;
   /** The record of the executed financing request for this invoice; null when there is none to open. */
@@ -2841,6 +2846,8 @@ export interface HomeV2Chart {
 export interface HomeV2 {
   /** The one line under the headline ("One funding action ready. Two deal decisions need you."): the server's sentence about what waits, in words; absent until the server sends it (then there is no line). */
   summary_text?: string | null;
+  /** The three nearest cash movements of the books (the rail's own rows, the plan's conditional landings left out), in day order. */
+  upcoming?: { label: string; amount_display: string; when: string; kind: "outflow" | "inflow" }[];
   kpis: {
     cash_available: HomeV2Kpi & {
       buffer: {
@@ -3674,6 +3681,10 @@ export interface PicturePath {
   recommended_reason_text?: string | null;
   /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
   scenario_assumption_text?: string | null;
+  /** The asked path only: what the invoice becomes under the ask (after the buyer's discount, the requested discount), each with its share of the face in the server's words; null or empty without an immediate discount. */
+  ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
+  /** The asked path only: the deal card's three facts in the server's words; any may be null. */
+  ask_facts?: { invoice_value_display: string | null; requested_discount_display: string | null; requested_term_text: string | null } | null;
 }
 
 /** Who decides, in the verifier's three classes. */

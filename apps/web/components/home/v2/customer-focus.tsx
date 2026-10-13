@@ -1,6 +1,7 @@
 "use client";
 
 import { Announce, Dismiss, Reading } from "@/components/home/v2/focus-parts";
+import { InvoiceCards } from "@/components/home/v2/invoice-card";
 import { ActionRow } from "@/components/home/v2/worklist";
 import { OpenSection } from "@/components/ui/open-section";
 import { StateWord } from "@/components/ui/state-word";
@@ -65,6 +66,7 @@ export function CustomerFocusPanel({ customerId, worklist, selection, onAll }: {
                   ))}
                 </dl>
               ) : null}
+              <InvoiceCards customerId={customerId} />
               <OpenSection title={t("hv2.focus.rows")} first className="mt-7">
                 {rows.length ? (
                   <ul className="divide-y divide-line" data-testid="focus-rows">

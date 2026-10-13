@@ -110,7 +110,7 @@ export function HomeV2ActionBar({
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant={quiet ? "quiet" : "action"} className="outline-none">
       <div data-testid={run ? "home-next-action" : quiet ? undefined : "home-attention-card"} data-alert={run?.alert_id} className="h-full">
-        <section aria-labelledby={titleId} data-testid="hv2-action" className="motion-reveal f-card flex h-full min-w-0 flex-col p-5 sm:p-6">
+        <section aria-labelledby={titleId} data-testid="hv2-action" className="motion-reveal f-card flex h-full min-w-0 flex-col p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <h2 id={titleId} className="font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="home-action-eyebrow">
               {run ? t("hv2.action.eyebrow") : quiet ? action.eyebrow : t("hv2.action.eyebrow")}

@@ -3,6 +3,7 @@
 import { useId, useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { pointAt, shown } from "@/components/home/v2/company-chart";
+import { Breakdown } from "@/components/home/v2/breakdown";
 import { Announce, Dismiss, LeaveLink } from "@/components/home/v2/focus-parts";
 import { ActionGroup } from "@/components/ui/action-group";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
@@ -217,12 +218,14 @@ export function DealFocusPanel({
   const requestCost = asked && (asked.cost_forward_display || asked.cost_display) ? t("hv2.deal.request", { amount: asked.cost_forward_display ?? asked.cost_display, note: asked.cost_note }) : null;
   const recCost = recommended ? (recommended.cost_once_display ? t("dq.cost.once", { amount: recommended.cost_once_display, buyer }) : recommended.cost_total_display ? t("dq.cost.total", { amount: recommended.cost_total_display, basis: recommended.cost_basis_text ?? "", buyer }) : null) : null;
   // The card's three figures, every word the server's: what is outstanding with the buyer (the overview's own figure) and the asked path's early-payment and payment-terms words.
+  // The server's `ask_facts` (invoice value, requested discount, requested term) when it sends them; until then the overview's outstanding figure and the asked path's own term words.
+  const facts = asked?.ask_facts ?? null;
   const outstanding = v?.figures?.find((f) => f.key === "outstanding") ?? null;
   const askTerm = (key: string) => asked?.terms.find((x) => x.key === key) ?? null;
   const kpis = [
-    outstanding ? { key: "outstanding", label: outstanding.label, value: outstanding.value_display } : null,
-    askTerm("early_payment") ? { key: "early_payment", label: askTerm("early_payment")!.label, value: askTerm("early_payment")!.value_text } : null,
-    askTerm("payment_terms") ? { key: "payment_terms", label: askTerm("payment_terms")!.label, value: askTerm("payment_terms")!.value_text } : null,
+    facts?.invoice_value_display ? { key: "invoice", label: t("hv2.deal.invoice"), value: facts.invoice_value_display } : !facts && outstanding ? { key: "outstanding", label: outstanding.label, value: outstanding.value_display } : null,
+    facts?.requested_discount_display ? { key: "discount", label: t("hv2.deal.discount"), value: facts.requested_discount_display } : !facts && askTerm("early_payment") ? { key: "early_payment", label: askTerm("early_payment")!.label, value: askTerm("early_payment")!.value_text } : null,
+    facts?.requested_term_text ? { key: "term", label: t("hv2.deal.term"), value: facts.requested_term_text } : !facts && askTerm("payment_terms") ? { key: "payment_terms", label: askTerm("payment_terms")!.label, value: askTerm("payment_terms")!.value_text } : null,
   ].filter((k): k is { key: string; label: string; value: string } => k !== null);
 
   return (
@@ -261,6 +264,7 @@ export function DealFocusPanel({
                   ))}
                 </dl>
               ) : null}
+              {asked?.ask_breakdown?.length ? <Breakdown rows={asked.ask_breakdown} total={facts?.invoice_value_display} testId="hv2-deal-breakdown" /> : null}
               {row && "why_first_text" in row && row.why_first_text ? (
                 <p className="mt-2 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="home-why-first">
                   {row.why_first_text}

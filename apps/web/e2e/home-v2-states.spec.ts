@@ -144,6 +144,7 @@ const label = (lang: Lang, key: keyof typeof en, vars: Record<string, string | n
   Object.entries(vars).reduce((t, [k, v]) => t.replace(`{${k}}`, String(v)), DICT[lang][key] as string);
 
 /** The worklist's scope: the card, at every width (a phone has it as a list on the page, no sheet). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function worklist(page: Page, _width: number, _lang: Lang, _read: WorklistView): Promise<Locator> {
   await expect(page.getByTestId("home-worklist-panel")).toBeVisible();
   await expect(page.getByTestId("home-worklist-open")).toHaveCount(0);
@@ -171,12 +172,24 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
     if (v2.kpis.funding.hint) await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint);
   } else await expect(page.getByTestId("home-kpi-funding-value")).toHaveCount(0);
   if (v2.kpis.funding.state === "ARRANGED" && v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
+  // The line under the headline is the server's summary of what waits (none when nothing does); Upcoming cash movements are the server's three nearest movements.
+  if (v2.summary_text) await expect(page.getByTestId("hv2-summary")).toHaveText(v2.summary_text);
+  else await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  const upcoming = v2.upcoming ?? [];
+  await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(upcoming.length);
+  for (const [i, u] of upcoming.entries()) {
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.label);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.amount_display);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.when);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toHaveAttribute("data-kind", u.kind);
+  }
   // The state pill: the alert's kind word while one is up, else the status word.
   await expect(page.getByTestId("hv2-state-pill")).toBeVisible();
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
-  for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
+  // The cost and the funding sentence are on the card (the third fact, who approves, is the approval line below).
+  for (const f of (v2.action.facts ?? []).slice(0, 2)) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
   // The approval is one line under the actions, bound to the server's two fields: the tick form for text with approval_needed false, the warn form when true, none for null.
   if (v2.action.variant === "ACTION") {

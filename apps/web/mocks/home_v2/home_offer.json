@@ -7684,6 +7684,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "One funding action ready. One deal decision needs you.",
+      "upcoming": [
+        {
+          "label": "Payroll is paid",
+          "amount_display": "−¥340k",
+          "when": "in 12 days",
+          "kind": "outflow"
+        },
+        {
+          "label": "A supplier payment goes out",
+          "amount_display": "−¥120k",
+          "when": "in 20 days",
+          "kind": "outflow"
+        },
+        {
+          "label": "A loan repayment goes out",
+          "amount_display": "−¥45k",
+          "when": "in 30 days",
+          "kind": "outflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "CASH AVAILABLE",
@@ -15745,6 +15766,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "有 1 项融资操作可以执行。1 项交易决定需要您处理。",
+      "upcoming": [
+        {
+          "label": "发放工资",
+          "amount_display": "−¥340k",
+          "when": "12 天后",
+          "kind": "outflow"
+        },
+        {
+          "label": "支付供应商款项",
+          "amount_display": "−¥120k",
+          "when": "20 天后",
+          "kind": "outflow"
+        },
+        {
+          "label": "一笔贷款还款支出",
+          "amount_display": "−¥45k",
+          "when": "30 天后",
+          "kind": "outflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "可用现金",

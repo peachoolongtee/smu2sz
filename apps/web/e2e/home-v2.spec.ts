@@ -13,6 +13,7 @@ import focusOfferRec from "../mocks/home_v2/focus_offer.json";
 import exposureRec from "../mocks/home_v2/exposure_offer.json";
 import pictureRec from "../mocks/home_v2/picture_offer.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
+import receivablesAfter from "../mocks/home_v2/receivables_after_fund.json";
 
 /**
  * Home V2 (the Home), after the refinement: the header, the metric strip, the recommendation, the company cash forecast with its fixed
@@ -67,7 +68,8 @@ test("the header and the three cards: the headline, the state pill, the cash car
   const said = worklistOffer.en.alert as { kind_text?: string | null; eyebrow: string };
   await expect(page.getByTestId("hv2-state-pill")).toHaveText(said.kind_text ?? said.eyebrow);
   await expect(page.getByTestId("hv2-state-pill")).toHaveAttribute("data-tone", "amber");
-  await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  expect(v2.summary_text).toBe("One funding action ready. One deal decision needs you.");
+  await expect(page.getByTestId("hv2-summary")).toHaveText(v2.summary_text!);
   // Cash available today: the figure, the server's note, the reserve bar (a track to the minimum and the buffer above it); not a progress bar.
   const cash = v2.kpis.cash_available;
   await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("Cash available today");
@@ -422,13 +424,16 @@ test("the worklist as the mockup's table: one alert line, tabs with counts, rows
 
 test("the upcoming cash movements are the rail's nearest events, and the way to the forecast; the footer row leads to the four routes", async ({ page }) => {
   await open(page, { offer: true });
-  const events = homeOffer.en.cash.events_rail.filter((e) => !e.planned && e.amount_fen !== 0 && e.day >= 0).slice(0, 4);
+  // The server's `home_v2.upcoming`: the three nearest movements of the books, label, short signed figure, when and the direction.
+  const events = homeOffer.en.home_v2.upcoming;
+  expect(events.length).toBe(3);
   const rows = page.getByTestId("hv2-upcoming-row");
   await expect(rows).toHaveCount(events.length);
   for (const [i, e] of events.entries()) {
-    await expect(rows.nth(i)).toContainText(e.amount_short);
+    await expect(rows.nth(i)).toContainText(e.amount_display);
     await expect(rows.nth(i)).toContainText(e.when);
     await expect(rows.nth(i)).toContainText(e.label);
+    await expect(rows.nth(i)).toHaveAttribute("data-kind", e.kind);
   }
   await expect(page.getByTestId("home-chart-full")).toHaveAttribute("href", "/cash");
   await expect(page.getByTestId("home-chart-full")).toContainText("Explore company forecast");
@@ -564,11 +569,23 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   await expect(page.getByTestId("hv2-context")).toContainText("Deal context");
   await expect(page.getByTestId("hv2-context-sentence")).toHaveText(worklistOffer.en.needs_you[0].consequence_text);
   await expect(page.getByTestId("focus-title")).toHaveText(SUBJECT.en);
-  // Three figures in the server's words: what is outstanding, the early payment asked, the payment terms asked.
-  const kpiAsked = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { terms: { key: string; value_text: string }[] };
-  await expect(page.getByTestId("hv2-deal-kpi-outstanding")).toContainText(view.figures.find((f) => f.key === "outstanding")!.value_display);
-  await expect(page.getByTestId("hv2-deal-kpi-early_payment")).toContainText(kpiAsked.terms.find((t) => t.key === "early_payment")!.value_text);
-  await expect(page.getByTestId("hv2-deal-kpi-payment_terms")).toContainText(kpiAsked.terms.find((t) => t.key === "payment_terms")!.value_text);
+  // Three facts in the server's words (the asked path's `ask_facts`): the invoice value, the requested discount, the requested term; and the breakdown the ask makes of the invoice.
+  const kpiAsked = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { ask_facts: { invoice_value_display: string; requested_discount_display: string; requested_term_text: string }; ask_breakdown: { label: string; amount_display: string; share_text: string }[] };
+  await expect(page.getByTestId("hv2-deal-kpi-invoice")).toContainText("Invoice value");
+  await expect(page.getByTestId("hv2-deal-kpi-invoice")).toContainText(kpiAsked.ask_facts.invoice_value_display);
+  await expect(page.getByTestId("hv2-deal-kpi-discount")).toContainText(kpiAsked.ask_facts.requested_discount_display);
+  await expect(page.getByTestId("hv2-deal-kpi-term")).toContainText(kpiAsked.ask_facts.requested_term_text);
+  for (const [i, r] of kpiAsked.ask_breakdown.entries()) {
+    await expect(page.getByTestId(`hv2-deal-breakdown-row-${i}`)).toContainText(r.label);
+    await expect(page.getByTestId(`hv2-deal-breakdown-amount-${i}`)).toHaveText(r.amount_display);
+    await expect(page.getByTestId(`hv2-deal-breakdown-share-${i}`)).toHaveText(r.share_text);
+  }
+  // The donut: one slice per row, sized by the share words, centred on the invoice value; it does not animate.
+  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
+  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toContainText(kpiAsked.ask_facts.invoice_value_display);
+  const dash = await Promise.all([0, 1].map((i) => page.getByTestId(`hv2-deal-breakdown-slice-${i}`).getAttribute("stroke-dasharray")));
+  expect(parseFloat(dash[0]!)).toBeGreaterThan(parseFloat(dash[1]!) * 20);
+  expect(await page.getByTestId("hv2-deal-breakdown-donut").evaluate((n) => getComputedStyle(n.querySelector("circle")!).transitionDuration)).toBe("0s");
   await expect(page.getByTestId("hv2-deal-next")).toContainText(d.eyebrow);
   await expect(page.getByTestId("focus-announce")).toHaveText(SUBJECT.en);
   await expect(page.getByTestId("hv2-customer-line")).toContainText(view.name);
@@ -874,6 +891,33 @@ test("phone: a row opens the deal at the top, under the one-row band; the table 
   await page.getByTestId("focus-all").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+});
+
+test("a customer with a financed invoice: the card shows the net after repayment in the server's word, the breakdown with its shares and the one filled button View invoice", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.getByTestId(`fix-open-${ALERT}`).click();
+  await page.getByTestId(`fix-${ALERT}`).click();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  await page.goto("/?customer=BUYER-1");
+  const row = receivablesAfter.en.rows[0] as unknown as { receivable_id: string; net_after_repayment_display: string; collection_due_text: string; face_display: string; breakdown: { label: string; amount_display: string; share_text: string }[] };
+  expect(row.net_after_repayment_display).toMatch(/^about /);
+  await expect(page.getByTestId("hv2-invoice")).toHaveCount(1);
+  await expect(page.getByTestId("hv2-invoice-net")).toContainText("Net cash after repayment");
+  await expect(page.getByTestId("hv2-invoice-net")).toContainText(row.net_after_repayment_display);
+  await expect(page.getByTestId("hv2-invoice-value")).toContainText(row.face_display);
+  await expect(page.getByTestId("hv2-invoice-due")).toContainText(row.collection_due_text);
+  for (const [i, r] of row.breakdown.entries()) {
+    await expect(page.getByTestId(`hv2-invoice-breakdown-row-${i}`)).toContainText(r.label);
+    await expect(page.getByTestId(`hv2-invoice-breakdown-amount-${i}`)).toHaveText(r.amount_display);
+    await expect(page.getByTestId(`hv2-invoice-breakdown-share-${i}`)).toHaveText(r.share_text);
+  }
+  await expect(page.getByTestId("hv2-invoice-breakdown-donut")).toBeVisible();
+  const view = page.getByTestId("hv2-invoice-view");
+  await expect(view).toHaveText("View invoice");
+  await expect(view).toHaveAttribute("href", `/receivables?invoice=${row.receivable_id}`);
+  // One filled button in the state: the card's (the band above is outlined).
+  expect(await filledBrand(page)).toBe(1);
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet"); // nothing of the company's waits: the quiet card, no band
 });
 
 test("phone: the collection state, a customer's row opens its card and its context under the worklist, in one column", async ({ page }) => {

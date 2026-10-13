@@ -22,17 +22,17 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
   const reserve = Math.max(b.min_fen, 1);
   const room = Math.max(b.cash_fen - b.min_fen, 0);
   return (
-    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-5 sm:p-6" data-testid="hv2-cash-card">
+    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4 sm:p-6" data-testid="hv2-cash-card">
       <h2 id="hv2-cash-title" className={cardTitle} data-testid="hv2-metric-cash-label">
         {t("hv2.card.cash")}
       </h2>
-      <p className={`mt-3 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-6 sm:text-[52px] ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
+      <p className={`mt-2 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-6 sm:text-[52px] ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
         {cash.value_display}
       </p>
       <p className="mt-3 text-pretty text-sm text-ink-3" data-testid="home-kpi-cash-note">
         {cash.note}
       </p>
-      <div className="mt-auto pt-4 sm:pt-8" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
+      <div className="mt-auto pt-3 sm:pt-8" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
         <div className="flex items-baseline justify-between gap-3 text-sm text-ink-3">
           <span data-testid="home-buffer-min-text">
             {t("hv2.card.reserve")} <span className="tabular-nums">{b.minimum_text ?? b.min_display}</span>
@@ -145,7 +145,14 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
  */
 export function UpcomingCard({ h }: { h: HomeView }) {
   const { t } = useI18n();
-  const events = (h.cash.events_rail ?? []).filter((e) => !e.planned && e.amount_fen !== 0 && e.day >= h.day).slice(0, 4);
+  // The server's own three nearest movements (`home_v2.upcoming`); an older server falls back to the rail's rows that move cash.
+  const server = h.home_v2?.upcoming ?? null;
+  const events = server
+    ? server.map((u, i) => ({ key: `${u.label}-${i}`, label: u.label, amount: u.amount_display, when: u.when, kind: u.kind }))
+    : (h.cash.events_rail ?? [])
+        .filter((e) => !e.planned && e.amount_fen !== 0 && e.day >= h.day)
+        .slice(0, 3)
+        .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
     <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-6" data-testid="hv2-upcoming">
       <h2 id="hv2-upcoming-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
@@ -154,12 +161,12 @@ export function UpcomingCard({ h }: { h: HomeView }) {
       {events.length ? (
         <ul className="mt-5 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
-            <li key={e.key} className="flex items-start justify-between gap-4 py-3.5 first:pt-0" data-testid="hv2-upcoming-row">
+            <li key={e.key} className="flex items-start justify-between gap-4 py-3.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
               <span className="min-w-0 text-[15px] text-ink">
-                <span className="block first-letter:uppercase">{e.label_short ?? e.label}</span>
+                <span className="block first-letter:uppercase">{e.label}</span>
                 <span className="mt-0.5 block text-sm text-ink-3 first-letter:uppercase">{e.when}</span>
               </span>
-              <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount_short}</b>
+              <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>
           ))}
         </ul>

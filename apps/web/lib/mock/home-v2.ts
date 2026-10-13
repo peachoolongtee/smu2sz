@@ -9,7 +9,7 @@
  * day 34's by the cure's stage from day 34 on, else the opening books.
  */
 
-import type { CustomerOverviewView, CustomersView, ExposureView, HomeView, OfferPictureView, WorklistView } from "../types";
+import type { CustomerOverviewView, CustomersView, ExposureView, HomeView, OfferPictureView, ReceivablesRead, WorklistView } from "../types";
 import { cureStage, isFunded, isReceipted, mockClock, mockReceiptVariant, NEWS_DAY, SETTLED_DAY } from "./home";
 
 type Point = "day0" | "offer" | "after_fund" | "day34" | "pending" | "after";
@@ -84,6 +84,17 @@ export async function mockHomeV2Block(point: Point, lang: "en" | "zh"): Promise<
 
 export const mockWorklist = (point: Point, lang: "en" | "zh") => pick<WorklistView>(WORKLIST, point, lang);
 export const mockCustomers = (point: Point, lang: "en" | "zh") => pick<CustomersView>(CUSTOMERS, point, lang);
+
+const INVOICES: Record<Point, Loader> = {
+  day0: () => import("../../mocks/home_v2/receivables_day0.json"),
+  offer: () => import("../../mocks/home_v2/receivables_offer.json"),
+  after_fund: () => import("../../mocks/home_v2/receivables_after_fund.json"),
+  day34: () => import("../../mocks/home_v2/receivables_day34.json"),
+  pending: () => import("../../mocks/home_v2/receivables_pending.json"),
+  after: () => import("../../mocks/home_v2/receivables_after.json"),
+};
+/** GET /receivables as the server answered it with the Home at this point (the rows' breakdown, net and collection words). */
+export const mockInvoices = (point: Point, lang: "en" | "zh") => pick<ReceivablesRead>(INVOICES, point, lang);
 
 // The focus reads: GET /customers/{id}/overview for each customer at each point, and (with the package offer read) for its deal with each scenario, each carrying the
 // context echoes; and the deal's exposure read.
