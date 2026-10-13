@@ -174,7 +174,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   return (
     <>
       <PageHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-      <p className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="whatif-scope">
+      <p className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2 ${result?.scope_text || result?.compare_text ? "mb-1" : "mb-4"}`} data-testid="whatif-scope">
         <span className="font-bold text-ink">{t("whatif.scope")}</span>
         <span>{title ?? ""}</span>
         {(result ?? unscoped)?.invoice_text ? <span data-testid="whatif-invoice">{(result ?? unscoped)?.invoice_text}</span> : null}
@@ -182,6 +182,12 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
           {t("whatif.scope.back")}
         </Link>
       </p>
+      {result?.scope_text || result?.compare_text ? (
+        <div className="mb-4 max-w-[68ch] space-y-1 text-sm text-ink-2">
+          {result.scope_text ? <p data-testid="whatif-scope-text">{result.scope_text}</p> : null}
+          {result.compare_text ? <p data-testid="whatif-compare">{result.compare_text}</p> : null}
+        </div>
+      ) : null}
       {other ? (
         <div className="mb-4" data-testid="whatif-scope-mismatch">
           <Callout tone="warn">{t("whatif.scope.mismatch")}</Callout>

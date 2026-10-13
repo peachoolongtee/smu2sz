@@ -2344,7 +2344,10 @@ export interface WhatIfResult {
   buyer_id?: string;
   buyer_name?: string;
   invoice_text?: string | null;
+  /** The assumption the sandbox runs on, in a sentence (what it holds fixed); shown under the subject. */
   scope_text?: string | null;
+  /** The negotiation's own figure beside the sandbox's, in the server's words; shown under the subject. Absent from a server that does not send it. */
+  compare_text?: string | null;
   note: string;
   /** What the simulation honoured of the address (ticket #126): the customer and decision it was run for, or `irrelevant_text` when the selection names nothing it can simulate. */
   context?: PageContext | null;

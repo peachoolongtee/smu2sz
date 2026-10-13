@@ -164,7 +164,7 @@ export function WorklistRow({
           ) : null}
           {qualifier ? (
             <span className="mt-0.5 block text-supporting font-normal italic text-ink-3" data-testid="hv2-row-qualifier">
-              “{qualifier}”
+              {qualifier}
             </span>
           ) : null}
         </span>

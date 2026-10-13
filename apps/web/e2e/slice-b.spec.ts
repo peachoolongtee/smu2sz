@@ -56,6 +56,16 @@ test.describe("mock", () => {
     await expect(page.getByTestId("whatif-outcome")).toHaveCount(0);
   });
 
+  test("a decision in the address that is not a deal (a funding request) asks which negotiation at once and never waits", async ({ page }) => {
+    await page.goto("/deals?decision=approval%3AAPR-000001");
+    await expect(page.getByTestId("deal-ask-which")).toContainText("Which negotiation?");
+    await expect(page.getByTestId("deal-ask-which")).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("Working it out…")).toHaveCount(0);
+    await expect(page.getByTestId("deal-pane")).toHaveCount(0);
+    await page.getByTestId("deal-which-close").click();
+    await expect(page).toHaveURL(/\/deals$/);
+  });
+
   test("What-if opens on the named negotiation's own terms and says which negotiation it is for", async ({ page }) => {
     await checkedDeal(page);
     await page.getByTestId("deal-whatif").click();
@@ -265,6 +275,36 @@ test.describe("live", () => {
     await page.goto("/");
     await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("7");
     await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
+  });
+
+  test("the approval row is a link to the Approvals page with that approval in view, never a selection; a differentiator is quoted once, on Deals and on Home", async ({ page, request }) => {
+    await busy(request);
+    await page.goto("/deals");
+    const approval = page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]');
+    await expect(approval).toHaveCount(1);
+    await expect(approval.getByTestId("queue-select")).toHaveCount(0);
+    const href = await approval.getByTestId("queue-go").getAttribute("href");
+    expect(href).toMatch(/^\/approvals#approval-APR-\d+$/);
+    await approval.getByTestId("queue-go").click();
+    await expect(page).toHaveURL((url) => url.pathname + url.hash === href);
+    await expect(page.locator(`#${href!.split("#")[1]}`)).toBeVisible();
+    await expect(page.getByTestId("deal-ask-which")).toHaveCount(0);
+
+    // A direct load of the funding request as a decision asks at once.
+    await page.goto("/deals?decision=approval%3AAPR-000001");
+    await expect(page.getByTestId("deal-ask-which")).toContainText("Which negotiation?");
+    await expect(page.getByText("Working it out…")).toHaveCount(0);
+
+    // The server sends the differentiator already quoted: the page adds nothing, so the text opens with exactly one quote mark.
+    await page.goto("/deals");
+    await expect(page.getByTestId("queue-row").first()).toBeVisible();
+    const sub = page.getByTestId("queue-differentiator");
+    expect(await sub.count(), "the busy books hold rows that need a differentiator").toBeGreaterThan(0);
+    for (const text of await sub.allTextContents()) expect(text, "Deals queue").toMatch(/^“[^“”]/);
+    await page.goto("/");
+    const qual = page.getByTestId("hv2-row-qualifier");
+    await expect(qual.first()).toBeVisible();
+    for (const text of await qual.allTextContents()) expect(text, "Home worklist").toMatch(/^“[^“”]/);
   });
 
   test("the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button", async ({ page, request }) => {

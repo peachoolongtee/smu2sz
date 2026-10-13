@@ -109,9 +109,11 @@ test("a negotiation, an agreement and a promise select in place; any other task 
   assert.deepEqual(queue.rowTarget(promise), { kind: "select", customer: "B1", decision: "deal:OFF-1", invoice: "RCV-A" });
   const collection = { key: "collection:B1", kind: "COLLECTION", customer_id: "B1", invoice_id: "RCV-A", subject_text: "s", status_text: "Overdue", consequence_text: "", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" };
   assert.deepEqual(queue.rowTarget(collection), { kind: "go", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" });
-  const approval = { key: "approval:A1", kind: "APPROVAL", customer_id: null, subject_text: "s", status_text: "Waiting", consequence_text: "", href: "/approvals#approval-A1" };
+  const approval = { key: "approval:A1", kind: "APPROVAL", customer_id: null, decision_id: "approval:A1", subject_text: "s", status_text: "Waiting", consequence_text: "", href: "/approvals#approval-A1" };
   assert.deepEqual(queue.rowTarget(approval), { kind: "go", href: "/approvals#approval-A1" });
+  // A funding request has a decision id of its own, but only a `deal:` id selects: the approval row is a link to the server's href, never a selection.
   assert.equal(queue.rowDecision(approval), null);
+  assert.equal(queue.tierOfDecision({ needs_you: [approval], waiting: [], agreements: [], customers: [] }, "approval:A1"), null);
 });
 
 test("the status pill and the next step are the server's words, split at its own separator", () => {

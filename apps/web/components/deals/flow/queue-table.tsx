@@ -59,7 +59,7 @@ function TaskRow({ tier, row, selected, locked, onSelect }: { tier: Exclude<Tier
             <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
             {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
           </p>
-          {row.differentiator_text ? <p className="text-supporting italic text-ink-3">“{row.differentiator_text}”</p> : null}
+          {row.differentiator_text ? <p className="text-supporting italic text-ink-3" data-testid="queue-differentiator">{row.differentiator_text}</p> : null}
           {row.consequence_text ? <p className="text-supporting text-ink-3">{row.consequence_text}</p> : null}
         </div>
         {/* Wide pane: the next step has its own column. Narrow pane: it sits under the pill at the right. */}
