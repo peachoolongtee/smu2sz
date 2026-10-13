@@ -180,6 +180,8 @@ def test_an_offer_waiting_for_approval_is_waiting_for_your_approval_everywhere(a
     approval = next(r for r in q["needs_you"] if r["kind"] == "APPROVAL")
     assert approval["status_text"] == said and approval["decision_id"] == f"deal:{offer_id}" and approval["customer_id"] == "BUYER-1"
     assert not any(r["decision_id"] == f"deal:{offer_id}" for r in q["waiting"]) and q["counts"]["needs_you"] == 1
+    home = api.get("/home", params={"lang": lang}).json()["deals_card"]
+    assert [r["status_text"] for r in home["rows"] if r["buyer_id"] == "BUYER-1"] == [said]
     queue_row = api.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
     assert queue_row["presentation"]["result_state_text"] == said
     overview = api.get("/customers/BUYER-1/overview", params={"lang": lang}).json()["decision"]
