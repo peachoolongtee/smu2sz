@@ -392,7 +392,7 @@ def test_the_share_of_sales_is_never_stated_unless_the_inputs_hold_it(api, rt):
     r = SimpleNamespace(lang="en", rows=[{"x": 1}], conc={
         "is_aggregate": False, "ar_total_fen": 100, "ar_buyer_fen": 50, "ar_share_bp": 5000, "annual_sales_share_bp": 1234,
         "aggregate_note": None})
-    assert overview._share(r)["note"] == "50% of currently open receivables · 12.3% of your sales"
+    assert overview._share(r)["note"] == "50.0% of currently open receivables · 12.3% of your sales"
 
 
 def test_an_aggregate_buyer_has_no_share_of_its_own(api, rt):
