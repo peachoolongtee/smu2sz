@@ -5,6 +5,7 @@ the approvals read's tier is the record's). On the Demo and on the busy company,
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
@@ -25,8 +26,8 @@ EX01 = {"fixture_id": "EX01_PACKAGE"}
 NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
          "Bank credit line", "Invoice financing (onboarded platform)", "Buyer early-payment offer",
          "Government-guaranteed working-capital loan"]
-ROW = {"key", "kind", "tier", "customer_id", "customer_short", "subject_text", "status_text", "consequence_text", "severity", "deadline_day",
-       "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href"}
+ROW = {"key", "kind", "tier", "customer_id", "customer_short", "subject_text", "subject_demo_text", "lifecycle", "status_text", "consequence_text",
+       "severity", "deadline_day", "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href"}
 
 
 @pytest.fixture
@@ -89,7 +90,8 @@ def test_the_demo_queue_is_empty_until_an_offer_arrives_and_then_one_row_per_off
     for r in rows:
         assert set(r) == ROW and r["tier"] == "NEEDS_YOU" and r["href"] == f"/deals?customer=BUYER-1&decision={quote(r['decision_id'], safe='')}"
     if lang == "zh":
-        assert not english_leaks([{k: r[k] for k in ("subject_text", "status_text", "consequence_text")} for r in rows], NAMES)
+        # (a subject may quote the buyer's own words, which stay in the language the buyer wrote them in)
+        assert not english_leaks([{k: re.sub("“[^”]*”", "", r[k]) for k in ("subject_text", "status_text", "consequence_text")} for r in rows], NAMES)
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
@@ -108,7 +110,7 @@ def test_the_busy_queue_has_every_task_in_its_tier(api: TestClient, lang: str) -
     assert q["alert"] is not None and q["alert"]["key"] == "company-cash"  # shown above the tabs, counted nowhere
     assert q["needs_you_empty_text"] and q["waiting_empty_text"] and q["agreements_empty_text"]
     if lang == "zh":
-        assert not english_leaks([{k: r[k] for k in ("subject_text", "status_text", "consequence_text")} for r in rows], NAMES)
+        assert not english_leaks([{k: re.sub("“[^”]*”", "", r[k]) for k in ("subject_text", "status_text", "consequence_text")} for r in rows], NAMES)
 
 
 def test_the_open_negotiations_of_one_customer_are_rows_of_their_own_with_their_own_links(api: TestClient) -> None:

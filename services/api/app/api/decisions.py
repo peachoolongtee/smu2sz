@@ -191,6 +191,7 @@ class Context:
     _states: dict[str, tuple[DecisionState, DecisionInputs]] | None = field(default=None, repr=False)
     _index: RecordIndex | None = field(default=None, repr=False)
     lapsed_by: dict[str, bool] = field(default_factory=dict, repr=False)  # a LAPSED decision -> whether another agreement settled its invoice
+    subject_cache: dict[str, dict[str, tuple[str, str]]] = field(default_factory=dict, repr=False)  # the negotiation subjects, by language (`app.api.subjects`)
 
     @property
     def index(self) -> RecordIndex:
@@ -388,7 +389,18 @@ def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang:
     """One decision as a list row. Reused by /decisions, the home's open decisions and the approvals queue."""
     waiting = waiting_view(ctx, ds, inp, lang)
     residual = ds.residual is not None
+    from app.api.subjects import (  # subjects reads the decision record's context
+        deal_lifecycle,
+        lifecycle_text,
+        subject_for,
+    )
+
+    deal = ds.family == "DEAL"
+    subject, subject_demo = subject_for(ctx, ds.offer, lang) if deal and ds.offer is not None else (None, None)
+    lifecycle = deal_lifecycle(ds) if deal else None
     return {
+        "subject_text": subject, "subject_demo_text": subject_demo, "lifecycle": lifecycle,
+        "status_text": lifecycle_text(lifecycle, lang) if lifecycle is not None else None,
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
         "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual,
                                           lapsed_by_agreement=ctx.lapsed_by.get(ds.decision_id, True)),
