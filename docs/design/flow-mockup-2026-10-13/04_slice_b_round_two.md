@@ -127,3 +127,28 @@ split layout), the widths and the action system. Specs per section, mock and liv
 
 ## Gates
 Focused specs while building; the full pair + tests/api at the merge; a verifier pass on journeys 1, 2 and 4 before merge.
+
+## 6. Owner's ideas after the mockups (14 Oct), reconciled
+- **§2 amended, in this round: two switchable cards under the timing diagram.** "What it costs you" and "Your cash" are two
+  cards side by side (the same card the Home uses); each shows its headline figures for the two options (Buyer request ·
+  Option A) in one line; clicking a card expands it in place (the other collapses to its headline) to the full table of
+  §2 (the cost breakdown, or the four-row cash comparison); the expanded card is the address (`?show=cost|cash`), Escape
+  collapses. One is open by default: the one the recommendation reason names (cost when the reply is within limits and
+  cheaper, cash when the request breaches the reserve), from the server's `recommended_reason_kind`.
+- **§2 amended, in this round: "Full analysis" is the Investigate level, renamed.** A quiet button "Full analysis" under the
+  two cards opens, in place and full width, everything the picture carries: every response in one table with the stress
+  rows, the deal's cash chart, the cost components per path, the envelope's packages, and **"Why FLOW recommends this"**:
+  the server's `recommended_reason_text`, each path's `authority_reason_text`, the assumption sentences, and the rule in
+  words ("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost"). The address
+  is `?investigate=1` as today.
+- **Later, round three: multi-deal comparison.** On Deals, "Compare deals" selects two to four negotiations and shows one
+  table: Customer · Requested change · Economic cost (each with its own basis words) · Cash effect (each path's own lowest
+  cash) · FLOW's reply; the combined effect on cash is shown as "Not yet evaluated" until the engine evaluates a combined
+  scenario on the same books (engine ticket). "Best" is never computed in the browser and never by cost alone (#131): the
+  table lets the owner see the verdicts side by side; a ranked recommendation across deals is the same engine ticket.
+- **Later, round three: the sandbox from playing to proposing.** What-if is already the sandbox for one negotiation's
+  terms. Round three makes it the deal's own: opened from the deal with its terms preset, a third column "FLOW's counter"
+  beside "Buyer request" and "Your terms", and the live verdict; then "Use these terms as my counter" drafts an
+  owner-authored counter that goes through the same verifier, pricing and receipt as FLOW's (a new server route; the
+  owner's authority applies: it needs approval when it exceeds what FLOW may send). The engine is not changed: the
+  verifier already prices hypothetical terms.
