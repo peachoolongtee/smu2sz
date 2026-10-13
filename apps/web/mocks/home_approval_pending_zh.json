@@ -2565,5 +2565,59 @@
     "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
     "authority_text": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
     "remaining_text": null
-  }
+  },
+  "commit_label": "授权融资申请",
+  "authorize_text": "批准后，发票将提交融资。预付款到账之前，不算现金。",
+  "terms_state_text": null,
+  "terms_rows": [
+    {
+      "label": "金额",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "成本",
+      "value_text": "¥1,782.19"
+    },
+    {
+      "label": "利率",
+      "value_text": "32.5%"
+    },
+    {
+      "label": "资金到账",
+      "value_text": "3 天后"
+    },
+    {
+      "label": "计算依据",
+      "value_text": "发票融资按整 30 天计费，直至发票付清。"
+    }
+  ],
+  "lifecycle": null,
+  "summary_rows": [
+    {
+      "label": "申请金额",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "融资额度",
+      "value_text": "Invoice financing (onboarded platform)"
+    },
+    {
+      "label": "现在会发生什么",
+      "value_text": "您批准后立即提交：以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00。"
+    },
+    {
+      "label": "现在是否有资金变动",
+      "value_text": "若您今天批准，资金将于3 天后到账。"
+    },
+    {
+      "label": "由谁决定是否提供资金",
+      "value_text": null
+    },
+    {
+      "label": "如果您拒绝",
+      "value_text": "8 天后比最低现金储备低 ¥200,000.00；缺口在8 天后最大，为 ¥200,000.00。"
+    }
+  ],
+  "deadline_text": "8 天后需要资金到位",
+  "deadline_day": 42
 }

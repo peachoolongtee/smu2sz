@@ -109,5 +109,34 @@
   "result_state_text": "Approved, cash arrives in 3 days",
   "result_tone": "info",
   "receipt": null,
+  "commit_label": "Authorize the financing request",
+  "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+  "terms_state_text": null,
+  "terms_rows": [
+    {
+      "label": "Amount",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "Cost",
+      "value_text": "¥1,782.19"
+    },
+    {
+      "label": "Rate",
+      "value_text": "32.5%"
+    },
+    {
+      "label": "Cash lands",
+      "value_text": "in 3 days"
+    },
+    {
+      "label": "Basis",
+      "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    }
+  ],
+  "lifecycle": null,
+  "summary_rows": null,
+  "deadline_text": null,
+  "deadline_day": null,
   "execution_status": "EXECUTED"
 }

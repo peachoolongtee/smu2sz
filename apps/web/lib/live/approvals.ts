@@ -45,6 +45,8 @@ interface RawApproval {
   terms_rows?: ApprovalSummaryRow[] | null;
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
+  deadline_text?: string | null;
+  deadline_day?: number | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -93,6 +95,8 @@ function toViews(approvals: RawApproval[]): ApprovalView[] {
         terms_rows: a.terms_rows ?? null,
         lifecycle: a.lifecycle ?? null,
         summary_rows: a.summary_rows ?? null,
+        deadline_text: a.deadline_text ?? null,
+        deadline_day: a.deadline_day ?? null,
       }) as ApprovalView,
   );
 }

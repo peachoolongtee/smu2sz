@@ -60,7 +60,7 @@ function SeverityDot({ severity }: { severity: QueueRowView["severity"] }) {
  * the task); the customer's name inside it is its own link, carrying THIS row's customer, decision and invoice and the origin. The selected row is the lavender fill with a purple edge and
  * `aria-current`; a row is held (disabled) while a send is in flight.
  */
-function CompactRow({ tier, row, selected, locked, onSelect }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select }) {
+function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean }) {
   const { t } = useI18n();
   const target = rowTarget(row);
   const pill = rowPill(tier, row);
@@ -86,6 +86,8 @@ function CompactRow({ tier, row, selected, locked, onSelect }: { tier: DealTier;
               {pill.text}
             </StatusPill>
             {pill.next ? <span className="text-supporting text-ink-2" data-testid="queue-next">{pill.next}</span> : null}
+            {/* Sorted by latest activity, each row says when it last moved (the server's words). */}
+            {activity && row.last_activity_text ? <span className="text-supporting text-ink-3" data-testid="queue-activity">{row.last_activity_text}</span> : null}
           </div>
           {row.consequence_text ? (
             <p className="mt-1.5 flex gap-1.5 text-supporting text-ink-3" data-testid="queue-consequence">
@@ -231,7 +233,7 @@ export function QueuePanel({
   const rowsOf = (list: DealRow[]) =>
     list.map(({ tier, row }) => {
       const selected = Boolean(selectedDecision) && rowDecision(row) === selectedDecision;
-      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} />;
+      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} />;
     });
   const listClass = asTable ? "space-y-2" : "space-y-2";
   return (

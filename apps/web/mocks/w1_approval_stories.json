@@ -94,7 +94,15 @@
       "assumptions_text": null,
       "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
       "remaining_text": null
-    }
+    },
+    "commit_label": "Authorize the agreement",
+    "authorize_text": null,
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": null,
+    "deadline_text": "Expires in 14 days",
+    "deadline_day": 14
   },
   "expired": {
     "id": "APR-000001",
@@ -189,7 +197,15 @@
       "assumptions_text": null,
       "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
       "remaining_text": null
-    }
+    },
+    "commit_label": "Authorize the agreement",
+    "authorize_text": null,
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": null,
+    "deadline_text": null,
+    "deadline_day": null
   },
   "refused": {
     "pending": {
@@ -2759,7 +2775,61 @@
         "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
         "authority_text": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
         "remaining_text": null
-      }
+      },
+      "commit_label": "Authorize the financing request",
+      "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+      "terms_state_text": null,
+      "terms_rows": [
+        {
+          "label": "Amount",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Cost",
+          "value_text": "¥1,782.19"
+        },
+        {
+          "label": "Rate",
+          "value_text": "32.5%"
+        },
+        {
+          "label": "Cash lands",
+          "value_text": "in 3 days"
+        },
+        {
+          "label": "Basis",
+          "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+        }
+      ],
+      "lifecycle": null,
+      "summary_rows": [
+        {
+          "label": "Amount requested",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Facility",
+          "value_text": "Invoice financing (onboarded platform)"
+        },
+        {
+          "label": "What happens now",
+          "value_text": "Sends the request as soon as you approve: Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)."
+        },
+        {
+          "label": "Does money move now",
+          "value_text": "If you approve today, the cash lands in 3 days."
+        },
+        {
+          "label": "Who decides whether funds are offered",
+          "value_text": null
+        },
+        {
+          "label": "What if you decline",
+          "value_text": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
+        }
+      ],
+      "deadline_text": "Cash needed in 8 days",
+      "deadline_day": 42
     },
     "decided": {
       "id": "APR-000001",
@@ -2863,6 +2933,35 @@
       "result_state_text": "Approved, did not run. No money moved.",
       "result_tone": "bad",
       "receipt": null,
+      "commit_label": "Authorize the financing request",
+      "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+      "terms_state_text": null,
+      "terms_rows": [
+        {
+          "label": "Amount",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Cost",
+          "value_text": "¥1,782.19"
+        },
+        {
+          "label": "Rate",
+          "value_text": "32.5%"
+        },
+        {
+          "label": "Cash lands",
+          "value_text": "54 days ago"
+        },
+        {
+          "label": "Basis",
+          "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+        }
+      ],
+      "lifecycle": null,
+      "summary_rows": null,
+      "deadline_text": null,
+      "deadline_day": null,
       "execution_status": "REFUSED"
     }
   }

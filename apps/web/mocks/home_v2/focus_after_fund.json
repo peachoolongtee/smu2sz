@@ -40,12 +40,115 @@
             "key": "share",
             "label": "Share of what you are owed",
             "value_display": "100%",
-            "note": "one open invoice; not its share of your sales",
+            "note": "100% of currently open receivables",
             "tone": "warn",
             "state": "none",
-            "state_text": ""
+            "state_text": "",
+            "proportion": 1
           }
         ],
+        "relationship_text": "Foshan contributes an estimated ¥1.09m a year, owes ¥420k (100% of your open receivables), and has no open negotiation.",
+        "receivable_flow": [
+          {
+            "key": "owed",
+            "label": "Foshan owes you",
+            "amount_display": "¥420,000.00",
+            "when_text": null,
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "financing",
+            "label": "Financing arranged",
+            "amount_display": "¥255,000.00",
+            "when_text": null,
+            "note": "not counted as cash until it lands",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "arrives",
+            "label": "The financing arrives",
+            "amount_display": "¥255,000.00",
+            "when_text": "arrives in 3 days",
+            "note": null,
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "customer_pays",
+            "label": "Foshan pays the invoice",
+            "amount_display": "¥420,000.00",
+            "when_text": "due in 32 days",
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "repayment",
+            "label": "Repayment and fees",
+            "amount_display": "¥257,272.29",
+            "when_text": "out of the payment, due in 32 days",
+            "note": "¥255,000 advance plus ¥2,272.29 in charges",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "net",
+            "label": "Net available at collection",
+            "amount_display": "about ¥163k",
+            "when_text": "due in 32 days",
+            "note": "if Foshan pays on the due day",
+            "href": null
+          }
+        ],
+        "links": [
+          {
+            "label": "The invoice",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "label": "The financing",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "label": "Payment status: Not due yet",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "exposure_comparison": {
+          "columns": [
+            {
+              "key": "expected",
+              "label": "Expected payment"
+            },
+            {
+              "key": "late",
+              "label": "30 days late"
+            }
+          ],
+          "rows": [
+            {
+              "label": "Lowest cash",
+              "expected_text": "¥300,000 in 30 days",
+              "late_text": "¥155,000 in 60 days"
+            },
+            {
+              "label": "Reserve breach",
+              "expected_text": "None",
+              "late_text": "Below your minimum for 15 days, starting in 47 days"
+            },
+            {
+              "label": "Maximum shortfall",
+              "expected_text": "None",
+              "late_text": "¥145,000"
+            },
+            {
+              "label": "Additional funding needed",
+              "expected_text": "None",
+              "late_text": "¥145,000 uncovered"
+            }
+          ]
+        },
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -220,12 +323,20 @@
             "key": "share",
             "label": "Share of what you are owed",
             "value_display": "0%",
-            "note": "no open invoice; not its share of your sales",
+            "note": "0% of currently open receivables",
             "tone": "neutral",
             "state": "none",
-            "state_text": ""
+            "state_text": "",
+            "proportion": 0
           }
         ],
+        "relationship_text": "Dongguan owes you nothing and has no open negotiation.",
+        "receivable_flow": [],
+        "links": [],
+        "exposure_comparison": null,
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Dongguan.",
         "actions": [
@@ -366,12 +477,115 @@
             "key": "share",
             "label": "占您应收款的比例",
             "value_display": "100%",
-            "note": "1 张未收发票；这不是其占您销售额的比例",
+            "note": "占当前未收应收款的 100%",
             "tone": "warn",
             "state": "none",
-            "state_text": ""
+            "state_text": "",
+            "proportion": 1
           }
         ],
+        "relationship_text": "Foshan每年估计贡献 ¥109万，应付 ¥420k（占您未收应收款的 100%），目前没有进行中的谈判。",
+        "receivable_flow": [
+          {
+            "key": "owed",
+            "label": "Foshan应付给您",
+            "amount_display": "¥420,000.00",
+            "when_text": null,
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "financing",
+            "label": "融资已安排",
+            "amount_display": "¥255,000.00",
+            "when_text": null,
+            "note": "到账前不计入现金",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "arrives",
+            "label": "融资到账",
+            "amount_display": "¥255,000.00",
+            "when_text": "3 天后到账",
+            "note": null,
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "customer_pays",
+            "label": "Foshan支付发票",
+            "amount_display": "¥420,000.00",
+            "when_text": "32 天后到期",
+            "note": null,
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "key": "repayment",
+            "label": "还款与费用",
+            "amount_display": "¥257,272.29",
+            "when_text": "从回款中扣除，32 天后到期",
+            "note": "¥255,000 垫款，加 ¥2,272.29 费用",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "key": "net",
+            "label": "回款后可用的净额",
+            "amount_display": "约 ¥163k",
+            "when_text": "32 天后到期",
+            "note": "如果 Foshan 在到期日付款",
+            "href": null
+          }
+        ],
+        "links": [
+          {
+            "label": "发票",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          },
+          {
+            "label": "融资",
+            "href": "/cash#facility-FAC-IF"
+          },
+          {
+            "label": "付款状态：未到期",
+            "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=customer"
+          }
+        ],
+        "exposure_comparison": {
+          "columns": [
+            {
+              "key": "expected",
+              "label": "按期付款"
+            },
+            {
+              "key": "late",
+              "label": "晚付 30 天"
+            }
+          ],
+          "rows": [
+            {
+              "label": "最低现金",
+              "expected_text": "30 天后为 ¥300,000",
+              "late_text": "60 天后降至 ¥155,000"
+            },
+            {
+              "label": "储备缺口",
+              "expected_text": "没有低于最低现金",
+              "late_text": "低于您的最低现金 15 天，自 47 天后起"
+            },
+            {
+              "label": "最大缺口",
+              "expected_text": "无",
+              "late_text": "¥145,000"
+            },
+            {
+              "label": "需要额外融资",
+              "expected_text": "无",
+              "late_text": "¥145,000 缺口无法覆盖"
+            }
+          ]
+        },
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -546,12 +760,20 @@
             "key": "share",
             "label": "占您应收款的比例",
             "value_display": "0%",
-            "note": "没有未收发票；这不是其占您销售额的比例",
+            "note": "占当前未收应收款的 0%",
             "tone": "neutral",
             "state": "none",
-            "state_text": ""
+            "state_text": "",
+            "proportion": 0
           }
         ],
+        "relationship_text": "Dongguan目前没有应付给您的款项，目前没有进行中的谈判。",
+        "receivable_flow": [],
+        "links": [],
+        "exposure_comparison": null,
+        "open_negotiations": [],
+        "primary_decision": null,
+        "other_open_count": 0,
         "decision": null,
         "none_text": "目前没有需要您对Dongguan作出的商务决定。",
         "actions": [

@@ -178,7 +178,10 @@ function ApprovalList({ waiting, selectedId, onPick }: { waiting: ApprovalView[]
                       <StatusPill tone="amber">{a.result_state_text ?? a.presentation?.result_state_text ?? te("apprstatus", a.status)}</StatusPill>
                       {a.amount_display ? <span className="text-supporting font-semibold tabular-nums text-ink">{a.amount_display}</span> : null}
                     </span>
-                    <span className="mt-1 block text-supporting text-ink-3">{te("tier.short", a.tier)}</span>
+                    <span className="mt-1 block text-supporting text-ink-3">
+                      {te("tier.short", a.tier)}
+                      {a.deadline_text ?? a.presentation?.deadline_text ? <span data-testid={`approval-deadline-${a.id}`}> · {a.deadline_text ?? a.presentation?.deadline_text}</span> : null}
+                    </span>
                   </button>
                 </li>
               ))}

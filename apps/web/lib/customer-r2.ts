@@ -4,12 +4,14 @@ import type { CustomerOverviewView, ExposureComparison, FlowStep, OverviewTone, 
  * The customer overview's round-two reads as the page draws them: the receivable-to-cash flow (the server sends a list of steps, each with `amount_display` and `note`, or an object holding them)
  * and the exposure comparison (a row is its cells in the columns' order, or the server's `<column key>_text` fields). Nothing here is a word: it names the same fields one way.
  */
-export function flowOf(view: Pick<CustomerOverviewView, "receivable_flow">): ReceivableFlow | null {
+export function flowOf(view: Pick<CustomerOverviewView, "receivable_flow" | "links">): ReceivableFlow | null {
   const raw = view.receivable_flow;
   if (!raw) return null;
   const flow: ReceivableFlow = Array.isArray(raw) ? { steps: raw } : raw;
+  // The chain's links ride on the overview (`links`, label and href); each is a chip keyed by its place in the chain.
+  const links = flow.links?.length ? flow.links : (view.links ?? []).map((l, i) => ({ key: `link-${i}`, label: l.label, href: l.href }));
   const steps: FlowStep[] = (flow.steps ?? []).map((s) => ({ ...s, value_display: s.value_display ?? s.amount_display ?? null, text: s.text ?? s.note ?? null }));
-  return steps.length ? { ...flow, steps } : null;
+  return steps.length ? { ...flow, steps, links } : null;
 }
 
 export interface ComparisonRow {

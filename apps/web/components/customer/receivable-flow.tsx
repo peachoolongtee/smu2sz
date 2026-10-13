@@ -32,7 +32,15 @@ export function ReceivableFlowCard({ flow }: { flow: ReceivableFlow }) {
                 {i + 1}
               </span>
               <div className="min-w-0 pt-0.5">
-                <p className="text-supporting font-bold text-ink-3">{s.label}</p>
+                <p className="text-supporting font-bold text-ink-3">
+                  {s.href ? (
+                    <Link href={s.href} prefetch={false} className="underline decoration-line-ui underline-offset-2 hover:decoration-ink" data-testid={`customer-flow-step-link-${s.key}`}>
+                      {s.label}
+                    </Link>
+                  ) : (
+                    s.label
+                  )}
+                </p>
                 {s.value_display ? <p className="font-display text-xl font-extrabold leading-tight tabular-nums text-ink">{s.value_display}</p> : null}
                 {s.when_text ? <p className="text-sm text-ink-2">{s.when_text}</p> : null}
                 {s.text ? <p className="text-supporting text-ink-2">{s.text}</p> : null}

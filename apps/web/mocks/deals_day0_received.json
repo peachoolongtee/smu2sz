@@ -413,6 +413,11 @@
       "agreements": 0,
       "customers": 2
     },
+    "deals": {
+      "needs_you": 1,
+      "waiting": 0,
+      "agreements": 0
+    },
     "alert": {
       "key": "company-cash",
       "eyebrow": "Company cash",
@@ -432,8 +437,13 @@
         "tier": "NEEDS_YOU",
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
-        "subject_text": "Foshan · Payment terms",
-        "status_text": "Offer received · Your review needed",
+        "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+        "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+        "lifecycle": "owner_review",
+        "topic_text": "Payment terms",
+        "last_activity_day": 0,
+        "last_activity_text": "today",
+        "status_text": "Owner review needed",
         "consequence_text": "FLOW has not read the offer yet, so its effect on your cash is not known.",
         "severity": "NORMAL",
         "deadline_day": null,

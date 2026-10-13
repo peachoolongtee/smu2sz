@@ -5847,6 +5847,10 @@
     "pending_count": 1,
     "open_decisions": [
       {
+        "subject_text": null,
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "status_text": null,
         "id": "alert:ALERT-RESERVE-42:v7",
         "family": "FUNDING",
         "state": "AUTHORIZATION_REQUIRED",
@@ -11870,6 +11874,10 @@
     "pending_count": 1,
     "open_decisions": [
       {
+        "subject_text": null,
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "status_text": null,
         "id": "alert:ALERT-RESERVE-42:v7",
         "family": "FUNDING",
         "state": "AUTHORIZATION_REQUIRED",

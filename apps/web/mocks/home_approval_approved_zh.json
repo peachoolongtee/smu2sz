@@ -108,5 +108,34 @@
   },
   "result_state_text": "已批准，资金将于3 天后到账",
   "result_tone": "info",
-  "receipt": null
+  "receipt": null,
+  "commit_label": "授权融资申请",
+  "authorize_text": "批准后，发票将提交融资。预付款到账之前，不算现金。",
+  "terms_state_text": null,
+  "terms_rows": [
+    {
+      "label": "金额",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "成本",
+      "value_text": "¥1,782.19"
+    },
+    {
+      "label": "利率",
+      "value_text": "32.5%"
+    },
+    {
+      "label": "资金到账",
+      "value_text": "3 天后"
+    },
+    {
+      "label": "计算依据",
+      "value_text": "发票融资按整 30 天计费，直至发票付清。"
+    }
+  ],
+  "lifecycle": null,
+  "summary_rows": null,
+  "deadline_text": null,
+  "deadline_day": null
 }

@@ -1311,6 +1311,9 @@ export interface ApprovalPresentation {
   summary_rows?: ApprovalSummaryRow[] | null;
   /** The terms of a real stored quote (`label`, `value_text`); empty when the quote carries none. */
   terms_rows?: ApprovalSummaryRow[] | null;
+  /** When it has to be decided by, in relative words ("Expires in 5 days"); null where it has no deadline. */
+  deadline_text?: string | null;
+  deadline_day?: number | null;
 }
 
 /** One stage of an approval's lifecycle (You authorize, Lender reviews, Funding decision): the server's label and sentence and where it stands; a stage is never shown done before it is. */
@@ -1361,6 +1364,8 @@ export interface ApprovalDetail {
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
   terms_rows?: ApprovalSummaryRow[] | null;
+  deadline_text?: string | null;
+  deadline_day?: number | null;
 }
 
 /** The colour of a state, chosen by the server. */
@@ -3496,8 +3501,11 @@ export interface QueueRowView {
   lifecycle?: string | null;
   /** The subject with the offer's id appended: the Demo view's (Business never shows an id). */
   subject_demo_text?: string | null;
-  /** The day of the negotiation's latest activity (round two): the "Latest activity" sort. Absent: that sort is not offered. */
+  /** The day of the negotiation's latest activity (round two) and the server's words for it ("today", "3 days ago"): the "Latest activity" sort. Absent: that sort is not offered. */
   last_activity_day?: Day | null;
+  last_activity_text?: string | null;
+  /** The old coarse topic of the row ("Payment terms"), kept by the server for readers that want it. */
+  topic_text?: string | null;
   /** The fallback read (today's worklist) writes these; the server's queue does not. */
   owner?: string;
   why_first?: never;
@@ -4133,6 +4141,8 @@ export interface FlowStep {
   /** One more sentence for the step ("arrives in 3 days if the plan runs"). */
   text?: string | null;
   note?: string | null;
+  /** Where the step is done (the invoice, the money): the step is a link when the server names it. */
+  href?: string | null;
   /** The state vocabulary's key when the step is a money state (planned, arranged, received, repaid, owed ...). */
   state?: string | null;
   state_text?: string | null;
@@ -4224,6 +4234,8 @@ export interface CustomerOverviewView {
   figures?: OverviewFigure[];
   /** Round two: the receivable-to-financing-to-net-collection flow for the customer's largest open invoice. */
   receivable_flow?: ReceivableFlow | FlowStep[] | null;
+  /** Round two: the chain the flow belongs to as links (the negotiation, its invoice, its financing, the payment's status), each only where the page has it. */
+  links?: { label: string; href: string }[] | null;
   /** Round two: the exposure as a two-column comparison (expected payment, 30 days late). */
   exposure_comparison?: ExposureComparison | null;
   /** Round two: every open negotiation of this customer (`decision_id`, `subject_text`, `subject_demo_text`, `lifecycle`, `status_text`, `is_primary`, `href`), the primary decision block (`text`, `recommends_text`, `href`) and how many other negotiations are open. */
