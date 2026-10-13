@@ -25,6 +25,7 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  CompareView,
   DealsContext,
   EnvelopeView,
   ExposureView,
@@ -204,6 +205,9 @@ export const live = {
   /** GET /offers/{offer_id}/exposure (flag `exposure`). Null when the feature is off, the offer is unknown or the route is absent. One read carries every path. */
   getOfferExposure: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}`)),
 
+  /** GET /offers/{offer_id}/compare (flag `exposure`). Null when the feature is off, the route is absent or the offer has no verdict yet (404). */
+  getOfferCompare: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<CompareView>("GET", `/offers/${enc(offerId)}/compare?lang=${lang}`)),
+
   /** GET /pilot/journal (flag `pilot_journal`). Null when the feature is off or absent. Read-only: the web never posts an entry. */
   getPilotJournal: () => nullWhenOff(() => http<PilotJournalView>("GET", "/pilot/journal")),
 
@@ -248,7 +252,7 @@ export const live = {
   getDeals: (lang: "en" | "zh" = "en", ctx: DealsContext = {}) => {
     const q = new URLSearchParams();
     if (lang === "zh") q.set("lang", "zh");
-    for (const k of ["customer", "invoice", "path"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
+    for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
     return http<DealsView>("GET", `/deals${q.size ? `?${q}` : ""}`);
   },
   getDocuments: (lang: "en" | "zh" = "en") => http<DocumentsList>("GET", `/documents${lang === "zh" ? "?lang=zh" : ""}`),

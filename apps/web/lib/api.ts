@@ -25,6 +25,7 @@ import type {
   BorrowerFileRequest,
   BorrowerFileView,
   BuyerExposureView,
+  CompareView,
   ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
@@ -271,6 +272,14 @@ export async function getEnvelope(buyerId: string, lang: "en" | "zh", zone = fal
  */
 export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Promise<ExposureView | null> {
   return isMock ? (await mock()).getOfferExposure(offerId, lang) : (await live()).getOfferExposure(offerId, lang);
+}
+
+/**
+ * GET /offers/{offer_id}/compare (flag `exposure`): every answer to the offer side by side, the buyer stopping included, each row read alone. Null when the server has the
+ * feature off, lacks the route, or the offer has not been evaluated yet (404): the page then compares the paths it already has. Read only when the owner opens the investigation.
+ */
+export async function getOfferCompare(offerId: string, lang: "en" | "zh"): Promise<CompareView | null> {
+  return isMock ? (await mock()).getOfferCompare(offerId, lang) : (await live()).getOfferCompare(offerId, lang);
 }
 
 /**

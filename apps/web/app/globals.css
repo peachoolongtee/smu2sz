@@ -32,7 +32,7 @@
     "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --color-canvas: #f5f7fb;
+  --color-canvas: light-dark(#e5e8e8, #1c2226); /* the owner's mockup canvas (docs/design/flow-mockup-2026-10-13), app-wide */
   --color-surface: #ffffff;
   --color-subtle: #eff3f8;
   --color-line: #e6e9ef;
@@ -177,12 +177,39 @@
   --animate-pulse: pulse calc(var(--dur-narrative) * 4) cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-spin: spin calc(var(--dur-narrative) * 2) linear infinite;
 
+
+  /* The owner's mockup palette (docs/design/flow-mockup-2026-10-13/00_design_language_of_record.md), each a light and a dark value: the panel the Home cards sit
+     on, the white of a row on a panel, the ink and its muted, the hairline, the amber, lavender and green tone pairs (a pill's fill and its text), the one risk red for a
+     figure below the minimum, and the ink primary button. Home reads them through the `.home-f` scope below (which maps the kit's tokens onto them); the shell reads the
+     canvas. The app is light only unless <html data-theme="dark"> is set: the dark values are there for that hook. */
+  --color-panel: light-dark(#f8f9f9, #293137);
+  --color-card: light-dark(#ffffff, #333e46);
+  --color-f-ink: light-dark(#151b1c, #f1f4f3);
+  --color-f-muted: light-dark(#586468, #b1bfc1);
+  --color-f-line: light-dark(#d8dddd, #465157);
+  --color-f-purple: light-dark(#9252dc, #c49af6);
+  --color-f-purple-soft: light-dark(#ebdefa, #42334e);
+  --color-f-purple-ink: light-dark(#4a2480, #e6d3fb);
+  --color-f-green: light-dark(#c7e9b3, #334a2b);
+  --color-f-green-ink: light-dark(#234220, #d4edc5);
+  --color-f-amber: light-dark(#f9d491, #50412b);
+  --color-f-amber-ink: light-dark(#60410e, #ffe0a5);
+  --color-f-risk: light-dark(#a83222, #ffab9e);
+  --color-f-btn: light-dark(#171d1e, #eef3f0);
+  --color-f-btn-ink: light-dark(#ffffff, #17201c);
+  /* The one soft shadow and the one card radius of the mockup. */
+  --shadow-f: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --radius-f-card: 24px;
+
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
   --color-new: #7c4ddb;
   --color-new-bg: #f1e9ff;
   --color-new-line: #d9c6fb;
 }
 
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
 html {
   /* Light only, by design: form controls, scrollbars and the dialog backdrop must not take a dark phone's theme under a light page. */
   color-scheme: light;

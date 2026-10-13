@@ -1,21 +1,25 @@
 /**
- * Where a customer's name leads, and the context that travels with it. The page you came from keeps its place in the URL and nowhere else
- * (`decision`, `path`, `invoice`; map #88, common rules): every customer name links to /customers/{id} carrying what the current URL holds,
- * and the overview's back link (the server's `context.back`) puts the owner back on that deal, path or invoice. No store, no storage.
+ * Where a customer's name leads, and the context that travels with it (ticket #126). The page you came from keeps its place in the URL and nowhere else:
+ * a customer name links to /customers/{id} carrying THAT ROW's own identity (its decision, its invoice) and the origin page (`from`), never the selected row's;
+ * the overview's back link (the server's `context.back`, written from `from`) puts the owner back where they were. No store, no storage.
  */
 
 export interface CustomerContext {
-  /** The deal the owner was looking at (`deal:{offer}`), and the path selected on it. */
+  /** The deal the link is about (`deal:{offer}`), and the path selected on it. */
   decision?: string | null;
   path?: string | null;
-  /** The invoice the owner was looking at. */
+  /** The invoice the link is about. */
   invoice?: string | null;
+  /** The payment-timing assumption the page was read under (`late`). */
+  scenario?: string | null;
+  /** The page the owner leaves (`deal`, `invoice`, `activity`, `home`, `cash`, `approvals`): the server writes the way back from it. */
+  from?: string | null;
 }
 
-/** The query keys that make up the context, in the order they are written. */
-export const CONTEXT_KEYS = ["decision", "path", "invoice"] as const;
+/** The query keys that make up the context, in the order they are written (the customer is the path's own id). */
+export const CONTEXT_KEYS = ["decision", "path", "invoice", "scenario", "from"] as const;
 
-/** The context a URL holds: only the three keys, only when non-empty. Takes `URLSearchParams` or `useSearchParams()`'s read-only twin. */
+/** The context a URL holds: only these keys, only when non-empty. Takes `URLSearchParams` or `useSearchParams()`'s read-only twin. */
 export function readContext(params: { get(name: string): string | null } | null | undefined): CustomerContext {
   const out: CustomerContext = {};
   if (!params) return out;

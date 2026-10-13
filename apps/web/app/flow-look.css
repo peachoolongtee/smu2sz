@@ -1,0 +1,59 @@
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------
+   Deals and Customer in the owner's mockup language (docs/design/flow-mockup-2026-10-13/00_design_language_of_record.md, "the other screens take the visual
+   language only"). `.flow-f` is the page scope: it maps the kit's own tokens onto the mockup's palette (declared in globals.css: ink and muted, the hairline, the
+   panel, the lavender selection, the ink primary button, the one risk red, 24 px cards), so the kit (Card, ActionGroup, ComparisonTable, SegmentedTabs, StateWord, Button)
+   changes look inside it without new primitives and no other page moves. The mapping is the same as Home's scope; when the two slices merge they become one.
+   --------------------------------------------------------------------------------------------------------------------------------------------------- */
+.flow-f {
+  --color-ink: var(--color-f-ink);
+  --color-ink-2: color-mix(in srgb, var(--color-f-ink) 70%, var(--color-f-muted));
+  --color-ink-3: var(--color-f-muted);
+  --color-line: var(--color-f-line);
+  --color-line-strong: var(--color-f-line);
+  --color-line-ui: color-mix(in srgb, var(--color-f-muted) 70%, var(--color-f-line));
+  --color-surface: var(--color-panel);
+  --color-subtle: color-mix(in srgb, var(--color-f-line) 45%, var(--color-panel));
+  --color-track: color-mix(in srgb, var(--color-f-line) 55%, var(--color-panel));
+  --color-brand-600: var(--color-f-btn);
+  --color-brand-700: var(--color-f-ink);
+  --color-brand-50: var(--color-f-purple-soft);
+  --color-brand-100: var(--color-f-purple-soft);
+  --color-info-line: color-mix(in srgb, var(--color-f-purple) 35%, var(--color-f-line));
+  /* The status pills' fills and inks: amber for what needs you, lavender for what waits on someone else, green for what is healthy or agreed. */
+  --color-warn-bg: var(--color-f-amber);
+  --color-info-bg: var(--color-f-purple-soft);
+  --color-info-fg: var(--color-f-purple-ink);
+  --color-info-solid: var(--color-f-purple);
+  --color-ok-bg: var(--color-f-green);
+  --color-chart-base: var(--color-f-purple);
+  --color-chart-axis: var(--color-f-muted);
+  --color-chart-grid: var(--color-f-line);
+  --color-chart-danger: color-mix(in srgb, var(--color-f-amber) 22%, transparent);
+  --color-bad-fg: var(--color-f-risk);
+  --color-bad-solid: var(--color-f-risk);
+  --color-ok-fg: var(--color-f-green-ink);
+  --color-warn-fg: var(--color-f-amber-ink);
+  --radius-card: var(--radius-f-card);
+  --radius-decision: var(--radius-f-card);
+  --radius-tile: 16px;
+  color: var(--color-f-ink);
+}
+
+/* A mockup card: the panel tone on the canvas, 24 px, the one soft shadow. `.flow-card-white` is the selected item's card (white). */
+.flow-card {
+  background: var(--color-panel);
+  border-radius: var(--radius-f-card);
+  box-shadow: var(--shadow-f);
+}
+.flow-card-white {
+  background: var(--color-card);
+}
+/* A row of the queue table: a white row on the panel, 16 px; the selected row is the lavender fill with a purple edge. */
+.flow-row {
+  background: var(--color-card);
+  border-radius: 16px;
+}
+.flow-row[aria-current="true"] {
+  background: var(--color-f-purple-soft);
+  box-shadow: inset 0 0 0 1px var(--color-f-purple);
+}

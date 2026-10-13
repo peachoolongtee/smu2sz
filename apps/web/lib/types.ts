@@ -1231,6 +1231,8 @@ export interface ApprovalOperation {
 
 /** Business words the API writes for an approval card (operations.py `presentation`): the question, the names behind the ids, the cost the alert priced and the day the cash lands. */
 export interface ApprovalPresentation {
+  /** The commitment receipt for approving this request (ticket #128); absent from a server that does not send it. */
+  receipt?: CommitmentReceiptView | null;
   headline: string;
   what: string;
   facility_name: string | null;
@@ -1666,6 +1668,8 @@ export interface ChaseView {
   facts: ChaseFact[];
   /** A payment request in the owner's voice, ready to copy. */
   request_text: string;
+  /** The commitment receipt for the chase (ticket #128); absent from a server that does not send it. */
+  receipt?: CommitmentReceiptView | null;
   /** The Deals route for the buyer when a deal thread exists, else null. */
   thread_href: string | null;
 }
@@ -2115,6 +2119,8 @@ export interface NlRequest {
   request_id?: string;
   /** What the owner's page was showing: ids only (INVARIANT 13), never an amount or a sentence. Owner turns only; the server checks every id and ignores what it cannot find. */
   context?: NlPageContext;
+  /** What the owner chose to talk about (the scope chip), from the address; owner turns only. */
+  scope?: NlScope;
 }
 
 /** The page behind a chat turn. `since_day` is the owner's last-visit marker (the same one GET /home takes). */
@@ -2224,6 +2230,8 @@ export interface NlResponse {
   trace_id: string;
   /** The validated page context this turn used; null when none was sent or none was found. */
   context_echo?: NlContextEcho | null;
+  /** The scope the server used for this answer (ticket #130); absent from an older server. */
+  scope_used?: NlScopeUsed | null;
   /** An owner turn that decided something: the decision's record id, and whether the record was written. Absent on other turns and in older recordings. */
   decision_id?: string | null;
   decision_recorded?: boolean;
@@ -2295,6 +2303,8 @@ export interface WhatIfControls {
 export interface WhatIfResult {
   hypothetical: true;
   note: string;
+  /** What the simulation honoured of the address (ticket #126): the customer and decision it was run for, or `irrelevant_text` when the selection names nothing it can simulate. */
+  context?: PageContext | null;
   key: string;
   params: WhatIfParams & {
     current_terms_days: number;
@@ -3341,11 +3351,97 @@ export interface DealsContext {
   customer?: string | null;
   invoice?: string | null;
   path?: string | null;
+  /** The negotiation and the origin page (ticket #126): the read echoes them in `context`. */
+  decision?: string | null;
+  from?: string | null;
 }
 
 export interface DealsView {
   day: Day;
   deals: DealView[];
+  /** The queue (ticket #127): the worklist's rows, one per task, by who owes the next step. Absent from a server that does not send it: the page then builds it from GET /worklist. */
+  queue?: DealsQueue | null;
+  /** What the read honoured of the address, and the way back (ticket #126); null or absent from an older server. */
+  context?: PageContext | null;
+}
+
+/** The selections a read honoured, the way back the server wrote from `from`, and, when a selection cannot be honoured, the sentence that says so (the page then asks). */
+export interface PageContext {
+  customer?: string | null;
+  decision?: string | null;
+  path?: string | null;
+  invoice?: string | null;
+  scenario?: string | null;
+  back?: { label: string; href: string } | null;
+  irrelevant_text?: string | null;
+}
+
+/** One row of the queue: a task (a negotiation, an approval, a collection on an invoice, a promise, an agreement in force). The words are the server's; `id`s are never shown. */
+export interface QueueRowView {
+  key: string;
+  kind: "DECISION" | "APPROVAL" | "COLLECTION" | "SETUP" | "BUYER_REPLY" | "SETTLEMENT" | "PROMISE" | "AGREEMENT" | string;
+  customer_id: string | null;
+  customer_short?: string | null;
+  /** "Foshan · Payment terms": the customer and the deal, in the server's words. */
+  subject_text: string;
+  /** What tells two alike subjects apart (an invoice, a scope); present only when two rows would read alike. */
+  differentiator_text?: string | null;
+  /** The state and who acts ("Counter ready · Reply needed"); `state_text` is the state alone and `next_step_text` the step alone when the server sends them apart. */
+  status_text: string;
+  state_text?: string | null;
+  next_step_text?: string | null;
+  consequence_text: string;
+  /** The deal's record id and the invoice the task is about, when it has them (the key of a decision row names its deal). */
+  decision?: string | null;
+  invoice?: string | null;
+  owner?: "NEEDS_YOU" | "WAITING" | "AGREED" | string;
+  severity?: WorklistSeverity;
+  href: string;
+  is_new?: boolean;
+  why_first_text?: string | null;
+}
+
+/** GET /deals `queue`: the four tiers and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Customers = unique relationships; the company alert is counted nowhere). */
+export interface DealsQueue {
+  counts: { needs_you: number; waiting: number; agreements: number; customers: number };
+  alert: WorklistAlert | null;
+  needs_you: QueueRowView[];
+  waiting: QueueRowView[];
+  agreements: QueueRowView[];
+  customers: WorklistCustomer[];
+  needs_you_empty_text?: string | null;
+}
+
+/**
+ * The commitment receipt (ticket #128): what an action that authorizes or moves money, or sends on the owner's behalf, will do, in the server's words and in this order.
+ * A line the server has no value for is null and is not drawn; the page never invents one.
+ */
+export interface CommitmentReceiptView {
+  authorizes_text?: string | null;
+  executes_now_text?: string | null;
+  others_must_agree_text?: string | null;
+  in_hand_vs_future_text?: string | null;
+  gross_display?: string | null;
+  fees_display?: string | null;
+  net_display?: string | null;
+  when_text?: string | null;
+  assumptions_text?: string | null;
+  authority_text?: string | null;
+  remaining_text?: string | null;
+}
+
+/** The scope Ask FLOW sends (ticket #130): the keys of the address that name something; the server validates each and echoes what it used as `scope_used`. */
+export interface NlScope {
+  customer?: string;
+  invoice?: string;
+  decision?: string;
+  scenario?: string;
+}
+
+/** What the server says it used of the scope: its kind (company, customer, invoice, decision) and a name, never an id. */
+export interface NlScopeUsed {
+  kind: "company" | "customer" | "invoice" | "decision" | string;
+  label: string;
 }
 
 /** One entry of the shadow pilot's journal (GET /pilot/journal, flag `pilot_journal`): what the owner did against an answer FLOW gave. No money field. */
@@ -3655,6 +3751,8 @@ export interface PicturePath {
   authority?: PathAuthority | null;
   /** The server's words for `authority`; the page falls back to `decides_text` when absent. */
   authority_text?: string | null;
+  /** The commitment receipt for sending this reply (ticket #128); absent from a server that does not send it (the page then uses the words the path already has). */
+  receipt?: CommitmentReceiptView | null;
   /** The cost headline on one basis across the three paths, and the words that name that basis. Absent from an older server (`cost_display` / `cost_note` then). */
   cost_total_display?: string | null;
   cost_basis_text?: string | null;
@@ -3828,6 +3926,51 @@ export interface ExposureView {
   day: Day;
 }
 
+// ------------------------------------------------------------------ the scenario comparator (flag `exposure`; GET /offers/{offer_id}/compare)
+
+/** One row of the comparison: the books as they stand (`current`), the request as asked (`asked`), a counter (its id), and the buyer stopping (`customer_loss`). */
+export interface CompareRowView {
+  key: string;
+  kind: "current" | "asked" | "reply" | "customer_loss" | string;
+  label: string;
+  assumption_text: string;
+  available: boolean;
+  unavailable_text: string | null;
+  outcome?: string | null;
+  /** The lowest cash and when, in the server's words; the display strings are absent from a server that sends only the fen (the page then shows the `when` words and the sentences). */
+  lowest_cash_fen?: Fen | null;
+  lowest_cash_display?: string | null;
+  lowest_when?: string | null;
+  first_breach_when?: string | null;
+  breach_days?: number | null;
+  funding_cost_fen?: Fen | null;
+  funding_cost_display?: string | null;
+  funding_basis_text?: string | null;
+  funding_text?: string | null;
+  plan_flags?: { admissible: boolean; needs_owner: boolean; executable_now: boolean; words: string[] };
+  late_days?: number;
+  late_assumption_text?: string | null;
+  late_unavailable_text?: string | null;
+  capacity?: { available: boolean; spare_text?: string | null; note?: string | null; windows?: ExposureWindow[] } | null;
+  contribution_context?: { label: string; share_sentence: string | null; note: string | null } | null;
+  /** The customer-loss row's own figures, as words: the receipts removed within the horizon, a year's billings and gross profit foregone, and what is not modelled. */
+  loss?: { receipts_text: string; loss_text: string | null; costs_text: string | null; horizon_days: number } | null;
+}
+
+/** GET /offers/{offer_id}/compare?lang=&late=: what each answer to an evaluated offer does to cash, row by row, each read alone and never added across rows. */
+export interface CompareView {
+  offer_id: string;
+  buyer: { id: string; name: string };
+  lang: "en" | "zh";
+  late: number;
+  late_assumption_text: string | null;
+  rows: CompareRowView[];
+  horizon_days: number;
+  note: string;
+  state_version?: number;
+  day?: Day;
+}
+
 // ------------------------------------------------------------------ the customer overview (map #88, ticket #108): GET /customers/{id}/overview
 
 /** The tone the overview gives a figure or a row; the browser only picks the colour. */
@@ -3907,7 +4050,7 @@ export interface CustomerOverviewView {
   partial?: { missing: string[]; missing_text?: string[]; text?: string } | null;
   history?: OverviewHistoryRow[];
   /** `back` is built by the server from the query the page was opened with; `customer`, `deal` and `scenario` echo Home V2's selections when they name this buyer's (`deal` the decision id, `scenario` validated against the deal's counters), else null. */
-  context?: { back: { label: string; href: string }; customer?: string | null; deal?: string | null; scenario?: string | null };
+  context?: { back: { label: string; href: string }; customer?: string | null; deal?: string | null; scenario?: string | null; irrelevant_text?: string | null };
 }
 
 // ---------------------------------------------------------------- the owner's Inputs sheet (map #88 Phase 2, ticket #97)

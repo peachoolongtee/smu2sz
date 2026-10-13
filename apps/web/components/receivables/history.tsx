@@ -39,7 +39,7 @@ export function PromisedAndReceived({ data, name, picked = null }: { data: Recon
             >
               <span className="min-w-0">
                 <span className="font-medium text-ink">
-                  <CustomerName id={p.counterparty_id}>{name(p.counterparty_id)}</CustomerName>
+                  <CustomerName id={p.counterparty_id} invoice={p.receivable_id}>{name(p.counterparty_id)}</CustomerName>
                 </span>
                 <span className="block text-sm text-ink-2">{p.detail_when ?? p.detail}</span>
               </span>
