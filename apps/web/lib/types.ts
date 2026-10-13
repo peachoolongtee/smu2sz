@@ -2773,7 +2773,28 @@ export interface HomeV2Kpi {
   tone?: HomeTone;
 }
 
+/** One leg of the funding plan: where the money comes from, how much, when it lands, what that leg costs and when it is repaid, its state in the one vocabulary and who decides, in the server's words. */
+export interface HomeV2Leg {
+  label: string;
+  amount_display: string;
+  lands_when: string;
+  cost_display: string | null;
+  repaid_when: string | null;
+  /** The state key (planned, arranged, received, repaid) and its word. */
+  state: string;
+  state_text: string;
+  authority_text: string | null;
+  /** Where the leg sits on the timeline and how big it is, when the server sends them (days from today, fen); without them the legs are spaced evenly and sized alike. */
+  lands_day?: number | null;
+  repaid_day?: number | null;
+  amount_fen?: number | null;
+}
+
 export interface HomeV2Action {
+  /** The word that says what the cost figure is ("one-off", "estimated all-in"), beside it; absent until the server sends it. */
+  cost_basis_text?: string | null;
+  /** The funding plan's legs, for the timeline; absent until the server sends them (the funding fact is then the text). */
+  legs?: HomeV2Leg[] | null;
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
   facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";

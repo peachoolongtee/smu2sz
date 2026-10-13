@@ -179,7 +179,7 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
-  for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action-facts")).toContainText(f.value);
+  for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
 }

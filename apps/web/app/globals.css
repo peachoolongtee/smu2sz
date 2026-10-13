@@ -586,59 +586,74 @@ input[type="radio"] {
   opacity: 1;
 }
 
-/* The collapsible sidebar (components/app-shell.tsx, BusinessShell), outside the layers so it wins over the utilities on the same elements. Only on a laptop (1024 to 1366 px) and only with <html data-sidebar="collapsed"> (set by the toggle and,
-   before the first paint, by lib/pre-hydration.ts): the column narrows to 4.5 rem, each destination is its icon, and its word is a label that appears beside the icon on hover
-   and on keyboard focus (opacity only). The link keeps its full accessible name; the Ask FLOW pill shrinks to its icon; a count becomes a small badge on the icon's corner. */
-@media (min-width: 64rem) and (max-width: 85.375rem) {
-  html[data-sidebar="collapsed"] .shell-grid {
-    grid-template-columns: 4.5rem minmax(0, 1fr);
+/* The navigation rail (components/app-shell.tsx, BusinessShell), outside the layers so it wins over the utilities on the same elements. From `lg` the page is laid out beside a 56 px
+   column of icons (the grid's first track); its panel is positioned over the page and widens to 12.5 rem (200 px) while the pointer is on it or focus is in it (`data-rail="open"`,
+   set by the shell's hover and focus handlers, which close it 150 ms after they leave), so the page beside it never moves. Pinned (<html data-sidebar="pinned">, set by "Keep open" and,
+   before the first paint, by lib/pre-hydration.ts) the track is 12.5 rem and the panel is open for good. Collapsed, each destination is its icon (its full accessible name stays on
+   the link), a count is a small badge on the icon's corner, the Demo note is hidden and the Ask FLOW pill is its icon. Only opacity and the panel's width ease (`--dur-fast`, `--ease-ui`);
+   under reduced motion nothing eases. */
+@media (min-width: 64rem) {
+  html[data-sidebar="pinned"] .shell-grid {
+    grid-template-columns: 12.5rem minmax(0, 1fr);
   }
-  html[data-sidebar="collapsed"] .side-link {
-    justify-content: center;
-    padding-inline: 0;
+  .rail-panel {
+    transition:
+      width var(--dur-fast) var(--ease-ui),
+      box-shadow var(--dur-fast) var(--ease-ui);
   }
-  html[data-sidebar="collapsed"] .side-link .side-label {
-    position: absolute;
-    left: calc(100% + 0.5rem);
-    top: 50%;
-    z-index: 50;
-    translate: 0 -50%;
-    pointer-events: none;
-    white-space: nowrap;
-    opacity: 0;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    padding: 0.375rem 0.75rem;
+  /* Open = the shell's own state (hover and keyboard focus, closing 150 ms after they leave) OR the pointer is on the column right now OR keyboard focus is in it: the CSS alone
+     opens it, so it never depends on a script event reaching an element. A mouse click's focus does not hold it open (only :focus-visible does). */
+  .rail:is([data-rail="open"], :hover, :has(:focus-visible)) .rail-panel,
+  html[data-sidebar="pinned"] .rail-panel {
+    width: 12.5rem;
+  }
+  .rail:is([data-rail="open"], :hover, :has(:focus-visible)) .rail-panel {
     box-shadow: var(--shadow-pop);
-    color: var(--color-ink);
-    font-weight: 600;
+  }
+  html[data-sidebar="pinned"] .rail .rail-panel {
+    box-shadow: none;
+  }
+  .side-label {
+    white-space: nowrap;
     transition: opacity var(--dur-fast) var(--ease-ui);
   }
-  html[data-sidebar="collapsed"] .side-link:hover .side-label,
-  html[data-sidebar="collapsed"] .side-link:focus-visible .side-label {
-    opacity: 1;
-  }
-  html[data-sidebar="collapsed"] .side-count {
+  /* Collapsed: icons and the pin only. Nothing that cannot fit stays: the words, the Demo note and the Ask FLOW word are out of sight and out of the tab order (the links keep their
+     full accessible names, and the Ask button its name). */
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-label {
     position: absolute;
-    top: 0.125rem;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    visibility: hidden;
+  }
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-count {
+    position: absolute;
+    top: 0.5rem;
     right: 0.5rem;
     margin-left: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
   }
-  html[data-sidebar="collapsed"] .side-foot {
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-foot {
     display: none;
   }
-  html[data-sidebar="collapsed"] .side-toggle {
-    justify-content: center;
-    padding-inline: 0;
-  }
-  html[data-sidebar="collapsed"] .ask-trigger {
-    left: 1.125rem;
+  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]:not(:hover)) .ask-trigger {
+    left: 0.5rem;
     width: 2.5rem;
     padding-inline: 0;
   }
-  html[data-sidebar="collapsed"] .ask-trigger .ask-label {
+  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]:not(:hover)) .ask-trigger .ask-label {
     display: none;
+  }
+}
+@media (min-width: 64rem) and (prefers-reduced-motion: reduce) {
+  .rail-panel,
+  .side-label {
+    transition: none;
   }
 }
 
