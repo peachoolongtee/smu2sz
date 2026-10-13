@@ -83,8 +83,10 @@ from app.api.home import Partial, read_home
 from app.api.home_hybrid import _ASK_ORDER, _pending_lots
 from app.api.offer_picture import cached_picture
 from app.api.presentation import (
+    CLOSED_IF_DECLINED,
     COMMERCIAL_KINDS,
     Lang,
+    approving_text,
     buyer_of_receivable,
     decision_state_text,
     find_agreement,
@@ -374,7 +376,10 @@ def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: s
         if card.get("cost_display"):
             consequence = t(lang, f"Estimated cost {card['cost_display']}.", f"预计成本 {card['cost_display']}。")
         else:
-            consequence = str(card.get("economic_effect_text") or card.get("if_decline") or "")
+            # a pending request says what approving does; the decline sentence stays only where it says something (an alert's shortfall)
+            declined = card.get("if_decline")
+            declined = None if declined == t(lang, *CLOSED_IF_DECLINED) else declined
+            consequence = str(card.get("economic_effect_text") or declined or approving_text(rec.kind or "", lang) or "")
         out.append(Row(key=f"approval:{rec.id}", kind="APPROVAL", customer_id=cid, customer_short=who, subject=subject,
                        status=t(lang, "Approval requested · Your approval needed", "已提交批准申请 · 需要您批准"), consequence=consequence,
                        severity=CAUTION if card.get("protects") else NORMAL, deadline_day=agreement.expires_day if agreement else None,

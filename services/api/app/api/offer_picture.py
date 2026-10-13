@@ -130,10 +130,10 @@ def _rebate_what(o: Any) -> str:
     return _pct(o.rate_bp) if o.rate_bp is not None else (fmt_yuan(o.amount_fen) if o.amount_fen is not None else "")
 
 
-def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str) -> dict[str, tuple[str, str]]:
+def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str) -> dict[str, tuple[str | None, str | None]]:
     """The three rows of a path from its obligations, each as (what the column says, the same said after "instead of"). A term the
-    path does not carry is "None"; payment terms it leaves alone are the terms in force."""
-    none = say(lang, "None", "无")
+    path does not carry is (None, None), sent as null for the page to leave out (never the word "None"); payment terms it leaves alone are
+    the terms in force."""
     days = _payment_days(state, obligations, buyer)
     if days is not None:
         terms = (say(lang, f"{days} days", f"{days} 天"), say(lang, str(days), f"{days} 天"))
@@ -150,7 +150,7 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         text = say(lang, ", ", "、").join(parts)
         early_row = (text, text)
     else:
-        early_row = (none, say(lang, "none", "无"))
+        early_row = (None, None)
     other = []
     for o in obligations:
         if o.type == ObligationType.CONTINGENT_REBATE:
@@ -167,15 +167,18 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         join = say(lang, ", ", "、")
         other_row = (join.join(v for v, _ in other), join.join(i for _, i in other))
     else:
-        other_row = (none, say(lang, "none", "无"))
+        other_row = (None, None)
     return {"payment_terms": terms, "early_payment": early_row, "rebate_or_price": other_row}
 
 
-def _terms_view(rows: dict[str, tuple[str, str]], asked_rows: dict[str, tuple[str, str]] | None, lang: str) -> list[dict[str, Any]]:
+def _terms_view(rows: dict[str, tuple[str | None, str | None]], asked_rows: dict[str, tuple[str | None, str | None]] | None,
+                lang: str) -> list[dict[str, Any]]:
+    """The terms column: `value_text` is what the path carries and `instead_of_text` what the buyer asked for in its place; either is null where
+    there is nothing to say (the page leaves the line out)."""
     out = []
     for key, en, zh in _TERM_ROWS:
         value, instead = rows[key][0], None
-        if asked_rows is not None and value != asked_rows[key][0]:
+        if asked_rows is not None and value != asked_rows[key][0] and asked_rows[key][1] is not None:
             instead = say(lang, f"instead of {asked_rows[key][1]}", f"而非 {asked_rows[key][1]}")
         out.append({"key": key, "label": say(lang, en, zh), "value_text": value, "instead_of_text": instead})
     return out
@@ -308,8 +311,9 @@ def _changes_text(lang: str, state: Any, obligations: list[Any], buyer: str | No
         out.append(say(lang, f"Payment terms {before_days} → {after_days} days." if before_days is not None else f"Payment terms {after_days} days.",
                        f"账期 {before_days} → {after_days} 天。" if before_days is not None else f"账期 {after_days} 天。"))
     if after["early_payment"][0] != now["early_payment"][0]:
-        out.append(say(lang, f"Early payment {now['early_payment'][1]} → {after['early_payment'][0]}.",
-                       f"提前付款 {now['early_payment'][1]} → {after['early_payment'][0]}。"))
+        before = now["early_payment"][1] or say(lang, "none", "无")
+        after_text = after["early_payment"][0] or say(lang, "none", "无")
+        out.append(say(lang, f"Early payment {before} → {after_text}.", f"提前付款 {before} → {after_text}。"))
     for o in obligations:
         if o.type == ObligationType.CONTINGENT_REBATE:
             out.append(say(lang, f"Rebate none → {_rebate_what(o)}.", f"返利 无 → {_rebate_what(o)}。"))

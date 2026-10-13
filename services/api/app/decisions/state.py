@@ -431,13 +431,15 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
     verdicts = list(idx.verdicts.get(offer_id or "", ()))
     verdict = verdicts[-1] if verdicts else None
     facts = _facts(i)
-    evaluated = next((f for _, f in reversed(facts) if isinstance(f, EvaluatedFact) and (verdict is None or f.verdict_id == verdict.id)), None)
     sents = [f for _, f in facts if isinstance(f, SentFact)]
     latest_sent = sents[-1] if sents else None
     mine = list(idx.commitments.get(offer_id or "", ()))
     commitment = next((c for c in mine if latest_sent is not None and c.id == latest_sent.commitment_id), None)
     if commitment is None and mine:
         commitment = mine[-1]
+    if commitment is not None:  # the agreement is the state: the verdict it was made from, not a later one (a re-read after the invoice changed)
+        verdict = next((v for v in verdicts if v.id == commitment.verdict_id), verdict)
+    evaluated = next((f for _, f in reversed(facts) if isinstance(f, EvaluatedFact) and (verdict is None or f.verdict_id == verdict.id)), None)
     extra = frozenset(
         op_id for f in sents for op_id in ([*f.funding_op_ids, *([f.accept_op_id] if f.accept_op_id else [])])
     )

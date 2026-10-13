@@ -503,7 +503,7 @@ def _if_plan_runs(lang: Lang) -> str:
 # ---------------------------------------------------------------- the four figures
 
 
-def _figure(key: str, label: str, value: str, note: str, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
+def _figure(key: str, label: str, value: str | None, note: str, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
     return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone, **(state or NO_STATE)}
 
 
@@ -538,7 +538,7 @@ def _financing(r: _Read) -> dict[str, Any]:
     if planned:  # the plan is ready and has not run: its advance, said as planned and never counted
         return _figure("financing", label, whole_yuan(sum(r.planned[x["receivable_id"]] for x in planned)), _if_plan_runs(lang), state=state)
     if not financed:
-        return _figure("financing", label, t(lang, "None", "无"),
+        return _figure("financing", label, None,  # no figure to show: null, and the note says why
                        t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"), state=state)
     total = sum(x["net"]["advance_fen"] for x in financed)
     states = {x["financing_state"] for x in financed}

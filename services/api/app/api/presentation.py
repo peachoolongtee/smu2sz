@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hmac
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from fractions import Fraction
 from typing import Any
 
@@ -533,9 +533,12 @@ def in_language(text: str | None, lang: Lang, state: FinancialState | None = Non
 
 # The engine ends an overdue alert "... and is still OPEN": the invoice's status code, said for a person.
 _STATUS_CODE = re.compile(r"(?<=\bis still )(OPEN|FINANCED)\b")
+# The executor's own sentence for a facility application: the status code and the "committed" it waits for, for a person.
+_APPLICATION_PENDING = re.compile(r"\bit is PENDING and counts as zero until committed\b")
 
 
 def _status_words(text: str) -> str:
+    text = _APPLICATION_PENDING.sub("the application is submitted and counts as zero cash until the bank commits", text)
     return _STATUS_CODE.sub(lambda m: "unpaid" if m.group(1) == "OPEN" else "financed", text)
 
 
@@ -975,7 +978,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
     buyer = party_name(state, buyer_of_receivable(state, receivable_id)) or None
     # What happens if the owner declines: for an approval born of a reserve alert, the alert's own shortfall sentence
     # (the same inputs the home reads), written relative to today; otherwise the request is simply closed.
-    if_decline: str | None = t(lang, "Nothing runs; the request is closed.", "不会执行任何操作；该请求关闭。")
+    if_decline: str | None = t(lang, *CLOSED_IF_DECLINED)
     if not pending:
         if_decline = None  # the owner has answered: there is nothing left to decline
     elif alert is not None and alert.kind == AlertKind.RESERVE_BREACH_AHEAD:
@@ -1192,6 +1195,8 @@ def approval_result_state(*, kind: str, status: str, execution_status: str | Non
             when = when_text(lands_day, today, lang)
             return t(lang, f"Approved, cash arrives {when}", f"已批准，资金将于{when}到账"), "info"
         return t(lang, "Approved, cash received", "已批准，资金已到账"), "ok"
+    if kind == "APPLY_FOR_FACILITY":  # submitted, not done: it counts as zero cash until the lender commits
+        return t(lang, "Approved and submitted", "已批准并已提交"), "info"
     return t(lang, "Approved, done", "已批准，已完成"), "ok"
 
 
@@ -1784,6 +1789,60 @@ _FUNDING_STATE_WORDS = {
     "SETTLED": ("Done; the cash has landed", "已完成，资金已到账"),
     "EXECUTED": ("Done", "已完成"),
 }
+
+
+# What declining a request that answers no alert comes to; the Deals queue says what approving does instead (`approving_text`).
+CLOSED_IF_DECLINED = ("Nothing runs; the request is closed.", "不会执行任何操作；该请求关闭。")
+
+
+def approving_text(kind: str, lang: Lang) -> str | None:
+    """What approving a waiting request comes to, in a sentence, for the kinds that have no cost or agreement effect to say."""
+    if kind == "APPLY_FOR_FACILITY":
+        return t(lang, "Approving submits the application; nothing runs until the bank commits.", "批准后将提交这份申请；在银行承诺之前不会执行任何操作。")
+    if kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY"):
+        return t(lang, "Approving sends the request as soon as you approve.", "批准后立即提交该请求。")
+    return None
+
+
+def commitment_cost_words(c: Any, lang: Lang) -> dict[str, str | None]:
+    """The words for an agreement's cost lines, so a figure is never said under the wrong label. `forward_label_text` names the commitment's
+    `forward_value_display` ("Forward cost"): an immediate discount is not forward, so an agreement that is only a discount shows a true ¥0.00
+    there; `immediate_label_text` and `immediate_text` give the discount on a line of its own ("0.85% off ¥211,900.00"), null when the agreement
+    has none. Rates and faces are the obligations' own; nothing is computed."""
+    parts: list[str] = []
+    for o in c.obligations:
+        if o.type != ObligationType.IMMEDIATE_DISCOUNT:
+            continue
+        rate = fmt_pct(bp(o.rate_bp)) if o.rate_bp is not None else None
+        face = fmt_yuan(o.base.amount_fen) if o.base.amount_fen is not None else None
+        if rate is None:
+            continue
+        parts.append(t(lang, f"{rate} off {face}" if face else f"{rate} off", f"{face} 减免 {rate}" if face else f"减免 {rate}"))
+    return {"forward_label_text": t(lang, "Forward cost you have promised", "您已承诺的远期成本"),
+            "immediate_label_text": t(lang, "Immediate discount", "立即折扣") if parts else None,
+            "immediate_text": t(lang, "; ", "；").join(parts) if parts else None}
+
+
+_CONFLICT = re.compile(r"^conflicting sources: the documents state (\d+) different values for (\w+)$")
+_QUANTITY_WORDS = {"order_size": ("order size", "订单量"), "invoice_amount": ("invoice amount", "发票金额")}
+_COUNT_WORDS = {2: ("two", "两"), 3: ("three", "三"), 4: ("four", "四")}
+
+
+def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | None:
+    """An abstention's reason in the owner's words. The compiler's "conflicting sources: the documents state 2 different values for order_size"
+    becomes "The message and its attachment give two different order sizes"; `channels` are the channels of the documents the abstention quotes
+    (chat, email, portal: the message; attachment). None for a reason this has no sentence for (the page then says nothing of it)."""
+    m = _CONFLICT.match(reason)
+    if m is None:
+        return None
+    n, kind = int(m.group(1)), m.group(2)
+    kinds = set(channels)
+    message = bool(kinds & {"chat", "email", "portal"})
+    both = message and "attachment" in kinds
+    who = (t(lang, "The message and its attachment", "消息及其附件") if both else t(lang, "The documents", "这些文件"))
+    en_what, zh_what = _QUANTITY_WORDS.get(kind, (kind.replace("_", " "), kind.replace("_", " ")))
+    en_n, zh_n = _COUNT_WORDS.get(n, (str(n), str(n)))
+    return t(lang, f"{who} give {en_n} different {en_what}s.", f"{who}给出了{zh_n}个不同的{zh_what}。")
 
 
 def lapsed_offer_text(lang: Lang) -> str:

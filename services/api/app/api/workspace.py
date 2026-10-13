@@ -15,6 +15,7 @@ from typing import Any
 from app.api.presentation import (
     business_action_text,
     business_text,
+    commitment_cost_words,
     first_breach_ahead,
     funding_lines,
     obligation_sentence,
@@ -193,6 +194,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
     buyer_name = party_name(state, cp) or t(lang, "the buyer", "买方")
     agreements = [{"commitment_id": c.id, "status": c.status.value, "status_text": t(lang, *_LIVE_AGREEMENT[c.status]),
                    "forward_value_fen": c.forward_value_fen, "forward_value_display": fmt_yuan(c.forward_value_fen),
+                   **commitment_cost_words(c, lang),
                    "text": (t(lang, "; ", "；")).join(obligation_sentence(state, o, today, lang) for o in c.obligations)}
                   for c in commitments if c.counterparty_id == cp and c.status in _LIVE_AGREEMENT]
     plans, authorities = send_plans or {}, authority_texts or {}
