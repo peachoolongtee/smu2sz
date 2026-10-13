@@ -418,3 +418,51 @@ def test_once_every_invoice_of_the_deal_is_paid_the_deal_has_ended_with_its_clos
         assert d["state_text"].startswith("买方已支付")
     _no_leaks(d)
     _check_sums(d)
+
+
+def _stage_states(d: dict[str, Any]) -> dict[str, str]:
+    return {x["key"]: x["state"] for x in d["stages"]}
+
+
+def test_the_stages_follow_the_one_flag_on_the_demo_books_with_the_contract_confirmed(api: TestClient, rt: Runtime) -> None:
+    """The recorder's walk: POST /demo/reset's books (the three demo documents confirmed, so the deal row has its own stages), then the
+    story, then the rest of the invoice paid through the bank-feed route. Whichever source the labels come from, ended means every stage is
+    done (missed or part for a promise missed or part kept) and live means collecting is the one stage that is now."""
+    rt.reset_demo("golden_sme")
+    did = _agree(api)
+    d = _tracker(api, did)
+    assert "read" in _stage_states(d), "the deal row's own stages are in use: the contract is confirmed"
+    live_now = lambda x: [s["key"] for s in x["stages"] if s["state"] == "now"]  # noqa: E731
+    assert _stage_states(d) == {"read": "done", "negotiated": "done", "early_payment": "part", "collecting": "now", "fulfilled": "todo"}
+    assert live_now(d) == ["collecting"]
+    api.post("/clock/advance", json={"to_day": 2})
+    assert api.post("/demo/bank-receipt").status_code == 200
+    d = _tracker(api, did)
+    assert _stage_states(d) == {"read": "done", "negotiated": "done", "early_payment": "done", "collecting": "now", "fulfilled": "todo"}
+    _to_day34(api)
+    d = _tracker(api, did)
+    assert d["closeout_text"] is None and live_now(d) == ["collecting"] and _stage_states(d)["fulfilled"] == "todo"
+    approval = _cure(api)
+    assert live_now(_tracker(api, did)) == ["collecting"]
+    assert api.post(f"/approvals/{approval}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    d = _tracker(api, did)
+    assert d["closeout_text"] is None and live_now(d) == ["collecting"]
+    bank = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
+    rest = next(r for r in rt.store.get_state().receivables if r.id == "RCV-A")
+    paid = api.post("/operations", headers=bank, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "rc-rest", "idempotency_key": "rc-rest", "mandate_version": api.get("/mandate").json()["mandate"]["version"],
+        "requested_by": "SYSTEM", "receivable_id": "RCV-A", "amount_fen": rest.face_fen - rest.settled_fen, "bank_reference": "BANK-REST"})
+    assert paid.json()["result"]["status"] == "EXECUTED", paid.text
+    for lang in ("en", "zh"):
+        d = _tracker(api, did, lang)
+        assert d["closeout_text"] and _stage_states(d) == {"read": "done", "negotiated": "done", "early_payment": "done",
+                                                           "collecting": "done", "fulfilled": "done"}
+        assert not live_now(d) and all(s["state"] not in ("now", "todo") for s in d["stages"])
+
+
+def test_a_missed_early_payment_shows_its_stage_missed_and_collecting_now_when_live(api: TestClient, rt: Runtime) -> None:
+    rt.reset_demo("golden_sme")
+    did = _agree(api)
+    _to_day34(api)
+    states = _stage_states(_tracker(api, did))
+    assert states["early_payment"] == "missed" and states["collecting"] == "now" and states["fulfilled"] == "todo"

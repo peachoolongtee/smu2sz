@@ -38,7 +38,6 @@ log = logging.getLogger("termsledger.tracker")
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 _WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
-_STAGE_STATE = {"done": "done", "now": "now", "todo": "todo", "missed": "missed", "pending": "part", "skipped": "todo", "part": "part"}
 
 
 def _num(n: int, lang: str) -> str:
@@ -103,9 +102,11 @@ def _owner_title(ob: Any, lang: str) -> str:
     return t(lang, "A further promise to the buyer", "对买方的另一项承诺")
 
 
-def _stages(rt: Any, ctx: Context, buyer: str, lang: str, states: list[str], ended: bool, lapsed: bool) -> list[dict[str, Any]]:
-    """The contract stages the deal row builds when a confirmed contract is on the books; else the same stages, in the same words, from the
-    record's own promises (the first, contract read, is the contract's and does not apply)."""
+def _stages(rt: Any, ctx: Context, buyer: str, lang: str, promised: list[Any], ended: bool) -> list[dict[str, Any]]:
+    """The contract stages the deal row builds when a confirmed contract is on the books (its keys and words); else the same stages, in the
+    same words (the first, contract read, is the contract's and does not apply). Whichever the source, the STATES follow the tracker's one
+    flag: ENDED means every stage is done (missed or part where a promise was missed or part kept), LIVE means collecting is the one stage
+    that is now."""
     words = {"done": ("Done", "已完成"), "now": ("Now", "进行中"), "todo": ("Still to come", "尚未开始"),
              "missed": ("Missed", "已错过"), "part": ("Under way", "等待中")}
     rows: list[dict[str, Any]] = []
@@ -116,16 +117,29 @@ def _stages(rt: Any, ctx: Context, buyer: str, lang: str, states: list[str], end
     except Exception:  # the stages are drawn from the record instead
         log.exception("stages of the deal could not be read")
     if rows:
-        mapped = [(s["key"], s["label"], _STAGE_STATE.get(str(s.get("state")), "todo")) for s in rows]
+        keys = [(s["key"], s["label"]) for s in rows]
     else:
-        early = ("missed" if lapsed or "missed" in states else "done" if "kept" in states[:1] or "part" in states[:1]
-                 else "part" if "awaited" in states[:1] else "todo")
-        collecting = "done" if ended and "late" not in states and "awaited" not in states else "now"
-        mapped = [("negotiated", t(lang, "Terms negotiated", "条款已谈判"), "done"),
-                  ("early_payment", t(lang, "Early payment in", "提前付款到账"), early),
-                  ("collecting", t(lang, "Collecting", "催收中"), collecting),
-                  ("fulfilled", t(lang, "Fulfilled", "已履行完毕"), "done" if ended and collecting == "done" else "todo")]
-    return [{"key": k, "label": label, "state": st, "state_text": t(lang, *words[st])} for k, label, st in mapped]
+        keys = [("negotiated", t(lang, "Terms negotiated", "条款已谈判")), ("early_payment", t(lang, "Early payment in", "提前付款到账")),
+                ("collecting", t(lang, "Collecting", "催收中")), ("fulfilled", t(lang, "Fulfilled", "已履行完毕"))]
+    seen = {p.status for p in promised}
+    if "LAPSED" in seen:
+        early = "missed"
+    elif "SETTLED_OTHERWISE" in seen or "AWAITED" in seen:
+        early = "part"
+    else:
+        early = "done" if seen or ended else "todo"
+    out = []
+    for k, label in keys:
+        if k == "early_payment":
+            st = early
+        elif k == "collecting":
+            st = "done" if ended else "now"
+        elif k == "fulfilled":
+            st = "done" if ended else "todo"
+        else:
+            st = "done"
+        out.append({"key": k, "label": label, "state": st, "state_text": t(lang, *words[st])})
+    return out
 
 
 def _booked_discounts(ctx: Context, c: Any, promised: list[Any]) -> dict[Any, int]:
@@ -643,7 +657,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
         "agreed_when": agreed_when, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
-        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, states, ended, lapsed), "cost": cost, "promises": rows,
+        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, promised, ended), "cost": cost, "promises": rows,
         "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",
