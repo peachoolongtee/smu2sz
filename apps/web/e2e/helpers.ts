@@ -58,7 +58,9 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
       await button.click();
       await page.getByRole("button", { name: /^Approve/ }).click();
       await expect(page.getByText("0 pending")).toBeVisible();
-      await expect(button).toHaveText("Next");
+      // The approval is the step: the server moves the story on by itself once it is answered (there is no second press for it).
+      await expect(button).not.toHaveText(/approval/i);
+      continue;
     }
     await button.click();
     await expect(stripOf(page)).toContainText(/Scene \d of 6|All 6 scenes/);

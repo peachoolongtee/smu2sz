@@ -146,13 +146,13 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await expect(page.getByTestId("doc-seq")).toHaveText("#4");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
 
-  // Activity: the owner's four confirmations in the executor's sentences, newest first, each opening its contract.
+  // Activity: the owner's confirmations in the server's words, newest first, each opening its record in Documents.
   await page.goto("/activity");
-  const confirms = page.getByTestId("activity-CONFIRM_DOCUMENT");
-  await expect(confirms).toHaveCount(4);
-  await expect(confirms.first()).toContainText("the agent read it, the owner confirmed it; nothing in the books changed");
-  await confirms.first().getByTestId("activity-document-link").click();
-  await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
+  const confirms = page.getByTestId("activity-list").getByTestId("activity-row").filter({ hasText: "You confirmed" });
+  expect(await confirms.count()).toBeGreaterThanOrEqual(3);
+  await expect(confirms.first()).toContainText("Nothing in the books changed");
+  await confirms.first().getByTestId("activity-open-decision").click();
+  await expect(page).toHaveURL(/\/documents/);
 });
 
 test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }) => {

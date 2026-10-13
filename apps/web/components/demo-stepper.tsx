@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { onSignedIn } from "@/lib/auth";
 import { getDemoStory } from "@/lib/api";
-import { runStoryAction, seenOf } from "@/lib/demo-control";
+import { resumeStoryAction, runStoryAction, seenOf } from "@/lib/demo-control";
 import { DEMO_STEPS } from "@/lib/demo";
 import { reachedOf, useDemo } from "@/lib/demo-store";
 import { stepNarration } from "@/lib/demo-text";
@@ -30,23 +30,9 @@ export function DemoStepper() {
   const story = useAsync(() => getDemoStory(lang, seenOf(reached)), [lang, reached]);
   const view = story.data;
 
-  // The step a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (as the chat resends its turn).
-  const interrupted = useRef<string | null>(null);
-  async function press(action: string) {
-    interrupted.current = null;
-    const outcome = await runStoryAction(action, router.push);
-    if (outcome === "unauthorized") interrupted.current = action;
-  }
-  useEffect(
-    () =>
-      onSignedIn(() => {
-        const action = interrupted.current;
-        if (action) void press(action);
-      }),
-    // press only reads the demo store and the router, so the first render's copy is the one to keep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  // The step a 401 interrupted runs by itself once the owner signs in from the dialog it opened.
+  useEffect(() => onSignedIn(() => void resumeStoryAction(router.push)), [router.push]);
+  const press = (action: string) => void runStoryAction(action, router.push);
 
   // The story page is the story: it carries its own one next control, so the strip is not drawn there.
   if (pathname === "/demo") return null;
@@ -117,7 +103,7 @@ export function DemoStepper() {
                 <ArrowRightIcon />
               </ButtonLink>
             ) : (
-              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => void press(view.next.action ?? "")} data-testid="demo-next">
+              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => press(view.next.action ?? "")} data-testid="demo-next">
                 {view.next.label}
                 <ArrowRightIcon />
               </Button>

@@ -43,6 +43,7 @@ test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's
 
 test("the approval card and the page header share one left edge", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await expect(page).toHaveURL(/\/capex/);
   await page.getByTestId("capex-apply").click();
@@ -57,6 +58,7 @@ test("the approval card and the page header share one left edge", async ({ page 
 
 test("an approval card expands in place to the operation, the reason, the amount and who asked", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
   await page.goto("/approvals");

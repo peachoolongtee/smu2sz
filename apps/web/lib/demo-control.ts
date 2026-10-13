@@ -153,7 +153,22 @@ export async function resetDemo(push: (route: string) => void, scenario?: string
  * The one next control of the story page. `action` is the server's: a step id to run, or `restart` (the main books reset, as the stepper always did). The books are the truth
  * about where the story stands, so a browser session that has lost its pointer (a reload, another tab) follows the server instead of refusing the step.
  */
+let resumeAction: string | null = null;
+
+/** The story control a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (the strip calls this on sign-in). */
+export async function resumeStoryAction(push: (route: string) => void): Promise<void> {
+  const action = resumeAction;
+  resumeAction = null;
+  if (action) await runStoryAction(action, push);
+}
+
 export async function runStoryAction(action: string, push: (route: string) => void): Promise<StepOutcome> {
+  const outcome = await runStoryActionOnce(action, push);
+  if (outcome === "unauthorized") resumeAction = action;
+  return outcome;
+}
+
+async function runStoryActionOnce(action: string, push: (route: string) => void): Promise<StepOutcome> {
   if (action === "restart") {
     await resetDemo(push);
     return "done";
