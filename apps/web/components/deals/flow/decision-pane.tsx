@@ -61,26 +61,43 @@ function SendResult({ n }: { n: NegotiationView }) {
 /** The record's own account of where a negotiation stands, for one that is out of the owner's hands or finished. */
 function RecordBlock({ record, decision }: { record: DecisionView; decision: string }) {
   const { t } = useI18n();
+  const ex = record.execution;
+  const money = Boolean(ex && (ex.requested_display || ex.landed_display || ex.in_transit_display));
+  const agreed = record.agreement?.terms ?? [];
+  const terms = agreed.length ? agreed : (record.interpretation?.terms ?? []);
+  const waiting = record.waiting_for?.text ?? null;
   return (
     <div className="mt-5 space-y-3" data-testid="deal-record" data-state={record.state}>
-      {record.waiting_for?.text ? (
+      {waiting ? (
         <p className="text-[15px] leading-snug text-ink" data-testid="deal-waiting">
-          {record.waiting_for.text}
+          {waiting}
+        </p>
+      ) : null}
+      {money && ex ? (
+        <p className="text-sm text-ink-2" data-testid="deal-money-lines">
+          {ex.summary_text}
         </p>
       ) : null}
       {record.agreement ? (
-        <p className="text-sm text-ink-2" data-testid="deal-agreement">
+        <p className="text-sm font-bold text-ink-2" data-testid="deal-agreement">
           {record.agreement.status_text} · {record.agreement.expires_when}
         </p>
       ) : null}
-      {record.interpretation?.terms?.length ? (
-        <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-terms">
-          {record.interpretation.terms.map((term, i) => (
-            <li key={i}>{term}</li>
-          ))}
-        </ul>
+      {terms.length ? (
+        <div>
+          <h3 className="text-supporting font-bold text-ink-3">{agreed.length ? t("deals.agreedTerms") : t("deals.askedTerms")}</h3>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-ink" data-testid="deal-terms">
+            {terms.map((term, i) => (
+              <li key={i}>{term}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
-      {record.remaining_task?.text ? <p className="text-sm text-ink-2">{record.remaining_task.text}</p> : null}
+      {record.remaining_task?.text && record.remaining_task.text !== waiting ? (
+        <p className="text-sm text-ink-2" data-testid="deal-left">
+          {record.remaining_task.text}
+        </p>
+      ) : null}
       <p className="text-sm">
         <Link href={`/decisions/${encodeURIComponent(decision)}`} className={textLinkClass} data-testid="deal-record-link">
           {t("deals.record")}

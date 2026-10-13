@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openCompare, openReview, resetBooks, runPlan, sendCounter, verdictHeading } from "./helpers";
+import { checkedDeal, openCompare, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
 import { openStoryFold, STORY_STEPS } from "./helpers";
 
 /**
@@ -20,13 +20,6 @@ async function scan(page: Page, label: string) {
   const text = bad.map((v) => `${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join("\n  ")}`);
   expect(result.passes.length, `${label}: axe ran its rules`).toBeGreaterThan(10);
   expect(text, `${label}: serious or critical findings`).toEqual([]);
-}
-
-async function checkedDeal(page: Page) {
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
 }
 
 async function advanceTo(page: Page, day: number) {
@@ -53,14 +46,19 @@ test("Home, Cash, Receivables, Activity, Approvals and the customer overview at 
 
 test("Deals: the inbox, a checked deal with its priced response, and the decision page", async ({ page }) => {
   await page.goto("/deals");
+  await expect(page.getByTestId("deals-select")).toBeVisible();
+  await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-list")).toBeVisible();
   await scan(page, "/deals inbox");
   await checkedDeal(page);
   await scan(page, "/deals checked");
-  // Everything the page folds, opened: the buyer's message and the calculations (the queue's evidence), then the decision page the record lives on.
+  // Everything the page opens on request: the receipt, the full table of responses and the deal's chart, then the decision page the record lives on.
+  await openReview(page);
+  await scan(page, "/deals the receipt");
   await openCompare(page);
-  for (const key of ["source_text", "formula"]) await page.getByTestId(`deal-adv-${key}`).locator("summary").first().click();
-  await scan(page, "/deals evidence open");
+  await page.getByTestId("deal-chart-toggle").click();
+  await expect(page.getByTestId("deal-chart")).toBeVisible();
+  await scan(page, "/deals compare and chart open");
   const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
   await page.goto(`/decisions/${encodeURIComponent(`deal:${offerId}`)}`);
   await expect(page).toHaveURL(/\/decisions\//);
@@ -77,12 +75,11 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await scan(page, "/documents review");
   await checkedDeal(page);
   await openReview(page);
-  const response = page.locator("#counters");
-  await response.getByTestId("deal-send").click();
-  await response.getByTestId("deal-send-confirm-box").getByLabel("Holds firm").check();
+  const review = page.getByTestId("queue-review");
+  await review.getByTestId("deal-send-confirm-box").getByLabel("Holds firm").check();
   await scan(page, "/deals the send step");
-  await response.getByTestId("deal-send-confirm-box").getByLabel("Open to a counter").check();
-  await response.getByTestId("deal-send-confirm").click();
+  await review.getByTestId("deal-send-confirm-box").getByLabel("Open to a counter").check();
+  await sendCounter(page);
   await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
   await scan(page, "/deals the deal summary");
   await page.getByTestId("deal-details-BUYER-1").locator("summary").click();
@@ -98,7 +95,7 @@ test("contract ingestion and the send step: the documents and a review, the buye
 test("an approval waiting, the chase dialog and the remaining task at day 34", async ({ page }) => {
   await checkedDeal(page);
   await openReview(page);
-  await sendCounter(page.locator("#counters"));
+  await sendCounter(page);
   await advanceTo(page, 34);
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toBeVisible();

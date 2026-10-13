@@ -3640,7 +3640,7 @@ export interface DecisionView extends DecisionSummary {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[] } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];

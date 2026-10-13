@@ -4,6 +4,8 @@ import "@/app/flow-look.css";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ActiveCommitments } from "@/components/deals/commitments";
+import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
 import { contractsOff } from "@/components/documents";
@@ -103,7 +105,8 @@ export function DealsPage() {
   const [reading, setReading] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [inboxPref, setInboxPref] = useState<boolean | null>(null);
-  const inboxOpen = inboxPref ?? Boolean(queue && rows.length === 0 && queue.customers.length === 0);
+  // Open while nothing is selected and nothing needs the owner (the next thing to do is read a message); folded to one row once a negotiation is selected.
+  const inboxOpen = inboxPref ?? Boolean(queue && !decision && queue.counts.needs_you === 0);
   // The messages Business mode shows: the senders the books know (the same rule as the list itself).
   const inboxCount = INBOX.filter((m) => mode !== "business" || (known ? known.has(m.counterparty_id) : false)).length;
   async function openMessage(m: InboxMessage) {
@@ -152,7 +155,7 @@ export function DealsPage() {
       ) : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:items-start">
         <div className="min-w-0 space-y-5">
-          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? null) : null} onShowAll={() => go({ customer: null })} />
+          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null} onShowAll={() => go({ customer: null })} />
           <div className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
             {inboxOpen ? null : (
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
@@ -192,6 +195,18 @@ export function DealsPage() {
         </div>
       </div>
       <div id="deals-investigate" className="mt-5 empty:hidden" />
+      {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
+      <div className="mt-8" data-testid="deals-agreements">
+        <ActiveCommitments
+          today={clock.data?.day ?? books.data?.day ?? 0}
+          buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
+          hideEmpty
+          agreed={(deals.data?.deals ?? []).filter(isAgreed)}
+          dealsDay={deals.data?.day ?? null}
+          dealsError={dealsError}
+          onRetryDeals={deals.reload}
+        />
+      </div>
     </div>
   );
 }

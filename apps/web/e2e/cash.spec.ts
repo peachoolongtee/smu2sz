@@ -220,8 +220,8 @@ test("the doors lead to Capex and the what-if without a day number in their pros
   await page.goto("/cash");
   await page.locator("#cash-whatif").getByRole("link").click();
   await expect(page).toHaveURL(/\/whatif/);
-  await expect(page.getByTestId("whatif-outcome")).toHaveText("Breaks your limits");
-  // The engine's own sentences (with their day numbers) are one disclosure down, closed.
+  // The sandbox is run for a negotiation: the link names none, so the page asks which (it never opens on a sample, audit UX26).
+  await expect(page.getByTestId("whatif-ask")).toBeVisible();
   expect(await proseOf(page, ["details"])).not.toMatch(/\bday \d/i);
 });
 

@@ -2610,6 +2610,8 @@ export const en = {
   "whatif.scope.mismatch": "This simulation was run for another customer than the one you chose. Do not read it as theirs.",
   "deals.whatif": "Try other terms",
   "receipt.title.approve": "What approving does",
+  "deals.agreedTerms": "What was agreed",
+  "deals.askedTerms": "What the buyer asked for",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5218,4 +5220,6 @@ export const zh: Record<DictKey, string> = {
   "whatif.scope.mismatch": "这次模拟针对的客户与您选择的不是同一个。请不要把它当作该客户的结果。",
   "deals.whatif": "试试其他条款",
   "receipt.title.approve": "批准会怎样",
+  "deals.agreedTerms": "达成的条款",
+  "deals.askedTerms": "买方的要求",
 };

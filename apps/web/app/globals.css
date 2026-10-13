@@ -202,7 +202,7 @@
   --radius-f-card: 24px;
 
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
-  --color-new: #7c4ddb;
+  --color-new: #6f3fcf; /* 5.2:1 on the mockup canvas (it was #7c4ddb, 4.3:1 there) */
   --color-new-bg: #f1e9ff;
   --color-new-line: #d9c6fb;
 }
