@@ -1,0 +1,23 @@
+{
+  "_note": "Simulated payment history imported from the supplier's accounting system for invoices settled BEFORE the books start (every day is negative). It never touches cash, the books or any verdict: only the buyer reliability profile (app.reliability) reads it, as its prior. New evidence comes from the bank feed's receipts as the clock runs.",
+  "invoices": [
+    {"id": "HIST-B1-01", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -373, "terms_days": 45, "payments": [{"day": -328, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-02", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -343, "terms_days": 45, "payments": [{"day": -299, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-03", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -313, "terms_days": 45, "payments": [{"day": -266, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-04", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -283, "terms_days": 45, "payments": [{"day": -238, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-05", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -253, "terms_days": 45, "payments": [{"day": -223, "amount_fen": 41622000}], "early_pay_discount_fen": 378000},
+    {"id": "HIST-B1-06", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -223, "terms_days": 45, "payments": [{"day": -177, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-07", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -193, "terms_days": 45, "payments": [{"day": -148, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-08", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -163, "terms_days": 45, "payments": [{"day": -112, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-09", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -133, "terms_days": 45, "payments": [{"day": -90, "amount_fen": 42000000}]},
+    {"id": "HIST-B1-10", "counterparty_id": "BUYER-1", "face_fen": 42000000, "issue_day": -103, "terms_days": 45, "payments": [{"day": -58, "amount_fen": 42000000}]},
+    {"id": "HIST-B2-01", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -330, "terms_days": 30, "payments": [{"day": -297, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-02", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -290, "terms_days": 30, "payments": [{"day": -260, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-03", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -250, "terms_days": 30, "payments": [{"day": -211, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-04", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -210, "terms_days": 30, "payments": [{"day": -168, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-05", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -170, "terms_days": 30, "payments": [{"day": -132, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-06", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -130, "terms_days": 30, "payments": [{"day": -90, "amount_fen": 20000000}, {"day": -85, "amount_fen": 5000000}]},
+    {"id": "HIST-B2-07", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -90, "terms_days": 30, "payments": [{"day": -42, "amount_fen": 25000000}]},
+    {"id": "HIST-B2-08", "counterparty_id": "BUYER-2", "face_fen": 25000000, "issue_day": -50, "terms_days": 30, "payments": [{"day": -2, "amount_fen": 25000000}]}
+  ]
+}
