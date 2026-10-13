@@ -28,6 +28,7 @@ from app.api.presentation import (
     business_action_text,
     decision_state_text,
     decision_state_tone,
+    economic_effect_text,
     event_words,
     execution_summary,
     facility_name,
@@ -46,6 +47,7 @@ from app.api.presentation import (
     waiting_text,
     when_text,
 )
+from app.api.receipt import agreement_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.decisions import (
@@ -491,6 +493,19 @@ def _authorization(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any]
             "decided_when": when_text(a.decided_day, ctx.today, lang) if a.decided_day is not None else None}
 
 
+def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[dict[str, Any]], lang: str) -> dict[str, str | None]:
+    """The receipt of the agreement on the record, from the words the record already writes for it (`app.api.receipt`)."""
+    a = ds.approval if ds.approval is not None else (ds.approvals[-1] if ds.approvals else None)
+    approval = str(getattr(a.status, "value", a.status)) if a is not None else None
+    authority = {"APPROVED": t(lang, "Approved by you.", "已由您批准。"), "PENDING": t(lang, "Waiting for your approval.", "等待您批准。"),
+                 "REJECTED": t(lang, "You declined it.", "您已拒绝。")}.get(approval or "")
+    awaited = next((p["detail_when"] for p in promises if p.get("status") == "AWAITED" and p.get("detail_when")), None)
+    return agreement_receipt(lang, buyer=party_name(ctx.state, c.counterparty_id), terms=_agreed_terms(ctx, c, lang),
+                             status_text=_status_text(c, ds, lang), forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
+                             economic_effect_text=economic_effect_text(c, ctx.mandate.forward_concession_horizon_days, lang),
+                             expires_when=when_text(c.expires_day, ctx.today, lang), authority_text=authority, awaited=awaited)
+
+
 def _operations(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str, Any]]:
     by_seq = {e.seq: e for e in ctx.entries}
     decided = frozenset(a.id for a in ctx.approvals if str(getattr(a.status, "value", a.status)) != "PENDING")
@@ -583,7 +598,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
         "authorization": _authorization(ctx, ds, lang),
         "agreement": ({"commitment_id": c.id, "status": c.status.value, "status_text": _status_text(c, ds, lang),
                        "expires_day": c.expires_day, "expires_when": when_text(c.expires_day, ctx.today, lang),
-                       "terms": _agreed_terms(ctx, c, lang)}
+                       "terms": _agreed_terms(ctx, c, lang),
+                       "receipt": _agreement_receipt(ctx, ds, c, promises, lang)}
                       if c is not None else None),
         "operations": _operations(ctx, ds, lang),
         "execution": execution_view(ctx, ds, lang),

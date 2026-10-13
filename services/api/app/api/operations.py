@@ -35,6 +35,7 @@ from app.api.presentation import (
     when_text,
 )
 from app.api.quotes import FUNDING_OPS, build_shown_quote, reason_rate
+from app.api.receipt import approval_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.decisions.identity import decision_id_for
@@ -293,6 +294,7 @@ def _approvals_queue(rt, lang: str) -> dict:
                 d.update(_decision_fields(ctx, rt, a, op, d["status"], d["presentation"], ran.get(a.id), lang))
             except Exception:
                 log.exception("approval %s: the decision record could not be read", a.id)
+        d["receipt"] = approval_receipt(lang, item=d, pres=d["presentation"]) if d.get("presentation") is not None else None
         out.append(d)
     return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}
 

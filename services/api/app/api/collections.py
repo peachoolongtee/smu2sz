@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.presentation import live_windows, party_name, t, when_text
+from app.api.receipt import collection_receipt
 from app.api.receipt_facts import window_open
 from app.api.runtime import get_runtime
 from app.domain.models import Commitment, FinancialState, Receivable
@@ -144,6 +145,9 @@ def chase_view(state: FinancialState, rt_store: Any, receivable: Receivable, tod
         "facts": facts,
         "request_text": _request_text(buyer=buyer, r=receivable, today=today, outstanding=outstanding, window=window_text, lang=lang),
         "thread_href": f"/deals?buyer={quote(receivable.counterparty_id, safe='')}" if has_thread else None,
+        "receipt": collection_receipt(
+            lang, buyer=buyer, outstanding=outstanding, due_clause=_due_clause(receivable.due_day, today, lang), terms_days=receivable.terms_days,
+            window_text=window_text, open_promise=next((r["text"] for r in rows if r["status"] in ("AWAITED", "LAPSED")), None)),
     }
 
 
