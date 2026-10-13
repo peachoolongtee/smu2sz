@@ -17,6 +17,8 @@ const COLS = "grid-cols-[minmax(0,1fr)_auto] @xl:grid-cols-[minmax(0,1fr)_7.5rem
 /** The subject with the customer's name as the link: "Foshan · Payment terms" links "Foshan"; a subject that does not start with the short name is linked whole. */
 function Subject({ row, decision, invoice }: { row: QueueRowView; decision: string | null; invoice: string | null }) {
   const short = row.customer_short;
+  // A row with no customer (a funding request) has no name link: plain text, so a click on the words reaches the row's own link.
+  if (!row.customer_id) return <span className="font-bold text-ink">{row.subject_text}</span>;
   const link = (children: string) => (
     <CustomerName id={row.customer_id} decision={decision} invoice={invoice} className="pointer-events-auto relative z-10 font-bold text-ink" testId="queue-customer">
       {children}
