@@ -109,7 +109,7 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
 def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> None:
     _offer(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text", "consequence_text")} == {  # the legs, the basis and the consequence have their own tests below
         "variant": "ACTION", "key": "funding:ALERT-RESERVE-12", "tone": "bad", "eyebrow": "NEXT ACTION · WITHIN 12 DAYS",
         "title": "Secure ¥405,000 before payroll in 12 days.",
         "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · "
@@ -154,7 +154,7 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
     _offer(api)
     _run_plan(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text", "consequence_text")} == {  # the legs, the basis and the consequence have their own tests below
         "variant": "QUIET", "key": None, "tone": "ok", "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
@@ -250,11 +250,13 @@ def test_a_step_with_no_cash_landing_yet_says_what_it_is_and_who_must_act(api: T
     assert v2["chart"]["legend"] == [{"label": "Current books · no new funding", "kind": "current"}]
 
 
-def test_an_unsafe_reserve_with_no_action_at_all_is_never_the_quiet_variant() -> None:
+def test_an_unsafe_reserve_with_no_action_at_all_is_never_the_quiet_variant(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(home_v2, "_plan_has_run", lambda _state: False)
     c = SimpleNamespace(action=None, breach_day=12, today=0, lang="en", headline="Your cash reserve becomes unsafe in 12 days.",
-                        note="Cash falls to ¥60k.", state=None)
+                        note="Cash falls to ¥60k.", state=None, low=(6_000_000, 30), floor=30_000_000)
     action = home_v2._action(c, {"items": []})  # type: ignore[arg-type]
     assert action["variant"] == "ACTION" and action["control"] is None and action["tone"] == "bad"
+    assert action["consequence_text"] == "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥240k in 30 days."
     assert (action["title"], action["text"]) == ("Your cash reserve becomes unsafe in 12 days.", "Cash falls to ¥60k.")
     assert action["primary"] == {"label": "See the options", "href": "/cash#cash-options"} and action["eyebrow"] == "NEXT ACTION · WITHIN 12 DAYS"
 
@@ -545,7 +547,7 @@ BASIS_EN = ("Estimated through the expected repayment of the Bank credit line in
 BASIS_ZH = "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。"
 
 
-LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text"]
+LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text", "share_text"]
 
 
 def _legs(api: TestClient, lang: str = "en") -> list[dict[str, Any]]:
@@ -562,9 +564,10 @@ def test_the_legs_on_day_zero_are_the_plans_two_planned_legs_and_leave_the_sente
     assert legs == [
         {"label": "Credit-line draw", "amount_display": "¥150,000", "amount_fen": 15_000_000, "lands_when": "today", "lands_day": 0,
          "cost_display": "¥841.64", "repaid_when": "in 32 days",
-         "state": "PLANNED", "state_text": "Planned", "authority_text": authority},
+         "state": "PLANNED", "state_text": "Planned", "authority_text": authority, "share_text": "37%"},
         {"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
-         "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority}]
+         "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority,
+         "share_text": "63%"}]
     assert action["text"] == ("FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
                               " · cost ¥3,113.93 · no approval needed.")
     assert [f["value"] for f in action["facts"]] == ["¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
@@ -650,7 +653,7 @@ def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_appr
     legs, basis = home_v2._action_legs(plan(None, financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert legs == [{"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
                      "cost_display": None, "repaid_when": None, "state": "PLANNED", "state_text": "Planned",
-                     "authority_text": "Needs your approval: its cost."}]
+                     "authority_text": "Needs your approval: its cost.", "share_text": "100%"}]  # the only leg is all of the plan
     assert basis is None  # no cost at all: no basis
     # a cost: the plan's own basis sentence, whatever the legs; no cost: none
     _, basis = home_v2._action_legs(plan("¥100.00", financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
@@ -660,3 +663,67 @@ def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_appr
     assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
     _, basis = home_v2._action_legs(plan(None, draw), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert basis is None
+
+
+# ---------------------------------------------------------------- the consequence sentence (batch 5)
+
+
+def test_the_consequence_is_the_first_breach_day_and_the_lowest_points_shortfall_on_day_zero(api: TestClient) -> None:
+    _offer(api)
+    action = _v2(api)["action"]
+    assert action["consequence_text"] == "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days."
+    kpi = _v2(api)["kpis"]["lowest_ahead"]
+    assert kpi["short_note"] == "¥405k shortfall in 30 days"  # the same figures as the KPI
+    assert action["text"].startswith("FLOW's plan within your signed limits")  # the action's own sentence is left alone
+    zh = _v2(api, "zh")["action"]
+    assert zh["consequence_text"] == "现金将在 12 天后首次低于您的最低现金。若没有新增融资，缺口将在 30 天后达到 ¥405k。"
+    assert english_leaks(zh["consequence_text"], NAMES) == []
+
+
+def test_the_consequence_is_null_once_the_plan_has_run_and_nothing_breaches(api: TestClient) -> None:
+    _offer(api)
+    _run_plan(api)
+    assert _v2(api)["action"]["consequence_text"] is None and _v2(api, "zh")["action"]["consequence_text"] is None
+
+
+def test_the_consequence_says_so_when_the_plan_ran_and_the_books_still_breach(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    _offer(api)
+    monkeypatch.setattr(home_v2, "_plan_has_run", lambda _state: True)
+    assert _v2(api)["action"]["consequence_text"] == ("Cash first falls below your minimum in 12 days. "
+                                                      "Even with the plan that ran, the shortfall reaches ¥405k in 30 days.")
+    assert _v2(api, "zh")["action"]["consequence_text"] == "现金将在 12 天后首次低于您的最低现金。即使方案已执行，缺口仍将在 30 天后达到 ¥405k。"
+
+
+def test_the_consequence_is_null_with_no_breach_or_no_shortfall() -> None:
+    for lang in ("en", "zh"):
+        none = SimpleNamespace(lang=lang, today=0, breach_day=None, low=(-1, 5), floor=0)
+        assert home_v2._consequence_text(none) is None  # type: ignore[arg-type]
+        above = SimpleNamespace(lang=lang, today=0, breach_day=3, low=(10, 5), floor=0)
+        assert home_v2._consequence_text(above) is None  # type: ignore[arg-type]
+
+
+def test_each_legs_share_of_the_plan_is_the_words_layers_percent_on_day_zero_after_the_plan_and_in_chinese(api: TestClient) -> None:
+    _offer(api)
+    assert [leg["share_text"] for leg in _legs(api)] == ["37%", "63%"]  # 150 / 405 and 255 / 405
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37%", "63%"]
+    _run_plan(api)
+    assert [leg["share_text"] for leg in _legs(api)] == ["37%", "63%"]  # the same shares once the plan has run
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37%", "63%"]
+
+
+def test_a_legs_share_is_null_when_the_plans_total_is_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(home_v2, "_leg", lambda c, **kw: {"amount_fen": 0})
+    c = SimpleNamespace(lang="en", today=0, record=None, action={
+        "kind": "RESERVE_BREACH_AHEAD", "receive_fen": 1, "needs_owner": False, "cost_total_display": None, "authority_text": "",
+        "legs": [{"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 0, "cost_fen": None, "cost_due_day": None}]})
+    legs, _ = home_v2._action_legs(c, {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert legs == [{"amount_fen": 0, "share_text": None}]
+
+
+def test_the_whole_percent_word_rounds_half_up_and_keeps_the_edges_and_the_default_is_unchanged() -> None:
+    from fractions import Fraction
+
+    from app.strategy.words import share_text
+
+    assert [share_text(Fraction(x, 1000), "en", whole=True) for x in (370, 375, 996, 4, 0, 1000)] == ["37%", "38%", "over 99%", "under 1%", "0%", "100%"]
+    assert share_text(Fraction(4, 1000), "zh", whole=True) == "低于 1%" and share_text(Fraction(370, 1000)) == "37.0%"

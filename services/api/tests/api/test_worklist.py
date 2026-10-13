@@ -117,8 +117,9 @@ def test_the_owner_alone_may_read(api: TestClient) -> None:
 def test_before_the_plan_the_alert_is_there_and_needs_you_holds_the_foshan_decision(api: TestClient) -> None:
     oid = _offer(api)
     w = _get(api)
-    assert w["alert"] == {"key": "company-cash", "eyebrow": "Company cash", "text": "Reserve unsafe in 12 days. A funding plan is ready.",
-                          "tone": "bad", "primary": {"label": "Run or compare", "href": "/"}}
+    assert w["alert"] == {"key": "company-cash", "eyebrow": "Company cash", "kind_text": "FLOW action ready",
+                          "text": "Reserve unsafe in 12 days. A funding plan is ready.",
+                          "pending_text": "¥405k funding plan available · no approval needed · waits for your go", "tone": "bad", "primary": {"label": "Run or compare", "href": "/"}}
     assert [i["key"] for i in w["needs_you"]] == [f"deal:{oid}"]
     item = w["needs_you"][0]
     assert (item["kind"], item["owner"], item["severity"], item["customer_short"]) == ("DECISION", "NEEDS_YOU", "CAUTION", "Foshan")
@@ -130,6 +131,18 @@ def test_before_the_plan_the_alert_is_there_and_needs_you_holds_the_foshan_decis
     assert item["href"] == "/?customer=BUYER-1&deal=deal%3A" + oid
     assert not any("reserve" in i["subject_text"].lower() for i in w["needs_you"])  # the alert is not a row
     assert w["waiting"] == []
+
+
+def test_the_empty_needs_you_word_follows_the_alert_on_day_zero_and_after_the_plan(api: TestClient) -> None:
+    _offer(api)
+    assert _get(api)["alert"] is not None
+    assert _get(api)["needs_you_empty_text"] == "Nothing else needs you."
+    assert _get(api, "zh")["needs_you_empty_text"] == "没有其他事项需要您处理。"
+    _run_plan(api)
+    assert _get(api)["alert"] is None
+    assert _get(api)["needs_you_empty_text"] == "Nothing needs a decision from you."
+    zh = _get(api, "zh")["needs_you_empty_text"]
+    assert zh == "没有需要您决定的事项。" and english_leaks(zh) == []
 
 
 def test_after_the_plan_the_alert_is_gone_and_the_financing_waits(api: TestClient) -> None:
@@ -234,6 +247,8 @@ def test_the_plan_waiting_on_approval_is_the_alerts_and_not_a_row_of_needs_you(a
     assert approval == "APR-000001" and {a["id"] for a in api.get("/home").json()["approvals"]} == {"APR-000001", "APR-000002"}
     assert [i["kind"] for i in w["needs_you"]] == ["DECISION"]
     assert _get(api, "zh")["alert"]["text"] == "现金储备将在 12 天后变得不安全。融资方案正等待您批准。"
+    assert w["alert"]["pending_text"] == "¥405k funding plan available · needs your approval · waits for your go"
+    assert _get(api, "zh")["alert"]["pending_text"] == "¥405k 融资方案可用 · 需要您批准 · 等待您确认"
 
 
 def test_an_unsafe_reserve_with_nothing_to_run_has_an_alert_that_points_at_the_options(api: TestClient) -> None:
@@ -243,6 +258,7 @@ def test_an_unsafe_reserve_with_nothing_to_run_has_an_alert_that_points_at_the_o
     _exhaust_line(get_runtime())
     w = _get(api)
     assert w["alert"]["text"] == "Reserve unsafe in 12 days. A funding plan is ready."  # the application for a facility is the plan
+    assert w["alert"]["kind_text"] == "FLOW action ready" and w["alert"]["pending_text"] is None  # it brings no cash to name
     assert w["needs_you"] == [] and w["counts"]["needs_you"] == 0
 
 
@@ -251,6 +267,7 @@ def test_the_alert_for_an_unsafe_reserve_with_no_plan_points_at_the_options() ->
     en = worklist._alert(home, "en")
     zh = worklist._alert({**home, "cash": {"first_breach_day": 12, "first_breach_when": "12 天后"}}, "zh")
     assert en is not None and zh is not None
+    assert en["kind_text"] is None and en["pending_text"] is None and zh["kind_text"] is None and zh["pending_text"] is None  # no plan, no action ready
     assert en["text"] == "Reserve unsafe in 12 days. No funding plan is ready yet." and en["primary"] == {"label": "See the options", "href": "/cash#cash-options"}
     assert zh["text"] == "现金储备将在 12 天后变得不安全。目前还没有准备好的融资方案。" and zh["primary"]["label"] == "查看选项"
     assert worklist._alert({"cash": {"first_breach_day": None}, "next_action": None}, "en") is None
@@ -377,6 +394,7 @@ def test_the_chinese_read_has_the_same_figures_and_no_english_or_ids(api: TestCl
     assert not english_leaks(zh, NAMES, raw_fields=[HREFS])
     assert not [s for s in _strings(zh) if RAW_ID.search(s)] and not [s for s in _strings(en) if RAW_ID.search(s)]
     assert zh["alert"]["text"] == "现金储备将在 12 天后变得不安全。融资方案已准备好。"
+    assert (zh["alert"]["kind_text"], zh["alert"]["pending_text"]) == ("FLOW 已备好行动", "¥405k 融资方案可用 · 无需批准 · 等待您确认")
     item = zh["needs_you"][0]
     assert (item["subject_text"], item["status_text"]) == ("Foshan · 付款账期", "还价已就绪 · 需要您答复")
     assert item["consequence_text"] == "按对方要求：低于您的最低现金储备 15 天。"
