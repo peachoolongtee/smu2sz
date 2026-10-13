@@ -17,7 +17,7 @@ from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
-from tests.api.conftest import english_leaks
+from tests.api.conftest import agree_on_rcv_a, english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
@@ -190,6 +190,7 @@ def test_the_collection_draft_says_nothing_is_sent(api: TestClient, lang: str) -
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_agreement_on_the_record_carries_its_receipt(api: TestClient, lang: str) -> None:
     api.post("/demo/reset", params={"scenario": "busy"})
+    agree_on_rcv_a(api)
     agreed = next(d for d in api.get("/decisions").json()["decisions"] if d["state"] == "AGREED")
     detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
     r = _whole(detail["agreement"]["receipt"], lang)
