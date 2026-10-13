@@ -207,17 +207,68 @@ def _owner_promises(ctx: Context, ds: DecisionState, promised: list[Any], lang: 
     return out
 
 
-def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], trouble_day: int | None, lang: str) -> list[dict[str, Any]]:
+def _receipt_days(ctx: Context) -> dict[str, int]:
+    """The latest day a receipt was booked against each invoice."""
+    out: dict[str, int] = {}
+    for r in ctx.receipts:
+        if r.day is not None:
+            out[r.receivable_id] = max(out.get(r.receivable_id, r.day), r.day)
+    return out
+
+
+def _late_on(receivables: list[Any], promised: list[Any], day: int, paid_on: dict[str, int]) -> bool:
+    """Whether a payment of these invoices was missed or late on `day`: an invoice past its due day and still unpaid then (unpaid now, or
+    paid only after `day`), or an early payment that lapsed before it."""
+    for r in receivables:
+        unpaid_then = r.face_fen - r.settled_fen > 0 or paid_on.get(r.id, -1) > day
+        if r.due_day < day and unpaid_then:
+            return True
+    return any(p.status == "LAPSED" and p.promised_day is not None and p.promised_day < day for p in promised)
+
+
+def _quoted_day(ctx: Context, fid: str, fds: DecisionState) -> int | None:
+    row = next((r for r in ctx.facts if r.decision_id == fid and r.fact == "QUOTED"), None)
+    if row is not None:
+        return int(row.day)
+    return fds.quote.alert_day if fds.quote is not None and fds.quote.alert_day is not None else fds.opened_day
+
+
+def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -> list[dict[str, Any]]:
     """A funding decision the records link to this deal: an invoice advance on one of its invoices (QUOTED), or the cure of a reserve
-    shortfall quoted after its payment was missed or late (ATTRIBUTED). The figure is the plan's stored quoted cost; no link, no line."""
+    shortfall quoted while this buyer's payment was missed or late (ATTRIBUTED). The figure is the plan's stored quoted cost; no link, no
+    line. A shortfall cure is COUNTED in this deal's cost only when this deal's buyer was the only buyer with a late or missed payment on
+    the day it was quoted, and this deal the only one of that buyer's with one: otherwise the line stays, uncounted (`actual_fen` null),
+    so that no cure is counted in the cost of two deals."""
+    c = ds.commitment
+    assert c is not None
+    buyer = c.counterparty_id
+    paid_on = _receipt_days(ctx)
+
+    def mine(commitment: Any, day: int) -> bool:
+        promised = [p for p in ctx.promised if p.commitment_id == commitment.id]
+        return _late_on(_deal_receivables(ctx, commitment, promised), promised, day, paid_on)
+
     out: list[dict[str, Any]] = []
     for fid, (fds, _inp) in ctx.states().items():
         q = fds.quote
         if fds.family != "FUNDING" or q is None or fds.state in (FundingState.DECLINED, FundingState.FAILED):
             continue
         advance = any(leg.receivable_id in rids for leg in q.legs)
-        cause = (not advance and trouble_day is not None and q.alert_kind == RESERVE_ALERT
-                 and fds.opened_day is not None and fds.opened_day >= trouble_day)
+        cause = counted = False
+        why = ""
+        qday = _quoted_day(ctx, fid, fds)
+        if not advance and q.alert_kind == RESERVE_ALERT and qday is not None:
+            late_buyers = {x.counterparty_id for x in ctx.state.receivables if _late_on([x], [], qday, paid_on)}
+            late_buyers |= {p.counterparty_id for p in ctx.promised if _late_on([], [p], qday, paid_on)}
+            cause = buyer in late_buyers and mine(c, qday)
+            if cause:
+                others = [x for x in ctx.commitments if x.counterparty_id == buyer and x.id != c.id
+                          and x.status != CommitmentStatus.PROPOSED and mine(x, qday)]
+                if late_buyers != {buyer}:
+                    why = "buyers"
+                elif others:
+                    why = "deals"
+                counted = not why
         if not (advance or cause):
             continue
         pending = fds.state == FundingState.AUTHORIZATION_REQUIRED
@@ -226,29 +277,37 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], trouble_day:
                  if q.cost_note == "draw_interest_excluded" else "")
         if cause:
             certainty = "ATTRIBUTED"
-            certainty_text = t(lang, "A real figure of your company's, attributed to this deal: it covers a shortfall that followed this "
-                                     "buyer's missed or late payment. It is the cost FLOW quoted; the charge itself is not yet booked.",
-                               "这是贵公司的真实数字，归于这笔交易：它用于弥补这位买方未付款或逾期付款之后出现的缺口。这是 FLOW 报出的成本，费用本身尚未入账。")
+            certainty_text = t(lang, "FLOW arranged this funding after this buyer's payment was late, and the records do not tie the funding to "
+                                     "this deal by itself: it is a real cost of your company's, attributed to this deal by its cause. It is "
+                                     "the cost FLOW quoted; the charge itself is not yet booked.",
+                               "FLOW 是在这位买方付款逾期之后安排的这笔融资，记录本身并不能把这笔融资与这笔交易直接对应：这是贵公司的真实成本，按其起因归于这笔交易。"
+                               "这是 FLOW 报出的成本，费用本身尚未入账。")
         else:
             certainty = "QUOTED"
             certainty_text = t(lang, "The cost FLOW quoted for funding against this deal's invoice; the charge itself is not yet booked.",
                                "FLOW 为这笔交易的发票融资所报的成本；费用本身尚未入账。")
-        if cost is None:
+        counts = (not cause) or counted
+        if not counts:
+            note = (t(lang, "This funding followed late payments from several buyers, so it is not counted in this deal's cost.",
+                      "这笔融资是在多位买方逾期付款之后安排的，因此不计入这笔交易的成本。") if why == "buyers"
+                    else t(lang, "This funding followed late payments on several of this buyer's deals, so it is not counted in this deal's cost.",
+                           "这笔融资是在这位买方多笔交易逾期付款之后安排的，因此不计入这笔交易的成本。"))
+        elif cost is None:
             note = t(lang, "Not measured yet: no cost was quoted for this funding.", "尚未衡量：这笔融资没有报出成本。")
         elif pending:
             note = t(lang, f"Quoted at {fmt_yuan(cost)}; it counts only once you approve it.", f"已报价 {fmt_yuan(cost)}；您批准后才会计入。")
         else:
             note = None
+        shown = counts and not pending and cost is not None
         out.append({
             "key": "funding" if not out else f"funding_{len(out) + 1}",
             "label": (t(lang, "Funding to cover the shortfall this deal left", "弥补这笔交易所致缺口的融资") if cause
                       else t(lang, "Funding against this deal's invoice", "以这笔交易的发票办理的融资")),
             "expected_fen": 0, "expected_display": fmt_yuan(0),
-            "actual_fen": None if (pending or cost is None) else cost,
-            "actual_display": None if (pending or cost is None) else fmt_yuan(cost),
+            "actual_fen": cost if shown else None, "actual_display": fmt_yuan(cost) if shown and cost is not None else None,
             "actual_note_text": note, "certainty": certainty, "certainty_text": certainty_text + extra,
-            "tone": "neutral" if (pending or cost is None) else "bad", "evidence_href": f"/decisions/{quote(fid, safe=':')}",
-            "_pending_fen": cost if pending else None,
+            "tone": "bad" if shown else "neutral", "evidence_href": f"/decisions/{quote(fid, safe=':')}",
+            "_pending": pending, "_pending_fen": cost if (pending and counts) else None,
         })
     return out
 
@@ -257,7 +316,8 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], trouble_day:
 
 
 def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]) -> dict[str, Any]:
-    cost: dict[str, Any] = {"expected": None, "actual": None, "to_come": None, "difference_fen": None, "difference_display": None, "lines": [],
+    cost: dict[str, Any] = {"expected": None, "actual": None, "to_come": None, "unmeasured_fen": None, "unmeasured_display": None,
+            "difference_fen": None, "difference_display": None, "lines": [],
             "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
             "agreed_when": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
@@ -315,36 +375,69 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     else:
         note = t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。")
     first_seq = min((k for k in booked if isinstance(k, int)), default=None)
+    lapsed_discount = sum(p.discount_fen for p in promised if p.status == "LAPSED")
+    # the part of the expected cost that no record holds: what was quoted, less the discount booked and less the discount of a promise
+    # that lapsed (a record says it was never given)
+    unmeasured = max(0, expected - booked_fen - lapsed_discount) if expected is not None else None
+    unmeasured_rows = [ob for ob in c.obligations if ob.type in (ObligationType.CONTINGENT_REBATE, ObligationType.PRICE_ADJUSTMENT)]
+    if not booked:
+        note = (t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
+                  "提前付款没有到账，因此这份协议下没有给出任何折扣。") if lapsed
+                else t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。"))
+    elif unmeasured:
+        note = (t(lang, f"Not measured: {fmt_yuan(unmeasured)} of the expected cost, which no record holds.",
+                  f"未能衡量：预期成本中有 {fmt_yuan(unmeasured)} 没有任何记录。") if ended
+                else t(lang, f"Not measured yet: {fmt_yuan(unmeasured)} of the expected cost, which no record holds yet.",
+                       f"尚未衡量：预期成本中有 {fmt_yuan(unmeasured)} 目前没有任何记录。"))
+    else:
+        note = None
+    if unmeasured_rows:
+        more = t(lang, "A rebate or price change in the agreement is not measured yet.", "协议中的返利或价格调整尚未衡量。")
+        note = f"{note} {more}" if note else more
     terms_line = {
         "key": "terms", "label": t(lang, "The terms you gave the buyer", "您给买方的条款"),
         "expected_fen": expected, "expected_display": _money(expected), "actual_fen": booked_fen, "actual_display": fmt_yuan(booked_fen),
         "actual_note_text": note, "certainty": "RECORDED",
         "certainty_text": t(lang, "Booked: the discount the bank receipts under this agreement posted. The expected figure is the one FLOW quoted when you agreed.",
                             "已入账：这份协议下银行收款所记的折扣。预期数字是您达成协议时 FLOW 报出的数字。"),
-        "tone": "bad" if expected is not None and booked_fen > expected else "ok", "evidence_href": _entry_href(first_seq),
+        "tone": ("bad" if expected is not None and booked_fen > expected
+                 else "ok" if ended and not unmeasured and expected is not None else "neutral"),
+        "evidence_href": _entry_href(first_seq),
     }
-    trouble = [p.promised_day for p in promised if p.status == "LAPSED" and p.promised_day is not None]
-    trouble += [r.due_day for r in receivables if r.status in ("OPEN", "FINANCED") and r.face_fen - r.settled_fen > 0 and r.due_day < today]
-    fund = _funding_lines(ctx, ds, rids, min(trouble) if trouble else None, lang)
+    fund = _funding_lines(ctx, ds, rids, lang)
     lines = [terms_line, *fund]
     actual = sum(x["actual_fen"] for x in lines if x["actual_fen"] is not None)
+    # the cost ON TOP of the agreed terms: what the counted funding lines add. Unsigned; it is not "actual minus expected", which would
+    # set the booked part of the terms against the whole expected cost.
+    on_top = sum(x["actual_fen"] for x in fund if x["actual_fen"] is not None)
     pending_fen = sum(x["_pending_fen"] for x in fund if x["_pending_fen"] is not None)
+    funding_pending = any(x["_pending"] for x in fund)
     awaiting_fen = sum(p.discount_fen for p in promised if p.status == "AWAITED")
     for x in fund:
         x.pop("_pending_fen")
-    diff = actual - expected if expected is not None else None
-    if diff is None:
-        actual_note, tone = t(lang, "The cost expected at agreement was not recorded.", "达成协议时的预期成本没有记录。"), "neutral"
-    elif diff > 0:
-        actual_note, tone = t(lang, f"{fmt_yuan(diff)} more than expected", f"比预期多 {fmt_yuan(diff)}"), "bad"
-    elif diff < 0 and not ended and actual == 0:
-        actual_note, tone = t(lang, "Nothing has been booked against the expected cost yet", "预期成本目前还没有任何入账"), "neutral"
-    elif diff < 0 and not ended:
-        actual_note, tone = t(lang, f"{fmt_yuan(-diff)} less than expected so far", f"目前比预期少 {fmt_yuan(-diff)}"), "ok"
-    elif diff < 0:
-        actual_note, tone = t(lang, f"{fmt_yuan(-diff)} less than expected", f"比预期少 {fmt_yuan(-diff)}"), "ok"
+        x.pop("_pending")
+    over = expected is not None and booked_fen > expected
+    parts: list[str] = []
+    if on_top:
+        parts.append(t(lang, f"Includes {fmt_yuan(on_top)} of funding on top of the terms you agreed.",
+                       f"其中包含 {fmt_yuan(on_top)} 在您同意的条款之外的融资成本。"))
+    if over and expected is not None:
+        parts.append(t(lang, f"The booked terms are {fmt_yuan(booked_fen - expected)} above the expected cost.",
+                       f"已入账的条款成本比预期高 {fmt_yuan(booked_fen - expected)}。"))
+    if unmeasured and (booked or on_top):
+        parts.append(t(lang, f"{fmt_yuan(unmeasured)} of the expected cost is not measured yet.",
+                       f"预期成本中有 {fmt_yuan(unmeasured)} 尚未衡量。"))
+    if expected is None:
+        parts.append(t(lang, "The cost expected at agreement was not recorded.", "达成协议时的预期成本没有记录。"))
+    if not booked and not on_top:
+        parts = [t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。")]
+    actual_note = " ".join(parts) if lang != "zh" else "".join(parts)
+    if on_top or over:
+        tone = "bad"
+    elif ended and not unmeasured and expected is not None:
+        tone = "ok"
     else:
-        actual_note, tone = t(lang, "As expected", "与预期一致"), "ok"
+        tone = "neutral"
     to_come_fen = pending_fen + (awaiting_fen if not ended else 0)
     if to_come_fen:
         to_come_note = (t(lang, "Still to come: the quoted funding once you approve it, and the discount if the buyer pays early as promised.",
@@ -361,10 +454,13 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         "expected": {"amount_fen": expected, "amount_display": _money(expected), "basis_text": terms, "certainty": "QUOTED"},
         "actual": {"amount_fen": actual, "amount_display": fmt_yuan(actual), "note_text": actual_note, "tone": tone},
         "to_come": {"amount_fen": to_come_fen or None, "amount_display": _money(to_come_fen or None), "note_text": to_come_note},
-        "difference_fen": diff, "difference_display": _money(diff), "lines": lines,
-        "method_text": t(lang, "Expected is the cost FLOW quoted when you agreed. Cost so far adds up only what the records hold: the discount "
-                              "booked from bank receipts and the quoted cost of funding linked to this deal; a part no record measures is said so.",
-                        "预期成本是您达成协议时 FLOW 报出的成本。至今成本只累计记录中已有的内容：银行收款所记的折扣，以及与这笔交易相关的融资报价成本；没有记录的部分会如实说明。"),
+        "unmeasured_fen": unmeasured, "unmeasured_display": _money(unmeasured),
+        "difference_fen": on_top, "difference_display": fmt_yuan(on_top), "lines": lines,
+        "method_text": t(lang, "Expected is the cost FLOW quoted when you agreed. Cost so far adds up only what the records hold, and the part "
+                              "of the expected cost that no record measures is shown apart as not measured yet. The difference is the cost on "
+                              "top of the terms you agreed: the funding linked to this deal, not a comparison with the whole expected figure.",
+                        "预期成本是您达成协议时 FLOW 报出的成本。至今成本只累计记录中已有的内容，预期成本中没有记录衡量的部分会单独标明为尚未衡量。"
+                        "差额是在您同意的条款之外增加的成本：即与这笔交易相关的融资，而不是与整个预期数字的比较。"),
     }
 
     # promises
@@ -420,26 +516,31 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     state_text = f"{decision_state_text('DEAL', ds.state.value, lang)}. {wait_text}".strip() if lang != "zh" else (
         f"{decision_state_text('DEAL', ds.state.value, lang)}。{wait_text}")
     if ended:
-        if diff is None:
+        if expected is None:
             headline = t(lang, "This deal has closed", "这笔交易已结束")
-        elif diff > 0:
-            headline = t(lang, "This deal closed above the expected cost", "这笔交易结束时的成本高于预期")
+        elif on_top > 0 or over:
+            headline = t(lang, "This deal closed with extra cost on top of the terms you agreed", "这笔交易结束时，在您同意的条款之外还有额外成本")
         elif lapsed or "missed" in states:
             headline = t(lang, "This deal ended with the buyer's promise missed", "这笔交易结束时买方未兑现承诺")
         elif "late" in states:
             headline = t(lang, "The agreement is complete, but the buyer is late on the rest of the invoice",
                          "协议已履行完毕，但买方对发票余款已逾期")
-        elif diff == 0:
+        elif unmeasured:
+            headline = t(lang, "This deal has closed; part of its expected cost is not measured", "这笔交易已结束；预期成本中有一部分未能衡量")
+        elif booked_fen == expected:
             headline = t(lang, "This deal closed as expected", "这笔交易按预期结束")
         else:
             headline = t(lang, "This deal closed below the expected cost", "这笔交易结束时的成本低于预期")
-        closeout = t(lang, f"This deal cost {fmt_yuan(actual)} against {_money(expected) or 'an expected cost that was not recorded'}. {counts_text}",
-                     f"这笔交易的成本为 {fmt_yuan(actual)}，预期为 {_money(expected) or '未记录'}。{counts_text}")
+        tail = (t(lang, f", with {fmt_yuan(unmeasured)} of the expected cost not measured", f"，其中预期成本的 {fmt_yuan(unmeasured)} 未能衡量")
+                if unmeasured else "")
+        closeout = t(lang, f"The records hold {fmt_yuan(actual)} of cost on this deal against {_money(expected) or 'an expected cost that was not recorded'}"
+                           f"{tail}. {counts_text}",
+                     f"记录显示这笔交易的成本为 {fmt_yuan(actual)}，预期为 {_money(expected) or '未记录'}{tail}。{counts_text}")
     else:
         closeout = None
         if nothing:
             headline = t(lang, "Nothing has happened on this deal yet", "这笔交易目前还没有任何进展")
-        elif diff is not None and diff > 0:
+        elif on_top > 0 or over:
             headline = t(lang, "This deal is costing more than you agreed to", "这笔交易的成本超出了您同意的范围")
         elif wtone == "bad":
             headline = t(lang, "A promise on this deal has not been kept", "这笔交易中有一项承诺没有兑现")
@@ -448,9 +549,13 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
 
     # the one next step
     nxt = None
+    if funding_pending:  # cash safety first: the approval of the cure comes before chasing the payment
+        nxt = {"label": t(lang, "Review the funding approval", "查看融资批准事项"),
+               "text": t(lang, "Funding to cover the shortfall is waiting for your approval.", "弥补缺口的融资正在等待您批准。"),
+               "href": "/approvals"}
     for r in sorted(receivables, key=lambda x: x.due_day):
         owed = r.face_fen - r.settled_fen
-        if r.status in ("OPEN", "FINANCED") and owed > 0:
+        if nxt is None and r.status in ("OPEN", "FINANCED") and owed > 0:
             state = collection_state(r.due_day, today, promise_missed=lapsed and r.due_day < today)
             if state in ("OVERDUE", "PROMISE_MISSED"):
                 act = collection_action(state, lang)
@@ -459,10 +564,6 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                                  f"催收{invoice_words(ctx.state, r.id, lang)}中仍未收的 {fmt_yuan(owed)}，该款已于{when_text(r.due_day, today, lang)}到期。"),
                        "href": f"/receivables?invoice={quote(r.id, safe='')}&customer={quote(buyer, safe='')}"}
                 break
-    if nxt is None and pending_fen:
-        nxt = {"label": t(lang, "Review the funding approval", "查看融资批准事项"),
-               "text": t(lang, "Funding to cover the shortfall is waiting for your approval.", "弥补缺口的融资正在等待您批准。"),
-               "href": "/approvals"}
 
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
