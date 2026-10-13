@@ -91,7 +91,7 @@ function Brand({ href }: { href: string }) {
   const { t } = useI18n();
   return (
     <Link href={href} className="hit flex items-center gap-2 font-semibold text-ink">
-      <span className="grid size-8 place-items-center rounded-pill bg-brand-600 text-white">
+      <span className="grid size-9 place-items-center rounded-[12px] bg-f-btn text-f-btn-ink">
         <ShieldIcon />
       </span>
       <span className="whitespace-nowrap leading-tight">
@@ -442,7 +442,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
         {/* The rail: a 56 px column of icons; its panel opens over the page to 200 px (no reflow) on hover or focus, or stays open once pinned. */}
         <aside className="rail relative hidden lg:block" data-rail={rail.open ? "open" : "closed"} {...rail.handlers} data-testid="nav-rail">
           <div className="sticky top-16 h-[calc(100dvh-4rem)]">
-            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden border-r border-line bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
+            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
               <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
                 <ul className="space-y-1">
                   {BUSINESS_NAV.map((n) => {
@@ -456,10 +456,10 @@ function BusinessShell({ children }: { children: ReactNode }) {
                           aria-current={active ? "page" : undefined}
                           aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
                           className={`side-link motion-press relative flex min-h-11 items-center gap-3 rounded-control px-2.5 text-sm ${
-                            active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
+                            active ? "bg-card font-bold text-ink shadow-f" : "font-medium text-ink-2 hover:bg-panel hover:text-ink"
                           }`}
                         >
-                          <Icon width={20} height={20} className={`shrink-0 ${active ? "text-brand-600" : "text-ink-3"}`} />
+                          <Icon width={20} height={20} className={`shrink-0 ${active ? "text-ink" : "text-ink-3"}`} />
                           <span className="side-label">{t(n.key)}</span>
                           <NavCount href={n.href} n={counts[n.href as NavKey]} className="side-count ml-auto" />
                         </Link>

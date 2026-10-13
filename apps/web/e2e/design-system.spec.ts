@@ -394,7 +394,7 @@ test("SegmentedTabs: the choice is not the pill alone, widths follow the labels,
   await page.setViewportSize({ width: 390, height: 844 });
   await tab("setup").click();
   await expect(tab("setup")).toBeInViewport();
-  await page.goto("/");
+  await page.goto("/?expand=1");
   await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("home-window-60").scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -60));
@@ -403,6 +403,75 @@ test("SegmentedTabs: the choice is not the pill alone, widths follow the labels,
   await page.getByTestId("home-window-60").click();
   await page.getByTestId("home-window-120").click();
   expect(Math.abs((await page.evaluate(() => window.scrollY)) - y)).toBeLessThan(2);
+});
+
+test("the owner's mockup tokens: the canvas app-wide, the palette and its dark pairs, the 24 px card with the one soft shadow on Home, the ink primary, the rail's white pill, a quiet Ask FLOW", async ({ page }) => {
+  await page.goto("/cash");
+  await expect(page.locator("h1").first()).toBeVisible({ timeout: 15_000 });
+  // The canvas is the mockup's on every page; nothing else of Home's palette leaks into another page's cards.
+  expect(await page.evaluate(() => getComputedStyle(document.body.parentElement!).backgroundColor)).toBe("rgb(229, 232, 232)");
+  const colours = await page.evaluate(() => {
+    const read = (v: string) => {
+      const el = document.createElement("div");
+      el.style.color = `var(${v})`;
+      document.body.append(el);
+      const c = getComputedStyle(el).color;
+      el.remove();
+      return c;
+    };
+    return Object.fromEntries(["--color-panel", "--color-card", "--color-f-ink", "--color-f-muted", "--color-f-line", "--color-f-purple", "--color-f-purple-soft", "--color-f-green", "--color-f-green-ink", "--color-f-amber", "--color-f-amber-ink", "--color-f-risk", "--color-f-btn", "--color-f-btn-ink"].map((v) => [v, read(v)]));
+  });
+  expect(colours).toEqual({
+    "--color-panel": "rgb(248, 249, 249)",
+    "--color-card": "rgb(255, 255, 255)",
+    "--color-f-ink": "rgb(21, 27, 28)",
+    "--color-f-muted": "rgb(88, 100, 104)",
+    "--color-f-line": "rgb(216, 221, 221)",
+    "--color-f-purple": "rgb(146, 82, 220)",
+    "--color-f-purple-soft": "rgb(235, 222, 250)",
+    "--color-f-green": "rgb(199, 233, 179)",
+    "--color-f-green-ink": "rgb(35, 66, 32)",
+    "--color-f-amber": "rgb(249, 212, 145)",
+    "--color-f-amber-ink": "rgb(96, 65, 14)",
+    "--color-f-risk": "rgb(168, 50, 34)",
+    "--color-f-btn": "rgb(23, 29, 30)",
+    "--color-f-btn-ink": "rgb(255, 255, 255)",
+  });
+  // The dark pairs the mockup gives are there for <html data-theme="dark">: the same tokens, other values; the app is light without it.
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  const dark = await page.evaluate(() => {
+    const el = document.createElement("div");
+    el.style.color = "var(--color-f-amber)";
+    document.body.append(el);
+    const c = getComputedStyle(el).color;
+    el.remove();
+    return [c, getComputedStyle(document.documentElement).backgroundColor];
+  });
+  expect(dark).toEqual(["rgb(80, 65, 43)", "rgb(28, 34, 38)"]);
+  await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
+  // The rail: a vertical pill group; the current section is the white pill with the soft shadow, the others sit on the canvas.
+  const nav = page.getByTestId("nav-pills");
+  const active = nav.getByRole("link", { name: "Cash & funding" });
+  await expect(active).toHaveAttribute("aria-current", "page");
+  expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+  expect(await active.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
+  expect(await nav.getByRole("link", { name: "Deals", exact: true }).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+  // Ask FLOW is a quiet outline pill, not a second filled button.
+  const ask = page.getByTestId("chat-open");
+  expect(await ask.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+  expect(await ask.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("1px");
+  expect(await ask.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(36, 50, 74)");
+  // Home: the cards are the panel tone, 24 px, with the one soft shadow; the white row on a card; the filled button is the ink primary.
+  await page.goto("/");
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible({ timeout: 15_000 });
+  for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card", "home-worklist-panel", "hv2-upcoming"]) {
+    const card = await page.getByTestId(id).evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, radius: getComputedStyle(el).borderTopLeftRadius, shadow: getComputedStyle(el).boxShadow }));
+    expect(card, id).toMatchObject({ bg: "rgb(248, 249, 249)", radius: "24px" });
+    expect(card.shadow, id).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
+  }
+  expect(await page.getByTestId("fix-open-ALERT-RESERVE-12").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
+  // The page is light only unless the dark hook is set.
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("light");
 });
 
 test("cards: a page has one decision card, and a chosen row, invoice or path is the one selected style (the tint and the 3 px rule)", async ({ page }) => {

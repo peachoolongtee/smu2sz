@@ -3,7 +3,8 @@
 import { useId, useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { pointAt, shown } from "@/components/home/v2/company-chart";
-import { Announce, Crumbs, LeaveLink } from "@/components/home/v2/focus-parts";
+import { Breakdown } from "@/components/home/v2/breakdown";
+import { Announce, Dismiss, LeaveLink } from "@/components/home/v2/focus-parts";
 import { ActionGroup } from "@/components/ui/action-group";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
 import { OpenSection } from "@/components/ui/open-section";
@@ -12,7 +13,6 @@ import { StateWord } from "@/components/ui/state-word";
 import { Disclosure } from "@/components/business/kit";
 import { Button, ButtonLink, ErrorState, LoadingBlock } from "@/components/ui";
 import { getCustomerFocus, getDealExposure, getDealPicture, getDealTitle, getDeals } from "@/lib/api";
-import { customerHref } from "@/lib/customer-href";
 import { offerOfDecision } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
@@ -217,13 +217,21 @@ export function DealFocusPanel({
 
   const requestCost = asked && (asked.cost_forward_display || asked.cost_display) ? t("hv2.deal.request", { amount: asked.cost_forward_display ?? asked.cost_display, note: asked.cost_note }) : null;
   const recCost = recommended ? (recommended.cost_once_display ? t("dq.cost.once", { amount: recommended.cost_once_display, buyer }) : recommended.cost_total_display ? t("dq.cost.total", { amount: recommended.cost_total_display, basis: recommended.cost_basis_text ?? "", buyer }) : null) : null;
-  const verdictTone = decisionCard ? "info" : "neutral";
+  // The card's three figures, every word the server's: what is outstanding with the buyer (the overview's own figure) and the asked path's early-payment and payment-terms words.
+  // The server's `ask_facts` (invoice value, requested discount, requested term) when it sends them; until then the overview's outstanding figure and the asked path's own term words.
+  const facts = asked?.ask_facts ?? null;
+  const outstanding = v?.figures?.find((f) => f.key === "outstanding") ?? null;
+  const askTerm = (key: string) => asked?.terms.find((x) => x.key === key) ?? null;
+  const kpis = [
+    facts?.invoice_value_display ? { key: "invoice", label: t("hv2.deal.invoice"), value: facts.invoice_value_display } : !facts && outstanding ? { key: "outstanding", label: outstanding.label, value: outstanding.value_display } : null,
+    facts?.requested_discount_display ? { key: "discount", label: t("hv2.deal.discount"), value: facts.requested_discount_display } : !facts && askTerm("early_payment") ? { key: "early_payment", label: askTerm("early_payment")!.label, value: askTerm("early_payment")!.value_text } : null,
+    facts?.requested_term_text ? { key: "term", label: t("hv2.deal.term"), value: facts.requested_term_text } : !facts && askTerm("payment_terms") ? { key: "payment_terms", label: askTerm("payment_terms")!.label, value: askTerm("payment_terms")!.value_text } : null,
+  ].filter((k): k is { key: string; label: string; value: string } => k !== null);
 
   return (
-    <div id="home-focus" data-testid="home-deal-focus" data-decision={decision} className="min-w-0">
+    <div id="home-focus" data-testid="home-deal-focus" data-decision={decision} className="f-card f-card-white min-w-0 p-6">
       <Announce text={title} />
       <div key={decision} className="motion-swap">
-        <Crumbs onAll={onAll} current={title} />
         {gone ? (
           <div className="mt-4 space-y-2" data-testid="home-deal-gone">
             <p className="text-sm text-ink-2">{t("hv2.deal.gone")}</p>
@@ -234,27 +242,35 @@ export function DealFocusPanel({
         ) : (
           <>
             {/* Level 1: the decision */}
-            <div className="mt-3" data-testid="hv2-level-decision">
-              {row?.status_text || decisionCard ? (
-                <p className="mb-1" data-testid="deal-eyebrow">
-                  <StateWord tone={verdictTone}>{row?.status_text ?? decisionCard?.eyebrow}</StateWord>
-                </p>
+            <div data-testid="hv2-level-decision">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
+                    {title}
+                  </h2>
+                  <p className="mt-1.5 text-[15px] text-ink-3" data-testid="hv2-customer-line">
+                    {[v.name, customer?.detail_text].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <Dismiss onDismiss={onAll} />
+              </div>
+              {kpis.length ? (
+                <dl className="mt-4 grid grid-cols-1 gap-y-3 border-y border-line py-4 sm:grid-cols-3 sm:gap-x-6" data-testid="hv2-deal-kpis">
+                  {kpis.map((k) => (
+                    <div key={k.key} className="min-w-0" data-testid={`hv2-deal-kpi-${k.key}`}>
+                      <dt className="text-[15px] text-ink-3">{k.label}</dt>
+                      <dd className="mt-1 break-words font-display text-[26px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-ink sm:text-[30px]">{k.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               ) : null}
-              <h2 id="home-focus-title" tabIndex={-1} className="font-display text-2xl font-extrabold leading-tight tracking-[-0.02em] text-ink" data-testid="focus-title">
-                {title}
-              </h2>
-              <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-ink-2" data-testid="hv2-customer-line">
-                <span>{[v.name, customer?.detail_text].filter(Boolean).join(" · ")}</span>
-                <LeaveLink href={customerHref(customerId, { decision })} testId="focus-open-customer">
-                  {t("hv2.focus.view")}
-                </LeaveLink>
-              </p>
+              {asked?.ask_breakdown?.length ? <Breakdown rows={asked.ask_breakdown} total={facts?.invoice_value_display} testId="hv2-deal-breakdown" /> : null}
               {row && "why_first_text" in row && row.why_first_text ? (
                 <p className="mt-2 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="home-why-first">
                   {row.why_first_text}
                 </p>
               ) : null}
-              <p className="mt-3 max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-ask">
+              <p className="mt-4 max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-ask">
                 {open ? t("dq.ask", { buyer, asks: open.asks_text }) : (decisionCard?.text ?? "")}
               </p>
               {recommended ? (
@@ -279,12 +295,20 @@ export function DealFocusPanel({
                   {decisionCard.text}
                 </p>
               ) : null}
-              <ActionGroup className="mt-4" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
-                {decisionCard ? (
+              {decisionCard ? (
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-line pt-4" data-testid="hv2-deal-next">
+                  <p className="min-w-0 text-[15px] text-ink">
+                    <span className="block" data-testid="hv2-deal-next-line">
+                      {decisionCard.eyebrow}
+                    </span>
+                    {row?.status_text ? <span className="mt-0.5 block text-sm text-ink-3">{row.status_text}</span> : null}
+                  </p>
                   <ButtonLink href={decisionCard.primary.href} variant="primary" data-testid="deal-primary">
                     {decisionCard.primary.label}
                   </ButtonLink>
-                ) : null}
+                </div>
+              ) : null}
+              <ActionGroup className="mt-4" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
                 {paths.length > 1 ? (
                   <Button aria-expanded={view.compare} aria-controls={`${uid}-compare`} onClick={() => onView({ compare: !view.compare })} data-testid="hv2-compare-toggle">
                     {t("hv2.deal.compare")}

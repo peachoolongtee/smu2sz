@@ -136,28 +136,21 @@ async function open(context: BrowserContext, lang: Lang, width: number, url = "/
   await page.setViewportSize({ width, height: width >= 1024 ? 900 : 844 });
   await page.goto(url);
   await expect(page.getByTestId("home-v2")).toBeVisible();
-  await expect(page.getByTestId("home-chart").or(page.getByTestId("home-customer-focus")).or(page.getByTestId("home-deal-focus"))).toBeVisible();
+  await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
   return page;
 }
 const phone = (width: number) => width < 1024;
 const label = (lang: Lang, key: keyof typeof en, vars: Record<string, string | number> = {}) =>
   Object.entries(vars).reduce((t, [k, v]) => t.replace(`{${k}}`, String(v)), DICT[lang][key] as string);
 
-/** The worklist's scope: the column at 1440, the sheet (opened here) at 390. */
-async function worklist(page: Page, width: number, lang: Lang, read: WorklistView): Promise<Locator> {
-  if (!phone(width)) {
-    await expect(page.getByTestId("home-v2-worklist")).toBeVisible();
-    await expect(page.getByTestId("home-worklist-open")).toHaveCount(0);
-    return page.getByTestId("home-worklist-panel");
-  }
-  await expect(page.getByTestId("home-v2-worklist")).toHaveCount(0);
-  const opener = page.getByTestId("home-worklist-open");
-  await expect(opener).toHaveText(label(lang, "hv2.sheet.open", { n: read.counts.needs_you }));
-  await opener.scrollIntoViewIfNeeded();
-  await opener.click();
-  const sheet = page.getByTestId("home-worklist-sheet");
-  await expect(sheet).toBeVisible();
-  return sheet;
+/** The worklist's scope: the card, at every width (a phone has it as a list on the page, no sheet). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function worklist(page: Page, _width: number, _lang: Lang, _read: WorklistView): Promise<Locator> {
+  await expect(page.getByTestId("home-worklist-panel")).toBeVisible();
+  await expect(page.getByTestId("home-worklist-open")).toHaveCount(0);
+  const panel = page.getByTestId("home-worklist-panel");
+  await panel.scrollIntoViewIfNeeded();
+  return panel;
 }
 
 /** The company strip, the status and the action are the Home read's words. */
@@ -165,21 +158,38 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   const v2 = h.home_v2!;
   await expect(page.getByTestId("home-status-word")).toHaveText(h.cash.status_word ?? "");
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", h.status);
-  for (const [id, k] of [["cash", v2.kpis.cash_available], ["lowest", v2.kpis.lowest_ahead], ["funding", v2.kpis.funding]] as const) {
-    await expect(page.getByTestId(`hv2-metric-${id}-label`)).toHaveText(label(lang, `hv2.metric.${id}` as keyof typeof en));
-    await expect(page.getByTestId(`home-kpi-${id}-value`)).toHaveText(k.value_display);
-    // Each level has one job: the cash note is the headroom with the dictionary's word ("+¥100k buffer"), the lowest one the server's short note, the funding cell its status line (the sentence is the recommendation's fact).
-    const note = page.getByTestId(`home-kpi-${id}-note`);
-    if (id === "lowest") await expect(note).toHaveText(v2.kpis.lowest_ahead.short_note ?? k.note);
-    else if (id === "funding" && v2.kpis.funding.status_text) await expect(note).toHaveCount(0);
-    else if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(note).toHaveText(`${v2.kpis.cash_available.buffer.headroom_text} ${label(lang, "hv2.metric.buffer")}`);
-    else await expect(note).toHaveText(k.note);
+  // The cash card and the outlook card: the labels are the dictionary's, the figures and notes the server's.
+  await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText(label(lang, "hv2.card.cash"));
+  await expect(page.getByTestId("home-kpi-cash-value")).toHaveText(v2.kpis.cash_available.value_display);
+  await expect(page.getByTestId("home-kpi-cash-note")).toHaveText(v2.kpis.cash_available.note);
+  await expect(page.getByTestId("hv2-metric-lowest-label")).toHaveText(label(lang, "hv2.card.outlook"));
+  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText(v2.kpis.lowest_ahead.value_display);
+  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(v2.kpis.lowest_ahead.short_note ?? v2.kpis.lowest_ahead.note);
+  await expect(page.getByTestId("hv2-outlook-when")).toHaveText(new RegExp(`^${h.cash.lowest_when}$`, "i"));
+  // The planned or arranged funding is the recommendation's figure (none while there is no funding and the action is quiet).
+  if (v2.kpis.funding.state !== "NONE" || v2.action.variant !== "QUIET") {
+    await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(v2.kpis.funding.value_display);
+    if (v2.kpis.funding.hint) await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint);
+  } else await expect(page.getByTestId("home-kpi-funding-value")).toHaveCount(0);
+  if (v2.kpis.funding.state === "ARRANGED" && v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
+  // The line under the headline is the server's summary of what waits (none when nothing does); Upcoming cash movements are the server's three nearest movements.
+  if (v2.summary_text) await expect(page.getByTestId("hv2-summary")).toHaveText(v2.summary_text);
+  else await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  const upcoming = v2.upcoming ?? [];
+  await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(upcoming.length);
+  for (const [i, u] of upcoming.entries()) {
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.label);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.amount_display);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.when);
+    await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toHaveAttribute("data-kind", u.kind);
   }
-  if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
+  // The state pill: the alert's kind word while one is up, else the status word.
+  await expect(page.getByTestId("hv2-state-pill")).toBeVisible();
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
-  for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
+  // The cost and the funding sentence are on the card (the third fact, who approves, is the approval line below).
+  for (const f of (v2.action.facts ?? []).slice(0, 2)) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
   // The approval is one line under the actions, bound to the server's two fields: the tick form for text with approval_needed false, the warn form when true, none for null.
   if (v2.action.variant === "ACTION") {
@@ -203,10 +213,10 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
     await expect(alert).toContainText(said.kind_text ?? said.eyebrow);
     await expect(scope.getByTestId("home-worklist-alert-go")).toContainText(read.alert.primary.label);
   } else await expect(alert).toHaveCount(0);
-  const tabs = [["needs_you", read.needs_you], ["waiting", read.waiting], ["customers", read.customers]] as const;
+  const tabs = [["all", [...read.needs_you, ...read.waiting]], ["needs_you", read.needs_you], ["waiting", read.waiting], ["customers", read.customers]] as const;
   for (const [tab, rows] of tabs) {
-    await expect(scope.getByTestId(`home-tab-${tab}-badge`)).toHaveText(String(read.counts[tab]));
-    expect(rows.length).toBe(read.counts[tab]);
+    await expect(scope.getByTestId(`home-tab-${tab}-badge`)).toHaveText(String(tab === "all" ? read.counts.needs_you + read.counts.waiting : read.counts[tab]));
+    expect(rows.length).toBe(tab === "all" ? read.counts.needs_you + read.counts.waiting : read.counts[tab]);
   }
   for (const [tab, rows] of tabs) {
     await scope.getByTestId(`home-tab-${tab}`).click();
@@ -215,10 +225,10 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
     if (rows.length === 0) {
       await expect(el).toHaveCount(0);
       const said = (read as WorklistView & { needs_you_empty_text?: string | null }).needs_you_empty_text;
-      if (tab === "needs_you" && said) await expect(scope.getByTestId("home-worklist-empty")).toContainText(said);
+      if ((tab === "needs_you" || tab === "all") && said) await expect(scope.getByTestId("home-worklist-empty")).toContainText(said);
       else {
         await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
-        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "waiting" ? "hv2.work.empty.waiting" : tab === "customers" ? "hv2.work.empty.customers" : "hv2.work.empty.needs"));
       }
       continue;
     }
@@ -227,13 +237,17 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
       const li = el.nth(i);
       if ("customer_id" in row && "short" in row) {
         await expect(li).toHaveAttribute("data-kind", "CUSTOMER");
-        for (const word of [row.name, row.status_text, row.detail_text]) await expect(li).toContainText(word);
+        for (const word of [row.name, row.detail_text]) await expect(li).toContainText(word);
+        await expect(li.getByTestId("home-row-status")).toHaveText(row.status_text);
         continue;
       }
       const r = row as WorklistView["needs_you"][number];
       await expect(li).toHaveAttribute("data-kind", r.kind);
       await expect(li).toHaveAttribute("data-owner", r.owner);
-      for (const word of [r.subject_text, r.status_text, r.consequence_text]) await expect(li).toContainText(word);
+      for (const word of [r.subject_text, r.consequence_text]) await expect(li).toContainText(word);
+      // The status is the pill, in the server's words; amber when it is the owner's turn, lavender when it is somebody else's.
+      await expect(li.getByTestId("home-row-status")).toHaveText(r.status_text);
+      await expect(li.getByTestId("home-row-status")).toHaveAttribute("data-tone", r.owner === "NEEDS_YOU" ? "amber" : "lavender");
       // A normal row says nothing about severity; a caution or a critical one wears its dot and its word.
       if (r.severity === "NORMAL") await expect(li.getByTestId("home-row-severity")).toHaveCount(0);
       else await expect(li.getByTestId("home-row-severity")).toHaveAttribute("data-severity", r.severity);
@@ -294,7 +308,7 @@ for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
         await expect(line).toHaveText(lang === "zh" ? "需要您批准后才会执行" : "Needs your approval before it runs");
         expect(reads.home[lang].home_v2!.action.approval_needed).toBe(true);
       }
-      if (s.name.startsWith("07")) await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText(label(lang, "hv2.metric.funding"));
+      if (s.name.startsWith("07")) await expect(page.getByTestId("hv2-plan-pill")).toHaveText(new RegExp(`^${DICT[lang]["home.hy.planned" as keyof typeof en]}$`, "i"));
     });
   });
 }
@@ -334,7 +348,7 @@ test(STATES[13].name, async ({ request, context }) => {
       await route.continue();
     };
     await page.goto("/");
-    await expect(page.getByTestId("home-chart")).toBeVisible();
+    await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
     await page.route("**/customers/*/overview*", hold);
     await page.route("**/offers/*/exposure*", hold);
     const scope = phone(width) ? await worklist(page, width, lang, reads.work[lang]) : page.getByTestId("home-worklist-panel");
@@ -368,17 +382,14 @@ test("reduced motion: the page and a selection arrive without an animation", asy
   await page.close();
 });
 
-test("accessibility: no axe violations on the five deals at 1440 and at 390 (the sheet open)", async ({ request, context }) => {
+test("accessibility: no axe violations on the five deals at 1440 and at 390", async ({ request, context }) => {
   const s = STATES[3];
   const reads = await drive(request, s);
   const violations = async (page: Page) => (await new AxeBuilder({ page }).analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
   for (const width of WIDTHS) {
     const page = await open(context, "en", width);
     expect(await violations(page), `${width} Home`).toEqual([]);
-    if (phone(width)) {
-      await worklist(page, width, "en", reads.work.en);
-      expect(await violations(page), `${width} sheet`).toEqual([]);
-    }
+    await worklist(page, width, "en", reads.work.en);
     await page.close();
   }
 });

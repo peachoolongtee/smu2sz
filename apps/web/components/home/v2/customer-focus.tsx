@@ -1,12 +1,12 @@
 "use client";
 
-import { Announce, Crumbs, LeaveLink, Reading } from "@/components/home/v2/focus-parts";
+import { Announce, Dismiss, Reading } from "@/components/home/v2/focus-parts";
+import { InvoiceCards } from "@/components/home/v2/invoice-card";
 import { ActionRow } from "@/components/home/v2/worklist";
 import { OpenSection } from "@/components/ui/open-section";
 import { StateWord } from "@/components/ui/state-word";
 import { stateKey } from "@/components/ui/state-word-model";
 import { getCustomerFocus } from "@/lib/api";
-import { customerHref } from "@/lib/customer-href";
 import type { HomeSelection } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomerOverviewView, OverviewFigure, OverviewTone, WorklistView } from "@/lib/types";
@@ -44,22 +44,21 @@ export function CustomerFocusPanel({ customerId, worklist, selection, onAll }: {
   const view = useAsync(() => getCustomerFocus(customerId, lang), [customerId, lang]);
   const rows = [...(worklist?.needs_you ?? []), ...(worklist?.waiting ?? [])].filter((r) => r.customer_id === customerId);
   return (
-    <div id="home-focus" data-testid="home-customer-focus" data-customer={customerId} className="min-w-0">
+    <div id="home-focus" data-testid="home-customer-focus" data-customer={customerId} className="f-card f-card-white min-w-0 p-6">
       <Announce text={view.data?.name ?? ""} />
       <div key={customerId} className="motion-swap">
-        <Crumbs onAll={onAll} current={view.data?.name} />
         <Reading read={view}>
           {(v: CustomerOverviewView) => (
             <>
-              <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <h2 id="home-focus-title" tabIndex={-1} className="font-display text-2xl font-extrabold leading-tight tracking-[-0.02em] text-ink" data-testid="focus-title">
-                  {v.name}
-                </h2>
-                <LeaveLink href={customerHref(customerId)} testId="focus-open-customer">
-                  {t("hv2.focus.open")}
-                </LeaveLink>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
+                    {v.name}
+                  </h2>
+                  {v.summary_text ? <p className="mt-1.5 text-pretty text-[15px] text-ink-3">{v.summary_text}</p> : null}
+                </div>
+                <Dismiss onDismiss={onAll} />
               </div>
-              {v.summary_text ? <p className="mt-1 text-pretty text-sm text-ink-2">{v.summary_text}</p> : null}
               {v.figures?.length ? (
                 <dl aria-label={t("hv2.focus.figures")} className="mt-4 grid grid-cols-2 border-y border-line sm:grid-cols-4" data-testid="focus-figures">
                   {v.figures.map((f) => (
@@ -67,6 +66,7 @@ export function CustomerFocusPanel({ customerId, worklist, selection, onAll }: {
                   ))}
                 </dl>
               ) : null}
+              <InvoiceCards customerId={customerId} />
               <OpenSection title={t("hv2.focus.rows")} first className="mt-7">
                 {rows.length ? (
                   <ul className="divide-y divide-line" data-testid="focus-rows">

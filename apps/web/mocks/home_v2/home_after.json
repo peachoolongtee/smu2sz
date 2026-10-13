@@ -4124,6 +4124,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "Nothing to run. One collection needs you.",
+      "upcoming": [
+        {
+          "label": "Invoice financing arrives",
+          "amount_display": "+¥200k",
+          "when": "in 3 days",
+          "kind": "inflow"
+        },
+        {
+          "label": "Payroll is paid",
+          "amount_display": "−¥200k",
+          "when": "in 8 days",
+          "kind": "outflow"
+        },
+        {
+          "label": "Foshan pays",
+          "amount_display": "+¥420k",
+          "when": "in 13 days",
+          "kind": "inflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "CASH AVAILABLE",
@@ -8533,6 +8554,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "没有需要执行的操作。1 项催收需要您处理。",
+      "upcoming": [
+        {
+          "label": "发票融资到账",
+          "amount_display": "+¥200k",
+          "when": "3 天后",
+          "kind": "inflow"
+        },
+        {
+          "label": "发放工资",
+          "amount_display": "−¥200k",
+          "when": "8 天后",
+          "kind": "outflow"
+        },
+        {
+          "label": "Foshan付款",
+          "amount_display": "+¥420k",
+          "when": "13 天后",
+          "kind": "inflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "可用现金",

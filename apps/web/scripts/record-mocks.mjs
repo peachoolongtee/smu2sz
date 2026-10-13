@@ -93,6 +93,7 @@
 //   day34       the deal made, the day-2 receipt, the clock at day 34 (the late invoice; the reserve alert open with its cure)
 //   pending     the day-34 cure queued for the owner's approval
 //   after       the cure approved
+// and receivables_<point>.json = { en, zh } of GET /receivables (the invoice rows with their breakdown, net after repayment and collection words) at each moment.
 // and, for the focus panels (slice 2; deal_title_offer.json = { en, zh } of GET /home?decision= `chart.scenario_title_text`; picture_offer.json = { en, zh } of GET /offers/<EX01>/picture, for the paths' words), focus_<point>.json = { en, zh } of { customers: { <id>: GET /customers/<id>/overview }, deals: { none | asked | counter:0:
 // the same read with the open decision and that scenario, so `context` echoes them } } (deals only at `offer`), and exposure_offer.json = { en, zh } of GET /offers/<EX01>/exposure?customer=.
 // The API needs the flags above (Home V2 has none):
@@ -498,6 +499,7 @@ if (HOME_V2) {
     const both = async (read) => ({ en: await inLang("en", () => read("en")), zh: await inLang("zh", () => read("zh")) });
     const home = await both((lang) => live.getHome(lang));
     if (!home.en.home_v2) throw new Error("the Home read carries no home_v2: the API is older than Home V2");
+    const receivables = await both((lang) => live.getReceivables(lang)); // the invoice rows: the breakdown, the net after repayment and the collection words the Home's invoice card shows
     const worklist = await both((lang) => live.getWorklist(lang));
     const customers = await both((lang) => live.getCustomers(lang));
     if (!worklist.en || !customers.en) throw new Error("GET /worklist or /customers is absent: the API is older than Home V2");
@@ -516,10 +518,10 @@ if (HOME_V2) {
       : null;
     const picture = decisionRow ? { en: await live.getOfferPicture(decisionRow.key.slice("deal:".length), "en"), zh: await live.getOfferPicture(decisionRow.key.slice("deal:".length), "zh") } : null;
     const title = decisionRow ? { en: await live.getDealTitle(decisionRow.key, "en"), zh: await live.getDealTitle(decisionRow.key, "zh") } : null;
-    return { home, worklist, customers, focus, exposure, picture, title };
+    return { home, worklist, customers, focus, exposure, picture, title, receivables };
   };
   const keep = (point, got) => {
-    for (const kind of ["home", "worklist", "customers", "focus"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
+    for (const kind of ["home", "worklist", "customers", "focus", "receivables"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
     if (point !== "offer") return; // the deal's own reads belong to the moment its offer is open
     if (got.exposure) write("home_v2/exposure_offer.json", got.exposure);
     if (got.picture) write("home_v2/picture_offer.json", got.picture);

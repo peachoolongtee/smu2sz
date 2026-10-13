@@ -23,18 +23,20 @@ export async function resetBooks(request: APIRequestContext): Promise<void> {
 }
 
 const BRAND_600 = "rgb(3, 104, 233)";
+/** The ink primary of the owner's mockup language (Home and the pages that have taken it): the same one filled button. */
+const INK_BUTTON = "rgb(23, 29, 30)";
 
 /** Visible elements filled with the brand blue: the page's primary actions. */
 export async function filledBrand(page: Page): Promise<number> {
-  return page.evaluate((brand) => {
+  return page.evaluate((fills) => {
     const visible = (el: Element) => {
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
     };
-    return Array.from(document.querySelectorAll("main button, main a")).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length +
-      Array.from(document.querySelectorAll('main [data-testid="home-review-primary"]')).filter((el) => visible(el) && getComputedStyle(el).backgroundColor === brand).length;
-  }, BRAND_600);
+    return Array.from(document.querySelectorAll("main button, main a")).filter((el) => visible(el) && fills.includes(getComputedStyle(el).backgroundColor)).length +
+      Array.from(document.querySelectorAll('main [data-testid="home-review-primary"]')).filter((el) => visible(el) && fills.includes(getComputedStyle(el).backgroundColor)).length;
+  }, [BRAND_600, INK_BUTTON]);
 }
 
 /** The guided Demo is eleven steps in six scenes (lib/demo.ts DEMO_STEPS): the late-payment loop. */

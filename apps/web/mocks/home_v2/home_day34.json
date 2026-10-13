@@ -5563,6 +5563,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "One funding action ready. One collection needs you.",
+      "upcoming": [
+        {
+          "label": "Payroll is paid",
+          "amount_display": "−¥200k",
+          "when": "in 8 days",
+          "kind": "outflow"
+        },
+        {
+          "label": "Foshan pays",
+          "amount_display": "+¥420k",
+          "when": "in 13 days",
+          "kind": "inflow"
+        },
+        {
+          "label": "Debt service is paid",
+          "amount_display": "−¥45k",
+          "when": "in 26 days",
+          "kind": "outflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "CASH AVAILABLE",
@@ -11478,6 +11499,27 @@
       "href": "/activity"
     },
     "home_v2": {
+      "summary_text": "有 1 项融资操作可以执行。1 项催收需要您处理。",
+      "upcoming": [
+        {
+          "label": "发放工资",
+          "amount_display": "−¥200k",
+          "when": "8 天后",
+          "kind": "outflow"
+        },
+        {
+          "label": "Foshan付款",
+          "amount_display": "+¥420k",
+          "when": "13 天后",
+          "kind": "inflow"
+        },
+        {
+          "label": "支付债务还款",
+          "amount_display": "−¥45k",
+          "when": "26 天后",
+          "kind": "outflow"
+        }
+      ],
       "kpis": {
         "cash_available": {
           "eyebrow": "可用现金",

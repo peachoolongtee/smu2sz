@@ -7842,7 +7842,24 @@
         "lowest_short": "¥165k",
         "lowest_when": "in 60 days",
         "first_breach_when": "in 47 days",
-        "band_text": "Below your minimum for 15 days"
+        "band_text": "Below your minimum for 15 days",
+        "ask_breakdown": [
+          {
+            "label": "After buyer discount",
+            "amount_display": "¥414,960",
+            "share_text": "99%"
+          },
+          {
+            "label": "Requested discount",
+            "amount_display": "¥5,040",
+            "share_text": "1%"
+          }
+        ],
+        "ask_facts": {
+          "invoice_value_display": "¥420,000",
+          "requested_discount_display": "¥5,040",
+          "requested_term_text": "60 days"
+        }
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -9849,7 +9866,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
         "first_breach_when": null,
-        "band_text": "The next invoice is paid 15 days sooner than as asked"
+        "band_text": "The next invoice is paid 15 days sooner than as asked",
+        "ask_breakdown": null,
+        "ask_facts": null
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -11886,7 +11905,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
         "first_breach_when": null,
-        "band_text": "The next invoice is paid 5 days sooner than as asked"
+        "band_text": "The next invoice is paid 5 days sooner than as asked",
+        "ask_breakdown": null,
+        "ask_facts": null
       }
     ],
     "moments": [
@@ -20126,7 +20147,24 @@
         "lowest_short": "¥165k",
         "lowest_when": "60 天后",
         "first_breach_when": "47 天后",
-        "band_text": "低于您的最低现金储备 15 天"
+        "band_text": "低于您的最低现金储备 15 天",
+        "ask_breakdown": [
+          {
+            "label": "买方折扣后",
+            "amount_display": "¥414,960",
+            "share_text": "99%"
+          },
+          {
+            "label": "买方要求的折扣",
+            "amount_display": "¥5,040",
+            "share_text": "1%"
+          }
+        ],
+        "ask_facts": {
+          "invoice_value_display": "¥420,000",
+          "requested_discount_display": "¥5,040",
+          "requested_term_text": "60 天"
+        }
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -22133,7 +22171,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
         "first_breach_when": null,
-        "band_text": "下一张发票比按对方要求早 15 天收款"
+        "band_text": "下一张发票比按对方要求早 15 天收款",
+        "ask_breakdown": null,
+        "ask_facts": null
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -24170,7 +24210,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
         "first_breach_when": null,
-        "band_text": "下一张发票比按对方要求早 5 天收款"
+        "band_text": "下一张发票比按对方要求早 5 天收款",
+        "ask_breakdown": null,
+        "ask_facts": null
       }
     ],
     "moments": [

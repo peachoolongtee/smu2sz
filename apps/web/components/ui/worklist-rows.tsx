@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type MouseEventHandler, type ReactNode } from "react";
+import { useRef, type KeyboardEvent, type MouseEventHandler, type ReactNode } from "react";
 import { nextTabIndex } from "@/components/ui/segmented-tabs-model";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 export interface UnderlineTab<T extends string> {
   value: T;
@@ -19,32 +18,13 @@ export interface UnderlineTab<T extends string> {
 }
 
 /**
- * The worklist's filters as an inbox's: text tabs on a hairline, a 2 px ink underline that slides to the chosen one (`--dur`, `--ease-select`; none under reduced motion), the
- * count beside each label at 13 px in neutral text (colour is for severity only). A tablist: one tab stop, arrow keys, Home and End move and the choice follows the focus.
+ * The worklist's filters as the mockup's: text tabs, the chosen one a white pill (the count beside each label at 13 px in neutral text; colour is for the status pill only). A tablist:
+ * one tab stop, arrow keys, Home and End move and the choice follows the focus.
  */
 export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[] }) {
-  const reduced = useReducedMotion();
   const track = useRef<HTMLDivElement>(null);
-  const bar = useRef<HTMLSpanElement>(null);
   const selected = tabs.findIndex((t) => t.value === value);
   const els = () => Array.from(track.current?.querySelectorAll<HTMLButtonElement>("[role=tab]") ?? []);
-  const measure = () => {
-    const el = els()[selected];
-    const b = bar.current;
-    if (el && b) {
-      b.style.width = `${el.offsetWidth}px`;
-      b.style.transform = `translateX(${el.offsetLeft}px)`;
-    }
-  };
-  useLayoutEffect(measure);
-  useEffect(() => {
-    const t = track.current;
-    if (!t || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(t);
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
   const onKey = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
     const to = nextTabIndex(e.key, i, tabs.map(() => ({})));
     if (to === null) return;
@@ -53,7 +33,7 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
     els()[to]?.focus();
   };
   return (
-    <div ref={track} role="tablist" aria-label={label} className="relative flex gap-5 border-b border-line">
+    <div ref={track} role="tablist" aria-label={label} className="flex flex-wrap gap-1">
       {tabs.map((t, i) => {
         const on = i === selected;
         return (
@@ -69,20 +49,15 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
             data-testid={t.testId}
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKey(e, i)}
-            className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-control text-sm font-bold transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "text-ink" : "text-ink-3"}`}
+            className={`motion-press inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-pill px-3.5 text-[15px] font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
           >
             {t.label}
-            <span className={`text-supporting font-bold tabular-nums ${on ? "text-ink-2" : "text-ink-3"}`} data-testid={t.countTestId}>
+            <span className={`text-supporting tabular-nums ${on ? "text-ink" : "text-ink-3"}`} data-testid={t.countTestId}>
               {t.count}
             </span>
           </button>
         );
       })}
-      <span
-        ref={bar}
-        aria-hidden
-        className={`pointer-events-none absolute -bottom-px left-0 h-0.5 rounded-pill bg-ink ${reduced ? "" : "transition-[transform,width] duration-(--dur) ease-select"} ${selected < 0 ? "opacity-0" : ""}`}
-      />
     </div>
   );
 }
@@ -90,7 +65,7 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
 /** The search: an icon, the field and one bottom hairline (no box). */
 export function WorklistSearch({ value, onChange, label, testId, found, foundTestId }: { value: string; onChange: (v: string) => void; label: string; testId?: string; found?: string; foundTestId?: string }) {
   return (
-    <div className="mt-2 flex h-10 items-center gap-2 border-b border-line px-0.5 text-ink-3 focus-within:border-line-ui">
+    <div className="flex h-10 min-w-0 items-center gap-2 border-b border-line-ui px-0.5 text-ink-3 focus-within:border-ink">
       <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden className="shrink-0">
         <circle cx="7" cy="7" r="4.75" />
         <path d="m10.6 10.6 3 3" />
@@ -127,10 +102,9 @@ export function WorklistAlertLine({ tone, eyebrow, text, action, describedBy, no
 }
 
 /**
- * One row of the inbox: a link that opens its item (padding 14 and 10, radius 10, the canvas on hover). The subject is 15 px 700, the status 13 px ink-2, the consequence 13 px
- * ink-3 (never the 12 px metadata size: they qualify a figure); `qualifier` is the italic quoted line that tells two alike subjects apart. The severity is the dot and its word
- * at the right (CAUTION and CRITICAL only). Selected is the `brand-50` fill with a 2 px brand rule on the left and the focus ring when focused. Dividers are inset to the text
- * and hide beside the selected row.
+ * One row of the worklist table (a white 16 px row on the panel): a link that opens its item. Columns from `md`: the subject (15 px, with a quoted differentiator under it when the
+ * server sends one for two alike subjects), the next step (the server's consequence, 14 px muted) and the status pill at the right; on a phone the subject and the pill share the first
+ * line and the next step sits under the subject. Selected is the lavender fill with a purple hairline. `severity` is the screen-reader word (the pill carries the status for the eye).
  */
 export function WorklistRow({
   href,
@@ -139,8 +113,8 @@ export function WorklistRow({
   isNew,
   newLabel,
   qualifier,
-  status,
-  consequence,
+  nextStep,
+  pill,
   severity,
   after,
   onClick,
@@ -153,10 +127,10 @@ export function WorklistRow({
   isNew?: boolean;
   newLabel?: string;
   qualifier?: string | null;
-  status?: string | null;
-  consequence?: string | null;
+  nextStep?: string | null;
+  pill?: ReactNode;
   severity?: ReactNode;
-  /** Under the three lines (the reason the first row is first). */
+  /** Under the row's lines (the reason the first row is first). */
   after?: ReactNode;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   testId?: string;
@@ -169,21 +143,27 @@ export function WorklistRow({
         scroll={false}
         aria-current={selected ? "true" : undefined}
         onClick={onClick}
-        className={`motion-press relative -mx-3.5 grid grid-cols-[minmax(0,1fr)_auto] gap-x-2.5 rounded-tile px-3.5 py-3 outline-offset-0 hover:bg-surface focus-visible:outline-2 focus-visible:outline-brand-600 ${selected ? "bg-brand-50 hover:bg-brand-50 before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-pill before:bg-brand-600" : ""}`}
+        className={`motion-press relative grid grid-cols-1 items-center gap-x-4 gap-y-1.5 rounded-[16px] px-4 py-3.5 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(7.5rem,auto)] ${
+          selected ? "bg-brand-50 ring-1 ring-f-purple" : "bg-card hover:shadow-f hover:ring-1 hover:ring-line"
+        }`}
       >
-        <span className="min-w-0 text-[15px] font-bold leading-snug text-ink">
+        <span className="min-w-0 text-[15px] font-medium leading-snug text-ink">
           {subject}
           {isNew && newLabel ? (
-            <span className="ml-2 text-supporting font-semibold text-brand-700" data-testid="home-row-new">
+            <span className="ml-2 text-supporting font-semibold text-ink-2" data-testid="home-row-new">
               {newLabel}
             </span>
           ) : null}
+          {qualifier ? (
+            <span className="mt-0.5 block text-supporting font-normal italic text-ink-3" data-testid="hv2-row-qualifier">
+              “{qualifier}”
+            </span>
+          ) : null}
         </span>
-        <span className="row-start-1 col-start-2 self-center">{severity}</span>
-        {qualifier ? <span className="col-start-1 text-supporting italic text-ink-3" data-testid="hv2-row-qualifier">“{qualifier}”</span> : null}
-        {status ? <span className="col-start-1 text-supporting text-ink-2">{status}</span> : null}
-        {consequence ? <span className="col-start-1 text-supporting text-ink-3">{consequence}</span> : null}
-        {after ? <span className="col-span-2 mt-1.5 block">{after}</span> : null}
+        {nextStep ? <span className="min-w-0 text-supporting text-ink-3 md:text-sm">{nextStep}</span> : <span className="hidden md:block" />}
+        <span className="flex min-w-0 items-center justify-start">{pill}</span>
+        {severity}
+        {after ? <span className="col-span-full mt-1 block">{after}</span> : null}
       </Link>
     </li>
   );
