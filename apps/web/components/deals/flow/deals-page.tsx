@@ -152,7 +152,7 @@ export function DealsPage() {
       ) : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:items-start">
         <div className="min-w-0 space-y-5">
-          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} />
+          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? null) : null} onShowAll={() => go({ customer: null })} />
           <div className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
             {inboxOpen ? null : (
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">

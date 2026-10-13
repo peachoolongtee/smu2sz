@@ -2585,6 +2585,11 @@ export const en = {
   "deals.inbox.title": "Buyer messages ({n})",
   "deals.inbox.show": "Show messages",
   "deals.check.body": "FLOW has read the message. Check what it would cost you and whether it fits your limits.",
+  "customer.fig.contribution": "Estimated annual gross contribution",
+  "customer.outstanding": "Open with {name}",
+  "customer.allTasks": "All of {name}'s tasks in Deals",
+  "deals.only": "Showing {name} only.",
+  "deals.showAll": "Show everyone",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5168,4 +5173,9 @@ export const zh: Record<DictKey, string> = {
   "deals.inbox.title": "买方消息（{n}）",
   "deals.inbox.show": "查看消息",
   "deals.check.body": "FLOW 已读完这条消息。请检查它会让您付出多少成本，以及是否符合您的上限。",
+  "customer.fig.contribution": "估算的全年毛利贡献",
+  "customer.outstanding": "与{name}之间待办的事项",
+  "customer.allTasks": "在交易页查看{name}的全部事项",
+  "deals.only": "只显示{name}。",
+  "deals.showAll": "显示全部客户",
 };

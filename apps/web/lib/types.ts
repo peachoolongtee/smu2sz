@@ -3986,6 +3986,8 @@ export interface OverviewFigure {
   /** The one state vocabulary's key (lower case: planned, arranged, received, repaid, current, due_soon, overdue, promise_missed) and its word; `none` and "" when the figure has no state. */
   state?: string;
   state_text?: string;
+  /** Where the figure comes from, in the server's word ("you entered", "projected from your books", "assumed for the Demo"); absent from a server that does not send it (the economics rows' own notes then say it). */
+  provenance_text?: string | null;
 }
 
 /** A labelled row of the economics or the exposure panel. `note` is the quiet sentence after the value (where it came from, what it means), when there is one. */
@@ -4019,6 +4021,9 @@ export interface OverviewDecision {
 export interface OverviewHistoryRow {
   when_text: string;
   text: string;
+  /** The state vocabulary's key and word for a row that is a money state (planned, arranged, received, repaid, overdue ...); absent otherwise. */
+  state?: string;
+  state_text?: string;
   /** Where the row opens (the deal, its record, the documents), or null for a row that is only said; `link_label` says where. */
   href: string | null;
   link_label?: string | null;

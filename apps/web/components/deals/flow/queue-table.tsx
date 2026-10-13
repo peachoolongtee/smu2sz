@@ -118,6 +118,8 @@ export function QueuePanel({
   locked,
   onSelect,
   alertGo,
+  onlyCustomer,
+  onShowAll,
 }: {
   queue: Queue | null | undefined;
   customers: CustomersView | null | undefined;
@@ -130,6 +132,9 @@ export function QueuePanel({
   locked: boolean;
   onSelect: (customer: string | null, decision: string, invoice: string | null) => void;
   alertGo?: () => void;
+  /** A customer's page sent the owner for all of its tasks: only that customer's rows are listed, and the chip says so with the way to show everyone. */
+  onlyCustomer?: string | null;
+  onShowAll?: () => void;
 }) {
   const { t } = useI18n();
   const uid = useId();
@@ -148,9 +153,10 @@ export function QueuePanel({
       </section>
     );
   const counts = tabCounts(queue);
-  const tasks = taskRows(queue).filter((x) => matchesRow(x.row, q, termsOf(x.row.customer_id)));
+  const only = onlyCustomer ? (queue.customers.find((c) => c.customer_id === onlyCustomer)?.name ?? null) : null;
+  const tasks = taskRows(queue).filter((x) => (!onlyCustomer || x.row.customer_id === onlyCustomer) && matchesRow(x.row, q, termsOf(x.row.customer_id)));
   const shownTasks = tab === "all" ? tasks : tab === "customers" ? [] : tasks.filter((x) => x.tier === tab);
-  const people = tab === "customers" ? queue.customers.filter((c) => matchesCustomer(c, q, termsOf(c.customer_id))) : [];
+  const people = tab === "customers" ? queue.customers.filter((c) => (!onlyCustomer || c.customer_id === onlyCustomer) && matchesCustomer(c, q, termsOf(c.customer_id))) : [];
   const shown = tab === "customers" ? people.length : shownTasks.length;
   const everywhereEmpty = counts.all === 0 && counts.customers === 0;
   const alert = queue.alert;
@@ -196,6 +202,14 @@ export function QueuePanel({
       <div className="mt-4 -mx-1 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] [&>div]:w-max [&>div]:min-w-full">
         <UnderlineTabs label={t("deals.tabs")} value={tab} onChange={onTab} tabs={tabs} />
       </div>
+      {onlyCustomer ? (
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="queue-only-customer">
+          <span>{t("deals.only", { name: only ?? onlyCustomer })}</span>
+          <button type="button" onClick={onShowAll} className="inline-flex min-h-8 items-center font-bold text-brand-700 underline underline-offset-2 touch:min-h-11" data-testid="queue-show-all">
+            {t("deals.showAll")}
+          </button>
+        </p>
+      ) : null}
       <WorklistSearch value={q} onChange={setQ} label={t("deals.search")} testId="queue-search" found={t("hv2.work.found", { n: shown })} foundTestId="queue-found" />
       <div role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} aria-busy={loading} data-testid={`queue-panel-${tab}`} className="mt-3">
         {shown === 0 ? (
