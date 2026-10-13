@@ -44,7 +44,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from fractions import Fraction
-from typing import Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -59,6 +59,7 @@ from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_pict
 from app.api.presentation import Lang, agreement_words, deal_back_label, event_words, party_name, t, when_text
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.api.workspace import _months
 from app.books import current_books
 from app.config import DEMO_GROSS_MARGIN_BP, get_settings
@@ -1065,32 +1066,8 @@ def _back(rt: Runtime, state: FinancialState, buyer_id: str, who: str, lang: Lan
     return {"label": t(lang, "Back to Deals", "返回交易"), "href": "/deals"}
 
 
-def _selected_deal(rt: Runtime, buyer_id: str, decision: str | None) -> str | None:
-    """The deal the page was opened on, when the query names one of this buyer's offers (else None, never echoed)."""
-    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
-    offer = rt.store.get_offer(offer_id) if offer_id else None
-    return decision if offer is not None and offer.counterparty_id == buyer_id else None
-
-
-_SCENARIO = re.compile(r"asked|counter:[0-9]{1,3}")
-
-
-def _selected_scenario(rt: Runtime, deal: str | None, scenario: str | None) -> str | None:
-    """The scenario the page was opened on, validated as the exposure reads validate `response`: `asked`, or `counter:<k>` when the deal's
-    verdict has a k-th counter-offer; none without a deal (a scenario is of a deal), and never an echo of anything else."""
-    if deal is None or not scenario or not _SCENARIO.fullmatch(scenario):
-        return None
-    if scenario == "asked":
-        return scenario
-    offer_id = offer_id_of(deal)
-    verdict = latest_verdict_for(rt, offer_id) if offer_id else None
-    return scenario if verdict is not None and int(scenario.split(":")[1]) < len(verdict.counters) else None
-
-
 @router.get("/customers/{customer_id}/overview")
-def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), decision: str | None = Query(None, max_length=120),
-                 path: str | None = Query(None, max_length=120), invoice: str | None = Query(None, max_length=120),
-                 scenario: str | None = Query(None, max_length=120)) -> dict[str, Any]:
+def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state = rt.store.get_state()
@@ -1098,7 +1075,9 @@ def get_overview(customer_id: str, lang: Literal["en", "zh"] = Query("en"), deci
         if buyer is None:
             raise HTTPException(404, detail={"code": "CUSTOMER_NOT_FOUND", "message": f"There is no customer {customer_id} on the books."})
         body = _cached(rt, customer_id, lang)
-        back = _back(rt, state, customer_id, buyer_short(buyer.name), lang, decision, path, invoice)
-        deal = _selected_deal(rt, customer_id, decision)
-    # the three selections (Home V2's URL state), echoed when they name this buyer's: a `scenario` needs a deal to be a scenario of
-    return {**body, "context": {"back": back, "customer": customer_id, "deal": deal, "scenario": _selected_scenario(rt, deal, scenario)}}
+        # the URL contract's context (`app.api.selection`), the one function every page read uses; `deal` is the same selection as `decision`
+        # (the name Home V2 gave it), kept for the pages that read it
+        context = build_context(rt, lang, sel, page="customer", buyer=customer_id)
+        context["back"] = context["back"] or _back(rt, state, customer_id, buyer_short(buyer.name), lang, context["decision"], context["path"],
+                                                   context["invoice"])
+    return {**body, "context": {**context, "deal": context["decision"]}}

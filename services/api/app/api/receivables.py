@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -23,6 +23,7 @@ from app.api.home import Partial
 from app.api.presentation import Lang, last_read
 from app.api.receipt_basis import BasisReader, agreement_days, scheduled_billing
 from app.api.runtime import get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.books import current_books
 from app.domain.models import CommitmentStatus, DocumentKind, DocumentStatus
 from app.financial import EngineError
@@ -146,11 +147,12 @@ def _say_basis(rt: Any, body: dict[str, Any], today: int, lang: str, entries: An
 
 
 @router.get("/receivables")
-def get_receivables(lang: Literal["en", "zh"] = "en") -> dict[str, Any]:
+def get_receivables(lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
     rt = get_runtime()
     with rt.lock:
         state, today, body, partial = read_rows(rt, lang)
         entries = _financing_links(rt, body["rows"], partial)
         _say_basis(rt, body, today, lang, entries, partial)
-    return displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, "partial": partial.view(lang),
-                      **last_read(today, lang)})
+        context = build_context(rt, lang, sel, page="receivables")
+    return {**displayed({"day": today, "lang": lang, "state_version": state.state_version, **body, "partial": partial.view(lang),
+                         **last_read(today, lang)}), "context": context}

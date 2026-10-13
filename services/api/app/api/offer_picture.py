@@ -11,7 +11,7 @@ import threading
 from bisect import bisect_right
 from collections import Counter, OrderedDict
 from functools import reduce
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -33,8 +33,10 @@ from app.api.presentation import (
 )
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
+from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
     FundingActionKind,
@@ -902,9 +904,12 @@ def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
 
 
 @router.get("/offers/{offer_id}/picture")
-def get_picture(offer_id: str, lang: str = "en") -> dict[str, Any]:
-    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only."""
+def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
+    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only. `context` is the
+    URL contract's (`app.api.selection`): the selections this offer honours, the way back, and what it could not use."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
-        return cached_picture(rt, offer_id, lang)
+        offer = rt.store.get_offer(offer_id)
+        context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
+        return {**cached_picture(rt, offer_id, lang), "context": context}

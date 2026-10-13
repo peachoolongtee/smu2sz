@@ -15,7 +15,7 @@ import json
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -47,6 +47,7 @@ from app.api.presentation import (
     when_text,
 )
 from app.api.runtime import Runtime, get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.decisions import (
     DealState,
     DecisionInputs,
@@ -627,7 +628,7 @@ def list_decisions(lang: str = "en", family: str | None = None, open: bool = Fal
 
 
 @router.get("/decisions/{decision_id}")
-def get_decision(decision_id: str, lang: str = "en") -> dict[str, Any]:
+def get_decision(decision_id: str, lang: str = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
     rt = get_runtime()
     lang = _lang(lang)
     with rt.lock:
@@ -640,7 +641,10 @@ def get_decision(decision_id: str, lang: str = "en") -> dict[str, Any]:
             inp = ctx.inputs_for(decision_id)
             found = (derive(inp), inp)
         ds, inp = found
-        return decision_detail(ctx, ds, inp, lang)
+        subject = ds.offer if ds.offer is not None else ds.commitment
+        context = build_context(rt, lang, sel, page="decision", buyer=subject.counterparty_id if subject is not None else None,
+                                deal=decision_id)
+        return {**decision_detail(ctx, ds, inp, lang), "context": context}
 
 
 __all__ = ["Context", "Reconciled", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]
