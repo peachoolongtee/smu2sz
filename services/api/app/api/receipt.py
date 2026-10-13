@@ -55,6 +55,10 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
     else:
         landing = t(lang, "Nothing is in hand yet.", "目前没有资金到账。")
     future = t(lang, f"Nothing from {buyer} counts as cash until it arrives.", f"{buyer}的款项在到账前不计入现金。")
+    # The engine funds the cash gap when the counter is sent, on the books as they stand then, whatever the buyer answers: a refusal does not
+    # take the funding back (`_negotiate_locked` plans the gap on both outcomes). Said where the owner reads the assumptions.
+    runs_anyway = (t(lang, "Runs when you send, whether or not the buyer agrees; if the buyer declines, it is sized to the gap as it stands without the agreement.",
+                     "发送时即执行，无论买方是否同意；若买方拒绝，融资金额按不含该协议的现有缺口确定。") if funding else None)
     return receipt(
         authorizes_text=lines[0] if lines else None,
         executes_now_text=_join(lang, funding),
@@ -62,7 +66,7 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
         in_hand_vs_future_text=f"{landing} {future}" if lang != "zh" else f"{landing}{future}",
         fees_display=cost_display,
         when_text=t(lang, "As soon as you confirm.", "您确认后立即生效。"),
-        assumptions_text=recheck_text,
+        assumptions_text=(" " if lang != "zh" else "").join(x for x in (recheck_text, runs_anyway) if x) or None,
         authority_text=authority_text,
         remaining_text=t(lang, f"{buyer} has not accepted yet; the agreement stands only if it does.", f"{buyer}尚未接受；只有接受后协议才成立。"))
 

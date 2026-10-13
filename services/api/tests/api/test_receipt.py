@@ -17,7 +17,7 @@ from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
-from tests.api.conftest import english_leaks
+from tests.api.conftest import agree_on_rcv_a, english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
@@ -81,7 +81,8 @@ def test_the_send_receipt_keeps_the_three_lines_of_the_ex01_receipt(api: TestCli
     assert cost == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
     assert r["authorizes_text"] == agreement and r["executes_now_text"] == f"{draw}; {cost}"
     assert r["fees_display"] == "¥3,027.77" == pr["supplier_cost_display"] and r["gross_display"] is None and r["net_display"] is None
-    assert r["assumptions_text"] == pr["recheck_text"]
+    # the recheck sentence, then what the engine does whatever the buyer answers (the funding runs when the counter is sent)
+    assert r["assumptions_text"].startswith(pr["recheck_text"]) and "Runs when you send, whether or not the buyer agrees" in r["assumptions_text"]
     assert r["authority_text"] == "FLOW can send it. Your approval is not needed."
     assert r["others_must_agree_text"] == "Foshan Home Retail Co. must accept the counter before it takes effect."
     assert r["in_hand_vs_future_text"] == "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives."
@@ -189,6 +190,7 @@ def test_the_collection_draft_says_nothing_is_sent(api: TestClient, lang: str) -
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_agreement_on_the_record_carries_its_receipt(api: TestClient, lang: str) -> None:
     api.post("/demo/reset", params={"scenario": "busy"})
+    agree_on_rcv_a(api)
     agreed = next(d for d in api.get("/decisions").json()["decisions"] if d["state"] == "AGREED")
     detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
     r = _whole(detail["agreement"]["receipt"], lang)

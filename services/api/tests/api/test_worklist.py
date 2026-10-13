@@ -155,7 +155,9 @@ def test_the_counts_equal_the_rows_and_the_alert_is_counted_nowhere(api: TestCli
         if moment == "after":
             _run_plan(api)
         w = _get(api)
-        assert w["counts"] == {"needs_you": len(w["needs_you"]), "waiting": len(w["waiting"]), "customers": len(w["customers"])}
+        # the queue's counts: a promise is an Agreements row there, so Waiting counts the rest of the `waiting` rows
+        assert w["counts"] == {"needs_you": len(w["needs_you"]), "waiting": len([r for r in w["waiting"] if r["kind"] != "PROMISE"]),
+                               "agreements": len([r for r in w["waiting"] if r["kind"] == "PROMISE"]), "customers": len(w["customers"])}
         assert w["counts"]["customers"] == 2
         assert all(k not in {i["key"] for i in w["needs_you"] + w["waiting"]} for k in ("company-cash",))
 

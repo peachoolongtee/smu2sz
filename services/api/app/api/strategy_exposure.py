@@ -50,11 +50,11 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.customer_overview import customer_context
-from app.api.decisions import latest_verdict_for
+from app.api.decisions import is_lapsed, latest_verdict_for
 from app.api.display import displayed
 from app.api.exposure_words import customer_back, net_later, origin_back
 from app.api.features import _MESSAGES, require_feature
-from app.api.presentation import t
+from app.api.presentation import lapsed_offer_text, t
 from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.config import get_settings
@@ -112,6 +112,9 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
         day = rt.day
         inputs = inputs_from_store(rt.store)
         verdict = latest_verdict_for(rt, offer.offer_id)
+        lapsed = verdict is not None and is_lapsed(state, mandate, rt.store.commitments(), offer.offer_id, verdict)
+    if lapsed:  # the same rule as the picture's "no longer drawn" and the decision's LAPSED: there is nothing to read, and nothing to retry
+        raise HTTPException(409, detail={"code": "OFFER_LAPSED", "message": lapsed_offer_text(lang), "message_when": lapsed_offer_text(lang)})
     if not any(c.id == offer.counterparty_id for c in state.counterparties):
         raise _not_found("BUYER_NOT_FOUND", f"There is no buyer {offer.counterparty_id} on the books.")
     try:

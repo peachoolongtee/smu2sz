@@ -50,6 +50,7 @@ from app.api.presentation import (
 from app.api.receipt import agreement_receipt
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.books import Books, current_books
 from app.decisions import (
     DealState,
     DecisionInputs,
@@ -62,9 +63,9 @@ from app.decisions import (
 from app.decisions.facts import Fact, record_for
 from app.decisions.identity import deal_id, decision_id_for, family_of, offer_id_of
 from app.decisions.state import RESERVE_ALERT, RecordIndex, derive, newest_reserve_decision
-from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, OperationStatus
+from app.domain.models import CommitmentStatus, CompiledOffer, FinancialState, Mandate, Mode, OperationStatus
 from app.domain.money import fmt_yuan
-from app.financial import EngineError
+from app.financial import EngineError, project
 from app.operations.log import LoggedEntry, read_entries
 from app.persistence.records import ApprovalRecord, DecisionFactRecord
 
@@ -102,6 +103,23 @@ def latest_verdict_for(rt: Runtime, offer_id: str):
     if verdict is None:
         verdict = next((v for v in reversed(rt.store.verdicts()) if v.offer_id == offer_id), None)
     return verdict
+
+
+def offer_as_asked(state: FinancialState, mandate: Mandate, commitments: Sequence[Any], offer_id: str, verdict: Any) -> tuple[Books, Any | None]:
+    """(the books without this offer's own agreements, the cash trajectory of the offer as asked on them), the trajectory None when the offer
+    can no longer be drawn on today's books: the days it named have passed, or its invoice has changed since (an agreement made after it
+    settled the invoice). The one rule the offer picture and the decision record's LAPSED state both read."""
+    books = current_books(state, [c for c in commitments if c.offer_id != offer_id])
+    try:
+        return books, project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days,
+                              mandate.min_cash_fen)
+    except EngineError:
+        return books, None
+
+
+def is_lapsed(state: FinancialState, mandate: Mandate, commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
+    """Whether the offer's reply can no longer be drawn on today's books (`offer_as_asked` has no trajectory)."""
+    return offer_as_asked(state, mandate, commitments, offer_id, verdict)[1] is None
 
 
 # ---------------------------------------------------------------- reading the stores once
@@ -187,6 +205,18 @@ class Context:
             promised=self.promised, alerts=self.open_alerts, index=self.index,
         )
 
+    def lapse(self, ds: DecisionState) -> DecisionState:
+        """The decision as the books leave it: a negotiation whose reply was ready (RESPONSE_READY) but whose offer can no longer be drawn on
+        today's books is LAPSED, closed (nothing to do, nothing to wait for). Any other decision is returned as it is."""
+        if ds.family != "DEAL" or ds.state != DealState.RESPONSE_READY or ds.verdict is None or ds.offer is None:
+            return ds
+        try:
+            lapsed = is_lapsed(self.state, self.mandate, self.commitments, ds.offer.offer_id, ds.verdict)
+        except Exception:
+            log.exception("the offer of decision %s could not be checked against today's books", ds.decision_id)
+            return ds
+        return replace(ds, state=DealState.LAPSED, terminal=True) if lapsed else ds
+
     def states(self) -> dict[str, tuple[DecisionState, DecisionInputs]]:
         """Every decision's state. One that cannot be derived is logged and left out (and not tried again), so a bad entry
         never takes the list, the home or the queue down with it."""
@@ -209,7 +239,7 @@ class Context:
                     except Exception:
                         log.exception("decision %s could not be derived with its residual; it is left out", decision_id)
                         continue
-                out[decision_id] = (ds, inp)
+                out[decision_id] = (self.lapse(ds), inp)
             self._states = out
         return self._states
 
@@ -660,7 +690,7 @@ def get_decision(decision_id: str, lang: str = "en", *, sel: Annotated[Selection
             if offer_id is None or ctx.offer(offer_id) is None:
                 raise HTTPException(404, {"code": "DECISION_NOT_FOUND", "decision_id": decision_id})
             inp = ctx.inputs_for(decision_id)
-            found = (derive(inp), inp)
+            found = (ctx.lapse(derive(inp)), inp)
         ds, inp = found
         subject = ds.offer if ds.offer is not None else ds.commitment
         context = build_context(rt, lang, sel, page="decision", buyer=subject.counterparty_id if subject is not None else None,

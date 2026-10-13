@@ -17,7 +17,7 @@ from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
-from tests.api.conftest import english_leaks
+from tests.api.conftest import agree_on_rcv_a, english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
@@ -96,26 +96,26 @@ def test_the_demo_queue_is_empty_until_an_offer_arrives_and_then_one_row_per_off
 def test_the_busy_queue_has_every_task_in_its_tier(api: TestClient, lang: str) -> None:
     _busy(api)
     q = _queue(api, lang)
-    assert q["counts"] == {"needs_you": 6, "waiting": 1, "agreements": 2, "customers": 3}
-    assert _shape(q["needs_you"]) == {("DECISION", "BUYER-1"): 2, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
+    # the busy seed holds no agreement: three Foshan replies (EX01, EX02, EX03) are all live on invoice RCV-A, and the owner can send any of them
+    assert q["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
+    assert _shape(q["needs_you"]) == {("DECISION", "BUYER-1"): 3, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
                                       ("APPROVAL", None): 1, ("COLLECTION", "BUYER-2"): 1}
     assert _shape(q["waiting"]) == {("BUYER_REPLY", "BUYER-1"): 1}
-    assert _shape(q["agreements"]) == {("AGREEMENT", "BUYER-1"): 1, ("PROMISE", "BUYER-1"): 1}  # a promise stays a row, in its deal's tier
+    assert q["agreements"] == []
     assert {r["tier"] for r in q["needs_you"]} == {"NEEDS_YOU"} and {r["tier"] for r in q["waiting"]} == {"WAITING"}
-    assert {r["tier"] for r in q["agreements"]} == {"AGREEMENTS"}
     rows = _rows(q)
-    assert all(set(r) == ROW for r in rows) and len({r["key"] for r in rows}) == 9
+    assert all(set(r) == ROW for r in rows) and len({r["key"] for r in rows}) == 8
     assert q["alert"] is not None and q["alert"]["key"] == "company-cash"  # shown above the tabs, counted nowhere
     assert q["needs_you_empty_text"] and q["waiting_empty_text"] and q["agreements_empty_text"]
     if lang == "zh":
         assert not english_leaks([{k: r[k] for k in ("subject_text", "status_text", "consequence_text")} for r in rows], NAMES)
 
 
-def test_the_two_open_negotiations_of_one_customer_are_two_rows_with_their_own_links(api: TestClient) -> None:
+def test_the_open_negotiations_of_one_customer_are_rows_of_their_own_with_their_own_links(api: TestClient) -> None:
     _busy(api)
     q = _queue(api)
     foshan = [r for r in q["needs_you"] if r["kind"] == "DECISION" and r["customer_id"] == "BUYER-1"]
-    assert len(foshan) == 2 and foshan[0]["decision_id"] != foshan[1]["decision_id"]
+    assert len(foshan) == 3 and len({r["decision_id"] for r in foshan}) == 3
     assert [r["href"] for r in foshan] == [f"/deals?customer=BUYER-1&decision={quote(r['decision_id'], safe='')}" for r in foshan]
     assert foshan[0]["subject_text"] and foshan[0]["href"] != foshan[1]["href"]
     assert all(r["decision_id"].startswith("deal:") and "OFF-" not in r["subject_text"] for r in foshan)
@@ -123,6 +123,7 @@ def test_the_two_open_negotiations_of_one_customer_are_two_rows_with_their_own_l
 
 def test_every_row_links_to_its_own_task_and_never_to_another_rows_context(api: TestClient) -> None:
     _busy(api)
+    agree_on_rcv_a(api)  # an agreement and its promise, for the Agreements tier
     by_kind: dict[str, dict[str, Any]] = {r["kind"]: r for r in _rows(_queue(api)) if r["kind"] not in ("DECISION",)}
     approval = by_kind["APPROVAL"]
     assert approval["approval_id"] and approval["href"] == f"/approvals#approval-{approval['approval_id']}"
@@ -141,8 +142,8 @@ def test_the_worklist_the_home_reads_is_unchanged(api: TestClient) -> None:
     _busy(api)
     w = api.get("/worklist").json()
     assert set(w) == {"lang", "day", "state_version", "alert", "counts", "needs_you", "needs_you_empty_text", "waiting", "customers", "partial"}
-    assert w["counts"] == {"needs_you": 6, "waiting": 2, "customers": 3}
-    assert {r["kind"] for r in w["waiting"]} == {"BUYER_REPLY", "PROMISE"}
+    assert w["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
+    assert {r["kind"] for r in w["waiting"]} == {"BUYER_REPLY"}
     assert all("tier" not in r and "decision_id" not in r for r in w["needs_you"] + w["waiting"])
 
 

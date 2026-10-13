@@ -7,7 +7,7 @@ Public interface: `simulate()` (-> WhatIfResult), `presets()`, `WhatIfParams`, `
 `PRESETS`, `clear_cache()`.
 """
 
-from app.whatif.params import PRESETS, WhatIfParamError, WhatIfParams
-from app.whatif.simulate import WhatIfResult, clear_cache, presets, simulate
+from app.whatif.params import PRESETS, WhatIfParamError, WhatIfParams, WhatIfRequest
+from app.whatif.simulate import WhatIfResult, clear_cache, presets, resolve, simulate
 
-__all__ = ["PRESETS", "WhatIfParamError", "WhatIfParams", "WhatIfResult", "clear_cache", "presets", "simulate"]
+__all__ = ["PRESETS", "WhatIfParamError", "WhatIfParams", "WhatIfRequest", "WhatIfResult", "clear_cache", "presets", "resolve", "simulate"]

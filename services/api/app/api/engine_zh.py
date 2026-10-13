@@ -233,7 +233,7 @@ def _repaid(m: re.Match[str]) -> str:
 
 @rule(rf"Applied for (?P<amt>{M}) on (?P<fac>{N}); it is PENDING and counts as zero until committed")
 def _applied(m: re.Match[str]) -> str:
-    return f"已向{m['fac']}申请 {m['amt']}；申请审批中，获批前按零计算"
+    return f"已向{m['fac']}申请 {m['amt']}；申请已提交，在银行承诺之前按零现金计算"
 
 
 @rule(r"Refused: (?P<why>.+)")

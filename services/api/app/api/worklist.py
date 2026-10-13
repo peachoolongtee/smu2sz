@@ -21,7 +21,7 @@ make; nothing is ranked, priced, projected or decided a second time:
                  `financing_words.state_of` ARRANGED), PROMISE (an early payment a live agreement promised, still awaited).
     customers    the buyers on the books, one row each: `GET /customers` returns these same rows (one function) and `search_terms`
                  (each customer's name and short name), for a page to filter the list it already holds.
-    counts       counted from the rows above, never stored: needs_you, waiting, customers.
+    counts       the Deals queue's own counts (needs_you, waiting, agreements, customers): a promise is counted under agreements though its row stays in `waiting`.
     needs_you_empty_text  what an empty Needs you says: "Nothing else needs you." while the alert is up, else "Nothing needs a decision from
                  you." (the waiting and customers lists carry no word that differs by the alert).
 
@@ -83,8 +83,10 @@ from app.api.home import Partial, read_home
 from app.api.home_hybrid import _ASK_ORDER, _pending_lots
 from app.api.offer_picture import cached_picture
 from app.api.presentation import (
+    CLOSED_IF_DECLINED,
     COMMERCIAL_KINDS,
     Lang,
+    approving_text,
     buyer_of_receivable,
     decision_state_text,
     find_agreement,
@@ -374,7 +376,10 @@ def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: s
         if card.get("cost_display"):
             consequence = t(lang, f"Estimated cost {card['cost_display']}.", f"预计成本 {card['cost_display']}。")
         else:
-            consequence = str(card.get("economic_effect_text") or card.get("if_decline") or "")
+            # a pending request says what approving does; the decline sentence stays only where it says something (an alert's shortfall)
+            declined = card.get("if_decline")
+            declined = None if declined == t(lang, *CLOSED_IF_DECLINED) else declined
+            consequence = str(card.get("economic_effect_text") or declined or approving_text(rec.kind or "", lang) or "")
         out.append(Row(key=f"approval:{rec.id}", kind="APPROVAL", customer_id=cid, customer_short=who, subject=subject,
                        status=t(lang, "Approval requested · Your approval needed", "已提交批准申请 · 需要您批准"), consequence=consequence,
                        severity=CAUTION if card.get("protects") else NORMAL, deadline_day=agreement.expires_day if agreement else None,
@@ -694,12 +699,14 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] 
         negotiations[ds.offer.counterparty_id] = negotiations.get(ds.offer.counterparty_id, 0) + 1
     customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations, partial)
     late = [r for r in body["rows"] if r["collection_state"] in ("OVERDUE", "PROMISE_MISSED")]
+    queue_body = _queue(ctx, lang, needs_sorted, waiting_sorted, alert, late, len(customers))
     return {
-        "queue": _queue(ctx, lang, needs_sorted, waiting_sorted, alert, late, len(customers)),
+        "queue": queue_body,
         "lang": lang, "day": ctx.today, "state_version": ctx.state.state_version, "alert": alert,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
                                  else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
-        "counts": {"needs_you": len(needs_sorted), "waiting": len(waiting_sorted), "customers": len(customers)},
+        # the queue's own counts, so the Home and Deals never disagree: a promise is counted under Agreements there, though its row stays in `waiting`
+        "counts": dict(queue_body["counts"]),
         "needs_you": [_needs_item(r, i == 0, since_day, lang) for i, r in enumerate(needs_sorted)],
         "waiting": waiting_sorted, "customers": customers,
         "search_terms": [{"customer_id": c["customer_id"], "terms": [c["name"], c["short"]]} for c in customers],
