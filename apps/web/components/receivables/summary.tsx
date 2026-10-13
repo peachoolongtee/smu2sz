@@ -45,15 +45,18 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
       </p>
       <PageHeader title={title} />
 
-      <dl className="grid gap-3 sm:grid-cols-3" aria-label={t("biz.recv.facts")} data-testid="recv3-cards">
-        <Stat
-          size="lg"
-          tone={late ? "bad" : "neutral"}
-          label={t("recv3.card.owe")}
-          value={summary.outstanding_total_display ?? "-"}
-          testId="recv3-owe"
-          caption={summary.count_text ? <span className="text-sm" data-testid="recv3-count">{summary.count_text}</span> : undefined}
-        />
+      {/* What customers owe is the page's figure: the large card on the deep block; the next payment and the net beside it are smaller. */}
+      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]" aria-label={t("biz.recv.facts")} data-testid="recv3-cards">
+        <div className="relative isolate overflow-hidden rounded-[24px] bg-brand-900 p-6 text-on-deep shadow-(--shadow-pop) sm:col-span-2 lg:col-span-1" data-testid="recv3-owe">
+          <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" />
+          <dt className="text-sm font-semibold text-on-deep-muted">{t("recv3.card.owe")}</dt>
+          <dd className={`mt-3 font-display text-[40px] font-extrabold leading-none tracking-[-0.03em] tabular-nums ${late ? "text-bad-bright" : ""}`}>{summary.outstanding_total_display ?? "-"}</dd>
+          {summary.count_text ? (
+            <dd className="mt-3 text-sm text-on-deep-muted" data-testid="recv3-count">
+              {summary.count_text}
+            </dd>
+          ) : null}
+        </div>
         <Stat
           size="lg"
           label={t("recv3.card.next")}
@@ -72,7 +75,7 @@ export function Summary({ read, rows }: { read: ReceivablesRead; rows: Receivabl
       </dl>
       {/* Billing that is scheduled but not invoiced has no row (it is not owed yet): the server says so in one sentence. */}
       {summary.scheduled_note ? (
-        <p className="text-sm text-ink-2" data-testid="recv3-scheduled-note">
+        <p className="mt-3 text-sm text-ink-2" data-testid="recv3-scheduled-note">
           {summary.scheduled_note}
         </p>
       ) : null}

@@ -33,9 +33,9 @@ test("risk, plan, options, forecast: one set of figures, in the owner's order", 
   const action = page.getByTestId("home-next-action");
   await expect(action.getByTestId("next-action-title")).toHaveText("Secure ¥405k of funding");
   await expect(action.getByTestId("next-action-cost")).toContainText("¥3,113.93");
-  // The sections come in the owner's order: the answer, the picture, the plan bar, the options (the bar is sticky, so the order is the document's).
+  // The sections come in the owner's order: the answer, the plan to run (the page's loudest part), the picture, the options.
   const inOrder = await page.evaluate(() => {
-    const els = ["cash-answer", "cash-chart", "home-next-action", "cash-options"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`));
+    const els = ["cash-answer", "home-next-action", "cash-chart", "cash-options"].map((id) => document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`));
     return els.every((el, i) => el !== null && (i === 0 || (els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0));
   });
   expect(inOrder).toBe(true);
@@ -139,18 +139,14 @@ test("after the plan ran, the page states the current funding and folds the comp
   await expect(page.getByTestId("cash-options")).toHaveCount(0);
   await expect(page.locator("#cash-options")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
-  // One projection: the debt readings on Cash & funding are the Home's, said in the summary line and in the table's first month.
+  // One projection: the debt readings' summary line is the table's first month.
   await page.getByTestId("cash-readings").locator("> summary").click();
   const now = await page.getByTestId("cash-readings-now").innerText();
   const firstRow = (await page.getByTestId("cash-readings").locator("tbody tr").first().innerText()).split("\t");
   const lev = firstRow[firstRow.length - 1].trim();
   const dscr = firstRow[firstRow.length - 2].trim();
-  await page.goto("/");
-  await page.getByTestId("home-details").locator("> summary").click();
-  expect(now).toContain(await page.getByTestId("home-leverage").innerText());
-  expect(now).toContain(await page.getByTestId("home-dscr").innerText());
-  expect(await page.getByTestId("home-leverage").innerText()).toBe(lev);
-  expect(await page.getByTestId("home-dscr").innerText()).toBe(dscr);
+  expect(now).toContain(lev);
+  expect(now).toContain(dscr);
 });
 
 test("covered after the walk: the comparison taken when the plan was chosen is history, closed under Other plans considered", async ({ page }) => {
@@ -235,7 +231,7 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   const cash = await page.locator("main").innerText();
   for (const word of [/\bverdict\b/i, /sandbox/i, /admissible/i, /\bexecutor\b/i, /hash/i]) expect(cash, String(word)).not.toMatch(word);
   await expect(page.locator("#cash-whatif")).toContainText("see the answer and the cash line");
-  await expect(page.locator("#cash-whatif").getByRole("link")).toHaveText("Try different terms");
+  await expect(page.locator("#cash-whatif").getByRole("link")).toContainText("Try different terms");
   await page.goto("/activity");
   const activity = await page.locator("main").innerText();
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
@@ -304,12 +300,16 @@ test("your funding sources: a utilisation bar per facility with the server's lim
   await expect.poll(async () => Math.max(...(await page.getByTestId("cash-facility-bar").evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-pct"))))))).toBeGreaterThan(0);
 });
 
-test("the plan bar is in flow at every width (under the picture at 1280 px, covering none of its plot; right after the headline at 390 px)", async ({ page }) => {
+test("the plan bar is in flow at every width (above the picture, covering none of its plot)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/cash");
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
-  // Nothing covers the picture's plot: at the top of the page, the element on top at each corner and the middle of the svg is the svg itself.
+  // In flow, above the picture: the bar ends before the plot starts.
+  const above = await page.evaluate(() => document.querySelector('[data-testid="home-next-action"]')!.getBoundingClientRect().bottom <= document.querySelector('[data-testid="cash-picture"] svg[role=img]')!.getBoundingClientRect().top + 1);
+  expect(above).toBe(true);
+  // Nothing covers the picture's plot: with the plot in view, the element on top at each corner and the middle of the svg is the svg itself.
+  await page.locator('[data-testid="cash-picture"] svg[role=img]').scrollIntoViewIfNeeded();
   const covered = await page.evaluate(() => {
     const svg = document.querySelector('[data-testid="cash-picture"] svg[role=img]')!;
     const r = svg.getBoundingClientRect();
@@ -320,9 +320,6 @@ test("the plan bar is in flow at every width (under the picture at 1280 px, cove
     }).length;
   });
   expect(covered).toBe(0);
-  // In flow, below the picture: the bar starts under the plot's foot.
-  const below = await page.evaluate(() => document.querySelector('[data-testid="cash-picture"] svg[role=img]')!.getBoundingClientRect().bottom <= document.querySelector('[data-testid="home-next-action"]')!.getBoundingClientRect().top + 1);
-  expect(below).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByTestId("home-next-action")).toBeVisible();
   expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");

@@ -95,9 +95,10 @@ test("Deals: no summary before a deal is agreed; once the buyer agrees, the conf
   await expect(page).toHaveURL(/\/documents\?id=DOC-000001$/);
   await expect(page.getByTestId("doc-review")).toHaveAttribute("data-status", "CONFIRMED");
   await expect(page.getByRole("region", { name: "Guided demo" })).toHaveCount(0);
-  // A detail page of Deals: the way back names it.
-  await expect(page.getByTestId("back-to-deals")).toHaveText("Back to Deals");
-  await page.getByTestId("back-to-deals").click();
+  // Documents is a section of its own (Attach deals): the navigation marks it, and Deals is one step away.
+  const nav = page.getByTestId((page.viewportSize()?.width ?? 1440) < 1024 ? "tab-bar" : "nav-pills");
+  await expect(nav.locator('[aria-current="page"]')).toHaveText(/Attach/);
+  await nav.getByRole("link", { name: "Deals", exact: true }).click();
   await expect(page).toHaveURL(/\/deals$/);
 });
 

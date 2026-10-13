@@ -333,6 +333,13 @@ input[type="radio"] {
 }
 
 @layer components {
+  /* The Home cash card's texture: a field of faint dots that fades out towards the figure. Decoration only. */
+  .dash-dots {
+    background-image: radial-gradient(rgb(255 255 255 / 0.16) 1.2px, transparent 1.6px);
+    background-size: 11px 11px;
+    mask-image: radial-gradient(ellipse 80% 90% at 85% 40%, #000 30%, transparent 75%);
+  }
+
   /* Blocks and cards fade in and rise once when they mount. `backwards` so nothing is left animating afterwards. */
   .motion-reveal {
     animation: biz-reveal var(--dur-expanded) var(--ease-ui) backwards;
@@ -429,8 +436,31 @@ input[type="radio"] {
      with the 3 px accent rule (the choice the detail beside it is about). */
   .card-standard {
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border-radius: 20px;
     background: var(--color-surface);
+    box-shadow: var(--shadow-lift);
+  }
+  /* A section that was once unboxed ("flat") is now a raised card of its own: a white surface, a soft lift and room around its words. */
+  .card-flat {
+    border-radius: 22px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lift);
+    padding: 1.25rem;
+  }
+  @media (min-width: 40rem) {
+    .card-flat {
+      padding: 1.5rem;
+    }
+  }
+  /* A card inside a card never stacks a second box: the inner one keeps its words and drops its chrome. */
+  :is(.card-flat, .card-standard, .card-decision) .card-flat {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  :is(.card-flat, .card-standard, .card-decision) .card-standard {
+    box-shadow: none;
   }
   .card-decision {
     border: 1px solid var(--color-line);
@@ -479,9 +509,11 @@ input[type="radio"] {
     letter-spacing: -0.015em;
   }
   .type-card-title {
+    font-family: var(--font-display);
     font-size: var(--text-card-title);
     line-height: var(--text-card-title--line-height);
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
 
   /* A small control keeps its look and reaches 44 x 44 px wherever a finger is the pointer (the `touch:` variant above): the

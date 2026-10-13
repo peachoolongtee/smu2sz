@@ -74,9 +74,9 @@ test("reduced motion: one transition per token keeps only opacity, at its own to
   }
 });
 
-test("three card types: a standard card has a hairline and no shadow, the decision card one soft shadow and no frost, the selected card the tint and a 3 px rule", async ({ page }) => {
+test("card types: a standard card and a section card rest on a soft lift, the decision card one soft shadow and no frost, the selected card the tint and a 3 px rule", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByTestId("home-next-action").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("home-card-funding").first()).toBeVisible({ timeout: 15_000 });
   const styles = await page.evaluate(() => {
     const read = (el: Element) => {
       const s = getComputedStyle(el);
@@ -90,20 +90,24 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
       el.remove();
       return out;
     };
-    const live = document.querySelector('[data-testid="home-next-action"]');
-    return { standard: probe("card-standard"), decision: probe("card-decision"), selected: probe("card-selected"), live: live ? read(live) : null };
+    const live = document.querySelector('[data-testid="home-card-funding"]');
+    return { standard: probe("card-standard"), flat: probe("card-flat"), decision: probe("card-decision"), selected: probe("card-selected"), live: live ? read(live) : null };
   });
-  expect(styles.standard.shadow).toBe("none");
-  expect(styles.standard.radius).toBe("14px");
+  const lift = "rgba(36, 50, 74, 0.06) 0px 2px 4px 0px, rgba(36, 50, 74, 0.22) 0px 12px 22px -14px";
+  expect(styles.standard.shadow).toBe(lift);
+  expect(styles.standard.radius).toBe("20px");
   expect(styles.standard.borderColor).toBe("rgb(230, 233, 239)");
+  expect(styles.flat.shadow).toBe(lift);
+  expect(styles.flat.radius).toBe("22px");
+  expect(styles.flat.bg).toBe("rgb(255, 255, 255)");
   expect(styles.decision.radius).toBe("16px");
   expect(styles.decision.shadow).toContain("rgba(16, 24, 40, 0.06) 0px 1px 2px");
   expect(styles.decision.shadow).toContain("rgba(16, 24, 40, 0.06) 0px 8px 24px");
   expect(styles.selected.bg).toBe("rgb(230, 241, 255)");
   expect(styles.selected.left).toBe("3px");
   expect(styles.selected.leftColor).toBe("rgb(3, 104, 233)");
-  // The attention card on Home is the decision card: solid, one soft shadow, no frost.
-  expect(styles.live?.shadow).toBe(styles.decision.shadow);
+  // The planned funding card on Home: solid white on the same lift, no frost.
+  expect(styles.live?.shadow).toBe(lift);
   expect(styles.live?.blur).toBe("none");
   expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
 });
@@ -181,7 +185,7 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   expect(found).toEqual({ Home: [], Cash: [], Receivables: [], Customer: [], Deals: [] });
 });
 
-const NAV = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+const NAV = ["Home", "Deals", "Attach deals", "Cash & funding", "Receivables", "Activity"];
 type Pg = import("@playwright/test").Page;
 /** The rail's grid column (the aside) and the panel that opens over the page. */
 const railColumn = (page: Pg) => page.getByTestId("nav-rail").evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -198,8 +202,8 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await railColumn(page), `${width}`).toBe(56);
     expect(await panelWidth(page)).toBe(56);
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
-    for (const name of NAV) await expect(nav.getByRole("link", { name })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "0");
+    for (const name of NAV) await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "0");
     const before = await mainBox(page);
 
     // Collapsed, the rail shows icons and the pin only: no text of any kind is visible in it (the Demo note, the words, the count's number), and the Ask FLOW pill is its icon.
@@ -221,10 +225,10 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     expect(await visibleText(), `${width} collapsed rail text`).toEqual([]);
     await expect(page.getByTestId("chat-open").locator(".ask-label")).toBeHidden();
     // The pointer on the rail opens the panel to 200 px over the page: the main column neither moves nor changes width.
-    await nav.getByRole("link", { name: "Deals" }).hover();
+    await nav.getByRole("link", { name: "Deals", exact: true }).hover();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     await expect.poll(() => panelWidth(page)).toBe(200);
-    await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+    await expect(nav.getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
     expect(await railColumn(page)).toBe(56);
     expect(await mainBox(page)).toEqual(before);
     expect((await visibleText()).length, "the open rail says its words").toBeGreaterThan(3);
@@ -264,7 +268,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     const primary = page.locator('[data-testid^="fix-open-"]').first();
     await expect(primary).toBeVisible();
     expect((await primary.boundingBox())!.x, `${width} collapsed`).toBeGreaterThan(56);
-    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
+    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).hover();
     await expect.poll(() => panelWidth(page)).toBe(200);
     // The open rail reads as a layer: a soft shadow, and only while it is open.
     expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
@@ -297,7 +301,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
   await page.mouse.move(900, 600);
   expect(await railColumn(page)).toBe(200);
   expect(await panelWidth(page)).toBe(200);
-  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
+  await expect(page.getByTestId("nav-pills").getByRole("link", { name: "Deals", exact: true }).locator(".side-label")).toHaveCSS("opacity", "1");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
   expect(await railColumn(page)).toBe(200);
@@ -395,13 +399,14 @@ test("SegmentedTabs: the choice is not the pill alone, widths follow the labels,
   await tab("setup").click();
   await expect(tab("setup")).toBeInViewport();
   await page.goto("/");
-  await expect(page.getByTestId("home-window-60")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("home-window-60").scrollIntoViewIfNeeded();
+  await page.getByTestId("home-card-lowest").click();
+  await expect(page.getByTestId("home-ahead-window-60")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("home-ahead-window-60").scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -60));
   const y = await page.evaluate(() => window.scrollY);
   expect(y).toBeGreaterThan(0);
-  await page.getByTestId("home-window-60").click();
-  await page.getByTestId("home-window-120").click();
+  await page.getByTestId("home-ahead-window-30").click();
+  await page.getByTestId("home-ahead-window-120").click();
   expect(Math.abs((await page.evaluate(() => window.scrollY)) - y)).toBeLessThan(2);
 });
 

@@ -58,6 +58,7 @@ const STEPS: Record<string, Step[]> = {
 const SECTIONS: { key: DictKey; body: DictKey }[] = [
   { key: "nav.home", body: "tour.sec.home" },
   { key: "nav.deals", body: "tour.sec.deals" },
+  { key: "nav.attach", body: "tour.sec.attach" },
   { key: "nav.cash", body: "tour.sec.cash" },
   { key: "nav.receivables", body: "tour.sec.receivables" },
   { key: "nav.activity", body: "tour.sec.activity" },

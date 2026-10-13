@@ -16,6 +16,7 @@ import { QueueDetail } from "@/components/deals/queue/queue-detail";
 import { QueueReadOnly } from "@/components/deals/queue/queue-readonly";
 import { QueueBody, QueueHead } from "@/components/deals/queue/queue";
 import { PathsBody, PathsReply, usePathsState } from "@/components/deals/paths-section";
+import { DealTools } from "@/components/deals/tools";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink, type Tone } from "@/components/ui";
@@ -537,7 +538,8 @@ function Deals() {
     return (
       <>
         <PageHeader section="deals" title={t("nav.deals")} subtitle={(narrow || short) && offer ? undefined : rows.some((r) => r.tab === "needs") ? t("dq.sub.needs") : t("dq.sub.none")} />
-        <div className="space-y-4">
+        <div className="space-y-5">
+          <DealTools />
           {backLink ? (
             <Link href={backLink.href} className="inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
               ‹ {backLink.label}
@@ -559,7 +561,8 @@ function Deals() {
   return (
     <>
       {offer && ready ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={offer && narrow ? undefined : t("biz.deals.subtitle")} />}
-      <div className="space-y-4">
+      <div className="space-y-5">
+        <DealTools />
         {inbox}
 
         {errorNode}
@@ -577,7 +580,7 @@ function Deals() {
           <LoadingBlock rows={3} />
         ) : !offer ? (
           <>
-            <div className="motion-reveal flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-4" data-testid="deals-empty">
+            <div className="motion-reveal card-flat flex flex-wrap items-center justify-between gap-x-6 gap-y-3" data-testid="deals-empty">
               <p className="min-w-0 flex-[1_1_20rem] text-sm text-ink-2">
                 <strong className="font-extrabold text-ink">{t("biz.deals.empty")}</strong> {t("biz.deals.empty.body")}
               </p>

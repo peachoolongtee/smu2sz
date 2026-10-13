@@ -215,9 +215,14 @@ export function QueueDetail({
           title={t("dq.chart.title")}
           above={<StressToggle exposure={exposure} on={stress} onChange={setStress} />}
           below={
+            // What accepting as asked would do and the exposure to this buyer are worth keeping, not reading first: each is a dropdown under the chart.
             <>
-              <WhyFacts v={verdict} today={today} />
-              <ExposureBand exposure={exposure} pick={paths.pick} />
+              <Disclosure testId="queue-if-asked" className="border-t border-line pt-2" summary={t("dq.fold.ifAsked")}>
+                <WhyFacts v={verdict} today={today} />
+              </Disclosure>
+              <Disclosure testId="queue-exposure" className="border-t border-line pt-2" summary={t("dq.fold.exposure", { buyer })}>
+                <ExposureBand exposure={exposure} pick={paths.pick} />
+              </Disclosure>
             </>
           }
           stress={stressLine?.series?.length ? { series: stressLine.series, label: stressLine.text ?? "" } : null}

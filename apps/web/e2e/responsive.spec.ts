@@ -42,21 +42,21 @@ test("the Business home puts the status and the next action in the first screen,
   const menu = page.getByRole("button", { name: "Open navigation" });
   if (await menu.isVisible()) {
     await menu.click();
-    await page.getByRole("link", { name: "Cash & funding" }).click();
+    await page.getByRole("link", { name: "Cash & funding" }).first().click();
   } else {
-    await page.getByRole("link", { name: "Cash & funding" }).click();
+    await page.getByTestId("nav-pills").getByRole("link", { name: "Cash & funding" }).click();
   }
   await expect(page).toHaveURL(/\/cash/);
 });
 
-test("Business navigation: five pills on a desktop, the same five tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
+test("Business navigation: six pills on a desktop, the same six tabs on a phone, the mode switch and Ask FLOW always visible", async ({ page }) => {
   await page.goto("/");
   const phone = (page.viewportSize()?.width ?? 1440) < 1024;
-  const names = ["Home", "Deals", "Cash & funding", "Receivables", "Activity"];
+  const names = ["Home", "Deals", "Attach deals", "Cash & funding", "Receivables", "Activity"];
   const bar = page.getByTestId(phone ? "tab-bar" : "nav-pills");
   await expect(bar).toBeVisible();
   await expect(page.getByTestId(phone ? "nav-pills" : "tab-bar")).toBeHidden();
-  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Cash", "Receivables", "Activity"] : names);
+  await expect(bar.getByRole("link")).toHaveText(phone ? ["Home", "Deals", "Attach", "Cash", "Receivables", "Activity"] : names);
   for (const n of names) await expect(bar.getByRole("link", { name: n, exact: true })).toBeVisible();
   await expect(bar.locator('[aria-current="page"]')).toHaveText(phone ? "Home" : "Home");
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
@@ -380,17 +380,18 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash,
   expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
 });
 
-test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air", async ({ page }, testInfo) => {
+test("a 1366 x 768 laptop: Home's primary ends in the first screen", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "a laptop check");
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The minimum is named on the chart's own line, and today's cash is the first fact; the card is in the page's flow (not sticky), above the chart.
-  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
-  await expect(page.getByTestId("home-fact-today")).toBeVisible();
+  // The minimum is named on the cash card, and today's cash is its figure; the plan's card is in the page's flow (not sticky).
+  await expect(page.getByTestId("home-card-cash")).toContainText("Minimum reserve ¥300k");
+  await expect(page.getByTestId("home-cash-value")).toBeVisible();
+  expect(await page.getByTestId("home-next-action").evaluate((el) => getComputedStyle(el).position)).not.toBe("sticky");
   await page.setViewportSize({ width: 1366, height: 900 });
-  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
+  await expect(page.getByTestId("home-card-cash")).toContainText("Minimum reserve ¥300k");
 });
 
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {

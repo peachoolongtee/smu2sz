@@ -5,7 +5,6 @@ import { useState, type ReactNode } from "react";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { BankIcon, SparkIcon, StoreIcon, UserIcon } from "@/components/icons";
 import { CustomerName } from "@/components/customer-link";
-import {  } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
 import { SpanQuote } from "@/components/offer-parts";
 import { Badge, ErrorState, Hash, LoadingBlock, PageHeader } from "@/components/ui";
@@ -17,32 +16,39 @@ import { whenText } from "@/lib/when";
 import { useAsync } from "@/lib/use-async";
 import { Disclosure, FoldChevron } from "@/components/business/kit";
 import { PilotJournal } from "@/components/business/pilot-journal";
+import { ReconciliationSection } from "@/components/business/reconciliation-section";
+import { FoldCard } from "@/components/business/surface";
 import { decisionHref } from "@/components/business/open-decisions";
 import type { OperationView } from "@/lib/types";
 
-/** An empty section is one quiet line under the timeline, not a box around nothing (it keeps the section's id). */
+/** An empty section is a small card with its one line (it keeps the section's id). */
 function QuietLine({ id, title, children }: { id: string; title: string; children: string }) {
   return (
-    <p id={id} className="text-sm text-ink-3">
-      <span className="font-medium text-ink-2">{title}:</span> {children}
-    </p>
+    <section id={id} className="card-flat" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`} className="font-display text-base font-extrabold text-ink">
+        {title}
+      </h2>
+      <p className="mt-1 text-sm text-ink-3">{children}</p>
+    </section>
   );
 }
 
-/** An unboxed section: a title and a quiet line under it, a hairline, then the rows. */
+/** A section as a card: its title, a quiet line under it, then the rows. */
 function Section({ id, title, sub, children }: { id: string; title: string; sub?: string; children: ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-20">
+    <section id={id} aria-labelledby={`${id}-title`} className="card-flat scroll-mt-20">
       <div className="mb-1 border-b border-line pb-2">
-        <h2 id={`${id}-title`} className="text-base font-extrabold text-ink">
+        <h2 id={`${id}-title`} className="font-display text-lg font-extrabold text-ink">
           {title}
         </h2>
-        {sub ? <p className="text-meta text-ink-3">{sub}</p> : null}
+        {sub ? <p className="text-supporting text-ink-3">{sub}</p> : null}
       </div>
       {children}
     </section>
   );
 }
+
+type View = "timeline" | "recon";
 
 /** The approval request's row line: the label of what it was ("Approval requested"), the decision's state today, and the way to the record. */
 function ApprovalLine({ o }: { o: OperationView }) {
@@ -95,7 +101,7 @@ function Actor({ who }: { who: "you" | "agent" | "system" | "buyer" }) {
     buyer: ["bg-sec-deals-bg text-sec-deals-fg", <StoreIcon key="i" width={16} height={16} />],
   }[who];
   return (
-    <span aria-hidden className={`relative z-10 grid size-8 place-items-center rounded-pill ring-4 ring-canvas ${look[0]}`} data-actor={who}>
+    <span aria-hidden className={`relative z-10 grid size-8 place-items-center rounded-pill ring-4 ring-surface ${look[0]}`} data-actor={who}>
       {look[1]}
     </span>
   );
@@ -113,6 +119,8 @@ export default function ActivityPage() {
   const audit = useAsync(getAudit, [lang]);
   const books = useAsync(getState, []);
   const [filter, setFilter] = useState<Filter>("all");
+  // The two parts of the page: the timeline, and the reconciliation log (opened directly by `#reconciliation`).
+  const [view, setView] = useState<View>(() => (typeof window !== "undefined" && window.location.hash === "#reconciliation" ? "recon" : "timeline"));
   const data = ledger.data;
   // The server's sentences hold no ids; the one id this page shows is an agreement's buyer, said by name.
   const buyerName = (id: string) => books.data?.state.counterparties.find((x) => x.id === id)?.name ?? id;
@@ -184,8 +192,20 @@ export default function ActivityPage() {
       ) : !data ? (
         <LoadingBlock rows={4} />
       ) : (
-        <div className="space-y-8">
-          <section id="activity-timeline" aria-label={t("biz.activity.rail")}>
+        <div className="space-y-6">
+          <SegmentedTabs
+            label={t("biz.activity.view")}
+            value={view}
+            onChange={setView}
+            testId="activity-view"
+            tabs={[
+              { value: "timeline" as View, label: t("biz.activity.view.timeline"), testId: "activity-view-timeline" },
+              { value: "recon" as View, label: t("biz.activity.view.recon"), testId: "activity-view-recon" },
+            ]}
+          />
+          {view === "recon" ? <ReconciliationSection today={today} buyerName={buyerName} /> : (
+          <>
+          <section id="activity-timeline" aria-label={t("biz.activity.rail")} className="card-flat">
             <p className="mb-3 text-meta text-ink-3">{t("biz.activity.timeline.sub")}</p>
             {showChips ? (
               <div className="mb-4">
@@ -215,7 +235,7 @@ export default function ActivityPage() {
                         passed(o) ? (
                           // Time passing is a thin separator on the rail carrying its sentence, not an entry.
                           <li key={`${o.seq}-${o.op_id}`} className="relative flex items-center gap-3 py-1.5" data-testid={`activity-${o.kind}`} data-status={o.status}>
-                            <span aria-hidden className="relative z-10 ml-[11px] size-2.5 rounded-pill border-2 border-line-strong bg-canvas" />
+                            <span aria-hidden className="relative z-10 ml-[11px] size-2.5 rounded-pill border-2 border-line-strong bg-surface" />
                             <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 break-words text-meta text-ink-3">
                               <span data-testid="activity-event">{sentenceOf(o)}</span>
                               <span className="font-medium" data-testid="activity-op">
@@ -342,6 +362,7 @@ export default function ActivityPage() {
             )}
           </section>
 
+          <div className="grid items-start gap-4 lg:grid-cols-2">
           {data.commitments.length ? (
             <Section id="activity-commitments" title={t("biz.activity.agreements")} sub={t("biz.activity.agreements.sub")}>
               <ul className="divide-y divide-line">
@@ -420,18 +441,30 @@ export default function ActivityPage() {
             </Section>
           )}
 
-          {data.chain_scope_text && data.chain_text !== null ? (
-            <Disclosure testId="activity-chain-scope" className="text-meta" summary={t("biz.activity.chainScope")}>
-              <p className="text-ink-2">{data.chain_scope_text}</p>
-            </Disclosure>
-          ) : null}
+          </div>
 
-          <p className="text-meta text-ink-3">
-            {t("biz.activity.trail")}{" "}
-            <Link href="/evidence" className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11">
-              {t("biz.activity.trail.open")}
-            </Link>
-          </p>
+          {/* What the chain check covers, folded; with nothing on the log yet there is no check to explain, and only the line to the evidence stays. */}
+          {data.chain_scope_text && data.chain_text !== null ? (
+            <FoldCard title={t("biz.activity.chainAbout")} hint={t("biz.activity.chainAbout.hint")} testId="activity-chain-scope">
+              <p className="text-supporting font-bold text-ink">{t("biz.activity.chainScope")}</p>
+              <p className="mt-1 text-sm text-ink-2">{data.chain_scope_text}</p>
+              <p className="mt-3 text-meta text-ink-3">
+                {t("biz.activity.trail")}{" "}
+                <Link href="/evidence" className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11">
+                  {t("biz.activity.trail.open")}
+                </Link>
+              </p>
+            </FoldCard>
+          ) : (
+            <p className="text-meta text-ink-3">
+              {t("biz.activity.trail")}{" "}
+              <Link href="/evidence" className="inline-flex min-h-8 items-center font-medium text-brand-700 underline underline-offset-2 touch:min-h-11">
+                {t("biz.activity.trail.open")}
+              </Link>
+            </p>
+          )}
+          </>
+          )}
 
           {/* The shadow pilot's journal: read-only, only with the strategy build flag and a live API (the mock has none). */}
           {STRATEGY_MVP && API_MODE === "live" ? <PilotJournal /> : null}

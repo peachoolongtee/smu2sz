@@ -14,6 +14,7 @@ import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon 
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
+import { PageBackdrop } from "./business/surface";
 import { SECTIONS, type Section } from "./section";
 import { toggleSidebarPin, useSidebarPinned } from "@/lib/use-sidebar";
 import { Badge, Button, Segmented, textLinkClass } from "./ui";
@@ -22,6 +23,7 @@ import { Badge, Button, Segmented, textLinkClass } from "./ui";
 const BUSINESS_NAV: { href: string; key: DictKey }[] = [
   { href: "/", key: "nav.home" },
   { href: "/deals", key: "nav.deals" },
+  { href: "/documents", key: "nav.attach" },
   { href: "/cash", key: "nav.cash" },
   { href: "/receivables", key: "nav.receivables" },
   { href: "/activity", key: "nav.activity" },
@@ -399,9 +401,9 @@ function useRail() {
   };
 }
 
-const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
+const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/documents": "docs", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
-const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/documents": "nav.short.attach" };
 /** The way back from a detail page, by the section it opens from. */
 const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals" };
 
@@ -421,7 +423,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <SkipLink />
       <OwnerSignInDialog />
       <Tour />
-      <header className="sticky top-0 z-30 bg-canvas">
+      <PageBackdrop />
+      <header className="sticky top-0 z-30 bg-canvas/75 backdrop-blur-md">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
@@ -442,7 +445,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
         {/* The rail: a 56 px column of icons; its panel opens over the page to 200 px (no reflow) on hover or focus, or stays open once pinned. */}
         <aside className="rail relative hidden lg:block" data-rail={rail.open ? "open" : "closed"} {...rail.handlers} data-testid="nav-rail">
           <div className="sticky top-16 h-[calc(100dvh-4rem)]">
-            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden border-r border-line bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
+            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden border-r border-line bg-canvas/80 backdrop-blur-md px-2 pb-20 pt-5" data-testid="nav-rail-panel">
               <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
                 <ul className="space-y-1">
                   {BUSINESS_NAV.map((n) => {
@@ -485,19 +488,19 @@ function BusinessShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       </div>
-      {/* Phones: a tab bar with the same five sections, as in a banking app. */}
+      {/* Phones: a tab bar with the same six sections, as in a banking app. */}
       <nav ref={bar} aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
         {/* Below sm the bar's last cell (3rem) is Ask FLOW, which ChatPanel fixes in place; from sm the bar is the five tabs. */}
         <div className="mx-auto flex max-w-xl">
           <div className="relative min-w-0 flex-1">
             <span
               aria-hidden
-              className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
+              className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/6 ${activeIdx < 0 ? "opacity-0" : ""}`}
               style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
             >
               <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
             </span>
-            <ul className="grid grid-cols-5">
+            <ul className="grid grid-cols-6">
               {BUSINESS_NAV.map((n) => {
                 const active = pathname === n.href;
                 const section = TAB_SECTION[n.href];
