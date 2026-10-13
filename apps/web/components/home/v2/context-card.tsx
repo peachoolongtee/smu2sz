@@ -14,7 +14,7 @@ import { useAsync } from "@/lib/use-async";
  * server sentence (the row's consequence), "Customer profile" (an outlined button to the customer's page) and the "Agreement & supporting evidence" fold (the deal's own sentence from the
  * overview read: what the buyer asks and what FLOW recommends). For a customer with no deal chosen it is "Customer context" with the overview's own sentence. Every word is the server's.
  */
-export function ContextCard({ customerId, decision, row, customer }: { customerId: string; decision: string | null; row: WorklistNeedsRow | WorklistWaitingRow | null; customer: WorklistCustomer | null }) {
+export function ContextCard({ customerId, decision, row, customer, onBack }: { customerId: string; decision: string | null; row: WorklistNeedsRow | WorklistWaitingRow | null; customer: WorklistCustomer | null; onBack: () => void }) {
   const { t, lang } = useI18n();
   const overview = useAsync(() => getCustomerFocus(customerId, lang, decision ? { decision } : {}), [customerId, decision, lang]);
   const v = overview.data;
@@ -24,8 +24,12 @@ export function ContextCard({ customerId, decision, row, customer }: { customerI
   const sentence = row?.consequence_text ?? v?.summary_text ?? customer?.detail_text ?? null;
   const evidence = decision ? (v?.decision?.text ?? null) : (v?.summary_text ?? null);
   return (
-    <section aria-labelledby="hv2-context-title" className="motion-reveal f-card min-w-0 p-6" data-testid="hv2-context">
-      <h2 id="hv2-context-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
+    <section aria-labelledby="hv2-context-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-context">
+      <button type="button" onClick={onBack} className="motion-press -ml-2 mb-2 inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 text-[15px] font-semibold text-ink hover:bg-subtle touch:min-h-11" data-testid="hv2-context-back">
+        <span aria-hidden>←</span>
+        {t("hv2.context.back")}
+      </button>
+      <h2 id="hv2-context-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {decision ? t("hv2.context.title") : t("hv2.context.titleCustomer")}
       </h2>
       <p className="mt-3 border-b border-line pb-4 text-[15px] text-ink-3" data-testid="hv2-context-subject">

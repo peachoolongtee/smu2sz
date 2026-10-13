@@ -20,7 +20,7 @@ function ScopeRouteWatcher() {
   return null;
 }
 
-export function ChatPanel() {
+export function ChatPanel({ headerEntry = false }: { headerEntry?: boolean } = {}) {
   const { t } = useI18n();
   const pathname = usePathname();
   const { panelOpen } = useChat();
@@ -33,7 +33,8 @@ export function ChatPanel() {
     if (!panelOpen && d.open) d.close();
   }, [panelOpen]);
 
-  const onChatPage = pathname === "/chat";
+  // The Business header carries Ask FLOW from `lg` (components/ask-header.tsx): no floating pill there; on the chat page itself there is none either.
+  const onChatPage = pathname === "/chat" || headerEntry;
 
   return (
     <>

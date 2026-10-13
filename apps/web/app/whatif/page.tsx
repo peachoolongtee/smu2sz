@@ -55,7 +55,7 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
   const needWorklist = deals.data !== undefined && !deals.data?.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang).catch(() => null) : Promise.resolve(null)), [lang, needWorklist]);
   const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, null, { agreedTerms: (x: string) => x, agreedRef: (x: string) => x });
-  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && x.row.kind === "DECISION" && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
+  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && (x.row.kind === "DECISION" || x.row.kind === "BUYER_REPLY") && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>
       <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />

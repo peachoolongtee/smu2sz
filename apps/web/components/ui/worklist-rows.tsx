@@ -117,6 +117,8 @@ export function WorklistRow({
   pill,
   severity,
   after,
+  selectLabel,
+  onWarm,
   onClick,
   testId,
   data,
@@ -132,6 +134,10 @@ export function WorklistRow({
   severity?: ReactNode;
   /** Under the row's lines (the reason the first row is first). */
   after?: ReactNode;
+  /** "Select": the affordance that hover and keyboard focus reveal at the right of the row (a click or Enter selects; hovering changes nothing else on the page). */
+  selectLabel?: string;
+  /** Called when the pointer rests on the row or focus enters it: the page starts the reads a selection would make, so the selection paints at once. */
+  onWarm?: () => void;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   testId?: string;
   data?: Record<string, string>;
@@ -143,7 +149,9 @@ export function WorklistRow({
         scroll={false}
         aria-current={selected ? "true" : undefined}
         onClick={onClick}
-        className={`motion-press relative grid grid-cols-1 items-center gap-x-4 gap-y-1.5 rounded-[16px] px-4 py-3.5 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(7.5rem,auto)] ${
+        onPointerEnter={onWarm}
+        onFocus={onWarm}
+        className={`group motion-press relative grid grid-cols-1 items-center gap-x-4 gap-y-1.5 min-h-14 rounded-[16px] px-4 py-2 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(7.5rem,auto)] ${
           selected ? "bg-brand-50 ring-1 ring-f-purple" : "bg-card hover:shadow-f hover:ring-1 hover:ring-line"
         }`}
       >
@@ -161,7 +169,14 @@ export function WorklistRow({
           ) : null}
         </span>
         {nextStep ? <span className="min-w-0 text-supporting text-ink-3 md:text-sm">{nextStep}</span> : <span className="hidden md:block" />}
-        <span className="flex min-w-0 items-center justify-start">{pill}</span>
+        <span className="flex min-w-0 items-center justify-start gap-2">
+          {pill}
+          {selectLabel && !selected ? (
+            <span aria-hidden className="shrink-0 whitespace-nowrap text-supporting font-semibold text-ink opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 group-focus-visible:opacity-100 max-md:hidden" data-testid="hv2-row-select">
+              {selectLabel} →
+            </span>
+          ) : null}
+        </span>
         {severity}
         {after ? <span className="col-span-full mt-1 block">{after}</span> : null}
       </Link>

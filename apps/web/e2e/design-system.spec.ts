@@ -434,11 +434,13 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
   expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
   expect(await active.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   expect(await nav.getByRole("link", { name: "Deals", exact: true }).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
-  // Ask FLOW is a quiet outline pill, not a second filled button.
-  const ask = page.getByTestId("chat-open");
+  // Ask FLOW is a quiet outlined input in the header (round two), not a floating pill and not a second filled button; a phone keeps the bar's cell.
+  const ask = page.getByTestId("ask-header");
   expect(await ask.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
   expect(await ask.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("1px");
-  expect(await ask.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(36, 50, 74)");
+  expect(await ask.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("9999px");
+  expect(await page.getByTestId("ask-input").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(36, 50, 74)");
+  await expect(page.locator(".ask-trigger")).toHaveCount(0);
   // Home: the cards are the panel tone, 24 px, with the one soft shadow; the white row on a card; the filled button is the ink primary.
   await page.goto("/");
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible({ timeout: 15_000 });

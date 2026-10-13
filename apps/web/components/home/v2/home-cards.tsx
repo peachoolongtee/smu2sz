@@ -5,10 +5,10 @@ import { DocumentIcon, ShieldCheckIcon } from "@/components/icons";
 import { segments, r1 } from "@/components/business/cash-picture";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint, HomeV2, HomeView } from "@/lib/types";
+import type { HomeSeriesPoint, HomeV2, HomeView, OfferPictureView } from "@/lib/types";
 
 /** The card's title: the display face, 20 px, sentence case, never an uppercase eyebrow. */
-export const cardTitle = "font-display text-[20px] font-bold leading-tight tracking-[-0.01em] text-ink";
+export const cardTitle = "font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink";
 
 /**
  * "Cash available today" (the mockup's first card): the server's figure, its note ("¥100k above your ¥300k minimum"), and the reserve bar: a track to the minimum and a green part for
@@ -22,11 +22,11 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
   const reserve = Math.max(b.min_fen, 1);
   const room = Math.max(b.cash_fen - b.min_fen, 0);
   return (
-    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4 sm:p-6" data-testid="hv2-cash-card">
+    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-cash-card">
       <h2 id="hv2-cash-title" className={cardTitle} data-testid="hv2-metric-cash-label">
         {t("hv2.card.cash")}
       </h2>
-      <p className={`mt-2 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-6 sm:text-[52px] ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
+      <p className={`mt-2 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-3 ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
         {cash.value_display}
       </p>
       {cash.note ? (
@@ -34,7 +34,7 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
           {cash.note}
         </p>
       ) : null}
-      <div className="mt-auto pt-3 sm:pt-8" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
+      <div className="mt-auto pt-3 sm:pt-4" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
         <div className="flex items-baseline justify-between gap-3 text-sm text-ink-3">
           <span data-testid="home-buffer-min-text">
             {t("hv2.card.reserve")} <span className="tabular-nums">{b.minimum_text ?? b.min_display}</span>
@@ -57,35 +57,51 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
 
 const WINDOW_FALLBACK = 30;
 
+interface MiniLine {
+  key: string;
+  points: HomeSeriesPoint[];
+  cls: string;
+  width: number;
+  dash?: string;
+  testId: string;
+}
+
 /**
- * The outlook card's small chart: the current books as a purple step line, the plan that is ready as a grey dashed one, the minimum as a hairline and the lowest point as a dot; no axes
- * (the expanded forecast has them). Marks only: days and fen place them, every word is outside it.
+ * The outlook card's small chart: step lines (the company's current books in purple and the plan that is ready as a grey dashed one; or, in a deal, the request in grey and the recommended reply in
+ * purple), the minimum as a hairline and one dot; no axes (the expanded forecast has them). Marks only: days and fen place them, every word is outside it.
  */
-function MiniOutlook({ cash, today, plan }: { cash: HomeView["cash"]; today: number; plan: HomeSeriesPoint[] | null }) {
+function MiniChart({ lines, floor, today, window, dotDay, dotCls, mainKey }: { lines: MiniLine[]; floor: number; today: number; window: number; dotDay: number; dotCls: string; mainKey: string }) {
   const W = 320;
-  const H = 104;
+  const H = 80;
   const pad = 6;
-  const end = today + Math.max(cash.picture_days || WINDOW_FALLBACK, cash.events_rail_days ?? 0);
-  const main = segments(cash.series.filter((p) => p.day >= today), end);
-  const alt = plan ? segments(plan.filter((p) => p.day >= today), end) : [];
-  const floor = cash.floor_fen;
-  const levels = [floor, ...main.map((s) => s.v), ...alt.map((s) => s.v)];
+  const end = today + window;
+  const drawn = lines.map((l) => ({ ...l, segs: segments(l.points.filter((p) => p.day >= today), end) }));
+  const levels = [floor, ...drawn.flatMap((l) => l.segs.map((q) => q.v))];
   const lo = Math.min(...levels);
   const hi = Math.max(...levels);
   const span = Math.max(end - today, 1);
   const x = (d: number) => r1(pad + ((Math.min(Math.max(d, today), end) - today) / span) * (W - pad * 2));
   const y = (v: number) => r1(pad + ((hi - v) / Math.max(hi - lo, 1)) * (H - pad * 2));
   const path = (s: { d0: number; d1: number; v: number }[]) => s.map((q, i) => (i === 0 ? `M${x(q.d0)},${y(q.v)}` : `H${x(q.d0)}V${y(q.v)}`)).join("") + (s.length ? `H${x(s[s.length - 1].d1)}` : "");
-  const lowDay = cash.lowest_day;
-  const lowV = main.find((q) => lowDay >= q.d0 && lowDay < q.d1)?.v ?? main[main.length - 1]?.v ?? floor;
+  const main = drawn.find((l) => l.key === mainKey)?.segs ?? [];
+  const dotV = main.find((q) => dotDay >= q.d0 && dotDay < q.d1)?.v ?? main[main.length - 1]?.v ?? floor;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} aria-hidden className="block h-auto w-full overflow-visible" data-testid="hv2-mini">
-      <line x1={pad} x2={W - pad} y1={y(floor)} y2={y(floor)} className="stroke-line-strong" strokeWidth={1} />
-      {alt.length ? <path d={path(alt)} fill="none" strokeLinejoin="miter" strokeDasharray="4 3" strokeWidth={1.75} className="stroke-ink-3" data-testid="hv2-mini-plan" /> : null}
-      <path d={path(main)} fill="none" strokeLinejoin="miter" strokeWidth={2.25} className="stroke-chart-base" data-testid="hv2-mini-current" />
-      <circle cx={x(lowDay)} cy={y(lowV)} r={4} className="fill-chart-base" />
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="block h-14 w-full overflow-visible" data-testid="hv2-mini">
+      <line x1={pad} x2={W - pad} y1={y(floor)} y2={y(floor)} className="stroke-line-strong" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+      {drawn.map((l) => (
+        <path key={l.key} d={path(l.segs)} fill="none" strokeLinejoin="miter" strokeDasharray={l.dash} strokeWidth={l.width} vectorEffect="non-scaling-stroke" className={l.cls} data-testid={l.testId} />
+      ))}
+      <line x1={x(dotDay)} x2={x(dotDay)} y1={y(dotV)} y2={y(dotV)} strokeWidth={8} strokeLinecap="round" vectorEffect="non-scaling-stroke" className={dotCls} />
     </svg>
   );
+}
+
+function MiniOutlook({ cash, today, plan }: { cash: HomeView["cash"]; today: number; plan: HomeSeriesPoint[] | null }) {
+  // The plan is drawn first, the current books over it (the dot sits on the current line).
+  const lines: MiniLine[] = [];
+  if (plan) lines.push({ key: "plan", points: plan, cls: "stroke-ink-3", width: 1.75, dash: "4 3", testId: "hv2-mini-plan" });
+  lines.push({ key: "base", points: cash.series, cls: "stroke-chart-base", width: 2.25, testId: "hv2-mini-current" });
+  return <MiniChart lines={lines} mainKey="base" floor={cash.floor_fen} today={today} window={Math.max(cash.picture_days || WINDOW_FALLBACK, cash.events_rail_days ?? 0)} dotDay={cash.lowest_day} dotCls="stroke-chart-base" />;
 }
 
 const ExpandIcon = ({ open }: { open: boolean }) => (
@@ -103,7 +119,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
   const low = kpis.lowest_ahead;
   const withPlan = low.with_plan ?? null;
   return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-5 sm:p-6" data-testid="hv2-outlook-card">
+    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card">
       <div className="flex items-start justify-between gap-3">
         <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
           {t("hv2.card.outlook")}
@@ -114,10 +130,10 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
           </StatusPill>
         ) : null}
       </div>
-      <p className={`mt-4 font-display text-[44px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[52px] ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+      <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
         {low.value_display}
       </p>
-      <p className="mt-2 text-sm text-ink-3">
+      <p className="mt-1.5 text-sm text-ink-3">
         {t("hv2.card.without")}
         {low.short_note ?? low.note ? (
           <span className="sr-only" data-testid="home-kpi-lowest-note">
@@ -126,10 +142,10 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
           </span>
         ) : null}
       </p>
-      <div className="mt-3 max-sm:max-w-xs">
+      <div className="mt-2 max-sm:max-w-xs">
         <MiniOutlook cash={h.cash} today={h.day} plan={plan} />
       </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-sm text-ink">
+      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
         {withPlan?.label && withPlan.value_text ? (
           <p className="tabular-nums" data-testid="home-kpi-lowest-plan">
             <span className="inline-block first-letter:uppercase">{withPlan.label}</span> {withPlan.value_text}
@@ -137,7 +153,60 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
         ) : (
           <span />
         )}
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+          {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
+          <ExpandIcon open={expanded} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The outlook card while a deal is selected (round two): the deal's own paths on the small chart, the request in grey and FLOW's recommended reply in purple, so the owner sees how the deal affects
+ * the company's cash. The figure is the request's lowest cash in the server's short word (risk red when it breaches the minimum), the pill when that is, the footer the recommended reply's own lowest;
+ * Expand opens the deal's cash chart under the deal's card. Nothing is computed here. Null while the picture is not here (the caller keeps the company's outlook).
+ */
+export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { h: HomeView; picture: OfferPictureView | null | undefined; expanded: boolean; onExpand: (open: boolean) => void; controls?: string }) {
+  const { t } = useI18n();
+  const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
+  const asked = paths.find((p) => p.kind === "asked") ?? null;
+  const rec = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
+  if (!picture || !asked?.series?.length || !rec?.series?.length) return null;
+  const lines: MiniLine[] = [
+    { key: "asked", points: asked.series, cls: "stroke-ink-3", width: 2, testId: "hv2-mini-asked" },
+    { key: "rec", points: rec.series, cls: "stroke-chart-base", width: 2.25, testId: "hv2-mini-rec" },
+  ];
+  const lowestDay = asked.series.filter((p) => p.day >= h.day).reduce<HomeSeriesPoint | null>((a, b) => (a === null || b.closing_fen < a.closing_fen ? b : a), null)?.day ?? h.day;
+  return (
+    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card" data-mode="deal">
+      <div className="flex items-start justify-between gap-3">
+        <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
+          {t("hv2.deal.outlook")}
+        </h2>
+        {asked.lowest_when ? (
+          <StatusPill tone="amber" testId="hv2-outlook-when">
+            {asked.lowest_when}
+          </StatusPill>
+        ) : null}
+      </div>
+      {asked.lowest_short ? (
+        <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+          {asked.lowest_short}
+        </p>
+      ) : null}
+      <p className="mt-1.5 text-sm text-ink-3" data-testid="hv2-outlook-asked">
+        {asked.label || t("hv2.deal.outlook.asked")}
+      </p>
+      <div className="mt-2 max-sm:max-w-xs">
+        <MiniChart lines={lines} mainKey="asked" floor={picture.floor_fen} today={h.day} window={picture.picture_days ?? h.cash.picture_days ?? WINDOW_FALLBACK} dotDay={lowestDay} dotCls="stroke-bad-solid" />
+      </div>
+      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
+        <p className="tabular-nums" data-testid="hv2-outlook-rec">
+          {rec.label}
+          {rec.lowest_short ? ` ${rec.lowest_short}` : ""}
+        </p>
+        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
           {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
           <ExpandIcon open={expanded} />
         </button>
@@ -161,17 +230,17 @@ export function UpcomingCard({ h }: { h: HomeView }) {
         .slice(0, 3)
         .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
-    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-6" data-testid="hv2-upcoming">
-      <h2 id="hv2-upcoming-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
+    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-upcoming">
+      <h2 id="hv2-upcoming-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
       {events.length ? (
-        <ul className="mt-5 divide-y divide-line" data-testid="hv2-upcoming-list">
+        <ul className="mt-3 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
-            <li key={e.key} className="flex items-start justify-between gap-4 py-3.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
+            <li key={e.key} className="flex min-h-11 items-center justify-between gap-4 py-1.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
               <span className="min-w-0 text-[15px] text-ink">
-                <span className="block first-letter:uppercase">{e.label}</span>
-                <span className="mt-0.5 block text-sm text-ink-3 first-letter:uppercase">{e.when}</span>
+                <span className="block leading-tight first-letter:uppercase">{e.label}</span>
+                <span className="block text-supporting text-ink-3 first-letter:uppercase">{e.when}</span>
               </span>
               <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>
@@ -197,10 +266,10 @@ const FOOT = [
 ] as const;
 
 /** The footer row: the four secondary destinations of the mockup, linking to the existing routes (their pages change in their own slices). */
-export function FooterLinks() {
+export function FooterLinks({ separate = false }: { separate?: boolean }) {
   const { t } = useI18n();
   return (
-    <nav aria-label={t("hv2.foot")} className="mt-8 border-t border-line pt-4" data-testid="home-v2-links">
+    <nav aria-label={t("hv2.foot")} className="mt-6 border-t border-line pt-3" data-testid="home-v2-links">
       <ul className="flex flex-wrap gap-x-7 gap-y-1">
         {FOOT.map(({ href, key, Icon }) => (
           <li key={href}>
@@ -211,6 +280,11 @@ export function FooterLinks() {
           </li>
         ))}
       </ul>
+      {separate ? (
+        <p className="mt-1 pb-1 text-supporting text-ink-3" data-testid="hv2-foot-separate">
+          {t("hv2.foot.separate")}
+        </p>
+      ) : null}
     </nav>
   );
 }
