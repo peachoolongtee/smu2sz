@@ -20,7 +20,7 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   const terms = card.getByTestId("approval-terms");
   await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co.");
   // A zero forward value is not shown as "¥0.00": the server sends its sentence instead.
-  await expect(card.getByTestId("approval-forward")).toHaveText("No cost over the valuation window beyond the early-payment discount.");
+  await expect(card.getByTestId("approval-forward")).toHaveText("No cost over the next 12 months beyond the early-payment discount.");
   await expect(card).not.toContainText("¥0.00");
   await expect(card).toContainText("¥420,000.00");
   await expect(card).not.toContainText("Accept offer");
