@@ -63,7 +63,7 @@ test("in Chinese the approvals queue and the decision record read in Chinese wit
   const card = page.locator('[id^="approval-APR-"]').first();
   await expect(card).toBeVisible();
   // Chinese sentences, English figures: the amount and the cost are the same figures the English queue shows.
-  await expect(page.locator('[data-testid="approval-headline"]')).toContainText("批准");
+  await expect(page.locator('[data-testid="approval-headline"]')).toContainText("申请");
   await expect(page.locator('[data-testid="approval-headline"]')).toContainText("¥200,000.00");
   await expect(card.locator('[data-testid^="approval-state-"]')).toContainText("等待您批准");
   await expect(card.locator('[data-testid="approval-cost"]')).toContainText("¥1,782.19");

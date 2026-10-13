@@ -101,7 +101,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   // Scene 5, the owner stays in control: the cure is queued, not run.
   await walkStory(page, 1, 6);
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  await expect(narration).toContainText("Queued, not run: Approve ¥200,000.00 of invoice financing?");
+  await expect(narration).toContainText("Queued, not run: Request ¥200,000 of invoice financing");
   await expect(page.getByText("1 pending")).toBeVisible();
   // The owner approves ON THE CARD (its one filled Approve); the strip's button only opens the approval, and then moves the story on.
   const card = page.locator('[id^="approval-APR-"]').first();

@@ -27,7 +27,8 @@
     "decided_day": null,
     "result_message": null,
     "presentation": {
-      "headline": "Approve ¥600,000.00 of facility application?",
+      "headline": "Apply for ¥600,000 in equipment financing",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -144,7 +145,9 @@
       }
     ],
     "deadline_text": null,
-    "deadline_day": null
+    "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": null
   },
   "apply_loan_approved": {
     "id": "APR-000001",
@@ -174,7 +177,8 @@
     "decided_day": 0,
     "result_message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
     "presentation": {
-      "headline": "You approved ¥600,000.00 of facility application.",
+      "headline": "You authorized the application; FLOW sent it to the lender.",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -255,6 +259,8 @@
     "summary_rows": null,
     "deadline_text": null,
     "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": "You authorized the application; FLOW sent it to the lender.",
     "execution_status": "EXECUTED"
   },
   "apply_loan_rejected": {
@@ -285,7 +291,8 @@
     "decided_day": 0,
     "result_message": "Declined by the owner (APR-000001); nothing executed",
     "presentation": {
-      "headline": "You declined ¥600,000.00 of facility application.",
+      "headline": "You declined; the application was not sent.",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -350,6 +357,8 @@
     "summary_rows": null,
     "deadline_text": null,
     "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": "You declined; the application was not sent.",
     "execution_status": "DECLINED"
   }
 }

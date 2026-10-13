@@ -243,6 +243,8 @@ export function costHeadline(p: PicturePath): { display: string | null; basis: s
 export interface CostCell {
   display: string;
   basis: string | null;
+  /** The server's word on the figure ("if the plan runs; it cannot run today"). */
+  note?: string | null;
 }
 export interface CostRow {
   key: string;
@@ -255,7 +257,7 @@ export function costRows(paths: PicturePath[]): CostRow[] {
   const rows: CostRow[] = [];
   paths.forEach((p, i) => {
     // The server's rows (`cost_rows`, the total apart) else its older components; a component with no amount for a path is that path's missing cell.
-    const parts = p.cost_rows?.length ? p.cost_rows.filter((r) => r.key !== "total").map((r) => ({ key: r.key, label: r.label, display: r.amount_display, basis_text: r.basis_text })) : (p.cost_components ?? []);
+    const parts = p.cost_rows?.length ? p.cost_rows.filter((r) => r.key !== "total").map((r) => ({ key: r.key, label: r.label, display: r.amount_display, basis_text: r.basis_text, note: r.note })) : (p.cost_components ?? []);
     for (const c of parts) {
       if (!c.display) continue;
       const key = c.key ?? c.label;
@@ -264,7 +266,7 @@ export function costRows(paths: PicturePath[]): CostRow[] {
         row = { key, label: c.label, cells: paths.map(() => null) };
         rows.push(row);
       }
-      row.cells[i] = { display: c.display, basis: c.basis_text ?? null };
+      row.cells[i] = { display: c.display, basis: c.basis_text ?? null, note: "note" in c ? (c.note ?? null) : null };
     }
   });
   return rows;

@@ -173,7 +173,7 @@ function ApprovalList({ waiting, selectedId, onPick }: { waiting: ApprovalView[]
                     className="flow-row block w-full px-4 py-3 text-left outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600"
                     data-testid={`approval-row-${a.id}`}
                   >
-                    <span className="block text-[15px] font-bold leading-snug text-ink">{a.presentation?.headline ?? a.subject}</span>
+                    <span className="block text-[15px] font-bold leading-snug text-ink">{a.title_text ?? a.presentation?.title_text ?? a.presentation?.headline ?? a.subject}</span>
                     <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                       <StatusPill tone="amber">{a.result_state_text ?? a.presentation?.result_state_text ?? te("apprstatus", a.status)}</StatusPill>
                       {a.amount_display ? <span className="text-supporting font-semibold tabular-nums text-ink">{a.amount_display}</span> : null}

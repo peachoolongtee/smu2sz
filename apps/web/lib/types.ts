@@ -1314,6 +1314,9 @@ export interface ApprovalPresentation {
   /** When it has to be decided by, in relative words ("Expires in 5 days"); null where it has no deadline. */
   deadline_text?: string | null;
   deadline_day?: number | null;
+  /** What the approval asks the owner to authorize, as a statement ("Apply for ¥200,000 in working-capital financing"), and what came of it once answered; the question headline is gone. */
+  title_text?: string | null;
+  decided_text?: string | null;
 }
 
 /** One stage of an approval's lifecycle (You authorize, Lender reviews, Funding decision): the server's label and sentence and where it stands; a stage is never shown done before it is. */
@@ -1366,6 +1369,8 @@ export interface ApprovalDetail {
   terms_rows?: ApprovalSummaryRow[] | null;
   deadline_text?: string | null;
   deadline_day?: number | null;
+  title_text?: string | null;
+  decided_text?: string | null;
 }
 
 /** The colour of a state, chosen by the server. */
@@ -3882,7 +3887,7 @@ export interface PicturePath {
   /** The parts of a cost, in the server's words: the immediate discount, the forward payment-term cost, the rebate, the funding cost (round two: each with its `key` and the basis words that say its horizon); absent when the cost is a plain figure. */
   cost_components?: { key?: string | null; label: string; display: string; basis_text?: string | null }[] | null;
   /** Round two: the cost as table rows, `{key, label, amount_display, basis_text}`: the immediate discount, the forward payment-term cost, the rebate, (a price offset), the funding cost and a `total` row whose basis is the path's `cost_basis_text`; an amount is null where the path has no such component. */
-  cost_rows?: { key: string; label: string; amount_display: string | null; basis_text?: string | null }[] | null;
+  cost_rows?: { key: string; label: string; amount_display: string | null; basis_text?: string | null; /** A word on the row ("if the plan runs; it cannot run today" on a funding cost the plan cannot incur today). */ note?: string | null }[] | null;
   /** Round two: the payment term of this path in days (plotting only: the timing diagram's bar) and the server's words for it; null for a path with no terms change. */
   terms_days?: number | null;
   terms_days_text?: string | null;

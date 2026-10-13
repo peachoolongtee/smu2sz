@@ -3772,7 +3772,7 @@
   "fund_gap": {
     "session_id": "rec-fund",
     "turn": 1,
-    "reply": "Router plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to execute.",
+    "reply": "Funding plan (committed facilities only): committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93, need ¥405,000.00. Cash today: ¥150,000.00. Cash later: ¥255,000.00 on FAC-IF, requested today, lands on day 3. Reply 'go ahead' to execute.",
     "intent": "FUND_GAP",
     "lang": "en",
     "plan": [
@@ -4050,7 +4050,7 @@
     "trace_id": "rec-fund:2",
     "context_echo": null,
     "scope_used": null,
-    "decision_id": "nl:rec-fund:t1:087bf83741ec",
+    "decision_id": "nl:rec-fund:t1:8261888c7964",
     "decision_recorded": true
   },
   "status": {
@@ -6584,7 +6584,7 @@
   "fund_gap_zh": {
     "session_id": "rec-fund-zh",
     "turn": 1,
-    "reply": "融资路由方案（仅已承诺额度）：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93，需求 ¥405,000.00。 今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”以执行。",
+    "reply": "融资方案（仅已承诺额度）：committed plan: ¥841.64 + ¥2,272.29 = ¥3,113.93，需求 ¥405,000.00。 今日到账：¥150,000.00。稍后到账：FAC-IF ¥255,000.00，今日申请，第 3 天到账。 回复“执行”以执行。",
     "intent": "FUND_GAP",
     "lang": "zh",
     "plan": [
@@ -6862,7 +6862,7 @@
     "trace_id": "rec-fund-zh:2",
     "context_echo": null,
     "scope_used": null,
-    "decision_id": "nl:rec-fund-zh:t1:c303d2a206fd",
+    "decision_id": "nl:rec-fund-zh:t1:0847ace929c6",
     "decision_recorded": true
   },
   "status_zh": {

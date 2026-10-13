@@ -50,6 +50,7 @@ export function CostTable({ paths, heads, testId = "deal-cost-table", caption }:
                     <>
                       <span className="tabular-nums text-ink">{c.display}</span>
                       {c.basis ? <span className="mt-0.5 block text-supporting text-ink-3">{c.basis}</span> : null}
+                      {c.note ? <span className="mt-0.5 block text-supporting text-warn-fg" data-testid="cost-row-note">{c.note}</span> : null}
                     </>
                   ) : (
                     NONE

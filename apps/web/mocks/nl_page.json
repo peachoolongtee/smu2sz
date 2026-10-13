@@ -1683,7 +1683,7 @@
     "changes": {
       "session_id": "rec-page-pending-changes",
       "turn": 1,
-      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. Status: still waiting for your decision.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Approve ¥200,000.00 of invoice financing? It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
+      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. Status: still waiting for your decision.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Request ¥200,000 of invoice financing. It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
       "intent": "CHANGES",
       "lang": "en",
       "plan": [],
@@ -1703,7 +1703,7 @@
     "waiting": {
       "session_id": "rec-page-pending-waiting",
       "turn": 1,
-      "reply": "Waiting for your decision: Approve ¥200,000.00 of invoice financing? It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\nWaiting for payment: Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
+      "reply": "Waiting for your decision: Request ¥200,000 of invoice financing. It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\nWaiting for payment: Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
       "intent": "SHOW_STATUS",
       "lang": "en",
       "plan": [],
@@ -1723,7 +1723,7 @@
     "arrival": {
       "session_id": "rec-page-pending-arrival",
       "turn": 1,
-      "reply": "Approve ¥200,000.00 of invoice financing? If you approve today, the cash lands in 3 days.\nThe next payment due is the ¥420,000.00 invoice to Foshan Home Retail Co., in 13 days.",
+      "reply": "Request ¥200,000 of invoice financing. If you approve today, the cash lands in 3 days.\nThe next payment due is the ¥420,000.00 invoice to Foshan Home Retail Co., in 13 days.",
       "intent": "SHOW_STATUS",
       "lang": "en",
       "plan": [],

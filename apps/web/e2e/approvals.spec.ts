@@ -74,7 +74,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   const card = page.locator("#approval-APR-000001");
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
-  await expect(page.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Apply for ¥600,000 in equipment financing");
   await expect(card.getByTestId("approval-reason")).toContainText("Apply for facility Equipment term loan");
   await expect(card.getByTestId("approval-detail-APR-000001")).toBeHidden();
   await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
@@ -175,7 +175,7 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   await expect(h1).toHaveCount(1);
   await expect(h1).toHaveText("Approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await expect(card.getByTestId("approval-headline")).toHaveText("Request ¥200,000 of invoice financing");
   await openDetails(card); // the cash picture is in the application details
   // The three facts, then the picture: the decline line is the baseline and the approve line the alternative, each lowest point named in the server's words.
   await expect(card.getByTestId("approval-lands")).toBeVisible();
@@ -242,7 +242,7 @@ test("a decided approval is a row on a hairline under the plain title, and the p
   await expect(card.getByTestId("approval-decided-APR-000001")).toBeVisible();
   await expect(page.getByTestId("approvals-decided")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Approvals");
-  await expect(page.getByTestId("approval-headline")).toHaveText("You approved ¥200,000.00 of invoice financing.");
+  await expect(page.getByTestId("approval-headline")).toHaveText("You authorized the financing request; FLOW sent it to the lender.");
   expect(await filledBrand(page)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

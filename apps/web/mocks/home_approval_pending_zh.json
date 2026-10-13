@@ -26,7 +26,8 @@
   "decided_day": null,
   "result_message": null,
   "presentation": {
-    "headline": "批准 ¥200,000.00 的发票融资？",
+    "headline": "申请 ¥200,000 的发票融资",
+    "title_text": "申请 ¥200,000 的发票融资",
     "what": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
@@ -2619,5 +2620,7 @@
     }
   ],
   "deadline_text": "8 天后需要资金到位",
-  "deadline_day": 42
+  "deadline_day": 42,
+  "title_text": "申请 ¥200,000 的发票融资",
+  "decided_text": null
 }

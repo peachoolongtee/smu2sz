@@ -4840,7 +4840,7 @@
         "key": "approval:APR-000001",
         "kind": "approval",
         "eyebrow": "1 项批准等待您处理",
-        "title": "批准 ¥200,000.00 的发票融资？",
+        "title": "申请 ¥200,000 的发票融资",
         "facts": [
           {
             "label": "预计成本",
@@ -5200,7 +5200,8 @@
       "created_day": 34,
       "amount_fen": 20000000,
       "amount_display": "¥200,000.00",
-      "headline": "批准 ¥200,000.00 的发票融资？",
+      "headline": "申请 ¥200,000 的发票融资",
+      "title_text": "申请 ¥200,000 的发票融资",
       "what": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
       "facility_name": "Invoice financing (onboarded platform)",
       "buyer_name": "Foshan Home Retail Co.",

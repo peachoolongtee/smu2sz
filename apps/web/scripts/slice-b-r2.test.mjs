@@ -110,6 +110,12 @@ test("the cost table aligns the components of the paths by key (else label); a p
   assert.deepEqual(m.costHeadline({ cost_total_display: "¥3,027.77", cost_basis_text: "once, nothing ongoing", cost_display: "x", cost_note: "y" }), { display: "¥3,027.77", basis: "once, nothing ongoing" });
 });
 
+test("a cost row's note (the funding the plan cannot incur today) rides with its cell, and a row with no amount is no cell", () => {
+  const r = { cost_rows: [{ key: "immediate_discount", label: "Immediate discount", amount_display: "¥3,570.00", basis_text: "once", note: null }, { key: "funding", label: "Funding cost", amount_display: "¥2,919.20", basis_text: "once", note: "if the plan runs; it cannot run today" }, { key: "rebate", label: "Rebate", amount_display: null, basis_text: "over 12 months", note: null }, { key: "total", label: "Total", amount_display: "¥6,489.20", basis_text: "once, nothing ongoing", note: null }] };
+  const rows = m.costRows([r]);
+  assert.deepEqual(rows.map((x) => [x.key, x.cells[0]?.display, x.cells[0]?.note ?? null]), [["immediate_discount", "¥3,570.00", null], ["funding", "¥2,919.20", "if the plan runs; it cannot run today"]]);
+});
+
 test("every round-two label has a Chinese twin and no key is empty", () => {
   const keys = Object.keys(en).filter((k) => /^(deals\.(terms|timing|cost|card|cards|why|review|sort|group|view|controls|more|full|row|workspace)|customer\.(flow|review|others|otherTasks|explore|share|exposure\.compare)|appr\.(stage|lifecycle|summary|details|authority|list|quoted))/.test(k));
   assert.ok(keys.length > 40);

@@ -5928,31 +5928,36 @@
             "key": "immediate_discount",
             "label": "Immediate discount",
             "amount_display": "¥5,040.00",
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "Forward payment-term cost",
             "amount_display": "¥24,326.92",
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "Rebate",
             "amount_display": "¥4,000.00",
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "funding",
             "label": "Funding cost",
             "amount_display": null,
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "total",
             "label": "Total",
             "amount_display": null,
-            "basis_text": "two parts: once, and over 12 months"
+            "basis_text": "two parts: once, and over 12 months",
+            "note": null
           }
         ],
         "authority": "over_limit",
@@ -7946,31 +7951,36 @@
             "key": "immediate_discount",
             "label": "Immediate discount",
             "amount_display": "¥2,186.20",
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "Forward payment-term cost",
             "amount_display": null,
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "Rebate",
             "amount_display": null,
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "funding",
             "label": "Funding cost",
             "amount_display": "¥841.57",
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "total",
             "label": "Total",
             "amount_display": "¥3,027.77",
-            "basis_text": "once, nothing ongoing"
+            "basis_text": "once, nothing ongoing",
+            "note": null
           }
         ],
         "authority": "flow_may",
@@ -10004,37 +10014,43 @@
             "key": "immediate_discount",
             "label": "Immediate discount",
             "amount_display": null,
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "Forward payment-term cost",
             "amount_display": "¥16,217.95",
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "Rebate",
             "amount_display": null,
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "price_offset",
             "label": "Offset by the price adjustment",
             "amount_display": "−¥16,380.00",
-            "basis_text": "over 12 months"
+            "basis_text": "over 12 months",
+            "note": null
           },
           {
             "key": "funding",
             "label": "Funding cost",
             "amount_display": null,
-            "basis_text": "once"
+            "basis_text": "once",
+            "note": null
           },
           {
             "key": "total",
             "label": "Total",
             "amount_display": "¥0.00",
-            "basis_text": "net over 12 months"
+            "basis_text": "net over 12 months",
+            "note": null
           }
         ],
         "authority": "needs_owner",
@@ -18367,31 +18383,36 @@
             "key": "immediate_discount",
             "label": "立即折扣",
             "amount_display": "¥5,040.00",
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "远期账期成本",
             "amount_display": "¥24,326.92",
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "返利",
             "amount_display": "¥4,000.00",
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "funding",
             "label": "融资成本",
             "amount_display": null,
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "total",
             "label": "合计",
             "amount_display": null,
-            "basis_text": "两部分：一次性，以及 12 个月内"
+            "basis_text": "两部分：一次性，以及 12 个月内",
+            "note": null
           }
         ],
         "authority": "over_limit",
@@ -20385,31 +20406,36 @@
             "key": "immediate_discount",
             "label": "立即折扣",
             "amount_display": "¥2,186.20",
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "远期账期成本",
             "amount_display": null,
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "返利",
             "amount_display": null,
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "funding",
             "label": "融资成本",
             "amount_display": "¥841.57",
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "total",
             "label": "合计",
             "amount_display": "¥3,027.77",
-            "basis_text": "一次性，之后无持续成本"
+            "basis_text": "一次性，之后无持续成本",
+            "note": null
           }
         ],
         "authority": "flow_may",
@@ -22443,37 +22469,43 @@
             "key": "immediate_discount",
             "label": "立即折扣",
             "amount_display": null,
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "payment_terms",
             "label": "远期账期成本",
             "amount_display": "¥16,217.95",
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "rebate",
             "label": "返利",
             "amount_display": null,
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "price_offset",
             "label": "价格调整的抵补",
             "amount_display": "−¥16,380.00",
-            "basis_text": "12 个月内"
+            "basis_text": "12 个月内",
+            "note": null
           },
           {
             "key": "funding",
             "label": "融资成本",
             "amount_display": null,
-            "basis_text": "一次性"
+            "basis_text": "一次性",
+            "note": null
           },
           {
             "key": "total",
             "label": "合计",
             "amount_display": "¥0.00",
-            "basis_text": "12 个月内的净额"
+            "basis_text": "12 个月内的净额",
+            "note": null
           }
         ],
         "authority": "needs_owner",

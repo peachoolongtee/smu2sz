@@ -26,7 +26,8 @@
   "decided_day": null,
   "result_message": null,
   "presentation": {
-    "headline": "Approve ¥200,000.00 of invoice financing?",
+    "headline": "Request ¥200,000 of invoice financing",
+    "title_text": "Request ¥200,000 of invoice financing",
     "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
@@ -2619,5 +2620,7 @@
     }
   ],
   "deadline_text": "Cash needed in 8 days",
-  "deadline_day": 42
+  "deadline_day": 42,
+  "title_text": "Request ¥200,000 of invoice financing",
+  "decided_text": null
 }

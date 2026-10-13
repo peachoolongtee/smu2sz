@@ -148,7 +148,7 @@ test("day 34: the cure queued from Cash & funding waits on Approvals, where the 
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
-  await expect(page.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Request ¥200,000 of invoice financing");
   await expect(card.getByTestId("approval-cost")).toContainText("¥1,782.19");
   await expect(card.getByTestId("approval-lands")).toHaveText("If you approve today, the cash lands in 3 days.");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");

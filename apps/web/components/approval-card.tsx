@@ -239,7 +239,8 @@ export function ApprovalCard({
   ) : null;
 
   const stateChip = stateText ? <StateWord tone={stateTone} testId={`approval-state-${a.id}`}>{stateText}</StateWord> : <Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>;
-  const headlineText = p?.headline ?? a.subject;
+  // The statement of what is authorized (`title_text`) while the request waits, what came of it (`decided_text`) once answered; the older question headline is the fallback.
+  const headlineText = isPending ? (a.title_text ?? p?.title_text ?? p?.headline ?? a.subject) : (a.decided_text ?? p?.decided_text ?? p?.headline ?? a.subject);
   // The sentence under the question says what the request is; when the Source and Invoice facts say it already, it is not said twice.
   const whatText = p?.facility_name && p?.invoice ? undefined : (p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`);
 

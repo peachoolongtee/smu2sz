@@ -15,7 +15,7 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await story(page, "tl-mock-approval-story", "agreement");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(page.getByTestId("approval-headline")).toHaveText("Approve this agreement with Foshan Home Retail Co.?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Record the agreement with Foshan Home Retail Co.");
   await expect(card.getByTestId("approval-buyer")).toHaveText("Foshan Home Retail Co.");
   const terms = card.getByTestId("approval-terms");
   await expect(terms).toContainText("The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co.");
@@ -65,7 +65,7 @@ test("an approval the executor refuses ends as 'could not run', with no buttons 
   await expect(refused).toContainText("You approved it, but it could not run: your signed limits (version 1) expired yesterday. No money moved.");
   await expect(refused).not.toContainText("declined");
   // The title is in the past tense and a refusal says where to go next (the server's sentence and route).
-  await expect(card.getByTestId("approval-headline")).toContainText("Approved, but it did not run");
+  await expect(card.getByTestId("approval-headline")).toContainText("You authorized the financing request, but it could not run. No money moved.");
   await expect(card.getByTestId("approval-next-APR-000001")).toHaveAttribute("href", "/limits");
   await expect(card).toContainText("Approved");
   await expect(card.getByRole("button", { name: /^Authorize/ })).toHaveCount(0);
