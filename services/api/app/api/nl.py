@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.auth import counterparty_for_key, is_agent
 from app.api.decisions import record_fact
 from app.api.display import displayed
-from app.api.home import get_home
+from app.api.home import read_home
 from app.api.offers import enforce_intake_cap
 from app.api.presentation import business_text
 from app.api.quotes import decision_id_of
@@ -56,7 +56,7 @@ def _owner_reads(rt, business: bool = False) -> OwnerReads:
     runtime lock; owner turns only."""
     def home(lang: str, since_day: int | None):
         try:
-            return get_home(lang=lang, since_day=since_day)
+            return read_home(lang, since_day)
         except HTTPException:  # the books cannot be projected: the read says so rather than guessing
             return None
 
