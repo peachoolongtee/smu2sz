@@ -822,6 +822,25 @@ export type VerdictView = Displayed<Verdict> & {
   workspace?: DealWorkspace;
 };
 
+/** The send plan of one sendable reply: what sending does and its commitment receipt, in the server's words (a null line of the receipt is omitted). */
+export interface PricedResponse {
+  counter_id: string;
+  label: string;
+  /** The label in the owner's language ("Option A" / "方案 A"); absent in older recordings. */
+  label_text?: string;
+  send_scope: string;
+  /** What sending does, one line each (the agreement it records, the funding it draws or requests, the estimated cost); absent when there is no counter or in older recordings. */
+  send_scope_lines?: string[] | null;
+  /** One sentence on what the send re-checks (the books are read again; if they moved, the new figures are shown first). Not sent yet: the queue shows it only when present. */
+  recheck_text?: string | null;
+  /** The commitment receipt of sending this reply (ticket #128), in the server's words and order; the review shows it above the one commit button. Absent from an older server. */
+  receipt?: CommitmentReceiptView | null;
+  supplier_cost_display: string;
+  forward_value_display: string;
+  verdict_id: string;
+  state_version: number;
+}
+
 export type WorkspaceSection = "buyer" | "buyer_asks" | "financial_impact" | "why_it_matters" | "recommends" | "priced_response" | "agreements" | "advanced";
 export type AdvancedKey = "parsed_obligations" | "source_text" | "checks" | "formula" | "engine_verdict" | "audit_evidence";
 
@@ -856,23 +875,10 @@ export interface DealWorkspace {
   };
   why_it_matters: { text: string; reasons: string[] };
   recommends: { action: BusinessAction; text: string };
-  priced_response: {
-    counter_id: string;
-    label: string;
-    /** The label in the owner's language ("Option A" / "方案 A"); absent in older recordings. */
-    label_text?: string;
-    send_scope: string;
-    /** What sending does, one line each (the agreement it records, the funding it draws or requests, the estimated cost); absent when there is no counter or in older recordings. */
-    send_scope_lines?: string[] | null;
-    /** One sentence on what the send re-checks (the books are read again; if they moved, the new figures are shown first). Not sent yet: the queue shows it only when present. */
-    recheck_text?: string | null;
-    /** The commitment receipt of sending this reply (ticket #128), in the server's words and order; the review shows it above the one commit button. Absent from an older server. */
-    receipt?: CommitmentReceiptView | null;
-    supplier_cost_display: string;
-    forward_value_display: string;
-    verdict_id: string;
-    state_version: number;
-  } | null;
+  /** The first sendable reply's send plan (kept for the story and for an older server); the send review reads `priced_responses`. */
+  priced_response: PricedResponse | null;
+  /** One entry per sendable reply, in the verdict's order, each with its own receipt (`counter_id` is the picture path's key). Absent from an older server. */
+  priced_responses?: PricedResponse[];
   /** The existing top-level fields of the verdict that the page folds, by what the owner calls them. */
   advanced: { keys: Record<AdvancedKey, string[]> };
 }

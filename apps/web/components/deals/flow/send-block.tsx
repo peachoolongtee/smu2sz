@@ -48,6 +48,8 @@ export function SendBlock({
   // The evaluation behind the picture, as this tab holds it: its id is the picture's, or it is not the one the owner is looking at.
   const cached = demo.verdicts[offerId];
   const verdict = cached && cached.id === picture.verdict_id ? cached : null;
+  // The server's receipt for THIS reply (its own priced response); none means FLOW has not priced it, and nothing is sent for it.
+  const receipt = verdict ? receiptOfSend(path, verdict) : null;
   const [reviewing, setReviewing] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [profile, setProfile] = useState<BuyerProfile>("cooperative");
@@ -136,11 +138,16 @@ export function SendBlock({
       ) : null}
       {reviewing ? (
         <div id="counters" role="region" aria-label={t("dq.review.region")} className="space-y-4 pt-1" data-testid="queue-review">
-          {verdict ? (
-            <CommitmentReceipt receipt={receiptOfSend(path, verdict)} id={`${uid}-receipt`} title={t("receipt.title.send", { label: path.label })} />
+          {receipt ? (
+            <CommitmentReceipt receipt={receipt} id={`${uid}-receipt`} title={t("receipt.title.send", { label: path.label })} />
+          ) : verdict ? (
+            <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="deal-unpriced">
+              {t("receipt.unpriced")}
+            </p>
           ) : preparing ? (
             <LoadingBlock rows={3} label={t("deals.review.reading")} />
           ) : null}
+          {verdict && !receipt ? null : (
           <div className="space-y-2" data-testid="deal-send-confirm-box">
             <p className="text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
             <div className="flex flex-wrap items-center gap-3">
@@ -162,10 +169,14 @@ export function SendBlock({
               </p>
             ) : null}
           </div>
+          )}
           <ActionGroup testId="deal-commit" label={t("deals.commit")}>
-            <Button variant="primary" loading={sending} disabled={inFlight || !verdict} onClick={() => void send()} data-testid="deal-send">
-              {sending ? t("biz.deals.sending") : t("deals.send.go", { label: path.label, buyer })}
-            </Button>
+            {/* No server receipt for this reply: no Send (a send the owner cannot read first is not offered). */}
+            {verdict && !receipt ? null : (
+              <Button variant="primary" loading={sending} disabled={inFlight || !verdict} onClick={() => void send()} data-testid="deal-send">
+                {sending ? t("biz.deals.sending") : t("deals.send.go", { label: path.label, buyer })}
+              </Button>
+            )}
             <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">
               {t("dq.review.close")}
             </button>
