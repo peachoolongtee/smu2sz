@@ -31,6 +31,7 @@ from app.api.presentation import (
     without_record_ids,
 )
 from app.api.runtime import get_runtime
+from app.api.security_words import audit_fields
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
 from app.decisions.identity import decision_id_for
@@ -217,7 +218,8 @@ def get_audit(lang: str = "en") -> dict:
     board = scoreboard(rt.store, allow_for=_counter_allow)  # computed from every stored verdict, not asserted
     return {
         "lang": lang,
-        "events": [displayed(json.loads(e.model_dump_json())) for e in events],
+        "events": [{**displayed(json.loads(e.model_dump_json())), **audit_fields(state, e, max(rt.day, state.as_of_day), lang)}
+                   for e in events],
         "refusals": refusals,
         "refusal_summary": refusal_block(len(refusals), len(events), lang),
         "documents": [json.loads(d.model_dump_json()) for i, d in rt.documents.items() if i in doc_ids],
@@ -258,8 +260,12 @@ def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
             "message_when": t(lang, f"There is no demo scenario called {scenario!r}; choose one of {names}. Nothing was reset.",
                               f"没有名为 {scenario!r} 的演示场景；请从 {names} 中选择。未重置任何内容。")})
     rt = get_runtime()
+    before = rt.scenario
     try:
         rt.reset_demo(scenario)
+        from app.api.demo_story import note_scenario_change
+
+        note_scenario_change(rt, before, scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
