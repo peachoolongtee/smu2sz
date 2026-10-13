@@ -16,6 +16,7 @@ Presentation only: no money arithmetic; every sentence is written for `lang` thr
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import time
@@ -283,27 +284,62 @@ def _next(lang: str, available: bool, cur: int | None, books: _Books, rejected: 
     return {"label": label, "action": sid, "href": None, "hint_text": hint, "owner": False}
 
 
+def _status(r: Any) -> str:
+    return str(getattr(r.status, "value", r.status))
+
+
 def _counts(rt: Runtime, books: _Books) -> dict[str, int]:
     """What the loaded books hold that a reset discards, counted from the stores (offers FLOW has read and priced, agreements, approvals,
-    the approvals still waiting, record entries other than the sample documents, security events, the clock)."""
+    the approvals still waiting, record entries other than document decisions, documents read, confirmed and rejected, customer inputs,
+    security events, all record entries, the clock)."""
     store = rt.store
     verdict_offers = {v.offer_id for v in store.verdicts()} | {c.offer_id for c in store.commitments() if c.offer_id}
     approvals = store.approvals()
+    docs = store.contract_records()
     return {"offers": len(verdict_offers | ({books.offer_id} if books.holds["ask"] else set())), "agreements": len(store.commitments()),
             "approvals": len(approvals), "waiting": sum(1 for a in approvals if a.status == ApprovalStatus.PENDING),
-            "entries": sum(1 for o, _, _ in books.ops if o.kind not in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT")),
+            "entries": sum(1 for o, _, _ in books.ops if o.kind not in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT")), "ops": len(books.ops),
+            "docs": len(docs), "docs_confirmed": sum(1 for r in docs if _status(r) == "CONFIRMED"),
+            "docs_rejected": sum(1 for r in docs if _status(r) == "REJECTED"), "inputs": len(store.all_customer_inputs()),
             "security": len(store.security_events()), "day": rt.day}
 
 
+def _dump(x: Any) -> Any:
+    return x.model_dump_json() if hasattr(x, "model_dump_json") else repr(x)
+
+
+def fingerprint(rt: Runtime) -> str:
+    """A short hash of everything a reset of the loaded books would discard: the scenario and the day, the record (entry count and head
+    hash), the books and the mandate, the security events, the documents and their states, the customer inputs, the approvals, the
+    commitments, the verdicts and the messages read. It is the loss token: it changes with any of them and with nothing else."""
+    store = rt.store
+    ops = store.operations()
+    parts = [rt.scenario, rt.day, len(ops), ops[-1].entry_hash if ops else "", store.get_state().model_dump_json(), store.get_mandate().model_dump_json(),
+             sorted(e.id for e in store.security_events()), [_dump(r) for r in store.contract_records()],
+             [_dump(r) for r in store.all_customer_inputs()], [(a.id, _status(a), a.decided_by, a.decided_day) for a in store.approvals()],
+             [_dump(c) for c in store.commitments()], sorted(v.id for v in store.verdicts()), sorted(rt.documents)]
+    return hashlib.sha256(json.dumps(parts, default=str, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def snapshot_fresh(rt: Runtime) -> dict[str, Any]:
+    """The fingerprint and the counts of the books right after a reset (`Runtime.mark_fresh`)."""
+    return {"fp": fingerprint(rt), "counts": _counts(rt, _read_books(rt))}
+
+
+def is_fresh(rt: Runtime, fp: str | None = None) -> bool:
+    """True only when the loaded books are exactly what a fresh reset of the scenario produced."""
+    return rt.fresh is not None and rt.fresh["fp"] == (fp or fingerprint(rt))
+
+
 def _beyond(rt: Runtime, books: _Books) -> dict[str, int]:
-    """The counts beyond a fresh reset of the loaded scenario: the main scenario starts with none; an alternate one with what its seed
-    wrote (counted when it was loaded; unknown after a restart, when everything counts)."""
-    base = rt.demo_baseline.get(rt.scenario, {}) if rt.scenario != MAIN else {}
+    """The counts beyond a fresh reset of the loaded scenario (its own seed's work is not counted)."""
+    base = rt.fresh["counts"] if rt.fresh is not None else {}
     return {k: max(0, v - base.get(k, 0)) for k, v in _counts(rt, books).items()}
 
 
 def _lost(rt: Runtime, books: _Books, steps: dict[str, str], lang: str) -> list[str]:
-    """What a reset or swap of the loaded books would lose, in words, each with its count; empty when nothing is beyond a fresh reset."""
+    """What a reset or swap of the loaded books would lose, in words, each with its count. Never empty while anything would be lost: a
+    catch-all line says so when the named lines do not account for every difference; empty only when the books are exactly fresh."""
     c = _beyond(rt, books)
     items: list[str] = []
     scenes_run = sum(1 for sc in SCENES if any(steps[s] == "done" for s, scene, *_ in STEPS if scene == sc))
@@ -316,20 +352,32 @@ def _lost(rt: Runtime, books: _Books, steps: dict[str, str], lang: str) -> list[
     if c["approvals"]:
         extra = t(lang, f", {c['waiting']} still waiting for you", f"，其中 {c['waiting']} 项仍在等您") if c["waiting"] else ""
         items.append(t(lang, f"{_plural(c['approvals'], 'approval', 'approvals')}{extra}.", f"{c['approvals']} 项批准事项{extra}。"))
+    if c["docs"]:
+        items.append(t(lang, f"{_plural(c['docs'], 'document', 'documents')} read.", f"已读取 {c['docs']} 份文件。"))
+    if c["docs_confirmed"]:
+        items.append(t(lang, f"{_plural(c['docs_confirmed'], 'document', 'documents')} confirmed.", f"已确认 {c['docs_confirmed']} 份文件。"))
+    if c["docs_rejected"]:
+        items.append(t(lang, f"{_plural(c['docs_rejected'], 'document', 'documents')} rejected.", f"已驳回 {c['docs_rejected']} 份文件。"))
+    if c["inputs"]:
+        items.append(t(lang, f"{_plural(c['inputs'], 'customer input', 'customer inputs')} entered.", f"已录入 {c['inputs']} 项客户信息。"))
     if c["entries"]:
         items.append(t(lang, f"{_plural(c['entries'], 'entry', 'entries')} in the record.", f"记录中的 {c['entries']} 条记录。"))
+    other = c["ops"] - c["entries"] - c["docs_confirmed"] - c["docs_rejected"]
+    if other > 0:
+        items.append(t(lang, f"{_plural(other, 'other entry', 'other entries')} in the record.", f"记录中另有 {other} 条记录。"))
     if c["security"]:
         items.append(t(lang, f"{_plural(c['security'], 'security event', 'security events')} in the record.", f"记录中的 {c['security']} 条安全事件。"))
     if c["day"]:
         items.append(t(lang, f"The clock goes back to the start: {c['day']} days of simulated time are undone.", f"时钟回到起点：模拟的 {c['day']} 天被撤销。"))
+    if not items and not is_fresh(rt):
+        items.append(t(lang, "Other changes made to these books since they were reset.", "自这些账目重置以来所做的其他更改。"))
     return items
 
 
 def lost_anything(rt: Runtime) -> bool:
-    """True when a reset of the loaded books would discard something beyond what a fresh reset holds."""
+    """True when a reset of the loaded books would discard anything beyond what a fresh reset produces."""
     with rt.lock:
-        books = _read_books(rt)
-        return bool(_lost(rt, books, _states(_with_views(books.holds, None), rt.scenario == MAIN)[0], "en"))
+        return not is_fresh(rt)
 
 
 def _declined_current(lang: str, step: tuple[str, str, bool, bool]) -> dict[str, Any]:
@@ -346,30 +394,40 @@ def _guard_error(code: str, en: str, zh: str, lang: str, **extra: Any) -> HTTPEx
 
 def check_books_unchanged(rt: Runtime, from_scenario: str | None, confirm_loss: str | None, lang: str) -> None:
     """The optional guard of `POST /demo/reset` and `POST /demo/restore` (call under `rt.lock`): a caller that names the scenario it
-    believes is loaded (`from_scenario`) is refused when the books are another, and, when something would be lost, unless it sent
-    `confirm_loss=1`. Without `from_scenario` nothing is checked (every existing caller)."""
+    believes is loaded (`from_scenario`) is refused when the books are another. When something would be lost it also needs
+    `confirm_loss=<the loss token it was shown>`: none is `LOSS_NOT_CONFIRMED`, one that is not the current token (the books changed since
+    the list was shown, or the old literal "1") is `LOSS_CHANGED`. With nothing to lose no token is needed. Without `from_scenario`
+    nothing is checked (every existing caller)."""
     if from_scenario is None:
         return
     if from_scenario != rt.scenario:
         raise _guard_error("BOOKS_CHANGED", "The books changed since this page was read; nothing was reset.",
                            "自您查看此页面以来，账目已发生变化；未重置任何内容。", lang, scenario=rt.scenario)
-    if confirm_loss != "1":
-        books = _read_books(rt)
-        items = _lost(rt, books, _states(_with_views(books.holds, None), rt.scenario == MAIN)[0], lang)
-        if items:
-            raise _guard_error("LOSS_NOT_CONFIRMED", "Resetting would discard work on these books and it was not confirmed; nothing was reset.",
-                               "重置会丢弃这些账目上的工作，而这一点尚未确认；未重置任何内容。", lang, loss_items=items)
+    fp = fingerprint(rt)
+    if is_fresh(rt, fp):
+        return
+    books = _read_books(rt)
+    items = _lost(rt, books, _states(_with_views(books.holds, None), rt.scenario == MAIN)[0], lang)
+    if not confirm_loss:
+        raise _guard_error("LOSS_NOT_CONFIRMED", "Resetting would discard work on these books and it was not confirmed; nothing was reset.",
+                           "重置会丢弃这些账目上的工作，而这一点尚未确认；未重置任何内容。", lang, loss_items=items, loss_token=fp)
+    if confirm_loss != fp:
+        raise _guard_error("LOSS_CHANGED", "The books changed since this list was shown; nothing was reset.",
+                           "自显示此清单以来，账目已发生变化；未重置任何内容。", lang, loss_items=items, loss_token=fp)
 
 
 def _books_block(rt: Runtime, books: _Books, steps: dict[str, str], lang: str) -> dict[str, Any]:
     main = rt.scenario == MAIN
     items = _lost(rt, books, steps, lang)
-    nothing = not items
+    fp = fingerprint(rt)
+    nothing = is_fresh(rt, fp)
+    if nothing:
+        items = []
     if nothing:
         items = [t(lang, "Nothing has been done yet, so nothing is lost." if main else "Nothing has been done on these books yet, so nothing is lost.",
                    "目前还没有做任何事，所以不会损失任何内容。" if main else "这些账目上还没有做任何事，所以不会损失任何内容。")]
     return {
-        "scenario": rt.scenario, "main": main, "nothing_to_lose": nothing,
+        "scenario": rt.scenario, "main": main, "nothing_to_lose": nothing, "loss_token": fp,
         "loss_title_text": t(lang, "What the main books lose" if main else "What these books lose", "主账目会失去什么" if main else "这些账目会失去什么"),
         "loss_items": items,
         "reset_confirm_title_text": t(lang, "Reset the books?" if main else "Reset these books?", "重置账目？" if main else "重置这些账目？"),
@@ -420,8 +478,6 @@ def note_scenario_change(rt: Runtime, before: str, after: str) -> None:
     """Remember that the books were swapped to another scenario, or the main ones restored (a reset wipes the operations log, so the
     note lives on the runtime). Re-running the main story on the main books is not a swap."""
     with rt.lock:
-        if after != MAIN:  # what this scenario's fresh reset holds, so a later reset is compared with it
-            rt.demo_baseline[after] = _counts(rt, _read_books(rt))
         if before == after:
             return
         rt.demo_history.append({"kind": "restore" if after == MAIN else "swap", "scenario": after, "at": time.time()})
@@ -490,7 +546,7 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
         "next": _next(lang, main, cur, books, rejected),
         "alternate": {
             "label": t(lang, "Load alternate scenario", "加载备用场景"), "scenario": ALTERNATE, "title_text": alt_title, "scope_text": scope,
-            "loss_title_text": t(lang, "What the main books lose", "主账目会失去什么"), "loss_items": loss_items, "nothing_to_lose": block["nothing_to_lose"], "loss_preview_text": loss_text,
+            "loss_title_text": t(lang, "What the main books lose", "主账目会失去什么"), "loss_items": loss_items, "nothing_to_lose": block["nothing_to_lose"], "loss_token": block["loss_token"], "loss_preview_text": loss_text,
             "keeps_text": t(lang, "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
                             "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。"),
             "confirm_title_text": t(lang, f"Load the {alt_title.lower()}?", f"加载“{alt_title}”？"),

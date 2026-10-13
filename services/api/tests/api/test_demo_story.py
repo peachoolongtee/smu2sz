@@ -398,7 +398,7 @@ def test_a_stale_page_cannot_swap_the_books(api: TestClient, rt: Runtime) -> Non
         assert "1 agreement on the books." in r.json()["detail"]["loss_items"] and r.json()["detail"]["message_when"].endswith("nothing was reset.")
         assert call(confirm_loss="0").status_code == 409
         assert _counts(rt) == before
-    ok = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme", "confirm_loss": "1"})
+    ok = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme", "confirm_loss": _story(api)["books"]["loss_token"]})
     assert ok.status_code == 200 and rt.scenario == "busy"
     ok = api.post("/demo/restore", params={"from_scenario": "busy", "confirm_loss": "1"})
     assert ok.status_code == 200 and rt.scenario == "golden_sme" and ok.json()["story"]["main"] is True
@@ -443,3 +443,142 @@ def test_a_declined_cure_has_its_own_words(api: TestClient, rt: Runtime) -> None
         assert "waits" not in cur["text"] and "open the approval" not in cur["text"].lower()
         assert body["next"]["action"] == "restart"
         _words(body, lang)
+
+
+# ---------------------------------------------------------------- the confirmation is bound to the loss it was shown; owner work counts
+
+
+def _token(api: TestClient) -> str:
+    body = _story(api)
+    assert body["books"]["loss_token"] == body["alternate"]["loss_token"]
+    return str(body["books"]["loss_token"])
+
+
+def _upload_contract(api: TestClient) -> dict[str, Any]:
+    r = api.post("/documents", json={"fixture_id": "FHR_SUPPLY_AGREEMENT"})
+    assert r.status_code == 200, r.text
+    return r.json()["document"]  # type: ignore[no-any-return]
+
+
+def _input(api: TestClient) -> None:
+    body = {"field": "typical_delay_days", "value": 15, "provenance": "OWNER_ENTERED", "source_ref": "the owner's call"}
+    assert api.post("/buyers/BUYER-1/inputs", json=body).status_code == 200
+
+
+def _detail(r: Any) -> dict[str, Any]:
+    return r.json()["detail"]  # type: ignore[no-any-return]
+
+
+def test_a_confirmation_given_for_one_loss_does_not_cover_another(api: TestClient, rt: Runtime) -> None:
+    # the page was opened on fresh books: its dialog said nothing is lost, so it holds no token (or the fresh one)
+    old = _token(api)
+    assert _story(api)["books"]["nothing_to_lose"] is True
+    offer = _ask(api, rt)
+    _agree(api, offer, _decide(api, offer))
+    before = _counts(rt)
+    new = _token(api)
+    assert new != old
+    params = {"scenario": "busy", "from_scenario": "golden_sme"}
+    stale = api.post("/demo/reset", params={**params, "confirm_loss": old})
+    assert stale.status_code == 409 and _detail(stale)["code"] == "LOSS_CHANGED" and _detail(stale)["loss_token"] == new
+    assert "1 agreement on the books." in _detail(stale)["loss_items"]
+    assert _detail(stale)["message"] == "The books changed since this list was shown; nothing was reset."
+    assert "清单" in _detail(api.post("/demo/reset", params={**params, "confirm_loss": old, "lang": "zh"}))["message_when"]
+    assert _counts(rt) == before
+    # the old literal is no confirmation, and a missing value is a different refusal
+    assert _detail(api.post("/demo/reset", params={**params, "confirm_loss": "1"}))["code"] == "LOSS_CHANGED"
+    assert _detail(api.post("/demo/restore", params={"from_scenario": "golden_sme", "confirm_loss": "1"}))["code"] == "LOSS_CHANGED"
+    missing = api.post("/demo/reset", params=params)
+    assert _detail(missing)["code"] == "LOSS_NOT_CONFIRMED" and _detail(missing)["loss_token"] == new
+    assert _counts(rt) == before
+    ok = api.post("/demo/reset", params={**params, "confirm_loss": new})
+    assert ok.status_code == 200 and rt.scenario == "busy"
+
+
+def test_owner_work_counts_as_something_to_lose(api: TestClient, rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    def check(label: str, expect_line: str | None) -> None:
+        body = _story(api)
+        assert body["books"]["nothing_to_lose"] is False and body["alternate"]["nothing_to_lose"] is False, label
+        items = body["books"]["loss_items"]
+        assert items and "nothing is lost" not in " ".join(items), label
+        if expect_line:
+            assert any(expect_line in i for i in items), (label, items)
+        before = _counts(rt)
+        r = api.post("/demo/reset", params={"scenario": "busy", "from_scenario": "golden_sme"})
+        assert r.status_code == 409 and _detail(r)["code"] == "LOSS_NOT_CONFIRMED" and _detail(r)["loss_items"], label
+        assert _counts(rt) == before, label
+        assert _words_ok(body)
+
+    def _words_ok(body: dict[str, Any]) -> bool:
+        return all(not ID_PATTERN.search(i) and "None" not in i for i in body["books"]["loss_items"])
+
+    # a document read (and not decided)
+    api.post("/demo/reset")
+    d = _upload_contract(api)
+    check("a document read", "1 document read.")
+    # the same document confirmed: 4 record entries
+    assert api.post(f"/documents/{d['id']}/confirm", json={"doc_hash": d["doc_hash"]}).status_code == 200
+    check("a document confirmed", "1 document confirmed.")
+    assert len(rt.store.operations()) == 4
+    # a document rejected
+    api.post("/demo/reset")
+    d = _upload_contract(api)
+    assert api.post(f"/documents/{d['id']}/reject", json={"doc_hash": d["doc_hash"]}).status_code == 200
+    check("a document rejected", "1 document rejected.")
+    # a customer input
+    api.post("/demo/reset")
+    _input(api)
+    check("a customer input", "1 customer input entered.")
+    zh = _story(api, lang="zh")["books"]["loss_items"]
+    assert zh and any("客户信息" in i for i in zh)
+
+
+def test_the_list_is_never_empty_while_something_would_be_lost(api: TestClient, rt: Runtime) -> None:
+    # a change no named line accounts for: the books moved without a count changing
+    api.post("/demo/reset")
+    state = rt.store.get_state()
+    rt.store.put_state(state.model_copy(update={"cash_fen": state.cash_fen + 1}), expected_version=state.state_version)
+    body = _story(api)
+    assert body["books"]["nothing_to_lose"] is False and body["books"]["loss_items"] == ["Other changes made to these books since they were reset."]
+    # a record entry no named line accounts for (a document decision with no document behind it) is said as "other entries"
+    rt.store.append_operation("x-op", "CONFIRM_DOCUMENT", "x-key", "{}", "{}")
+    items = _story(api)["books"]["loss_items"]
+    assert "1 other entry in the record." in items
+
+
+def test_fresh_books_have_nothing_to_lose_and_reset_without_a_token(api: TestClient, rt: Runtime) -> None:
+    for scenario in ("golden_sme", "busy"):
+        api.post("/demo/reset", params={"scenario": scenario})
+        books = _story(api)["books"]
+        assert books["nothing_to_lose"] is True and books["scenario"] == scenario
+        r = api.post("/demo/reset", params={"scenario": scenario, "from_scenario": scenario})
+        assert r.status_code == 200, r.text
+    assert api.post("/demo/restore", params={"from_scenario": "busy"}).status_code == 200
+    assert _story(api)["books"]["nothing_to_lose"] is True
+
+
+def test_the_token_is_stable_until_something_changes(api: TestClient, rt: Runtime, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FEATURE_EXPOSURE", "1")
+    api.post("/demo/reset")
+    base = _token(api)
+    assert _token(api) == base and _token(api) == base
+    assert api.get("/activity").status_code == 200 and api.get("/home").status_code == 200
+    assert _token(api) == base  # reads change nothing
+    seen = {base}
+
+    def changed(label: str) -> None:
+        tok = _token(api)
+        assert tok not in seen, label
+        seen.add(tok)
+
+    api.post("/offers", json={"fixture_id": "EX01_PACKAGE"})
+    changed("an offer")
+    _upload_contract(api)
+    changed("a document")
+    _input(api)
+    changed("a customer input")
+    _wrong_token(1)
+    changed("a wrong-token request")
+    api.post("/clock/advance", json={"to_day": 1})
+    changed("a clock move")
