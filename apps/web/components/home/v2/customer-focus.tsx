@@ -17,12 +17,15 @@ const TONE_TEXT: Record<OverviewTone, string> = { neutral: "text-ink", ok: "text
 
 function Figure({ figure }: { figure: OverviewFigure }) {
   const key = stateKey(figure.state);
+  if (!figure.value_display && !figure.note && !figure.state_text) return null;
   return (
     <div className="min-w-0 py-3 pr-4 sm:border-l sm:border-line sm:px-4 sm:first:border-l-0 sm:first:pl-0" data-testid={`focus-figure-${figure.key}`}>
       <dt className="text-supporting font-bold text-ink-3">{figure.label}</dt>
-      <dd className={`mt-1 break-words font-display text-xl font-bold tabular-nums ${TONE_TEXT[figure.tone]}`} data-testid={`focus-figure-${figure.key}-value`}>
-        {figure.value_display}
-      </dd>
+      {figure.value_display ? (
+        <dd className={`mt-1 break-words font-display text-xl font-bold tabular-nums ${TONE_TEXT[figure.tone]}`} data-testid={`focus-figure-${figure.key}-value`}>
+          {figure.value_display}
+        </dd>
+      ) : null}
       {key && figure.state_text ? (
         <dd className="mt-0.5">
           <StateWord state={key} testId={`focus-figure-${figure.key}-state`}>

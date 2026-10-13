@@ -56,8 +56,10 @@ const POINT_READS: [RegExp, keyof typeof page.day0][] = [
 function pageRead(req: NlRequest): Recorded | null {
   if (req.actor !== "OWNER") return null;
   const q = req.text.trim();
-  const echo = req.context?.offer_id ? (page.deals.explain.context_echo as NlResponse["context_echo"]) : null;
-  const deal = req.context?.offer_id ? DEAL_READS.find(([re]) => re.test(q)) : undefined;
+  // The scope names the deal (its decision, `deal:<offer>`); the context's offer id is the older way and still reads.
+  const names = Boolean(req.scope?.decision || req.context?.offer_id);
+  const echo = names ? (page.deals.explain.context_echo as NlResponse["context_echo"]) : null;
+  const deal = names ? DEAL_READS.find(([re]) => re.test(q)) : undefined;
   const recorded = deal ? page.deals[deal[1]] : (() => {
     const hit = POINT_READS.find(([re]) => re.test(q));
     return hit ? page[readPoint()][hit[1]] : null;

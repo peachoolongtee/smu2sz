@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openStoryFold, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
+import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -220,12 +220,13 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await openCompare(page);
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // One order per width (the DOM order is the visual order): the verdict (the heading), what they ask, why, the reply card, the picture with its columns, the comparison fold;
-  // the folded inbox row is above them on a desktop and after them on a phone or a short window (its place moves in the DOM, so the focus order follows).
-  const phoneWidth = (page.viewportSize()?.width ?? 1440) < 1024 || (page.viewportSize()?.height ?? 900) <= 800;
-  const detail = ["queue-heading", "queue-ask", "queue-why", "queue-recommends", "deal-paths", "queue-compare"];
-  const ids = phoneWidth ? [...detail, "inbox-collapsed"] : ["inbox-collapsed", ...detail];
+  // One order per width (the DOM order is the visual order): the verdict (the heading), what they ask, the recommendation, the consequence; below the two-pane width
+  // the negotiation comes first and the queue's cards (the folded inbox row among them) after it; from `xl` they are the left pane, and only the negotiation's parts are in one column.
+  const twoPanes = (page.viewportSize()?.width ?? 1440) >= 1280;
+  const detail = ["queue-heading", "deal-ask-quote", "queue-recommends", "deal-level-consequence"];
+  const ids = twoPanes ? detail : [...detail, "inbox-collapsed"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
     return el ? el.getBoundingClientRect().top + scrollY : -1;
@@ -290,7 +291,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const rec = (await topOf(page, "queue-heading"))!;
   const send = await page.getByTestId("queue-review-open").boundingBox();
   const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const asks = (await topOf(page, "queue-ask"))!;
+  const asks = (await topOf(page, "deal-ask-quote"))!;
   expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
@@ -328,15 +329,17 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   }
 });
 
-test("on a desktop the Deals workspace keeps the server's order and the inbox row stays above it", async ({ page }, testInfo) => {
+test("on a desktop the queue is the left pane and the negotiation the right one, side by side", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "phone", "a desktop check");
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const selected = (await topOf(page, "queue-heading"))!;
-  expect(inbox.top).toBeLessThan(selected.top);
+  const queue = (await page.getByTestId("deals-queue").boundingBox())!;
+  const pane = (await page.getByTestId("deal-pane").boundingBox())!;
+  expect(pane.x, "the negotiation is to the right of the queue").toBeGreaterThan(queue.x + queue.width - 1);
+  expect(Math.abs(pane.y - queue.y), "and starts at the same height").toBeLessThan(4);
 });
 
 /**
@@ -356,7 +359,7 @@ async function bottomOf(page: Page, testId: string): Promise<number> {
   return Math.round(box.y + box.height);
 }
 
-test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash, the approval's buttons)", async ({ page }, testInfo) => {
+test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash); the approval's button follows its terms", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "phone", "the phone's first screen");
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto("/cash");
@@ -376,8 +379,15 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash,
   await page.goto("/approvals");
   const approve = page.getByRole("button", { name: /^Approve/ }).first();
   await expect(approve).toBeVisible();
-  const box = (await approve.boundingBox())!;
-  expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
+  // The approval's terms come before its one button at every width (ticket #128, audit UX03), so on a phone the button is no longer in the first screen: it is after the terms,
+  // and still reachable (not hidden, not behind the tab bar once scrolled to).
+  await approve.scrollIntoViewIfNeeded();
+  await expect(approve).toBeInViewport();
+  const terms = page.getByTestId("approval-facts-APR-000001");
+  if (await terms.count()) {
+    const [t, b] = [(await terms.boundingBox())!, (await approve.boundingBox())!];
+    expect(t.y + t.height, "the facts end before the button begins").toBeLessThanOrEqual(b.y);
+  }
 });
 
 test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air", async ({ page }, testInfo) => {

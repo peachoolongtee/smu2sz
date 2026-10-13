@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { whatIf } from "@/lib/api";
-import type { WhatIfParams, WhatIfResult } from "@/lib/types";
+import type { WhatIfParams, WhatIfResult, WhatIfUnscoped } from "@/lib/types";
 
 /** Debounce for slider drags: short enough to feel live, long enough to skip intermediate stops. */
 export const WHATIF_DEBOUNCE_MS = 150;
@@ -12,7 +12,7 @@ export const keyOf = (p: WhatIfParams): string =>
 
 interface Settled {
   key: string;
-  result?: WhatIfResult;
+  result?: WhatIfResult | WhatIfUnscoped;
   error?: Error;
 }
 
@@ -24,7 +24,10 @@ class Queue {
   private inflight = false;
   private queued: WhatIfParams | null = null;
 
-  constructor(private readonly publish: (update: (prev: Settled) => Settled) => void) {}
+  constructor(
+    private readonly publish: (update: (prev: Settled) => Settled) => void,
+    private readonly scope: { offerId?: string | null; lang?: "en" | "zh" },
+  ) {}
 
   send(p: WhatIfParams): void {
     if (this.inflight) {
@@ -33,7 +36,7 @@ class Queue {
     }
     this.inflight = true;
     const key = keyOf(p);
-    whatIf(p)
+    whatIf(p, this.scope)
       .then(
         (result) => this.publish(() => ({ key, result })),
         (e: unknown) =>
@@ -50,7 +53,7 @@ class Queue {
 
 export interface WhatIfState {
   /** The latest result received (kept while a newer one loads: stale-while-revalidate). */
-  result: WhatIfResult | undefined;
+  result: WhatIfResult | WhatIfUnscoped | undefined;
   error: Error | undefined;
   /** True until the result for exactly these params has arrived. */
   loading: boolean;
@@ -58,9 +61,9 @@ export interface WhatIfState {
   reload: () => void;
 }
 
-export function useWhatIf(params: WhatIfParams): WhatIfState {
+export function useWhatIf(params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}): WhatIfState {
   const [settled, setSettled] = useState<Settled>({ key: "" });
-  const [queue] = useState(() => new Queue((update) => setSettled(update)));
+  const [queue] = useState(() => new Queue((update) => setSettled(update), scope));
   const [nonce, setNonce] = useState(0);
   const key = keyOf(params);
 

@@ -81,7 +81,20 @@
       "summary_text": "Waiting for your approval. Nothing has run."
     },
     "result_state_text": "Waiting for your approval",
-    "result_tone": "warn"
+    "result_tone": "warn",
+    "receipt": {
+      "authorizes_text": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+      "executes_now_text": "Records the agreement with Foshan Home Retail Co. as in force.",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+      "gross_display": null,
+      "fees_display": null,
+      "net_display": null,
+      "when_text": "As soon as you approve.",
+      "assumptions_text": null,
+      "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
+      "remaining_text": null
+    }
   },
   "expired": {
     "id": "APR-000001",
@@ -163,7 +176,20 @@
       "summary_text": "Waiting for your approval. Nothing has run."
     },
     "result_state_text": "Waiting for your approval",
-    "result_tone": "warn"
+    "result_tone": "warn",
+    "receipt": {
+      "authorizes_text": "Agreement with Foshan Home Retail Co.",
+      "executes_now_text": "Records the agreement with Foshan Home Retail Co. as in force.",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+      "gross_display": null,
+      "fees_display": null,
+      "net_display": null,
+      "when_text": "As soon as you approve.",
+      "assumptions_text": null,
+      "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
+      "remaining_text": null
+    }
   },
   "refused": {
     "pending": {
@@ -2720,7 +2746,20 @@
         "summary_text": "Waiting for your approval. Nothing has run."
       },
       "result_state_text": "Waiting for your approval",
-      "result_tone": "warn"
+      "result_tone": "warn",
+      "receipt": {
+        "authorizes_text": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "executes_now_text": "Sends the request as soon as you approve: Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform).",
+        "others_must_agree_text": null,
+        "in_hand_vs_future_text": "If you approve today, the cash lands in 3 days.",
+        "gross_display": "¥200,000.00",
+        "fees_display": "¥1,782.19",
+        "net_display": null,
+        "when_text": "The cash lands in 3 days.",
+        "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "authority_text": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+        "remaining_text": null
+      }
     },
     "decided": {
       "id": "APR-000001",
@@ -2823,6 +2862,7 @@
       },
       "result_state_text": "Approved, did not run. No money moved.",
       "result_tone": "bad",
+      "receipt": null,
       "execution_status": "REFUSED"
     }
   }

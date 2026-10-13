@@ -1,8 +1,9 @@
 """The busy company (POST /demo/reset?scenario=busy): the golden books plus a third customer and two overdue invoices, opened mid-conversation.
 
 The scenario's seed file (`fixtures/scenarios/busy.seed.json`) is replayed after the books are seeded, through the functions the routes
-call: six offers submitted and evaluated, one deal (EX03) negotiated to an agreement with a promise, one facility application queued for the
-owner. What is pinned is the shape of the day-0 worklist (tiers, kinds, customers and counts), not the words or the money in it."""
+call: six offers submitted and evaluated, one facility application queued for the owner. No deal is negotiated: Foshan's three replies (EX01,
+EX02, EX03) are all about invoice RCV-A and any one sent makes the others lapse, so the day-0 books keep all three live and sendable (the
+cooperative buyer cannot agree Dongguan's rebate, EX08B, which has no counter to send). What is pinned is the shape of the day-0 worklist (tiers, kinds, customers and counts), not the words or the money in it."""
 
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from app.api.runtime import Runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
+from tests.api.conftest import agree_on_rcv_a
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 SEEDED = ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "EX08B_JOINT_BUYER2", "EX09_TERMS_BUYER3"]
@@ -64,28 +66,40 @@ def test_the_day_zero_worklist(api: TestClient) -> None:
     _busy(api)
     w = _worklist(api)
     assert w["day"] == 0
-    # Needs you: the four open decisions (two Foshan, Dongguan, Zhuhai), the facility approval, and Dongguan's overdue invoices
+    # Needs you: the five open decisions (three Foshan, Dongguan, Zhuhai), the facility approval, and Dongguan's overdue invoices
     assert _shape(w["needs_you"]) == Counter({
-        ("DECISION", "BUYER-1"): 2, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
+        ("DECISION", "BUYER-1"): 3, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
         ("APPROVAL", None): 1, ("COLLECTION", "BUYER-2"): 1})
-    # Waiting: the buyer's reply to the conflicting message, and the promised payment of the agreed deal
-    assert _shape(w["waiting"]) == Counter({("BUYER_REPLY", "BUYER-1"): 1, ("PROMISE", "BUYER-1"): 1})
-    assert w["counts"] == {"needs_you": 6, "waiting": 2, "customers": 3}
+    # Waiting: the buyer's reply to the conflicting message; no agreement is in force, so no promised payment
+    assert _shape(w["waiting"]) == Counter({("BUYER_REPLY", "BUYER-1"): 1})
+    assert w["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
     assert w["alert"] is not None and w["alert"]["key"] == "company-cash"
     assert all(r["owner"] == "NEEDS_YOU" for r in w["needs_you"]) and all(r["owner"] == "WAITING" for r in w["waiting"])
     assert len({r["key"] for r in w["needs_you"] + w["waiting"]}) == 8
 
 
-def test_the_approval_is_the_facility_application_and_the_deal_is_an_agreement(api: TestClient, rt: Runtime) -> None:
+def test_the_approval_is_the_facility_application_and_no_deal_is_agreed(api: TestClient, rt: Runtime) -> None:
     _busy(api)
     [pending] = rt.store.approvals("PENDING")
     assert '"FAC-GGL"' in pending.op_json and '"APPLY_FOR_FACILITY"' in pending.op_json
     [row] = [r for r in _worklist(api)["needs_you"] if r["kind"] == "APPROVAL"]
     assert row["key"] == f"approval:{pending.id}"
+    assert rt.store.commitments() == []
+
+
+def test_a_send_on_rcv_a_agrees_one_deal_and_the_waiting_count_leaves_the_promise_to_agreements(api: TestClient, rt: Runtime) -> None:
+    """Sending one of Foshan's replies agrees the deal and promises its payment; the promise's row stays in `waiting[]` but is counted under
+    Agreements, as the Deals queue counts it, so the Home and Deals agree."""
+    _busy(api)
+    agree_on_rcv_a(api)
     [agreement] = rt.store.commitments()
     assert agreement.status.value in ("ACCEPTED", "ACTIVE")
-    [promise] = [r for r in _worklist(api)["waiting"] if r["kind"] == "PROMISE"]
+    w = _worklist(api)
+    [promise] = [r for r in w["waiting"] if r["kind"] == "PROMISE"]
     assert promise["key"].startswith(f"promise:{agreement.id}:")
+    q = api.get("/deals").json()["queue"]
+    assert w["counts"] == q["counts"] == {"needs_you": 4, "waiting": 1, "agreements": 2, "customers": 3}
+    assert len(w["waiting"]) == 2 and w["counts"]["waiting"] == len(w["waiting"]) - 1
 
 
 def test_every_offer_was_submitted_and_evaluated_in_the_seeds_order(api: TestClient, rt: Runtime) -> None:
@@ -134,7 +148,7 @@ def test_a_second_reset_starts_over_from_the_same_day_zero(api: TestClient, rt: 
     _busy(api)
     again = _worklist(api)
     assert again["counts"] == first["counts"] and _shape(again["needs_you"]) == _shape(first["needs_you"])
-    assert len(rt.store.verdicts()) == len(SEEDED) and len(rt.store.commitments()) == 1 and len(rt.store.approvals("PENDING")) == 1
+    assert len(rt.store.verdicts()) == len(SEEDED) and len(rt.store.commitments()) == 0 and len(rt.store.approvals("PENDING")) == 1
 
 
 def test_a_scenario_without_a_seed_file_is_not_replayed(api: TestClient, rt: Runtime) -> None:

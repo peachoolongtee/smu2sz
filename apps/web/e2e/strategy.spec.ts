@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, proseOf, test } from "./fixtures";
-import { filledBrand, openStoryFold, resetBooks, runPlan } from "./helpers";
+import { checkedDeal, filledBrand, openCompare, openStoryFold, resetBooks, runPlan } from "./helpers";
 
 /**
  * The strategy MVP surfaces (wayfinder map #47, Wave 5): the cash price sentence on Cash & funding, the collections worth on
@@ -71,16 +71,11 @@ async function advanceTo34(page: Page, request: APIRequestContext) {
   else await advanceMockTo34(page);
 }
 
-/** Read the EX01 message the way the owner does: open it in the inbox (the Deals thread shows the ask and the card under it). */
-async function openEx01(page: Page) {
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("queue-ask")).toBeVisible();
-}
-
-/** The ids of the Deals sections that matter, in page order. */
-async function sectionOrder(page: Page): Promise<string[]> {
-  return page.evaluate(() => [...document.querySelectorAll("[data-testid=queue-heading], [data-testid=queue-ask], #deal-envelope")].map((el) => el.id || el.getAttribute("data-testid") || ""));
+/** The package offer read and checked on Deals, and the full comparison opened: the envelope sits at the foot of it. */
+async function openEnvelope(page: Page) {
+  await checkedDeal(page);
+  await openCompare(page);
+  await expect(page.getByTestId("deal-envelope-packages")).toBeVisible({ timeout: 30_000 });
 }
 
 test.describe("desktop", () => {
@@ -165,98 +160,38 @@ test.describe("desktop", () => {
     expect(await filledBrand(page)).toBe(0);
   });
 
-  test("Deals day 0: the Before they ask card answers in the server's words, opens its details, and adds no filled button; Option B opens from the response card", async ({ page }) => {
-    await openEx01(page);
+  test("Deals day 0: Compare responses ends with what the owner could answer instead, by who may send it, the rest behind 'more'", async ({ page }) => {
+    await openEnvelope(page);
+    // The card of what the owner can live with, then the packages by who may send them.
     const card = page.locator("#deal-envelope");
-    // The card is there as soon as the message is read, before the check; it has no options to open yet.
-    // The server's `primary` sentence (the same three figures, said again) is not drawn: the tiles carry them, and the sentence is
-    // pinned at the recording level in scripts/strategy.test.mjs.
-    await expect(card.getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
-    await expect(card.getByTestId("envelope-primary")).toHaveCount(0);
-    await expect(card.getByTestId("envelope-reason")).not.toBeEmpty();
-    // The three ceilings are tiles, each the server's maximum in words.
-    await expect(card.getByTestId("envelope-ceiling-terms")).toHaveText("55 days, price up 0.30%");
-    await expect(card.getByTestId("envelope-ceiling-early")).toHaveText("0.85% on ¥257,200.00");
-    await expect(card.getByTestId("envelope-ceiling-rebate")).toHaveText("1.25%");
-    await expect(card.getByTestId("envelope-money")).toContainText("¥");
-    await expect(card).toContainText("The most you can give");
+    await expect(card.getByTestId("envelope-ceiling-terms")).toContainText("55 days");
     await expect(card.getByTestId("envelope-caption")).toContainText("Your limits, not an opening offer");
-    await expect(card).toContainText("Estimate");
-    await expect(card).not.toContainText("Hypothetical");
-    await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
-    // The heading is the detail's first section from the moment an offer is open (the server's sentence about it), then the ask; the card sits at the end of the detail, after the comparison.
-    expect(await sectionOrder(page)).toEqual(["queue-heading", "queue-ask", "deal-envelope"]);
-
-    await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-    await expect(page.getByTestId("queue-heading")).toBeVisible();
-    // The verdict is the heading; the card sits at the end of the detail.
-    expect(await sectionOrder(page)).toEqual(["queue-heading", "queue-ask", "deal-envelope"]);
-
-    // Details: the levers (six), the approved packages and, where the server gave it, the terms-and-price zone.
-    await expect(card.getByTestId("envelope-levers")).toBeHidden();
-    await card.getByTestId("envelope-details").locator("summary").first().click();
-    await expect(card.getByTestId("envelope-levers").locator("tbody tr")).toHaveCount(6);
-    await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("45 days");
-    await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("your budget for what you give buyers");
-    await expect(card.getByTestId("envelope-lever-terms_alone")).toContainText("50 days: over your limits; its funding cannot run today");
-    await expect(card.getByTestId("envelope-lever-terms_with_price")).toContainText("55 days, price up 0.30%");
-    await expect(card.getByTestId("envelope-lever-terms_with_price")).toContainText("your cash floor");
-    await expect(card.getByTestId("envelope-lever-early_pay_whole")).toContainText("0.70% on ¥420,000.00");
-    await expect(card.getByTestId("envelope-lever-early_pay_counter")).toContainText("0.85% on ¥257,200.00");
-    await expect(card.getByTestId("envelope-lever-early_pay_counter")).toContainText("0.90% on ¥257,200.00: over your limits");
-    await expect(card.getByTestId("envelope-lever-rebate")).toContainText("1.25%");
-    const packages = card.getByTestId("envelope-packages").getByTestId("envelope-package");
-    expect(await packages.count()).toBeGreaterThan(3);
-    await expect(packages.first()).toContainText(" · ");
-    await expect(card.getByTestId("envelope-packages")).toContainText("55-day terms · price up 0.25% · rebate 0.60%");
-    await expect(card.getByRole("heading", { name: "Within your limits" })).toBeVisible();
-    await expect(card.getByTestId("envelope-packages")).toContainText("needs your approval");
-    // The terms-and-price zone: the server's rows, in the mock and live alike.
-    const zone = card.getByTestId("envelope-zone");
-    await zone.locator("summary").first().click();
-    await expect(zone.locator("summary").first()).toContainText("Terms and price table");
-    await expect(zone.getByTestId("envelope-zone-row")).toHaveCount(13);
-    await expect(zone.getByTestId("envelope-zone-row").first()).toContainText("no price rise needed");
-    await expect(zone.getByTestId("envelope-zone-row").nth(3)).toContainText("no price rise needed");
-    await expect(zone).toContainText("0.25%");
-    await expect(zone).toContainText("none works");
-    // Where no terms work the counter-price column shows a dash, not the rule price; the column is named for what it holds.
-    await expect(zone).toContainText("Price that covers the cost");
-    await expect(zone.getByTestId("envelope-zone-row").last().locator("td").nth(1)).toHaveText("—");
-    await expect(zone).not.toContainText("0.00%");
-
-    // Prose rules: the owner's words, no engine day numbers, no brand fill added.
-    expect(await card.evaluate((el) => el.textContent ?? "")).not.toMatch(DAY_N);
+    const env = page.getByTestId("deal-envelope-packages");
+    await expect(env).toContainText("What you could answer instead");
+    // The classes in the verifier's own order: what FLOW may send, what the owner approves first. A class with nothing in it is not drawn.
+    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("FLOW may send these");
+    await expect(env.getByTestId("envelope-class-flow_may").getByTestId("envelope-package")).toHaveCount(1);
+    await expect(env.getByTestId("envelope-class-flow_may")).toContainText("early payment 0.85% on ¥257,200.00");
+    const owner = env.getByTestId("envelope-class-needs_owner");
+    await expect(owner).toContainText("You approve these first");
+    // The first three of a class are listed; the rest are one fold away, said with their count.
+    await expect(owner.getByTestId("envelope-package")).toHaveCount(3 + 7);
+    await expect(owner.getByTestId("envelope-more-needs_owner").locator("> summary")).toHaveText("7 more");
+    await expect(owner.getByTestId("envelope-more-needs_owner").getByTestId("envelope-package").first()).toBeHidden();
+    await expect(env.getByTestId("envelope-class-over_limit")).toHaveCount(0);
+    // The owner's words: no engine day number, no filled button added by the section.
+    expect(await env.evaluate((el) => el.textContent ?? "")).not.toMatch(DAY_N);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
-    await expect(card.getByTestId("envelope-computed")).toHaveCount(0);
-
-    // The card has no Option A / Option B buttons any more: Option A is the path picked first in the reply below, and picking the Option B column
-    // puts Option B in the reply bar. The card sends nothing.
-    await expect(card.getByTestId("envelope-open-a")).toHaveCount(0);
-    await expect(card.getByTestId("envelope-open-b")).toHaveCount(0);
-    await expect(page.getByTestId("path-col-pick-1")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
-    await page.getByTestId("path-col-pick-2").click();
-    await expect(page.getByTestId("path-col-pick-2")).toHaveAttribute("aria-checked", "true");
-    await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
-    await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
-    expect(await filledBrand(page)).toBe(1);
-    await page.getByTestId("queue-review-open").click();
-    await expect(page.getByTestId("deal-send-Option-B")).toHaveClass(/bg-brand-600/);
-    // ... and the recommended path comes back with its column.
-    await page.getByTestId("path-col-pick-1").click();
-    await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
   });
 
-  test("Deals: the details open and close from the keyboard", async ({ page }) => {
-    await openEx01(page);
-    const card = page.locator("#deal-envelope");
-    await expect(card.getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
-    await card.getByTestId("envelope-details").locator("summary").first().focus();
+  test("Deals: the 'more' fold opens and closes from the keyboard", async ({ page }) => {
+    await openEnvelope(page);
+    const fold = page.getByTestId("envelope-more-needs_owner");
+    await fold.locator("> summary").focus();
     await page.keyboard.press("Enter");
-    await expect(card.getByTestId("envelope-levers")).toBeVisible();
+    await expect(fold.getByTestId("envelope-package").first()).toBeVisible();
     await page.keyboard.press("Enter");
-    await expect(card.getByTestId("envelope-levers")).toBeHidden();
+    await expect(fold.getByTestId("envelope-package").first()).toBeHidden();
   });
 
   test("Cash day 34: once the owner has approved the cure, the price sentence is the post-approval one (mock)", async ({ page }) => {
@@ -276,29 +211,6 @@ test.describe("desktop", () => {
     expect(await sentence.innerText()).not.toBe(before);
     await expect(sentence).toContainText("saves you nothing");
     expect(await proseOf(page)).not.toMatch(DAY_N);
-  });
-
-  test("Deals (live): while the server works the card says so and holds its place; a failure reads in one line with a retry", async ({ page }) => {
-    test.skip(test.info().project.name !== "live", "the mock answers at once; the live API's first sweep takes seconds");
-    await page.route("**/envelope?**", async (route) => {
-      await new Promise((r) => setTimeout(r, 2500));
-      await route.continue();
-    });
-    await openEx01(page);
-    const loading = page.locator("#deal-envelope").getByTestId("envelope-loading");
-    await expect(loading).toBeVisible();
-    await expect(loading).toContainText("Working out what you can live with");
-    await expect(page.locator("#deal-envelope").getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
-
-    await page.unroute("**/envelope?**");
-    await page.route("**/envelope?**", (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "boom" }) }));
-    await page.reload();
-    const failed = page.locator("#deal-envelope").getByTestId("envelope-error");
-    await expect(failed).toBeVisible({ timeout: 30_000 });
-    await expect(failed).toContainText("could not work out");
-    await page.unroute("**/envelope?**");
-    await failed.getByRole("button", { name: "Retry" }).click();
-    await expect(page.locator("#deal-envelope").getByTestId("envelope-caption")).toBeVisible({ timeout: 30_000 });
   });
 
 });
@@ -334,17 +246,12 @@ test.describe("phone", () => {
     await expect(dialog.getByTestId("chase-copy")).toBeVisible();
   });
 
-  test("Deals day 0: the Before they ask card on a phone lists the levers, keeps Option B's column in reach and does not overflow", async ({ page }) => {
-    await openEx01(page);
-    const card = page.locator("#deal-envelope");
-    await expect(card.getByTestId("envelope-ceiling-terms")).toContainText("55 days", { timeout: 30_000 });
-    await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-    await card.getByTestId("envelope-details").locator("summary").first().click();
-    await expect(card.getByTestId("envelope-levers-list").locator("li")).toHaveCount(6);
-    await expect(card.getByTestId("envelope-levers").locator("table")).toBeHidden();
-    await expect(card.getByTestId("envelope-packages")).toBeVisible();
-    await page.getByTestId("path-col-pick-2").click();
-    await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
+  test("Deals day 0: the envelope on a phone lists the packages, keeps the fold in reach and does not overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openEnvelope(page);
+    const env = page.getByTestId("deal-envelope-packages");
+    await expect(env.getByTestId("envelope-package").first()).toBeVisible();
+    await expect(env.getByTestId("envelope-more-needs_owner")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
   });

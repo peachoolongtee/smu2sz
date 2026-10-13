@@ -168,7 +168,7 @@ export function WorklistRow({
           ) : null}
           {qualifier ? (
             <span className="max-w-[55%] shrink-0 truncate text-supporting font-normal italic text-ink-3" title={qualifier} data-testid="hv2-row-qualifier">
-              “{qualifier}”
+              {qualifier}
             </span>
           ) : null}
         </span>

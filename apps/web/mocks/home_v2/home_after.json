@@ -4116,7 +4116,7 @@
         {
           "id": "alert:ALERT-PASTDUE-RCV-A",
           "when": "2 days ago",
-          "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+          "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
           "kind": "LATE"
         }
       ],
@@ -4311,8 +4311,8 @@
         "seq": null,
         "kind": "LATE",
         "actor": "",
-        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
-        "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
+        "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
         "event_detail": null,
         "when": "2 days ago",
         "id": "alert:ALERT-PASTDUE-RCV-A",
@@ -4320,7 +4320,7 @@
         "commitment_id": null,
         "decision_id": null,
         "superseded_by": null,
-        "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
         "why_it_matters": "The forecast stays at or above your minimum.",
         "why_it_matters_as_of": "now",
         "what_remains": null,
@@ -4373,7 +4373,7 @@
         "id": "ALERT-PASTDUE-RCV-A",
         "kind": "RECEIVABLE_PAST_DUE",
         "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
-        "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
+        "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt.",
         "day": 32,
         "when": "2 days ago"
       },

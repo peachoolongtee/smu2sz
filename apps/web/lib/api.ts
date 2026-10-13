@@ -25,6 +25,7 @@ import type {
   BorrowerFileRequest,
   BorrowerFileView,
   BuyerExposureView,
+  CompareView,
   ChaseView,
   CapexApplyRequest,
   CapexApplyResult,
@@ -72,6 +73,8 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
+  WhatIfUnscoped,
   WorklistView,
 } from "./types";
 
@@ -106,8 +109,8 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
 }
 
 /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. A 404 means the server does not know the offer. */
-export async function getOffer(offerId: string): Promise<OfferView> {
-  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
+export async function getOffer(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> {
+  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId, lang);
 }
 
 /** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */
@@ -279,6 +282,14 @@ export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Prom
 }
 
 /**
+ * GET /offers/{offer_id}/compare (flag `exposure`): every answer to the offer side by side, the buyer stopping included, each row read alone. Null when the server has the
+ * feature off, lacks the route, or the offer has not been evaluated yet (404): the page then compares the paths it already has. Read only when the owner opens the investigation.
+ */
+export async function getOfferCompare(offerId: string, lang: "en" | "zh"): Promise<CompareView | null> {
+  return isMock ? (await mock()).getOfferCompare(offerId, lang) : (await live()).getOfferCompare(offerId, lang);
+}
+
+/**
  * GET /pilot/journal (flag `pilot_journal`): the shadow pilot's entries, newest first, read-only. Null when the server has the
  * feature off (403 FEATURE_DISABLED) or lacks the route, so the Activity section hides; null in mock mode, which has no recording.
  * Call it only behind STRATEGY_MVP and live mode.
@@ -371,9 +382,14 @@ export function alertChanged(e: unknown): AlertChangedDetail | null {
   return d && d.code === "ALERT_CHANGED" ? (d as AlertChangedDetail) : null;
 }
 
+/** GET /whatif/presets?offer_id=: whether the sandbox can act on the negotiation's buyer, and on which invoice, before any slider is sent. Null in the mock (one recorded sandbox) and from a server without the route. */
+export async function whatIfScope(offerId: string, lang: "en" | "zh" = "en"): Promise<WhatIfScope | null> {
+  return isMock ? null : (await live()).whatIfScope(offerId, lang).catch(() => null);
+}
+
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
-export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
-  return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params);
+export async function whatIf(params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}): Promise<WhatIfResult | WhatIfUnscoped> {
+  return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params, scope);
 }
 
 /** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */

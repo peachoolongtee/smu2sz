@@ -7,6 +7,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
+      "agreements": 0,
       "customers": 2
     },
     "needs_you": [
@@ -81,6 +82,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
+      "agreements": 0,
       "customers": 2
     },
     "needs_you": [

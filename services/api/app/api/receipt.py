@@ -44,10 +44,14 @@ def _join(lang: Lang, parts: Sequence[str | None]) -> str | None:
 
 
 def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: str | None, cost_display: str | None,
-                 funds_when: str | None, funds_today: bool, authority_text: str | None) -> dict[str, str | None]:
+                 funds_when: str | None, funds_today: bool, authority_text: str | None,
+                 if_declined_lines: Sequence[str] = (), unfunded: bool = False) -> dict[str, str | None]:
     """The send-the-counter review. `lines` are `send_scope_lines` (the agreement, then the draws and the funding cost, when the send runs
     funding); `funds_when` is the distance the last draw lands ("in 3 days") and `funds_today` whether it lands today; `authority_text` is the
-    sentence the offer picture gives the reply (who decides), null when the picture cannot say."""
+    sentence the offer picture gives the reply (who decides), null when the picture cannot say. `if_declined_lines` are the funding legs the send
+    runs if the buyer declines (the gap as it stands without the agreement): the engine funds the cash gap when the counter is sent, whatever the
+    buyer answers, and the assumptions say so in words. `unfunded`: the gap has a plan and the plan cannot run today, so the send runs no funding
+    and `executes_now_text` says so before the send, as the record says it after ("The gap was not funded")."""
     funding = list(lines[1:])
     if funding and funds_when:
         landing = (t(lang, "The draw is in hand today.", "提款今天到账。") if funds_today
@@ -55,14 +59,28 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
     else:
         landing = t(lang, "Nothing is in hand yet.", "目前没有资金到账。")
     future = t(lang, f"Nothing from {buyer} counts as cash until it arrives.", f"{buyer}的款项在到账前不计入现金。")
+    # The engine funds the cash gap when the counter is sent, on the books as they stand then, whatever the buyer answers: a refusal does not
+    # take the funding back (`_negotiate_locked` plans the gap on both outcomes). Said where the owner reads the assumptions.
+    declined = t(lang, "; ", "；").join(if_declined_lines)
+    runs_anyway: str | None = None
+    if funding:
+        runs_anyway = t(lang, "Runs when you send, whether or not the buyer agrees.", "发送时即执行，无论买方是否同意。")
+        if declined:
+            runs_anyway += t(lang, f" If the buyer declines, it is sized to the gap as it stands without the agreement: {declined}.",
+                             f"若买方拒绝，融资金额按不含该协议的现有缺口确定：{declined}。")
+    elif declined:
+        runs_anyway = t(lang, f"If the buyer declines, the funding for your cash gap still runs when you send: {declined}.",
+                        f"若买方拒绝，发送时仍会为您的资金缺口办理融资：{declined}。")
     return receipt(
         authorizes_text=lines[0] if lines else None,
-        executes_now_text=_join(lang, funding),
+        executes_now_text=_join(lang, funding) or (
+            t(lang, "No funding runs when you send: today's plan cannot run; the gap stays open.",
+              "发送时不会办理融资：今天的方案无法执行；缺口仍未补上。") if unfunded else None),
         others_must_agree_text=t(lang, f"{buyer} must accept the counter before it takes effect.", f"{buyer}需先接受此还价，还价才会生效。"),
         in_hand_vs_future_text=f"{landing} {future}" if lang != "zh" else f"{landing}{future}",
         fees_display=cost_display,
         when_text=t(lang, "As soon as you confirm.", "您确认后立即生效。"),
-        assumptions_text=recheck_text,
+        assumptions_text=(" " if lang != "zh" else "").join(x for x in (recheck_text, runs_anyway) if x) or None,
         authority_text=authority_text,
         remaining_text=t(lang, f"{buyer} has not accepted yet; the agreement stands only if it does.", f"{buyer}尚未接受；只有接受后协议才成立。"))
 
@@ -159,8 +177,8 @@ def collection_receipt(lang: Lang, *, buyer: str, outstanding: str, due_clause: 
 def agreement_receipt(lang: Lang, *, buyer: str | None, terms: Sequence[str], status_text: str, forward_value_display: str | None,
                       economic_effect_text: str | None, expires_when: str | None, authority_text: str | None,
                       awaited: str | None) -> dict[str, str | None]:
-    """The record-commitment receipt: the terms agreed, where the agreement stands, what it books against the budget, when it expires and who
-    approved it."""
+    """The record-commitment receipt: the terms agreed, what ran (`status_text` is the decision's execution summary: the agreement recorded, the
+    funding requested or not funded, never just the agreement's state word), what it books against the budget, when it expires and who approved it."""
     sep = t(lang, "; ", "；")
     return receipt(
         authorizes_text=(sep.join(terms) + t(lang, ".", "。")) if terms else None,

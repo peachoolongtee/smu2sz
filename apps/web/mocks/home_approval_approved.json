@@ -108,5 +108,6 @@
   },
   "result_state_text": "Approved, cash arrives in 3 days",
   "result_tone": "info",
+  "receipt": null,
   "execution_status": "EXECUTED"
 }

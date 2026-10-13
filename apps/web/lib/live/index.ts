@@ -9,6 +9,7 @@ import type { ExposureContext } from "../api";
 import { buyerExposureQuery } from "./exposure-query";
 import { ApiError } from "../errors";
 import { contextQuery, type CustomerContext } from "../customer-href";
+import { serverScenario } from "../selection";
 import type {
   ActRequest,
   AlertActResult,
@@ -25,6 +26,7 @@ import type {
   CapexApplyResult,
   CapexRequest,
   CapexView,
+  CompareView,
   DealsContext,
   EnvelopeView,
   ExposureView,
@@ -65,6 +67,8 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
+  WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
 } from "../types";
@@ -122,9 +126,9 @@ export const live = {
     }),
 
   /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
-  getOffer: async (offerId: string): Promise<OfferView> => {
+  getOffer: async (offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> => {
     try {
-      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}${lang === "zh" ? "?lang=zh" : ""}`);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
       throw e;
@@ -204,6 +208,9 @@ export const live = {
   /** GET /offers/{offer_id}/exposure (flag `exposure`). Null when the feature is off, the offer is unknown or the route is absent. One read carries every path. */
   getOfferExposure: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<ExposureView>("GET", `/offers/${enc(offerId)}/exposure?lang=${lang}`)),
 
+  /** GET /offers/{offer_id}/compare (flag `exposure`). Null when the feature is off, the route is absent or the offer has no verdict yet (404). */
+  getOfferCompare: (offerId: string, lang: "en" | "zh") => nullWhenOff(() => http<CompareView>("GET", `/offers/${enc(offerId)}/compare?lang=${lang}`)),
+
   /** GET /pilot/journal (flag `pilot_journal`). Null when the feature is off or absent. Read-only: the web never posts an entry. */
   getPilotJournal: () => nullWhenOff(() => http<PilotJournalView>("GET", "/pilot/journal")),
 
@@ -233,7 +240,13 @@ export const live = {
   /** POST /alerts/{id}/act: executes the alert's cure as the agent. The body always binds the act to what was shown (409 ALERT_CHANGED when the books moved). */
   actOnAlert: (id: string, bound: ActRequest) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { body: bound, ownerOn403: true }),
 
-  whatIf: (params: WhatIfParams) => http<WhatIfResult>("POST", "/whatif", { body: params }),
+  /** POST /whatif on the invoice of the negotiation addressed (`offer_id` in the body; none: the books' first buyer with a recurring invoice), the words in `lang`. A buyer the sandbox cannot value as a whole answers `available: false` and says why. */
+  whatIf: (params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}) =>
+    http<WhatIfResult | WhatIfUnscoped>("POST", `/whatif?lang=${scope.lang ?? "en"}`, { body: scope.offerId ? { ...params, offer_id: scope.offerId } : params }),
+
+  /** GET /whatif/presets on the addressed negotiation's invoice: `available`, `invoice_text` and `scope_text` say which invoice the sandbox would act on, or why it has none (then no presets). */
+  whatIfScope: (offerId: string, lang: "en" | "zh" = "en") =>
+    http<WhatIfScope>("GET", `/whatif/presets?offer_id=${enc(offerId)}&lang=${lang}`),
 
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
@@ -248,7 +261,7 @@ export const live = {
   getDeals: (lang: "en" | "zh" = "en", ctx: DealsContext = {}) => {
     const q = new URLSearchParams();
     if (lang === "zh") q.set("lang", "zh");
-    for (const k of ["customer", "invoice", "path"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
+    for (const k of ["customer", "invoice", "decision", "path", "from"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
     return http<DealsView>("GET", `/deals${q.size ? `?${q}` : ""}`);
   },
   getDocuments: (lang: "en" | "zh" = "en") => http<DocumentsList>("GET", `/documents${lang === "zh" ? "?lang=zh" : ""}`),
@@ -269,10 +282,10 @@ export const live = {
 
   /** GET /customers/{id}/overview: one page's read; the context (`decision`, `path`, `invoice`) only builds the back link. */
   getCustomerOverview: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
-    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery(ctx)}`),
+    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery({ ...ctx, scenario: serverScenario(ctx.scenario) })}`),
 
   getBuyerInputs: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
-    http<InputSheetView>("GET", `/buyers/${enc(id)}/inputs?lang=${lang}${contextQuery(ctx)}`),
+    http<InputSheetView>("GET", `/buyers/${enc(id)}/inputs?lang=${lang}${contextQuery({ ...ctx, scenario: serverScenario(ctx.scenario) })}`),
 
   saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
     http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),

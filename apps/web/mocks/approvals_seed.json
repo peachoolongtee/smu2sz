@@ -82,7 +82,20 @@
       "summary_text": "Waiting for your approval. Nothing has run."
     },
     "result_state_text": "Waiting for your approval",
-    "result_tone": "warn"
+    "result_tone": "warn",
+    "receipt": {
+      "authorizes_text": "Apply for ¥600,000.00 on Equipment term loan",
+      "executes_now_text": "Sends the request as soon as you approve: Apply for ¥600,000.00 on Equipment term loan.",
+      "others_must_agree_text": "The lender still has to accept the application.",
+      "in_hand_vs_future_text": null,
+      "gross_display": "¥600,000.00",
+      "fees_display": null,
+      "net_display": null,
+      "when_text": null,
+      "assumptions_text": null,
+      "authority_text": "Apply for facility Equipment term loan (¥600,000.00).",
+      "remaining_text": null
+    }
   },
   "apply_loan_approved": {
     "id": "APR-000001",
@@ -139,9 +152,9 @@
       "reason": "Apply for facility Equipment term loan (¥600,000.00).",
       "next_step_text": null,
       "next_step_href": null,
-      "result_state_text": "Approved, done",
-      "result_tone": "ok",
-      "result_message": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed",
+      "result_state_text": "Approved and submitted",
+      "result_tone": "info",
+      "result_message": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits",
       "decided_when": "today",
       "created_when": "today"
     },
@@ -164,10 +177,11 @@
     },
     "execution": {
       "status": "EXECUTED",
-      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed"
+      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits"
     },
-    "result_state_text": "Approved, done",
-    "result_tone": "ok",
+    "result_state_text": "Approved and submitted",
+    "result_tone": "info",
+    "receipt": null,
     "execution_status": "EXECUTED"
   },
   "apply_loan_rejected": {
@@ -254,6 +268,7 @@
     },
     "result_state_text": "Declined, nothing ran",
     "result_tone": "neutral",
+    "receipt": null,
     "execution_status": "DECLINED"
   }
 }

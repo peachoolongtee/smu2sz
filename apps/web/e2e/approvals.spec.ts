@@ -162,13 +162,13 @@ async function toPendingCure(page: import("@playwright/test").Page) {
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
 }
 
-test("with one approval waiting the page's one h1 is its question, the card does not repeat it, and the picture shows both lines", async ({ page }) => {
+test("with one approval waiting the page's title is stable, the card asks the question, and the picture shows both lines", async ({ page }) => {
   await toPendingCure(page);
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toHaveCount(1);
-  await expect(h1).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await expect(h1).toHaveText("Approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveCount(0);
+  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
   // The three facts, then the picture: the decline line is the baseline and the approve line the alternative, each lowest point named in the server's words.
   await expect(card.getByTestId("approval-lands")).toBeVisible();
   const picture = card.getByTestId("approval-picture");
@@ -200,6 +200,28 @@ test("an agreement approval shows its terms and no picture", async ({ page }) =>
   await expect(card.getByTestId("approval-picture")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(card.getByTestId("approval-if-decline")).toBeVisible();
+});
+
+test("the terms come before the one approve button at every width, and approving needs no second step (audit UX03)", async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem("tl-mock-approval-story", "agreement"));
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/approvals");
+    const card = page.locator("#approval-APR-000001");
+    const terms = await card.getByTestId("approval-terms").boundingBox();
+    const approve = card.getByRole("button", { name: /^Approve/ });
+    const button = await approve.boundingBox();
+    expect(terms!.y + terms!.height, `${width}: the terms end before the button begins`).toBeLessThanOrEqual(button!.y);
+    // DOM order says the same (reading and focus order).
+    expect(await card.evaluate((el) => {
+      const t = el.querySelector('[data-testid="approval-terms"]')!;
+      const b = Array.from(el.querySelectorAll("button")).find((x) => /^Approve/.test(x.textContent ?? ""))!;
+      return Boolean(t.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })).toBe(true);
+  }
+  // One press approves: the button is the whole commit.
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await expect(page.getByTestId("approval-decided-APR-000001")).toBeVisible();
 });
 
 test("a decided approval is a row on a hairline under the plain title, and the page does not scroll sideways at 390 px", async ({ page }) => {

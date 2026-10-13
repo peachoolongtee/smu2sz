@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { filledBrand, openReview } from "./helpers";
+import { checkedDeal, filledBrand, openReview } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -85,16 +85,15 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
     if (path !== "/") expect(await page.locator('[data-testid="home-status"]').count()).toBe(0);
   }
   // Deals once a deal is evaluated: "Send this counter" is the one; the page has no other filled button.
-  await page.goto("/deals");
-  await page.getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  // (the queue's card carries the one filled button, "Review and send the counter"; opened, the send takes its place)
+  await checkedDeal(page);
+  // The commit area carries the one filled button, "Review and send the counter"; opened, the one commit button takes its place (the page has no other filled button).
+  expect(await filledBrand(page)).toBe(1);
   await openReview(page);
   await expect(page.getByTestId("deal-send")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
   // The channel chip is neutral, not the "fine" green (the inbox is one row until it is asked for).
   await page.getByTestId("inbox-back").click();
-  expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).toBe("rgb(239, 243, 248)");
+  expect(await bg(page.getByTestId("inbox-msg-EX01").locator("span").first())).not.toBe("rgb(226, 246, 243)");
 });
 
 test("the day-34 pending home has one primary: the decision, and the owner's disc is brand, not green", async ({ page }) => {

@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, openCompare, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -359,6 +359,9 @@ test("the Business inbox waits for the books before it shows any sender, and say
     await route.continue();
   });
   await page.goto("/deals");
+  // The inbox card is drawn once the queue is read (open when nothing needs the owner, else one folded row: open it).
+  await page.getByTestId("deals-inbox").waitFor();
+  if (await page.getByTestId("inbox-back").count()) await page.getByTestId("inbox-back").click();
   // Business mode, books still loading: a loading block, and no message row at all (the registry decides who is known).
   await expect(page.getByTestId("inbox-loading")).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
@@ -378,6 +381,8 @@ test("the Business inbox waits for the books before it shows any sender, and say
     }),
   );
   await page.goto("/deals");
+  await page.getByTestId("deals-inbox").waitFor();
+  if (await page.getByTestId("inbox-back").count()) await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-error")).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
 });
@@ -502,12 +507,11 @@ test("a buyer's agreement that expired before the owner looked cannot be approve
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
-/** Reads the Deals page's first Foshan message and checks it against the limits. */
-async function checkedDeal(page: Page) {
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+/** Reads the Deals page's first Foshan message and checks it against the limits; returns the address of the negotiation (the address is the selection). */
+async function checkedDeal(page: Page): Promise<string> {
+  await readDeal(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
+  return page.url();
 }
 
 const ownerPost = (request: APIRequestContext): Post => async (path, data, headers = { "X-Owner-Token": TOKEN }) => {
@@ -528,11 +532,11 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   page.on("request", (r) => {
     if (/\/offers\/[^/]+\/picture/.test(r.url())) pictures.push(r.url());
   });
-  await checkedDeal(page);
+  const deal = await checkedDeal(page);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toContainText("Counter recommended");
   await openReview(page);
-  await expect(page.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
+  await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
   await sendCounter(page);
   await expect.poll(() => sends.length).toBe(1);
   // The browser sends ids and the shown books' version, never a figure.
@@ -541,7 +545,6 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   expect(sends[0].counter_id).toMatch(/^CTR-/);
   expect(typeof sends[0].state_version).toBe("number");
   await expect(steps).toHaveAttribute("data-state", "AGREED");
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Agreed");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
   expect(pictures.length, "the picture was read while the offer was open").toBeGreaterThan(0);
   await page.waitForTimeout(1000);
@@ -553,7 +556,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   expect(record.response.sent.chosen_label).toBe("Option A");
   // The receipt came on day 2: the page reads the record again and the deal is Fulfilled.
   await dayTwoToDay34(request, "full", post);
-  await page.goto("/deals");
+  await page.goto(deal);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
   await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   expect(pictures.length, "no picture read once the deal is agreed").toBe(readsWhenAgreed);
@@ -567,19 +570,18 @@ test("Deals: with no receipt on day 2 the line says the early payment did not ar
   page.on("request", (r) => {
     if (/\/offers\/[^/]+\/picture/.test(r.url())) pictures.push(r.url());
   });
-  await checkedDeal(page);
+  const deal = await checkedDeal(page);
   await openReview(page);
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await page.waitForTimeout(1000);
   const readsWhenAgreed = pictures.length;
   await dayTwoToDay34(request, "none", post);
-  await page.goto("/deals");
+  await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
   await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
   await expect(steps).not.toContainText("Agreed");
-  await expect(page.getByTestId("deal-recommendation")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments")).toContainText("Agreement expired");
   expect(pictures.length, "no picture read on a later day either").toBe(readsWhenAgreed);
@@ -609,6 +611,7 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
   // Checking again evaluates on the books as they are; the new proposal can be sent.
   await changed.getByTestId("deal-check-again").click();
   await expect(changed).toHaveCount(0);
+  await openReview(page);
   await expect(page.getByTestId("deal-send")).toBeVisible();
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
@@ -646,22 +649,19 @@ test("Cash & funding: a cure that cannot restore the reserve leaves a remaining 
   await post("/demo/reset", {});
 });
 
-test("Deals: the workspace is the API's, in its order, and ?buyer= selects the buyer's deal", async ({ page, request }) => {
+test("Deals: the negotiation is the API's, in its order, with the costs it prices", async ({ page, request }) => {
   const post = ownerPost(request);
   await post("/demo/reset", {});
-  await page.goto("/deals?buyer=BUYER-1");
-  await expect(page.getByTestId("queue-detail-customer")).toContainText("Foshan Home Retail Co.");
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
+  await checkedDeal(page);
   await expect(page.getByTestId("queue-heading")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  // Every sentence below is the server's: the ask, the reasons, the costs (the legacy page's asks fold, "Evaluated today" line and impact lines have the table and the why as counterparts).
-  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
-  await expect(page.getByTestId("queue-why")).toContainText("Accepted as asked, cash would fall below your minimum");
-  const tops = await page.evaluate(() => ["queue-heading", "queue-ask", "queue-why", "queue-recommends"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
+  // Every sentence below is the server's: the ask in the buyer's words, the recommendation and its reason, the costs with their basis.
+  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
+  await expect(page.getByTestId("deal-recommended-reason")).toContainText("Recommended because FLOW can send it");
+  const tops = await page.evaluate(() => ["queue-heading", "deal-ask-quote", "queue-recommends", "deal-level-consequence"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
-  await page.getByTestId("queue-compare").locator("> summary").click();
-  await expect(page.getByTestId("queue-impact-once")).toContainText("¥5,040.00");
-  await expect(page.getByTestId("queue-impact-forward")).toContainText("¥28,326.92");
+  await openCompare(page);
+  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("¥3,027.77");
   await post("/demo/reset", {});
 });
 

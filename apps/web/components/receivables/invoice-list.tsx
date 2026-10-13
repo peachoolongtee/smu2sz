@@ -91,7 +91,7 @@ export function InvoiceList({
                 >
                   <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 lg:col-span-1">
                     <Avatar tone={toneFor(buyer)}>{initials(buyer)}</Avatar>
-                    <CustomerName id={r.buyer_id} className="hit relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700" testId={`recv-customer-${r.receivable_id}`}>
+                    <CustomerName id={r.buyer_id} invoice={r.receivable_id} className="hit relative z-10 min-w-0 break-words text-sm font-semibold text-brand-700" testId={`recv-customer-${r.receivable_id}`}>
                       {buyer}
                     </CustomerName>
                   </div>

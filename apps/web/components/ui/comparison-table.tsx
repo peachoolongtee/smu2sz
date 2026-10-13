@@ -22,12 +22,15 @@ export interface CompareRow {
  * The responses side by side. A 150 px row head, then one column per path; hairline rows with 11 and 14 px cell padding. The recommended column has a `brand-50` header
  * with a 2 px brand rule on top, a light tint and `info-line` sides. At least 600 px wide: below that it scrolls sideways with the row heads sticky (the text never shrinks);
  * below 1024 px it stacks into one block per response. Both forms hold the same cells (`testId` and `${testId}-stack`); the page shows one of them.
+ * `container`: the table lives in a pane that is narrower than the window (a queue beside it), so the switch follows the width of its own container (448 px, and the table may be as narrow as 420) and not the window's.
  */
-export function ComparisonTable({ caption, columns, rows, testId }: { caption: string; columns: CompareColumn[]; rows: CompareRow[]; testId: string }) {
+export function ComparisonTable({ caption, columns, rows, testId, container = false }: { caption: string; columns: CompareColumn[]; rows: CompareRow[]; testId: string; container?: boolean }) {
+  const tableShown = container ? "@min-[28rem]:block" : "lg:block";
+  const stackHidden = container ? "@min-[28rem]:hidden" : "lg:hidden";
   return (
-    <div data-testid={testId}>
-      <div className="hidden overflow-x-auto lg:block" data-testid={`${testId}-scroll`}>
-        <table className="w-full min-w-[600px] table-fixed border-separate border-spacing-0 text-sm" data-testid={`${testId}-table`}>
+    <div data-testid={testId} className={container ? "@container" : undefined}>
+      <div className={`hidden overflow-x-auto ${tableShown}`} data-testid={`${testId}-scroll`}>
+        <table className={`w-full ${container ? "min-w-[420px]" : "min-w-[600px]"} table-fixed border-separate border-spacing-0 text-sm`} data-testid={`${testId}-table`}>
           <caption className="sr-only">{caption}</caption>
           <colgroup>
             <col className="w-[150px]" />
@@ -73,7 +76,7 @@ export function ComparisonTable({ caption, columns, rows, testId }: { caption: s
           </tbody>
         </table>
       </div>
-      <div className="grid gap-3 lg:hidden" data-testid={`${testId}-stack`}>
+      <div className={`grid gap-3 ${stackHidden}`} data-testid={`${testId}-stack`}>
         {columns.map((c, ci) => (
           <div key={c.key} className={`rounded-tile border px-4 py-3 ${c.recommended ? "border-info-line bg-brand-50/45" : "border-line"}`}>
             <h3 className="font-bold text-ink">

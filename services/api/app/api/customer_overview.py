@@ -51,7 +51,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.alerts import alerts
 from app.api.auth import require_owner
-from app.api.deal_offers import open_offers
+from app.api.deal_offers import lapsed_offers, open_deals, open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
 from app.api.financing_words import State, state_of, state_word
 from app.api.home import next_action
@@ -503,8 +503,13 @@ def _if_plan_runs(lang: Lang) -> str:
 # ---------------------------------------------------------------- the four figures
 
 
-def _figure(key: str, label: str, value: str, note: str, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
+def _figure(key: str, label: str, value: str | None, note: str, tone: str = "neutral", state: dict[str, str] | None = None) -> dict[str, Any]:
     return {"key": key, "label": label, "value_display": value, "note": note, "tone": tone, **(state or NO_STATE)}
+
+
+def _gap(when: str) -> str:
+    """A Chinese distance that starts with a number takes a space before it ("已承诺 2 天后"), as the house writes it."""
+    return f" {when}" if when[:1].isdigit() else when
 
 
 def _outstanding(r: _Read) -> dict[str, Any]:
@@ -520,6 +525,14 @@ def _outstanding(r: _Read) -> dict[str, Any]:
         if waiting:
             note += t(lang, f"; next due {waiting[0]['due_when']}", f"；下一笔{waiting[0]['due_when']}到期")
         return _figure("outstanding", label, whole_yuan(total), note, "bad", _worst_collection(r.rows))
+    promise = next((p for p in getattr(getattr(r, "ctx", None), "promised", ()) if p.counterparty_id == r.buyer_id and getattr(p.status, "value", p.status) == "AWAITED"
+                    and p.promised_day is not None), None)
+    if promise is not None:  # an early payment is promised: the figure says what is promised and when, then when the invoice itself falls due
+        said = when_text(promise.promised_day, r.today, lang)
+        return _figure("outstanding", label, whole_yuan(total),
+                       t(lang, f"{whole_yuan(promise.expected_fen)} promised {said}; otherwise due {r.rows[0]['due_when']}",
+                         f"已承诺{_gap(said)}支付 {whole_yuan(promise.expected_fen)}；否则{_gap(r.rows[0]['due_when'])}到期"),
+                       state=_worst_collection(r.rows))
     lead = "due" if len(r.rows) == 1 else "next due"
     return _figure("outstanding", label, whole_yuan(total),
                    t(lang, f"{lead} {r.rows[0]['due_when']}, nothing overdue", f"{r.rows[0]['due_when']}到期，没有逾期"),
@@ -538,7 +551,7 @@ def _financing(r: _Read) -> dict[str, Any]:
     if planned:  # the plan is ready and has not run: its advance, said as planned and never counted
         return _figure("financing", label, whole_yuan(sum(r.planned[x["receivable_id"]] for x in planned)), _if_plan_runs(lang), state=state)
     if not financed:
-        return _figure("financing", label, t(lang, "None", "无"),
+        return _figure("financing", label, None,  # no figure to show: null, and the note says why
                        t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"), state=state)
     total = sum(x["net"]["advance_fen"] for x in financed)
     states = {x["financing_state"] for x in financed}
@@ -655,6 +668,20 @@ def _approval_href(r: _Read) -> str | None:
     return f"/approvals#approval-{_quoted(approval.id)}" if approval is not None else None
 
 
+_NUMBER_EN = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+
+
+def _waiting_eyebrow(r: _Read) -> str:
+    """"One commercial decision waits for you" counts the customer's own open decisions the way the Deals queue does (a reply waiting on the buyer or on an
+    approval is not one of them): "Three commercial decisions wait for you"."""
+    n = max(1, sum(1 for _view, st, ds in open_deals(r.ctx, r.lang)
+                   if ds.offer.counterparty_id == r.buyer_id and st not in (DealState.NEEDS_CLARIFICATION, DealState.AUTHORIZATION_REQUIRED)))
+    if n == 1:
+        return t(r.lang, "One commercial decision waits for you", "有一项商务决定等待您处理")
+    word = _NUMBER_EN[n].capitalize() if n < len(_NUMBER_EN) else str(n)
+    return t(r.lang, f"{word} commercial decisions wait for you", f"有 {n} 项商务决定等待您处理")
+
+
 def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
     lang = r.lang
     none = t(lang, f"No commercial decision is waiting for you with {r.who}.", f"目前没有需要您对{r.who}作出的商务决定。")
@@ -664,6 +691,12 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
     asks = offer["asks_text"]
     wants = (t(lang, f"{r.who} wants {asks}.", f"{r.who}要求：{asks}。") if asks
              else t(lang, f"{r.who} has made a request.", f"{r.who}提出了一项请求。"))
+    if r.offer_state == DealState.LAPSED:  # the invoice it was about has been settled under another agreement: nothing to review, send or wait for
+        return {
+            "kind": "lapsed", "eyebrow": t(lang, "Lapsed", "已失效"), "text": f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}",
+            "headline_short": None, "authority_text": None,
+            "primary": {"label": t(lang, "Open the negotiation", "打开谈判"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
+            "secondary": actions}, none
     if r.offer_state == DealState.RECEIVED:  # received, not read yet: nothing to recommend and no authority to state
         return {
             "kind": "offer_received", "eyebrow": t(lang, "One offer waits to be read", "有一份报价等待阅读"),
@@ -704,7 +737,7 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
     path = f"&path={_quoted(r.lead)}" if rec is not None else ""
     return {
         "kind": "counter" if rec is not None and rec["kind"] == "reply" else "request",
-        "eyebrow": t(lang, "One commercial decision waits for you", "有一项商务决定等待您处理"),
+        "eyebrow": _waiting_eyebrow(r),
         "text": body, "headline_short": offer["headline_short"], "authority_text": authority,
         "primary": {"label": label, "href": f"/deals?decision={_quoted(r.decision_id() or '')}{path}"},
         "secondary": actions}, none
@@ -802,7 +835,7 @@ def _capacity_row(r: _Read, ex: dict[str, Any]) -> dict[str, Any]:
         return t(lang, "none", "无") if fen is None else whole_yuan(fen)
 
     today = t(lang, f"{amount(spare['today_fen'])} today", f"今天 {amount(spare['today_fen'])}")
-    if r.offer is None:
+    if r.offer is None or r.offer_state == DealState.LAPSED:
         return _row("capacity", label, today)
     rec = r.recommended
     after = (t(lang, f"if {r.who} accepts {rec['label']}", f"如果{r.who}接受{rec['label']}") if rec is not None
@@ -927,9 +960,16 @@ def _history(r: _Read) -> list[dict[str, Any]]:
                     "link_label": label if href else None, **words_of})
     if r.rows:
         g = r.rows[0]["governed_by"]
+        early = r.rows[0]["early_payment"]
+        if early["agreed"]:  # an agreement is in force on this invoice: the row says what was agreed, not that none is on file
+            rebate = (t(lang, f"; a {fmt_pct(bp(g['rebate_bp']))} rebate is agreed with the buyer", f"；已与买方约定 {fmt_pct(bp(g['rebate_bp']))} 的返利")
+                      if g["rebate_bp"] else "")
+            text = t(lang, f"Agreed: {early['text']}. Otherwise payment is due {g['terms_days']} days from the invoice date{rebate}",
+                     f"已约定：{early['text']}。否则账期为自开票日起 {g['terms_days']} 天{rebate}")
+        else:
+            text = t(lang, f"{g['terms_text']}; early payment: {early['text']}", f"{g['terms_text']}；提前付款：{early['text']}")
         out.append({"when_text": t(lang, "In force", "现行"),
-                    "text": t(lang, f"{g['terms_text']}; early payment: {r.rows[0]['early_payment']['text']}",
-                              f"{g['terms_text']}；提前付款：{r.rows[0]['early_payment']['text']}"),
+                    "text": text,
                     "href": "/documents" if g["contract_ref"] else None,
                     "link_label": t(lang, "The terms", "条款") if g["contract_ref"] else None, **NO_STATE})
     return out
@@ -941,8 +981,9 @@ def _history(r: _Read) -> list[dict[str, Any]]:
 def _find_offer(rt: Runtime, ctx: Context, buyer_id: str, lang: Lang
                 ) -> tuple[dict[str, Any] | None, DealState | None, CompiledOffer | None, Verdict | None]:
     found = open_offers(ctx, lang).get(buyer_id)
-    if found is None:
-        return None, None, None, None
+    if found is None:  # nothing open: a lapsed negotiation is still said, as lapsed, with no reply to review and no figure to read
+        lapsed = lapsed_offers(ctx, lang).get(buyer_id)
+        return (lapsed[0], DealState.LAPSED, None, None) if lapsed is not None else (None, None, None, None)
     offer = found[0]
     return offer, found[1], rt.store.get_offer(offer["offer_id"]), latest_verdict_for(rt, offer["offer_id"])
 

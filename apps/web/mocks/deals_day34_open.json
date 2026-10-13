@@ -442,5 +442,59 @@
       "needs_you": false,
       "needs_you_text": null
     }
-  ]
+  ],
+  "queue": {
+    "counts": {
+      "needs_you": 1,
+      "waiting": 0,
+      "agreements": 0,
+      "customers": 2
+    },
+    "alert": {
+      "key": "company-cash",
+      "eyebrow": "Company cash",
+      "kind_text": "FLOW action ready",
+      "text": "Reserve unsafe in 8 days. A funding plan is ready.",
+      "pending_text": "¥200k funding plan available · needs your approval · waits for your go",
+      "tone": "bad",
+      "primary": {
+        "label": "Run or compare",
+        "href": "/"
+      }
+    },
+    "needs_you": [
+      {
+        "key": "collection:BUYER-1",
+        "kind": "COLLECTION",
+        "tier": "NEEDS_YOU",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · ¥163k overdue",
+        "status_text": "Payment overdue · Your follow-up needed",
+        "consequence_text": "2 days overdue.",
+        "severity": "CRITICAL",
+        "deadline_day": 32,
+        "expected_day": null,
+        "differentiator_text": null,
+        "decision_id": null,
+        "invoice_id": "RCV-A",
+        "approval_id": null,
+        "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=deals"
+      }
+    ],
+    "waiting": [],
+    "agreements": [],
+    "needs_you_empty_text": "Nothing else needs you.",
+    "waiting_empty_text": "Nothing is waiting on anyone else.",
+    "agreements_empty_text": "No agreement is in force."
+  },
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  }
 }

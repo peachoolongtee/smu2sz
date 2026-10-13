@@ -56,21 +56,20 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await expect(narration).toContainText("Offer from Foshan Home Retail Co.");
   await expectSelectedMessage(page, "EX01");
   // (the queue says the ask once, in the server's words for the three terms)
-  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
-  await expect(page.getByTestId("queue-ask")).toContainText("payment terms to 60 days");
+  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
+  await expect(page.getByTestId("deal-ask-quote")).toContainText("60 days going forward");
 
   // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
   await walkStory(page, 1, 1);
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
-  await expect(page.getByTestId("queue-why")).toContainText("¥28,326.92");
-  await expect(page.getByTestId("path-tile-figure-0")).toHaveText("¥210k");
+  await expect(page.getByTestId("deal-cost-asked")).toContainText("¥28,326.92");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("path-col-cost-1")).toHaveText("¥3,027.77");
+  await expect(page.getByTestId("queue-cost")).toContainText("¥3,027.77");
 
   // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
   await walkStory(page, 1, 2);
-  await expect(page).toHaveURL(/\/deals#commitments/);
+  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await expect(page.getByTestId("commitments-live")).toBeVisible();
   await expect(narration).toContainText("Agreed.");
@@ -425,7 +424,7 @@ test("Show opens a finished step and changes nothing; Replay runs it again and i
   await expect(page).toHaveURL(/\/deals/);
   await page.goto("/demo");
   await page.getByTestId("story-show-3").click();
-  await expect(page).toHaveURL(/\/deals#commitments/);
+  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
   await page.goto("/demo");
   await expect(page.getByTestId("home-day")).toHaveText("Day 7");
   await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);

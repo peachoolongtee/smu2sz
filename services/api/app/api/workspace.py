@@ -9,12 +9,13 @@ sentence (INVARIANT 13).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
 from app.api.presentation import (
     business_action_text,
     business_text,
+    commitment_cost_words,
     first_breach_ahead,
     funding_lines,
     obligation_sentence,
@@ -100,20 +101,50 @@ def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] 
     """The funding leg's cost, said against the counter's own cost on the same card so the owner never reads two figures under one label:
     "already inside" when the counter's cost is the discount plus this funding (its formula carries the funding figure), else "in addition"."""
     cost = fmt_yuan(send_plan.total_cost_fen)
-    inside = counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+    # A counter whose cost is below the funding cost (Option B's price adjustment offsets what it gives away) does not carry the funding in it,
+    # even when its formula quotes the plan's cost: the funding is then in addition.
     what = t(lang, "for the draw" if all(k == "DRAW" for k, *_ in legs) else "for the funding", "")
-    if inside:
+    if (counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+            and int(counter.get("supplier_cost_fen") or 0) >= send_plan.total_cost_fen):
         above = counter["supplier_cost_display"]
         return t(lang, f"Funding cost {cost} {what} (already inside the {above} above)", f"融资成本 {cost}（已计入上方的 {above}）")
     return t(lang, f"Funding cost {cost} in addition", f"融资成本 {cost}（另计）")
 
 
+def priced_response(counter: dict[str, Any], *, view: dict[str, Any], verdict_id: str, state: FinancialState, buyer: str, send_plan: Any,
+                    today: int, lang: str, authority_text: str | None, decline_plan: Any = None) -> dict[str, Any]:
+    """One reply the owner could send, with its own send scope and receipt: `send_plan` is the router's plan for the gap that would remain
+    if the buyer accepts THIS counter (what its send would run), `decline_plan` the plan for the gap as it stands if the buyer declines (the
+    funding the send runs anyway), `authority_text` the sentence the offer picture gives it (who decides)."""
+    lines = send_scope_lines(state, buyer, send_plan, today, lang, counter)
+    lands = [a.lands_day for a in send_plan.actions] if _send_runs_funding(send_plan) else []
+    recheck = t(lang, _RECHECK[0], _RECHECK[1])
+    return {
+        "counter_id": counter["id"], "label": counter["label"], "label_text": option_label(counter["label"], lang),
+        "send_scope": send_scope_text(lang, option_label(counter["label"], lang)),
+        "send_scope_lines": lines,
+        "recheck_text": recheck,
+        "receipt": send_receipt(lang, buyer=buyer, lines=lines, recheck_text=recheck, cost_display=counter["supplier_cost_display"],
+                                funds_when=when_text(max(lands), today, lang) if lands else None,
+                                funds_today=bool(lands) and max(lands) <= today, authority_text=authority_text,
+                                unfunded=bool(send_plan is not None and send_plan.actions and not _send_runs_funding(send_plan)),
+                                if_declined_lines=(funding_lines(state, [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in decline_plan.actions],
+                                                                 None, today, lang) if _send_runs_funding(decline_plan) else [])),
+        "supplier_cost_display": counter["supplier_cost_display"], "forward_value_display": counter["forward_value_display"],
+        "verdict_id": verdict_id, "state_version": view["state_version"],
+    }
+
+
 def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str,
-          offer: Any = None, commitments: Sequence[Any] = (), send_plan: Any = None, authority_text: str | None = None) -> dict[str, Any]:
+          offer: Any = None, commitments: Sequence[Any] = (), send_plans: Mapping[str, Any] | None = None,
+          authority_texts: Mapping[str, str | None] | None = None, sendable_ids: Collection[str] | None = None,
+          decline_plan: Any = None) -> dict[str, Any]:
     """The workspace for one evaluated offer. `view` is the evaluate view being returned, `bundle` the verifier's bundle, `offer` the
-    compiled offer, `commitments` the books' agreements and `send_plan` the router's plan for the gap that would remain if the buyer
-    accepts the recommended counter (what the send would run). `authority_text` is the sentence the offer picture gives the recommended
-    reply (who decides it), for the send receipt; null when it could not be read."""
+    compiled offer, `commitments` the books' agreements. `send_plans` holds, by counter id, the router's plan for the gap that would remain
+    if the buyer accepts that counter (what its send would run); `authority_texts` the sentence the offer picture gives each reply (who
+    decides it); `decline_plan` the plan for the gap as it stands (what a send runs if the buyer declines); `sendable_ids` the replies the picture says could be sent (None: only the first counter is offered, as before the
+    picture could be read). `priced_responses` is one entry per sendable reply in the verdict's order; `priced_response` stays the first
+    counter's, for compatibility."""
     verdict = bundle.verdict
     bound = {o.id: o for o in bundle.bound_obligations}
     months = _months(mandate.forward_concession_horizon_days)
@@ -170,14 +201,18 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
     buyer_name = party_name(state, cp) or t(lang, "the buyer", "买方")
     agreements = [{"commitment_id": c.id, "status": c.status.value, "status_text": t(lang, *_LIVE_AGREEMENT[c.status]),
                    "forward_value_fen": c.forward_value_fen, "forward_value_display": fmt_yuan(c.forward_value_fen),
+                   **commitment_cost_words(c, lang),
                    "text": (t(lang, "; ", "；")).join(obligation_sentence(state, o, today, lang) for o in c.obligations)}
                   for c in commitments if c.counterparty_id == cp and c.status in _LIVE_AGREEMENT]
-    send_lines = send_scope_lines(state, buyer_name, send_plan, today, lang, chosen) if chosen is not None else []
-    lands = [a.lands_day for a in send_plan.actions] if chosen is not None and _send_runs_funding(send_plan) else []
-    receipt_block = (send_receipt(lang, buyer=buyer_name, lines=send_lines, recheck_text=t(lang, _RECHECK[0], _RECHECK[1]),
-                                  cost_display=chosen["supplier_cost_display"], funds_when=when_text(max(lands), today, lang) if lands else None,
-                                  funds_today=bool(lands) and max(lands) <= today, authority_text=authority_text)
-                     if chosen is not None else None)
+    plans, authorities = send_plans or {}, authority_texts or {}
+
+    def priced(counter: dict[str, Any]) -> dict[str, Any]:
+        return priced_response(counter, view=view, verdict_id=verdict.id, state=state, buyer=buyer_name, send_plan=plans.get(counter["id"]),
+                               today=today, lang=lang, authority_text=authorities.get(counter["id"]), decline_plan=decline_plan)
+
+    offered = [c for c in counters if sendable_ids is None or c["id"] in sendable_ids] if action == "counter" else []
+    if sendable_ids is None:
+        offered = offered[:1]
     return {
         "order": list(ORDER),
         "buyer": {"title": t(lang, "Who is asking", "提出方"), "counterparty_id": cp, "name": buyer_name,
@@ -189,14 +224,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "financial_impact": impact,
         "why_it_matters": {"text": " ".join(reasons), "reasons": reasons},
         "recommends": {"action": action, "text": business_action_text(action, lang)},
-        "priced_response": ({
-            "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
-            "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
-            "send_scope_lines": send_lines,
-            "recheck_text": t(lang, _RECHECK[0], _RECHECK[1]),
-            "receipt": receipt_block,
-            "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
-            "verdict_id": verdict.id, "state_version": view["state_version"],
-        } if chosen is not None else None),
+        "priced_response": priced(chosen) if chosen is not None else None,
+        "priced_responses": [priced(c) for c in offered],
         "advanced": {"keys": ADVANCED},
     }

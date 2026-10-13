@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { DEMO_TOKEN } from "./fixtures";
-import { resetBooks, verdictHeading } from "./helpers";
+import { checkedDeal, resetBooks } from "./helpers";
 
 /**
  * /chat (POST /nl). Runs in both projects: mock replays replies recorded from the real API, live calls the
@@ -374,13 +374,14 @@ test("Business chat is the owner's alone: no role switch, no Tier 1 hint, no fix
 test("the Deals question about the deal explains the verdict the page evaluated, and the panel says what it is discussing", async ({ page, request }) => {
   await resetBooks(request);
   await asOwner(page);
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+  await checkedDeal(page);
 
   await page.getByTestId("chat-open").click();
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
+  // The scope chip says what the question is about before it is asked: the negotiation in the address, widenable to its customer or the company.
+  const chip = panel.getByTestId("chat-scope");
+  await expect(chip).toHaveAttribute("data-kind", "decision");
+  await expect(chip.getByRole("tab")).toHaveText(["Decision", "Customer", "Company"]);
   // The page holds an evaluated deal with counters, so all four Deals questions are offered.
   await expect(panel.locator('[data-testid^="prompt-"]')).toHaveText([
     "Why are we countering this?",
@@ -398,7 +399,8 @@ test("the Deals question about the deal explains the verdict the page evaluated,
   await expect(why.getByTestId("chat-reply")).not.toContainText("no verdict to explain");
   // A Business page says it in the reply, in words; the verdict panel (outcome, tier, codes) is the Demo views'.
   await expect(why.getByTestId("chat-outcome")).toHaveCount(0);
-  await expect(panel.getByTestId("chat-discussing")).toHaveText("Discussing: the Foshan Home Retail Co. offer");
+  await expect(panel.getByTestId("chat-discussing")).toHaveText(/^Answered about: .*Foshan/);
+  await expect(panel.getByTestId("chat-discussing")).toHaveAttribute("data-mismatch", "false");
 
   await panel.getByTestId("prompt-page-original").click();
   const original = panel.getByTestId("chat-turn").last();

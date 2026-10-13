@@ -61,7 +61,7 @@ export function WhatIfVerdictCard({ r, loading }: { r: WhatIfResult; loading: bo
       id="whatif-engine"
       title={t("whatif.engine")}
       actions={
-        <span className="flex items-center gap-2 text-meta text-ink-3" aria-live="polite">
+        <span className="flex items-center gap-2 text-supporting text-ink-3" aria-live="polite">
           {loading ? (
             <>
               <Spinner /> {t("whatif.updating")}
@@ -101,11 +101,11 @@ const RESULT_TEXT: Partial<Record<Tone, string>> = { ok: "text-ok-fg", warn: "te
 function SummaryFigure({ label, value, sub, tone, testId }: { label: string; value: string; sub?: string | null; tone?: Tone; testId?: string }) {
   return (
     <div className="min-w-0 rounded-tile border border-line bg-subtle px-3.5 py-3">
-      <dt className="text-meta font-medium text-ink-3">{label}</dt>
+      <dt className="text-supporting font-medium text-ink-3">{label}</dt>
       <dd className={`mt-0.5 break-words text-lg font-semibold tabular-nums ${(tone && RESULT_TEXT[tone]) ?? "text-ink"}`} data-testid={testId}>
         {value}
       </dd>
-      {sub ? <dd className="text-meta text-ink-3">{sub}</dd> : null}
+      {sub ? <dd className="text-supporting text-ink-3">{sub}</dd> : null}
     </div>
   );
 }
@@ -116,11 +116,10 @@ function SummaryFigure({ label, value, sub, tone, testId }: { label: string; val
  * dictionary and every figure a server display string; days are distances from today. The detail cards follow
  * behind "How this was worked out".
  */
-export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; loading: boolean; today: number }) {
+export function WhatIfSummaryCard({ r, loading }: { r: WhatIfResult; loading: boolean }) {
   const { t } = useI18n();
   const result = RESULT[r.outcome] ?? RESULT.NO_VERDICT;
   const f = r.forward;
-  const breach = r.reserve.breach_day;
   const p = r.plan;
   const needsFunding = Boolean(p && p.actions.length);
   const be = r.break_even;
@@ -131,7 +130,7 @@ export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; load
       title={t("whatif.verdict")}
       actions={
         loading ? (
-          <span className="flex items-center gap-2 text-meta text-ink-3" aria-live="polite">
+          <span className="flex items-center gap-2 text-supporting text-ink-3" aria-live="polite">
             <Spinner /> {t("whatif.updating")}
           </span>
         ) : (
@@ -149,9 +148,9 @@ export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; load
         <SummaryFigure label={t("whatif.fig.giveaways")} value={f.total_display} sub={t("whatif.fig.limit", { cap: f.cap_display })} tone={f.over_cap ? "bad" : undefined} testId="whatif-forward-total" />
         <SummaryFigure
           label={t("whatif.fig.cash")}
-          value={breach !== null ? t("whatif.fig.below", { when: whenText(breach, today, t) }) : t("whatif.fig.above")}
+          value={r.reserve.cash_text ?? "–"}
           sub={r.trajectory ? t("whatif.fig.lowest", { amount: r.trajectory.min_cash.text }) : null}
-          tone={breach !== null ? (r.reserve.curable ? "warn" : "bad") : "ok"}
+          tone={r.reserve.stays_above == null ? undefined : r.reserve.stays_above ? "ok" : r.reserve.curable ? "warn" : "bad"}
           testId="whatif-cash-fig"
         />
         <SummaryFigure
@@ -162,7 +161,7 @@ export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; load
           testId="whatif-plan-cost"
         />
       </dl>
-      <p className="mt-3 text-meta text-ink-3">{t("whatif.hypothetical.note")}</p>
+      <p className="mt-3 text-supporting text-ink-3">{t("whatif.hypothetical.note")}</p>
     </Card>
   );
 }
@@ -211,7 +210,7 @@ export function WhatIfCashCard({ r, today }: { r: WhatIfResult; today: number })
           showCured={Boolean(r.funded)}
         />
       </div>
-      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-meta text-ink-2">
+      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-supporting text-ink-2">
         <li className="flex items-center gap-1.5">
           <span className="inline-block h-0.5 w-5 bg-brand-600" aria-hidden />
           {t("whatif.legend.cash")}
@@ -252,7 +251,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
         capFen={f.cap_fen}
         capLabel={f.cap_display}
       />
-      <p className="text-meta text-ink-3">{t("whatif.meter.headroom", { x: f.headroom_display })}</p>
+      <p className="text-supporting text-ink-3">{t("whatif.meter.headroom", { x: f.headroom_display })}</p>
       {f.items.length ? (
         <ul className="mt-3 space-y-2 text-sm">
           {f.items.map((it) => (
@@ -261,7 +260,7 @@ export function WhatIfMeterCard({ r }: { r: WhatIfResult }) {
                 <span className="text-ink-2">{it.label}</span>
                 <span className="font-medium tabular-nums">{it.value_display}</span>
               </div>
-              <p className="mt-0.5 break-words font-mono text-meta leading-relaxed text-ink-3">{it.formula}</p>
+              <p className="mt-0.5 break-words font-mono text-supporting leading-relaxed text-ink-3">{it.formula}</p>
             </li>
           ))}
         </ul>
@@ -281,14 +280,14 @@ export function WhatIfCovenantsCard({ r }: { r: WhatIfResult }) {
             title={`${c.label}: ${c.formula}`}
             className={`min-w-28 flex-1 rounded-tile border px-3 py-2 ${c.ok ? "border-ok-line bg-ok-bg" : "border-bad-line bg-bad-bg"}`}
           >
-            <p className="text-meta font-medium text-ink-3">{t(`whatif.covenant.${c.code}`)}</p>
+            <p className="text-supporting font-medium text-ink-3">{t(`whatif.covenant.${c.code}`)}</p>
             <p className={`text-lg font-semibold tabular-nums ${c.ok ? "text-ok-fg" : "text-bad-fg"}`}>{c.observed}</p>
-            <p className="text-meta text-ink-3">{c.limit}</p>
+            <p className="text-supporting text-ink-3">{c.limit}</p>
           </li>
         ))}
       </ul>
       {r.covenants.some((c) => c.code === "DSCR_MIN") ? (
-        <p className="mt-2 text-meta text-ink-3">{t("dscr.readingNote")}</p>
+        <p className="mt-2 text-supporting text-ink-3">{t("dscr.readingNote")}</p>
       ) : null}
     </Card>
   );
@@ -306,7 +305,7 @@ export function WhatIfPlanCard({ r }: { r: WhatIfResult }) {
       </p>
       {needsFunding && p ? (
         <>
-          <p className="mt-0.5 text-meta text-ink-3">{t("whatif.plan.need", { x: p.need_display })}</p>
+          <p className="mt-0.5 text-supporting text-ink-3">{t("whatif.plan.need", { x: p.need_display })}</p>
           <ul className="mt-2 space-y-1 text-sm">
             {p.costs.map((c) => (
               <li key={c.label} className="flex justify-between gap-3">
@@ -347,7 +346,7 @@ export function WhatIfCountersCard({ r }: { r: WhatIfResult }) {
               <span className="text-sm font-medium tabular-nums text-ink-2">{c.supplier_cost_display}</span>
             </div>
             <p className="mt-1 text-sm text-ink">{c.text}</p>
-            <p className="mt-1 text-meta text-ink-3">{c.rationale}</p>
+            <p className="mt-1 text-supporting text-ink-3">{c.rationale}</p>
           </li>
         ))}
       </ul>

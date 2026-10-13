@@ -39,6 +39,7 @@
   "parse_source": "rules",
   "trace_id": "rec-home-go:2",
   "context_echo": null,
+  "scope_used": null,
   "decision_id": "alert:ALERT-RESERVE-42:v7",
   "decision_recorded": true
 }

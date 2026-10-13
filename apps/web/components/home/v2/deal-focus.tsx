@@ -148,7 +148,7 @@ export function DealFocusPanel({
   }));
   const termCell = (p: PicturePath, key: string) => {
     const x = term(p, key);
-    return x ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>—</span>;
+    return x && (x.value_text || x.instead_of_text) ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>—</span>;
   };
   const economics = (p: PicturePath) => {
     const parts = p.cost_components ?? [];
@@ -234,7 +234,7 @@ export function DealFocusPanel({
     facts?.invoice_value_display ? { key: "invoice", label: t("hv2.deal.invoice"), value: facts.invoice_value_display } : !facts && outstanding ? { key: "outstanding", label: outstanding.label, value: outstanding.value_display } : null,
     facts?.requested_discount_display ? { key: "discount", label: t("hv2.deal.discount"), value: facts.requested_discount_display } : !facts && askTerm("early_payment") ? { key: "early_payment", label: askTerm("early_payment")!.label, value: askTerm("early_payment")!.value_text } : null,
     facts?.requested_term_text ? { key: "term", label: t("hv2.deal.term"), value: facts.requested_term_text } : !facts && askTerm("payment_terms") ? { key: "payment_terms", label: askTerm("payment_terms")!.label, value: askTerm("payment_terms")!.value_text } : null,
-  ].filter((k): k is { key: string; label: string; value: string } => k !== null);
+  ].filter((k): k is { key: string; label: string; value: string } => k !== null && Boolean(k.value));
 
   // Round five: the right column of a deal is ONE card, "Cash impact of this deal": the deal's own step chart (as asked grey, FLOW's reply purple, the reserve hairline, the window control), the two lowest
   // points named in the server's words under it (the recommended in purple) and the quiet line that company cash stays separate. It shares one height with the deal card (the taller decides).

@@ -7893,7 +7893,7 @@
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of a 1.00% rebate"
           }
         ],
@@ -9909,7 +9909,7 @@
           {
             "key": "early_payment",
             "label": "Early payment",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of 1.20% off ¥420,000.00"
           },
           {
@@ -11915,6 +11915,7 @@
         "day": 0,
         "label": "Today",
         "title": "Today",
+        "when": "today",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -11975,6 +11976,7 @@
         "day": 30,
         "label": "In 30 days",
         "title": "In 30 days",
+        "when": "in 30 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12036,6 +12038,7 @@
         "day": 47,
         "label": "In 47 days",
         "title": "In 47 days",
+        "when": "in 47 days",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -12099,6 +12102,7 @@
         "day": 60,
         "label": "In 60 days",
         "title": "In 60 days",
+        "when": "in 60 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12160,6 +12164,7 @@
         "day": 62,
         "label": "In 62 days",
         "title": "In 62 days",
+        "when": "in 62 days",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -12217,12 +12222,13 @@
         "day": 66,
         "label": "In 66 days",
         "title": "In 66 days",
+        "when": "in 66 days",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "Day 66",
+        "word": "End, in 66 days",
         "text": "No cash moves on any path.",
         "values": [
           {
@@ -12302,7 +12308,19 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "Back to Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   },
   "zh": {
     "offer_id": "OFF-f806f79b6c21",
@@ -20198,7 +20216,7 @@
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 1.00% 返利"
           }
         ],
@@ -22214,7 +22232,7 @@
           {
             "key": "early_payment",
             "label": "提前付款",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 ¥420,000.00 减免 1.20%"
           },
           {
@@ -24220,6 +24238,7 @@
         "day": 0,
         "label": "今天",
         "title": "今天",
+        "when": "今天",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -24280,6 +24299,7 @@
         "day": 30,
         "label": "30 天后",
         "title": "30 天后",
+        "when": "30 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24341,6 +24361,7 @@
         "day": 47,
         "label": "47 天后",
         "title": "47 天后",
+        "when": "47 天后",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -24404,6 +24425,7 @@
         "day": 60,
         "label": "60 天后",
         "title": "60 天后",
+        "when": "60 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24465,6 +24487,7 @@
         "day": 62,
         "label": "62 天后",
         "title": "62 天后",
+        "when": "62 天后",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -24522,12 +24545,13 @@
         "day": 66,
         "label": "66 天后",
         "title": "66 天后",
+        "when": "66 天后",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "第 66 天",
+        "word": "终点，66 天后",
         "text": "各路径都没有现金变动。",
         "values": [
           {
@@ -24607,6 +24631,18 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "返回Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   }
 }

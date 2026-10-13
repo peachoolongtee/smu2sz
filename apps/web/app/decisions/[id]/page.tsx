@@ -26,7 +26,8 @@ function Fact({ label, children, testId, figure = false }: { label: string; chil
 function RecordBody({ d }: { d: DecisionView }) {
   const { t } = useI18n();
   const sent = d.response?.sent ?? null;
-  const dealHome = d.family === "DEAL" ? "/deals" : "/approvals";
+  // A deal opens on its own negotiation in Deals (the record's id is the selection); a funding request opens Approvals.
+  const dealHome = d.family === "DEAL" ? `/deals?decision=${encodeURIComponent(d.id)}` : "/approvals";
   // The server chooses the tone of the state; a state that waits for the owner, or leaves something short, is the warning tone, never a calm "done".
   const tone: Tone = d.state_tone ?? (d.residual ? "warn" : "neutral");
   const awaitsOwner = d.authorization?.status === "PENDING";

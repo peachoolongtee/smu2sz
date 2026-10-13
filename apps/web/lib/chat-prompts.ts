@@ -107,6 +107,35 @@ const PAGE: Record<string, Record<Lang, Prompt[]>> = {
       { id: "page-waiting", label: "chat.p.page.waiting", text: "我们在等什么？" },
     ],
   },
+  // A customer's page and Activity have questions of their own (ticket #130), each one the rules read (tests/nl/test_business_page_prompts.py).
+  "/customers": {
+    en: [
+      { id: "page-owes", label: "chat.p.page.owes", text: "Who owes us money?" },
+      { id: "page-overdue", label: "chat.p.page.overdue", text: "What is overdue?" },
+      { id: "page-late", label: "chat.p.page.late", text: "What happens if this payment is late?" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "What are we waiting for?" },
+    ],
+    zh: [
+      { id: "page-owes", label: "chat.p.page.owes", text: "谁欠我们钱？" },
+      { id: "page-overdue", label: "chat.p.page.overdue", text: "哪些款项逾期了？" },
+      { id: "page-late", label: "chat.p.page.late", text: "如果这笔款项延迟会怎样？" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "我们在等什么？" },
+    ],
+  },
+  "/activity": {
+    en: [
+      { id: "page-changed", label: "chat.p.page.changed", text: "What changed today?" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "What are we waiting for?" },
+      { id: "page-latepay", label: "chat.p.page.latepay", text: "Which payments are late?" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "Who owes us money?" },
+    ],
+    zh: [
+      { id: "page-changed", label: "chat.p.page.changed", text: "今天有什么变化？" },
+      { id: "page-waiting", label: "chat.p.page.waiting", text: "我们在等什么？" },
+      { id: "page-latepay", label: "chat.p.page.latepay", text: "哪些回款没到？" },
+      { id: "page-owes", label: "chat.p.page.owes", text: "谁欠我们钱？" },
+    ],
+  },
   "/cash": {
     en: [
       { id: "page-plan", label: "chat.p.page.plan", text: "Why did FLOW choose this plan?", needs: "plan" },
@@ -145,7 +174,9 @@ export function promptsFor(role: NlActor, lang: Lang, pathname?: string | null, 
   if (role !== "OWNER") return BUYER[lang];
   const facts = opts.facts ?? NO_FACTS;
   const shown = (list: Prompt[] | undefined) => (list ?? []).filter((p) => !p.needs || facts[p.needs]);
-  if (opts.business) return shown((pathname ? PAGE[pathname] : undefined)?.[lang] ?? PAGE["/"][lang]);
-  const page = pathname && isBusinessRoute(pathname) ? shown(PAGE[pathname]?.[lang]) : [];
+  // A customer's page (`/customers/{id}`) takes the customer questions, whichever customer.
+  const key = pathname?.startsWith("/customers/") ? "/customers" : pathname;
+  if (opts.business) return shown((key ? PAGE[key] : undefined)?.[lang] ?? PAGE["/"][lang]);
+  const page = pathname && isBusinessRoute(pathname) ? shown(PAGE[key as string]?.[lang]) : [];
   return [...page, ...OWNER[lang]];
 }

@@ -26,7 +26,7 @@ const BRAND_600 = "rgb(3, 104, 233)";
 /** The ink primary of the owner's mockup language (Home and the pages that have taken it): the same one filled button. */
 const INK_BUTTON = "rgb(23, 29, 30)";
 
-/** Visible elements filled with the brand blue: the page's primary actions. */
+/** Visible elements filled with the brand blue (or, inside the mockup scope, the ink button): the page's primary actions. */
 export async function filledBrand(page: Page): Promise<number> {
   return page.evaluate((fills) => {
     const visible = (el: Element) => {
@@ -78,10 +78,9 @@ export async function walkAway(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/verdict/);
 }
 
-/** A counter's Send asks once, as Home's Run does: the first press shows what will happen, the second sends exactly that. `scope` holds the button. */
-export async function sendCounter(scope: Page | Locator, option = ""): Promise<void> {
-  await scope.getByTestId(option ? `deal-send-${option}` : "deal-send").click();
-  await scope.getByTestId(option ? `deal-send-confirm-${option}` : "deal-send-confirm").click();
+/** Send, from the open review: the receipt on screen is the review and the one commit button sends (the page's "Review and send the counter" opens it first; `openReview`). `scope` holds the button. */
+export async function sendCounter(scope: Page | Locator): Promise<void> {
+  await scope.getByTestId("deal-send").click();
 }
 
 /**
@@ -96,18 +95,41 @@ export async function openStoryFold(page: Page, card: "story-more" | "story-toda
   if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
 }
 
-/** The open deal's verdict heading: the decision queue's `h2`, or (a server without the exposure read) the page's own. */
-export const verdictHeading = (page: Page): Locator => page.getByTestId("queue-heading").or(page.getByTestId("deal-recommendation"));
+/** The open deal's heading: the selected negotiation's `h2` (the verdict in a few words). */
+export const verdictHeading = (page: Page): Locator => page.getByTestId("queue-heading");
 
-/** The queue's "Review and send the counter" opens the send in place; a page without the queue has the send already. Waits for whichever comes first, then opens the review if there is one. */
+/** "Review and send the counter" opens the commitment receipt in place above the one commit button. Waits for it, then opens the review. */
 export async function openReview(page: Page): Promise<void> {
   const review = page.getByTestId("queue-review-open");
-  await review.or(page.getByTestId("deal-send")).first().waitFor();
-  if (await review.count()) await review.click();
+  await review.waitFor();
+  await review.click();
+  await page.getByTestId("queue-review").waitFor();
 }
 
-/** The queue holds the advanced details (the buyer's message, the calculations) inside its comparison fold: open that fold when there is one. */
+/** "Compare responses" opens the full table of every response under the two panes; opens it when it is closed. */
 export async function openCompare(page: Page): Promise<void> {
-  const fold = page.getByTestId("queue-compare");
-  if ((await fold.count()) && !(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
+  const toggle = page.getByTestId("deal-compare-toggle");
+  await toggle.waitFor();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await page.getByTestId("deal-compare-table").or(page.getByTestId("deal-compare-stack")).first().waitFor();
+}
+
+/** The inbox card opens on Deals while nothing needs the owner and no negotiation is selected, and folds to one row otherwise: opens it when it is folded. */
+export async function openInbox(page: Page): Promise<void> {
+  const fold = page.getByTestId("inbox-back");
+  await page.getByTestId("deals-inbox").waitFor();
+  if (await fold.count()) await fold.click();
+  await page.getByTestId("inbox-list").waitFor();
+}
+
+/**
+ * The package offer read on Deals as the owner does it: the inbox's first message opens the negotiation (the address then names it), "Check against my limits" reads it against the
+ * limits, and the decision level appears. Leaves the page on the selected negotiation.
+ */
+export async function checkedDeal(page: Page, message = "EX01"): Promise<void> {
+  await page.goto("/deals");
+  await openInbox(page);
+  await page.getByTestId(`inbox-msg-${message}`).click();
+  await page.getByTestId("queue-check-button").click();
+  await page.getByTestId("queue-recommends").waitFor();
 }

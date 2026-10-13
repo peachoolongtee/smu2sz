@@ -5914,11 +5914,85 @@
         "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
       ],
       "recheck_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+      "receipt": {
+        "authorizes_text": "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+        "executes_now_text": "Draws ¥149,986.20 on the Bank credit line today; Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)",
+        "others_must_agree_text": "Foshan Home Retail Co. must accept the counter before it takes effect.",
+        "in_hand_vs_future_text": "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives.",
+        "gross_display": null,
+        "fees_display": "¥3,027.77",
+        "net_display": null,
+        "when_text": "As soon as you confirm.",
+        "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first. Runs when you send, whether or not the buyer agrees. If the buyer declines, it is sized to the gap as it stands without the agreement: Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.",
+        "authority_text": "FLOW can send it. Your approval is not needed.",
+        "remaining_text": "Foshan Home Retail Co. has not accepted yet; the agreement stands only if it does."
+      },
       "supplier_cost_display": "¥3,027.77",
       "forward_value_display": "¥0.00",
       "verdict_id": "VER-ad144620d269",
       "state_version": 1
     },
+    "priced_responses": [
+      {
+        "counter_id": "CTR-72a07f7c0f50",
+        "label": "Option A",
+        "label_text": "Option A",
+        "send_scope": "Sends Option A to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits.",
+        "send_scope_lines": [
+          "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+          "Draws ¥149,986.20 on the Bank credit line today",
+          "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
+        ],
+        "recheck_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+        "receipt": {
+          "authorizes_text": "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+          "executes_now_text": "Draws ¥149,986.20 on the Bank credit line today; Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)",
+          "others_must_agree_text": "Foshan Home Retail Co. must accept the counter before it takes effect.",
+          "in_hand_vs_future_text": "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives.",
+          "gross_display": null,
+          "fees_display": "¥3,027.77",
+          "net_display": null,
+          "when_text": "As soon as you confirm.",
+          "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first. Runs when you send, whether or not the buyer agrees. If the buyer declines, it is sized to the gap as it stands without the agreement: Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.",
+          "authority_text": "FLOW can send it. Your approval is not needed.",
+          "remaining_text": "Foshan Home Retail Co. has not accepted yet; the agreement stands only if it does."
+        },
+        "supplier_cost_display": "¥3,027.77",
+        "forward_value_display": "¥0.00",
+        "verdict_id": "VER-ad144620d269",
+        "state_version": 1
+      },
+      {
+        "counter_id": "CTR-be519b1e4c69",
+        "label": "Option B",
+        "label_text": "Option B",
+        "send_scope": "Sends Option B to the buyer (the reply is simulated); records the agreement, with your approval when it changes terms; runs the funding for any remaining gap within your limits.",
+        "send_scope_lines": [
+          "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+          "Draws ¥90,000.00 on the Bank credit line today",
+          "Requests ¥315,000.00 of invoice financing, arriving in 3 days",
+          "Funding cost ¥3,706.46 in addition"
+        ],
+        "recheck_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+        "receipt": {
+          "authorizes_text": "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+          "executes_now_text": "Draws ¥90,000.00 on the Bank credit line today; Requests ¥315,000.00 of invoice financing, arriving in 3 days; Funding cost ¥3,706.46 in addition",
+          "others_must_agree_text": "Foshan Home Retail Co. must accept the counter before it takes effect.",
+          "in_hand_vs_future_text": "The funding arrives in 3 days. Nothing from Foshan Home Retail Co. counts as cash until it arrives.",
+          "gross_display": null,
+          "fees_display": "¥0.00",
+          "net_display": null,
+          "when_text": "As soon as you confirm.",
+          "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first. Runs when you send, whether or not the buyer agrees. If the buyer declines, it is sized to the gap as it stands without the agreement: Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.",
+          "authority_text": "It changes your terms, so you approve it first.",
+          "remaining_text": "Foshan Home Retail Co. has not accepted yet; the agreement stands only if it does."
+        },
+        "supplier_cost_display": "¥0.00",
+        "forward_value_display": "¥0.00",
+        "verdict_id": "VER-ad144620d269",
+        "state_version": 1
+      }
+    ],
     "advanced": {
       "keys": {
         "parsed_obligations": [

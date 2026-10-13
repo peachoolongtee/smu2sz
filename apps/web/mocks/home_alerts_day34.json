@@ -105,7 +105,7 @@
       "basis": "CONSERVATIVE",
       "amount_display": "¥162,800.00",
       "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
-      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
+      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-HEADROOM-34",

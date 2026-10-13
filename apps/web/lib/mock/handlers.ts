@@ -59,6 +59,7 @@ import type {
   EnvelopeView,
   ExposureView,
   BuyerExposureView,
+  CompareView,
   ReceivablesRead,
   ReceivablesWorthView,
   ReconciliationView,
@@ -973,6 +974,14 @@ export async function getEnvelope(buyerId: string, _lang: "en" | "zh", zone = fa
   if (buyerId !== "BUYER-1") return null;
   const view = await strategyRecording<EnvelopeView>(envelopeRecordings);
   return zone ? view : { ...view, zone: [] };
+}
+
+/** GET /offers/{id}/compare: no recording yet (the comparator is re-recorded once the server's Slice B words land); absent, as a server with the feature off. */
+export async function getOfferCompare(offerId: string, lang: "en" | "zh"): Promise<CompareView | null> {
+  void offerId;
+  void lang;
+  await delay();
+  return null;
 }
 
 /** GET /offers/{id}/exposure: recorded for the package offer, in both languages; any other offer has none (null, as a server with the feature off). */

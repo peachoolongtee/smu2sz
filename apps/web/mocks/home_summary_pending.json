@@ -4929,12 +4929,164 @@
       {
         "id": "alert:ALERT-PASTDUE-RCV-A",
         "when": "2 days ago",
-        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
         "kind": "LATE"
       }
     ],
     "empty_text": "Nothing has changed lately.",
     "href": "/activity"
+  },
+  "home_v2": {
+    "summary_text": "One funding action waits for your approval. One collection needs you.",
+    "upcoming": [
+      {
+        "label": "Payroll is paid",
+        "amount_display": "−¥200k",
+        "when": "in 8 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "Foshan pays",
+        "amount_display": "+¥420k",
+        "when": "in 13 days",
+        "kind": "inflow"
+      },
+      {
+        "label": "Debt service is paid",
+        "amount_display": "−¥45k",
+        "when": "in 26 days",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "CASH AVAILABLE",
+        "value_display": "¥300,000",
+        "note": "at your ¥300k minimum",
+        "tone": "warn",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 30000000,
+          "min_display": "¥300k",
+          "headroom_text": "¥0",
+          "cash_display": "¥300,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "LOWEST CASH AHEAD",
+        "value_display": "¥100,000",
+        "note": "¥200k below your minimum in 8 days · current books, the plan ran",
+        "short_note": "¥200k shortfall in 8 days",
+        "tone": "bad",
+        "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
+        "with_plan": {
+          "label": "with plan",
+          "value_text": "¥300,000"
+        }
+      },
+      "funding": {
+        "state": "PROPOSED",
+        "eyebrow": "PLANNED FUNDING",
+        "value_display": "¥200,000",
+        "note": "¥200k invoice financing in 3 days",
+        "status_text": "Waiting for your approval",
+        "hint": "Conditional on you approving the plan; not counted as cash."
+      }
+    },
+    "action": {
+      "variant": "ACTION",
+      "key": "approval:APR-000001",
+      "tone": "bad",
+      "eyebrow": "NEXT ACTION · WITHIN 8 DAYS",
+      "title": "Secure ¥200,000 before payroll in 8 days.",
+      "text": "FLOW's plan needs your approval because of its cost: ¥200k invoice financing in 3 days, planned · cost ¥1,782.19 · your approval is needed.",
+      "facts": [
+        {
+          "label": "Estimated cost",
+          "value": "¥1,782.19"
+        },
+        {
+          "label": "Funding",
+          "value": "¥200k invoice financing in 3 days, planned"
+        },
+        {
+          "label": "Approval",
+          "value": "Your approval is needed"
+        }
+      ],
+      "primary": {
+        "label": "Review the plan",
+        "href": "/approvals#approval-APR-000001"
+      },
+      "secondary": {
+        "label": "Compare",
+        "href": "/cash#cash-options"
+      },
+      "control": "APPROVE_PLAN",
+      "approval_text": "Needs your approval before it runs",
+      "approval_needed": true,
+      "consequence_text": "Cash first falls below your minimum in 8 days. Even with the plan that ran, the shortfall reaches ¥200k in 8 days.",
+      "legs": [
+        {
+          "label": "Invoice financing",
+          "amount_display": "¥200,000",
+          "amount_fen": 20000000,
+          "lands_when": "in 3 days",
+          "lands_day": 3,
+          "cost_display": "¥1,782.19",
+          "repaid_when": null,
+          "state": "PLANNED",
+          "state_text": "Planned",
+          "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+          "share_text": "100%"
+        }
+      ],
+      "cost_basis_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    },
+    "chart": {
+      "scope_title": "COMPANY CASH FORECAST",
+      "legend": [
+        {
+          "label": "Current books · the plan ran",
+          "kind": "current"
+        },
+        {
+          "label": "If FLOW's plan runs (planned)",
+          "kind": "planned"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "The lowest point · in 8 days",
+        "projected_display": "¥100,000",
+        "minimum_display": "¥300,000",
+        "third_label": "Shortfall",
+        "third_display": "¥200,000",
+        "note": "With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned."
+      },
+      "lowest": {
+        "cause": null
+      },
+      "scenario_title_text": null,
+      "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
+    },
+    "links": [
+      {
+        "label": "Where the cash goes",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "Facility headroom",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "What you are owed, by when",
+        "href": "/receivables"
+      },
+      {
+        "label": "All deals",
+        "href": "/deals"
+      }
+    ]
   },
   "next_action": {
     "alert_id": "ALERT-RESERVE-42",
@@ -5025,6 +5177,19 @@
         "amount_display": "¥200,000.00"
       }
     ],
+    "receipt": {
+      "authorizes_text": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "executes_now_text": "Nothing runs until you approve it.",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": "Arrives: ¥200k in 3 days.",
+      "gross_display": "¥200,000.00",
+      "fees_display": "¥1,782.19",
+      "net_display": null,
+      "when_text": "The last funds land in 3 days.",
+      "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+      "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+      "remaining_text": null
+    },
     "after_lowest_display": "¥300,000.00"
   },
   "approvals": [
@@ -5112,8 +5277,8 @@
       "seq": null,
       "kind": "LATE",
       "actor": "",
-      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
-      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
+      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
       "event_detail": null,
       "when": "2 days ago",
       "id": "alert:ALERT-PASTDUE-RCV-A",
@@ -5121,7 +5286,7 @@
       "commitment_id": null,
       "decision_id": null,
       "superseded_by": null,
-      "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+      "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
       "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
       "why_it_matters_as_of": "now",
       "what_remains": null,
@@ -5174,7 +5339,7 @@
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "2 days ago"
     },

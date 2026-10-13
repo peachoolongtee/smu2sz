@@ -107,5 +107,6 @@
     "summary_text": "¥200,000.00 的发票融资已于今天提交；资金将于3 天后到账。"
   },
   "result_state_text": "已批准，资金将于3 天后到账",
-  "result_tone": "info"
+  "result_tone": "info",
+  "receipt": null
 }

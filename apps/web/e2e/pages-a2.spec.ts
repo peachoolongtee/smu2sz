@@ -14,7 +14,7 @@ const noSideScroll = (page: import("@playwright/test").Page) => page.evaluate(()
 for (const [path, ready] of [
   ["/limits", "limits-rules"],
   ["/documents", "docs-list"],
-  ["/whatif", "whatif-controls"],
+  ["/whatif", "whatif-ask"], // no negotiation named: the page asks which
   ["/capex", ""],
   ["/cash", "cash-forecast"],
 ] as const) {

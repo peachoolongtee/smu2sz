@@ -125,12 +125,19 @@ async function cureRow(): Promise<ApprovalView | null> {
 
 // ---------------------------------------------------------------- the six scenes
 
+/** Deals on the story's own negotiation: the address names it (`customer`, `decision`), because the address is the selection and the session holds none (ticket #126). */
+const dealsRoute = (hash = "") => (demo: DemoState): string => {
+  const id = demo.storyOfferId;
+  const buyer = id ? demo.offers[id]?.offer.counterparty_id : null;
+  return id ? `/deals?${buyer ? `customer=${encodeURIComponent(buyer)}&` : ""}decision=${encodeURIComponent(`deal:${id}`)}${hash}` : `/deals${hash}`;
+};
+
 export const DEMO_STEPS: DemoStep[] = [
   // 1. Buyer asks: the books are reset, the buyer's message arrives and is read.
   {
     id: "ask",
     scene: "buyer",
-    route: "/deals",
+    route: dealsRoute(),
     run: async () => {
       await demoReset();
       clearDemo();
@@ -144,7 +151,7 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     id: "decide",
     scene: "decision",
-    route: "/deals",
+    route: dealsRoute(),
     run: async () => {
       const id = storyOffer();
       // Once the answer is sent the books have moved: a replay shows the verdict the owner decided on, it does not rewrite it.
@@ -161,7 +168,7 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     id: "agree",
     scene: "agreement",
-    route: "/deals#commitments",
+    route: dealsRoute("#commitments"),
     run: async () => {
       const id = storyOffer();
       const d = demoStore.get();

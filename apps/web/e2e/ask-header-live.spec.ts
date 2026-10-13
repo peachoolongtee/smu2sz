@@ -22,9 +22,9 @@ test("Enter in the header sends the Home's scope with the question and the chip 
   await expect(panel).toBeVisible();
   await expect(panel.getByTestId("chat-reply").first()).toBeVisible({ timeout: 30000 });
   // The server answered in the customer's scope and said it in its own words.
-  await expect(panel.getByTestId("chat-scope")).toHaveAttribute("data-scope", "customer");
-  await expect(panel.getByTestId("chat-scope")).toContainText("Foshan");
-  await expect(panel.getByTestId("chat-scope")).not.toContainText("this customer");
+  await expect(panel.getByTestId("chat-scope")).toHaveAttribute("data-kind", "customer");
+  await expect(panel.getByTestId("chat-discussing")).toContainText("Foshan");
+  await expect(panel.getByTestId("chat-discussing")).toHaveAttribute("data-mismatch", "false");
 });
 
 test("on the company's Home the scope is empty and the server answers in the company", async ({ page, request }) => {
@@ -35,9 +35,9 @@ test("on the company's Home the scope is empty and the server answers in the com
   await page.getByTestId("ask-input").fill("When does the invoice financing land?");
   await page.getByTestId("ask-input").press("Enter");
   const body = (await sent).postDataJSON() as { scope?: Record<string, string> };
-  expect(body.scope).toEqual({});
+  expect(body.scope ?? {}).toEqual({}); // the company is no scope key at all
   await expect(page.getByTestId("chat-panel").getByTestId("chat-reply").first()).toBeVisible({ timeout: 30000 });
-  await expect(page.getByTestId("chat-scope")).toHaveAttribute("data-scope", "company");
+  await expect(page.getByTestId("chat-scope")).toHaveAttribute("data-kind", "company");
 });
 
 // Every placeholder is a question the chat answers (round three): asked in both languages against the real chat route, none is out of scope or ambiguous, and each gets a reply.

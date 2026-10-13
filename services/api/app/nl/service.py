@@ -43,7 +43,7 @@ from app.nl.funding import (
     run_accelerate,
     status,
 )
-from app.nl.models import Intent, NlRequest, NlResponse, Parsed, Slots
+from app.nl.models import Intent, NlRequest, NlResponse, Parsed, ScopeUsed, Slots
 from app.nl.offers import (
     counterparty_message,
     evaluate_offer,
@@ -118,6 +118,7 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
             context = scoped.context(req.context)
             page.drop_page_binding(session)
             ctx.scope_used = scoped.used
+            ctx.scope_customer, ctx.scope_invoice = scoped.customer_id, scoped.invoice_id
             if not req.counterparty_id:
                 session.counterparty_id = scoped.customer_id
         ctx.binding = page.resolve(store, context, day=day, state=store.get_state(),
@@ -138,6 +139,7 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         parsed = _parse(ctx, req.text, classifier_backends)
         parse_source = parsed.source
         turn = _dispatch(ctx, parsed, req.text)
+        _honour_scope(ctx, scoped, store.get_state(), lang)
 
     if turn.pending is not None and turn.pending.state_version is None:
         turn.pending.bind(ctx)  # the books this proposal was made on (a plan the handler did not bind itself)
@@ -155,6 +157,19 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
         session.requests[req.request_id] = list(ctx.sent)
     session.history.append((session.turn, turn.intent.value))
     return _response(ctx, turn, parse_source, before)
+
+
+def _honour_scope(ctx: NlContext, scoped: page.ScopeResult | None, state: FinancialState, lang: str) -> None:
+    """After the turn ran: say the scope the answer was really given in. A read that listed only the scope's own rows keeps the scope (a
+    negotiation's rows are its buyer's, so it says the customer); a read that is company-wide whatever was asked (cash status, what changed) says
+    "company", so the page shows the mismatch instead of a customer label over the company's figures."""
+    if scoped is None or scoped.used is None or ctx.scope_read is None:
+        return
+    if ctx.scope_read == "company":
+        ctx.scope_used = ScopeUsed(kind="company", label=t(ctx, "Your whole company", "整个公司"))
+    elif scoped.used.kind == "decision" and scoped.customer_id is not None:
+        name = next((c.name for c in state.counterparties if c.id == scoped.customer_id), scoped.customer_id)
+        ctx.scope_used = ScopeUsed(kind="customer", label=name)
 
 
 def opener(session_id: str | None, lang: str | None, *, store: LedgerStore, executor: Executor, day: int,
@@ -276,7 +291,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
-    if (p.intent in cap.OWNER_ONLY or p.intent == Intent.CHANGES or {"waiting", "arrival"} & set(p.matched)) \
+    if (p.intent in cap.OWNER_ONLY or p.intent == Intent.CHANGES or {"waiting", "arrival", "owed"} & set(p.matched)) \
             and not ctx.owner_authenticated:
         return cap.needs_sign_in(ctx, p.intent)
     match p.intent:
@@ -296,8 +311,12 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
                 return reads.waiting(ctx)
             if "arrival" in p.matched:
                 return reads.arrival(ctx)
+            if "owed" in p.matched:
+                return reads.owed(ctx)
+            ctx.scope_read = "company"  # the cash status is the company's, whatever the request narrowed to
             return status(ctx)
         case Intent.CHANGES:
+            ctx.scope_read = "company"  # what changed is the company's log
             return reads.changes(ctx)
         case Intent.RECORD_FACT:
             return cap.record_fact(ctx, slots)

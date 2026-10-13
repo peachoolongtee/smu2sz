@@ -158,9 +158,9 @@ test("Enter opens the Ask FLOW panel with the question already sent, under the p
     "What does the counter cost me?",
   );
   // On the company's Home the scope is the company; a turn is on its way or answered (the busy word or a reply).
-  await expect(panel.getByTestId("chat-scope")).toContainText("your company");
+  await expect(panel.getByTestId("chat-scope")).toContainText("Company");
   await expect(panel.getByTestId("chat-scope")).toHaveAttribute(
-    "data-scope",
+    "data-kind",
     "company",
   );
   await expect(
@@ -188,23 +188,24 @@ test("the scope chip follows the Home's selection: a deal, a customer, the compa
   await page.getByTestId("ask-input").fill("Who owes me money?");
   await page.getByTestId("ask-input").press("Enter");
   await expect(page.getByTestId("chat-scope")).toHaveAttribute(
-    "data-scope",
+    "data-kind",
     "customer",
   );
-  await expect(page.getByTestId("chat-scope")).toContainText("this customer");
+  await expect(page.getByTestId("chat-scope")).toContainText("Customer");
   await page.keyboard.press("Escape");
   await page.goto("/?customer=BUYER-1&decision=deal%3AOFF-x");
   await page.getByTestId("chat-open").click();
   await expect(page.getByTestId("chat-scope")).toHaveAttribute(
-    "data-scope",
+    "data-kind",
     "decision",
   );
-  await expect(page.getByTestId("chat-scope")).toContainText("this deal");
+  await expect(page.getByTestId("chat-scope")).toContainText("Decision");
   await page.keyboard.press("Escape");
-  // Other pages have no scope: no chip.
+  // Another page has no selection in its address: the chip is the company alone (Slice B's scope model, ticket #130).
   await page.goto("/cash");
   await page.getByTestId("chat-open").click();
-  await expect(page.getByTestId("chat-scope")).toHaveCount(0);
+  await expect(page.getByTestId("chat-scope")).toHaveAttribute("data-kind", "company");
+  await expect(page.getByTestId("chat-scope-customer")).toHaveCount(0);
 });
 
 test("a phone keeps the bottom bar's Ask and has no header input; Enter in the panel's own composer still works", async ({

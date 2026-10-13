@@ -475,7 +475,8 @@
         "counterparty_name": "Foshan Home Retail Co.",
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
-      }
+      },
+      "scope_used": null
     },
     "original": {
       "session_id": "rec-page-deal-original",
@@ -952,7 +953,8 @@
         "counterparty_name": "Foshan Home Retail Co.",
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
-      }
+      },
+      "scope_used": null
     },
     "option": {
       "session_id": "rec-page-deal-option",
@@ -1429,7 +1431,8 @@
         "counterparty_name": "Foshan Home Retail Co.",
         "decision_id": "VER-a899ca66120c",
         "invoice_id": null
-      }
+      },
+      "scope_used": null
     }
   },
   "day0": {
@@ -1450,7 +1453,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-changes:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "waiting": {
       "session_id": "rec-page-day0-waiting",
@@ -1469,7 +1473,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-waiting:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "arrival": {
       "session_id": "rec-page-day0-arrival",
@@ -1488,7 +1493,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-arrival:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "overdue": {
       "session_id": "rec-page-day0-overdue",
@@ -1507,7 +1513,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-overdue:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "late": {
       "session_id": "rec-page-day0-late",
@@ -1526,7 +1533,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-late:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "plan": {
       "session_id": "rec-page-day0-plan",
@@ -1545,14 +1553,15 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day0-plan:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     }
   },
   "day34": {
     "changes": {
       "session_id": "rec-page-day34-changes",
       "turn": 1,
-      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
+      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
       "intent": "CHANGES",
       "lang": "en",
       "plan": [],
@@ -1566,7 +1575,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-changes:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "waiting": {
       "session_id": "rec-page-day34-waiting",
@@ -1585,7 +1595,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-waiting:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "arrival": {
       "session_id": "rec-page-day34-arrival",
@@ -1604,7 +1615,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-arrival:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "overdue": {
       "session_id": "rec-page-day34-overdue",
@@ -1623,7 +1635,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-overdue:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "late": {
       "session_id": "rec-page-day34-late",
@@ -1642,7 +1655,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-late:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "plan": {
       "session_id": "rec-page-day34-plan",
@@ -1661,14 +1675,15 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-day34-plan:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     }
   },
   "pending": {
     "changes": {
       "session_id": "rec-page-pending-changes",
       "turn": 1,
-      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. Status: still waiting for your decision.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Approve ¥200,000.00 of invoice financing? It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
+      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. Status: still waiting for your decision.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: Your cash reserve becomes unsafe in 8 days. Cash falls to ¥100k, ¥200k below your ¥300k minimum cash reserve.\nStill to do:\n- Approve ¥200,000.00 of invoice financing? It costs ¥1,782.19. If you approve today, the cash lands in 3 days. If you decline, ¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
       "intent": "CHANGES",
       "lang": "en",
       "plan": [],
@@ -1682,7 +1697,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-changes:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "waiting": {
       "session_id": "rec-page-pending-waiting",
@@ -1701,7 +1717,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-waiting:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "arrival": {
       "session_id": "rec-page-pending-arrival",
@@ -1720,7 +1737,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-arrival:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "overdue": {
       "session_id": "rec-page-pending-overdue",
@@ -1739,7 +1757,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-overdue:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "late": {
       "session_id": "rec-page-pending-late",
@@ -1758,7 +1777,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-late:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "plan": {
       "session_id": "rec-page-pending-plan",
@@ -1777,14 +1797,15 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-pending-plan:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     }
   },
   "after": {
     "changes": {
       "session_id": "rec-page-after-changes",
       "turn": 1,
-      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days. Status: done.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: You're covered. Cash stays at or above your ¥300k minimum cash reserve for the next 120 days. It comes close: cash sits exactly on the minimum cash reserve today.\nStill to do:\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
+      "reply": "Since your last visit 34 days ago:\n- Time moved forward 34 days, to today.\n- You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days. Status: done.\n- ¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. Status: still unpaid.\n- Received ¥255,013.80 from Foshan Home Retail Co. Status: done.\n- ¥149,986.20 drawn on the Bank credit line. Cash received 34 days ago. Status: done.\n- Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00. Status: done.\nWhat it means for your cash: You're covered. Cash stays at or above your ¥300k minimum cash reserve for the next 120 days. It comes close: cash sits exactly on the minimum cash reserve today.\nStill to do:\n- Not yet paid: the ¥420,000.00 invoice to Foshan Home Retail Co., due 2 days ago.",
       "intent": "CHANGES",
       "lang": "en",
       "plan": [],
@@ -1798,7 +1819,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-changes:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "waiting": {
       "session_id": "rec-page-after-waiting",
@@ -1817,7 +1839,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-waiting:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "arrival": {
       "session_id": "rec-page-after-arrival",
@@ -1836,7 +1859,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-arrival:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "overdue": {
       "session_id": "rec-page-after-overdue",
@@ -1855,7 +1879,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-overdue:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "late": {
       "session_id": "rec-page-after-late",
@@ -1874,7 +1899,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-late:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     },
     "plan": {
       "session_id": "rec-page-after-plan",
@@ -1893,7 +1919,8 @@
       "security_events": [],
       "parse_source": "rules",
       "trace_id": "rec-page-after-plan:1",
-      "context_echo": null
+      "context_echo": null,
+      "scope_used": null
     }
   }
 }

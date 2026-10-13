@@ -441,7 +441,10 @@
           "observed": "¥209,960.00",
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
           "first_unfunded_day": 47,
-          "cure_cost_display": "¥2,406.67"
+          "below_days": 15,
+          "stays_above": false,
+          "cure_cost_display": "¥2,406.67",
+          "cash_text": "Below it for 15 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -2615,7 +2618,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -2689,7 +2698,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": 20
+          "first_unfunded_day": 20,
+          "below_days": 12,
+          "stays_above": false,
+          "cash_text": "Below it for 12 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -4825,7 +4837,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -4922,7 +4940,10 @@
           "observed": "¥215,000.00",
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥1,570.36 (cannot run today); the extension itself costs ¥1,247.53 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥88,113.93 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
           "first_unfunded_day": 12,
-          "cure_cost_display": "¥1,570.36"
+          "below_days": 30,
+          "stays_above": false,
+          "cure_cost_display": "¥1,570.36",
+          "cash_text": "Below it for 30 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -7084,7 +7105,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -7143,7 +7170,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 20,
+          "stays_above": false,
+          "cash_text": "Below it for 20 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -9284,7 +9314,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -9354,7 +9390,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 20,
+          "stays_above": false,
+          "cash_text": "Below it for 20 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -11506,7 +11545,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -11586,7 +11631,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 20,
+          "stays_above": false,
+          "cash_text": "Below it for 20 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -13747,7 +13795,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -13857,7 +13911,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": null
+          "first_unfunded_day": null,
+          "below_days": 0,
+          "stays_above": true,
+          "cash_text": "Stays above it"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -15013,7 +15070,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -15133,7 +15196,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": null
+          "first_unfunded_day": null,
+          "below_days": 0,
+          "stays_above": true,
+          "cash_text": "Stays above it"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -16298,7 +16364,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -16368,7 +16440,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 20,
+          "stays_above": false,
+          "cash_text": "Below it for 20 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -18519,7 +18594,13 @@
         "counters": [],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -18619,7 +18700,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": null
+          "first_unfunded_day": null,
+          "below_days": 0,
+          "stays_above": true,
+          "cash_text": "Stays above it"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -19765,7 +19849,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -19875,7 +19965,10 @@
           "cure_cost_fen": null,
           "cure_cost_display": null,
           "observed": null,
-          "first_unfunded_day": null
+          "first_unfunded_day": null,
+          "below_days": 0,
+          "stays_above": true,
+          "cash_text": "Stays above it"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -21030,7 +21123,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -21128,7 +21227,10 @@
           "cure_cost_fen": null,
           "observed": "¥215,000.00",
           "cure_note": "no admissible plan on sources able to carry a permanent need",
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 35,
+          "stays_above": false,
+          "cash_text": "Below it for 35 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -23299,7 +23401,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -23407,7 +23515,10 @@
           "cure_cost_fen": null,
           "observed": "¥215,000.00",
           "cure_note": "no admissible plan on sources able to carry a permanent need",
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 35,
+          "stays_above": false,
+          "cash_text": "Below it for 35 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -25587,7 +25698,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -25725,7 +25842,10 @@
           "observed": "¥209,960.00",
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥2,406.67 (cannot run today); the extension itself costs ¥1,871.30 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥135,040.00 on RI:BUYER-1:32: RI:BUYER-1:32 is not an invoice the executor can finance today; it is issued on day 32",
           "first_unfunded_day": 47,
-          "cure_cost_display": "¥2,406.67"
+          "below_days": 15,
+          "stays_above": false,
+          "cure_cost_display": "¥2,406.67",
+          "cash_text": "Below it for 15 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -27890,7 +28010,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -27988,7 +28114,10 @@
           "cure_cost_fen": null,
           "observed": "¥215,000.00",
           "cure_note": "no admissible plan on sources able to carry a permanent need",
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 65,
+          "stays_above": false,
+          "cash_text": "Below it for 65 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -30174,7 +30303,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -30282,7 +30417,10 @@
           "cure_cost_fen": null,
           "observed": "¥215,000.00",
           "cure_note": "no admissible plan on sources able to carry a permanent need",
-          "first_unfunded_day": 12
+          "first_unfunded_day": 12,
+          "below_days": 65,
+          "stays_above": false,
+          "cash_text": "Below it for 65 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -32477,7 +32615,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -32615,7 +32759,10 @@
           "observed": "¥209,960.00",
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥4,812.99 (cannot run today); the extension itself costs ¥5,613.90 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥180,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
           "first_unfunded_day": 47,
-          "cure_cost_display": "¥4,812.99"
+          "below_days": 45,
+          "stays_above": false,
+          "cure_cost_display": "¥4,812.99",
+          "cash_text": "Below it for 45 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -34780,7 +34927,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     },
     {
@@ -34928,7 +35081,10 @@
           "observed": "¥209,960.00",
           "cure_note": "cured on Invoice financing (onboarded platform) (sources able to carry a permanent need): committed plan: ¥4,812.99 (cannot run today); the extension itself costs ¥5,613.90 per invoice; the cure cannot run today: Invoice financing (onboarded platform): advance ¥180,040.00 on RI:BUYER-1:2: RI:BUYER-1:2 is not an invoice the executor can finance today; it is issued on day 2",
           "first_unfunded_day": 47,
-          "cure_cost_display": "¥4,812.99"
+          "below_days": 45,
+          "stays_above": false,
+          "cure_cost_display": "¥4,812.99",
+          "cash_text": "Below it for 45 days"
         },
         "trajectory": {
           "mode": "CONSERVATIVE",
@@ -37102,7 +37258,13 @@
         ],
         "notes": [],
         "compute_ms": 0,
-        "cached": false
+        "cached": false,
+        "available": true,
+        "buyer_id": "BUYER-1",
+        "buyer_name": "Foshan Home Retail Co.",
+        "invoice_text": "the ¥420,000.00 invoice to Foshan Home Retail Co., due in 32 days",
+        "scope_text": "The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one.",
+        "compare_text": null
       }
     }
   ]

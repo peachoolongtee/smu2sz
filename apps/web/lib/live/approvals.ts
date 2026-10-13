@@ -6,7 +6,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { StateTone, ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
+import type { CommitmentReceiptView, StateTone, ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -36,6 +36,8 @@ interface RawApproval {
   execution?: { status: ApprovalExecutionStatus; summary_text: string | null } | null;
   result_state_text?: string | null;
   result_tone?: StateTone | null;
+  /** The commitment receipt of a pending approval (the server's words in its order); null for a decided one. */
+  receipt?: CommitmentReceiptView | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -77,6 +79,7 @@ function toViews(approvals: RawApproval[]): ApprovalView[] {
         execution: a.execution ?? null,
         result_state_text: a.result_state_text ?? a.presentation?.result_state_text ?? null,
         result_tone: a.result_tone ?? a.presentation?.result_tone ?? null,
+        receipt: a.receipt ?? null,
       }) as ApprovalView,
   );
 }

@@ -247,7 +247,8 @@ def test_a_late_customer_is_the_collection_and_a_calm_book_has_no_queue(client):
     _run_plan(client)
     client.post("/clock/advance", json={"to_day": 10})
     calm = client.get("/home").json()["attention"]
-    assert [i["kind"] for i in calm["items"]] == ["deal"]  # the offer still waits; nothing else does
+    # the plan financed the invoice the offer was about: the offer has lapsed (it can no longer be drawn), so nothing is waiting for the owner
+    assert [i["kind"] for i in calm["items"]] == []
     # without any offer or pending landing, nothing needs the owner
     client.post("/demo/reset", json={})
     _run_plan(client)

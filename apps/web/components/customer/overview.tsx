@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
 import { PartialRead } from "@/components/business/freshness";
-import { Card, ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
-import { fromCustomer } from "@/lib/customer-href";
+import { ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
+import { ActionGroup } from "@/components/ui/action-group";
+import { OpenSection } from "@/components/ui/open-section";
+import { StateWord } from "@/components/ui/state-word";
+import { stateKey } from "@/components/ui/state-word-model";
+import { fromCustomer, contextQuery, type CustomerContext } from "@/lib/customer-href";
 import { useI18n } from "@/lib/i18n";
-import { contextQuery, type CustomerContext } from "@/lib/customer-href";
 import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
+import { focusOf, OutstandingWork } from "./outstanding";
+import type { Queue } from "@/components/deals/flow/queue-model";
+import { rowsOfCustomer } from "./outstanding";
 
 /** The colour a tone gives a figure or a value; a status is always said in the server's words as well, so colour is never the only channel. */
 const toneText: Record<OverviewTone, string> = { neutral: "text-ink", ok: "text-ok-fg", warn: "text-warn-fg", bad: "text-bad-fg" };
@@ -15,22 +21,65 @@ const toneText: Record<OverviewTone, string> = { neutral: "text-ink", ok: "text-
 /** A quiet text link inside a sentence or a row: brand text, underlined, 14 px. */
 const inlineLink = "font-bold text-brand-700 underline underline-offset-2 hover:text-brand-600";
 
-function Figure({ figure }: { figure: OverviewFigure }) {
+/** The figure's state, in the one vocabulary: the mark and the server's word (`state` is a key of the twelve; a word the browser does not know draws no state). */
+function FigureState({ figure }: { figure: OverviewFigure }) {
+  const key = stateKey(figure.state);
+  if (!key || !figure.state_text) return null;
+  return (
+    <dd className="mt-1" data-testid={`customer-figure-${figure.key}-state`} data-state={key}>
+      <StateWord state={key}>{figure.state_text}</StateWord>
+    </dd>
+  );
+}
+
+/**
+ * One of the four figures. The first is a year's gross contribution, said as that ("Estimated annual gross contribution", never "relationship value") with where it comes from
+ * right beside it (the figure's own `provenance_text`, else the economics rows' words: "projected from your books", "assumed for the Demo, not confirmed by you"); the others carry
+ * their state in the state vocabulary (planned, arranged, received, overdue ...) beside the server's note.
+ */
+function Figure({ figure, provenance }: { figure: OverviewFigure; provenance: string | null }) {
+  const { t } = useI18n();
+  const contribution = figure.key === "value";
+  // A figure with no value, no note and no state has nothing to say: it is left out, not drawn as a bare label.
+  if (!figure.value_display && !figure.note && !figure.state_text) return null;
   return (
     <div className="min-w-0 lg:border-r lg:border-line lg:px-5 lg:first:pl-0 lg:last:border-r-0" data-testid={`customer-figure-${figure.key}`}>
-      <dt className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{figure.label}</dt>
-      <dd className={`mt-1 break-words type-value font-display ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
-        {figure.value_display}
-      </dd>
+      <dt className="text-supporting font-bold text-ink-3">{contribution ? t("customer.fig.contribution") : figure.label}</dt>
+      {figure.value_display ? (
+        <dd className={`mt-1 break-words type-value font-display ${toneText[figure.tone]}`} data-testid={`customer-figure-${figure.key}-value`}>
+          {figure.value_display}
+        </dd>
+      ) : null}
       <dd className="mt-0.5 break-words text-sm text-ink-2" data-testid={`customer-figure-${figure.key}-note`}>
         {figure.note}
       </dd>
+      {contribution && provenance ? (
+        <dd className="mt-0.5 break-words text-supporting font-medium text-warn-fg" data-testid="customer-figure-value-provenance">
+          {provenance}
+        </dd>
+      ) : null}
+      <FigureState figure={figure} />
     </div>
   );
 }
 
-/** The decision card: the one place on the page that asks the owner for something. A decision waiting leads with its primary; none waiting says so and keeps the other two links. */
-function Decision({ view }: { view: CustomerOverviewView }) {
+/**
+ * Where the contribution comes from, said beside it: the figure's own word (`provenance_text`); else the weakest link of its economics (the margin's note, then the sales') unless
+ * the figure's own note already says it ("a year, estimated contribution; margin assumed for the Demo, not confirmed by you"). The server's words as they are.
+ */
+function provenanceOf(view: CustomerOverviewView): string | null {
+  const figure = view.figures?.find((f) => f.key === "value");
+  if (figure?.provenance_text) return figure.provenance_text;
+  const rows = view.economics ?? [];
+  const word = rows.find((r) => r.key === "gross_margin")?.note ?? rows.find((r) => r.key === "annual_sales")?.note ?? null;
+  return word && !(figure?.note ?? "").includes(word) ? word : null;
+}
+
+/**
+ * The commercial decision in focus: what waits (the server's question), the one filled primary and the other two links, then who may do it. The primary is the page's only
+ * filled button; none waiting says so and keeps the links as outlined buttons.
+ */
+function Focus({ view }: { view: CustomerOverviewView }) {
   const { t } = useI18n();
   const decision = view.decision;
   const rest: OverviewAction[] = decision ? decision.secondary : (view.actions ?? []);
@@ -42,38 +91,37 @@ function Decision({ view }: { view: CustomerOverviewView }) {
   if (!decision) {
     if (!view.none_text && !rest.length) return null;
     return (
-      <section aria-label={t("customer.decision")} className="motion-reveal flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
+      <section aria-label={t("customer.decision")} className="mb-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
         {view.none_text ? <p className="min-w-0 flex-[2_1_20rem] text-pretty text-sm text-ink-2">{view.none_text}</p> : null}
-        {links.length ? <div className="flex flex-wrap gap-2">{links}</div> : null}
+        {links.length ? <ActionGroup>{links}</ActionGroup> : null}
       </section>
     );
   }
-  // Source order is the reading and the tab order: the question, the actions, then what FLOW may do alone (so the actions stay in a phone's first screen).
-  // From `lg` the actions sit beside the question and the authority line under it.
+  // Nothing is the owner's to do while the buyer's reply is awaited: the way into the negotiation is an outlined button, not the page's filled one.
+  const waitsOnBuyer = decision.kind === "awaiting_buyer";
+  // A lapsed negotiation is nobody's turn: nothing to review, send or wait for. It is a closed state (neutral), and its way in is an outlined button.
+  const lapsed = decision.kind === "lapsed";
   return (
-    <Card tone="warn" id="customer-decision" labelledBy="customer-decision-title">
-      <div className="grid gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1fr)_auto]" data-testid="customer-decision">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <h2 id="customer-decision-title" className="text-meta font-extrabold uppercase tracking-[0.08em] text-warn-fg">
-            {decision.eyebrow}
-          </h2>
-          <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="customer-decision-text">
-            {decision.text}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
-          <ButtonLink href={decision.primary.href} variant="primary" data-testid="customer-decision-primary">
-            {decision.primary.label}
-          </ButtonLink>
-          {links}
-        </div>
-        {decision.authority_text ? (
-          <p className="border-l-2 border-line-strong pl-3 text-sm text-ink-2 lg:col-start-1 lg:row-start-2" data-testid="customer-decision-authority">
-            {decision.authority_text}
-          </p>
-        ) : null}
-      </div>
-    </Card>
+    <section aria-labelledby="customer-decision-title" className="mb-4 border-b border-line pb-4" id="customer-decision" data-testid="customer-decision">
+      <h3 id="customer-decision-title" className="text-supporting font-bold" data-kind={decision.kind ?? ""}>
+        {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
+        <StateWord tone={lapsed ? "neutral" : waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
+      </h3>
+      <p className="mt-1 text-pretty font-display text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="customer-decision-text">
+        {decision.text}
+      </p>
+      <ActionGroup className="mt-3" label={t("customer.decision")}>
+        <ButtonLink href={decision.primary.href} variant={waitsOnBuyer || lapsed ? "secondary" : "primary"} data-testid="customer-decision-primary">
+          {decision.primary.label}
+        </ButtonLink>
+        {links}
+      </ActionGroup>
+      {decision.authority_text ? (
+        <p className="mt-3 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="customer-decision-authority">
+          {decision.authority_text}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -94,7 +142,7 @@ function Rows({ rows, testId }: { rows: OverviewRow[]; testId: string }) {
           <dt className="text-sm text-ink-3">{r.label}</dt>
           <dd className="min-w-0 break-words text-sm">
             <Value row={r} />
-            {r.note ? <span className="mt-0.5 block text-ink-2">{r.note}</span> : null}
+            {r.note ? <span className="mt-0.5 block text-supporting text-ink-2">{r.note}</span> : null}
           </dd>
         </div>
       ))}
@@ -126,11 +174,12 @@ function Economics({ view, ctx }: { view: CustomerOverviewView; ctx: CustomerCon
   const rows = shownEconomics(view);
   if (!rows.length) return null;
   return (
-    <Card flat id="customer-economics" title={t("customer.economics")}>
+    <OpenSection first id="customer-economics" title={t("customer.economics")} testId="customer-economics">
       <Rows rows={rows} testId="customer-economics-rows" />
       {view.economics_note || (view.edit_href && view.edit_label) ? (
         <p className="mt-3 text-pretty text-sm leading-relaxed text-ink-2" data-testid="customer-economics-note">
           {view.economics_note}
+          {/* The inputs sheet is the edit route, and the server names it only while the economics are on (hidden otherwise). */}
           {view.edit_href && view.edit_label ? (
             <>
               {view.economics_note ? " " : null}
@@ -141,11 +190,11 @@ function Economics({ view, ctx }: { view: CustomerOverviewView; ctx: CustomerCon
           ) : null}
         </p>
       ) : null}
-    </Card>
+    </OpenSection>
   );
 }
 
-/** A link that carries the context this page was opened with (`decision`, `path`, `invoice`), so the page it opens can find its way back. */
+/** A link that carries the context this page was opened with, so the page it opens can find its way back. */
 function withContext(href: string, ctx: CustomerContext): string {
   const query = contextQuery(ctx);
   return query ? `${href}${href.includes("?") ? "&" : "?"}${query.slice(1)}` : href;
@@ -157,7 +206,7 @@ function Exposure({ view }: { view: CustomerOverviewView }) {
   const exposure = view.exposure;
   if (!exposure && !view.note) return null;
   return (
-    <Card flat id="customer-exposure" title={t("customer.exposure")}>
+    <OpenSection first id="customer-exposure" title={t("customer.exposure")} testId="customer-exposure">
       {exposure ? (
         <>
           <Rows rows={exposure.rows} testId="customer-exposure-rows" />
@@ -172,7 +221,7 @@ function Exposure({ view }: { view: CustomerOverviewView }) {
           {view.note}
         </p>
       )}
-    </Card>
+    </OpenSection>
   );
 }
 
@@ -180,37 +229,52 @@ function History({ rows }: { rows: OverviewHistoryRow[] }) {
   const { t } = useI18n();
   if (!rows.length) return null;
   return (
-    <Card flat id="customer-history" title={t("customer.history")}>
+    <OpenSection first id="customer-history" title={t("customer.history")} testId="customer-history">
       <ul className="divide-y divide-line" data-testid="customer-history-rows">
-        {rows.map((h, i) => (
-          <li key={i} className="grid gap-x-4 gap-y-0.5 py-2.5 text-sm sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-baseline" data-testid="customer-history-row">
-            <span className="text-ink-3">{h.when_text}</span>
-            <span className="min-w-0 break-words text-ink">{h.text}</span>
-            {h.href ? (
-              <Link href={h.href} className={`${textLinkClass} -ml-2 justify-self-start text-sm sm:ml-0 sm:justify-self-end`}>
-                {h.link_label ?? t("customer.history.open")}
-              </Link>
-            ) : null}
-          </li>
-        ))}
+        {rows.map((h, i) => {
+          const key = stateKey(h.state);
+          return (
+            <li key={i} className="grid gap-x-4 gap-y-0.5 py-2.5 text-sm sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-baseline" data-testid="customer-history-row">
+              <span className="text-ink-3">{h.when_text}</span>
+              <span className="min-w-0 break-words text-ink">
+                {h.text}
+                {key && h.state_text ? (
+                  <span className="mt-0.5 block" data-testid="customer-history-state" data-state={key}>
+                    <StateWord state={key}>{h.state_text}</StateWord>
+                  </span>
+                ) : null}
+              </span>
+              {h.href ? (
+                <Link href={h.href} className={`${textLinkClass} -ml-2 justify-self-start text-sm sm:ml-0 sm:justify-self-end`}>
+                  {h.link_label ?? t("customer.history.open")}
+                </Link>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
-    </Card>
+    </OpenSection>
   );
 }
 
 /**
- * A customer's overview in the order of the board: the eyebrow and the server's back link, the name and one sentence, the four figures, the one
- * commercial decision (or the line that none waits, with the two other links), the economics and the exposure side by side, and the history. Each
- * section is drawn only when the server sent it. Every word, figure and link is the server's; the page decides nothing.
+ * A customer's overview (tickets #126, #134): the eyebrow and the server's back link (written from the origin the owner came from), the name and one sentence, the four figures
+ * (the first a year's estimated gross contribution with its provenance beside it, the others with their state), what is outstanding with this customer as a short list from the queue
+ * with one task in focus and the commercial decision's one filled primary, the economics and the exposure, and the history. Each section is drawn only when the server sent it.
+ * Every word, figure and link is the server's; the page decides nothing.
  */
-export function CustomerOverview({ view, onRetry, ctx = {} }: { view: CustomerOverviewView; onRetry: () => void; ctx?: CustomerContext }) {
+export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: CustomerOverviewView; onRetry: () => void; ctx?: CustomerContext; queue?: Queue | null }) {
   const { t } = useI18n();
   const back = view.context?.back;
+  const tasks = rowsOfCustomer(queue, view.customer_id);
+  const focus = focusOf(tasks, ctx.decision ?? view.context?.deal ?? null);
+  const hasEconomics = shownEconomics(view).length > 0;
+  const hasExposure = Boolean(view.exposure || view.note);
   return (
-    <div className="space-y-6" data-testid="customer-overview">
+    <div className="flow-f space-y-5" data-testid="customer-overview">
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("customer.title")}</p>
+          <p className="text-supporting font-bold text-ink-3">{t("customer.title")}</p>
           {back ? (
             <Link href={back.href} className="motion-press hit -mr-2 inline-flex min-h-8 items-center gap-1 rounded-pill px-2 text-sm font-bold text-brand-700 underline underline-offset-2 hover:bg-brand-50" data-testid="customer-back">
               <ArrowLeftIcon width={14} height={14} />
@@ -218,24 +282,52 @@ export function CustomerOverview({ view, onRetry, ctx = {} }: { view: CustomerOv
             </Link>
           ) : null}
         </div>
-        <PageHeader title={view.name} subtitle={view.summary_text} />
+        <PageHeader title={view.name} subtitle={view.summary_text ? <span className="max-sm:hidden">{view.summary_text}</span> : undefined} />
       </div>
       <PartialRead partial={view.partial} onRetry={onRetry} />
+      {view.context?.irrelevant_text ? (
+        <p className="rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink-2" role="status" data-testid="customer-irrelevant">
+          {view.context.irrelevant_text}
+        </p>
+      ) : null}
       {view.figures?.length ? (
-        <section aria-label={t("customer.figures")} data-testid="customer-figures">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-line py-3 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-4 lg:py-4">
+        <section aria-label={t("customer.figures")} className="flow-card p-4 sm:p-6" data-testid="customer-figures">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-4">
             {view.figures.map((f) => (
-              <Figure key={f.key} figure={f} />
+              <Figure key={f.key} figure={f} provenance={provenanceOf(view)} />
             ))}
           </dl>
         </section>
       ) : null}
-      <Decision view={view} />
-      <div className={`grid gap-x-10 gap-y-6 ${shownEconomics(view).length && (view.exposure || view.note) ? "lg:grid-cols-2" : ""}`}>
-        <Economics view={view} ctx={ctx} />
-        <Exposure view={view} />
-      </div>
-      <History rows={view.history ?? []} />
+      {tasks.length || view.decision || view.none_text || (view.actions ?? []).length ? (
+        <section aria-labelledby="customer-work-title" className="flow-card p-4 sm:p-6" data-testid="customer-work">
+          <h2 id="customer-work-title" className="type-section mb-3 text-ink">
+            {t("customer.outstanding", { name: view.name })}
+          </h2>
+          {/* The task in focus and its one action come first (on a phone the button is in the first screen); the list of everything open follows. */}
+          <Focus view={view} />
+          <OutstandingWork customerId={view.customer_id} rows={tasks} focusKey={focus?.row.key ?? null} name={view.name} />
+        </section>
+      ) : null}
+      {hasEconomics || hasExposure ? (
+        <div className={`grid gap-5 ${hasEconomics && hasExposure ? "lg:grid-cols-2" : ""}`}>
+          {hasEconomics ? (
+            <div className="flow-card p-5 sm:p-6">
+              <Economics view={view} ctx={ctx} />
+            </div>
+          ) : null}
+          {hasExposure ? (
+            <div className="flow-card p-5 sm:p-6">
+              <Exposure view={view} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {view.history?.length ? (
+        <div className="flow-card p-5 sm:p-6">
+          <History rows={view.history} />
+        </div>
+      ) : null}
     </div>
   );
 }

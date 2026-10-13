@@ -298,7 +298,7 @@ EVALUATE_BUSINESS = ("workspace", "counters", "comparison", "violations", "notes
                      "evaluated_when", "summary_when")
 _PLANS = r"\.(plan|plan_committed|plan_expected|cure_plan)"
 EVALUATE_RAW = [
-    r"\.workspace\.financial_impact\.lines\[\]\.basis", r"\.workspace\.priced_response\.label",
+    r"\.workspace\.financial_impact\.lines\[\]\.basis", r"\.workspace\.priced_response\.label", r"\.workspace\.priced_responses\[\]\.label",
     r"\.counters\[\]\.(label|text|rationale|formula|obligations\[\]\.spans\[\]\.text|economics\.components\[\]\.basis)",
     r"\.comparison\[\]\.(label|components\[\]|note|not_executable_reason)",
     r"\.violations\[\]\.(message|formula|spans\[\]\.text|cure_note|inputs\..*)", r"\.notes\[\]\.message",

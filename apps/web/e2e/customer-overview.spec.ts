@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan, verdictHeading } from "./helpers";
+import { checkedDeal, openInbox, runPlan } from "./helpers";
 
 /**
  * The customer overview, /customers/{id} (map #88, ticket #108), in mock mode on the recorded API answers (scripts/record-mocks.mjs --overview):
@@ -14,16 +14,6 @@ import { runPlan, verdictHeading } from "./helpers";
 test.beforeEach(({}, testInfo) => {
   test.skip(testInfo.project.name === "live", "mock-mode spec: the recorded overview");
 });
-
-const AFTER_CHECK = /Don't accept as asked|Counter instead of accepting as asked/;
-
-/** The package offer received and read, as the owner does it on Deals: the books then hold one open decision with Foshan. */
-async function checkedDeal(page: Page) {
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(AFTER_CHECK);
-}
 
 /** The decision's own query (`decision`, `path`), taken from the primary link the page shows. */
 async function decisionQuery(page: Page): Promise<URLSearchParams> {
@@ -45,19 +35,24 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(page.locator("h1")).toHaveText("Foshan Home Retail Co.");
   await expect(page.getByText("What this relationship is worth, and what it puts at risk.")).toBeVisible();
   const figures = page.getByTestId("customer-figures");
-  await expect(figures.locator("dt")).toHaveText(["Relationship value", "Outstanding", "Financing linked", "Share of what you are owed"]);
+  await expect(figures.locator("dt")).toHaveText(["Estimated annual gross contribution", "Outstanding", "Financing linked", "Share of what you are owed"]);
+  await expect(page.locator("body")).not.toContainText("Relationship value");
   await expect(page.getByTestId("customer-figure-outstanding-value")).toHaveText("¥420,000");
   await expect(page.getByTestId("customer-figure-outstanding-note")).toHaveText("due in 32 days, nothing overdue");
   await expect(page.getByTestId("customer-figure-share-value")).toHaveText("100%");
   await expect(page.getByTestId("customer-figure-share-note")).toHaveText("one open invoice; not its share of your sales");
   // The Demo's sales and margin give the server's estimate; the browser makes none of its own.
   await expect(page.getByTestId("customer-figure-value-value")).toHaveText("about ¥1.09m");
-  await expect(page.getByTestId("customer-figure-value-note")).toHaveText("a year, estimated contribution");
+  // Where it comes from is said beside it, in the server's words (the margin is the weakest link), once.
+  await expect(page.getByTestId("customer-figure-value-note")).toHaveText("a year, estimated contribution; margin assumed for the Demo, not confirmed by you");
+  await expect(page.getByTestId("customer-figure-value-provenance")).toHaveCount(0);
   // No decision waits: the server's line, the two links that remain, and no filled primary on the page.
   const none = page.getByTestId("customer-decision-none");
   await expect(none).toContainText("No commercial decision is waiting for you with Foshan.");
   await expect(none.getByRole("link")).toHaveText(["View the invoices", "Stress-test payment"]);
   await expect(page.getByTestId("customer-decision")).toHaveCount(0);
+  // What is open with the customer is the queue's own rows for it (here the agreement in force), and the way to the complete queue.
+  await expect(page.getByTestId("customer-outstanding")).toHaveCount(0); // nothing is open yet: no list, and no way to an empty queue
   await expect(none.getByRole("link", { name: "View the invoices" })).toHaveAttribute("href", "/receivables?customer=BUYER-1&invoice=RCV-A");
   await expect(none.getByRole("link", { name: "Stress-test payment" })).toHaveAttribute("href", "/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer");
   // The economics and the exposure panels, each in the server's rows.
@@ -86,6 +81,11 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
   const query = await decisionQuery(page);
   const card = page.getByTestId("customer-decision");
   await expect(card).toContainText("One commercial decision waits for you");
+  // What is open with the customer is the queue's own row for this negotiation, in focus, and the way to the complete queue carries the origin.
+  await expect(page.getByTestId("customer-task")).toHaveCount(1);
+  await expect(page.getByTestId("customer-task")).toHaveAttribute("data-focus", "true");
+  await expect(page.getByTestId("customer-task")).toContainText("Payment terms");
+  await expect(page.getByTestId("customer-all-tasks")).toHaveAttribute("href", "/deals?customer=BUYER-1&from=customer");
   await expect(page.getByTestId("customer-decision-text")).toContainText("FLOW recommends countering with Option A, ¥3,027.77 once if accepted.");
   const primary = page.getByTestId("customer-decision-primary");
   await expect(primary).toHaveText("Review the counter");
@@ -110,8 +110,9 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
 
 test("an offer not yet read: the decision says so and its primary is Read the offer", async ({ page }) => {
   await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" })).toBeVisible();
+  await openInbox(page);
+  await page.getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("queue-check-button")).toBeVisible();
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-decision")).toContainText("One offer waits to be read");
   await expect(page.getByTestId("customer-decision-primary")).toHaveText("Read the offer");
@@ -130,25 +131,23 @@ test("after the day-0 plan the financing is linked, in the server's words", asyn
   await expect(page.getByTestId("customer-exposure-rows-financing_then")).toContainText("runs 30 days longer");
 });
 
-test("the customer links on Receivables and Deals carry the context of the URL they are on (the decision, the path and the invoice)", async ({ page }) => {
+test("a customer link carries that row's own customer, decision and invoice and the origin, never what the address holds for another row (audit UX07, UX34)", async ({ page }) => {
   await checkedDeal(page);
   const query = await decisionQuery(page);
-  const ctx = `decision=${encodeURIComponent(query.get("decision")!)}&path=${encodeURIComponent(query.get("path")!)}`;
-  // Receivables: the invoice's buyer, with the context of the URL it was opened on.
-  await page.goto(`/receivables?${ctx}&invoice=RCV-A`);
+  const decision = encodeURIComponent(query.get("decision")!);
+  // Receivables: the invoice row's own invoice and the origin `invoice`, whatever else the address names.
+  await page.goto(`/receivables?decision=${decision}&path=${encodeURIComponent(query.get("path")!)}&invoice=RCV-A`);
   const row = page.getByTestId("recv-RCV-A");
   await expect(row).toBeVisible();
-  const link = row.getByRole("link", { name: "Foshan Home Retail Co." }).first();
-  await expect(link).toHaveAttribute("href", `/customers/BUYER-1?${ctx}&invoice=RCV-A`);
-  // Without a context the link is the plain one.
+  await expect(row.getByRole("link", { name: "Foshan Home Retail Co." }).first()).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A&from=invoice");
   await page.goto("/receivables");
-  await expect(page.getByTestId("recv-RCV-A").getByRole("link", { name: "Foshan Home Retail Co." })).toHaveAttribute("href", "/customers/BUYER-1");
-  // Deals: the buyer of the selected deal.
-  await page.goto(`/deals?${ctx}`);
-  // (the queue's detail names the customer with the same context and the `customer` the queue's links all carry)
-  await expect(page.getByTestId("queue-detail-customer")).toHaveAttribute("href", `/customers/BUYER-1?customer=BUYER-1&${ctx}`);
-  await page.getByTestId("queue-detail-customer").click();
-  await expect(page).toHaveURL(/\/customers\/BUYER-1\?(customer=BUYER-1&)?decision=/);
+  await expect(page.getByTestId("recv-RCV-A").getByRole("link", { name: "Foshan Home Retail Co." })).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A&from=invoice");
+  // Deals: the selected negotiation's customer carries that negotiation and the origin `deal`; so does the row in the queue.
+  await page.goto(`/deals?customer=BUYER-1&decision=${decision}`);
+  await expect(page.getByTestId("deal-selected-customer")).toHaveAttribute("href", `/customers/BUYER-1?decision=${decision}&from=deal`);
+  await expect(page.getByTestId("queue-customer").first()).toHaveAttribute("href", `/customers/BUYER-1?decision=${decision}&from=deal`);
+  await page.getByTestId("deal-selected-customer").click();
+  await expect(page).toHaveURL(new RegExp(`/customers/BUYER-1\\?decision=.*&from=deal`));
   await expect(page.getByTestId("customer-back")).toHaveText("Back to the Foshan deal");
 });
 
@@ -158,8 +157,9 @@ test("the customer link on Activity carries the context of the URL it is on", as
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/activity?invoice=RCV-A");
+  // Activity holds no selection: its links carry the origin and nothing from the address.
   const link = page.locator("#activity-commitments").getByRole("link", { name: "Foshan Home Retail Co." }).first();
-  await expect(link).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A");
+  await expect(link).toHaveAttribute("href", "/customers/BUYER-1?from=activity");
 });
 
 test("while the exposure read is off the panel says why, in the server's words, and the stress link is not offered", async ({ page }) => {
@@ -184,7 +184,7 @@ test("in Chinese the page reads in Chinese with the same figures", async ({ page
   await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await page.goto("/customers/BUYER-1");
   await expect(page.locator("h1")).toHaveText("Foshan Home Retail Co.");
-  await expect(page.getByTestId("customer-figures").locator("dt")).toHaveText(["客户关系价值", "未收款", "已关联的融资", "占您应收款的比例"]);
+  await expect(page.getByTestId("customer-figures").locator("dt")).toHaveText(["估算的全年毛利贡献", "未收款", "已关联的融资", "占您应收款的比例"]);
   await expect(page.getByTestId("customer-figure-outstanding-value")).toHaveText("¥420,000");
   await expect(page.getByRole("heading", { name: "客户经济状况" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "财务风险敞口" })).toBeVisible();
@@ -219,8 +219,9 @@ for (const lang of ["en", "zh"] as const) {
       if (moment === "offer_evaluated") await checkedDeal(page);
       else {
         await page.goto("/deals");
-        await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-        await expect(page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" })).toBeVisible();
+        await openInbox(page);
+        await page.getByTestId("inbox-msg-EX01").click();
+        await expect(page.getByTestId("queue-check-button")).toBeVisible();
       }
       await page.evaluate((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
       await page.goto("/customers/BUYER-1");
