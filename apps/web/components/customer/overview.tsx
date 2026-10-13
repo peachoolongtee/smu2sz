@@ -95,6 +95,8 @@ interface Selected {
   pill: { tone: PillTone; text: string; lifecycle: string | null };
   recommends: string | null;
   href: string;
+  /** The server's label for the button when it speaks for this negotiation ("Review the counter", "Read the offer"); null is the dictionary's "Review decision". */
+  label: string | null;
   closed: boolean;
 }
 
@@ -129,7 +131,7 @@ function ActionBlock({ view, selected }: { view: CustomerOverviewView; selected:
   // The server's recommendation speaks for the primary decision; the older long sentence is the fallback for a server that does not send it.
   const body = selected ? selected.recommends : (decision?.text ?? null);
   const href = selected?.href ?? decision?.primary.href ?? "/deals";
-  const label = selected && view.primary_decision && selected.key === view.primary_decision.decision_id ? (decision?.primary.label ?? t("customer.review")) : (decision?.primary.label && !selected ? decision.primary.label : t("customer.review"));
+  const label = selected ? (selected.label ?? t("customer.review")) : (decision?.primary.label ?? t("customer.review"));
   return (
     <section aria-labelledby="customer-decision-title" className="flow-card p-4 sm:p-6" id="customer-decision" data-testid="customer-decision" data-focus={selected?.key ?? undefined}>
       {/* The server's own sentence for what waits names the region; with no server decision it is the plain title. */}
@@ -327,6 +329,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
           pill,
           recommends: primary ? (view.primary_decision?.recommends_text ?? null) : (focus && rowDecision(focus.row) === serverSel.decision_id ? focus.row.consequence_text : null),
           href: primary && view.primary_decision ? view.primary_decision.href : selectionHref("/deals", { customer: view.customer_id, decision: serverSel.decision_id, invoice: null, from: "customer" }),
+          label: primary ? (view.decision?.primary.label ?? null) : null,
           closed: pill.lifecycle === "awaiting_buyer" || pill.lifecycle === "agreed" || pill.lifecycle === "lapsed" || pill.lifecycle === "declined",
         };
       })()
@@ -334,12 +337,15 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
       ? (() => {
           const pill = rowPill(focus.tier, focus.row);
           const dec = rowDecision(focus.row);
+          const speaks = Boolean(view.decision && dec && view.decision.primary.href.includes(encodeURIComponent(dec)));
           return {
             key: focus.row.key,
             subject: mode === "demo" ? (focus.row.subject_demo_text ?? focus.row.subject_text) : focus.row.subject_text,
             pill,
-            recommends: view.decision && dec && view.decision.primary.href.includes(encodeURIComponent(dec)) ? view.decision.text : focus.row.consequence_text,
-            href: dec ? selectionHref("/deals", { customer: view.customer_id, decision: dec, invoice: null, from: "customer" }) : (view.decision?.primary.href ?? "/deals"),
+            recommends: speaks && view.decision ? view.decision.text : focus.row.consequence_text,
+            // The server's decision speaks for this negotiation when its link names it: its own link (with the path) and its own label.
+            href: speaks && view.decision ? view.decision.primary.href : dec ? selectionHref("/deals", { customer: view.customer_id, decision: dec, invoice: null, from: "customer" }) : (view.decision?.primary.href ?? "/deals"),
+            label: speaks && view.decision ? view.decision.primary.label : null,
             closed: pill.lifecycle === "awaiting_buyer" || focus.tier === "waiting" || focus.tier === "agreements" || pill.lifecycle === "lapsed",
           };
         })()
