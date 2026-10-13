@@ -527,6 +527,19 @@ def test_the_approval_words_while_the_plan_waits_for_the_owner_and_once_it_has_r
     assert english_leaks(_v2(api, "zh")["action"]["approval_text"]) == []
 
 
+def test_a_plan_ready_to_run_that_needs_the_owner_says_so_and_the_flag_agrees(api: TestClient) -> None:
+    from app.mandate.fixture import load_demo_owner_key
+    from app.mandate.signing import sign
+
+    rt = get_runtime()
+    _offer(api)
+    rt.store.put_mandate(sign(rt.store.get_mandate().model_copy(update={"max_apr_bp": 500}), load_demo_owner_key()["private_key_hex"]))
+    for lang, fact, sentence in (("en", "Your approval is needed", "Needs your approval before it runs"), ("zh", "需要您批准", "需要您批准后才会执行")):
+        action = _v2(api, lang)["action"]
+        assert action["control"] == "RUN_PLAN" and action["facts"][2]["value"] == fact  # ready to run, and the cure needs the owner
+        assert (action["approval_text"], action["approval_needed"]) == (sentence, True)  # never a tick beside "approval is needed"
+
+
 def test_the_approval_words_are_null_when_the_action_has_no_plan(api: TestClient) -> None:
     _offer(api)
     _run_plan(api)
