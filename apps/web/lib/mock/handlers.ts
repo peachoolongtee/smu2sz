@@ -546,7 +546,8 @@ export async function getDecision(id: string, lang: "en" | "zh"): Promise<Decisi
 // Deal tracker (#150): GET /decisions/{id}/tracker, served by lib/mock/tracker.ts.
 export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
   await delay();
-  return trackerMock.mockTracker(id, lang);
+  seedApprovalStory();
+  return trackerMock.mockTracker(decisionContext(), id, lang);
 }
 
 export async function getOffer(offerId: string): Promise<OfferView> {

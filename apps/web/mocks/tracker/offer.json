@@ -1,0 +1,90 @@
+{
+  "en": {
+    "decision_id": "deal:OFF-f806f79b6c21",
+    "lang": "en",
+    "available": false,
+    "unavailable_text": "This deal has not been agreed yet, so there is nothing to track.",
+    "buyer_id": null,
+    "buyer_name": null,
+    "agreed_when": null,
+    "terms_text": null,
+    "headline_text": null,
+    "state_word": null,
+    "state_tone": "neutral",
+    "state_text": null,
+    "stages": [],
+    "cost": {
+      "expected": null,
+      "actual": null,
+      "to_come": null,
+      "unmeasured_fen": null,
+      "unmeasured_display": null,
+      "difference_fen": null,
+      "difference_display": null,
+      "lines": [],
+      "method_text": null
+    },
+    "promises": [],
+    "promise_counts": null,
+    "buyer": null,
+    "next": null,
+    "closeout_text": null,
+    "links": {
+      "record_href": "/decisions/deal:OFF-f806f79b6c21",
+      "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
+    },
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  },
+  "zh": {
+    "decision_id": "deal:OFF-f806f79b6c21",
+    "lang": "zh",
+    "available": false,
+    "unavailable_text": "这笔交易尚未达成，因此没有可跟踪的内容。",
+    "buyer_id": null,
+    "buyer_name": null,
+    "agreed_when": null,
+    "terms_text": null,
+    "headline_text": null,
+    "state_word": null,
+    "state_tone": "neutral",
+    "state_text": null,
+    "stages": [],
+    "cost": {
+      "expected": null,
+      "actual": null,
+      "to_come": null,
+      "unmeasured_fen": null,
+      "unmeasured_display": null,
+      "difference_fen": null,
+      "difference_display": null,
+      "lines": [],
+      "method_text": null
+    },
+    "promises": [],
+    "promise_counts": null,
+    "buyer": null,
+    "next": null,
+    "closeout_text": null,
+    "links": {
+      "record_href": "/decisions/deal:OFF-f806f79b6c21",
+      "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
+    },
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
+  }
+}
