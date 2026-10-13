@@ -20,8 +20,9 @@ import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
-import { QueuePanel } from "./queue-table";
-import { buildQueue, rowDecision, tabOf, taskRows, type TabKey } from "./queue-model";
+import { dealTabCounts, dealTabOf, negotiationRows, TABLE_FROM, type DealTab } from "./deal-model";
+import { QueuePanel, type QueueLayout } from "./queue-table";
+import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
 const XL = "(min-width: 1280px)";
 const subscribeXl = (onChange: () => void) => {
@@ -47,7 +48,9 @@ export function DealsPage() {
   const sel = readSelection(params);
   const search = params.toString();
   const decision = sel.decision ?? null;
-  const tab = tabOf(params.get("tab")) ?? "all";
+  const tab = dealTabOf(params.get("tab")) ?? "all";
+  // Home's table is the queue's layout from 20 negotiations; the compact rows are the default (a view choice, held by the page so the queue can take the full width).
+  const [layout, setLayout] = useState<QueueLayout>("compact");
   const view: DealView = { compare: params.get("compare") === "1", chart: params.get("chart") === "1", late: sel.scenario === "late" };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
@@ -59,7 +62,7 @@ export function DealsPage() {
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
-  const rows = queue ? taskRows(queue) : [];
+  const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;
   const [sending, setSending] = useState(false);
@@ -73,7 +76,9 @@ export function DealsPage() {
     go({ customer, decision: dec, invoice, path: null, compare: null, chart: null });
   };
   const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null });
-  const onTab = (k: TabKey) => go({ tab: k === "all" ? null : k }, "replace");
+  const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
+  // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
+  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null }));
   const onView = (patch: Partial<DealView>) =>
     go(
       {
@@ -138,47 +143,64 @@ export function DealsPage() {
   };
 
   // ---- the state sentence under the stable title
-  const counts = queue?.counts;
+  const counts = queue ? dealTabCounts(queue) : undefined;
   const subtitle = !counts ? undefined : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
-  const LIST = (
-        <div key="list" className="min-w-0 space-y-5">
-          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null} onShowAll={() => go({ customer: null, buyer: null })} />
-          {/* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */}
-          {queue === undefined ? null : (
-          <div className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
-            {inboxOpen ? null : (
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
-                <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
-                <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
-                  {t("deals.inbox.show")}
-                </Button>
-              </div>
-            )}
-            {inboxOpen ? (
-              <InboxList
-                currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
-                readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
-                known={known}
-                busy={reading}
-                today={clock.data?.day ?? books.data?.day ?? 0}
-                mode={mode}
-                statusFor={statusFor}
-                onOpen={(m) => void openMessage(m)}
-                loadError={books.error}
-                onRetry={books.reload}
-                onCollapse={() => setInboxPref(false)}
-                refusals={ledger.data?.refusals ?? null}
-              />
-            ) : null}
-          </div>
-          )}
-        </div>
+  const tableMode = Boolean(queue) && layout === "table" && rows.length >= TABLE_FROM;
+  const QUEUE_NODE = (
+    <QueuePanel
+      key="queue"
+      queue={queue}
+      customers={customers.data}
+      loading={deals.loading || worklist.loading}
+      error={dealsError}
+      onRetry={deals.reload}
+      tab={tab}
+      onTab={onTab}
+      selectedDecision={decision}
+      locked={sending}
+      onSelect={select}
+      hrefOf={hrefOf}
+      layout={layout}
+      onLayout={setLayout}
+      onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null}
+      onShowAll={() => go({ customer: null, buyer: null })}
+    />
   );
+  const INBOX_NODE =
+    /* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */
+    queue === undefined ? null : (
+      <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
+        {inboxOpen ? null : (
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
+            <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
+            <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
+              {t("deals.inbox.show")}
+            </Button>
+          </div>
+        )}
+        {inboxOpen ? (
+          <InboxList
+            currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
+            readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+            known={known}
+            busy={reading}
+            today={clock.data?.day ?? books.data?.day ?? 0}
+            mode={mode}
+            statusFor={statusFor}
+            onOpen={(m) => void openMessage(m)}
+            loadError={books.error}
+            onRetry={books.reload}
+            onCollapse={() => setInboxPref(false)}
+            refusals={ledger.data?.refusals ?? null}
+          />
+        ) : null}
+      </div>
+    );
   const PANE = (
-        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
+        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" data-testid="deals-detail">
           {decision ? (
             <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
           ) : queue === undefined ? null : (
@@ -208,12 +230,30 @@ export function DealsPage() {
           <ErrorState error={readError} />
         </div>
       ) : null}
-      {/* the two columns, named once so their order can follow the width */}
-      {/* Below the two-pane width a selected negotiation comes first (its decision is inside the first screen of a phone) and the queue follows; from `xl` the queue is the left pane. The DOM order is the reading and focus order. */}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:items-start">
-        {!twoPanes && decision ? <>{PANE}{LIST}</> : <>{LIST}{PANE}</>}
+      {/* Round two widths: the queue is 340 px, the workspace is fluid up to 850 px (the page's content holds at 1400 px, flow-look.css). Below `xl` a selected negotiation comes first (its decision is inside the first
+          screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
+          From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
+      {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
+      <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,850px)] xl:items-start">
+        {!twoPanes && decision ? (
+          <>
+            {PANE}
+            <div className="min-w-0 space-y-6">
+              {tableMode ? null : QUEUE_NODE}
+              {INBOX_NODE}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="min-w-0 space-y-6">
+              {tableMode ? null : QUEUE_NODE}
+              {INBOX_NODE}
+            </div>
+            {PANE}
+          </>
+        )}
       </div>
-      <div id="deals-investigate" className="mt-5 empty:hidden" />
+      <div id="deals-investigate" className="mt-6 max-w-[1214px] empty:hidden" />
       {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
       <div className="mt-8" data-testid="deals-agreements">
         <ActiveCommitments

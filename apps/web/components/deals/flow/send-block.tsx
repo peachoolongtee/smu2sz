@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { Disclosure } from "@/components/business/kit";
 import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
+import { receiptLines } from "@/components/ui/commitment-receipt-model";
 import { counterChanged, negotiate } from "@/lib/api";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation, useDemo } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { isTimeout } from "@/lib/errors";
+import { CostTable } from "./cost-table";
 import { quietLink } from "./flow-parts";
+import { TermsTable } from "./terms-table";
 import { useI18n } from "@/lib/i18n";
+import { useMode } from "@/lib/mode";
 import { receiptOfSend } from "@/lib/receipt";
-import type { BuyerProfile, CounterChangedDetail, NegotiationView, OfferPictureView, PicturePath } from "@/lib/types";
+import type { BuyerProfile, CommitmentReceiptView, CounterChangedDetail, NegotiationView, OfferPictureView, PicturePath } from "@/lib/types";
 
 /**
  * The commit area of a reply you may send (tickets #128, #129): one filled button in the whole region. "Review and send the counter" opens the commitment receipt (the server's
@@ -20,13 +26,19 @@ import type { BuyerProfile, CounterChangedDetail, NegotiationView, OfferPictureV
  * The review is read from the evaluation the picture was drawn from (its `priced_response.receipt`, the terms of this very send): when this tab has not read it, opening the
  * review reads it (the same check as "Check again", asked for by the owner's own press), and the send carries exactly what was shown (that verdict's id and books version, and
  * the counter): if the books moved the API refuses (409) and nothing is sent; "Check again" asks for a new proposal, an explicit step and never a prerequisite to reading the deal. A send that ran out of time may have landed: Retry reads the
- * deal again and sends nothing. The page keys it by the reply, so another reply (or another deal) starts a fresh review. The buyer's reply is simulated in this demo, and the owner says how the simulated buyer leans before sending.
+ * deal again and sends nothing. The page keys it by the reply, so another reply (or another deal) starts a fresh review. The buyer's reply is simulated in this environment: Business mode says so and sends with
+ * the cooperative buyer; Demo mode also lets the owner choose how the simulated buyer leans.
+ *
+ * Round two (section 2): the review is three statements first (What you are authorizing, What happens immediately, What does not happen yet: the receipt's `authorizes_text`, `executes_now_text`,
+ * `remaining_text`), then the terms and the cost of this very reply, then the one button that names the send; the rest of the receipt (who else must agree, the figures, the authority, the assumptions) is
+ * one disclosure after it, with the record link as the audit evidence.
  */
 export function SendBlock({
   offerId,
   path,
   picture,
   buyer,
+  recordHref,
   onSent,
   onBusy,
   children,
@@ -35,6 +47,8 @@ export function SendBlock({
   path: PicturePath;
   picture: OfferPictureView;
   buyer: string;
+  /** The negotiation's decision record: the audit evidence's link. */
+  recordHref?: string;
   /** Told with the answer when a send was accepted by the API (the page reads the deal again). */
   onSent: (n: NegotiationView) => void;
   /** Told whenever a send or a check is in flight: the page holds the selection then. */
@@ -45,6 +59,7 @@ export function SendBlock({
   const { t } = useI18n();
   const uid = useId();
   const demo = useDemo();
+  const mode = useMode();
   // The evaluation behind the picture, as this tab holds it: its id is the picture's, or it is not the one the owner is looking at.
   const cached = demo.verdicts[offerId];
   const verdict = cached && cached.id === picture.verdict_id ? cached : null;
