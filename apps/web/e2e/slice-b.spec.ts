@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, openInbox, openReview, resetBooks } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openReview, resetBooks } from "./helpers";
 
 /**
  * Slice B of the overhaul map #121 (tickets #126 to #132, #134, #143), the contract end to end: a row's link and the origin, a deep link that hydrates a fresh session,
@@ -233,31 +233,35 @@ test.describe("live", () => {
     expect(res.ok()).toBeTruthy();
   }
 
-  test("the busy company's queue has one row per task: two Foshan negotiations are two rows, an approval, a collection and the agreement's promise each their own", async ({ page, request }) => {
+  test("the busy company's queue has one row per task: three Foshan negotiations are three rows, an approval and a collection each their own, and the tab counts are the Home's", async ({ page, request }) => {
     await busy(request);
     await page.goto("/deals");
-    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("6");
+    // Day 0 of the busy books: nothing is agreed yet (the agreements come from the owner's own sends), so the Agreements tab is empty.
+    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("7");
     await expect(page.getByTestId("queue-count-waiting")).toHaveText("1");
-    await expect(page.getByTestId("queue-count-agreements")).toHaveText("2");
+    await expect(page.getByTestId("queue-count-agreements")).toHaveText("0");
     await expect(page.getByTestId("queue-count-customers")).toHaveText("3");
-    await expect(page.getByTestId("queue-count-all")).toHaveText("9");
+    await expect(page.getByTestId("queue-count-all")).toHaveText("8");
     const rows = page.locator('[data-testid="queue-row"]');
-    await expect(rows).toHaveCount(9);
+    await expect(rows).toHaveCount(8);
     const foshan = page.locator('[data-testid="queue-row"][data-tier="needs_you"][data-kind="DECISION"]').filter({ hasText: "Foshan" });
-    await expect(foshan).toHaveCount(2);
+    await expect(foshan).toHaveCount(3);
     const hrefs = await foshan.getByTestId("queue-customer").evaluateAll((els) => els.map((el) => el.getAttribute("href")!));
-    expect(new Set(hrefs).size, "each row's customer link carries its own decision").toBe(2);
+    expect(new Set(hrefs).size, "each row's customer link carries its own decision").toBe(3);
     for (const href of hrefs) expect(href).toMatch(/^\/customers\/BUYER-1\?decision=deal%3AOFF-.*&from=deal$/);
     await expect(page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]')).toHaveCount(1);
     await expect(page.locator('[data-testid="queue-row"][data-kind="COLLECTION"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="queue-row"][data-kind="PROMISE"]')).toHaveCount(1);
     // No id and no day number in the prose.
     await expect(page.locator("main")).not.toContainText(/OFF-|BUYER-\d|RCV-|\bDay \d/);
-    // Selecting one of the two Foshan rows opens that negotiation and no other.
+    // Selecting one of the Foshan rows opens that negotiation and no other.
     await foshan.nth(1).getByTestId("queue-select").click();
     await expect(page).toHaveURL(/decision=deal%3AOFF-/);
     const chosen = new URL(page.url()).searchParams.get("decision");
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", chosen!);
+    // Home says the same numbers as Deals.
+    await page.goto("/");
+    await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText("7");
+    await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
   });
 
   test("the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button", async ({ page, request }) => {
@@ -270,11 +274,18 @@ test.describe("live", () => {
     await expect(page.getByTestId("whatif-choice")).toHaveCount(decisions);
     await expect(page.getByTestId("whatif-choices")).not.toContainText(/loan|approval/i);
 
-    // An agreed negotiation: the agreement record, its terms, no "can't safely evaluate" and no Clarify.
-    await page.goto("/deals?tab=agreements");
-    await page.locator('[data-testid="queue-row"][data-kind="AGREEMENT"] [data-testid="queue-select"]').first().click();
+    // A negotiation the owner has agreed: send the counter on Foshan's "same arrangement as usual" request (a read that abstained), and the agreed pane shows the agreement record,
+    // its receipt and terms, and no "can't safely evaluate" with Clarify above "Agreed".
+    const AGREED = "deal:OFF-39cabafae4ee";
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(AGREED)}`);
+    await expect(page.getByTestId("deal-pane")).toBeVisible();
+    await page.getByTestId("queue-review-open").click();
+    await page.getByTestId("deal-send").click();
+    await expect(page.getByTestId("deal-sent")).toBeVisible();
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(AGREED)}`);
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
     await expect(page.getByTestId("deal-record")).toBeVisible();
+    await expect(page.getByTestId("deal-agreement-receipt")).toBeVisible();
     await expect(page.getByTestId("deal-abstentions")).toHaveCount(0);
     await expect(page.getByTestId("deal-pane")).not.toContainText(/can't safely evaluate/i);
     await expect(page.getByRole("link", { name: "Clarify" })).toHaveCount(0);
@@ -291,6 +302,46 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-review")).toHaveCount(0);
     await expect(page.getByTestId("deal-pane")).not.toContainText(/\bNone\b/);
     await expect(page.getByTestId("deal-ask-terms")).not.toContainText(/Early payment|Rebate or price/);
+  });
+
+  test("the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply", async ({ page, request }) => {
+    await resetBooks(request);
+    await checkedDeal(page); // the opening books' EX01: Option A (FLOW may send it) and Option B (needs the owner's approval), both sendable
+    await page.getByTestId("queue-review-open").click();
+    const receipt = page.getByTestId("queue-review").getByTestId("commitment-receipt");
+    await expect(receipt).toBeVisible();
+    const recommended = (await receipt.textContent())!;
+    const recommendedLabel = (await page.getByTestId("deal-send").textContent())!;
+    await page.getByTestId("queue-review-close").click();
+    await openCompare(page);
+    // The first reply that is not the recommended one.
+    await page.locator('[data-testid^="deal-use-"]:visible').nth(1).click();
+    await expect(page.getByTestId("path-reply-back")).toBeVisible();
+    await page.getByTestId("queue-review-open").click();
+    const picked = page.getByTestId("queue-review");
+    await expect(picked.getByTestId("commitment-receipt")).toBeVisible();
+    expect((await picked.getByTestId("commitment-receipt").textContent())!, "the picked reply's own receipt, not Option A's").not.toBe(recommended);
+    expect((await page.getByTestId("deal-send").textContent())!).not.toBe(recommendedLabel);
+    await expect(page.getByTestId("deal-unpriced")).toHaveCount(0);
+  });
+
+  test("What-if runs on the addressed negotiation's own invoice, in the server's words, and says why when the buyer has none it can act on", async ({ page, request }) => {
+    await busy(request);
+    const run = (offer: string, customer: string) => `/whatif?customer=${customer}&decision=${encodeURIComponent(`deal:${offer}`)}&from=deal`;
+    await page.goto(run("OFF-96e709c2b1d8", "BUYER-3"));
+    await expect(page.getByTestId("whatif-invoice")).toContainText(/the ¥150,000\.00 invoice to Zhuhai .*, due in \d+ days/);
+    await expect(page.getByTestId("whatif-terms-readout")).toBeVisible();
+    await expect(page.getByTestId("whatif-scope")).not.toContainText(/RCV-|Settle only part of RCV/);
+    await expect(page.getByText("Settle only part of this invoice")).toBeVisible();
+    await expect(page.getByText(/Settle only part of RCV/)).toHaveCount(0);
+    // Another buyer, another invoice.
+    await page.goto(run("OFF-4f6bf9834d4d", "BUYER-1"));
+    await expect(page.getByTestId("whatif-invoice")).toContainText("the ¥420,000.00 invoice to Foshan");
+    // A buyer with no recurring invoice to extend: the server's reason, no sliders, no verdict.
+    await page.goto(run("OFF-ea1ac57ae2a0", "BUYER-2"));
+    await expect(page.getByTestId("whatif-unscoped")).toContainText("no recurring invoice to extend");
+    await expect(page.getByTestId("whatif-terms-readout")).toHaveCount(0);
+    await expect(page.getByTestId("whatif-outcome")).toHaveCount(0);
   });
 
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {

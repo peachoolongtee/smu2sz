@@ -74,6 +74,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
   WhatIfUnscoped,
   WorklistView,
 } from "./types";
@@ -380,6 +381,11 @@ export function alertChanged(e: unknown): AlertChangedDetail | null {
   if (!(e instanceof ApiError) || e.status !== 409) return null;
   const d = e.detail as Partial<AlertChangedDetail> | undefined;
   return d && d.code === "ALERT_CHANGED" ? (d as AlertChangedDetail) : null;
+}
+
+/** GET /whatif/presets?offer_id=: whether the sandbox can act on the negotiation's buyer, and on which invoice, before any slider is sent. Null in the mock (one recorded sandbox) and from a server without the route. */
+export async function whatIfScope(offerId: string, lang: "en" | "zh" = "en"): Promise<WhatIfScope | null> {
+  return isMock ? null : (await live()).whatIfScope(offerId, lang).catch(() => null);
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */

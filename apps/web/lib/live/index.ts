@@ -67,6 +67,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
   WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
@@ -242,6 +243,10 @@ export const live = {
   /** POST /whatif on the invoice of the negotiation addressed (`offer_id` in the body; none: the books' first buyer with a recurring invoice), the words in `lang`. A buyer the sandbox cannot value as a whole answers `available: false` and says why. */
   whatIf: (params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}) =>
     http<WhatIfResult | WhatIfUnscoped>("POST", `/whatif?lang=${scope.lang ?? "en"}`, { body: scope.offerId ? { ...params, offer_id: scope.offerId } : params }),
+
+  /** GET /whatif/presets on the addressed negotiation's invoice: `available`, `invoice_text` and `scope_text` say which invoice the sandbox would act on, or why it has none (then no presets). */
+  whatIfScope: (offerId: string, lang: "en" | "zh" = "en") =>
+    http<WhatIfScope>("GET", `/whatif/presets?offer_id=${enc(offerId)}&lang=${lang}`),
 
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });

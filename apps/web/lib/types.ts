@@ -2323,6 +2323,15 @@ export interface WhatIfUnscoped {
   controls: null;
 }
 
+/** GET /whatif/presets for a negotiation: which buyer and invoice the sandbox would run on, in words, or why it cannot (`available` false, `scope_text`, no presets). */
+export interface WhatIfScope {
+  available: boolean;
+  buyer_id?: string;
+  buyer_name?: string;
+  invoice_text?: string | null;
+  scope_text?: string | null;
+}
+
 /** POST /whatif. Everything is hypothetical: nothing is booked, sent or executed. */
 export interface WhatIfResult {
   hypothetical: true;
