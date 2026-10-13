@@ -114,6 +114,12 @@ Slice D (merge dev in, re-record, the lead's whole gate, the verifier's third pa
 the tracker (its integration result below, the verifier's third pass, the lead's gate, merge after Slice D, #149 to #151);
 then #152 (entry points), #153 (one measure) and #154 (close-out carry-over) as the map orders them.
 
-## Addendum: the tracker's integration round
-(Filled in when the web owner reported; if this line is still here, the round had not reported: check `git log
-origin/feat/deal-tracker-web` and whether it contains dev's 866b52d5.)
+## Addendum: the tracker's integration round (reported after the pause was asked for)
+`feat/deal-tracker-web` is at 893a5ac2 (pushed) and now CONTAINS dev (Slice B, 866b52d5) and `feat/deal-tracker-api` 8c2f0017.
+The only conflict was `playwright.config.ts` (dev's live `testMatch` kept, `tracker` added); the one link on the decision
+record, the one mock route, the dictionary block, DESIGN.md and package.json merged by themselves. `--tracker` re-recorded on
+the merged tree (stable on a second run). The web owner's runs, zero retries: unit 133; **whole mock suite 394 passed, 47
+skipped, 0 failed**; live `tracker.spec.ts` 1 passed (`record.spec.ts` is not in the live project). The eyebrow prints the
+server's `agreed_text`. Still to do, unchanged: the verifier's third pass, the lead's own gate (whole mock, the whole live
+project, tests/api on the merged tree), the merge after Slice D. Because this branch already holds dev, Slice D should merge
+dev first and land first; then merge dev into this branch once more before its gate.
