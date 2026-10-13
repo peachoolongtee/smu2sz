@@ -437,7 +437,9 @@ test.describe("live", () => {
     expect(served, "the server names the result").toBeTruthy();
     await expect(card.getByTestId("approval-state-APR-000001")).toHaveText(served!);
     await expect(card).toContainText(/submitted/i);
-    await expect(card).not.toContainText(/\bdone\b/i);
+    // (the lifecycle names its stage "done" for assistive tools; the outcome, the state word and the headline never say the bare word)
+    await expect(card.getByTestId("approval-outcome-APR-000001")).not.toContainText(/\bdone\b/i);
+    await expect(card.getByTestId("approval-state-APR-000001")).not.toContainText(/\bdone\b/i);
   });
 
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {
