@@ -81,10 +81,11 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
   const query = await decisionQuery(page);
   const card = page.getByTestId("customer-decision");
   await expect(card).toContainText("One commercial decision waits for you");
-  // What is open with the customer is the queue's own row for this negotiation, in focus, and the way to the complete queue carries the origin.
-  await expect(page.getByTestId("customer-task")).toHaveCount(1);
-  await expect(page.getByTestId("customer-task")).toHaveAttribute("data-focus", "true");
-  await expect(page.getByTestId("customer-task")).toContainText("Payment terms");
+  // The block is about the selected negotiation (the queue's own row, its words and status); with nothing else open the list of others is absent, and the way to the complete queue carries the origin.
+  await expect(card).toHaveAttribute("data-focus", /^deal:/);
+  await expect(page.getByTestId("customer-decision-heading")).toContainText("Payment terms");
+  await expect(page.getByTestId("customer-decision-status")).toContainText("Counter ready");
+  await expect(page.getByTestId("customer-task")).toHaveCount(0);
   await expect(page.getByTestId("customer-all-tasks")).toHaveAttribute("href", "/deals?customer=BUYER-1&from=customer");
   await expect(page.getByTestId("customer-decision-text")).toContainText("FLOW recommends countering with Option A, ¥3,027.77 once if accepted.");
   const primary = page.getByTestId("customer-decision-primary");

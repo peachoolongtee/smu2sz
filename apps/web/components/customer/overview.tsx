@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/icons";
 import { PartialRead } from "@/components/business/freshness";
+import { isNegotiation, lifecyclePill, rowPill } from "@/components/deals/flow/deal-model";
+import type { PillTone } from "@/components/ui/status-pill";
+import { useMode } from "@/lib/mode";
+import { rowDecision, type Queue } from "@/components/deals/flow/queue-model";
 import { ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
+import { StatusPill } from "@/components/ui/status-pill";
+import { selectionHref } from "@/lib/selection";
+import { flowOf } from "@/lib/customer-r2";
+import { ExposureTable } from "./exposure-table";
+import { ReceivableFlowCard } from "./receivable-flow";
 import { ActionGroup } from "@/components/ui/action-group";
 import { OpenSection } from "@/components/ui/open-section";
 import { StateWord } from "@/components/ui/state-word";
@@ -11,8 +20,7 @@ import { stateKey } from "@/components/ui/state-word-model";
 import { fromCustomer, contextQuery, type CustomerContext } from "@/lib/customer-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomerOverviewView, OverviewAction, OverviewFigure, OverviewHistoryRow, OverviewRow, OverviewTone } from "@/lib/types";
-import { focusOf, OutstandingWork } from "./outstanding";
-import type { Queue } from "@/components/deals/flow/queue-model";
+import { AllTasksLink, focusOf, OutstandingWork } from "./outstanding";
 import { rowsOfCustomer } from "./outstanding";
 
 /** The colour a tone gives a figure or a value; a status is always said in the server's words as well, so colour is never the only channel. */
@@ -53,6 +61,11 @@ function Figure({ figure, provenance }: { figure: OverviewFigure; provenance: st
       <dd className="mt-0.5 break-words text-sm text-ink-2" data-testid={`customer-figure-${figure.key}-note`}>
         {figure.note}
       </dd>
+      {typeof figure.proportion === "number" && figure.proportion >= 0 ? (
+        <dd className="mt-1.5 h-1.5 overflow-hidden rounded-pill bg-track" role="img" aria-label={t("customer.share.bar", { label: figure.label })} data-testid={`customer-figure-${figure.key}-bar`}>
+          <span className="block h-full rounded-pill bg-f-purple" style={{ width: `${Math.min(figure.proportion, 1) * 100}%` }} />
+        </dd>
+      ) : null}
       {contribution && provenance ? (
         <dd className="mt-0.5 break-words text-supporting font-medium text-warn-fg" data-testid="customer-figure-value-provenance">
           {provenance}
@@ -75,11 +88,23 @@ function provenanceOf(view: CustomerOverviewView): string | null {
   return word && !(figure?.note ?? "").includes(word) ? word : null;
 }
 
+/** What the action block is about: the selected negotiation's own words (its subject, its lifecycle pill, what FLOW recommends), where "Review decision" leads and whether the owner's turn is next. */
+interface Selected {
+  key: string;
+  subject: string;
+  pill: { tone: PillTone; text: string; lifecycle: string | null };
+  recommends: string | null;
+  href: string;
+  closed: boolean;
+}
+
 /**
- * The commercial decision in focus: what waits (the server's question), the one filled primary and the other two links, then who may do it. The primary is the page's only
- * filled button; none waiting says so and keeps the links as outlined buttons.
+ * The primary action block (round two): the SELECTED negotiation's heading, lifecycle status and recommendation (the one the address names, else the first that needs the owner, never the
+ * highest-priority one in its place), the one filled button to review it in Deals, then who may do it. The sentence over it is the server's (`primary_decision.text`, "Foshan has one commercial
+ * decision requiring your response."), the recommendation is the server's (`recommends_text`) when the selection is the primary decision and the queue row's own consequence otherwise. Nothing waiting says
+ * so (the server's `none_text`) and the other links stand as outlined buttons, so there is no filled primary.
  */
-function Focus({ view }: { view: CustomerOverviewView }) {
+function ActionBlock({ view, selected }: { view: CustomerOverviewView; selected: Selected | null }) {
   const { t } = useI18n();
   const decision = view.decision;
   const rest: OverviewAction[] = decision ? decision.secondary : (view.actions ?? []);
@@ -88,35 +113,47 @@ function Focus({ view }: { view: CustomerOverviewView }) {
       {a.label}
     </ButtonLink>
   ));
-  if (!decision) {
+  if (!decision && !selected) {
     if (!view.none_text && !rest.length) return null;
     return (
-      <section aria-label={t("customer.decision")} className="mb-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
+      <section aria-label={t("customer.decision")} className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
         {view.none_text ? <p className="min-w-0 flex-[2_1_20rem] text-pretty text-sm text-ink-2">{view.none_text}</p> : null}
         {links.length ? <ActionGroup>{links}</ActionGroup> : null}
       </section>
     );
   }
-  // Nothing is the owner's to do while the buyer's reply is awaited: the way into the negotiation is an outlined button, not the page's filled one.
-  const waitsOnBuyer = decision.kind === "awaiting_buyer";
-  // A lapsed negotiation is nobody's turn: nothing to review, send or wait for. It is a closed state (neutral), and its way in is an outlined button.
-  const lapsed = decision.kind === "lapsed";
+  const title = view.primary_decision?.text ?? decision?.eyebrow ?? t("customer.decision");
+  const heading = selected?.subject ?? decision?.headline_short ?? decision?.text ?? "";
+  const pill = selected?.pill ?? { tone: "amber" as PillTone, text: decision?.eyebrow ?? "", lifecycle: null };
+  const closed = selected ? selected.closed : decision?.kind === "awaiting_buyer" || decision?.kind === "lapsed";
+  // The server's recommendation speaks for the primary decision; the older long sentence is the fallback for a server that does not send it.
+  const body = selected ? selected.recommends : (decision?.text ?? null);
+  const href = selected?.href ?? decision?.primary.href ?? "/deals";
+  const label = selected && view.primary_decision && selected.key === view.primary_decision.decision_id ? (decision?.primary.label ?? t("customer.review")) : (decision?.primary.label && !selected ? decision.primary.label : t("customer.review"));
   return (
-    <section aria-labelledby="customer-decision-title" className="mb-4 border-b border-line pb-4" id="customer-decision" data-testid="customer-decision">
-      <h3 id="customer-decision-title" className="text-supporting font-bold" data-kind={decision.kind ?? ""}>
-        {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
-        <StateWord tone={lapsed ? "neutral" : waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
-      </h3>
-      <p className="mt-1 text-pretty font-display text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="customer-decision-text">
-        {decision.text}
+    <section aria-labelledby="customer-decision-title" className="flow-card p-4 sm:p-6" id="customer-decision" data-testid="customer-decision" data-focus={selected?.key ?? undefined}>
+      {/* The server's own sentence for what waits names the region; with no server decision it is the plain title. */}
+      <h2 id="customer-decision-title" className="type-section text-ink" data-kind={decision?.kind ?? ""}>
+        {title}
+      </h2>
+      <p className="mt-3" data-testid="customer-decision-status">
+        <StatusPill tone={pill.tone}>{pill.text}</StatusPill>
       </p>
-      <ActionGroup className="mt-3" label={t("customer.decision")}>
-        <ButtonLink href={decision.primary.href} variant={waitsOnBuyer || lapsed ? "secondary" : "primary"} data-testid="customer-decision-primary">
-          {decision.primary.label}
+      <p className="mt-2 text-pretty font-display text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="customer-decision-heading">
+        {heading}
+      </p>
+      {body ? (
+        <p className="mt-1 text-pretty text-sm leading-relaxed text-ink-2" data-testid="customer-decision-text">
+          {body}
+        </p>
+      ) : null}
+      <ActionGroup className="mt-4" label={t("customer.decision")}>
+        <ButtonLink href={href} variant={closed ? "secondary" : "primary"} data-testid="customer-decision-primary">
+          {label}
         </ButtonLink>
         {links}
       </ActionGroup>
-      {decision.authority_text ? (
+      {decision?.authority_text && (!selected || selected.key === view.primary_decision?.decision_id || !view.primary_decision) ? (
         <p className="mt-3 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="customer-decision-authority">
           {decision.authority_text}
         </p>
@@ -204,10 +241,16 @@ function withContext(href: string, ctx: CustomerContext): string {
 function Exposure({ view }: { view: CustomerOverviewView }) {
   const { t } = useI18n();
   const exposure = view.exposure;
-  if (!exposure && !view.note) return null;
+  const comparison = view.exposure_comparison;
+  if (!exposure && !comparison && !view.note) return null;
+  // The server's comparison (expected payment against paid late) replaces the rows; the link to the late-payment test is its own, else the action the overview already carries.
+  const stress = (view.actions ?? view.decision?.secondary ?? []).find((a) => a.key === "stress");
+  const explore = comparison?.explore ?? (stress ? { label: t("customer.explore"), href: fromCustomer(stress.href, view.customer_id) } : null);
   return (
     <OpenSection first id="customer-exposure" title={t("customer.exposure")} testId="customer-exposure">
-      {exposure ? (
+      {comparison ? (
+        <ExposureTable comparison={comparison} explore={explore} />
+      ) : exposure ? (
         <>
           <Rows rows={exposure.rows} testId="customer-exposure-rows" />
           {exposure.same_figures_note ? (
@@ -266,12 +309,49 @@ function History({ rows }: { rows: OverviewHistoryRow[] }) {
 export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: CustomerOverviewView; onRetry: () => void; ctx?: CustomerContext; queue?: Queue | null }) {
   const { t } = useI18n();
   const back = view.context?.back;
+  const mode = useMode();
   const tasks = rowsOfCustomer(queue, view.customer_id);
-  const focus = focusOf(tasks, ctx.decision ?? view.context?.deal ?? null);
+  const wanted = ctx.decision ?? view.context?.deal ?? null;
+  const focus = focusOf(tasks, wanted);
+  // The selected negotiation: from the server's list of this customer's open negotiations (the address's, else the primary, else the first), else from the queue's rows.
+  const negs = view.open_negotiations ?? [];
+  const serverSel = negs.find((n) => n.decision_id === wanted) ?? negs.find((n) => n.is_primary) ?? negs[0] ?? null;
+  const subjectOf = (n: { subject_text: string; subject_demo_text?: string | null }) => (mode === "demo" ? (n.subject_demo_text ?? n.subject_text) : n.subject_text);
+  const selected: Selected | null = serverSel
+    ? (() => {
+        const pill = lifecyclePill(serverSel.lifecycle, serverSel.status_text);
+        const primary = view.primary_decision?.decision_id === serverSel.decision_id;
+        return {
+          key: serverSel.decision_id,
+          subject: subjectOf(serverSel),
+          pill,
+          recommends: primary ? (view.primary_decision?.recommends_text ?? null) : (focus && rowDecision(focus.row) === serverSel.decision_id ? focus.row.consequence_text : null),
+          href: primary && view.primary_decision ? view.primary_decision.href : selectionHref("/deals", { customer: view.customer_id, decision: serverSel.decision_id, invoice: null, from: "customer" }),
+          closed: pill.lifecycle === "awaiting_buyer" || pill.lifecycle === "agreed" || pill.lifecycle === "lapsed" || pill.lifecycle === "declined",
+        };
+      })()
+    : focus && isNegotiation(focus.row)
+      ? (() => {
+          const pill = rowPill(focus.tier, focus.row);
+          const dec = rowDecision(focus.row);
+          return {
+            key: focus.row.key,
+            subject: mode === "demo" ? (focus.row.subject_demo_text ?? focus.row.subject_text) : focus.row.subject_text,
+            pill,
+            recommends: view.decision && dec && view.decision.primary.href.includes(encodeURIComponent(dec)) ? view.decision.text : focus.row.consequence_text,
+            href: dec ? selectionHref("/deals", { customer: view.customer_id, decision: dec, invoice: null, from: "customer" }) : (view.decision?.primary.href ?? "/deals"),
+            closed: pill.lifecycle === "awaiting_buyer" || focus.tier === "waiting" || focus.tier === "agreements" || pill.lifecycle === "lapsed",
+          };
+        })()
+      : null;
   const hasEconomics = shownEconomics(view).length > 0;
-  const hasExposure = Boolean(view.exposure || view.note);
+  const hasExposure = Boolean(view.exposure || view.exposure_comparison || view.note);
+  const flow = flowOf(view);
+  const hasFlow = Boolean(flow);
+  const hasWork = Boolean(tasks.length || view.decision || view.none_text || (view.actions ?? []).length);
+  const sentence = view.relationship_text ?? view.summary_text ?? null;
   return (
-    <div className="flow-f space-y-5" data-testid="customer-overview">
+    <div className="flow-f flex flex-col gap-6" data-testid="customer-overview">
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <p className="text-supporting font-bold text-ink-3">{t("customer.title")}</p>
@@ -282,7 +362,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
             </Link>
           ) : null}
         </div>
-        <PageHeader title={view.name} subtitle={view.summary_text ? <span className="max-sm:hidden">{view.summary_text}</span> : undefined} />
+        <PageHeader title={view.name} subtitle={sentence ? <span data-testid="customer-relationship">{sentence}</span> : undefined} />
       </div>
       <PartialRead partial={view.partial} onRetry={onRetry} />
       {view.context?.irrelevant_text ? (
@@ -291,7 +371,8 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
         </p>
       ) : null}
       {view.figures?.length ? (
-        <section aria-label={t("customer.figures")} className="flow-card p-4 sm:p-6" data-testid="customer-figures">
+        // On a phone the action comes before the four figures (they are not interactive, so no focus order changes): its button is inside the first screen.
+        <section aria-label={t("customer.figures")} className="flow-card p-4 max-lg:order-2 sm:p-6" data-testid="customer-figures">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-4">
             {view.figures.map((f) => (
               <Figure key={f.key} figure={f} provenance={provenanceOf(view)} />
@@ -299,18 +380,25 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
           </dl>
         </section>
       ) : null}
-      {tasks.length || view.decision || view.none_text || (view.actions ?? []).length ? (
-        <section aria-labelledby="customer-work-title" className="flow-card p-4 sm:p-6" data-testid="customer-work">
-          <h2 id="customer-work-title" className="type-section mb-3 text-ink">
-            {t("customer.outstanding", { name: view.name })}
-          </h2>
-          {/* The task in focus and its one action come first (on a phone the button is in the first screen); the list of everything open follows. */}
-          <Focus view={view} />
-          <OutstandingWork customerId={view.customer_id} rows={tasks} focusKey={focus?.row.key ?? null} name={view.name} />
-        </section>
+      {hasWork || hasFlow ? (
+        <div className={`grid gap-6 max-lg:order-1 ${hasWork && hasFlow ? "lg:grid-cols-2 lg:items-start" : ""}`}>
+          {/* The action comes first in the reading order (on a phone its button is in the first screen); the receivable-to-cash flow is beside it from `lg`. */}
+          {hasWork ? (
+            <div className="min-w-0 space-y-6" data-testid="customer-work">
+              <ActionBlock view={view} selected={selected} />
+              {(tasks.length || negs.length) && !(tasks.some((x) => x.row.key !== focus?.row.key) || negs.length > 1) ? <AllTasksLink customerId={view.customer_id} name={view.name} /> : null}
+              {tasks.some((x) => x.row.key !== focus?.row.key) || negs.length > 1 ? (
+                <section aria-label={t("customer.outstanding", { name: view.name })} className="flow-card p-4 sm:p-6">
+                  <OutstandingWork customerId={view.customer_id} rows={tasks} focusKey={focus?.row.key ?? null} name={view.name} negotiations={negs.length ? negs.filter((n) => n.decision_id !== selected?.key).map((n) => ({ key: n.decision_id, href: selectionHref("/deals", { customer: view.customer_id, decision: n.decision_id, invoice: null, from: "customer" }), subject: subjectOf(n), pill: lifecyclePill(n.lifecycle, n.status_text) })) : undefined} />
+                </section>
+              ) : null}
+            </div>
+          ) : null}
+          {flow ? <ReceivableFlowCard flow={flow} /> : null}
+        </div>
       ) : null}
       {hasEconomics || hasExposure ? (
-        <div className={`grid gap-5 ${hasEconomics && hasExposure ? "lg:grid-cols-2" : ""}`}>
+        <div className={`grid gap-6 max-lg:order-3 ${hasEconomics && hasExposure ? "lg:grid-cols-2" : ""}`}>
           {hasEconomics ? (
             <div className="flow-card p-5 sm:p-6">
               <Economics view={view} ctx={ctx} />
@@ -324,7 +412,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
         </div>
       ) : null}
       {view.history?.length ? (
-        <div className="flow-card p-5 sm:p-6">
+        <div className="flow-card p-5 max-lg:order-3 sm:p-6">
           <History rows={view.history} />
         </div>
       ) : null}
