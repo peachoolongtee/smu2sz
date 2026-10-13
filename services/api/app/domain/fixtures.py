@@ -36,6 +36,18 @@ def scenario_events(name: str = "golden_sme") -> list[dict]:
     return list(json.loads(path.read_text(encoding="utf-8")).get("events", []))
 
 
+def scenario_seed(name: str) -> dict | None:
+    """What the demo replays on a scenario's books after they are seeded (offers to submit and evaluate, negotiations to
+    send, operations to post: `app.api.demo_seed`), or None when the scenario has no seed file."""
+    path = FIXTURES / "scenarios" / f"{name}.seed.json"
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise TypeError(f"{path.name} must hold a JSON object")
+    return data
+
+
 def golden_values() -> dict:
     return json.loads((FIXTURES / "golden" / "golden_values.json").read_text(encoding="utf-8"))
 

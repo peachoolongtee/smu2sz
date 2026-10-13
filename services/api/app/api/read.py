@@ -241,6 +241,7 @@ def get_evidence() -> str:
 
 @router.post("/demo/reset")
 def demo_reset(scenario: str = "golden_sme") -> dict:
+    from app.api.demo_seed import DemoSeedError
     from app.api.runtime import ResetRefused
 
     rt = get_runtime()
@@ -248,4 +249,6 @@ def demo_reset(scenario: str = "golden_sme") -> dict:
         rt.reset_demo(scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
+    except DemoSeedError as e:
+        raise HTTPException(500, {"code": "DEMO_SEED_FAILED", "step": e.step, "message": str(e)}) from e
     return {"ok": True, "scenario": scenario, "day": rt.day}

@@ -35,7 +35,7 @@ from app.api.presentation import (
     when_text,
 )
 from app.api.quotes import FUNDING_OPS, build_shown_quote, reason_rate
-from app.api.runtime import get_runtime
+from app.api.runtime import Runtime, get_runtime
 from app.books import current_books
 from app.decisions.identity import decision_id_for
 from app.domain.models import Actor, Operation, OperationResult, OperationStatus, RepayFacility
@@ -63,6 +63,12 @@ def post_operation(body: dict, x_owner_token: str | None = Header(default=None),
         body = {**body, "requested_by": Actor.AGENT.value}  # unauthenticated owner claim -> agent
     if body.get("requested_by") == Actor.SYSTEM.value and not is_bank_feed(x_bank_feed_key):
         body = {**body, "requested_by": Actor.AGENT.value}  # only the bank feed speaks as SYSTEM (F-02)
+    return run_operation(rt, body)
+
+
+def run_operation(rt: Runtime, body: dict) -> dict:
+    """Type the body and hand it to the executor: the part of POST /operations after who is asking is settled. The demo's seed
+    replay (`app.api.demo_seed`) calls it with an agent's body, so a seeded operation is queued exactly as the route queues one."""
     body.setdefault("day", rt.day)
     try:
         op = _OP.validate_json(json.dumps(body))
