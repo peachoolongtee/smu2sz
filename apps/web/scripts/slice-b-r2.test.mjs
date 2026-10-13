@@ -11,13 +11,13 @@ const { en, zh } = await import("../lib/dictionary.ts");
 const row = (o) => ({ key: o.key, kind: "DECISION", customer_id: "BUYER-1", subject_text: "Foshan · Early settlement on the ¥420k invoice", status_text: "Counter ready", consequence_text: "", severity: "NORMAL", href: "/deals", ...o });
 const queue = (o = {}) => ({ counts: { needs_you: 9, waiting: 9, agreements: 9, customers: 9 }, alert: null, needs_you: [], waiting: [], agreements: [], customers: [], fallback: false, ...o });
 
-test("the Deals queue lists negotiations only: an approval, a collection, a setup task, a settlement and a promise are other pages' rows", () => {
+test("the Deals queue lists negotiations only: an approval, a collection, a setup task and a settlement are other pages' rows; the promised payments stay under the agreements", () => {
   const q = queue({
     needs_you: [row({ key: "a" }), row({ key: "b", kind: "APPROVAL" }), row({ key: "c", kind: "COLLECTION" }), row({ key: "d", kind: "SETUP" })],
     waiting: [row({ key: "e", kind: "BUYER_REPLY" }), row({ key: "f", kind: "SETTLEMENT" }), row({ key: "g", kind: "PROMISE" })],
     agreements: [row({ key: "h", kind: "AGREEMENT" }), row({ key: "i", kind: "PROMISE" })],
   });
-  assert.deepEqual(m.negotiationRows(q).map((x) => [x.tier, x.row.key]), [["needs_you", "a"], ["waiting", "e"], ["agreements", "h"]]);
+  assert.deepEqual(m.negotiationRows(q).map((x) => [x.tier, x.row.key]), [["needs_you", "a"], ["waiting", "e"], ["agreements", "h"], ["agreements", "i"]]);
 });
 
 test("the tabs' counts are the server's `queue.deals` when it sends them, else the negotiation rows held; the Customers tab is gone", () => {
