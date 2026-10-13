@@ -17,7 +17,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.auth import require_owner
-from app.api.decisions import latest_verdict_for
+from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
 from app.api.presentation import (
     business_action,
@@ -36,7 +36,6 @@ from app.api.presentation import t as say
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
 from app.api.workspace import _months, _posted_discount
-from app.books import current_books
 from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
@@ -835,13 +834,12 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                                   "message": "evaluate the offer first; there is nothing to draw yet"})
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     held = [c for c in rt.store.commitments() if c.offer_id != offer_id]  # the offer as asked, not as it was later booked
-    books = current_books(state, held)
     today = max(rt.day, state.as_of_day)
     floor = mandate.min_cash_fen
-    try:
-        asked = project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
-    except EngineError:
-        # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books
+    books, asked = offer_as_asked(state, mandate, rt.store.commitments(), offer_id, verdict)
+    if asked is None:
+        # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books (the decision
+        # record words it as LAPSED, by the same rule)
         return {"offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today, "available": False,
                 "unavailable_text": say(lang, "This offer can no longer be drawn on today's books: the days it named have passed or the "
                                               "invoice has changed since.",

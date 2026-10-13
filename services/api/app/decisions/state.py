@@ -51,6 +51,9 @@ class DealState(StrEnum):
     MISSED = "MISSED"
     FULFILLED = "FULFILLED"
     REVOKED = "REVOKED"
+    # An offer whose reply was ready but which can no longer be drawn on today's books (the invoice it was about has since changed): nothing to
+    # do and nothing to wait for. `derive` never gives it: it is a fact about the books, set by the API read (`Context.states`).
+    LAPSED = "LAPSED"
 
 
 class FundingState(StrEnum):

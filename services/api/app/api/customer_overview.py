@@ -51,7 +51,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.alerts import alerts
 from app.api.auth import require_owner
-from app.api.deal_offers import open_offers
+from app.api.deal_offers import lapsed_offers, open_offers
 from app.api.decisions import Context, latest_verdict_for, load_context
 from app.api.financing_words import State, state_of, state_word
 from app.api.home import next_action
@@ -664,6 +664,12 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
     asks = offer["asks_text"]
     wants = (t(lang, f"{r.who} wants {asks}.", f"{r.who}要求：{asks}。") if asks
              else t(lang, f"{r.who} has made a request.", f"{r.who}提出了一项请求。"))
+    if r.offer_state == DealState.LAPSED:  # the invoice it was about has been settled under another agreement: nothing to review, send or wait for
+        return {
+            "kind": "lapsed", "eyebrow": t(lang, "Lapsed", "已失效"), "text": f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}",
+            "headline_short": None, "authority_text": None,
+            "primary": {"label": t(lang, "Open the negotiation", "打开谈判"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
+            "secondary": actions}, none
     if r.offer_state == DealState.RECEIVED:  # received, not read yet: nothing to recommend and no authority to state
         return {
             "kind": "offer_received", "eyebrow": t(lang, "One offer waits to be read", "有一份报价等待阅读"),
@@ -802,7 +808,7 @@ def _capacity_row(r: _Read, ex: dict[str, Any]) -> dict[str, Any]:
         return t(lang, "none", "无") if fen is None else whole_yuan(fen)
 
     today = t(lang, f"{amount(spare['today_fen'])} today", f"今天 {amount(spare['today_fen'])}")
-    if r.offer is None:
+    if r.offer is None or r.offer_state == DealState.LAPSED:
         return _row("capacity", label, today)
     rec = r.recommended
     after = (t(lang, f"if {r.who} accepts {rec['label']}", f"如果{r.who}接受{rec['label']}") if rec is not None
@@ -941,8 +947,9 @@ def _history(r: _Read) -> list[dict[str, Any]]:
 def _find_offer(rt: Runtime, ctx: Context, buyer_id: str, lang: Lang
                 ) -> tuple[dict[str, Any] | None, DealState | None, CompiledOffer | None, Verdict | None]:
     found = open_offers(ctx, lang).get(buyer_id)
-    if found is None:
-        return None, None, None, None
+    if found is None:  # nothing open: a lapsed negotiation is still said, as lapsed, with no reply to review and no figure to read
+        lapsed = lapsed_offers(ctx, lang).get(buyer_id)
+        return (lapsed[0], DealState.LAPSED, None, None) if lapsed is not None else (None, None, None, None)
     offer = found[0]
     return offer, found[1], rt.store.get_offer(offer["offer_id"]), latest_verdict_for(rt, offer["offer_id"])
 

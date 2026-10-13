@@ -1757,6 +1757,8 @@ _DEAL_STATE_WORDS = {
     "MISSED": ("Early payment did not arrive", "提前付款未到账"),
     "FULFILLED": ("Fulfilled", "已履行"),
     "REVOKED": ("Revoked", "已撤销"),
+    "LAPSED": ("Lapsed · the invoice it was about has since been settled under another agreement",
+               "已失效 · 它所针对的发票此后已按另一份协议结算"),
 }
 _RESPONSE_WORDS = {
     "accept": ("Acceptable, awaiting agreement", "可接受，等待达成协议"),
@@ -1774,6 +1776,12 @@ _FUNDING_STATE_WORDS = {
     "SETTLED": ("Done; the cash has landed", "已完成，资金已到账"),
     "EXECUTED": ("Done", "已完成"),
 }
+
+
+def lapsed_offer_text(lang: Lang) -> str:
+    """Why a negotiation whose invoice has been settled since can no longer be answered: it is closed, and there is nothing to read on it."""
+    return t(lang, "This offer has lapsed: the invoice it was about has since been settled under another agreement, so there is nothing to reply to.",
+             "该报价已失效：它所针对的发票此后已按另一份协议结算，无需再答复。")
 
 
 def business_action_text(code: str, lang: Lang) -> str:
@@ -1807,7 +1815,7 @@ def decision_state_tone(state: str, *, awaited: bool, residual: bool) -> str:
         return "warn"
     if state in ("FULFILLED", "SETTLED"):
         return "ok"
-    if state in ("DECLINED", "NO_DEAL", "EXPIRED", "REVOKED"):
+    if state in ("DECLINED", "NO_DEAL", "EXPIRED", "REVOKED", "LAPSED"):
         return "neutral"
     return "info"
 
