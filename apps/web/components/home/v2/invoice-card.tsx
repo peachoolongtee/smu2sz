@@ -1,5 +1,6 @@
 "use client";
 
+import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { Breakdown } from "@/components/home/v2/breakdown";
 import { ButtonLink } from "@/components/ui";
 import { getHomeInvoices } from "@/lib/api";
@@ -13,7 +14,7 @@ import { useAsync } from "@/lib/use-async";
  */
 export function InvoiceCards({ customerId }: { customerId: string }) {
   const { t, lang } = useI18n();
-  const read = useAsync(() => getHomeInvoices(lang).catch(() => null), [lang]);
+  const read = useAsync(() => fromWarm(key.invoices(lang), () => getHomeInvoices(lang).catch(() => null)), [lang]);
   const rows = (read.data?.rows ?? []).filter((r) => r.buyer_id === customerId && (r.breakdown?.length ?? 0) > 0);
   if (!rows.length) return null;
   return (
@@ -29,7 +30,7 @@ export function InvoiceCards({ customerId }: { customerId: string }) {
               k.value ? (
                 <div key={k.key} className="min-w-0" data-testid={`hv2-invoice-${k.key}`}>
                   <dt className="text-[15px] text-ink-3">{k.label}</dt>
-                  <dd className="mt-1 break-words font-display text-[26px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-ink first-letter:uppercase sm:text-[30px]">{k.value}</dd>
+                  <dd className="mt-1 break-words font-display text-[24px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-ink first-letter:uppercase">{k.value}</dd>
                 </div>
               ) : null,
             )}

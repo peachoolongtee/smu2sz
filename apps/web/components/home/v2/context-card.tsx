@@ -24,12 +24,12 @@ export function ContextCard({ customerId, decision, row, customer, onBack }: { c
   const sentence = row?.consequence_text ?? v?.summary_text ?? customer?.detail_text ?? null;
   const evidence = decision ? (v?.decision?.text ?? null) : (v?.summary_text ?? null);
   return (
-    <section aria-labelledby="hv2-context-title" className="motion-reveal f-card min-w-0 p-5" data-testid="hv2-context">
+    <section aria-labelledby="hv2-context-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-context">
       <button type="button" onClick={onBack} className="motion-press -ml-2 mb-2 inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 text-[15px] font-semibold text-ink hover:bg-subtle touch:min-h-11" data-testid="hv2-context-back">
         <span aria-hidden>←</span>
         {t("hv2.context.back")}
       </button>
-      <h2 id="hv2-context-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
+      <h2 id="hv2-context-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {decision ? t("hv2.context.title") : t("hv2.context.titleCustomer")}
       </h2>
       <p className="mt-3 border-b border-line pb-4 text-[15px] text-ink-3" data-testid="hv2-context-subject">

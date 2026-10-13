@@ -426,16 +426,17 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <Tour />
       <header className="sticky top-0 z-30 bg-canvas">
-        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
           <Brand href="/" />
-          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+          {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
+          {wide ? <AskHeaderInput /> : null}
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
             <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
                 {t("biz.demoData")}
               </Badge>
             </span>
-            {wide ? <AskHeaderInput /> : null}
             <ModeSwitch />
             <AccountMenu />
           </div>

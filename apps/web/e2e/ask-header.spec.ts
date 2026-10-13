@@ -13,12 +13,18 @@ test.beforeEach(async ({}, testInfo) => {
   );
 });
 
-const EXAMPLES = {
-  en: [en["ask.ph.1"], en["ask.ph.2"], en["ask.ph.3"]],
-  zh: [zh["ask.ph.1"], zh["ask.ph.2"], zh["ask.ph.3"]],
-};
+/** The six placeholders in order (round three): the late-payment one names the first worklist customer's short name (the server's word, "Foshan" on the Demo); the last rests. */
+const lines = (d: typeof en | typeof zh, name = "Foshan") => [
+  d["ask.ph.1"],
+  d["ask.ph.2"],
+  d["ask.ph.3"],
+  d["ask.ph.4"].replace("{name}", name),
+  d["ask.ph.5"],
+  d["ask.ph.rest"],
+];
+const EXAMPLES = { en: lines(en), zh: lines(zh) };
 
-test("the header carries a rounded Ask FLOW input left of the mode switch, and no floating pill on a desktop", async ({
+test("the header carries a rounded 36 px Ask FLOW input in its centre (the viewport's), 420 px wide and 520 px on focus, and no floating pill on a desktop", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -26,14 +32,17 @@ test("the header carries a rounded Ask FLOW input left of the mode switch, and n
   const form = page.getByTestId("ask-header");
   await expect(form).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Ask FLOW" })).toBeVisible();
-  const [f, m] = await Promise.all([
-    form.boundingBox(),
+  const f = (await form.boundingBox())!;
+  // Centred on the viewport, between the brand and the right-hand controls; 36 px tall, 420 px wide, a pill.
+  expect(Math.abs(f.x + f.width / 2 - 720)).toBeLessThanOrEqual(2);
+  expect(Math.round(f.height)).toBe(36);
+  expect(Math.round(f.width)).toBe(420);
+  const [brand, mode] = await Promise.all([
+    page.getByRole("link", { name: /FLOW/ }).first().boundingBox(),
     page.getByText("Business", { exact: true }).first().boundingBox(),
   ]);
-  expect(f!.x + f!.width).toBeLessThanOrEqual(m!.x + 1);
-  expect(Math.abs(f!.y + f!.height / 2 - (m!.y + m!.height / 2))).toBeLessThan(
-    8,
-  );
+  expect(brand!.x + brand!.width).toBeLessThanOrEqual(f.x);
+  expect(f.x + f.width).toBeLessThanOrEqual(mode!.x);
   expect(
     await form.evaluate((el) => getComputedStyle(el).borderTopLeftRadius),
   ).toBe("9999px");
@@ -42,6 +51,13 @@ test("the header carries a rounded Ask FLOW input left of the mode switch, and n
   expect((await page.getByTestId("chat-open").boundingBox())!.y).toBeLessThan(
     80,
   ); // the header's icon, not a pill above the bottom of the page
+  // Focus widens it to 520 px from its centre (the centre never moves, the icon stays under a pointer that presses it).
+  await page.getByTestId("ask-input").focus();
+  await expect
+    .poll(async () => Math.round((await form.boundingBox())!.width))
+    .toBe(520);
+  const g = (await form.boundingBox())!;
+  expect(Math.abs(g.x + g.width / 2 - 720)).toBeLessThanOrEqual(2);
   // Other Business pages carry it too.
   for (const path of ["/deals", "/cash", "/receivables", "/activity"]) {
     await page.goto(path);
@@ -51,50 +67,50 @@ test("the header carries a rounded Ask FLOW input left of the mode switch, and n
 
 test.describe("with motion", () => {
   test.use({ reducedMotion: "no-preference" });
-  test("the placeholder cycles through the three example questions as a typewriter, pauses on focus, and is the Chinese set in Chinese", async ({
+  test("the placeholder types six questions in turn and rests on 'Ask FLOW anything…'; focus pauses it; the Chinese set in Chinese", async ({
     page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     const input = page.getByTestId("ask-input");
-    const seen = new Set<string>();
+    const seen: string[] = [];
     const start = Date.now();
-    while (Date.now() - start < 30000 && seen.size < 3) {
+    const rest = EXAMPLES.en[5];
+    while (Date.now() - start < 60000) {
       const ph = (await input.getAttribute("placeholder")) ?? "";
       const whole = EXAMPLES.en.find((e) => e === ph);
-      if (whole) seen.add(whole);
+      if (whole && !seen.includes(whole)) seen.push(whole);
       // A partial placeholder is a prefix of an example: it is being typed.
       if (ph && !whole)
         expect(EXAMPLES.en.some((e) => e.startsWith(ph))).toBe(true);
-      await page.waitForTimeout(60);
+      if (seen.includes(rest)) break;
+      await page.waitForTimeout(50);
     }
-    expect([...seen].sort()).toEqual([...EXAMPLES.en].sort());
-    // Focus pauses it: the whole current example stays, and stays after a while; leaving resumes.
+    // In order, each question the chat answers, ending on the resting line.
+    expect(seen).toEqual(EXAMPLES.en);
+    // The resting line holds: no further cycling.
+    await page.waitForTimeout(4000);
+    expect(await input.getAttribute("placeholder")).toBe(rest);
+    expect(Date.now() - start).toBeLessThan(60000);
+  });
+  test("focus pauses the typewriter on the whole current line; the Chinese set is in Chinese", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const input = page.getByTestId("ask-input");
     await input.focus();
     const held = await input.getAttribute("placeholder");
     expect(EXAMPLES.en).toContain(held);
     await page.waitForTimeout(2600);
     expect(await input.getAttribute("placeholder")).toBe(held);
-    // Focus widens it.
-    await expect
-      .poll(
-        async () => (await page.getByTestId("ask-header").boundingBox())!.width,
-      )
-      .toBeGreaterThan(340);
-    const right = (await page.getByTestId("ask-header").boundingBox())!;
     await input.evaluate((el) => (el as HTMLInputElement).blur());
     await expect
-      .poll(
-        async () => (await page.getByTestId("ask-header").boundingBox())!.width,
+      .poll(async () =>
+        Math.round((await page.getByTestId("ask-header").boundingBox())!.width),
       )
-      .toBeLessThan(300);
-    // Its right edge never moves (it widens to the left), so the opener stays under the pointer.
-    const narrow = (await page.getByTestId("ask-header").boundingBox())!;
-    expect(
-      Math.abs(right.x + right.width - (narrow.x + narrow.width)),
-    ).toBeLessThan(1);
-    // Chinese.
+      .toBe(420);
     await page.addInitScript(() =>
       localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })),
     );
@@ -107,16 +123,24 @@ test.describe("with motion", () => {
   });
 });
 
-test("under reduced motion the placeholder is the first example, whole, and does not move", async ({
+test("under reduced motion the placeholder is the resting line, whole, and does not move", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   const input = page.getByTestId("ask-input");
-  await expect(input).toHaveAttribute("placeholder", EXAMPLES.en[0]);
+  await expect(input).toHaveAttribute("placeholder", EXAMPLES.en[5]);
   await page.waitForTimeout(2500);
-  await expect(input).toHaveAttribute("placeholder", EXAMPLES.en[0]);
+  await expect(input).toHaveAttribute("placeholder", EXAMPLES.en[5]);
+  await page.addInitScript(() =>
+    localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })),
+  );
+  await page.reload();
+  await expect(page.getByTestId("ask-input")).toHaveAttribute(
+    "placeholder",
+    EXAMPLES.zh[5],
+  );
 });
 
 test("Enter opens the Ask FLOW panel with the question already sent, under the page's scope chip, and the input clears", async ({

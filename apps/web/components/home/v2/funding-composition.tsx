@@ -67,7 +67,7 @@ export function FundingFact({ label, value, open, controls, id, toggle, pointer,
       onClick={toggle}
       {...pointer}
       {...focus}
-      className="motion-press group inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-ink hover:bg-subtle touch:min-h-11 max-sm:!flex-none"
+      className="motion-press group -ml-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-ink hover:bg-subtle touch:min-h-11 max-sm:!flex-none"
       data-testid="hv2-funding-fact"
     >
       <span aria-hidden>{t("hv2.funding.sources")}</span>

@@ -23,7 +23,7 @@ function PlanControls({ a, run, stateVersion, fixer }: { a: HomeV2Action; run: H
   const { primary, panel } = usePlanRun(run, stateVersion, fixer);
   return (
     <>
-      <ActionGroup testId="home-attention-run">
+      <ActionGroup testId="home-attention-run" className="[&>*]:min-h-9">
         {primary}
         {a.secondary ? (
           <ButtonLink href={a.secondary.href} data-testid="next-action-alternatives">
@@ -79,7 +79,7 @@ export function HomeV2ActionBar({
     const cash = kpis.cash_available;
     return (
       <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="held" className="outline-none">
-        <section aria-label={t("hv2.band.label")} data-testid="hv2-band" className="motion-reveal f-card flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3">
+        <section aria-label={t("hv2.band.label")} data-testid="hv2-band" className="motion-reveal f-card flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
           <p className="min-w-0 text-sm text-ink-3">
             <span className="text-ink">
               {t("hv2.band.cash")} <b className="font-bold tabular-nums">{cash.value_display}</b>
@@ -115,23 +115,23 @@ export function HomeV2ActionBar({
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant={quiet ? "quiet" : "action"} className="outline-none">
       <div data-testid={run ? "home-next-action" : quiet ? undefined : "home-attention-card"} data-alert={run?.alert_id} className="h-full">
-        <section aria-labelledby={titleId} data-testid="hv2-action" className="motion-reveal f-card flex h-full min-w-0 flex-col p-4 sm:p-5">
+        <section aria-labelledby={titleId} data-testid="hv2-action" className="motion-reveal f-card flex h-full min-w-0 flex-col p-4">
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="home-action-eyebrow">
+            <h2 id={titleId} className="font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="home-action-eyebrow">
               {quiet ? action.eyebrow : t("hv2.action.eyebrow")}
             </h2>
             {planned && !quiet ? (
-              <StatusPill tone="lavender" testId="hv2-plan-pill">
+              <StatusPill tone="lavender" testId="hv2-plan-pill" className="!min-h-6 py-0">
                 {t("home.hy.planned")}
               </StatusPill>
             ) : null}
           </div>
-          <p className="mt-2 line-clamp-2 text-pretty font-display text-[17px] font-semibold leading-snug tracking-[-0.01em] text-ink sm:text-[20px]" data-testid="home-action-title">
+          <p className="mt-1.5 line-clamp-1 text-pretty font-display text-[16px] font-semibold leading-snug tracking-[-0.01em] text-ink sm:text-[18px]" data-testid="home-action-title">
             {action.title}
           </p>
           {amount ? (
             <>
-              <p className="mt-1 font-display text-[34px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink sm:text-[40px]" data-testid="home-kpi-funding-value">
+              <p className="mt-0.5 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink sm:text-[36px]" data-testid="home-kpi-funding-value">
                 <span data-testid="hv2-plan-amount">{amount}</span>
               </p>
               {kpis.funding.state === "ARRANGED" && kpis.funding.status_text ? (
@@ -142,12 +142,12 @@ export function HomeV2ActionBar({
             </>
           ) : null}
           {line ? (
-            <p className="mt-1.5 line-clamp-2 max-w-3xl text-pretty text-sm text-ink-3 max-sm:hidden" data-testid="home-action-text">
+            <p className="mt-0.5 line-clamp-1 max-w-3xl text-pretty text-sm text-ink-3 max-sm:hidden" data-testid="home-action-text">
               {line}
             </p>
           ) : null}
           {cost?.value || approvalText ? (
-            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-supporting text-ink" data-testid="hv2-action-facts">
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-supporting text-ink" data-testid="hv2-action-facts">
               {cost?.value ? (
                 <span>
                   <span className="text-ink-3">{t("hv2.action.cost")}</span>{" "}
@@ -170,7 +170,7 @@ export function HomeV2ActionBar({
             </p>
           ) : null}
           {!quiet ? (
-            <div className="mt-3">
+            <div className="mt-2">
               {run ? (
                 <PlanControls a={action} run={run} stateVersion={stateVersion} fixer={fixer} />
               ) : action.primary || action.secondary ? (
@@ -189,7 +189,7 @@ export function HomeV2ActionBar({
               ) : null}
             </div>
           ) : null}
-          {fundingToggle ? <div className="mt-1.5 flex flex-wrap items-center gap-x-4" data-testid="hv2-funding-row">{fundingToggle}</div> : null}
+          {fundingToggle ? <div className="mt-0.5 flex flex-wrap items-center gap-x-4" data-testid="hv2-funding-row">{fundingToggle}</div> : null}
           {legs && funding.open ? <FundingComposition legs={legs} total={fundingTotal && kpis.funding.state !== "NONE" ? fundingTotal : ""} id={`${uid}-comp`} labelledBy={`${uid}-fact`} basis={action.cost_basis_text} hint={kpis.funding.hint} pointer={funding.pointer} /> : null}
         </section>
       </div>
