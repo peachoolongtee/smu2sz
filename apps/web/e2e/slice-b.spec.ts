@@ -213,12 +213,15 @@ test.describe("mock", () => {
   test("Ask FLOW is a quiet outline pill, never a filled button", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/deals");
-    const pill = page.getByTestId("chat-open");
-    await expect(pill).toBeVisible();
-    const fill = await pill.evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(fill).not.toBe("rgb(3, 104, 233)");
-    expect(fill).not.toBe("rgb(23, 29, 30)");
-    expect(await pill.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))).toBeGreaterThan(0);
+    // On a desktop the entry is the header's input (Home round three): a bordered field, never a filled button; its opener beside it is quiet too.
+    const entry = page.getByTestId("ask-header");
+    await expect(entry).toBeVisible();
+    expect(await entry.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))).toBeGreaterThan(0);
+    for (const el of [entry, page.getByTestId("chat-open")]) {
+      const fill = await el.evaluate((e) => getComputedStyle(e).backgroundColor);
+      expect(fill).not.toBe("rgb(3, 104, 233)");
+      expect(fill).not.toBe("rgb(23, 29, 30)");
+    }
   });
 });
 
@@ -268,7 +271,8 @@ test.describe("live", () => {
     await busy(request);
     await page.goto("/deals");
     await expect(page.getByTestId("queue-row").first()).toBeVisible();
-    const decisions = await page.locator('[data-testid="queue-row"][data-kind="DECISION"]:not([data-tier="agreements"])').count();
+    // The sandbox offers every negotiation (one needing the owner, or one waiting on the buyer), never an approval, collection or promise.
+    const decisions = await page.locator('[data-testid="queue-row"][data-kind="DECISION"]:not([data-tier="agreements"]), [data-testid="queue-row"][data-kind="BUYER_REPLY"]:not([data-tier="agreements"])').count();
     expect(await page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]').count(), "the busy books hold a loan approval").toBe(1);
     await page.goto("/whatif");
     await expect(page.getByTestId("whatif-choice")).toHaveCount(decisions);
