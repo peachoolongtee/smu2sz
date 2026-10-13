@@ -183,9 +183,8 @@ test.describe("live", () => {
     await page.getByTestId("queue-check-button").click();
     await page.getByTestId("queue-recommends").waitFor();
     const bodies: Record<string, unknown>[] = [];
-    await page.route("**/nl", async (route) => {
-      bodies.push(route.request().postDataJSON() as Record<string, unknown>);
-      await route.continue();
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/nl(\?|$)/.test(r.url())) bodies.push(r.postDataJSON() as Record<string, unknown>);
     });
     await page.getByTestId("chat-open").click();
     const panel = page.getByRole("dialog", { name: "Ask FLOW" });

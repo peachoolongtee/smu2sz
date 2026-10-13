@@ -359,6 +359,9 @@ test("the Business inbox waits for the books before it shows any sender, and say
     await route.continue();
   });
   await page.goto("/deals");
+  // The inbox card is drawn once the queue is read (open when nothing needs the owner, else one folded row: open it).
+  await page.getByTestId("deals-inbox").waitFor();
+  if (await page.getByTestId("inbox-back").count()) await page.getByTestId("inbox-back").click();
   // Business mode, books still loading: a loading block, and no message row at all (the registry decides who is known).
   await expect(page.getByTestId("inbox-loading")).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
@@ -378,6 +381,8 @@ test("the Business inbox waits for the books before it shows any sender, and say
     }),
   );
   await page.goto("/deals");
+  await page.getByTestId("deals-inbox").waitFor();
+  if (await page.getByTestId("inbox-back").count()) await page.getByTestId("inbox-back").click();
   await expect(page.getByTestId("inbox-error")).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-msg-"]')).toHaveCount(0);
 });

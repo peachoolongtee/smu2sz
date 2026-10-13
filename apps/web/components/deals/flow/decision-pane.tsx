@@ -518,7 +518,8 @@ export function DecisionPane({
 
               {canSend && focus && picture && mode === "business" ? (
                 <SendBlock
-                  key={`${offer.offer.offer_id}:${focus.key}`}
+                  // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
+                  key={`${offer.offer.offer_id}:${focus.label}`}
                   offerId={offer.offer.offer_id}
                   path={focus}
                   picture={picture}
