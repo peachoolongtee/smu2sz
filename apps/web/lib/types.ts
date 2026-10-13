@@ -1912,6 +1912,8 @@ export type CollectionActionKind = "VIEW_TERMS" | "PREPARE_REMINDER" | "CHASE";
 /** What one invoice leaves the owner if it is paid on the due day, with the server's words for it. */
 export interface ReceivableNet {
   net_display?: string;
+  /** The net after repayment in fen: places the invoice's tick on the cash bar (a mark; every word is the server's). */
+  net_fen?: Fen;
   /** "about ¥163k" */
   net_short?: string;
   /** "if Foshan pays on the due day" */

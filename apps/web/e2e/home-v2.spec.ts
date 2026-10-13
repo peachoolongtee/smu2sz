@@ -108,14 +108,14 @@ test("the recommendation: the title, the planned amount, one line that reconcile
   await expect(page.getByTestId("home-action-text")).toHaveText(a.consequence_text ?? homeOffer.en.cash.headline_note);
   const facts = a.facts ?? [];
   expect(facts.length).toBe(3);
-  // The planned amount is the figure; the cost to the owner is one line under it; the funding sentence is behind "Funding sources".
+  // The planned amount is the figure; the cost to the owner is one line under it; the funding legs are one inline bar in the gap (no disclosure).
   await expect(page.getByTestId("hv2-plan-amount")).toHaveText(homeOffer.en.home_v2.kpis.funding.value_display);
   // "Conditional on you running the plan; not counted as cash" left the card (it is the pill's meaning); it is the first line of the funding disclosure.
   await expect(page.getByTestId("hv2-funding-hint")).toHaveCount(0);
   await expect(page.getByTestId("hv2-action-facts")).toContainText("Cost to you");
   await expect(page.getByTestId("hv2-hero-value")).toHaveText(facts[0].value);
-  await expect(page.getByTestId("hv2-funding-fact")).toContainText(facts[1].value);
-  await expect(page.getByTestId("hv2-funding-fact")).toContainText("Funding sources");
+  await expect(page.getByTestId("hv2-funding-fact")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-funding-bar")).toBeVisible();
   // Who approves is the one line under the actions, not a fact.
   await expect(page.getByTestId("hv2-action-facts")).not.toContainText(facts[2].label);
   await expect(page.getByTestId("hv2-authority")).toHaveCount(0);
@@ -130,11 +130,13 @@ test("the recommendation: the title, the planned amount, one line that reconcile
   await expect(approval.locator("svg")).toHaveCount(1);
   expect(await approval.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBe(13);
   expect(await approval.evaluate((n) => getComputedStyle(n).fontWeight)).not.toBe("600");
-  // It shares the facts row with the cost (cost bold, then who decides) and sits above the actions; the funding disclosure is a quiet row under them.
-  const [actionsBox, lineBox, costBox, fundBox] = await Promise.all([page.getByTestId("home-attention-run").boundingBox(), approval.boundingBox(), page.getByTestId("hv2-hero-value").boundingBox(), page.getByTestId("hv2-funding-fact").boundingBox()]);
+  // Round four: the card is a flex column. The cost is the bold fact, the funding bar fills the gap under it, the approval line sits directly above the actions, and the actions are pinned to the card's bottom.
+  const [actionsBox, lineBox, costBox, barBox, cardBox] = await Promise.all([page.getByTestId("home-attention-run").boundingBox(), approval.boundingBox(), page.getByTestId("hv2-hero-value").boundingBox(), page.getByTestId("hv2-funding-bar").boundingBox(), page.getByTestId("hv2-action").boundingBox()]);
   expect(lineBox!.y + lineBox!.height).toBeLessThanOrEqual(actionsBox!.y + 1);
-  expect(Math.abs(lineBox!.y - costBox!.y)).toBeLessThan(6);
-  expect(fundBox!.y).toBeGreaterThan(actionsBox!.y + actionsBox!.height - 1);
+  expect(actionsBox!.y - (lineBox!.y + lineBox!.height)).toBeLessThan(16);
+  expect(barBox!.y).toBeGreaterThan(costBox!.y + costBox!.height - 1);
+  expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(lineBox!.y + 1);
+  expect(Math.round(cardBox!.y + cardBox!.height - (actionsBox!.y + actionsBox!.height))).toBeLessThanOrEqual(20); // 16 px padding: the actions are pinned to the bottom
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
   await expect(page.getByTestId("next-action-alternatives")).toHaveText("Compare funding options");
   await expect(page.getByTestId("next-action-alternatives")).toHaveAttribute("href", a.secondary.href);
@@ -197,7 +199,26 @@ test("no funding amount: the figure line is omitted (the title carries the amoun
   await expect(page.getByTestId("home-action-text")).toHaveText(homeOffer.en.home_v2.action.text);
   await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
   await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveCount(0);
-  // With no plan card to say it, the server's alert is the worklist's row again: its kind, its words and the way to act.
+  // Round four's rule: the card has a title, so the Home renders a recommendation card and the worklist's alert row is absent (it is not keyed to the funding state).
+  await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
+  const said = await page.getByTestId("home-v2").innerText();
+  expect(said).not.toMatch(/\b(None|null|undefined|NaN)\b/);
+  // The same with the deal and the customer selected.
+  for (const url of [DEAL, "/?customer=BUYER-1", "/?expand=1"]) {
+    await page.goto(url);
+    await expect(page.getByTestId("home-v2")).toBeVisible();
+    await expect(page.getByTestId("hv2-stage")).toBeVisible();
+    expect(await page.getByTestId("home-v2").innerText(), url).not.toMatch(/\b(None|null|undefined|NaN)\b/);
+  }
+});
+
+// Round four, section 4: the worklist's alert row stands in only when the Home renders NO recommendation card (the action has no title and no control).
+test("the alert row shows only when the Home renders no recommendation card: its kind, its words and the way to act", async ({ page }) => {
+  const action = { ...homeOffer.en.home_v2.action, variant: "QUIET", title: "", eyebrow: "", text: "", control: null, primary: null, secondary: null, facts: [], legs: [], consequence_text: null, approval_text: null, approval_needed: false, cost_basis_text: null };
+  const funding = { ...homeOffer.en.home_v2.kpis.funding, state: "PROPOSED" }; // the funding state is not the rule: a proposed funding with no card still shows the row
+  const v2 = { ...homeOffer.en.home_v2, kpis: { ...homeOffer.en.home_v2.kpis, funding }, action };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: v2 }] as const);
+  await open(page, { offer: true });
   const alertRead = worklistOffer.en.alert as typeof worklistOffer.en.alert & { kind_text?: string | null; pending_text?: string | null };
   const alert = page.getByTestId("home-worklist-alert");
   await expect(alert).toContainText(alertRead.pending_text ?? alertRead.text);
@@ -207,15 +228,6 @@ test("no funding amount: the figure line is omitted (the title carries the amoun
   const note = page.getByTestId("home-worklist-alert-note");
   await expect(alert).toHaveAttribute("aria-describedby", (await note.getAttribute("id")) ?? "");
   expect((await alert.boundingBox())!.height).toBeLessThan(120);
-  const said = await page.getByTestId("home-v2").innerText();
-  expect(said).not.toMatch(/\b(None|null|undefined|NaN)\b/);
-  // The same with the deal and the customer selected.
-  for (const url of [DEAL, "/?customer=BUYER-1", "/?expand=1"]) {
-    await page.goto(url);
-    await expect(page.getByTestId("home-v2")).toBeVisible();
-    await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
-    expect(await page.getByTestId("home-v2").innerText(), url).not.toMatch(/\b(None|null|undefined|NaN)\b/);
-  }
 });
 
 // A block the server could not read (a supporting read failed): the status stays, the page says so with Retry, and never shows an empty page. In-spec patches of the recorded read.
@@ -246,75 +258,88 @@ test("failed read: a home_v2 that is absent without a sentence says so in the di
 type RecordedLeg = NonNullable<typeof homeOffer.en.home_v2.action.legs>[number] & { share_text?: string | null };
 const LEGS: { en: RecordedLeg[]; zh: RecordedLeg[] } = { en: homeOffer.en.home_v2.action.legs ?? [], zh: homeOffer.zh.home_v2.action.legs ?? [] };
 
-test("the funding timing opens the funding composition on the real pointer, on keyboard focus and from the address; its bar is proportional to the legs' amounts", async ({ page }) => {
+test("the funding legs are one inline stacked bar in the card's gap: widths from the legs' amounts, the server's labels, amounts, landing words and shares, the total at the right; a leg card on hover and focus", async ({ page }) => {
   const legs = LEGS.en;
   expect(legs.length).toBeGreaterThan(1);
   const v2 = homeOffer.en.home_v2;
   await open(page, { offer: true });
-  const fact = page.getByTestId("hv2-funding-fact");
-  const comp = page.getByTestId("hv2-funding-composition");
-  await expect(comp).toHaveCount(0);
-  await expect(fact).toHaveAttribute("aria-expanded", "false");
-  // The pointer on the fact opens it (the composition sits under the facts row and keeps open while the pointer is on it); leaving closes it.
-  await fact.hover();
-  await expect(comp).toBeVisible();
-  await expect(fact).toHaveAttribute("aria-expanded", "true");
-  await comp.hover();
-  await expect(comp).toBeVisible();
-  await page.mouse.move(5, 5);
-  await expect(comp).toHaveCount(0);
-  // One row per leg in the server's words, the total, and the plan's own basis for its cost.
-  await fact.hover();
+  // No disclosure and no `funding` address flag: the bar is simply there.
+  await expect(page.getByTestId("hv2-funding-fact")).toHaveCount(0);
+  const bar = page.getByTestId("hv2-funding-bar");
+  await expect(bar).toBeVisible();
+  expect((await bar.boundingBox())!.height).toBeLessThanOrEqual(14); // one thin bar
   for (const [i, leg] of legs.entries()) {
-    const r = page.getByTestId(`hv2-comp-row-${i}`);
-    await expect(r).toContainText(leg.amount_display);
+    const r = page.getByTestId(`hv2-funding-row-${i}`);
     await expect(r).toContainText(leg.label);
+    await expect(r).toContainText(leg.amount_display);
     await expect(r).toContainText(leg.lands_when);
-    await expect(r).toContainText(leg.state_text);
-    await expect(r).toHaveAttribute("data-state", leg.state);
+    if (leg.share_text) await expect(page.getByTestId(`hv2-funding-share-${i}`)).toHaveText(leg.share_text);
   }
-  await expect(page.getByTestId("hv2-comp-total")).toContainText(v2.kpis.funding.value_display);
-  await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint!); // the pill's meaning, the disclosure's first line
-  if (v2.action.cost_basis_text) await expect(page.getByTestId("hv2-comp-basis")).toHaveText(v2.action.cost_basis_text);
-  // The bar's widths are the amounts (the legs' `amount_fen` as the weights), not a percentage worked out here; the labels are the server's `share_text` when it sends one, else none.
-  const widths = await Promise.all(legs.map(async (_, i) => (await page.getByTestId(`hv2-comp-seg-${i}`).boundingBox())!.width));
-  const total = legs.reduce((n, l) => n + (l.amount_fen ?? 0), 0);
-  for (const [i, leg] of legs.entries()) expect(widths[i] / widths.reduce((a, b) => a + b, 0)).toBeCloseTo((leg.amount_fen ?? 0) / total, 1);
-  if (legs.every((l) => l.share_text)) for (const [i, leg] of legs.entries()) await expect(page.getByTestId(`hv2-comp-share-${i}`)).toHaveText(leg.share_text!);
-  else await expect(page.getByTestId("hv2-comp-shares")).toHaveCount(0);
+  // The total sits at the right end of the bar, in the server's word.
+  const total = page.getByTestId("hv2-funding-total");
+  await expect(total).toHaveText(v2.kpis.funding.value_display);
+  const [barBox, totalBox] = await Promise.all([bar.boundingBox(), total.boundingBox()]);
+  expect(totalBox!.x).toBeGreaterThanOrEqual(barBox!.x + barBox!.width - 1);
+  // The widths are the amounts (the legs' `amount_fen` as the weights), not a percentage worked out here.
+  const widths = await Promise.all(legs.map(async (_, i) => (await page.getByTestId(`hv2-funding-seg-${i}`).boundingBox())!.width));
+  const sum = legs.reduce((n, l) => n + (l.amount_fen ?? 0), 0);
+  for (const [i, leg] of legs.entries()) expect(widths[i] / widths.reduce((a, b) => a + b, 0)).toBeCloseTo((leg.amount_fen ?? 0) / sum, 1);
+  // Hover on a segment opens its leg card (the leg, when it lands, its state, its cost and when it is repaid, who approves); leaving closes it. Focus does the same.
+  const tip = page.getByTestId("hv2-funding-tip-0");
+  expect(await tip.evaluate((n) => getComputedStyle(n).opacity)).toBe("0");
+  await page.getByTestId("hv2-funding-seg-0").hover();
+  await expect.poll(() => tip.evaluate((n) => getComputedStyle(n).opacity)).toBe("1");
+  await expect(tip).toContainText(legs[0].label);
+  await expect(tip).toContainText(legs[0].state_text);
+  await expect(tip).toContainText(legs[0].cost_display!);
+  await expect(tip).toContainText(legs[0].authority_text!);
   await page.mouse.move(5, 5);
-  // A press pins it into the address (and again releases it); the address alone opens it on load; keyboard focus opens it too.
-  await fact.click();
-  await expect(page).toHaveURL(/funding=1/);
-  await page.mouse.move(5, 5);
-  await expect(comp).toBeVisible();
-  await page.reload();
-  await expect(comp).toBeVisible();
-  await fact.click();
-  await page.mouse.move(5, 5);
-  await expect(comp).toHaveCount(0);
+  await expect.poll(() => tip.evaluate((n) => getComputedStyle(n).opacity)).toBe("0");
+  await page.getByTestId("hv2-funding-seg-1").focus();
+  await expect.poll(() => page.getByTestId("hv2-funding-tip-1").evaluate((n) => getComputedStyle(n).opacity)).toBe("1");
+  await expect(page.getByTestId("hv2-funding-seg-1")).toHaveAttribute("aria-describedby", /hv2-funding-tip-1/);
+  // A press says that leg's sentence; a second press clears.
+  await page.getByTestId("hv2-funding-seg-1").click();
+  await expect(page.getByTestId("hv2-funding-sentence")).toContainText(legs[1].label);
   await expect(page).not.toHaveURL(/funding=1/);
-  await fact.evaluate((el) => (el as HTMLElement).blur());
-  for (let i = 0; i < 40 && !(await fact.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
-  await expect(fact).toBeFocused();
-  await expect(comp).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
 });
 
-test("on a phone the funding fact opens its composition on a tap (rows, the bar), and in Chinese the words are the server's", async ({ page }) => {
+test("a single-leg plan is one full bar with its one label; a plan with no legs shows the server's cost basis alone", async ({ page }) => {
+  const one = homeOffer.en.home_v2.action.legs![0];
+  const action = { ...homeOffer.en.home_v2.action, legs: [one] };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: { ...homeOffer.en.home_v2, action } }] as const);
+  await open(page, { offer: true });
+  await expect(page.getByTestId("hv2-funding-seg-0")).toBeVisible();
+  await expect(page.getByTestId("hv2-funding-seg-1")).toHaveCount(0);
+  const [barBox, segBox] = await Promise.all([page.getByTestId("hv2-funding-bar").boundingBox(), page.getByTestId("hv2-funding-seg-0").boundingBox()]);
+  expect(Math.abs(barBox!.width - segBox!.width)).toBeLessThan(2);
+  await expect(page.getByTestId("hv2-funding-row-0")).toContainText(one.label);
+  await expect(page.getByTestId("hv2-funding-row-0")).toContainText(one.amount_display);
+});
+
+test("a plan with no legs shows the server's cost basis alone in the gap", async ({ page }) => {
+  const action = { ...homeOffer.en.home_v2.action, legs: [] };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: { ...homeOffer.en.home_v2, action } }] as const);
+  await open(page, { offer: true });
+  await expect(page.getByTestId("hv2-funding-bar")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-cost-basis")).toHaveText(homeOffer.en.home_v2.action.cost_basis_text!);
+  expect(await page.getByTestId("hv2-cost-basis").evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(13);
+});
+
+test("on a phone the funding bar and its legend stay inside the card, and in Chinese the words are the server's", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { lang: "zh", offer: true });
   const legs = LEGS.zh;
-  await expect(page.getByTestId("hv2-funding-composition")).toHaveCount(0);
-  await page.getByTestId("hv2-funding-fact").click();
-  await page.mouse.move(5, 5);
   for (const [i, leg] of legs.entries()) {
-    const row = page.getByTestId(`hv2-comp-row-${i}`);
+    const row = page.getByTestId(`hv2-funding-row-${i}`);
     await expect(row).toContainText(leg.label);
     await expect(row).toContainText(leg.amount_display);
-    await expect(row).toContainText(leg.state_text);
+    await expect(row).toContainText(leg.lands_when);
   }
-  await expect(page.getByTestId("hv2-comp-bar")).toBeVisible();
+  await expect(page.getByTestId("hv2-funding-bar")).toBeVisible();
+  const [cardBox, barBox] = await Promise.all([page.getByTestId("hv2-action").boundingBox(), page.getByTestId("hv2-funding-bar").boundingBox()]);
+  expect(barBox!.x + barBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width);
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
   expect(await filledBrand(page)).toBe(1);
 });
@@ -465,6 +490,71 @@ test("the worklist as the mockup's table: one alert line, tabs with counts, rows
   await expect(page.getByTestId("home-tab-waiting")).toHaveAttribute("aria-selected", "true");
 });
 
+test("round four: the worklist is a fixed-column table: the same columns on every row and under the header, 56 px rows, a one-line next step with its whole sentence in title, group headings under All, the pill never moving for Select", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await open(page, { offer: true });
+  const w = worklistOffer.en;
+  const rows = page.getByTestId("home-worklist-row");
+  const n = await rows.count();
+  expect(n).toBeGreaterThan(0);
+  // Group headings: 12 px uppercase, the group's name and its count; only the groups that have rows.
+  const heading = page.getByTestId("hv2-group-heading");
+  await expect(heading).toHaveCount(w.needs_you.length && w.waiting.length ? 2 : 1);
+  await expect(heading.first()).toHaveText(`Needs you (${w.needs_you.length})`);
+  expect(await heading.first().evaluate((n) => [getComputedStyle(n).fontSize, getComputedStyle(n).textTransform])).toEqual(["12px", "uppercase"]);
+  // The same columns on every row and under the header: x of the subject, the next step, the pill and the select cell; widths 36 : 44 : 20 of the table less the select column.
+  const cols = async (row: ReturnType<typeof rows.nth>) => ({
+    subject: (await row.getByTestId("hv2-row-subject").boundingBox())!,
+    next: (await row.getByTestId("hv2-row-next").boundingBox())!,
+    status: (await row.getByTestId("hv2-row-status").boundingBox())!,
+    select: (await row.getByTestId("hv2-row-select-cell").boundingBox())!,
+    row: (await row.boundingBox())!,
+  });
+  const first = await cols(rows.first());
+  for (let i = 0; i < n; i++) {
+    const c = await cols(rows.nth(i));
+    expect(Math.round(c.row.height), `row ${i} height`).toBe(56);
+    expect(Math.abs(c.subject.x - first.subject.x), `row ${i} subject x`).toBeLessThan(1);
+    expect(Math.abs(c.next.x - first.next.x), `row ${i} next x`).toBeLessThan(1);
+    expect(Math.abs(c.status.x + c.status.width - (first.status.x + first.status.width)), `row ${i} status right edge`).toBeLessThan(1);
+    expect(Math.abs(c.next.width - first.next.width)).toBeLessThan(1);
+    expect(Math.round(c.select.width), "the select column").toBe(72);
+  }
+  const ratio = first.subject.width / first.next.width;
+  expect(ratio).toBeGreaterThan(0.7);
+  expect(ratio).toBeLessThan(0.95); // 36 : 44
+  // The head's labels line up with their columns, Status at the right.
+  const head = page.getByTestId("hv2-work-head");
+  const [hDeal, hNext, hStatus] = await Promise.all(["Customer / deal", "Next step", "Status"].map(async (t) => (await head.getByText(t, { exact: true }).boundingBox())!));
+  expect(Math.abs(hDeal.x - first.subject.x)).toBeLessThan(1);
+  expect(Math.abs(hNext.x - first.next.x)).toBeLessThan(1);
+  expect(Math.abs(hStatus.x + hStatus.width - (first.status.x + first.status.width))).toBeLessThan(1);
+  // Hierarchy: the subject 15 px semibold, the next step 13 px muted on ONE line with its whole sentence in `title`; the pill is not moved by Select.
+  const one = rows.first();
+  expect(await one.getByTestId("hv2-row-subject").evaluate((n) => [getComputedStyle(n).fontSize, getComputedStyle(n).fontWeight])).toEqual(["15px", "600"]);
+  const next = one.getByTestId("hv2-row-next");
+  expect(await next.evaluate((n) => [getComputedStyle(n).fontSize, getComputedStyle(n).whiteSpace, getComputedStyle(n).textOverflow])).toEqual(["13px", "nowrap", "ellipsis"]);
+  await expect(next).toHaveAttribute("title", w.needs_you[0].consequence_text);
+  const pillBefore = (await one.getByTestId("home-row-status").boundingBox())!;
+  await one.getByRole("link").hover();
+  await expect(one.getByTestId("hv2-row-select")).toHaveCSS("opacity", "1");
+  const pillAfter = (await one.getByTestId("home-row-status").boundingBox())!;
+  expect(pillAfter.x).toBe(pillBefore.x);
+  expect(pillAfter.y).toBe(pillBefore.y);
+  // Below lg the rows are two lines at a fixed 64 px (subject and status, then the next step), no select column.
+  await page.setViewportSize({ width: 820, height: 1000 });
+  await expect(page.getByTestId("hv2-work-head")).toBeHidden();
+  for (let i = 0; i < n; i++) expect(Math.round((await rows.nth(i).boundingBox())!.height), `phone row ${i}`).toBe(64);
+  await expect(rows.first().getByTestId("hv2-row-select-cell")).toBeHidden();
+  const [s1, n1] = await Promise.all([rows.first().getByTestId("hv2-row-subject").boundingBox(), rows.first().getByTestId("hv2-row-next").boundingBox()]);
+  expect(n1!.y).toBeGreaterThan(s1!.y + s1!.height - 1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  // The Customers tab is the same rows.
+  await page.getByTestId("home-tab-customers").click();
+  await expect(page.getByTestId("hv2-group-heading")).toHaveCount(0);
+});
+
 test("the upcoming cash movements are the rail's nearest events, and the way to the forecast; the footer row leads to the four routes", async ({ page }) => {
   await open(page, { offer: true });
   // The server's `home_v2.upcoming`: the three nearest movements of the books, label, short signed figure, when and the direction.
@@ -566,7 +656,8 @@ test("a customer row opens the customer in place: the address is the selection, 
   await expect(page.getByTestId("focus-rows").getByTestId("home-worklist-row")).toHaveCount(1);
   await expect(page.getByTestId("focus-open-customer")).toHaveAttribute("href", "/customers/BUYER-1");
   // The company is still on the page: the strip as it was, the alert pinned, the health band with an OUTLINED button, no filled button anywhere, no second chart.
-  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible(); // the customer card sits beside the cash card, as the default's left pair
+  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "held");
   await expect(page.getByTestId("hv2-band")).toBeVisible();
@@ -605,9 +696,11 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   const rec = pic.find((p) => p.recommended)!;
   const asked = pic.find((p) => p.kind === "asked")!;
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  // The selected card replaces the cash and recommendation cards and keeps the outlook; its header names the deal and carries Dismiss; the stage pill is in the context panel.
+  // Round five: the right of the deal card is ONE card, "Cash impact of this deal"; the company's cash card, the outlook and the recommendation leave the deal view.
   await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
+  await expect(page.getByTestId("hv2-action")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await expect(page.getByTestId("focus-all")).toHaveText("Dismiss");
   await expect(page.getByTestId("hv2-context-stage")).toHaveText(worklistOffer.en.needs_you[0].status_text);
   await expect(page.getByTestId("hv2-context")).toContainText("Deal context");
@@ -619,17 +712,16 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   await expect(page.getByTestId("hv2-deal-kpi-invoice")).toContainText(kpiAsked.ask_facts.invoice_value_display);
   await expect(page.getByTestId("hv2-deal-kpi-discount")).toContainText(kpiAsked.ask_facts.requested_discount_display);
   await expect(page.getByTestId("hv2-deal-kpi-term")).toContainText(kpiAsked.ask_facts.requested_term_text);
-  for (const [i, r] of kpiAsked.ask_breakdown.entries()) {
+  // The bar reads invoice, discount, net: the server's rows (net first) in the reverse order.
+  for (const [i, r] of [...kpiAsked.ask_breakdown].reverse().entries()) {
     await expect(page.getByTestId(`hv2-deal-breakdown-row-${i}`)).toContainText(r.label);
     await expect(page.getByTestId(`hv2-deal-breakdown-amount-${i}`)).toHaveText(r.amount_display);
     await expect(page.getByTestId(`hv2-deal-breakdown-share-${i}`)).toHaveText(r.share_text);
   }
-  // The donut: one slice per row, sized by the share words, centred on the invoice value; it does not animate.
-  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
-  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toContainText(kpiAsked.ask_facts.invoice_value_display);
-  const dash = await Promise.all([0, 1].map((i) => page.getByTestId(`hv2-deal-breakdown-slice-${i}`).getAttribute("stroke-dasharray")));
-  expect(parseFloat(dash[0]!)).toBeGreaterThan(parseFloat(dash[1]!) * 20);
-  await expect(page.getByTestId("hv2-deal-breakdown-slice-0")).toHaveAttribute("role", "button");
+  // Round four: the 99 / 1 donut is a segmented bar (invoice, discount, net), the segments sized by the rows' own amounts; no donut here.
+  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
+  await expect(page.getByTestId("hv2-deal-breakdown-seg-0")).toBeVisible();
   await expect(page.getByTestId("hv2-deal-next")).toContainText(d.eyebrow);
   await expect(page.getByTestId("focus-announce")).toHaveText(SUBJECT.en);
   await expect(page.getByTestId("hv2-customer-line")).toContainText(view.name);
@@ -671,12 +763,12 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   await expect(table.getByTestId("hv2-consequence-row-limits")).toContainText(/within/i);
   await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(asked.authority_text!);
   await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(rec.authority_text!);
-  // The full table of responses is still behind its own toggle; Cash impact opened the consequence and the deal's chart together (and Close closes both).
+  // The full table of responses is still behind its own toggle; Cash impact opens the consequence only (the deal's chart is the cash-impact card, always there).
   await expect(page.getByTestId("hv2-compare")).toHaveCount(0);
   await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await expect(page.getByTestId("home-chart")).toHaveCount(1);
   await page.getByTestId("hv2-chart-toggle").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
   await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
 });
 
@@ -727,13 +819,9 @@ test("Compare responses expands the full table and FLOW's reasons in place, and 
   await expect(toggle).toBeFocused();
 });
 
-test("Cash impact expands the deal's chart: the option solid, the request grey with its stretches under the reserve in red, a same-day inspector; and collapses", async ({ page }) => {
+test("the deal's chart is the one card beside the deal card, always open: the option solid, the request grey with its stretches under the reserve in red, a same-day inspector; Cash impact opens only the consequence table", async ({ page }) => {
   await open(page, { offer: true });
   await page.goto(DEAL);
-  const toggle = page.getByTestId("hv2-chart-toggle");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page).toHaveURL(/chart=1/);
   const chart = page.getByTestId("hv2-deal-chart");
   await expect(chart).toBeVisible();
   const pic = pictures.en.paths;
@@ -742,14 +830,22 @@ test("Cash impact expands the deal's chart: the option solid, the request grey w
   await expect(chart.getByTestId("hv2-below-request")).toBeAttached();
   await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.kind === "asked")!.label);
   await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.recommended)!.label);
-  // The inspector is a same-day comparison and says so; it never says a day number.
-  await expect(chart.getByTestId("hv2-inspector-note")).toContainText("same day");
-  await expect(chart.getByTestId("hv2-inspector-request")).toBeVisible();
-  await expect(chart.getByTestId("hv2-inspector-option")).toBeVisible();
-  const when = await chart.getByTestId("hv2-inspector-when").innerText();
-  expect(when).not.toMatch(/\bday\s+\d/i);
+  // The window control is the company chart's (36 / 60 / 120 when the horizon allows).
+  await expect(chart.getByRole("tablist", { name: "Days shown" })).toBeVisible();
+  // The card is chart and words: the two lowest points are named under it (no same-day strip in a column this narrow).
+  await expect(chart.getByTestId("hv2-inspector")).toHaveCount(0);
+  await expect(chart.getByTestId("hv2-deal-low-asked")).toBeVisible();
+  // Cash impact opens the consequence table and nothing else: the chart is neither added nor removed.
+  const toggle = page.getByTestId("hv2-chart-toggle");
+  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
   await toggle.click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page).toHaveURL(/chart=1/);
+  await expect(page.getByTestId("hv2-consequence-table")).toBeVisible();
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
+  await toggle.click();
+  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
   await expect(page).not.toHaveURL(/chart=1/);
 });
 
@@ -833,6 +929,7 @@ test("nothing in Business mode is an id, a code or a day number; every figure an
         const style = getComputedStyle(el);
         if (style.display === "none" || style.visibility === "hidden") continue;
         if (el.closest(".sr-only") || el.closest("[hidden]")) continue;
+        if (el.closest("[data-testid=hv2-group-heading]")) continue; // the worklist's 12 px uppercase section rows are not a financial qualifier
         if (parseFloat(style.fontSize) < 13) out.push(`${text.slice(0, 40)} ${style.fontSize}`);
       }
       return out;
@@ -909,14 +1006,16 @@ test("phone: the cards stack with the recommendation's primary in the first view
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  // No sheet and no opener: the worklist is on the page; a row is the subject, its next step and the status pill under it (the head of the table is hidden).
+  // No sheet and no opener: the worklist is on the page; a row is two lines, the subject with the status pill and then its next step (the head of the table is hidden).
   await expect(page.getByTestId("home-worklist-open")).toHaveCount(0);
   await expect(page.getByTestId("home-worklist-panel")).toBeVisible();
   const row = page.getByTestId("home-worklist-row").first();
   await row.scrollIntoViewIfNeeded();
   const subject = (await row.getByText(worklistOffer.en.needs_you[0].subject_text).boundingBox())!;
   const pill = (await row.getByTestId("home-row-status").boundingBox())!;
-  expect(pill.y).toBeGreaterThan(subject.y + subject.height - 1);
+  // Below lg a row is two lines: the subject and the pill share the first, the next step is the second.
+  expect(Math.abs(pill.y + pill.height / 2 - (subject.y + subject.height / 2))).toBeLessThan(14);
+  expect((await row.getByTestId("hv2-row-next").boundingBox())!.y).toBeGreaterThan(subject.y + subject.height - 1);
   expect(pill.x + pill.width).toBeLessThanOrEqual(390);
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
@@ -961,7 +1060,7 @@ test("a customer with a financed invoice: the card shows the net after repayment
     await expect(page.getByTestId(`hv2-invoice-breakdown-amount-${i}`)).toHaveText(r.amount_display);
     await expect(page.getByTestId(`hv2-invoice-breakdown-share-${i}`)).toHaveText(r.share_text);
   }
-  await expect(page.getByTestId("hv2-invoice-breakdown-donut")).toBeVisible();
+  await expect(page.getByTestId("hv2-invoice-breakdown-bar")).toBeVisible();
   const view = page.getByTestId("hv2-invoice-view");
   await expect(view).toHaveText("View invoice");
   await expect(view).toHaveAttribute("href", `/receivables?invoice=${row.receivable_id}`);
@@ -977,7 +1076,7 @@ test("phone: the collection state, a customer's row opens its card and its conte
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   const a = (await page.getByTestId("home-customer-focus").boundingBox())!;
-  const b = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
+  const b = (await page.getByTestId("hv2-cash-card").boundingBox())!;
   const c = (await page.getByTestId("hv2-context").boundingBox())!;
   expect(b.y).toBeGreaterThan(a.y + a.height - 1);
   expect(c.y).toBeGreaterThan(b.y);
@@ -1001,7 +1100,8 @@ test("a selected row: Dismiss and Escape restore the overview and clear the addr
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
   await expect(page.getByTestId("hv2-upcoming")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0); // a deal: the deal card and its one cash-impact card
+  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await page.getByTestId("focus-all").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-context")).toHaveCount(0);
@@ -1045,7 +1145,7 @@ test("reduced motion: a selection arrives without an animation", async ({ page }
 
 test("accessibility: no axe violations on the default Home, expanded, with the customer and with the deal open (compared, with its chart), at 1440 and at 390", async ({ page }) => {
   await open(page, { offer: true });
-  for (const url of ["/", "/?expand=1&funding=1", "/?customer=BUYER-1", `${DEAL}&compare=1&chart=1`]) {
+  for (const url of ["/", "/?expand=1", "/?customer=BUYER-1", `${DEAL}&compare=1&chart=1`]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("deal-working")).toHaveCount(0);
@@ -1083,8 +1183,8 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
     await page.getByTestId("sidebar-toggle").click();
     seen[width] = { collapsed, pinned };
     // The cards' row and the worklist row share the left and right edges, and nothing scrolls sideways.
-    expect(collapsed.worklistLeft, `${width} left edge`).toBe(0);
-    expect(collapsed.upcomingRight, `${width} right edge`).toBe(0);
+    expect(Math.abs(collapsed.worklistLeft), `${width} left edge`).toBeLessThan(1);
+    expect(Math.abs(collapsed.upcomingRight), `${width} right edge`).toBeLessThan(1);
     expect(await overflowX(page)).toBeLessThanOrEqual(0);
     // The rail's own 56 px: the page fills what is left, to 1680.
     expect(collapsed.main).toBe(Math.min(width - 56, 1680));
@@ -1097,13 +1197,13 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
 
 // ---------------------------------------------------------------- round two: sizes, selection, the ways back
 
-test("round three sizes at 1440: the three cards are 260 px tall at most, padded 16 px, titles 16 px, figures 32 px and the planned amount 36 px; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
+test("round four sizes at 1440: the three cards are 300 px tall at most (the tallest decides), padded 16 px, titles 16 px, figures 32 px and the planned amount 36 px; rows 56 px and 44 px; nothing wraps to a third line", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page, { offer: true });
   const ids = ["hv2-cash-card", "hv2-action", "hv2-outlook-card"];
   for (const id of ids) {
     const box = (await page.getByTestId(id).boundingBox())!;
-    expect(box.height, `${id} height`).toBeLessThanOrEqual(260);
+    expect(box.height, `${id} height`).toBeLessThanOrEqual(300);
     expect(await page.getByTestId(id).evaluate((el) => getComputedStyle(el).paddingTop), `${id} padding`).toBe("16px");
   }
   const px = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).fontSize);
@@ -1116,11 +1216,11 @@ test("round three sizes at 1440: the three cards are 260 px tall at most, padded
   expect(await px("home-action-title")).toBe("18px");
   expect(await px("hv2-headline")).toBe("32px");
   expect(await px("hv2-summary")).toBe("15px");
-  // The worklist rows are 56 px and the upcoming movements 44 px.
-  expect(Math.round((await page.getByTestId("home-worklist-row").first().boundingBox())!.height)).toBe(56);
+  // The worklist rows are 56 px (fixed) and the upcoming movements 44 px.
+  for (const r of await page.getByTestId("home-worklist-row").all()) expect(Math.round((await r.boundingBox())!.height)).toBe(56);
   expect(Math.round((await page.getByTestId("hv2-upcoming-row").first().boundingBox())!.height)).toBe(44);
-  // The middle card's order: the eyebrow with the Planned pill, the headline, the amount, one muted line, the facts row, the actions, the funding row.
-  const order = await Promise.all(["home-action-eyebrow", "home-action-title", "home-kpi-funding-value", "home-action-text", "hv2-action-facts", "home-attention-run", "hv2-funding-row"].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
+  // The middle card's order: the eyebrow with the Planned pill, the headline, the amount with the cost at its right, the consequence, the funding bar, the approval line, the actions.
+  const order = await Promise.all(["home-action-eyebrow", "home-action-title", "home-kpi-funding-value", "hv2-action-facts", "home-action-text", "hv2-funding-row", "hv2-approval", "home-attention-run"].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
   expect([...order].sort((x, y) => x - y)).toEqual(order);
   // No text block of the three cards is more than two lines (the headline and the one muted line are one), at 1440 and at 1280.
   for (const width of [1440, 1280]) {
@@ -1138,7 +1238,7 @@ test("round three sizes at 1440: the three cards are 260 px tall at most, padded
       return out;
     }, ids);
     expect(lines, `${width}`).toEqual([]);
-    for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(270);
+    for (const id of ids) expect((await page.getByTestId(id).boundingBox())!.height, `${id} at ${width}`).toBeLessThanOrEqual(300);
   }
 });
 
@@ -1170,7 +1270,7 @@ test("hover and focus only highlight a worklist row and reveal Select; a click o
   await expect(page.getByTestId("home-worklist-row").first().getByTestId("hv2-row-select")).toHaveCount(0);
 });
 
-test("selecting a row transforms the cards: the company line, the deal's card, the deal's own paths on the outlook, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
+test("selecting a row transforms the cards: the company line, the deal's card, the one cash-impact card with the deal's own paths, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
   await open(page, { offer: true });
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "sel");
@@ -1182,26 +1282,29 @@ test("selecting a row transforms the cards: the company line, the deal's card, t
   await expect(band).toContainText(cash.value_display);
   await expect(band).toContainText(cash.buffer.min_display);
   await expect(page.getByTestId("home-action-back")).toHaveText(`Review ${homeOffer.en.home_v2.kpis.funding.value_display} funding plan`);
-  // The deal's card, the context panel and the outlook card drawn with the deal's own paths (as asked against the recommended reply).
+  // The deal's card and the context panel; ONE card beside the deal card, "Cash impact of this deal": the chart, the two lowest points named in the server's words (the recommended in purple) and the quiet line.
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
-  const outlook = page.getByTestId("hv2-outlook-card");
-  await expect(outlook).toHaveAttribute("data-mode", "deal");
   const asked = pictures.en.paths.find((p) => p.kind === "asked")! as unknown as { label: string; lowest_short: string; lowest_when: string };
-  const rec = pictures.en.paths.find((p) => p.recommended)! as unknown as { label: string; lowest_short: string };
-  await expect(outlook.getByTestId("home-kpi-lowest-value")).toHaveText(asked.lowest_short);
-  await expect(outlook.getByTestId("hv2-outlook-asked")).toHaveText(asked.label);
-  await expect(outlook.getByTestId("hv2-outlook-rec")).toContainText(rec.label);
-  await expect(outlook.getByTestId("hv2-outlook-rec")).toContainText(rec.lowest_short);
-  await expect(outlook.getByTestId("hv2-mini-asked")).toBeAttached();
-  await expect(outlook.getByTestId("hv2-mini-rec")).toBeAttached();
-  await expect(page.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
-  // Expand opens the deal's cash chart under the card (the same as its Cash impact toggle).
-  await outlook.getByTestId("hv2-outlook-expand").click();
-  await expect(page).toHaveURL(/chart=1/);
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
-  await outlook.getByTestId("hv2-outlook-expand").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  const rec = pictures.en.paths.find((p) => p.recommended)! as unknown as { label: string; lowest_short: string; lowest_when: string };
+  const card = page.getByTestId("hv2-deal-chart");
+  await expect(card.getByRole("heading", { name: "Cash impact of this deal" })).toBeVisible();
+  await expect(card.getByTestId("hv2-deal-low-asked")).toHaveText(`${asked.label} ${asked.lowest_short} ${asked.lowest_when}`);
+  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveText(`${rec.label} ${rec.lowest_short} ${rec.lowest_when}`);
+  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveClass(/text-f-purple-ink/);
+  await expect(card.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
+  await expect(page.getByTestId("hv2-foot-separate")).toHaveCount(1);
+  // The deal card and this card share one height (the taller decides, 600 px at most) and sit side by side.
+  const [dealBox, cardBox] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
+  expect(Math.abs(dealBox!.height - cardBox!.height)).toBeLessThan(2);
+  expect(cardBox!.height).toBeLessThanOrEqual(600);
+  expect(Math.abs(dealBox!.y - cardBox!.y)).toBeLessThan(2);
+  expect(cardBox!.x).toBeGreaterThan(dealBox!.x + dealBox!.width - 1);
+  // The deal's cash impact is no longer in the context panel; the panel keeps the customer line, the stage, Customer profile and the evidence.
+  await expect(page.getByTestId("hv2-context").getByTestId("hv2-deal-cash")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-context-stage")).toBeVisible();
+  await expect(page.getByTestId("hv2-context").getByTestId("focus-open-customer")).toBeVisible();
+  await expect(page.getByTestId("hv2-context-evidence")).toBeVisible();
   // Way back 1: the Dismiss on the card.
   const back = async () => {
     await expect(page).toHaveURL(/\/$/);
@@ -1231,48 +1334,167 @@ test("selecting a row transforms the cards: the company line, the deal's card, t
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
 });
 
-test("the donut: one slice per server row, clickable (and its row too), highlighting both and saying that row's sentence in the server's words; a second click clears", async ({ page }) => {
+test("the deal's invoice, discount and net: one segmented bar from the server's ask breakdown rows, each segment (and its row) clickable to say that row's sentence; a second press clears", async ({ page }) => {
   await open(page, { offer: true });
   await page.goto(DEAL);
   const picture = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { ask_facts: { invoice_value_display: string }; ask_breakdown: { label: string; amount_display: string; share_text: string }[] };
   const rows = picture.ask_breakdown;
-  const total = picture.ask_facts.invoice_value_display;
-  const slice = (i: number) => page.getByTestId(`hv2-deal-breakdown-slice-${i}`);
+  // The bar runs invoice, then discount, then net (the server's rows reversed into that order); the invoice is its lead.
+  const n = rows.length;
+  const seg = (i: number) => page.getByTestId(`hv2-deal-breakdown-seg-${i}`);
   const sentence = page.getByTestId("hv2-deal-breakdown-sentence");
-  await expect(slice(0)).toHaveAttribute("aria-pressed", "false");
-  await slice(1).dispatchEvent("click");
-  await expect(slice(1)).toHaveAttribute("aria-pressed", "true");
-  await expect(slice(0)).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("hv2-deal-line")).toContainText(picture.ask_facts.invoice_value_display);
+  expect(n).toBeGreaterThanOrEqual(2);
+  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
+  await seg(1).click();
+  await expect(seg(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("hv2-deal-breakdown-row-1")).toHaveAttribute("data-active", "true");
   await expect(page.getByTestId("hv2-deal-breakdown-row-0")).toHaveAttribute("data-active", "false");
-  await expect(sentence).toContainText(rows[1].label);
-  await expect(sentence).toContainText(rows[1].amount_display);
-  await expect(sentence).toContainText(rows[1].share_text);
-  await expect(sentence).toContainText(total);
-  expect(await slice(1).getAttribute("stroke-width")).toBe("20");
-  expect(await slice(0).getAttribute("opacity")).toBe("0.4");
-  // A second press clears; a row is as good as its slice; the keyboard presses a slice.
-  await slice(1).dispatchEvent("click");
-  await expect(slice(1)).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("hv2-deal-breakdown-row-1")).toHaveAttribute("data-active", "false");
+  const shownRow = await page.getByTestId("hv2-deal-breakdown-row-1").innerText();
+  const second = rows.find((r) => shownRow.includes(r.label) && shownRow.includes(r.amount_display)) ?? rows[n - 2];
+  await expect(sentence).toContainText(second.label);
+  await expect(sentence).toContainText(second.amount_display);
+  // The other segments dim (opacity), never a size change.
+  await expect.poll(() => seg(0).evaluate((el) => getComputedStyle(el).opacity)).toBe("0.4");
+  // A second press clears; a row is as good as its segment; the keyboard presses a segment.
+  await seg(1).click();
+  await expect(seg(1)).toHaveAttribute("aria-pressed", "false");
   await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
-  await expect(slice(0)).toHaveAttribute("aria-pressed", "true");
-  await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
-  await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
-  await expect(slice(0)).toHaveAttribute("aria-pressed", "true");
-  await expect(sentence).toContainText(rows[0].label);
-  await slice(0).focus();
+  await expect(seg(0)).toHaveAttribute("aria-pressed", "true");
+  await seg(0).focus();
   await page.keyboard.press("Enter");
-  await expect(slice(0)).toHaveAttribute("aria-pressed", "false");
+  await expect(seg(0)).toHaveAttribute("aria-pressed", "false");
   await expect(sentence).toHaveText("");
 });
 
-test("reduced motion: the donut's slices do not draw in, the stage crossfades by opacity alone", async ({ page }) => {
+test("what you are owed, by customer: its own card under the upcoming movements on the default page and on every selection (the same place), a ring of the customers' rows with every slice and row a button that selects that customer, the selected slice lifted 4 px", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const rowsOf = [
+    { customer_id: "BUYER-1", name: "Foshan Home Retail Co.", short: "Foshan", outstanding_display: "¥420,000", share_text: "54.5% of what you are owed" },
+    { customer_id: "BUYER-2", name: "Dongguan Office Supplies Ltd.", short: "Dongguan", outstanding_display: "¥200,000", share_text: "26.0% of what you are owed" },
+    { customer_id: "BUYER-3", name: "Zhuhai Kitchenware Wholesale Co.", short: "Zhuhai", outstanding_display: "¥150,000", share_text: "19.5% of what you are owed" },
+  ];
+  const base = customersOffer.en.customers;
+  const customers = rowsOf.map((r, i) => ({ ...base[Math.min(i, base.length - 1)], ...r }));
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-customers-patch", { customers }] as const);
+  await open(page, { offer: true });
+  const card = page.getByTestId("hv2-owed-card");
+  // The default page: below "Upcoming cash movements", in the right column; nothing is lifted and the centre says nothing yet.
+  await expect(card).toBeVisible();
+  await expect(card.getByTestId("hv2-owed-title")).toHaveText("What you are owed, by customer");
+  const place = async (above: string) => {
+    const [c, a] = await Promise.all([card.boundingBox(), page.getByTestId(above).boundingBox()]);
+    return { x: Math.round(c!.x), w: Math.round(c!.width), below: c!.y - (a!.y + a!.height) };
+  };
+  const onDefault = await place("hv2-upcoming");
+  expect(onDefault.below).toBeGreaterThan(0);
+  expect(onDefault.below).toBeLessThan(24);
+  await expect(card.getByTestId("hv2-owed-centre")).toHaveCount(0);
+  for (const [i, r] of rowsOf.entries()) {
+    await expect(card.getByTestId(`hv2-owed-row-${i}`)).toContainText(r.name);
+    await expect(card.getByTestId(`hv2-owed-amount-${i}`)).toHaveText(r.outstanding_display);
+    await expect(card.getByTestId(`hv2-owed-share-${i}`)).toHaveText(r.share_text);
+    await expect(card.getByTestId(`hv2-owed-slice-${i}`)).toHaveAttribute("aria-pressed", "false");
+  }
+  // A slice on the default page SELECTS that customer: the address changes, the customer card and the cash card take the stage, the donut has not moved.
+  await card.getByTestId("hv2-owed-slice-1").dispatchEvent("click");
+  await expect(page).toHaveURL(/customer=BUYER-2/);
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  const onCustomer = await place("hv2-context");
+  expect(onCustomer.x).toBe(onDefault.x);
+  expect(onCustomer.w).toBe(onDefault.w);
+  expect(onCustomer.below).toBeLessThan(24);
+  // The selected customer's slice is lifted 4 px (a larger radius) and named in the centre: short name, amount, percent.
+  const centre = card.getByTestId("hv2-owed-centre");
+  await expect(centre).toContainText("Dongguan");
+  await expect(centre).toContainText("¥200,000");
+  await expect(centre).toContainText("26.0%");
+  const radius = (i: number) => card.getByTestId(`hv2-owed-slice-${i}`).getAttribute("r").then(Number);
+  expect((await radius(1)) - (await radius(0))).toBeCloseTo(4, 0);
+  // Another row selects that customer; the keyboard presses a slice.
+  await card.getByTestId("hv2-owed-row-2").getByRole("button").click();
+  await expect(page).toHaveURL(/customer=BUYER-3/);
+  await expect(card.getByTestId("hv2-owed-centre")).toContainText("19.5%");
+  await card.getByTestId("hv2-owed-slice-0").focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/customer=BUYER-1/);
+  // A deal: the same place under the context panel, and the centre names the deal's customer.
+  await page.goto(DEAL);
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  const onDeal = await place("hv2-context");
+  expect(onDeal.x).toBe(onDefault.x);
+  expect(onDeal.w).toBe(onDefault.w);
+  expect(onDeal.below).toBeLessThan(24);
+  await expect(card.getByTestId("hv2-owed-centre")).toContainText("Foshan");
+  // Dismiss restores the default, and the card has not moved.
+  await page.getByTestId("focus-all").click();
+  await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
+  await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
+  expect((await place("hv2-upcoming")).x).toBe(onDefault.x);
+  await expect(card.getByTestId("hv2-owed-centre")).toHaveCount(0);
+});
+
+test("what you are owed with fewer than two customers owed is the one figure, no ring, still a button that selects the customer", async ({ page }) => {
+  await open(page, { offer: true }); // the recording has one customer owing
+  const card = page.getByTestId("hv2-owed-card");
+  const only = customersOffer.en.customers[0];
+  await expect(card).toHaveAttribute("data-ring", "false");
+  await expect(card.locator("svg")).toHaveCount(0);
+  await expect(card.getByTestId("hv2-owed-one")).toContainText(only.outstanding_display);
+  await expect(card.getByTestId("hv2-owed-one")).toContainText(only.name);
+  await card.getByTestId("hv2-owed-one").click();
+  await expect(page).toHaveURL(/customer=BUYER-1/);
+});
+
+test("Upcoming cash movements has no overdue row when nothing is overdue (the live matrix holds the busy books' row, its figure, its count and its link)", async ({ page }) => {
+  await open(page, { offer: true });
+  await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
+  await expect(page.getByTestId("hv2-upcoming-overdue-row")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(homeOffer.en.home_v2.upcoming!.length);
+});
+
+// Round five: the deal view at four widths shows exactly one card beside (from lg) or under (below it) the deal card, with its chart and the two named points; the customer view keeps the customer card with the cash card.
+for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]] as const) {
+  test(`the deal view at ${width}: exactly one card with the deal card, its chart and the two named lowest points; the customer view keeps the cash card`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await open(page, { offer: true });
+    await page.goto(DEAL);
+    await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+    const card = page.getByTestId("hv2-deal-chart");
+    await expect(card).toBeVisible();
+    await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
+    await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
+    await expect(card.getByTestId("home-chart")).toBeVisible();
+    await expect(card.getByTestId("hv2-deal-low-asked")).toBeVisible();
+    await expect(card.getByTestId("hv2-deal-low-rec")).toBeVisible();
+    const [d, c] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
+    if (width >= 1024) {
+      expect(c!.x).toBeGreaterThan(d!.x + d!.width - 1);
+      expect(Math.abs(c!.height - d!.height)).toBeLessThan(2);
+      expect(c!.height).toBeLessThanOrEqual(600);
+    } else {
+      expect(c!.y).toBeGreaterThan(d!.y + d!.height - 1);
+      expect(Math.abs(c!.width - d!.width)).toBeLessThan(2);
+    }
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
+    // The customer view: the customer card beside the cash card; no cash-impact card, and the owed card stays below the right column's first card.
+    await page.goto("/?customer=BUYER-1");
+    await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+    await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+    await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+    await expect(page.getByTestId("hv2-owed-card")).toBeVisible();
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  });
+}
+
+test("reduced motion: the bar does not draw in, the stage crossfades by opacity alone", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open(page, { offer: true });
   await page.goto(DEAL);
-  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
-  expect(await page.getByTestId("hv2-deal-breakdown-slice-0").evaluate((n) => getComputedStyle(n).animationName)).toBe("none");
+  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
+  expect(await page.getByTestId("hv2-deal-breakdown-bar").evaluate((n) => getComputedStyle(n).animationName)).toBe("none");
   const stage = page.getByTestId("hv2-stage");
   const t = await stage.evaluate((n) => [getComputedStyle(n).transitionProperty, getComputedStyle(n).transform]);
   expect(t[0]).toBe("opacity");
@@ -1283,12 +1505,12 @@ test("reduced motion: the donut's slices do not draw in, the stage crossfades by
 
 test.describe("with motion allowed", () => {
   test.use({ reducedMotion: "no-preference" });
-  test("the donut's slices draw in over 300 ms on first paint, and the stage crossfades (opacity over 100 ms each way)", async ({ page }) => {
+  test("the bar draws in from the left over 300 ms on first paint (one transform), and the stage crossfades (opacity over 100 ms each way)", async ({ page }) => {
     await open(page, { offer: true });
     await page.goto(DEAL);
-    await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
-    const anim = await page.getByTestId("hv2-deal-breakdown-slice-0").evaluate((n) => [getComputedStyle(n).animationName, getComputedStyle(n).animationDuration]);
-    expect(anim).toEqual(["f-draw", "0.3s"]);
+    await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
+    const anim = await page.getByTestId("hv2-deal-breakdown-bar").evaluate((n) => [getComputedStyle(n).animationName, getComputedStyle(n).animationDuration, getComputedStyle(n).transformOrigin.split(" ")[0]]);
+    expect(anim).toEqual(["f-bar-in", "0.3s", "0px"]);
     const stage = page.getByTestId("hv2-stage");
     expect(await stage.evaluate((n) => [getComputedStyle(n).transitionProperty, getComputedStyle(n).transitionDuration])).toEqual(["opacity", "0.1s"]);
     // Dismiss: the stage fades out, takes the overview, and fades in again.
@@ -1310,7 +1532,7 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
     await row.getByRole("link").click();
     await expect(page.getByTestId("home-deal-focus")).toBeVisible();
     await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "sel");
-    await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
+    await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
     await expect.poll(async () => page.evaluate(() => Math.round(document.getElementById("hv2-stage")!.getBoundingClientRect().top)), { message: "the stage lands under the sticky header" }).toBeLessThan(100);
     const m = await page.evaluate(() => {
       const header = document.querySelector("header")!.getBoundingClientRect();
@@ -1326,7 +1548,7 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
     expect(m.headBottom).toBeLessThanOrEqual(m.band);
     expect(m.y).toBeGreaterThan(0);
     await expect(page.getByTestId("home-deal-focus")).toBeInViewport({ ratio: 0.5 });
-    // The card is compact: the facts, the donut and the one commit area, no comparison table.
+    // The card is compact: the facts, the bar and the one commit area, no comparison table.
     await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
     // Dismiss scrolls back to the top of the overview.
     await page.getByTestId("focus-all").click();
@@ -1335,7 +1557,7 @@ for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]
   });
 }
 
-test("browser Back and Forward between two selections land at the top of the selection again, and a slice press does not scroll", async ({ page }) => {
+test("browser Back and Forward between two selections land at the top of the selection again, and a segment press does not scroll", async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 800 });
   await open(page, { offer: true });
   await page.getByTestId("home-tab-customers").click();
@@ -1346,7 +1568,7 @@ test("browser Back and Forward between two selections land at the top of the sel
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   const bandTop = () => page.evaluate(() => Math.round(document.getElementById("home-v2-action")!.getBoundingClientRect().top));
   await expect.poll(bandTop).toBeLessThan(100);
-  // A slice press changes nothing and scrolls nothing.
+  // A segment press changes nothing and scrolls nothing.
   const y = await page.evaluate(() => scrollY);
   await page.getByTestId("hv2-deal-breakdown-row-0").getByRole("button").click();
   expect(await page.evaluate(() => scrollY)).toBe(y);
@@ -1368,7 +1590,7 @@ test("the selection paints at once: a row's reads start on hover and focus, so n
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   await expect(page.getByTestId("hv2-deal-reserved")).toHaveCount(0);
   await expect(page.getByText(en["hv2.focus.working"], { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId("hv2-deal-breakdown-donut")).toBeVisible();
+  await expect(page.getByTestId("hv2-deal-breakdown-bar")).toBeVisible();
   const box = (await page.getByTestId("home-deal-focus").boundingBox())!;
   await page.waitForTimeout(500);
   expect(Math.abs((await page.getByTestId("home-deal-focus").boundingBox())!.height - box.height)).toBeLessThan(2);

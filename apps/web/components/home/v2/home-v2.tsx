@@ -9,7 +9,7 @@ import { CompanyChart } from "@/components/home/v2/company-chart";
 import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
 import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { CashCard, DealOutlookCard, FooterLinks, OutlookCard, UpcomingCard } from "@/components/home/v2/home-cards";
+import { CashCard, FooterLinks, OutlookCard, OwedCard, UpcomingCard } from "@/components/home/v2/home-cards";
 import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { ErrorState } from "@/components/ui";
@@ -40,10 +40,9 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const selection = readSelection(params);
   const dealView = readDealView(params);
   const focusing = selection.customer !== null;
-  // Two small views of the Home are in the address too: the funding's composition (`funding=1`) and the expanded forecast (`expand=1`).
-  const fundingOpen = params.get("funding") === "1";
+  // One small view of the Home is in the address too: the expanded forecast (`expand=1`).
   const expanded = params.get("expand") === "1";
-  const setFlag = (key: "funding" | "expand", on: boolean) => {
+  const setFlag = (key: "expand", on: boolean) => {
     const q = new URLSearchParams(params.toString());
     if (on) q.set(key, "1");
     else q.delete(key);
@@ -95,7 +94,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [want, selKey]);
   const shown = stage.mode === "sel" ? (focusing ? selection : stage.selection) : null;
-  // The deal's own picture, one read for the selected card and the outlook card that draws its paths.
+  // The deal's own picture, one read for the deal card and the cash-impact card beside it.
   // A selection lands at the top of what changed, on every width: the company line and the selected card's top edge under the sticky header (smooth unless reduced motion), whenever the selection
   // changes (a click, Enter, the browser's Back or Forward between two selections), never when nothing changed (a slice press). Leaving the selection scrolls back to the headline.
   const landed = useRef(selKey);
@@ -131,7 +130,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const cash = h.cash;
   const headline = cash.headline_conditional || h.headline;
   // "FLOW action ready" is said once, by the recommendation card: the line under the headline keeps the server's count sentence and drops its first sentence ("One funding action ready.")
-  // when the card carries the plan's control; the worklist's alert row is shown only on a Home whose funding is NONE (no plan card to say it).
+  // when the card carries the plan's control; the worklist's alert row is shown only on a Home that renders no recommendation card (no title and no control), whatever the funding state.
   const summary = v2?.summary_text ? (v2.action.control ? v2.summary_text.replace(/^[^.。]*[.。]\s*/, "") : v2.summary_text) : null;
   const header = (
     <header className="motion-reveal mb-3 grid grid-cols-1 items-start gap-y-1.5 sm:mb-5" data-testid="home-status" data-status={h.status}>
@@ -166,16 +165,16 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const customerRow = shown?.customer ? (worklist.data?.customers.find((c) => c.customer_id === shown.customer) ?? null) : null;
   const buyer = customerRow?.short ?? "";
   const row = shown?.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === shown.decision) ?? null) : null;
-  const paths = dealPicture.data?.paths ?? [];
-  const dealDrawn = Boolean(shown?.decision && paths.some((p) => p.kind === "asked" && p.series?.length) && paths.some((p) => p.kind === "reply" && p.recommended && p.series?.length));
   // A worklist the server does not have (null) leaves the page without the table; a failed one says so in the card, with Retry.
   const hasWorklist = worklist.data !== null;
-  const outlook =
-    shown?.decision && dealDrawn ? (
-      <DealOutlookCard h={h} picture={dealPicture.data} expanded={dealView.chart} onExpand={(on) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, chart: on }, "replace")} />
-    ) : (
-      <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />
-    );
+  const hasCard = Boolean(v2.action.title || v2.action.control);
+  // "What you are owed, by customer" is a card of its own in the right column, directly under the upcoming movements (or the context panel): the same place on the default page and on every selection.
+  const owedRows = customers.data?.customers ?? null;
+  const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
+  const owedCard = <OwedCard customers={owedRows} selected={shown?.customer ?? null} onSelect={(id) => go({ customer: id })} />;
+  // The last upcoming row: what customers owe past due (the hybrid read's own short word) and how many customers have a collection row (the server's rows, one per customer, counted); none when nothing is overdue.
+  const overdueCount = (worklist.data?.needs_you ?? []).filter((r) => r.kind === "COLLECTION").length;
+  const overdue = overdueCount > 0 && h.receivables_card?.overdue_short ? { short: h.receivables_card.overdue_short, count: overdueCount } : null;
   const fade = { opacity: fading ? 0 : 1, transition: "opacity 100ms ease-out" } as const;
   const bar = (
     <HomeV2ActionBar
@@ -186,8 +185,6 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       fixer={fixer}
       line={cash.headline_note}
       fundingTotal={v2.kpis.funding.value_display}
-      fundingOpen={fundingOpen}
-      onFunding={(on) => setFlag("funding", on)}
       onBack={shown ? () => clear("action") : undefined}
     />
   );
@@ -200,26 +197,28 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         {shown ? (
           <>
             <div className="mb-3">{bar}</div>
-            <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-              {shown.decision ? (
-                <DealFocusPanel
-                  customerId={shown.customer as string}
-                  buyer={buyer}
-                  decision={shown.decision}
-                  row={row}
-                  customer={customerRow}
-                  h={h}
-                  picture={dealPicture}
-                  view={dealView}
-                  onView={(patch) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, ...patch }, "replace")}
-                  onAll={() => clear()}
-                  onCustomer={() => go({ customer: shown.customer })}
-                />
-              ) : (
+            {shown.decision ? (
+              // A deal: the deal card and ONE card beside it, "Cash impact of this deal" (the panel draws both, on one height).
+              <DealFocusPanel
+                customerId={shown.customer as string}
+                buyer={buyer}
+                decision={shown.decision}
+                row={row}
+                customer={customerRow}
+                h={h}
+                picture={dealPicture}
+                view={dealView}
+                onView={(patch) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, ...patch }, "replace")}
+                onAll={() => clear()}
+                onCustomer={() => go({ customer: shown.customer })}
+              />
+            ) : (
+              // A customer: the customer card beside the company's cash card (the default's left pair); the owed donut stays below the movements.
+              <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
                 <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
-              )}
-              {outlook}
-            </div>
+                <CashCard kpis={v2.kpis} />
+              </div>
+            )}
           </>
         ) : (
           <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
@@ -234,13 +233,16 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
         </div>
       ) : null}
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={v2.kpis.funding.state === "NONE"} /> : <span />}
-        <div style={fade} className="min-w-0">
-          {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} />}
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]">
+        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : <span />}
+        <div className="grid min-w-0 content-start gap-4">
+          <div style={fade} className="min-w-0">
+            {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} overdue={overdue} />}
+          </div>
+          {owedCard}
         </div>
       </div>
-      <FooterLinks separate={Boolean(shown)} />
+      <FooterLinks separate={Boolean(shown && !shown.decision)} />
     </div>
   );
 }

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { DocumentIcon, ShieldCheckIcon } from "@/components/icons";
 import { segments, r1 } from "@/components/business/cash-picture";
+import { Breakdown } from "@/components/home/v2/breakdown";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint, HomeV2, HomeView, OfferPictureView } from "@/lib/types";
+import type { HomeSeriesPoint, HomeV2, HomeView, WorklistCustomer } from "@/lib/types";
 
 /** The card's title: the display face, 20 px, sentence case, never an uppercase eyebrow. */
 export const cardTitle = "font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink";
@@ -19,7 +20,8 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
   const cash = kpis.cash_available;
   const b = cash.buffer;
   const below = b.cash_fen < b.min_fen;
-  const reserve = Math.max(b.min_fen, 1);
+  const scale = Math.max(b.cash_fen, b.min_fen, 1);
+  const pct = (fen: number) => Math.min(Math.max((fen / scale) * 100, 0), 100);
   const room = Math.max(b.cash_fen - b.min_fen, 0);
   return (
     <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-cash-card">
@@ -44,11 +46,13 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
             {b.headroom_text ? <span className="tabular-nums"> {b.headroom_text}</span> : null}
           </span>
         </div>
-        <div role="img" aria-label={cash.note} className="mt-2 flex h-2.5 gap-1" data-testid="home-buffer-bar">
-          <span className="relative overflow-hidden rounded-pill bg-line-strong" style={{ flexGrow: reserve, flexBasis: 0 }}>
-            {below ? <span className="absolute inset-y-0 left-0 rounded-pill bg-bad-solid" style={{ width: `${Math.min(Math.max((b.cash_fen / reserve) * 100, 0), 100)}%` }} data-testid="home-buffer-cash" /> : null}
-          </span>
-          {!below && room > 0 ? <span className="rounded-pill bg-f-green" style={{ flexGrow: room, flexBasis: 0 }} data-testid="home-buffer-cash" /> : null}
+        <div className="relative mt-2" data-testid="home-buffer-track">
+          <div role="img" aria-label={cash.note} className="flex h-2.5 gap-1" data-testid="home-buffer-bar">
+            <span className="relative overflow-hidden rounded-pill bg-line-strong" style={{ width: `${pct(b.min_fen)}%` }}>
+              {below ? <span className="absolute inset-y-0 left-0 rounded-pill bg-bad-solid" style={{ width: `${Math.min(Math.max((b.cash_fen / Math.max(b.min_fen, 1)) * 100, 0), 100)}%` }} data-testid="home-buffer-cash" /> : null}
+            </span>
+            {!below && room > 0 ? <span className="rounded-pill bg-f-green" style={{ width: `${(room / scale) * 100}%` }} data-testid="home-buffer-cash" /> : null}
+          </div>
         </div>
       </div>
     </section>
@@ -162,55 +166,66 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
   );
 }
 
+
+/** The number and its percent sign in a share word ("19.5% of what you are owed", "占您应收款的 19.5%" are "19.5%"): the centre of the owed donut says the figure, the legend keeps the server's whole phrase. */
+const percentOf = (share: string | null | undefined): string | null => /(\d+(?:\.\d+)?\s*%)/.exec(share ?? "")?.[1] ?? null;
+
 /**
- * The outlook card while a deal is selected (round two): the deal's own paths on the small chart, the request in grey and FLOW's recommended reply in purple, so the owner sees how the deal affects
- * the company's cash. The figure is the request's lowest cash in the server's short word (risk red when it breaches the minimum), the pill when that is, the footer the recommended reply's own lowest;
- * Expand opens the deal's cash chart under the deal's card. Nothing is computed here. Null while the picture is not here (the caller keeps the company's outlook).
+ * "What you are owed, by customer" (round four: on a selection the outlook card becomes this donut): a slice for each customer with something outstanding, from the `/customers` rows the page already
+ * reads (name, `outstanding_display`, `share_text`, the server's words); the selected customer's slice is lifted 4 px and named in the centre ("Zhuhai · ¥150,000 · 19.5%"); another slice or its
+ * row SELECTS that customer (the address changes and the cards follow).
  */
-export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { h: HomeView; picture: OfferPictureView | null | undefined; expanded: boolean; onExpand: (open: boolean) => void; controls?: string }) {
+export function owedRowsOf(customers: WorklistCustomer[] | null | undefined): WorklistCustomer[] {
+  return (customers ?? []).filter((c) => {
+    const pct = percentOf(c.share_text);
+    return pct !== null && parseFloat(pct) > 0;
+  });
+}
+
+export function OwedCard({ customers, selected, onSelect }: { customers: WorklistCustomer[] | null | undefined; selected: string | null; onSelect: (customerId: string) => void }) {
   const { t } = useI18n();
-  const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
-  const asked = paths.find((p) => p.kind === "asked") ?? null;
-  const rec = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
-  if (!picture || !asked?.series?.length || !rec?.series?.length) return null;
-  const lines: MiniLine[] = [
-    { key: "asked", points: asked.series, cls: "stroke-ink-3", width: 2, testId: "hv2-mini-asked" },
-    { key: "rec", points: rec.series, cls: "stroke-chart-base", width: 2.25, testId: "hv2-mini-rec" },
-  ];
-  const lowestDay = asked.series.filter((p) => p.day >= h.day).reduce<HomeSeriesPoint | null>((a, b) => (a === null || b.closing_fen < a.closing_fen ? b : a), null)?.day ?? h.day;
-  return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card" data-mode="deal">
-      <div className="flex items-start justify-between gap-3">
-        <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
-          {t("hv2.deal.outlook")}
+  const rows = owedRowsOf(customers);
+  if (!rows.length) return null;
+  // Fewer than two customers owed: the one figure, no ring (a single slice says nothing a number does not).
+  if (rows.length === 1) {
+    const only = rows[0];
+    return (
+      <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card" data-ring="false">
+        <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+          {t("hv2.owed.title")}
         </h2>
-        {asked.lowest_when ? (
-          <StatusPill tone="amber" testId="hv2-outlook-when">
-            {asked.lowest_when}
-          </StatusPill>
-        ) : null}
-      </div>
-      {asked.lowest_short ? (
-        <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
-          {asked.lowest_short}
-        </p>
-      ) : null}
-      <p className="mt-1.5 text-sm text-ink-3" data-testid="hv2-outlook-asked">
-        {asked.label || t("hv2.deal.outlook.asked")}
-      </p>
-      <div className="mt-2 max-sm:max-w-xs">
-        <MiniChart lines={lines} mainKey="asked" floor={picture.floor_fen} today={h.day} window={picture.picture_days ?? h.cash.picture_days ?? WINDOW_FALLBACK} dotDay={lowestDay} dotCls="stroke-bad-solid" />
-      </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
-        <p className="tabular-nums" data-testid="hv2-outlook-rec">
-          {rec.label}
-          {rec.lowest_short ? ` ${rec.lowest_short}` : ""}
-        </p>
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
-          {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
-          <ExpandIcon open={expanded} />
+        <button type="button" aria-pressed={selected === only.customer_id} onClick={() => onSelect(only.customer_id)} className="motion-press mt-2 block w-full rounded-control px-1 py-1 text-left hover:bg-subtle touch:min-h-11" data-testid="hv2-owed-one">
+          <b className="block font-display text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink">{only.outstanding_display}</b>
+          <span className="mt-1 block text-sm text-ink-2">{only.name}</span>
+          <span className="block text-supporting text-ink-3">{only.share_text}</span>
         </button>
-      </div>
+      </section>
+    );
+  }
+  const at = rows.findIndex((c) => c.customer_id === selected);
+  const on = at >= 0 ? rows[at] : null;
+  return (
+    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card">
+      <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+        {t("hv2.owed.title")}
+      </h2>
+      <Breakdown
+        stacked
+        size={128}
+        testId="hv2-owed"
+        rows={rows.map((c) => ({ label: c.name, amount_display: c.outstanding_display, share_text: c.share_text as string }))}
+        lifted={at >= 0 ? at : null}
+        onPick={(i) => onSelect(rows[i].customer_id)}
+        centre={
+          on ? (
+            <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-5 text-center leading-tight" data-testid="hv2-owed-centre">
+              <span className="max-w-full truncate text-supporting text-ink-3">{on.short}</span>
+              <b className="font-display text-[15px] font-bold tabular-nums text-ink">{on.outstanding_display}</b>
+              <span className="text-supporting tabular-nums text-ink-3">{percentOf(on.share_text)}</span>
+            </span>
+          ) : undefined
+        }
+      />
     </section>
   );
 }
@@ -219,7 +234,7 @@ export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { 
  * "Upcoming cash movements": the Home read's own rail events (the nearest that move cash, each with the server's label, amount and when; the plan's landings are the plan's, not
  * movements), never a second computation, and the way to the full forecast on Cash & Funding.
  */
-export function UpcomingCard({ h }: { h: HomeView }) {
+export function UpcomingCard({ h, overdue }: { h: HomeView; overdue?: { short: string; count: number } | null }) {
   const { t } = useI18n();
   // The server's own three nearest movements (`home_v2.upcoming`); an older server falls back to the rail's rows that move cash.
   const server = h.home_v2?.upcoming ?? null;
@@ -234,7 +249,7 @@ export function UpcomingCard({ h }: { h: HomeView }) {
       <h2 id="hv2-upcoming-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
-      {events.length ? (
+      {events.length || overdue ? (
         <ul className="mt-3 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
             <li key={e.key} className="flex min-h-11 items-center justify-between gap-4 py-1.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
@@ -245,6 +260,17 @@ export function UpcomingCard({ h }: { h: HomeView }) {
               <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>
           ))}
+          {overdue ? (
+            <li className="min-h-11 py-1.5" data-testid="hv2-upcoming-overdue-row">
+              <Link href="/receivables?from=home" className="motion-press flex min-h-8 items-center justify-between gap-4 rounded-control text-[15px] text-ink hover:underline hover:underline-offset-[3px] touch:min-h-11" data-testid="hv2-upcoming-overdue">
+                <span className="min-w-0">
+                  <span className="block leading-tight">{t("hv2.upcoming.overdue")}</span>
+                  <span className="block text-supporting text-ink-3">{t(overdue.count === 1 ? "hv2.upcoming.overdue.one" : "hv2.upcoming.overdue.many", { n: overdue.count })}</span>
+                </span>
+                <b className="shrink-0 font-semibold tabular-nums text-bad-fg">{overdue.short}</b>
+              </Link>
+            </li>
+          ) : null}
         </ul>
       ) : (
         <p className="mt-4 text-sm text-ink-3" data-testid="hv2-upcoming-none">

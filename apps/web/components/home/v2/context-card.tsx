@@ -32,6 +32,7 @@ export function ContextCard({ customerId, decision, row, customer, onBack }: { c
       <h2 id="hv2-context-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {decision ? t("hv2.context.title") : t("hv2.context.titleCustomer")}
       </h2>
+      {/* The deal's own cash impact (as asked against FLOW's reply): the first block of the panel */}
       <p className="mt-3 border-b border-line pb-4 text-[15px] text-ink-3" data-testid="hv2-context-subject">
         {[row?.subject_text, name].filter(Boolean).join(" · ")}
       </p>
