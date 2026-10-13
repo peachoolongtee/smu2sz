@@ -24,7 +24,10 @@ class Queue {
   private inflight = false;
   private queued: WhatIfParams | null = null;
 
-  constructor(private readonly publish: (update: (prev: Settled) => Settled) => void) {}
+  constructor(
+    private readonly publish: (update: (prev: Settled) => Settled) => void,
+    private readonly scope: { customer?: string | null; decision?: string | null },
+  ) {}
 
   send(p: WhatIfParams): void {
     if (this.inflight) {
@@ -33,7 +36,7 @@ class Queue {
     }
     this.inflight = true;
     const key = keyOf(p);
-    whatIf(p)
+    whatIf(p, this.scope)
       .then(
         (result) => this.publish(() => ({ key, result })),
         (e: unknown) =>
@@ -58,9 +61,9 @@ export interface WhatIfState {
   reload: () => void;
 }
 
-export function useWhatIf(params: WhatIfParams): WhatIfState {
+export function useWhatIf(params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}): WhatIfState {
   const [settled, setSettled] = useState<Settled>({ key: "" });
-  const [queue] = useState(() => new Queue((update) => setSettled(update)));
+  const [queue] = useState(() => new Queue((update) => setSettled(update), scope));
   const [nonce, setNonce] = useState(0);
   const key = keyOf(params);
 

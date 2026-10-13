@@ -6,10 +6,10 @@ import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { CashPicture } from "@/components/business/cash-picture";
 import { Badge, Button, Callout, DecisionCard, KeyValueList, textLinkClass, type Tone } from "@/components/ui";
+import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { StateWord } from "@/components/ui/state-word";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
 import { useI18n } from "@/lib/i18n";
-import { useNarrow } from "@/lib/use-narrow";
 import type { ApprovalDecision, ApprovalQuote, ApprovalView } from "@/lib/types";
 
 /** Operations that carry a price. A quote that was never recorded is said for these only; an application or an agreement has no price to miss. */
@@ -128,8 +128,6 @@ export function ApprovalCard({
 }) {
   const { t, te } = useI18n();
   const Wrap = raised ? DecisionCard : StandardSection;
-  // On a phone the buttons come up the screen: they sit right after the reason, before the picture.
-  const narrow = useNarrow();
   const isPending = a.status === "PENDING";
   const p = a.presentation;
   // What the decision run did, in the server's words (the decision record's execution block); the older fields are the fallback.
@@ -380,7 +378,6 @@ export function ApprovalCard({
           </dd>
         </dl>
 
-        {narrow ? decide : null}
         {picture}
         {termsBlock}
         {picture ? null : (
@@ -404,7 +401,9 @@ export function ApprovalCard({
         )}
         {quoteFold}
 
-        {narrow ? null : decide}
+        {/* The terms come first at every width, then the one button that names what it does (ticket #128, audit UX03): the receipt on screen is the review, and Approve asks nothing more. */}
+        <CommitmentReceipt receipt={p?.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} className="border-t border-line pt-3" />
+        {decide}
         {recordLink}
         {auditFold}
       </Wrap>

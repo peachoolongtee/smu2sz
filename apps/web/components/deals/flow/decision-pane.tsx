@@ -262,6 +262,7 @@ export function DecisionPane({
   const focusBasis = focus ? (focus.cost_basis_text ?? focus.cost_note) : null;
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
+  const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
   const customerLine = (
     <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2" data-testid="deal-customer-line">
@@ -449,11 +450,11 @@ export function DecisionPane({
                   onSent={setSent}
                   onBusy={setBusyBoth}
                 >
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} uid={uid} hasChart={paths.some((p) => (p.series ?? []).length > 0)} /> : null}
+                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
                 </SendBlock>
               ) : (
                 <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} uid={uid} hasChart={paths.some((p) => (p.series ?? []).length > 0)} /> : null}
+                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
                   {mode === "demo" ? (
                     <Link href="/verdict#negotiation" className={textLinkClass}>
                       {t("biz.deals.negotiateLink")}
@@ -519,7 +520,7 @@ export function DecisionPane({
 }
 
 /** "Compare responses" and "Cash impact": the outlined toggles of the decision level (the filled button is the commit's). */
-function CompareButtons({ view, onView, uid, hasChart }: { view: DealView; onView: (patch: Partial<DealView>) => void; uid: string; hasChart: boolean }) {
+function CompareButtons({ view, onView, hasChart, whatif }: { view: DealView; onView: (patch: Partial<DealView>) => void; hasChart: boolean; whatif: string }) {
   const { t } = useI18n();
   const chevron = (on: boolean) => (
     <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`transition-transform duration-(--dur) ${on ? "rotate-180" : ""}`}>
@@ -538,7 +539,9 @@ function CompareButtons({ view, onView, uid, hasChart }: { view: DealView; onVie
           {chevron(view.chart)}
         </Button>
       ) : null}
-      <span id={`${uid}-compare`} className="sr-only" />
+      <Link href={whatif} className={`${textLinkClass} px-1`} data-testid="deal-whatif">
+        {t("deals.whatif")}
+      </Link>
     </>
   );
 }

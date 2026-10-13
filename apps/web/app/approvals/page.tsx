@@ -12,12 +12,9 @@ import { isWriteConflictDetail } from "@/lib/live/retry";
 import { useI18n } from "@/lib/i18n";
 import type { ApprovalDecision } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
-import { useNarrow } from "@/lib/use-narrow";
 
 export default function ApprovalsPage() {
   const { t, lang } = useI18n();
-  // On a phone, with a decision waiting, the page's own subtitle gives way to the question: the buttons come up the screen.
-  const narrow = useNarrow();
   const read = useAsync(getApprovalsRead, [lang]);
   // The queue as before: `list.data` is the rows; the read's own freshness word rides beside it.
   const list = { data: read.data?.approvals, error: read.error, reload: read.reload };
@@ -70,11 +67,7 @@ export default function ApprovalsPage() {
   const waiting = list.data?.filter((a) => a.status === "PENDING") ?? [];
   const decided = list.data?.filter((a) => a.status !== "PENDING") ?? [];
   const pending = waiting.length;
-  // The page answers "what are you asking me": with one approval waiting, its question is the page's own heading and the card does not repeat it;
-  // with several, a counted sentence; with none, the plain title.
-  const single = waiting.length === 1 ? waiting[0] : null;
-  const title = single ? <span data-testid="approval-headline">{single.presentation?.headline ?? single.subject}</span> : pending > 1 ? t("biz.appr.headline.many", { n: pending }) : t("appr.title");
-
+  // The page's title is stable (ticket #129): "Approvals". What is asked is each card's own question, with its terms above the one button that approves.
   // A link such as /approvals#approval-APR-000001 (from an alert waiting for approval) lands on that card once the queue has loaded.
   const loaded = Boolean(list.data);
   useEffect(() => {
@@ -87,8 +80,8 @@ export default function ApprovalsPage() {
       <PageHeader
         section="home"
         icon={ShieldCheckIcon}
-        title={title}
-        subtitle={narrow && pending ? undefined : t("appr.subtitle")}
+        title={t("appr.title")}
+        subtitle={t("appr.subtitle")}
         actions={list.data ? <Badge tone={pending ? "warn" : "neutral"}>{t("appr.pending", { n: pending })}</Badge> : undefined}
       />
       <ReadWhen when={read.data?.last_read_when} testId="appr-read-when" className="mb-2" />
@@ -119,7 +112,7 @@ export default function ApprovalsPage() {
             <ul className="space-y-6" data-testid="approvals-waiting">
               {waiting.map((a, i) => (
                 <li key={a.id} className="min-w-0">
-                  <ApprovalCard raised={i === 0} a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} cash={cash} headlineInPage={single?.id === a.id} />
+                  <ApprovalCard raised={i === 0} a={a} busyId={busyId} resultMessage={results[a.id]} onDecide={(id, d) => void decide(id, d)} onRetry={list.reload} cash={cash} />
                 </li>
               ))}
             </ul>

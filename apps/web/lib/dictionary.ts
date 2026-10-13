@@ -2600,6 +2600,16 @@ export const en = {
   "chat.scope.mismatch": "You asked about the {asked}; FLOW answered about: {used}",
   "chat.p.page.owes": "Who owes us money?",
   "chat.p.page.latepay": "Which payments are late?",
+  "whatif.ask.sub": "Test other terms on one negotiation. Nothing is booked or sent.",
+  "whatif.ask.body": "Choose the negotiation to test terms for. The sandbox opens on that offer's own terms.",
+  "whatif.ask.none": "No negotiation is open",
+  "whatif.ask.none.body": "There is nothing to test terms for yet. A buyer's message starts a negotiation in Deals.",
+  "whatif.ask.choose": "Choose a negotiation",
+  "whatif.scope": "Testing terms for",
+  "whatif.scope.back": "Back to the deal",
+  "whatif.scope.mismatch": "This simulation was run for another customer than the one you chose. Do not read it as theirs.",
+  "deals.whatif": "Try other terms",
+  "receipt.title.approve": "What approving does",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5198,4 +5208,14 @@ export const zh: Record<DictKey, string> = {
   "chat.scope.mismatch": "您问的是{asked}；FLOW 回答所依据的范围是：{used}",
   "chat.p.page.owes": "谁欠我们钱？",
   "chat.p.page.latepay": "哪些回款没到？",
+  "whatif.ask.sub": "对一项谈判试试其他条款。不会记账，也不会发送。",
+  "whatif.ask.body": "请选择要测试条款的谈判。沙盘会从该报价自己的条款开始。",
+  "whatif.ask.none": "目前没有进行中的谈判",
+  "whatif.ask.none.body": "目前没有可以测试条款的谈判。买方的消息会在交易页开启一项谈判。",
+  "whatif.ask.choose": "选择一项谈判",
+  "whatif.scope": "正在测试条款：",
+  "whatif.scope.back": "回到这项交易",
+  "whatif.scope.mismatch": "这次模拟针对的客户与您选择的不是同一个。请不要把它当作该客户的结果。",
+  "deals.whatif": "试试其他条款",
+  "receipt.title.approve": "批准会怎样",
 };

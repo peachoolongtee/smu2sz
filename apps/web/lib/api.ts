@@ -376,8 +376,8 @@ export function alertChanged(e: unknown): AlertChangedDetail | null {
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
-export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
-  return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params);
+export async function whatIf(params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}): Promise<WhatIfResult> {
+  return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params, scope);
 }
 
 /** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */
