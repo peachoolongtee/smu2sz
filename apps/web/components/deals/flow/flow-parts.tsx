@@ -38,3 +38,6 @@ export function Cell({ value, bad, note, sub }: { value?: string | null; bad?: b
 }
 
 export const NONE = <span className="text-supporting text-ink-3">—</span>;
+
+/** A quiet text link or text button: 13 px (the kit's own is 12 px, which this page keeps for labels only), brand ink, underlined, a 32 px target (44 px on touch). */
+export const quietLink = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-supporting font-bold text-brand-700 underline underline-offset-2 hover:bg-brand-50 touch:min-h-11";

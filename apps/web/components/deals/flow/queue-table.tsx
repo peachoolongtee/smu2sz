@@ -206,7 +206,7 @@ export function QueuePanel({
       </div>
       {onlyCustomer ? (
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="queue-only-customer">
-          <span>{t("deals.only", { name: only ?? onlyCustomer })}</span>
+          <span>{only ? t("deals.only", { name: only }) : t("deals.only.unknown")}</span>
           <button type="button" onClick={onShowAll} className="inline-flex min-h-8 items-center font-bold text-brand-700 underline underline-offset-2 touch:min-h-11" data-testid="queue-show-all">
             {t("deals.showAll")}
           </button>

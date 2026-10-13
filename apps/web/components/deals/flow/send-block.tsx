@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice, textLinkClass } from "@/components/ui";
+import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { counterChanged, negotiate } from "@/lib/api";
@@ -9,6 +9,7 @@ import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { bump, recordNegotiation, useDemo } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { isTimeout } from "@/lib/errors";
+import { quietLink } from "./flow-parts";
 import { useI18n } from "@/lib/i18n";
 import { receiptOfSend } from "@/lib/receipt";
 import type { BuyerProfile, CounterChangedDetail, NegotiationView, OfferPictureView, PicturePath } from "@/lib/types";
@@ -117,7 +118,7 @@ export function SendBlock({
     <div className="space-y-3">
       <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
         {reviewing ? null : (
-          <Button variant="primary" aria-expanded={false} aria-controls={`${uid}-review`} onClick={() => void open()} data-testid="queue-review-open">
+          <Button variant="primary" aria-expanded={false} aria-controls="counters" onClick={() => void open()} data-testid="queue-review-open">
             {t("dq.review")}
           </Button>
         )}
@@ -134,7 +135,7 @@ export function SendBlock({
         </div>
       ) : null}
       {reviewing ? (
-        <div id={`${uid}-review`} role="region" aria-label={t("dq.review.region")} className="space-y-4 pt-1" data-testid="queue-review">
+        <div id="counters" role="region" aria-label={t("dq.review.region")} className="space-y-4 pt-1" data-testid="queue-review">
           {verdict ? (
             <CommitmentReceipt receipt={receiptOfSend(path, verdict)} id={`${uid}-receipt`} title={t("receipt.title.send", { label: path.label })} />
           ) : preparing ? (
@@ -165,7 +166,7 @@ export function SendBlock({
             <Button variant="primary" loading={sending} disabled={inFlight || !verdict} onClick={() => void send()} data-testid="deal-send">
               {sending ? t("biz.deals.sending") : t("deals.send.go", { label: path.label, buyer })}
             </Button>
-            <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${textLinkClass} disabled:opacity-50`} data-testid="queue-review-close">
+            <button type="button" onClick={() => setReviewing(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="queue-review-close">
               {t("dq.review.close")}
             </button>
           </ActionGroup>

@@ -2614,6 +2614,7 @@ export const en = {
   "deals.askedTerms": "What the buyer asked for",
   "deals.review.reading": "Reading the terms of this send",
   "receipt.title.agreed": "What this agreement does",
+  "deals.only.unknown": "Showing one customer only.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5226,4 +5227,5 @@ export const zh: Record<DictKey, string> = {
   "deals.askedTerms": "买方的要求",
   "deals.review.reading": "正在读取这次发送的条款",
   "receipt.title.agreed": "这份协议的作用",
+  "deals.only.unknown": "只显示一位客户。",
 };

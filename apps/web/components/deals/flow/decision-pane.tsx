@@ -5,7 +5,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CustomerName } from "@/components/customer-link";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
-import { Button, ButtonLink, Callout, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
+import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
 import { OpenSection } from "@/components/ui/open-section";
@@ -16,7 +16,7 @@ import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
-import { AUTH_TONE, Cell, NONE, toneOfDeal } from "./flow-parts";
+import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
 import { Investigate, lowestOf } from "./investigate";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
@@ -99,7 +99,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
         </p>
       ) : null}
       <p className="text-sm">
-        <Link href={`/decisions/${encodeURIComponent(decision)}`} className={textLinkClass} data-testid="deal-record-link">
+        <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
           {t("deals.record")}
         </Link>
       </p>
@@ -373,8 +373,10 @@ export function DecisionPane({
               <LoadingBlock rows={3} />
             </div>
           ) : !picture || !evaluated ? (
-            <div data-testid="queue-check">
-              <p className="max-w-[60ch] text-sm text-ink-2">{t("deals.check.body")}</p>
+            <div data-testid="next-step">
+              <p className="max-w-[60ch] text-sm text-ink-2" data-testid="queue-check">
+                {t("deals.check.body")}
+              </p>
               <ActionGroup className="mt-3" testId="deal-actions" label={t("deals.actions")}>
                 <Button variant="primary" loading={checking} onClick={() => void check()} data-testid="queue-check-button">
                   {t("biz.deals.check")}
@@ -472,7 +474,7 @@ export function DecisionPane({
                 <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
                   {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
                   {mode === "demo" ? (
-                    <Link href="/verdict#negotiation" className={textLinkClass}>
+                    <Link href="/verdict#negotiation" className={quietLink}>
                       {t("biz.deals.negotiateLink")}
                     </Link>
                   ) : null}
@@ -555,7 +557,7 @@ function CompareButtons({ view, onView, hasChart, whatif }: { view: DealView; on
           {chevron(view.chart)}
         </Button>
       ) : null}
-      <Link href={whatif} className={`${textLinkClass} px-1`} data-testid="deal-whatif">
+      <Link href={whatif} className={`${quietLink} px-1`} data-testid="deal-whatif">
         {t("deals.whatif")}
       </Link>
     </>
