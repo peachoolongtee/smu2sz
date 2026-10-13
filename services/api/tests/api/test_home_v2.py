@@ -786,3 +786,81 @@ def test_the_whole_percent_word_rounds_half_up_and_keeps_the_edges_and_the_defau
 
     assert [share_text(Fraction(x, 1000), "en", whole=True) for x in (370, 375, 996, 4, 0, 1000)] == ["37%", "38%", "over 99%", "under 1%", "0%", "100%"]
     assert share_text(Fraction(4, 1000), "zh", whole=True) == "低于 1%" and share_text(Fraction(370, 1000)) == "37.0%"
+
+
+# ---------------------------------------------------------------- summary_text and upcoming (the Home mockup's words)
+
+
+def _busy(api: TestClient) -> None:
+    assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
+
+
+def test_the_summary_composes_the_funding_action_and_the_worklist_counts_on_day_zero(api: TestClient) -> None:
+    _offer(api)
+    assert _v2(api)["summary_text"] == "One funding action ready. One deal decision needs you."
+    assert _v2(api, "zh")["summary_text"] == "有 1 项融资操作可以执行。1 项交易决定需要您处理。"
+    assert english_leaks(_v2(api, "zh")["summary_text"]) == []
+
+
+def test_the_summary_on_the_busy_day_names_each_kind_and_has_nothing_to_run(api: TestClient) -> None:
+    _busy(api)
+    assert _v2(api)["summary_text"] == "Nothing to run. Four deal decisions, one approval and one collection need you."
+    assert _v2(api, "zh")["summary_text"] == "没有需要执行的操作。4 项交易决定、1 项审批、1 项催收需要您处理。"
+
+
+def test_the_summary_words_agree_with_the_count_and_name_only_what_is_present() -> None:
+    assert home_v2._needs_sentence("en", {"DECISION": 2}) == "Two deal decisions need you."
+    assert home_v2._needs_sentence("en", {"APPROVAL": 1, "COLLECTION": 1}) == "One approval and one collection need you."
+    assert home_v2._needs_sentence("en", {"COLLECTION": 1}) == "One collection needs you."
+    assert home_v2._needs_sentence("en", {"SETUP": 1}) == "One contract to review needs you."
+    assert home_v2._needs_sentence("zh", {"APPROVAL": 1, "COLLECTION": 2}) == "1 项审批、2 项催收需要您处理。"
+    assert home_v2._needs_sentence("en", {}) is None and home_v2._needs_sentence("zh", {}) is None
+
+
+def test_the_summary_is_null_when_no_action_runs_and_nothing_waits(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(worklist, "kind_counts", lambda rt, lang, **kw: {})
+    monkeypatch.setattr(home_v2, "_is_plan", lambda a: False)
+    assert _v2(api)["summary_text"] is None
+
+
+def test_the_summary_after_the_plan_runs_has_nothing_to_run(api: TestClient) -> None:
+    _offer(api)
+    _run_plan(api)
+    assert _v2(api)["summary_text"] == "Nothing to run. One deal decision needs you."
+
+
+def test_upcoming_is_the_three_nearest_movements_of_the_books_on_day_zero_and_in_chinese(api: TestClient) -> None:
+    _offer(api)
+    up = _v2(api)["upcoming"]
+    assert up == [{"label": "Payroll is paid", "amount_display": "−¥340k", "when": "in 12 days", "kind": "outflow"},
+                  {"label": "A supplier payment goes out", "amount_display": "−¥120k", "when": "in 20 days", "kind": "outflow"},
+                  {"label": "A loan repayment goes out", "amount_display": "−¥45k", "when": "in 30 days", "kind": "outflow"}]
+    zh = _v2(api, "zh")["upcoming"]
+    assert [(u["label"], u["amount_display"], u["when"], u["kind"]) for u in zh] == [
+        ("发放工资", "−¥340k", "12 天后", "outflow"), ("支付供应商款项", "−¥120k", "20 天后", "outflow"), ("一笔贷款还款支出", "−¥45k", "30 天后", "outflow")]
+    assert english_leaks(zh) == []
+
+
+def test_upcoming_on_the_busy_day_leads_with_the_inflow_and_is_in_day_order(api: TestClient) -> None:
+    _busy(api)
+    up = _v2(api)["upcoming"]
+    assert [(u["label"], u["amount_display"], u["when"], u["kind"]) for u in up] == [
+        ("Foshan pays", "+¥420k", "in 2 days", "inflow"), ("Payroll is paid", "−¥340k", "in 12 days", "outflow"),
+        ("A supplier payment goes out", "−¥120k", "in 20 days", "outflow")]
+
+
+def test_upcoming_leaves_out_planned_rows_and_is_empty_with_no_rail() -> None:
+    rail = [{"key": "day-0", "day": 0, "label": "the draw would arrive", "amount_fen": 100, "amount_short": "+¥1", "when": "today", "planned": True},
+            {"key": "day-5", "day": 5, "label": "no amount", "amount_fen": 0, "amount_short": "¥0", "when": "in 5 days", "planned": False}]
+    assert home_v2._upcoming(SimpleNamespace(), rail) == [] and home_v2._upcoming(SimpleNamespace(), None) == []  # type: ignore[arg-type]
+
+
+def test_a_worklist_that_cannot_be_counted_leaves_the_summary_null_and_is_named_in_partial(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    _offer(api)
+
+    def boom(rt: Any, lang: str, **kw: Any) -> dict[str, int]:
+        raise RuntimeError("no worklist")
+
+    monkeypatch.setattr(worklist, "kind_counts", boom)
+    h: dict[str, Any] = api.get("/home").json()
+    assert h["home_v2"]["summary_text"] is None and h["home_v2"]["kpis"] and h["partial"]["missing"] == ["home_v2"]

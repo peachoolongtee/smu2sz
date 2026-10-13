@@ -10,6 +10,7 @@ import re
 import threading
 from bisect import bisect_right
 from collections import Counter, OrderedDict
+from fractions import Fraction
 from functools import reduce
 from typing import Any
 
@@ -51,6 +52,7 @@ from app.funding import plan
 from app.mandate import tier_for
 from app.operations import lengthens_terms
 from app.operations.executor import only_early_pay
+from app.strategy.words import share_text
 from app.verifier import counter_recheck
 from app.verifier.evaluate import CAP_CODES
 from app.verifier.screen import SECURITY_CODES
@@ -452,18 +454,37 @@ def _scenario_assumption(lang: str, kind: str, legs: str | None, *, funded: bool
     return say(lang, "Assumes the buyer accepts this reply; no new funding is needed.", "假设买方接受此回复；无需新增融资。")
 
 
+def _ask_words(state: Any, bound: list[Any], buyer: str | None, once: int, lang: str) -> tuple[list[dict[str, str]], dict[str, str | None]]:
+    """(`ask_breakdown`, `ask_facts`) of the offer as asked, the figures the deal card shows. The invoice value is the face of the one immediate
+    discount the buyer asks (its base), the requested discount the amount the projection posted for it (`once`, the path's own `cost_once`),
+    and the buyer's discount takes the second from the first: the two rows are shares of the face (`share_text`, whole percent). With no such
+    discount (none, several, or one with no face or posted amount) there is no breakdown and no invoice value or discount; the requested
+    term is the terms the ask extends to (its terms extension), null when the ask leaves the terms alone."""
+    early = [o for o in bound if o.type == ObligationType.IMMEDIATE_DISCOUNT]
+    face = early[0].base.amount_fen if len(early) == 1 else None
+    ext = any(o.type == ObligationType.TERMS_EXTENSION for o in bound)
+    days = _payment_days(state, bound, buyer) if ext else None
+    term = say(lang, f"{days} days", f"{days} 天") if days is not None else None
+    if face is None or face <= 0 or once <= 0 or once > face:
+        return [], {"invoice_value_display": None, "requested_discount_display": None, "requested_term_text": term}
+    rows = [(say(lang, "After buyer discount", "买方折扣后"), face - once), (say(lang, "Requested discount", "买方要求的折扣"), once)]
+    return ([{"label": label, "amount_display": whole(fen), "share_text": share_text(Fraction(fen, face), lang, whole=True)} for label, fen in rows],
+            {"invoice_value_display": whole(face), "requested_discount_display": whole(once), "requested_term_text": term})
+
+
 def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable: bool, needs_owner: bool, tag: str | None,
                 cost_display: str, cost_note: str, cost: dict[str, Any], terms: list[dict[str, Any]], decides: str,
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
                 lang: str, reason: str | None = None, recommended_reason: str | None = None,
-                scenario_assumption: str | None = None) -> dict[str, Any]:
+                scenario_assumption: str | None = None, ask: tuple[list[dict[str, str]], dict[str, str | None]] | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
             "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason,
             "scenario_assumption_text": scenario_assumption, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
-            "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band}
+            "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band,
+            "ask_breakdown": ask[0] if ask is not None else None, "ask_facts": ask[1] if ask is not None else None}
 
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
@@ -507,7 +528,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         authority=authority, authority_text=authority_text, assumption=None, reply_text=None, series=asked_view["series"],
         low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
         breach_when=asked_view["first_breach_when"], band=band, lang=lang,
-        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False))]
+        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang))]
 
     by_id = {r["counter_id"]: r for r in replies}
     who: dict[str, tuple[str | None, str, bool, str]] = {}  # per reply: (authority, its words, whether the owner decides, the rule that says so)

@@ -337,3 +337,41 @@ def test_no_other_state_of_the_books_makes_the_picture_fail(client):
     assert client.get(f"/offers/{oid}/picture").status_code == 200
     client.post("/clock/advance", json={"to_day": 34})
     assert client.get(f"/offers/{oid}/picture").status_code == 200
+
+
+# ---------------------------------------------------------------- the asked path's breakdown and facts (the Home deal card's words)
+
+
+def test_the_asked_path_carries_the_breakdown_and_the_three_facts_on_day_zero(client):
+    oid, _ = _evaluated(client)
+    asked, *replies = client.get(f"/offers/{oid}/picture").json()["paths"]
+    assert asked["ask_breakdown"] == [{"label": "After buyer discount", "amount_display": "¥414,960", "share_text": "99%"},
+                                      {"label": "Requested discount", "amount_display": "¥5,040", "share_text": "1%"}]
+    assert asked["ask_facts"] == {"invoice_value_display": "¥420,000", "requested_discount_display": "¥5,040", "requested_term_text": "60 days"}
+    assert asked["cost_once_display"] == "¥5,040.00"  # the discount is the path's own posted one-off, said whole
+    assert all(p["ask_breakdown"] is None and p["ask_facts"] is None for p in replies) and replies
+
+
+def test_the_asked_breakdown_in_chinese_has_no_english(client):
+    oid, _ = _evaluated(client)
+    asked = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["paths"][0]
+    assert [(r["label"], r["amount_display"], r["share_text"]) for r in asked["ask_breakdown"]] == [
+        ("买方折扣后", "¥414,960", "99%"), ("买方要求的折扣", "¥5,040", "1%")]
+    assert asked["ask_facts"]["requested_term_text"] == "60 天"
+    assert english_leaks([asked["ask_breakdown"], asked["ask_facts"]]) == []
+
+
+def test_an_ask_with_a_discount_and_no_terms_extension_has_no_requested_term(client):
+    client.post("/demo/reset", json={})
+    offer = client.post("/offers", json={"fixture_id": "EX02_EARLY_1_5"}).json()["offer"]["offer_id"]
+    client.post(f"/offers/{offer}/evaluate", json={"fixture_id": "EX02_EARLY_1_5"})
+    asked = client.get(f"/offers/{offer}/picture").json()["paths"][0]
+    assert asked["ask_facts"] == {"invoice_value_display": "¥420,000", "requested_discount_display": "¥6,300", "requested_term_text": None}
+    assert [r["amount_display"] for r in asked["ask_breakdown"]] == ["¥413,700", "¥6,300"]
+
+
+def test_an_ask_with_no_composable_discount_has_an_empty_breakdown_and_no_figures():
+    from app.api import offer_picture
+
+    rows, facts = offer_picture._ask_words(None, [], None, 0, "en")
+    assert rows == [] and facts == {"invoice_value_display": None, "requested_discount_display": None, "requested_term_text": None}

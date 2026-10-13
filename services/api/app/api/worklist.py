@@ -553,15 +553,18 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
 # ---------------------------------------------------------------- reading
 
 
-def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, Any], bool]:
+def _build(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] | None = None,
+           reconciled: Any | None = None) -> tuple[dict[str, Any], bool]:
     """(the worklist, whether it is whole). Call under `rt.lock`. The Home read (without its V2 fields) is the source of the company's
-    status, plan and approvals. `partial` merges the Home's, the receivable rows' and the worklist's own; a read that fell back is
-    returned and never cached."""
-    home = read_home(lang, v2=False)
+    status, plan and approvals: a Home read that is itself building its summary hands in its own `home` and `reconciled`, so it is not
+    read, reconciled or run through the alerts a second time. `partial` merges the Home's, the receivable rows' and the worklist's own; a
+    read that fell back is returned and never cached."""
+    if home is None:
+        home = read_home(lang, v2=False)
     partial = Partial()
     for name in (home.get("partial") or {}).get("missing", []):
         partial.add(name)
-    ctx = load_context(rt, found=[])
+    ctx = load_context(rt, found=[], reconciled=reconciled)
     alert = _alert(home, lang)
     deals = open_deals(ctx, lang)
     needs, waiting = _deal_rows(rt, ctx, lang, deals, partial)
@@ -591,7 +594,7 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, An
     }, not partial.missing
 
 
-def _cached(rt: Runtime, lang: Lang, since_day: int | None) -> dict[str, Any]:
+def _cached(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] | None = None, reconciled: Any | None = None) -> dict[str, Any]:
     """The read, cached on what it reads (the same key parts as the Customer overview, plus the day the page last read, every flag and where each contract stands)."""
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     flags = tuple(sorted(get_settings().features.__dict__.items()))
@@ -601,7 +604,7 @@ def _cached(rt: Runtime, lang: Lang, since_day: int | None) -> dict[str, Any]:
     hit = _CACHE.get(key)
     if hit is not None:
         return hit
-    body, whole = _build(rt, lang, since_day)
+    body, whole = _build(rt, lang, since_day, home, reconciled)
     if whole:
         _CACHE.put(key, body)
     return body
@@ -610,6 +613,13 @@ def _cached(rt: Runtime, lang: Lang, since_day: int | None) -> dict[str, Any]:
 def counts(rt: Runtime, lang: Lang) -> dict[str, int]:
     """The worklist's counts (call under `rt.lock`): the one count of what waits for the owner, for the Home's own sentence about it."""
     return dict(_cached(rt, lang, None)["counts"])
+
+
+def kind_counts(rt: Runtime, lang: Lang, *, home: dict[str, Any] | None = None, reconciled: Any | None = None) -> dict[str, int]:
+    """What waits for the owner by kind (DECISION, APPROVAL, COLLECTION, SETUP; call under `rt.lock`), counted from the same Needs you rows as
+    `counts`, for the Home's summary sentence. A Home read passes its own `home` and `reconciled` so the worklist is not built from a second one."""
+    rows = _cached(rt, lang, None, home, reconciled)["needs_you"]
+    return {kind: sum(1 for r in rows if r["kind"] == kind) for kind in dict.fromkeys(r["kind"] for r in rows)}
 
 
 @router.get("/worklist")
