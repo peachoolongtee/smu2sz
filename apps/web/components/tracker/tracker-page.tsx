@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { CostBlock } from "@/components/tracker/cost-block";
 import { Block, EvidenceLink, PILL_TONE, pillClass } from "@/components/tracker/parts";
@@ -47,11 +48,6 @@ function Body({ d }: { d: TrackerView }) {
   }
   return (
     <div className="flex flex-col gap-6" data-testid="tracker">
-      {d.closeout_text ? (
-        <p className="flow-card p-5 text-body-lg font-semibold text-ink sm:p-6" data-testid="tracker-closeout">
-          {d.closeout_text}
-        </p>
-      ) : null}
       <BackLink href={back.href} label={back.label} />
 
       <header className="flex flex-col gap-2.5">
@@ -73,6 +69,12 @@ function Body({ d }: { d: TrackerView }) {
           </p>
         ) : null}
       </header>
+
+      {d.closeout_text ? (
+        <p className="flow-card p-5 text-body-lg font-semibold text-ink sm:p-6" data-testid="tracker-closeout">
+          {d.closeout_text}
+        </p>
+      ) : null}
 
       {d.stages.length ? (
         <ol aria-label={t("tracker.stages")} className="flex flex-wrap gap-2">
@@ -153,7 +155,7 @@ function Body({ d }: { d: TrackerView }) {
 }
 
 /** The deal tracker's states (loading, failure, no such read, unavailable, the read itself). The words are the server's or the dictionary's. */
-export function TrackerPage({ id, selection }: { id: string; selection: Selection }) {
+function TrackerStates({ id, selection }: { id: string; selection: Selection }) {
   const { t } = useI18n();
   const read = useTracker(id, selection);
   if (read.error) {
@@ -188,9 +190,13 @@ export function TrackerPage({ id, selection }: { id: string; selection: Selectio
       </div>
     );
   }
+  return <Body d={read.data} />;
+}
+
+export function TrackerPage({ id, selection }: { id: string; selection: Selection }) {
   return (
     <div className="flow-f min-w-0">
-      <Body d={read.data} />
+      <TrackerStates id={id} selection={selection} />
     </div>
   );
 }

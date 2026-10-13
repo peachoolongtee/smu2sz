@@ -8,10 +8,10 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "2 days ago",
     "terms_text": "0.85% off up to ¥257,200.00 if paid early",
-    "headline_text": "This deal has closed; part of its expected cost is not measured",
-    "state_word": "Completed",
+    "headline_text": "This deal is on the agreed terms so far",
+    "state_word": "On plan",
     "state_tone": "ok",
-    "state_text": "Fulfilled.",
+    "state_text": "The buyer paid the early part it promised. The rest of the invoice falls due in 30 days.",
     "stages": [
       {
         "key": "read",
@@ -60,7 +60,7 @@
       "to_come": {
         "amount_fen": null,
         "amount_display": null,
-        "note_text": "Nothing further is due under this agreement."
+        "note_text": "No record holds a further cost yet; anything that appears will be shown here."
       },
       "unmeasured_fen": 84157,
       "unmeasured_display": "¥841.57",
@@ -74,7 +74,7 @@
           "expected_display": "¥3,027.77",
           "actual_fen": 218620,
           "actual_display": "¥2,186.20",
-          "actual_note_text": "Not measured: ¥841.57 of the expected cost, which no record holds.",
+          "actual_note_text": "Not measured yet: ¥841.57 of the expected cost, which no record holds yet.",
           "certainty": "RECORDED",
           "certainty_text": "Booked: the discount the bank receipts under this agreement posted. The expected figure is the one FLOW quoted when you agreed.",
           "tone": "neutral",
@@ -118,6 +118,7 @@
     "promise_counts": {
       "buyer_kept": 1,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "The buyer has kept one of two promises on this deal."
     },
     "buyer": {
@@ -126,7 +127,7 @@
       "href": "/customers/BUYER-1"
     },
     "next": null,
-    "closeout_text": "The records hold ¥2,186.20 of cost on this deal against ¥3,027.77, with ¥841.57 of the expected cost not measured. The buyer has kept one of two promises on this deal.",
+    "closeout_text": null,
     "links": {
       "record_href": "/decisions/deal:OFF-f806f79b6c21",
       "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
@@ -150,10 +151,10 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "2 天前",
     "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
-    "headline_text": "这笔交易已结束；预期成本中有一部分未能衡量",
-    "state_word": "已完成",
+    "headline_text": "到目前为止，这笔交易按约定的条款进行",
+    "state_word": "按计划进行",
     "state_tone": "ok",
-    "state_text": "已履行。",
+    "state_text": "买方已支付它承诺提前支付的部分。发票余款将于30 天后到期。",
     "stages": [
       {
         "key": "read",
@@ -202,7 +203,7 @@
       "to_come": {
         "amount_fen": null,
         "amount_display": null,
-        "note_text": "这份协议下没有后续款项。"
+        "note_text": "目前没有记录显示还有后续成本；一旦出现会在此显示。"
       },
       "unmeasured_fen": 84157,
       "unmeasured_display": "¥841.57",
@@ -216,7 +217,7 @@
           "expected_display": "¥3,027.77",
           "actual_fen": 218620,
           "actual_display": "¥2,186.20",
-          "actual_note_text": "未能衡量：预期成本中有 ¥841.57 没有任何记录。",
+          "actual_note_text": "尚未衡量：预期成本中有 ¥841.57 目前没有任何记录。",
           "certainty": "RECORDED",
           "certainty_text": "已入账：这份协议下银行收款所记的折扣。预期数字是您达成协议时 FLOW 报出的数字。",
           "tone": "neutral",
@@ -260,6 +261,7 @@
     "promise_counts": {
       "buyer_kept": 1,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "买方在这笔交易的 2 项承诺中已兑现 1 项。"
     },
     "buyer": {
@@ -268,7 +270,7 @@
       "href": "/customers/BUYER-1"
     },
     "next": null,
-    "closeout_text": "记录显示这笔交易的成本为 ¥2,186.20，预期为 ¥3,027.77，其中预期成本的 ¥841.57 未能衡量。买方在这笔交易的 2 项承诺中已兑现 1 项。",
+    "closeout_text": null,
     "links": {
       "record_href": "/decisions/deal:OFF-f806f79b6c21",
       "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"

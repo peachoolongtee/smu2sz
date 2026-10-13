@@ -105,7 +105,7 @@
 // --tracker records ONLY apps/web/mocks/tracker/<moment>.json, { en, zh } of GET /decisions/{id}/tracker for the story's deal (Deal tracker, map #148), and exits.
 // The moments are walked with the stepper's own calls: offer (the offer read and evaluated, not agreed: the `available: false` answer), agreed (day 0, right
 // after the agreement), receipt (day 2, after the bank receipt), late (day 34), pending (the cure queued for approval), approved (the owner approved it) and
-// settled (day 38). lib/mock/tracker.ts chooses among them by the mock's own story state. The API needs the recording environment above:
+// settled (day 38) and ended (the rest of the invoice paid through the bank feed, so every invoice on the deal is paid: the close-out). lib/mock/tracker.ts chooses among them by the mock's own story state. The API needs the recording environment above:
 //   cd services/api && SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8241
 //   node scripts/record-mocks.mjs --api http://localhost:8241 --tracker
 
@@ -500,7 +500,7 @@ if (OVERVIEW) {
   process.exit(0);
 }
 
-// --tracker: the deal tracker at seven moments of the golden story and nothing else (see the header).
+// --tracker: the deal tracker at eight moments of the golden story and nothing else (see the header).
 if (TRACKER) {
   mkdirSync(join(OUT, "tracker"), { recursive: true });
   const { getTracker } = await import("../lib/tracker.ts");
@@ -538,6 +538,18 @@ if (TRACKER) {
   }
   await live.advanceClock(38 - 34);
   await keep("settled");
+  {
+    // The rest of the invoice, paid through the bank feed's own route (as the server's test does): every invoice on the deal is paid, so the deal has ended.
+    const rest = (await live.getState()).state.receivables.find((r) => r.id === "RCV-A");
+    const version = (await live.getMandate()).mandate.version;
+    const res = await fetch(`${API}/operations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Owner-Token": OWNER_TOKEN, ...BANK },
+      body: JSON.stringify({ kind: "RECEIVE_PAYMENT", op_id: "rec-rest", idempotency_key: "rec-rest", mandate_version: version, requested_by: "SYSTEM", receivable_id: "RCV-A", amount_fen: rest.face_fen - (rest.settled_fen ?? 0), bank_reference: "DEMO-RCPT-REST" }),
+    });
+    if (!res.ok) throw new Error(`the rest of the invoice was not paid: ${res.status} ${await res.text()}`);
+    await keep("ended");
+  }
   await live.demoReset();
   console.log(`recorded ${written.length} tracker files into ${join(OUT, "tracker")} from ${API}`);
   process.exit(0);

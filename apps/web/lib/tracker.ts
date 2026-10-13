@@ -15,7 +15,7 @@ import { useAsync, type AsyncState } from "./use-async";
 export type TrackerTone = "ok" | "warn" | "bad" | "neutral";
 export type TrackerStageState = "done" | "now" | "todo" | "missed" | "part";
 export type TrackerCertainty = "RECORDED" | "QUOTED" | "ATTRIBUTED";
-export type TrackerPromiseState = "kept" | "part" | "late" | "missed" | "awaited" | "in_force" | "ended";
+export type TrackerPromiseState = "kept" | "part" | "late" | "missed" | "awaited" | "in_force" | "ended" | "paid_late";
 
 export interface TrackerStage {
   key: string;
@@ -80,7 +80,7 @@ export interface TrackerView {
   /** On an unavailable read the server sends the cost with every part null; the page draws it only when `available`. */
   cost: TrackerCost | null;
   promises: TrackerPromise[];
-  promise_counts: { buyer_kept: number; buyer_total: number; text: string } | null;
+  promise_counts: { buyer_kept: number; buyer_total: number; buyer_paid_late?: number; text: string } | null;
   buyer: { text: string; note_text: string | null; href: string | null } | null;
   next: { label: string; text: string; href: string } | null;
   closeout_text: string | null;

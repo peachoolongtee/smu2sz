@@ -13,7 +13,7 @@ import type { TrackerView } from "../lib/tracker";
  * owner's own click, and compares the page with the API's own answer.
  */
 
-type Moment = "offer" | "agreed" | "receipt" | "late" | "pending" | "approved" | "settled";
+type Moment = "offer" | "agreed" | "receipt" | "late" | "pending" | "approved" | "settled" | "ended";
 const recorded = (m: Moment): { en: TrackerView; zh: TrackerView } => JSON.parse(readFileSync(join(__dirname, "..", "mocks", "tracker", `${m}.json`), "utf8"));
 /** The demo story's steps (lib/demo.ts) after which each moment is on the books: agree 3, bank 5, time 6, queue 7, approve 8, settle 9. */
 const AFTER: [Moment, number][] = [["agreed", 3], ["receipt", 5], ["late", 6], ["pending", 7], ["approved", 8], ["settled", 9]];
@@ -63,12 +63,27 @@ async function expectRead(page: Page, d: TrackerView): Promise<void> {
     await expect(row).toContainText(p.state_word);
   }
   await expect(page.getByTestId("tracker-buyer")).toContainText(d.buyer!.text);
-  if (d.closeout_text) await expect(page.getByTestId("tracker-closeout")).toHaveText(d.closeout_text);
-  else await expect(page.getByTestId("tracker-closeout")).toHaveCount(0);
+  for (const [i, p] of d.promises.entries()) if (p.state === "paid_late") await expect(page.getByTestId(`tracker-promise-${i}`)).toContainText(p.state_word);
+  // The back link is the page's first control; the close-out, when there is one, is its own card after the header (never above the back link).
+  const back = await page.getByTestId("tracker-back").boundingBox();
+  const head = await page.getByTestId("tracker-headline").boundingBox();
+  expect(back!.y).toBeLessThan(head!.y);
+  if (d.closeout_text) {
+    await expect(page.getByTestId("tracker-closeout")).toHaveText(d.closeout_text);
+    const closeout = await page.getByTestId("tracker-closeout").boundingBox();
+    expect(closeout!.y).toBeGreaterThan(head!.y);
+    await expect(page.getByTestId("tracker-headline")).toContainText(/clos/i);
+  } else {
+    // A deal that is still live shows no close-out and its headline never says it closed.
+    await expect(page.getByTestId("tracker-closeout")).toHaveCount(0);
+    expect(d.headline_text).not.toMatch(/clos|已结束|已完结/i);
+  }
   // One filled button at most: the next step when there is one, none when there is not.
   if (d.next) {
     await expect(page.getByTestId("tracker-next-action")).toHaveText(d.next.label);
     expect(await filledBrand(page)).toBe(1);
+    // The page is in the `.flow-f` scope, so the one filled button is the ink colour, not the brand blue.
+    expect(await page.getByTestId("tracker-next-action").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(23, 29, 30)");
   } else {
     await expect(page.getByTestId("tracker-next-action")).toHaveCount(0);
     expect(await filledBrand(page)).toBe(0);
@@ -98,6 +113,20 @@ test.describe("mock", () => {
       await page.goto("/demo");
       if (walked < STORY_STEPS) await expect(page.getByTestId("demo-next")).toBeEnabled();
     }
+  });
+
+  test("once the rest of the invoice is paid the deal has ended: the close-out card after the header, and the Paid late promise with its word", async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.goto("/demo");
+    await walkStory(page, 9);
+    await page.evaluate(() => sessionStorage.setItem("tl-mock-tracker-ended", "1"));
+    const read = recorded("ended").en;
+    expect(read.closeout_text).toBeTruthy();
+    expect(read.promises.some((p) => p.state === "paid_late")).toBe(true);
+    await page.goto(trackerUrl(read.decision_id));
+    await expectRead(page, read);
+    const late = read.promises.findIndex((p) => p.state === "paid_late");
+    await expect(page.getByTestId(`tracker-promise-${late}`)).toContainText("Paid late");
   });
 
   test("a deal that is not agreed gets the server's words and a way back, never an error", async ({ page }) => {
@@ -183,5 +212,20 @@ test.describe("live", () => {
     // The record links here, and the link is the tracker's address.
     await page.goto(`/decisions/${encodeURIComponent(id)}`);
     await expect(page.getByTestId("decision-tracker-link")).toBeVisible();
+    // Settled, then the rest of the invoice paid through the bank feed's own route: the deal has ended, and the close-out is the API's own words.
+    await page.goto("/demo");
+    await walkStory(page, 1, 8);
+    const state = (await (await request.get(`${API}/state`, { headers })).json()) as { state: { receivables: { id: string; face_fen: number; settled_fen?: number }[] } };
+    const rest = state.state.receivables.find((r) => r.id === "RCV-A")!;
+    const mandate = (await (await request.get(`${API}/mandate`, { headers })).json()) as { mandate: { version: number } };
+    const paid = await request.post(`${API}/operations`, {
+      headers: { ...headers, "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" },
+      data: { kind: "RECEIVE_PAYMENT", op_id: "e2e-rest", idempotency_key: "e2e-rest", mandate_version: mandate.mandate.version, requested_by: "SYSTEM", receivable_id: "RCV-A", amount_fen: rest.face_fen - (rest.settled_fen ?? 0), bank_reference: "E2E-REST" },
+    });
+    expect(paid.ok()).toBe(true);
+    const ended = (await (await request.get(`${API}/decisions/${encodeURIComponent(id)}/tracker?lang=en`, { headers })).json()) as TrackerView;
+    expect(ended.closeout_text).toBeTruthy();
+    await page.goto(trackerUrl(id));
+    await expectRead(page, ended);
   });
 });

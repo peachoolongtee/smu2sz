@@ -11,7 +11,7 @@
     "headline_text": "Nothing has happened on this deal yet",
     "state_word": "Waiting for the buyer",
     "state_tone": "neutral",
-    "state_text": "Agreed. Waiting for Foshan Home Retail Co. to pay, due in 2 days.",
+    "state_text": "The buyer's early payment is still awaited. The invoice falls due in 32 days.",
     "stages": [
       {
         "key": "read",
@@ -118,6 +118,7 @@
     "promise_counts": {
       "buyer_kept": 0,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "The buyer has kept zero of two promises on this deal."
     },
     "buyer": {
@@ -153,7 +154,7 @@
     "headline_text": "这笔交易目前还没有任何进展",
     "state_word": "等待买方",
     "state_tone": "neutral",
-    "state_text": "已达成协议。等待Foshan Home Retail Co.付款，应于2 天后到账。",
+    "state_text": "买方承诺的提前付款仍在等待中。发票将于32 天后到期。",
     "stages": [
       {
         "key": "read",
@@ -260,6 +261,7 @@
     "promise_counts": {
       "buyer_kept": 0,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "买方在这笔交易的 2 项承诺中已兑现 0 项。"
     },
     "buyer": {

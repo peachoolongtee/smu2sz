@@ -8,10 +8,10 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "34 days ago",
     "terms_text": "0.85% off up to ¥257,200.00 if paid early",
-    "headline_text": "The agreement is complete, but the buyer is late on the rest of the invoice",
+    "headline_text": "The buyer is late on this deal",
     "state_word": "Payment late",
     "state_tone": "bad",
-    "state_text": "Fulfilled.",
+    "state_text": "The buyer paid the early part it promised. The rest of the invoice is 2 days late.",
     "stages": [
       {
         "key": "read",
@@ -60,7 +60,7 @@
       "to_come": {
         "amount_fen": null,
         "amount_display": null,
-        "note_text": "Nothing further is due under this agreement."
+        "note_text": "No record holds a further cost yet; anything that appears will be shown here."
       },
       "unmeasured_fen": 84157,
       "unmeasured_display": "¥841.57",
@@ -74,7 +74,7 @@
           "expected_display": "¥3,027.77",
           "actual_fen": 218620,
           "actual_display": "¥2,186.20",
-          "actual_note_text": "Not measured: ¥841.57 of the expected cost, which no record holds.",
+          "actual_note_text": "Not measured yet: ¥841.57 of the expected cost, which no record holds yet.",
           "certainty": "RECORDED",
           "certainty_text": "Booked: the discount the bank receipts under this agreement posted. The expected figure is the one FLOW quoted when you agreed.",
           "tone": "neutral",
@@ -118,6 +118,7 @@
     "promise_counts": {
       "buyer_kept": 1,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "The buyer has kept one of two promises on this deal."
     },
     "buyer": {
@@ -130,7 +131,7 @@
       "text": "Chase the ¥162,800.00 still owed on the ¥420,000.00 invoice to Foshan Home Retail Co., which fell due 2 days ago.",
       "href": "/receivables?invoice=RCV-A&customer=BUYER-1"
     },
-    "closeout_text": "The records hold ¥2,186.20 of cost on this deal against ¥3,027.77, with ¥841.57 of the expected cost not measured. The buyer has kept one of two promises on this deal.",
+    "closeout_text": null,
     "links": {
       "record_href": "/decisions/deal:OFF-f806f79b6c21",
       "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
@@ -154,10 +155,10 @@
     "buyer_name": "Foshan Home Retail Co.",
     "agreed_when": "34 天前",
     "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
-    "headline_text": "协议已履行完毕，但买方对发票余款已逾期",
+    "headline_text": "买方在这笔交易上已逾期",
     "state_word": "付款逾期",
     "state_tone": "bad",
-    "state_text": "已履行。",
+    "state_text": "买方已支付它承诺提前支付的部分。发票余款已逾期 2 天。",
     "stages": [
       {
         "key": "read",
@@ -206,7 +207,7 @@
       "to_come": {
         "amount_fen": null,
         "amount_display": null,
-        "note_text": "这份协议下没有后续款项。"
+        "note_text": "目前没有记录显示还有后续成本；一旦出现会在此显示。"
       },
       "unmeasured_fen": 84157,
       "unmeasured_display": "¥841.57",
@@ -220,7 +221,7 @@
           "expected_display": "¥3,027.77",
           "actual_fen": 218620,
           "actual_display": "¥2,186.20",
-          "actual_note_text": "未能衡量：预期成本中有 ¥841.57 没有任何记录。",
+          "actual_note_text": "尚未衡量：预期成本中有 ¥841.57 目前没有任何记录。",
           "certainty": "RECORDED",
           "certainty_text": "已入账：这份协议下银行收款所记的折扣。预期数字是您达成协议时 FLOW 报出的数字。",
           "tone": "neutral",
@@ -264,6 +265,7 @@
     "promise_counts": {
       "buyer_kept": 1,
       "buyer_total": 2,
+      "buyer_paid_late": 0,
       "text": "买方在这笔交易的 2 项承诺中已兑现 1 项。"
     },
     "buyer": {
@@ -276,7 +278,7 @@
       "text": "催收Foshan Home Retail Co. 的 ¥420,000.00 发票中仍未收的 ¥162,800.00，该款已于2 天前到期。",
       "href": "/receivables?invoice=RCV-A&customer=BUYER-1"
     },
-    "closeout_text": "记录显示这笔交易的成本为 ¥2,186.20，预期为 ¥3,027.77，其中预期成本的 ¥841.57 未能衡量。买方在这笔交易的 2 项承诺中已兑现 1 项。",
+    "closeout_text": null,
     "links": {
       "record_href": "/decisions/deal:OFF-f806f79b6c21",
       "activity_href": "/activity?decision=deal:OFF-f806f79b6c21"
