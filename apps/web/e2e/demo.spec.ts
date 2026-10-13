@@ -123,14 +123,15 @@ test("another set of books: the dialog shows the loss, cancel changes nothing, c
   await open.click();
   await page.getByTestId("demo-alternate-confirm").click();
   const banner = page.getByTestId("demo-loaded-banner");
-  await expect(banner).toBeVisible();
+  // Loading a whole company takes the real API a few seconds.
+  await expect(banner).toBeVisible({ timeout: 60_000 });
   await expect(banner).toHaveAttribute("role", "status");
   await expect(page.getByTestId("story")).toHaveCount(0);
   expect(await filledBrand(page)).toBe(1);
   await expect(next(page)).toHaveAttribute("href", "/");
   // One click puts the main books back, at the first scene.
   await page.getByTestId("demo-restore").click();
-  await expect(banner).toHaveCount(0);
+  await expect(banner).toHaveCount(0, { timeout: 60_000 });
   await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
   await expect(page.getByTestId("demo-restored")).toBeVisible();
 });

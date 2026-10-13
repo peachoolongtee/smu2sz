@@ -258,7 +258,8 @@ export const live = {
   },
 
   demoReset: async (scenario?: string): Promise<void> => {
-    await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });
+    // Loading another company (the busy books) is a long write: it gets the long timeout, not the default 20 s.
+    await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {}, timeoutMs: scenario ? 60_000 : undefined });
   },
 
   /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */
