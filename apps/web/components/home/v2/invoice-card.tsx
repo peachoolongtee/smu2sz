@@ -36,9 +36,13 @@ export function InvoiceCards({ customerId }: { customerId: string }) {
           </dl>
           <Breakdown rows={r.breakdown ?? []} total={r.face_display} testId="hv2-invoice-breakdown" />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <p className="min-w-0 text-[15px] text-ink" data-testid="hv2-invoice-note">
-              {r.net?.repays_text ?? r.collection_state_text ?? ""}
-            </p>
+            {r.net?.repays_text ?? r.collection_state_text ? (
+              <p className="min-w-0 text-[15px] text-ink" data-testid="hv2-invoice-note">
+                {r.net?.repays_text ?? r.collection_state_text}
+              </p>
+            ) : (
+              <span />
+            )}
             <ButtonLink href={`/receivables?invoice=${encodeURIComponent(r.receivable_id)}`} variant="primary" data-testid="hv2-invoice-view">
               {t("hv2.inv.view")}
             </ButtonLink>

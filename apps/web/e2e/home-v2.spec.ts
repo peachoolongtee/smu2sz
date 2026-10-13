@@ -166,6 +166,43 @@ test("no approval line when the server sends no approval text (a card with no pl
   await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
 });
 
+// A facility application carries no planned amount: the server's funding says state NONE and its word "None" (the busy Demo's "Apply for ¥288,570.00 on Equipment lease"); an optional word the server leaves null is not text.
+test("no funding amount: the figure line is omitted (the title carries the amount) and no null, undefined or 'None' is ever rendered on the Home", async ({ page }) => {
+  const funding = { ...homeOffer.en.home_v2.kpis.funding, state: "NONE", value_display: "None", status_text: null, hint: null };
+  const action = {
+    ...homeOffer.en.home_v2.action,
+    title: "Apply for ¥288,570.00 on Equipment lease",
+    facts: [],
+    legs: [],
+    consequence_text: null,
+    approval_text: null,
+    approval_needed: false,
+    cost_basis_text: null,
+  };
+  const lowest = { ...homeOffer.en.home_v2.kpis.lowest_ahead, with_plan: null, short_note: null };
+  const v2 = { ...homeOffer.en.home_v2, summary_text: null, kpis: { ...homeOffer.en.home_v2.kpis, funding, lowest_ahead: lowest }, action };
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: v2 }] as const);
+  await open(page, { offer: true });
+  await expect(page.getByTestId("home-action-title")).toHaveText("Apply for ¥288,570.00 on Equipment lease");
+  await expect(page.getByTestId("home-kpi-funding-value")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-plan-amount")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-plan-pill")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
+  // With no consequence sentence the card keeps the action's own text (the server's), never an empty line.
+  await expect(page.getByTestId("home-action-text")).toHaveText(homeOffer.en.home_v2.action.text);
+  await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveCount(0);
+  const said = await page.getByTestId("home-v2").innerText();
+  expect(said).not.toMatch(/\b(None|null|undefined|NaN)\b/);
+  // The same with the deal and the customer selected.
+  for (const url of [DEAL, "/?customer=BUYER-1", "/?expand=1"]) {
+    await page.goto(url);
+    await expect(page.getByTestId("home-v2")).toBeVisible();
+    await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
+    expect(await page.getByTestId("home-v2").innerText(), url).not.toMatch(/\b(None|null|undefined|NaN)\b/);
+  }
+});
+
 // A block the server could not read (a supporting read failed): the status stays, the page says so with Retry, and never shows an empty page. In-spec patches of the recorded read.
 test("failed read: a home_v2 the server could not read leaves the status, the server's sentence and Retry, and no strip", async ({ page }) => {
   const text = "Part of the home page could not be read: the company forecast.";

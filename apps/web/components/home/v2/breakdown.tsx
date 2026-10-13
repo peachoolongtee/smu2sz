@@ -26,7 +26,7 @@ const sizeOf = (share: string): number | null => {
 export function Breakdown({ rows, total, testId = "hv2-breakdown" }: { rows: BreakdownRow[]; total?: string | null; testId?: string }) {
   const { t } = useI18n();
   if (!rows.length) return null;
-  const sizes = rows.map((r) => sizeOf(r.share_text));
+  const sizes = rows.map((r) => sizeOf(r.share_text ?? ""));
   const donut = sizes.every((n): n is number => n !== null && n >= 0) && sizes.reduce((a, n) => a + n, 0) > 0;
   const sum = donut ? (sizes as number[]).reduce((a, n) => a + n, 0) : 1;
   const R = 52;
@@ -52,9 +52,11 @@ export function Breakdown({ rows, total, testId = "hv2-breakdown" }: { rows: Bre
               <span aria-hidden className={`mt-2 size-2.5 shrink-0 rounded-pill ${DOT[i % DOT.length]}`} />
               <span className="min-w-0 text-[15px] text-ink">
                 <span className="block">{r.label}</span>
-                <span className="block text-supporting text-ink-3" data-testid={`${testId}-share-${i}`}>
-                  {r.share_text}
-                </span>
+                {r.share_text ? (
+                  <span className="block text-supporting text-ink-3" data-testid={`${testId}-share-${i}`}>
+                    {r.share_text}
+                  </span>
+                ) : null}
               </span>
             </span>
             <b className="shrink-0 font-semibold tabular-nums text-ink" data-testid={`${testId}-amount-${i}`}>

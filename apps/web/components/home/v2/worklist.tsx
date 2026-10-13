@@ -76,7 +76,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
       nextStep={row.consequence_text}
-      pill={<StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill>}
+      pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}
     />
   );
@@ -94,7 +94,7 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       onClick={onLeave}
       subject={customer.name}
       nextStep={customer.detail_text}
-      pill={<StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill>}
+      pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}
       severity={<Severity severity={TONE_SEVERITY[customer.tone]} />}
     />
   );

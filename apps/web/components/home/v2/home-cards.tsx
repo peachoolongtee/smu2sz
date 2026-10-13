@@ -29,16 +29,19 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
       <p className={`mt-2 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-6 sm:text-[52px] ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
         {cash.value_display}
       </p>
-      <p className="mt-3 text-pretty text-sm text-ink-3" data-testid="home-kpi-cash-note">
-        {cash.note}
-      </p>
+      {cash.note ? (
+        <p className="mt-3 text-pretty text-sm text-ink-3" data-testid="home-kpi-cash-note">
+          {cash.note}
+        </p>
+      ) : null}
       <div className="mt-auto pt-3 sm:pt-8" data-testid="home-buffer" data-min={b.min_fen} data-cash={b.cash_fen}>
         <div className="flex items-baseline justify-between gap-3 text-sm text-ink-3">
           <span data-testid="home-buffer-min-text">
             {t("hv2.card.reserve")} <span className="tabular-nums">{b.minimum_text ?? b.min_display}</span>
           </span>
           <span data-testid="home-buffer-room-text">
-            {below ? t("hv2.card.short") : t("hv2.card.buffer")} <span className="tabular-nums">{b.headroom_text ?? ""}</span>
+            {below ? t("hv2.card.short") : t("hv2.card.buffer")}
+            {b.headroom_text ? <span className="tabular-nums"> {b.headroom_text}</span> : null}
           </span>
         </div>
         <div role="img" aria-label={cash.note} className="mt-2 flex h-2.5 gap-1" data-testid="home-buffer-bar">
@@ -105,25 +108,29 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
         <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
           {t("hv2.card.outlook")}
         </h2>
-        <StatusPill tone="amber" testId="hv2-outlook-when">
-          {h.cash.lowest_when}
-        </StatusPill>
+        {h.cash.lowest_when ? (
+          <StatusPill tone="amber" testId="hv2-outlook-when">
+            {h.cash.lowest_when}
+          </StatusPill>
+        ) : null}
       </div>
       <p className={`mt-4 font-display text-[44px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[52px] ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
         {low.value_display}
       </p>
       <p className="mt-2 text-sm text-ink-3">
         {t("hv2.card.without")}
-        <span className="sr-only" data-testid="home-kpi-lowest-note">
-          {" "}
-          {low.short_note ?? low.note}
-        </span>
+        {low.short_note ?? low.note ? (
+          <span className="sr-only" data-testid="home-kpi-lowest-note">
+            {" "}
+            {low.short_note ?? low.note}
+          </span>
+        ) : null}
       </p>
       <div className="mt-3 max-sm:max-w-xs">
         <MiniOutlook cash={h.cash} today={h.day} plan={plan} />
       </div>
       <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-sm text-ink">
-        {withPlan ? (
+        {withPlan?.label && withPlan.value_text ? (
           <p className="tabular-nums" data-testid="home-kpi-lowest-plan">
             <span className="inline-block first-letter:uppercase">{withPlan.label}</span> {withPlan.value_text}
           </p>

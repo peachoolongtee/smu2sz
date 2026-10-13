@@ -74,6 +74,8 @@ export function HomeV2ActionBar({
   const uid = useId();
   const funding = useFunding(Boolean(fundingOpen), onFunding ?? (() => undefined));
   const planned = kpis.funding.state === "PROPOSED";
+  // The planned or arranged amount is the figure only when the action carries one: with no funding (state NONE: a facility application, say) the server's word for it ("None") is not an amount, and the title already says what is asked.
+  const amount = kpis.funding.state !== "NONE" && kpis.funding.value_display ? kpis.funding.value_display : null;
   if (onBack && action.variant === "ACTION") {
     const cash = kpis.cash_available;
     return (
@@ -124,10 +126,10 @@ export function HomeV2ActionBar({
           <p className="mt-2.5 text-pretty font-display text-[18px] font-semibold leading-snug tracking-[-0.01em] text-ink sm:mt-4 sm:text-[21px]" data-testid="home-action-title">
             {action.title}
           </p>
-          {kpis.funding.state !== "NONE" || !quiet ? (
+          {amount ? (
             <>
               <p className="mt-2 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink sm:text-[52px]" data-testid="home-kpi-funding-value">
-                <span data-testid="hv2-plan-amount">{kpis.funding.value_display}</span>
+                <span data-testid="hv2-plan-amount">{amount}</span>
               </p>
               {kpis.funding.state === "ARRANGED" && kpis.funding.status_text ? (
                 <p className="mt-1.5 text-sm font-medium text-ink-2" data-testid="home-kpi-funding-status">
@@ -146,7 +148,7 @@ export function HomeV2ActionBar({
               {action.consequence_text ?? (facts ? line : action.text)}
             </p>
           ) : null}
-          {cost ? (
+          {cost?.value ? (
             <div className="mt-3 border-t border-line pt-2.5 text-sm text-ink sm:mt-4 sm:pt-3" data-testid="hv2-action-facts">
               <p>
                 <span className="text-ink-3">{t("hv2.action.cost")}</span>{" "}
@@ -195,7 +197,7 @@ export function HomeV2ActionBar({
               {approvalText}
             </p>
           ) : null}
-          {legs && funding.open ? <FundingComposition legs={legs} total={fundingTotal ?? ""} id={`${uid}-comp`} labelledBy={`${uid}-fact`} basis={action.cost_basis_text} pointer={funding.pointer} /> : null}
+          {legs && funding.open ? <FundingComposition legs={legs} total={fundingTotal && kpis.funding.state !== "NONE" ? fundingTotal : ""} id={`${uid}-comp`} labelledBy={`${uid}-fact`} basis={action.cost_basis_text} pointer={funding.pointer} /> : null}
         </section>
       </div>
     </div>
