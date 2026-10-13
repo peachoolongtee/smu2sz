@@ -84,12 +84,17 @@ export function FundingFact({ label, value, open, controls, id, toggle, pointer,
  * are the legs' amounts (`amount_fen` as the flex weights; no percentage is worked out here) and, under each segment, the server's `share_text` when it sends one (else no label).
  * Under the bar the plan's own basis for its cost, when the server has it. Opacity only moves it.
  */
-export function FundingComposition({ legs, total, id, labelledBy, basis, pointer }: { legs: HomeV2Leg[]; total: string; id: string; labelledBy: string; basis?: string | null; pointer: object }) {
+export function FundingComposition({ legs, total, id, labelledBy, basis, hint, pointer }: { legs: HomeV2Leg[]; total: string; id: string; labelledBy: string; basis?: string | null; hint?: string | null; pointer: object }) {
   const { t } = useI18n();
   const weights = legs.map((l) => (l.amount_fen && l.amount_fen > 0 ? l.amount_fen : 1));
   const shares = legs.some((l) => l.share_text);
   return (
     <div id={id} role="region" aria-labelledby={labelledBy} {...pointer} className="motion-reveal mt-3 border-t border-line pt-3" data-testid="hv2-funding-composition">
+      {hint ? (
+        <p className="mb-1 text-supporting text-ink-3" data-testid="hv2-funding-hint">
+          {hint}
+        </p>
+      ) : null}
       <ul className="divide-y divide-line" data-testid="hv2-comp-rows">
         {legs.map((l, i) => {
           const key = stateKey(l.state) ?? "planned";

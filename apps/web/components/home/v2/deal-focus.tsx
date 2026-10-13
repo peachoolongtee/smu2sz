@@ -12,10 +12,10 @@ import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
 import { Disclosure } from "@/components/business/kit";
 import { Button, ButtonLink, ErrorState, LoadingBlock } from "@/components/ui";
-import { getCustomerFocus, getDealExposure, getDealPicture, getDealTitle, getDeals } from "@/lib/api";
+import { getCustomerFocus, getDealExposure, getDealTitle, getDeals } from "@/lib/api";
 import { offerOfDecision } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
-import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
+import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 
 type Tone = "ok" | "warn" | "bad" | "info" | "neutral";
@@ -69,6 +69,7 @@ export function DealFocusPanel({
   row,
   customer,
   h,
+  picture,
   view,
   onView,
   onAll,
@@ -80,6 +81,8 @@ export function DealFocusPanel({
   row: WorklistNeedsRow | WorklistWaitingRow | null;
   customer: WorklistCustomer | null;
   h: HomeView;
+  /** The offer's picture (one read, lifted to the page: the outlook card draws its paths too). */
+  picture: { data: OfferPictureView | null | undefined; error: Error | undefined; loading: boolean };
   view: DealView;
   onView: (patch: Partial<DealView>) => void;
   onAll: () => void;
@@ -89,7 +92,6 @@ export function DealFocusPanel({
   const uid = useId();
   const offerId = offerOfDecision(decision);
   const overview = useAsync(() => getCustomerFocus(customerId, lang, { decision }), [customerId, decision, lang]);
-  const picture = useAsync(() => getDealPicture(offerId, lang), [offerId, lang]);
   const exposure = useAsync(() => getDealExposure(offerId, lang, customerId).catch(() => null), [offerId, customerId, lang]);
   const deals = useAsync(() => getDeals(lang).catch(() => null), [lang]);
   const serverTitle = useAsync(() => getDealTitle(decision, lang), [decision, lang]);

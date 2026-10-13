@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, type KeyboardEvent } from "react";
 import { Badge, Button, EmptyState, Segmented, inputClass } from "@/components/ui";
 import { Spinner } from "@/components/icons";
 import { requestSignIn, useAuth } from "@/lib/auth";
@@ -21,7 +21,7 @@ import {
 import { promptsFor, type Prompt } from "@/lib/chat-prompts";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { NlActor, NlContextEcho } from "@/lib/types";
+import type { NlActor, NlContextEcho, NlScopeUsed } from "@/lib/types";
 import { useBusinessShell } from "@/lib/use-business-today";
 import { useChatFacts } from "@/lib/use-chat-facts";
 import { AssistantTurn } from "./assistant-turn";
@@ -122,6 +122,23 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
   );
 }
 
+/**
+ * The scope chip: what the next question is about, said before it is asked and after. On the Home it follows the address (this deal, this customer, this invoice, your company: the dictionary's words);
+ * once an answer has come, the server's own label for the scope it answered in ("The negotiation with Foshan Home Retail Co.") replaces it. Other pages have no scope and show none.
+ */
+function ScopeChip({ used }: { used: NlScopeUsed | null }) {
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  if (pathname !== "/") return null;
+  const key = params.get("decision") ? "decision" : params.get("invoice") ? "invoice" : params.get("customer") ? "customer" : "company";
+  return (
+    <p className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-pill bg-subtle px-3 py-1 text-supporting text-ink-2" data-testid="chat-scope" data-scope={used?.kind ?? key}>
+      <span className="truncate">{used ? t("chat.scope.label", { what: used.label }) : t("chat.scope.label", { what: t(`chat.scope.${key}` as DictKey) })}</span>
+    </p>
+  );
+}
+
 /** What the server used from the page for the last answer, said quietly above the composer: "Discussing: the Foshan Home Retail Co. offer". Names, never ids. */
 function Discussing({ echo }: { echo: NlContextEcho }) {
   const { t } = useI18n();
@@ -152,6 +169,7 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
   const signedOut = role === "OWNER" && !token;
   const lastAnswer = [...conv.messages].reverse().find((m): m is Extract<ChatMessage, { from: "assistant" }> => m.from === "assistant");
   const echo = lastAnswer?.response.context_echo ?? null;
+  const scopeUsed = lastAnswer?.response.scope_used ?? null;
 
   useEffect(() => {
     // While waiting, show the spinner under the question. Once an answer lands, show it from its first line
@@ -276,6 +294,11 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
       ) : null}
 
       <Suggestions prompts={prompts} disabled={conv.busy} compact={conv.messages.length > 0} role={role} />
+      {role === "OWNER" ? (
+        <Suspense fallback={null}>
+          <ScopeChip used={scopeUsed} />
+        </Suspense>
+      ) : null}
       {echo ? <Discussing echo={echo} /> : null}
       <Composer role={role} counterpartyId={chat.counterpartyId} busy={conv.busy} business={business} />
     </div>

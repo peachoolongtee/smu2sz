@@ -75,6 +75,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
       isNew={"is_new" in row && row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
+      selectLabel={t("hv2.row.select")}
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}
@@ -84,6 +85,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
 
 /** A row of Customers: the name, its negotiations and which need the owner, what is outstanding and its share; the weightiest tone as its dot and word. */
 export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { customer: WorklistCustomer; selection?: HomeSelection; onLeave?: () => void }) {
+  const { t } = useI18n();
   const sel = { customer: customer.customer_id, decision: null };
   return (
     <WorklistRow
@@ -93,6 +95,7 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       selected={isSelected(sel, selection)}
       onClick={onLeave}
       subject={customer.name}
+      selectLabel={t("hv2.row.select")}
       nextStep={customer.detail_text}
       pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}
       severity={<Severity severity={TONE_SEVERITY[customer.tone]} />}
@@ -216,7 +219,7 @@ export function WorklistPanel({ read, customers, loading, error, onRetry, onAler
   const [settled, handlers] = useSettled(read ?? undefined);
   const titleId = useId();
   return (
-    <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-6">
+    <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <h2 id={titleId} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-worklist-title">
