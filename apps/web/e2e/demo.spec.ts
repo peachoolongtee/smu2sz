@@ -20,6 +20,10 @@ async function freshDemo(page: Page): Promise<void> {
   await openDemo(page);
   await openOperatorTools(page);
   await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  // Work on the books (a spec before this one) is listed in the dialog first: this is the owner's confirmation.
+  const dialog = page.getByTestId("books-dialog");
+  await page.waitForTimeout(300); // the dialog opens on the click itself
+  if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
   await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 }
 
@@ -62,8 +66,15 @@ test("one filled next control at every step of the walk; the owner's step only o
   await openDemo(page);
   await expect(page.getByTestId("demo-progress")).toContainText(/^All/);
   for (const id of ["buyer", "decision", "agreement", "reality", "owner", "proof"]) await expect(page.getByTestId(`demo-scene-${id}`)).toHaveAttribute("data-state", "done");
-  // Complete: the next control starts the story again, from scene one.
+  // Complete: the next control starts the story again, from scene one, after the dialog has listed what the books lose.
   await next(page).click();
+  await expect(page.getByTestId("books-dialog")).toBeVisible();
+  await expect(page.getByTestId("books-dialog-loss").locator("li").first()).toBeVisible();
+  await expect(page.getByTestId("books-dialog-cancel")).toBeFocused();
+  await page.getByTestId("books-dialog-cancel").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/^All/);
+  await next(page).click();
+  await page.getByTestId("books-dialog-confirm").click();
   await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 });
 
@@ -108,6 +119,13 @@ test("another set of books: the dialog shows the loss, cancel changes nothing, c
   // The loss preview, in words, from the books as they stand; the dialog's one filled button is the confirmation.
   await expect(page.getByTestId("demo-alternate-loss").locator("li").first()).toBeVisible();
   await expect(dialog.getByRole("button")).toHaveCount(2);
+  // Focus starts on the safe choice: Enter on open keeps the main books.
+  await expect(page.getByTestId("demo-alternate-cancel")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  await open.click();
   // Escape closes it and focus returns to the button that opened it; nothing changed.
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -229,4 +247,87 @@ test("the filled buttons are the design language's ink, on a direct load of the 
   await expect(next(page)).toHaveCSS("background-color", "rgb(23, 29, 30)");
   await page.getByTestId("demo-alternate-open").click();
   await expect(page.getByTestId("demo-alternate-confirm")).toHaveCSS("background-color", "rgb(23, 29, 30)");
+});
+
+test("a reset with work on the books asks first and resets nothing on cancel; on fresh books there is no dialog", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  // Fresh books: nothing to lose, so the reset happens at once.
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  await expect(page.getByTestId("books-dialog")).toBeHidden();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  const reset = page.getByTestId("demo-tools-books").getByRole("button").first();
+  await reset.click();
+  const dialog = page.getByTestId("books-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId("books-dialog-loss").locator("li").first()).toBeVisible();
+  // The safe choice has the focus: Enter on open changes nothing.
+  await expect(page.getByTestId("books-dialog-cancel")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Escape does the same.
+  await reset.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Only the confirmation resets.
+  await reset.click();
+  await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+});
+
+test("the optional scene that replaces the books asks first when work would be lost, and replaces nothing on cancel", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  await page.getByTestId("more-run-walk").click();
+  const dialog = page.getByTestId("books-dialog");
+  await expect(dialog).toBeVisible();
+  await page.getByTestId("books-dialog-cancel").click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/demo$/);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  await page.getByTestId("more-run-walk").click();
+  await page.getByTestId("books-dialog-confirm").click();
+  await expect(page).toHaveURL(/\/verdict/);
+});
+
+test("a stale page cannot reset books it did not read: the server's sentence is shown and the main books are untouched", async ({ page, request }, info) => {
+  test.skip(info.project.name !== "live", "the stale page is a second writer: the live API");
+  test.setTimeout(180_000);
+  const api = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+  const owner = { "X-Owner-Token": "demo-owner-token" };
+  await freshDemo(page);
+  // Page A loads the busy books through the dialog.
+  await page.getByTestId("demo-alternate-open").click();
+  await page.getByTestId("demo-alternate-confirm").click();
+  await expect(page.getByTestId("demo-loaded-banner")).toBeVisible({ timeout: 60_000 });
+  // Meanwhile another writer restores the main books and does work on them, through the API.
+  expect((await request.post(`${api}/demo/restore`, { headers: owner, data: {} })).ok()).toBeTruthy();
+  expect((await request.post(`${api}/offers`, { headers: owner, data: { fixture_id: "EX01_PACKAGE" } })).ok()).toBeTruthy();
+  const entries = async () => ((await (await request.get(`${api}/ledger`, { headers: owner })).json()) as { operations: unknown[] }).operations.length;
+  const before = await entries();
+  // Page A is stale: its "Reset these books" names the busy books, which are no longer loaded.
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  await expect(page.getByTestId("books-notice")).toContainText("changed");
+  expect(await entries()).toBe(before);
+  // The page reads the story again: it now shows the main books.
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
 });

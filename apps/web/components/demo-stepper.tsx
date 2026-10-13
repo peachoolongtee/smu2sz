@@ -10,6 +10,7 @@ import { DEMO_STEPS } from "@/lib/demo";
 import { reachedOf, useDemo } from "@/lib/demo-store";
 import { stepNarration } from "@/lib/demo-text";
 import { useI18n } from "@/lib/i18n";
+import type { DemoStoryView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { ArrowRightIcon } from "./icons";
 import { Button, ButtonLink } from "./ui";
@@ -32,7 +33,7 @@ export function DemoStepper() {
 
   // The step a 401 interrupted runs by itself once the owner signs in from the dialog it opened.
   useEffect(() => onSignedIn(() => void resumeStoryAction(router.push)), [router.push]);
-  const press = (action: string) => void runStoryAction(action, router.push);
+  const press = (action: string, books: DemoStoryView["books"]) => void runStoryAction(action, router.push, books);
 
   // The story page is the story: it carries its own one next control, so the strip is not drawn there.
   if (pathname === "/demo") return null;
@@ -103,7 +104,7 @@ export function DemoStepper() {
                 <ArrowRightIcon />
               </ButtonLink>
             ) : (
-              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => press(view.next.action ?? "")} data-testid="demo-next">
+              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => press(view.next.action ?? "", view.books)} data-testid="demo-next">
                 {view.next.label}
                 <ArrowRightIcon />
               </Button>

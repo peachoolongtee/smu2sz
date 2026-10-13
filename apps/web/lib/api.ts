@@ -389,8 +389,8 @@ export async function whatIf(params: WhatIfParams, scope: { customer?: string | 
 }
 
 /** POST /demo/reset (owner action). `scenario` picks the server fixture: the golden books by default, or `short_facilities`. */
-export async function demoReset(scenario?: string): Promise<void> {
-  return isMock ? (await mock()).demoReset(scenario) : (await live()).demoReset(scenario);
+export async function demoReset(scenario?: string, guard?: BooksGuard): Promise<void> {
+  return isMock ? (await mock()).demoReset(scenario, guard) : (await live()).demoReset(scenario, guard);
 }
 
 /**
@@ -500,12 +500,22 @@ export function activityMissing(e: unknown): boolean {
   return e instanceof ApiError && (e.status === 404 || e.status === 405);
 }
 
+/**
+ * What a page that may be stale sends with a reset or a restore: `from` is the scenario of the story read it is showing (`books.scenario`); the server refuses (409
+ * BOOKS_CHANGED, nothing reset) when the books are another. `confirm` is `confirm_loss=1`, sent only from the confirm button of the dialog that listed what is lost; without it
+ * the server refuses (409 LOSS_NOT_CONFIRMED, with the list) when the reset would discard work.
+ */
+export interface BooksGuard {
+  from: string;
+  confirm?: boolean;
+}
+
 /** GET /demo/story?lang=&seen=: where the story stands (derived from the books), the one next control, the alternate scenario and the operator tools. */
 export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
   return isMock ? (await mock()).getDemoStory(lang, seen) : (await live()).getDemoStory(lang, seen);
 }
 
 /** POST /demo/restore?lang= (owner, demo mode): puts the main books back after the alternate scenario was loaded. */
-export async function restoreDemo(lang: "en" | "zh"): Promise<DemoRestoreResult> {
-  return isMock ? (await mock()).restoreDemo(lang) : (await live()).restoreDemo(lang);
+export async function restoreDemo(lang: "en" | "zh", guard?: BooksGuard): Promise<DemoRestoreResult> {
+  return isMock ? (await mock()).restoreDemo(lang, guard) : (await live()).restoreDemo(lang, guard);
 }

@@ -131,8 +131,14 @@ export function SecurityView({ embedded = false, event = null }: { embedded?: bo
         <ErrorState error={audit.error} onRetry={audit.reload} />
       ) : !data ? (
         <LoadingBlock rows={4} />
-      ) : !doc || data.events.length === 0 ? (
-        <EmptyState
+      ) : data.events.length === 0 ? (
+        <>
+          {event !== null ? (
+            <p role="status" className="mb-3 text-sm text-ink-2" data-testid="trust-event-missing">
+              {t("trust.event.missing")}
+            </p>
+          ) : null}
+          <EmptyState
           title={t("sec.empty.title")}
           body={t("sec.empty.body")}
           action={
@@ -141,11 +147,14 @@ export function SecurityView({ embedded = false, event = null }: { embedded?: bo
             </Button>
           }
         />
+        </>
       ) : (
         <div className="space-y-6">
-          <Card id="sec-message" title={t("sec.message", { sender: doc.sender_id })} subtitle={t("sec.message.sub")} tone="bad" actions={<OutcomeBadge outcome="REJECT" />}>
-            <AnnotatedText text={doc.text} annotations={annotations} activeId={active} onActivate={setActive} ariaLabel={t("sec.message", { sender: doc.sender_id })} />
-          </Card>
+          {doc ? (
+                      <Card id="sec-message" title={t("sec.message", { sender: doc.sender_id })} subtitle={t("sec.message.sub")} tone="bad" actions={<OutcomeBadge outcome="REJECT" />}>
+              <AnnotatedText text={doc.text} annotations={annotations} activeId={active} onActivate={setActive} ariaLabel={t("sec.message", { sender: doc.sender_id })} />
+            </Card>
+          ) : null}
 
           <section aria-labelledby="sec-scoreboard">
             <h2 id="sec-scoreboard" className="mb-2 font-display text-base font-extrabold text-ink">

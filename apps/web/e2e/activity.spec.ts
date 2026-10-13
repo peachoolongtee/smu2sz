@@ -88,6 +88,17 @@ test("the failed sign-ins are one line apart from the real alert, their rows und
   await benign.getByTestId("activity-benign-rows").locator("> summary").click();
   const rendered = (await page.getByTestId("activity-row").count()) + (await page.getByTestId("activity-alert").count());
   expect(rendered).toBe(total);
+  // A failed sign-in's evidence link lands on its event too, marked, with the security view showing every event.
+  const attempts = page.getByTestId("activity-benign-rows").getByTestId("activity-row").first();
+  await attempts.getByTestId("activity-evidence").locator("> summary").click();
+  const authHref = (await attempts.getByTestId("activity-evidence-link").getAttribute("href"))!;
+  const authId = /event=([^&]+)/.exec(authHref)![1];
+  expect(authId).toMatch(/^SEC-AUTH-/);
+  await attempts.getByTestId("activity-evidence-link").click();
+  await expect(page.getByTestId(`event-${authId}`)).toHaveAttribute("aria-current", "true");
+  await expect(page.getByText("No security events yet")).toHaveCount(0);
+  await page.goto("/activity");
+  await page.getByTestId("activity-benign-rows").locator("> summary").click();
   // An alert's evidence link names an event the security view has: it lands on it, marked.
   const alert = page.getByTestId("activity-alert").first();
   await alert.getByTestId("activity-evidence").locator("> summary").click();

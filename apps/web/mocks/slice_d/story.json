@@ -167,6 +167,7 @@
         "loss_items": [
           "Nothing has been done yet, so nothing is lost."
         ],
+        "nothing_to_lose": true,
         "loss_preview_text": "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -177,6 +178,19 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": true,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Nothing has been done yet, so nothing is lost."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -202,7 +216,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -430,6 +445,7 @@
         "loss_items": [
           "目前还没有做任何事，所以不会损失任何内容。"
         ],
+        "nothing_to_lose": true,
         "loss_preview_text": "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -440,6 +456,19 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": true,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "目前还没有做任何事，所以不会损失任何内容。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -465,7 +494,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -696,6 +726,7 @@
           "Your place in the story: 1 of 6 scenes have run.",
           "1 offer FLOW has read and priced."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 1 of 6 scenes have run. 1 offer FLOW has read and priced. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -706,6 +737,20 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 1 of 6 scenes have run.",
+          "1 offer FLOW has read and priced."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -731,7 +776,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -960,6 +1006,7 @@
           "您在故事中的进度：已运行 1 / 6 个场景。",
           "FLOW 已读取并定价的 1 份报价。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 1 / 6 个场景。 FLOW 已读取并定价的 1 份报价。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -970,6 +1017,20 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 1 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -995,7 +1056,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -1236,6 +1298,7 @@
           "Your place in the story: 2 of 6 scenes have run.",
           "1 offer FLOW has read and priced."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 2 of 6 scenes have run. 1 offer FLOW has read and priced. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -1246,6 +1309,20 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 2 of 6 scenes have run.",
+          "1 offer FLOW has read and priced."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -1271,7 +1348,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -1510,6 +1588,7 @@
           "您在故事中的进度：已运行 2 / 6 个场景。",
           "FLOW 已读取并定价的 1 份报价。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 2 / 6 个场景。 FLOW 已读取并定价的 1 份报价。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -1520,6 +1599,20 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 2 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -1545,7 +1638,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -1788,6 +1882,7 @@
           "1 agreement on the books.",
           "2 entries in the record."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 3 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 2 entries in the record. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -1798,6 +1893,22 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 3 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "2 entries in the record."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -1823,7 +1934,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -2064,6 +2176,7 @@
           "账目中的 1 项协议。",
           "记录中的 2 条记录。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 3 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 2 条记录。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -2074,6 +2187,22 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 3 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "记录中的 2 条记录。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -2099,7 +2228,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -2355,6 +2485,7 @@
           "1 agreement on the books.",
           "2 entries in the record."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 3 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 2 entries in the record. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -2365,6 +2496,22 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 3 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "2 entries in the record."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -2390,7 +2537,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -2644,6 +2792,7 @@
           "账目中的 1 项协议。",
           "记录中的 2 条记录。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 3 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 2 条记录。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -2654,6 +2803,22 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 3 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "记录中的 2 条记录。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -2679,7 +2844,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -2936,6 +3102,7 @@
           "4 entries in the record.",
           "The clock goes back to the start: 2 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 4 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 4 entries in the record. The clock goes back to the start: 2 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -2946,6 +3113,23 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 4 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "4 entries in the record.",
+          "The clock goes back to the start: 2 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -2971,7 +3155,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -3226,6 +3411,7 @@
           "记录中的 4 条记录。",
           "时钟回到起点：模拟的 2 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 4 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 4 条记录。 时钟回到起点：模拟的 2 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -3236,6 +3422,23 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 4 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "记录中的 4 条记录。",
+          "时钟回到起点：模拟的 2 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -3261,7 +3464,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -3527,6 +3731,7 @@
           "5 entries in the record.",
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 4 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 5 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -3537,6 +3742,23 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 4 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "5 entries in the record.",
+          "The clock goes back to the start: 34 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -3562,7 +3784,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -3826,6 +4049,7 @@
           "记录中的 5 条记录。",
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 4 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 5 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -3836,6 +4060,23 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 4 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "记录中的 5 条记录。",
+          "时钟回到起点：模拟的 34 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -3861,7 +4102,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -4128,6 +4370,7 @@
           "6 entries in the record.",
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval, 1 still waiting for you. 6 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -4138,6 +4381,24 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 5 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "1 approval, 1 still waiting for you.",
+          "6 entries in the record.",
+          "The clock goes back to the start: 34 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -4163,7 +4424,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -4428,6 +4690,7 @@
           "记录中的 6 条记录。",
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项，其中 1 项仍在等您。 记录中的 6 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -4438,6 +4701,24 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 5 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "1 项批准事项，其中 1 项仍在等您。",
+          "记录中的 6 条记录。",
+          "时钟回到起点：模拟的 34 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -4463,7 +4744,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -4730,6 +5012,7 @@
           "7 entries in the record.",
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 7 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -4740,6 +5023,24 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 5 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "1 approval.",
+          "7 entries in the record.",
+          "The clock goes back to the start: 34 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -4765,7 +5066,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -5030,6 +5332,7 @@
           "记录中的 7 条记录。",
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 7 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -5040,6 +5343,24 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 5 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "1 项批准事项。",
+          "记录中的 7 条记录。",
+          "时钟回到起点：模拟的 34 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -5065,7 +5386,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -5345,6 +5667,7 @@
           "8 entries in the record.",
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -5355,6 +5678,24 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 5 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "1 approval.",
+          "8 entries in the record.",
+          "The clock goes back to the start: 38 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -5380,7 +5721,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -5658,6 +6000,7 @@
           "记录中的 8 条记录。",
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -5668,6 +6011,24 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 5 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "1 项批准事项。",
+          "记录中的 8 条记录。",
+          "时钟回到起点：模拟的 38 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -5693,7 +6054,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -5973,6 +6335,7 @@
           "8 entries in the record.",
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 6 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -5983,6 +6346,24 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 6 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "1 approval.",
+          "8 entries in the record.",
+          "The clock goes back to the start: 38 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -6008,7 +6389,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -6286,6 +6668,7 @@
           "记录中的 8 条记录。",
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 6 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -6296,6 +6679,24 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 6 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "1 项批准事项。",
+          "记录中的 8 条记录。",
+          "时钟回到起点：模拟的 38 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -6321,7 +6722,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -6603,6 +7005,7 @@
           "8 entries in the record.",
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 6 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -6613,6 +7016,24 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Your place in the story: 6 of 6 scenes have run.",
+          "1 offer FLOW has read and priced.",
+          "1 agreement on the books.",
+          "1 approval.",
+          "8 entries in the record.",
+          "The clock goes back to the start: 38 days of simulated time are undone."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -6638,7 +7059,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -6918,6 +7340,7 @@
           "记录中的 8 条记录。",
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
+        "nothing_to_lose": false,
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 6 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -6928,6 +7351,24 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": false,
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "您在故事中的进度：已运行 6 / 6 个场景。",
+          "FLOW 已读取并定价的 1 份报价。",
+          "账目中的 1 项协议。",
+          "1 项批准事项。",
+          "记录中的 8 条记录。",
+          "时钟回到起点：模拟的 38 天被撤销。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -6953,7 +7394,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"
@@ -7174,8 +7616,9 @@
         "scope_text": "3 customers, 4 negotiations waiting for your decision, 1 negotiation waiting for the buyer's reply, 2 agreements in force, 1 approval waiting for you and 2 overdue invoices.",
         "loss_title_text": "What the main books lose",
         "loss_items": [
-          "Anything you did on these alternate books."
+          "Nothing has been done on these books yet, so nothing is lost."
         ],
+        "nothing_to_lose": true,
         "loss_preview_text": "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -7186,6 +7629,19 @@
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
+      },
+      "books": {
+        "scenario": "busy",
+        "main": false,
+        "nothing_to_lose": true,
+        "loss_title_text": "What these books lose",
+        "loss_items": [
+          "Nothing has been done on these books yet, so nothing is lost."
+        ],
+        "reset_confirm_title_text": "Reset these books?",
+        "reset_confirm_label": "Reset these books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -7211,7 +7667,8 @@
             "items": [
               {
                 "label": "Reset the books",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "Clears every deal, operation and approval of this session."
@@ -7430,8 +7887,9 @@
         "scope_text": "3 位客户、4 项谈判等您决定、1 项谈判等买方回复、2 项协议已生效、1 项批准事项等您处理、2 张发票已逾期。",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
-          "您在这些备用账目上做过的任何事。"
+          "这些账目上还没有做任何事，所以不会损失任何内容。"
         ],
+        "nothing_to_lose": true,
         "loss_preview_text": "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -7442,6 +7900,19 @@
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
+      },
+      "books": {
+        "scenario": "busy",
+        "main": false,
+        "nothing_to_lose": true,
+        "loss_title_text": "这些账目会失去什么",
+        "loss_items": [
+          "这些账目上还没有做任何事，所以不会损失任何内容。"
+        ],
+        "reset_confirm_title_text": "重置这些账目？",
+        "reset_confirm_label": "重置这些账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
       },
       "operator_tools": {
         "label": "操作工具",
@@ -7467,7 +7938,8 @@
             "items": [
               {
                 "label": "重置账目",
-                "action": "reset"
+                "action": "reset",
+                "replaces_books": true
               }
             ],
             "note_text": "清除本次会话的所有交易、操作和批准事项。"

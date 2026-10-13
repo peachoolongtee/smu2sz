@@ -28,7 +28,11 @@ export function AlternateSection({ alt, busy, onConfirm }: { alt: DemoStoryView[
         {alt.scope_text}
       </p>
       {alt.loaded ? null : (
-        <Button ref={opener} disabled={busy} onClick={() => dialog.current?.showModal()} data-testid="demo-alternate-open" aria-haspopup="dialog">
+        <Button ref={opener} disabled={busy} onClick={() => {
+            dialog.current?.showModal();
+            // The safe choice takes the focus: Enter on open keeps the main books.
+            dialog.current?.querySelector<HTMLElement>('[data-testid="demo-alternate-cancel"]')?.focus();
+          }} data-testid="demo-alternate-open" aria-haspopup="dialog">
           {alt.label}
         </Button>
       )}
@@ -62,6 +66,7 @@ export function AlternateSection({ alt, busy, onConfirm }: { alt: DemoStoryView[
           <Button variant="primary" loading={busy} onClick={onConfirm} data-testid="demo-alternate-confirm">
             {alt.confirm_label}
           </Button>
+          {/* Focus starts on the safe choice: Enter on open changes nothing. */}
           <Button onClick={close} data-testid="demo-alternate-cancel">
             {alt.cancel_label}
           </Button>

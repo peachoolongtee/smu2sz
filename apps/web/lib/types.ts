@@ -4254,6 +4254,18 @@ export interface DemoStoryView {
   story_available: boolean;
   complete: boolean;
   progress_text: string;
+  /** The books as they stand: the scenario this read describes (what `from_scenario` names) and what a reset of them would lose. */
+  books: {
+    scenario: string;
+    main: boolean;
+    nothing_to_lose: boolean;
+    loss_title_text: string;
+    loss_items: string[];
+    reset_confirm_title_text: string;
+    reset_confirm_label: string;
+    reset_cancel_label: string;
+    reset_keeps_text: string;
+  };
   scenes: StoryScene[];
   current: { scene_id: string; step_id: string; title_text: string; text: string; owner: boolean; owner_text: string | null } | null;
   next: { label: string; action: string | null; href: string | null; hint_text: string; owner: boolean };
@@ -4270,6 +4282,7 @@ export interface DemoStoryView {
     confirm_label: string;
     cancel_label: string;
     loaded: boolean;
+    nothing_to_lose?: boolean;
     loaded_text: string | null;
     restore_label: string;
     restore_text: string;
@@ -4278,7 +4291,7 @@ export interface DemoStoryView {
   operator_tools: {
     label: string;
     hint_text: string;
-    groups: { key: string; label: string; items: { label: string; action?: string; href?: string }[]; note_text?: string }[];
+    groups: { key: string; label: string; items: { label: string; action?: string; href?: string; replaces_books?: boolean }[]; note_text?: string }[];
   };
   proof: {
     title_text: string;

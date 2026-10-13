@@ -58,6 +58,7 @@
 //   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy }: each { en, zh } of GET /activity; `security` is the
 //                 settled books after two refused sign-ins and the FastCapital scene (benign sign-ins beside a real alert); `busy` is the busy company
 //   restore.json  { en, zh } of POST /demo/restore, made on the busy books
+//   guard.json    { loss_not_confirmed, books_changed }: { en, zh } of the message words of the two 409s of POST /demo/reset?from_scenario= (work on the books not confirmed; books that are another)
 //   audit.json    GET /audit at the `security` moment (the same events the Activity rows link to), served by the mock for the security view
 // lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` once the busy books are loaded.
 //   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8221
@@ -565,6 +566,14 @@ if (SLICE_D) {
   await runSecurityScene();
   await takeActivity("security");
   const audit = await live.getAudit(); // the security view of the same moment: its event ids are the ones the Activity rows link to
+  // The stale-page guard's two refusals, as the API words them (the mock answers the same two from its own state): work on the books not confirmed, and books that are another.
+  const refusal = async (query, lang) => {
+    const res = await fetch(`${API}/demo/reset?${query}&lang=${lang}`, { method: "POST", headers: { "X-Owner-Token": OWNER_TOKEN, "Content-Type": "application/json" }, body: "{}" });
+    if (res.status !== 409) throw new Error(`the guard did not refuse (${res.status}): ${query}`);
+    const { detail } = await res.json();
+    return { message: detail.message, message_when: detail.message_when };
+  };
+  const guard = { loss_not_confirmed: await both((lang) => refusal("from_scenario=golden_sme", lang)) };
   // The busy company, and the one-click restore made on it.
   await live.demoReset("busy");
   clearDemo();
@@ -572,10 +581,12 @@ if (SLICE_D) {
   await takeActivity("busy");
   const restore = await both((lang) => live.restoreDemo(lang));
   await live.demoReset();
+  guard.books_changed = await both((lang) => refusal("from_scenario=busy", lang));
   write("slice_d/story.json", story);
   write("slice_d/activity.json", activity);
   write("slice_d/restore.json", restore);
   write("slice_d/audit.json", audit);
+  write("slice_d/guard.json", guard);
   console.log(`recorded ${written.length} files into ${join(OUT, "slice_d")} from ${API}`);
   process.exit(0);
 }

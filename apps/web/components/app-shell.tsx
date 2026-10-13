@@ -13,6 +13,7 @@ import { DemoStepper } from "./demo-stepper";
 import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
+import { BooksDialog } from "./demo/books-dialog";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
 import { toggleSidebarPin, useSidebarPinned } from "@/lib/use-sidebar";
@@ -421,6 +422,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <SkipLink />
       <OwnerSignInDialog />
       <Tour />
+      <BooksDialog />
       <header className="sticky top-0 z-30 bg-canvas">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <Brand href="/" />
@@ -593,6 +595,7 @@ function DemoShell({ children }: { children: ReactNode }) {
 
       <OwnerSignInDialog />
       <Tour />
+      <BooksDialog />
 
       <div className="min-w-0">
         <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">

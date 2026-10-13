@@ -2658,6 +2658,7 @@ export const en = {
   "tour.demo.alt.body": "Loads a busier company in place of the main books. You see what the main books lose first, and one click restores them.",
   "tour.demo.tools.title": "Operator tools",
   "tour.demo.tools.body": "The clock, a reset and the engine views, folded away until you want them.",
+  "demo.notice.close": "Dismiss",
   // ---- Slice D (end)
 } as const;
 
@@ -5315,5 +5316,6 @@ export const zh: Record<DictKey, string> = {
   "tour.demo.alt.body": "用一家更忙的公司替换主账目。先告诉您主账目会失去什么，之后一键即可恢复。",
   "tour.demo.tools.title": "操作工具",
   "tour.demo.tools.body": "时钟、重置和引擎视图，平时收起，需要时再打开。",
+  "demo.notice.close": "知道了",
   // ---- Slice D (end)
 };

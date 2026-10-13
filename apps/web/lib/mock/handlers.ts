@@ -94,6 +94,7 @@ import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
 import sliceDActivity from "../../mocks/slice_d/activity.json";
+import sliceDGuard from "../../mocks/slice_d/guard.json";
 import sliceDAudit from "../../mocks/slice_d/audit.json";
 import sliceDRestore from "../../mocks/slice_d/restore.json";
 import sliceDStory from "../../mocks/slice_d/story.json";
@@ -467,16 +468,41 @@ export async function getActivity(lang: "en" | "zh", _ctx: object = {}): Promise
   return pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), key, lang);
 }
 
-export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
-  await delay();
+function storyKey(seen?: string | null): string {
   const book = storyBook();
   // The view steps change nothing, so the page says which it has shown; the books must support it, as the server checks.
-  const key = currentScenario() === "busy" ? "busy" : book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book;
-  return pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), key, lang);
+  return currentScenario() === "busy" ? "busy" : book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book;
 }
 
-export async function restoreDemo(lang: "en" | "zh"): Promise<DemoRestoreResult> {
-  await demoReset();
+export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
+  await delay();
+  return pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), storyKey(seen), lang);
+}
+
+/**
+ * The server's stale-page guard on a reset or a restore, answered from the mock's own state: another scenario than the page named is 409 BOOKS_CHANGED; work on the books without
+ * `confirm_loss` is 409 LOSS_NOT_CONFIRMED with the list the story read carries. The sentences are the API's own, recorded (mocks/slice_d/guard.json).
+ */
+function checkGuard(guard?: { from: string; confirm?: boolean }): void {
+  if (!guard) return;
+  const lang = getLang() === "zh" ? "zh" : "en";
+  type Rec = { en: { message: string; message_when: string }; zh: { message: string; message_when: string } };
+  const rec = cast<{ books_changed: Rec; loss_not_confirmed: Rec }>(sliceDGuard);
+  const now = currentScenario() ?? "golden_sme";
+  if (guard.from !== now) {
+    const d = rec.books_changed[lang];
+    throw new ApiError(409, d.message, { code: "BOOKS_CHANGED", message: d.message, message_when: d.message_when, scenario: now });
+  }
+  if (guard.confirm) return;
+  const books = pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), storyKey(), lang).books;
+  if (!books.nothing_to_lose) {
+    const d = rec.loss_not_confirmed[lang];
+    throw new ApiError(409, d.message, { code: "LOSS_NOT_CONFIRMED", message: d.message, message_when: d.message_when, loss_items: books.loss_items });
+  }
+}
+
+export async function restoreDemo(lang: "en" | "zh", guard?: { from: string; confirm?: boolean }): Promise<DemoRestoreResult> {
+  await demoReset(undefined, guard);
   return clone(cast<Pair<DemoRestoreResult>>(sliceDRestore)[lang === "zh" ? "zh" : "en"]);
 }
 
@@ -1172,13 +1198,14 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   } as WhatIfResult);
 }
 
-export async function demoReset(requested?: string): Promise<void> {
+export async function demoReset(requested?: string, guard?: { from: string; confirm?: boolean }): Promise<void> {
   await delay();
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
+  checkGuard(guard);
   // The mock holds one recorded set of books; the busy company is the two Slice D reads recorded on it.
   setScenario(requested && requested !== "golden_sme" ? requested : null);
   memory = seededStore();

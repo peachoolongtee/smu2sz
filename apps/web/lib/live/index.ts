@@ -113,6 +113,16 @@ function asOperationView(o: Record<string, unknown>): OperationView {
   } as unknown as OperationView;
 }
 
+/** The query of a reset or restore: its own parameters, then the stale-page guard (`from_scenario`, and `confirm_loss=1` only when the caller was told what is lost). */
+function guardQuery(own: Record<string, string>, guard?: { from: string; confirm?: boolean }): string {
+  const q = new URLSearchParams(own);
+  if (guard) {
+    q.set("from_scenario", guard.from);
+    if (guard.confirm) q.set("confirm_loss", "1");
+  }
+  return q.toString();
+}
+
 export const live = {
   downloadFile,
   getState: () => http<StateView>("GET", "/state"),
@@ -157,7 +167,7 @@ export const live = {
     return http<ActivityView>("GET", `/activity?${q}`);
   },
   getDemoStory: (lang: "en" | "zh", seen?: string | null) => http<DemoStoryView>("GET", `/demo/story?lang=${lang}${seen ? `&seen=${encodeURIComponent(seen)}` : ""}`),
-  restoreDemo: (lang: "en" | "zh") => http<DemoRestoreResult>("POST", `/demo/restore?lang=${lang}`, { body: {} }),
+  restoreDemo: (lang: "en" | "zh", guard?: { from: string; confirm?: boolean }) => http<DemoRestoreResult>("POST", `/demo/restore?${guardQuery({ lang }, guard)}`, { body: {} }),
 
   getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),
   getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
@@ -257,9 +267,10 @@ export const live = {
     return http<WhatIfResult>("POST", `/whatif${q.size ? `?${q}` : ""}`, { body: params });
   },
 
-  demoReset: async (scenario?: string): Promise<void> => {
+  demoReset: async (scenario?: string, guard?: { from: string; confirm?: boolean }): Promise<void> => {
     // Loading another company (the busy books) is a long write: it gets the long timeout, not the default 20 s.
-    await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {}, timeoutMs: scenario ? 60_000 : undefined });
+    const q = guardQuery(scenario ? { scenario } : {}, guard);
+    await http("POST", q ? `/demo/reset?${q}` : "/demo/reset", { body: {}, timeoutMs: scenario ? 60_000 : undefined });
   },
 
   /** The guided Demo's synthetic bank event (owner, demo mode): the server posts the promised early payment as the bank feed would. */

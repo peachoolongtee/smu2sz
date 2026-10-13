@@ -58,7 +58,7 @@ function TrustBody() {
             { value: "evidence" as View, label: t("trust.view.evidence"), icon: DownloadIcon, testId: "trust-view-evidence" },
           ]}
         />
-        <section data-testid={`trust-${view}`}>{view === "security" ? <SecurityView embedded event={eventParam} /> : <EvidenceView embedded entry={entry} />}</section>
+        <section data-testid={`trust-${view}`}>{view === "security" ? <SecurityView embedded event={eventParam} /> : <EvidenceView embedded entry={entry} entryAsked={entryParam !== null} />}</section>
       </div>
     </>
   );

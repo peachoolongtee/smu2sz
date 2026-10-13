@@ -1,10 +1,11 @@
 "use client";
 
-import { demoReset } from "./api";
+import { demoReset, type BooksGuard } from "./api";
+import { changeBooks, isGuardError, resetTo, type Books } from "./books-guard";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
 import { demoStore, reachedOf, recordFacts, resetSession, selectStoryOffer } from "./demo-store";
-import { DEMO_STEPS, MORE, OwnerDecisionPending, stepRoute, type MoreId } from "./demo";
+import { DEMO_STEPS, MORE, OwnerDecisionPending, stepRoute, withBooksGuard, type MoreId } from "./demo";
 import { getLang } from "./i18n";
 import { setMode } from "./mode";
 
@@ -60,6 +61,11 @@ export async function goToStep(target: number, push: (route: string) => void, op
     open(stepRoute(step, demoStore.get()), push);
     return "done";
   } catch (e) {
+    if (isGuardError(e)) {
+      // A refused reset changed nothing: the story stays where it was, and the guard (lib/books-guard.ts) says what to do.
+      demoStore.set((s) => ({ ...s, busy: false, running: null }));
+      throw e;
+    }
     if (e instanceof ApiError && e.status === 401) {
       demoStore.set((s) => ({ ...s, busy: false, running: null }));
       return "unauthorized";
@@ -102,7 +108,20 @@ export function backStep(push: (route: string) => void): void {
  * screen. The scene that replaces the books (the buyer who walks away) cannot leave a story half-told on books that are no longer
  * its own, so after it the story starts over from its first step.
  */
-export async function goToMore(id: MoreId, push: (route: string) => void): Promise<StepOutcome> {
+export async function goToMore(id: MoreId, push: (route: string) => void, books: Books): Promise<StepOutcome> {
+  const item = MORE.find((m) => m.id === id);
+  if (!item?.replacesBooks) return runMore(id, push);
+  // An optional scene that replaces the books resets them: the same guard as every other reset.
+  let outcome = "done" as StepOutcome;
+  await changeBooks(books, (guard) =>
+    withBooksGuard(guard, async () => {
+      outcome = await runMore(id, push);
+    }),
+  );
+  return outcome;
+}
+
+async function runMore(id: MoreId, push: (route: string) => void): Promise<StepOutcome> {
   const item = MORE.find((m) => m.id === id);
   if (!item) return "ignored";
   if (inFlight || demoStore.get().busy) return "busy";
@@ -119,6 +138,10 @@ export async function goToMore(id: MoreId, push: (route: string) => void): Promi
     open(item.route, push);
     return "done";
   } catch (e) {
+    if (isGuardError(e)) {
+      demoStore.set((s) => ({ ...s, busy: false }));
+      throw e;
+    }
     if (e instanceof ApiError && e.status === 401) {
       demoStore.set((s) => ({ ...s, busy: false }));
       return "unauthorized";
@@ -131,16 +154,20 @@ export async function goToMore(id: MoreId, push: (route: string) => void): Promi
 }
 
 /** Reset the books (owner action) and clear the session; `scenario` picks the server fixture (golden books by default). */
-export async function resetDemo(push: (route: string) => void, scenario?: string): Promise<void> {
+export async function resetDemo(push: (route: string) => void, scenario?: string, guard?: BooksGuard): Promise<void> {
   if (inFlight || demoStore.get().busy) return;
   inFlight = true;
   setMode("demo");
   demoStore.set((s) => ({ ...s, busy: true, running: null, error: null }));
   try {
-    await demoReset(scenario);
+    await demoReset(scenario, guard);
     resetSession();
     push("/demo");
   } catch (e) {
+    if (isGuardError(e)) {
+      demoStore.set((s) => ({ ...s, busy: false }));
+      throw e;
+    }
     // A 401 has opened the sign-in dialog; Reset stays a deliberate click.
     const unauthorized = e instanceof ApiError && e.status === 401;
     demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : errorMessage(e) }));
@@ -153,30 +180,38 @@ export async function resetDemo(push: (route: string) => void, scenario?: string
  * The one next control of the story page. `action` is the server's: a step id to run, or `restart` (the main books reset, as the stepper always did). The books are the truth
  * about where the story stands, so a browser session that has lost its pointer (a reload, another tab) follows the server instead of refusing the step.
  */
-let resumeAction: string | null = null;
+let resumeAction: { action: string; books: Books } | null = null;
 
 /** The story control a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (the strip calls this on sign-in). */
 export async function resumeStoryAction(push: (route: string) => void): Promise<void> {
-  const action = resumeAction;
+  const r = resumeAction;
   resumeAction = null;
-  if (action) await runStoryAction(action, push);
+  if (r) await runStoryAction(r.action, push, r.books);
 }
 
-export async function runStoryAction(action: string, push: (route: string) => void): Promise<StepOutcome> {
-  const outcome = await runStoryActionOnce(action, push);
-  if (outcome === "unauthorized") resumeAction = action;
-  return outcome;
-}
-
-async function runStoryActionOnce(action: string, push: (route: string) => void): Promise<StepOutcome> {
+/**
+ * The one next control of the story page and of the strip. `action` is the server's: a step id to run, or `restart` (the main books reset, as the stepper always did). `books` is
+ * the `books` block of the story read the caller is showing: the first step and `restart` replace the books, so they go through the guard (lib/books-guard.ts): the dialog first when
+ * work would be lost, `from_scenario` always, `confirm_loss=1` only from the dialog's confirm. The books are the truth about where the story stands, so a browser session that has
+ * lost its pointer (a reload, another tab) follows the server instead of refusing the step.
+ */
+export async function runStoryAction(action: string, push: (route: string) => void, books: Books): Promise<StepOutcome> {
+  let outcome = "done" as StepOutcome;
   if (action === "restart") {
-    await resetDemo(push);
-    return "done";
+    await changeBooks(books, resetTo(undefined, push));
+    return outcome;
   }
   const idx = DEMO_STEPS.findIndex((s) => s.id === action);
   if (idx < 0) return "ignored";
   if (idx > reachedOf(demoStore.get()) + 1) demoStore.set((s) => ({ ...s, reached: idx - 1, step: Math.max(s.step, idx - 1) }));
-  return goToStep(idx, push, { mode: "run" });
+  const run = async () => {
+    outcome = await goToStep(idx, push, { mode: "run" });
+  };
+  // The first step starts the story over on fresh books: it is the one step that resets.
+  if (idx === 0) await changeBooks(books, (guard) => withBooksGuard(guard, run));
+  else await run();
+  if (outcome === "unauthorized") resumeAction = { action, books };
+  return outcome;
 }
 
 /** `seen` for GET /demo/story: the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it. */

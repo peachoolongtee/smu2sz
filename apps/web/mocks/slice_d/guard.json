@@ -1,0 +1,22 @@
+{
+  "loss_not_confirmed": {
+    "en": {
+      "message": "Resetting would discard work on these books and it was not confirmed; nothing was reset.",
+      "message_when": "Resetting would discard work on these books and it was not confirmed; nothing was reset."
+    },
+    "zh": {
+      "message": "Resetting would discard work on these books and it was not confirmed; nothing was reset.",
+      "message_when": "重置会丢弃这些账目上的工作，而这一点尚未确认；未重置任何内容。"
+    }
+  },
+  "books_changed": {
+    "en": {
+      "message": "The books changed since this page was read; nothing was reset.",
+      "message_when": "The books changed since this page was read; nothing was reset."
+    },
+    "zh": {
+      "message": "The books changed since this page was read; nothing was reset.",
+      "message_when": "自您查看此页面以来，账目已发生变化；未重置任何内容。"
+    }
+  }
+}

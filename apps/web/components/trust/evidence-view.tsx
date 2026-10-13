@@ -32,7 +32,7 @@ function parse(jsonl: string): { lines: string[]; headHash: string | null } {
  * engine's kind codes. The raw file stays the download and a preview under a fold. `entry` (a sequence number in the address) marks one entry: it is scrolled to,
  * drawn with a visible mark and `aria-current`, and takes focus. `embedded` (the /trust page) swaps the page header for a section heading, so the page keeps one h1.
  */
-export function EvidenceView({ embedded = false, entry = null }: { embedded?: boolean; entry?: number | null }) {
+export function EvidenceView({ embedded = false, entry = null, entryAsked = false }: { embedded?: boolean; entry?: number | null; /** The address names an `entry` at all (a number or not): one that is not in the record says so. */ entryAsked?: boolean }) {
   const { t, lang } = useI18n();
   const ev = useAsync(getEvidence, []);
   const ledger = useAsync(() => getLedger(lang), [lang]);
@@ -66,13 +66,13 @@ export function EvidenceView({ embedded = false, entry = null }: { embedded?: bo
       ) : ev.data.trim() === "" ? (
         <EmptyState title={t("evid.empty.title")} body={t("evid.empty.body")} />
       ) : (
-        <EvidenceBody text={ev.data} ops={ledger.data?.operations ?? null} entry={entry} onDownload={() => download(ev.data ?? "")} />
+        <EvidenceBody text={ev.data} ops={ledger.data?.operations ?? null} entry={entry} entryAsked={entryAsked} onDownload={() => download(ev.data ?? "")} />
       )}
     </>
   );
 }
 
-function EvidenceBody({ text, ops, entry, onDownload }: { text: string; ops: OperationView[] | null; entry: number | null; onDownload: () => void }) {
+function EvidenceBody({ text, ops, entry, entryAsked, onDownload }: { text: string; ops: OperationView[] | null; entry: number | null; entryAsked: boolean; onDownload: () => void }) {
   const { t } = useI18n();
   const { lines, headHash } = parse(text);
   const entries = ops ? ops.filter((o) => o.seq !== undefined && o.seq !== null) : [];
@@ -118,7 +118,7 @@ function EvidenceBody({ text, ops, entry, onDownload }: { text: string; ops: Ope
       </Card>
 
       <Card id="evidence-entries" title={t("trust.entries", { n: entries.length })} subtitle={t("trust.entries.sub")}>
-        {entry !== null && ops && !found ? (
+        {(entryAsked || entry !== null) && ops && !found ? (
           <p role="status" className="mb-3 text-sm text-ink-2" data-testid="trust-entry-missing">
             {t("trust.entry.missing")}
           </p>

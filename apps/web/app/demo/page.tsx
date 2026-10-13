@@ -12,7 +12,8 @@ import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
 import { advanceClock, getDemoStory, restoreDemo } from "@/lib/api";
-import { goToMore, resetDemo, runStoryAction, seenOf } from "@/lib/demo-control";
+import { changeBooks, changeBooksConfirmed, resetTo } from "@/lib/books-guard";
+import { goToMore, runStoryAction, seenOf } from "@/lib/demo-control";
 import { MORE, type MoreId } from "@/lib/demo";
 import { bump, reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -61,7 +62,7 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
     if (action.startsWith("advance:")) {
       await advanceClock(Number(action.slice("advance:".length)));
       bump();
-    } else if (action === "reset") await resetDemo(router.push, view.main ? undefined : view.alternate.scenario);
+    } else if (action === "reset") await changeBooks(view.books, resetTo(view.main ? undefined : view.books.scenario, router.push));
   };
   return (
     <Disclosure card testId="demo-operator-tools" summary={<span>{tools.label} <span className="text-supporting font-normal text-ink-3">{tools.hint_text}</span></span>}>
@@ -102,7 +103,7 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
                     <span className="block text-supporting text-ink-3">{te("more.desc", m.id)}</span>
                     {m.replacesBooks ? <span className="block text-supporting font-medium text-warn-fg">{t("more.replaces")}</span> : null}
                   </span>
-                  <Button size="sm" disabled={busy || Boolean(m.needsWalk && !demo.rewordedId)} onClick={() => void goToMore(m.id as MoreId, router.push)} aria-label={`${t("story.show")}: ${te("more.title", m.id)}`} data-testid={`more-run-${m.id}`}>
+                  <Button size="sm" disabled={busy || Boolean(m.needsWalk && !demo.rewordedId)} onClick={() => void goToMore(m.id as MoreId, router.push, view.books)} aria-label={`${t("story.show")}: ${te("more.title", m.id)}`} data-testid={`more-run-${m.id}`}>
                     {t("story.show")}
                   </Button>
                 </li>
@@ -132,18 +133,28 @@ export default function DemoPage() {
   const busy = demo.busy || working;
   const view = story.data;
 
+  // The dialog's confirm button is the one thing that sends `confirm_loss=1`: the books it listed are the ones this read names (`from_scenario`).
   async function loadAlternate(scenario: string) {
+    if (!view) return;
     setRestored(null);
-    await resetDemo(router.push, scenario);
+    await changeBooksConfirmed(view.books, resetTo(scenario, router.push));
     document.querySelector<HTMLDialogElement>('[data-testid="demo-alternate-dialog"]')?.close();
   }
 
   async function restore() {
+    if (!view) return;
+    const alt = view.alternate;
     setWorking(true);
     try {
-      const r = await restoreDemo(lang);
-      resetSession();
-      setRestored(r.restored_text);
+      await changeBooks(
+        view.books,
+        async (guard) => {
+          const r = await restoreDemo(lang, guard);
+          resetSession();
+          setRestored(r.restored_text);
+        },
+        { title: alt.restore_label, confirm: alt.restore_label, cancel: alt.cancel_label, keeps: alt.restore_text },
+      );
     } finally {
       setWorking(false);
     }
@@ -210,7 +221,7 @@ export default function DemoPage() {
                     <ArrowRightIcon />
                   </ButtonLink>
                 ) : (
-                  <Button variant="primary" loading={busy} onClick={() => void runStoryAction(view.next.action ?? "", router.push)} data-testid="demo-next">
+                  <Button variant="primary" loading={busy} onClick={() => void runStoryAction(view.next.action ?? "", router.push, view.books)} data-testid="demo-next">
                     {view.next.label}
                     <ArrowRightIcon />
                   </Button>

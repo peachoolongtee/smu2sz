@@ -192,3 +192,13 @@ test.describe("the trust views are chosen by the address", () => {
     expect(wide).toBe(false);
   });
 });
+
+test.describe("a record the address names that is not in the record says so", () => {
+  test("an event id that is not in the security record, and an entry that is not a number", async ({ page }) => {
+    await page.goto("/trust?view=security&event=SEC-NOT-THERE");
+    await expect(page.getByTestId("trust-event-missing")).toContainText("Nothing was removed");
+    await page.goto("/trust?view=evidence&entry=abc");
+    await expect(page.getByTestId("trust-entry-missing")).toContainText("Nothing was removed");
+    await expect(page.locator('[data-marked="true"]')).toHaveCount(0);
+  });
+});
