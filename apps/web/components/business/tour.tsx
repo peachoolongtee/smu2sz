@@ -32,7 +32,9 @@ interface Step {
 
 const NAV: Step = { target: '[data-testid="nav-pills"], [data-testid="tab-bar"]', title: "tour.nav.title", body: "tour.nav.body", extra: "sections" };
 
-/** At most two steps per page. */
+const tid = (id: string) => `[data-testid="${id}"]`;
+
+/** The steps of each page, in reading order. */
 const STEPS: Record<string, Step[]> = {
   "/": [{ target: '[data-testid="home-status"]', title: "tour.home.status.title", body: "tour.home.status.body" }, NAV],
   "/deals": [
@@ -50,6 +52,11 @@ const STEPS: Record<string, Step[]> = {
   "/activity": [
     { target: '#activity-timeline, [data-testid="activity-list"]', title: "tour.activity.list.title", body: "tour.activity.list.body" },
     { target: '#activity-refused, [data-testid="activity-security"]', title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+  ],
+  "/demo": [
+    { target: tid("demo-current"), title: "tour.demo.current.title", body: "tour.demo.current.body" },
+    { target: tid("demo-alternate"), title: "tour.demo.alt.title", body: "tour.demo.alt.body" },
+    { target: tid("demo-operator-tools"), title: "tour.demo.tools.title", body: "tour.demo.tools.body" },
   ],
   "/approvals": [{ target: '[id^="approval-APR"]', title: "tour.approvals.title", body: "tour.approvals.body" }],
   "/limits": [{ target: "#limits-rules", title: "tour.limits.title", body: "tour.limits.body" }],

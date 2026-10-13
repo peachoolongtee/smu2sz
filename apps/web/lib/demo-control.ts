@@ -148,3 +148,18 @@ export async function resetDemo(push: (route: string) => void, scenario?: string
     inFlight = false;
   }
 }
+
+/**
+ * The one next control of the story page. `action` is the server's: a step id to run, or `restart` (the main books reset, as the stepper always did). The books are the truth
+ * about where the story stands, so a browser session that has lost its pointer (a reload, another tab) follows the server instead of refusing the step.
+ */
+export async function runStoryAction(action: string, push: (route: string) => void): Promise<StepOutcome> {
+  if (action === "restart") {
+    await resetDemo(push);
+    return "done";
+  }
+  const idx = DEMO_STEPS.findIndex((s) => s.id === action);
+  if (idx < 0) return "ignored";
+  if (idx > reachedOf(demoStore.get()) + 1) demoStore.set((s) => ({ ...s, reached: idx - 1, step: Math.max(s.step, idx - 1) }));
+  return goToStep(idx, push, { mode: "run" });
+}

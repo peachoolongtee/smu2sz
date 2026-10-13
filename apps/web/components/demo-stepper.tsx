@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
@@ -57,12 +57,15 @@ export function DemoStepper() {
 
   const upcoming = DEMO_STEPS[step + 1] ?? null;
   // The owner's own step: while the cure waits, the decision is the card's one filled Approve, and this button only opens it.
+  const pathname = usePathname();
   const cureWaiting = useCureWaiting();
   const opensApproval = Boolean(upcoming?.owner && cureWaiting);
   const nextLabel = step < 0 ? t("demo.start") : opensApproval ? t("demo.openApproval") : t("demo.next");
   const sceneNo = current ? SCENES.findIndex((x) => x.id === current.scene) + 1 : 0;
   const narration = current ? stepNarration(i18n, current.id, demo) : "";
 
+  // The story page carries its own one next control; the strip would be a second.
+  if (pathname === "/demo") return null;
   return (
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
