@@ -318,8 +318,30 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
     return out, basis
 
 
+def _consequence_text(c: HomeRead) -> str | None:
+    """"Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days.": the first breach day and the
+    lowest point's shortfall, the words `kpis.lowest_ahead` and the company alert already use (`when_text`, `_short`, `c.low`, the books' own
+    trajectory); no new figure. Null when the books hold no breach."""
+    lang = c.lang
+    if c.breach_day is None:
+        return None
+    low_fen, low_day = c.low
+    gap = low_fen - c.floor
+    if gap >= 0:
+        return None
+    first = when_text(c.breach_day, c.today, lang)
+    at = when_text(low_day, c.today, lang)
+    short = _short(-gap)
+    if _plan_has_run(c.state):
+        return t(lang, f"Cash first falls below your minimum {first}. Even with the plan that ran, the shortfall reaches {short} {at}.",
+                 f"现金将在{_digit_gap(first)}首次低于您的最低现金。即使方案已执行，缺口仍将在{_digit_gap(at)}达到 {short}。")
+    return t(lang, f"Cash first falls below your minimum {first}. Without new funding, the shortfall reaches {short} {at}.",
+             f"现金将在{_digit_gap(first)}首次低于您的最低现金。若没有新增融资，缺口将在{_digit_gap(at)}达到 {short}。")
+
+
 def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:
     out = _action_body(c, att)
+    out["consequence_text"] = _consequence_text(c)
     out["legs"], out["cost_basis_text"] = _action_legs(c, out, funding_line)
     return out
 

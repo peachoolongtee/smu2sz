@@ -109,7 +109,7 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
 def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> None:
     _offer(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text", "consequence_text")} == {  # the legs, the basis and the consequence have their own tests below
         "variant": "ACTION", "key": "funding:ALERT-RESERVE-12", "tone": "bad", "eyebrow": "NEXT ACTION · WITHIN 12 DAYS",
         "title": "Secure ¥405,000 before payroll in 12 days.",
         "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · "
@@ -154,7 +154,7 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
     _offer(api)
     _run_plan(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text", "consequence_text")} == {  # the legs, the basis and the consequence have their own tests below
         "variant": "QUIET", "key": None, "tone": "ok", "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
@@ -250,11 +250,13 @@ def test_a_step_with_no_cash_landing_yet_says_what_it_is_and_who_must_act(api: T
     assert v2["chart"]["legend"] == [{"label": "Current books · no new funding", "kind": "current"}]
 
 
-def test_an_unsafe_reserve_with_no_action_at_all_is_never_the_quiet_variant() -> None:
+def test_an_unsafe_reserve_with_no_action_at_all_is_never_the_quiet_variant(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(home_v2, "_plan_has_run", lambda _state: False)
     c = SimpleNamespace(action=None, breach_day=12, today=0, lang="en", headline="Your cash reserve becomes unsafe in 12 days.",
-                        note="Cash falls to ¥60k.", state=None)
+                        note="Cash falls to ¥60k.", state=None, low=(6_000_000, 30), floor=30_000_000)
     action = home_v2._action(c, {"items": []})  # type: ignore[arg-type]
     assert action["variant"] == "ACTION" and action["control"] is None and action["tone"] == "bad"
+    assert action["consequence_text"] == "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥240k in 30 days."
     assert (action["title"], action["text"]) == ("Your cash reserve becomes unsafe in 12 days.", "Cash falls to ¥60k.")
     assert action["primary"] == {"label": "See the options", "href": "/cash#cash-options"} and action["eyebrow"] == "NEXT ACTION · WITHIN 12 DAYS"
 
@@ -660,3 +662,40 @@ def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_appr
     assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
     _, basis = home_v2._action_legs(plan(None, draw), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert basis is None
+
+
+# ---------------------------------------------------------------- the consequence sentence (batch 5)
+
+
+def test_the_consequence_is_the_first_breach_day_and_the_lowest_points_shortfall_on_day_zero(api: TestClient) -> None:
+    _offer(api)
+    action = _v2(api)["action"]
+    assert action["consequence_text"] == "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days."
+    kpi = _v2(api)["kpis"]["lowest_ahead"]
+    assert kpi["short_note"] == "¥405k shortfall in 30 days"  # the same figures as the KPI
+    assert action["text"].startswith("FLOW's plan within your signed limits")  # the action's own sentence is left alone
+    zh = _v2(api, "zh")["action"]
+    assert zh["consequence_text"] == "现金将在 12 天后首次低于您的最低现金。若没有新增融资，缺口将在 30 天后达到 ¥405k。"
+    assert english_leaks(zh["consequence_text"], NAMES) == []
+
+
+def test_the_consequence_is_null_once_the_plan_has_run_and_nothing_breaches(api: TestClient) -> None:
+    _offer(api)
+    _run_plan(api)
+    assert _v2(api)["action"]["consequence_text"] is None and _v2(api, "zh")["action"]["consequence_text"] is None
+
+
+def test_the_consequence_says_so_when_the_plan_ran_and_the_books_still_breach(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    _offer(api)
+    monkeypatch.setattr(home_v2, "_plan_has_run", lambda _state: True)
+    assert _v2(api)["action"]["consequence_text"] == ("Cash first falls below your minimum in 12 days. "
+                                                      "Even with the plan that ran, the shortfall reaches ¥405k in 30 days.")
+    assert _v2(api, "zh")["action"]["consequence_text"] == "现金将在 12 天后首次低于您的最低现金。即使方案已执行，缺口仍将在 30 天后达到 ¥405k。"
+
+
+def test_the_consequence_is_null_with_no_breach_or_no_shortfall() -> None:
+    for lang in ("en", "zh"):
+        none = SimpleNamespace(lang=lang, today=0, breach_day=None, low=(-1, 5), floor=0)
+        assert home_v2._consequence_text(none) is None  # type: ignore[arg-type]
+        above = SimpleNamespace(lang=lang, today=0, breach_day=3, low=(10, 5), floor=0)
+        assert home_v2._consequence_text(above) is None  # type: ignore[arg-type]
