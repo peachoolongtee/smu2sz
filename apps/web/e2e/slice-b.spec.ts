@@ -344,6 +344,26 @@ test.describe("live", () => {
     await expect(page.getByTestId("whatif-outcome")).toHaveCount(0);
   });
 
+  test("a negotiation whose invoice was settled under another agreement is Lapsed: its word in the pane, no reply ready, no cost, and it is gone from the queue", async ({ page, request }) => {
+    await busy(request);
+    // Agreeing Foshan's early-payment counter settles the invoice the other two Foshan requests were about.
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent("deal:OFF-39cabafae4ee")}`);
+    await page.getByTestId("queue-review-open").click();
+    await page.getByTestId("deal-send").click();
+    await expect(page.getByTestId("deal-sent")).toBeVisible();
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent("deal:OFF-f806f79b6c21")}`);
+    const pane = page.getByTestId("deal-pane");
+    await expect(pane).toHaveAttribute("data-state", "LAPSED");
+    await expect(page.getByTestId("deal-state-chip")).toContainText("Lapsed");
+    await expect(page.getByTestId("queue-recommends")).toHaveCount(0);
+    await expect(page.getByTestId("queue-review-open")).toHaveCount(0);
+    await expect(page.getByTestId("deal-send")).toHaveCount(0);
+    await expect(page.getByTestId("deal-costs")).toHaveCount(0);
+    await expect(page.getByTestId("deal-abstentions")).toHaveCount(0);
+    // The queue lists no lapsed decision as a task.
+    await expect(page.locator('[data-testid="queue-row"][data-tier="needs_you"][data-kind="DECISION"]').filter({ hasText: "Foshan" })).toHaveCount(0);
+  });
+
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {
     await resetBooks(request);
     await page.goto("/deals");
