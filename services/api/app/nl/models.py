@@ -115,6 +115,27 @@ class NlPageContext(BaseModel):
     since_day: int | None = Field(default=None, ge=0, le=100_000)
 
 
+class NlScope(BaseModel):
+    """What the owner's question is about, from the URL contract (`customer`, `decision`, `invoice`, `scenario`; map #121, ticket #130). The
+    page shows it before the question is asked and the request carries exactly this, so a request that sends a scope sends no stale
+    offer: the scope replaces the offer, decision and invoice ids of `context`. An empty scope is the whole company. The server checks every key
+    against its own stores and answers with a clarification, never a guess, for one it cannot honour."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    customer: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    invoice: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+    decision: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,80}$")
+    scenario: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
+
+
+class ScopeUsed(BaseModel):
+    """The scope the server answered in: its kind (`company`, `customer`, `invoice`, `decision`) and its label in the owner's words."""
+
+    kind: Literal["company", "customer", "invoice", "decision"]
+    label: str
+
+
 class ContextEcho(BaseModel):
     """What the server actually used from the page context (so the panel can say "Discussing: the Foshan offer")."""
 
@@ -139,6 +160,7 @@ class NlRequest(BaseModel):
     buyer_profile: str | None = Field(default=None, max_length=64)
     request_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_.:-]{1,64}$")
     context: NlPageContext | None = None  # the owner's page; a counterparty's context is ignored
+    scope: NlScope | None = None  # what the question is about (the URL contract); when sent it replaces the offer, decision and invoice of `context`
 
 
 class NlResponse(BaseModel):
@@ -159,3 +181,4 @@ class NlResponse(BaseModel):
     parse_source: str = "rules"
     trace_id: str
     context_echo: ContextEcho | None = None  # the validated page context this turn used (owner channel only)
+    scope_used: ScopeUsed | None = None  # the scope this turn was answered in, when the request carried one (owner channel only)

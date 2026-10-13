@@ -48,6 +48,7 @@ class NlContext:
     request_id: str | None = None
     binding: Any = None  # app.nl.binding.Binding: the validated page context of this owner turn, if any
     reads: Any = None  # app.nl.binding.OwnerReads: the Home read and the business-words rewrite (owner turns only)
+    scope_used: Any = None  # app.nl.models.ScopeUsed: the scope the request carried and the server honoured, if any
     results: list[OperationResult] = field(default_factory=list)
     sent: list[Any] = field(default_factory=list)  # the typed operations sent this turn
     events: list[str] = field(default_factory=list)
