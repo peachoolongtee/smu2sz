@@ -9,7 +9,7 @@ import { CompanyChart } from "@/components/home/v2/company-chart";
 import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
 import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { CashCard, DealOutlookCard, FooterLinks, OutlookCard, UpcomingCard } from "@/components/home/v2/home-cards";
+import { CashCard, type CashMarker, DealCashBlock, FooterLinks, OutlookCard, OwedCard, owedRowsOf, UpcomingCard } from "@/components/home/v2/home-cards";
 import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { ErrorState } from "@/components/ui";
@@ -40,10 +40,9 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const selection = readSelection(params);
   const dealView = readDealView(params);
   const focusing = selection.customer !== null;
-  // Two small views of the Home are in the address too: the funding's composition (`funding=1`) and the expanded forecast (`expand=1`).
-  const fundingOpen = params.get("funding") === "1";
+  // One small view of the Home is in the address too: the expanded forecast (`expand=1`).
   const expanded = params.get("expand") === "1";
-  const setFlag = (key: "funding" | "expand", on: boolean) => {
+  const setFlag = (key: "expand", on: boolean) => {
     const q = new URLSearchParams(params.toString());
     if (on) q.set(key, "1");
     else q.delete(key);
@@ -131,7 +130,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const cash = h.cash;
   const headline = cash.headline_conditional || h.headline;
   // "FLOW action ready" is said once, by the recommendation card: the line under the headline keeps the server's count sentence and drops its first sentence ("One funding action ready.")
-  // when the card carries the plan's control; the worklist's alert row is shown only on a Home whose funding is NONE (no plan card to say it).
+  // when the card carries the plan's control; the worklist's alert row is shown only on a Home that renders no recommendation card (no title and no control), whatever the funding state.
   const summary = v2?.summary_text ? (v2.action.control ? v2.summary_text.replace(/^[^.。]*[.。]\s*/, "") : v2.summary_text) : null;
   const header = (
     <header className="motion-reveal mb-3 grid grid-cols-1 items-start gap-y-1.5 sm:mb-5" data-testid="home-status" data-status={h.status}>
@@ -170,12 +169,21 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const dealDrawn = Boolean(shown?.decision && paths.some((p) => p.kind === "asked" && p.series?.length) && paths.some((p) => p.kind === "reply" && p.recommended && p.series?.length));
   // A worklist the server does not have (null) leaves the page without the table; a failed one says so in the card, with Retry.
   const hasWorklist = worklist.data !== null;
-  const outlook =
-    shown?.decision && dealDrawn ? (
-      <DealOutlookCard h={h} picture={dealPicture.data} expanded={dealView.chart} onExpand={(on) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, chart: on }, "replace")} />
-    ) : (
-      <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />
-    );
+  const hasCard = Boolean(v2.action.title || v2.action.control);
+  // The overview's third card is the company outlook; a selection replaces it with "What you are owed, by customer" (the customers' own rows, whose slices select that customer) when two or more customers have something owed: one slice is not a share worth a donut, so the outlook stays.
+  const owedRows = customers.data?.customers ?? null;
+  const owed = owedRowsOf(owedRows);
+  const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
+  const owedCard = owed.length >= 2 ? <OwedCard customers={owedRows} selected={shown?.customer ?? null} onSelect={(id) => go({ customer: id })} /> : outlook;
+  // The cash bar's ticks for the selected deal: the server's lowest cash as asked and with the recommended reply, labelled with the server's own short word; the caption says both in the server's words.
+  const dealAsked = shown?.decision ? (paths.find((p) => p.kind === "asked") ?? null) : null;
+  const dealRec = shown?.decision ? (paths.find((p) => p.kind === "reply" && p.recommended) ?? null) : null;
+  const markers: CashMarker[] = [];
+  if (dealAsked?.lowest_fen != null && dealAsked.lowest_short) markers.push({ key: "asked", fen: dealAsked.lowest_fen, label: dealAsked.lowest_short });
+  if (dealRec?.lowest_fen != null && dealRec.lowest_short) markers.push({ key: "rec", fen: dealRec.lowest_fen, label: dealRec.lowest_short });
+  const sayPath = (p: typeof dealAsked) => (p ? [p.label, p.lowest_short, p.lowest_when].filter(Boolean).join(" ") : "");
+  const caption = markers.length ? [markers.some((m) => m.key === "asked") ? sayPath(dealAsked) : "", markers.some((m) => m.key === "rec") ? sayPath(dealRec) : ""].filter(Boolean).join(" · ") : null;
+  const dealCash = dealDrawn ? <DealCashBlock h={h} picture={dealPicture.data} expanded={dealView.chart} onExpand={(on) => go({ customer: shown?.customer, decision: shown?.decision }, { ...dealView, chart: on }, "replace")} /> : null;
   const fade = { opacity: fading ? 0 : 1, transition: "opacity 100ms ease-out" } as const;
   const bar = (
     <HomeV2ActionBar
@@ -186,8 +194,6 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       fixer={fixer}
       line={cash.headline_note}
       fundingTotal={v2.kpis.funding.value_display}
-      fundingOpen={fundingOpen}
-      onFunding={(on) => setFlag("funding", on)}
       onBack={shown ? () => clear("action") : undefined}
     />
   );
@@ -200,7 +206,8 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         {shown ? (
           <>
             <div className="mb-3">{bar}</div>
-            <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+            {/* A deal card is wide (its tables need the room) and keeps its own height beside the stack of the cash card and the side card; a customer's card sits with the two as three columns from xl. */}
+            <div className={`grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)] ${shown.decision ? "items-start" : "items-stretch xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)]"}`}>
               {shown.decision ? (
                 <DealFocusPanel
                   customerId={shown.customer as string}
@@ -218,7 +225,10 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
               ) : (
                 <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
               )}
-              {outlook}
+              <div className={`grid min-w-0 content-start gap-3 sm:gap-4 ${shown.decision ? "" : "xl:contents"}`}>
+                <CashCard kpis={v2.kpis} markers={markers} caption={caption} />
+                {owedCard}
+              </div>
             </div>
           </>
         ) : (
@@ -234,10 +244,10 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
         </div>
       ) : null}
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={v2.kpis.funding.state === "NONE"} /> : <span />}
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]">
+        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : <span />}
         <div style={fade} className="min-w-0">
-          {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} />}
+          {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} dealCash={dealCash} /> : <UpcomingCard h={h} />}
         </div>
       </div>
       <FooterLinks separate={Boolean(shown)} />

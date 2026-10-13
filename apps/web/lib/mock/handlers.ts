@@ -828,7 +828,20 @@ export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | n
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
-  return homeV2.mockCustomers(homeV2Point(), lang);
+  const view = await homeV2.mockCustomers(homeV2Point(), lang);
+  return view && typeof window !== "undefined" ? withCustomersPatch(view) : view;
+}
+
+/** A test seam like the home patch: e2e lays `customers` rows over the recorded GET /customers for what no recording has (several buyers with something owed: the "owed by customer" donut). Unset, the read is exactly the recording. */
+export const CUSTOMERS_PATCH_KEY = "tl-mock-customers-patch";
+function withCustomersPatch(view: CustomersView): CustomersView {
+  const raw = window.sessionStorage.getItem(CUSTOMERS_PATCH_KEY);
+  if (!raw) return view;
+  try {
+    return { ...view, ...(JSON.parse(raw) as Partial<CustomersView>) };
+  } catch {
+    return view;
+  }
 }
 
 /**

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
-import { UnderlineTabs, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
+import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import { warmSelection } from "@/components/home/v2/prefetch";
 import { type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
@@ -141,7 +141,20 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
   const tabId = (v: Tab) => `${uid}-tab-${v}`;
   const panelId = `${uid}-panel`;
   const link = `${textLinkClass} -ml-2 gap-1 text-sm font-bold`;
-  const head = "grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(7.5rem,auto)] gap-x-4 px-4 pb-2 text-sm text-ink-3 max-md:hidden";
+  const head = `grid gap-x-4 px-4 pb-0.5 text-supporting font-medium text-ink-3 max-lg:hidden ${WORKLIST_COLUMNS}`;
+  // Under "All" the two lists are told apart by a 12 px uppercase heading row with its count; on one tab the tab itself says it.
+  const group = (label: string, n: number) => (
+    <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-ink-3 first:pt-2" data-testid="hv2-group-heading">
+      {label} ({n})
+    </h3>
+  );
+  const rows = (list: (WorklistNeedsRow | WorklistWaitingRow)[]) => (
+    <ul className="space-y-2">
+      {list.map((r) => (
+        <ActionRow key={r.key} row={r} selection={selection} onLeave={onLeave} />
+      ))}
+    </ul>
+  );
   return (
     <div className="min-w-0" data-testid="home-worklist">
       {alert ? (
@@ -185,10 +198,11 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
           <WorklistSearch value={query} onChange={setQuery} label={t("hv2.work.search")} testId="home-worklist-search" found={t("hv2.work.found", { n: shown })} foundTestId="home-worklist-found" />
         </div>
       </div>
-      <div className={`${head} mt-4`} aria-hidden>
+      <div className={`${head} mt-4`} aria-hidden data-testid="hv2-work-head">
         <span>{t("hv2.work.col.deal")}</span>
         <span>{t("hv2.work.col.next")}</span>
-        <span>{t("hv2.work.col.status")}</span>
+        <span className="text-right">{t("hv2.work.col.status")}</span>
+        <span />
       </div>
       <div role="tabpanel" id={panelId} aria-labelledby={tabId(tab)} data-testid={`home-panel-${tab}`} className="mt-2 md:mt-0">
         {shown === 0 ? (
@@ -203,11 +217,25 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
             )}
           </div>
         ) : (
-          <ul className="space-y-2">
-            {tab === "all" || tab === "needs_you" ? needs.map((r) => <ActionRow key={r.key} row={r} selection={selection} onLeave={onLeave} />) : null}
-            {tab === "all" || tab === "waiting" ? waiting.map((r) => <ActionRow key={r.key} row={r} selection={selection} onLeave={onLeave} />) : null}
-            {tab === "customers" ? people.map((c) => <CustomerRow key={c.customer_id} customer={c} selection={selection} onLeave={onLeave} />) : null}
-          </ul>
+          <>
+            {tab === "all" ? (
+              <>
+                {needs.length ? group(t("hv2.work.needs"), needs.length) : null}
+                {needs.length ? rows(needs) : null}
+                {waiting.length ? group(t("hv2.work.waiting"), waiting.length) : null}
+                {waiting.length ? rows(waiting) : null}
+              </>
+            ) : null}
+            {tab === "needs_you" ? rows(needs) : null}
+            {tab === "waiting" ? rows(waiting) : null}
+            {tab === "customers" ? (
+              <ul className="space-y-2">
+                {people.map((c) => (
+                  <CustomerRow key={c.customer_id} customer={c} selection={selection} onLeave={onLeave} />
+                ))}
+              </ul>
+            ) : null}
+          </>
         )}
       </div>
     </div>

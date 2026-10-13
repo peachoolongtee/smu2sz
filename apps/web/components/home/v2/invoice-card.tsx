@@ -1,7 +1,8 @@
 "use client";
 
 import { fromWarm, key } from "@/components/home/v2/prefetch";
-import { Breakdown } from "@/components/home/v2/breakdown";
+import { sizeOf } from "@/components/home/v2/breakdown";
+import { SegmentedBar } from "@/components/home/v2/segmented-bar";
 import { ButtonLink } from "@/components/ui";
 import { getHomeInvoices } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -9,7 +10,7 @@ import { useAsync } from "@/lib/use-async";
 
 /**
  * The selected customer's invoice, as the mockup's agreement and overdue-invoice cards show it: the net cash after repayment (the server's own "about ¥163k"), the invoice value, when it is collected
- * (the server's "In 32 days", "5 days overdue"), the breakdown of what the face becomes at collection (the financing repayment and the cash remaining, each with its share word; the donut sized by those words)
+ * (the server's "In 32 days", "5 days overdue"), the breakdown of what the face becomes at collection (the financing repayment and the cash remaining, each with its share word; a segmented bar sized by those words)
  * and the one filled button, "View invoice", which opens Receivables with the invoice in the address. An invoice with no financing to repay has no breakdown and no card. A failed or absent read shows nothing.
  */
 export function InvoiceCards({ customerId }: { customerId: string }) {
@@ -35,7 +36,13 @@ export function InvoiceCards({ customerId }: { customerId: string }) {
               ) : null,
             )}
           </dl>
-          <Breakdown rows={r.breakdown ?? []} total={r.face_display} testId="hv2-invoice-breakdown" />
+          <div className="mt-2 border-b border-line pb-2.5">
+            <SegmentedBar
+              testId="hv2-invoice-breakdown"
+              lead={r.face_display ? `${t("hv2.inv.value")} ${r.face_display}` : undefined}
+              segments={(r.breakdown ?? []).map((b) => ({ label: b.label, amount_display: b.amount_display, share_text: b.share_text, weight: sizeOf(b.share_text) }))}
+            />
+          </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             {r.net?.repays_text ?? r.collection_state_text ? (
               <p className="min-w-0 text-[15px] text-ink" data-testid="hv2-invoice-note">

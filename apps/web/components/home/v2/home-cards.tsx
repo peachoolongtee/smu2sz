@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { DocumentIcon, ShieldCheckIcon } from "@/components/icons";
 import { segments, r1 } from "@/components/business/cash-picture";
+import { Breakdown } from "@/components/home/v2/breakdown";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint, HomeV2, HomeView, OfferPictureView } from "@/lib/types";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { HomeSeriesPoint, HomeV2, HomeView, OfferPictureView, WorklistCustomer } from "@/lib/types";
 
 /** The card's title: the display face, 20 px, sentence case, never an uppercase eyebrow. */
 export const cardTitle = "font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink";
@@ -14,13 +17,42 @@ export const cardTitle = "font-display text-[16px] font-bold leading-tight track
  * "Cash available today" (the mockup's first card): the server's figure, its note ("¥100k above your ¥300k minimum"), and the reserve bar: a track to the minimum and a green part for
  * the buffer above it (a risk-red fill and "Short by" when the cash is below the minimum). The fen only size the two parts; every word is the server's or a label.
  */
-export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
+/** A labelled tick on the cash bar for the selected item's effect: its place along the bar (fen, a mark), the server's short word for it and which path it is (the recommended one in purple). */
+export interface CashMarker {
+  key: "asked" | "rec";
+  fen: number;
+  label: string;
+}
+
+/** One tick on the cash bar: it starts at the bar's left end and takes its place on the next frame (a single `left` change over --dur; none under reduced motion). */
+function Tick({ marker, at, slide }: { marker: CashMarker; at: number; slide: boolean }) {
+  const [placed, setPlaced] = useState(false);
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => setPlaced(true));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+  return (
+    <span
+      aria-hidden
+      className={`absolute -top-1 h-[18px] w-0.5 rounded-pill ${marker.key === "rec" ? "bg-f-purple" : "bg-ink"} ${slide ? "transition-[left] duration-(--dur) ease-ui" : ""}`}
+      style={{ left: `${placed || !slide ? at : 0}%` }}
+      data-testid={`hv2-cash-tick-${marker.key}`}
+      data-at={at.toFixed(1)}
+    />
+  );
+}
+
+export function CashCard({ kpis, markers = [], caption }: { kpis: HomeV2["kpis"]; markers?: CashMarker[]; caption?: string | null }) {
   const { t } = useI18n();
+  const reduced = useReducedMotion();
   const cash = kpis.cash_available;
   const b = cash.buffer;
   const below = b.cash_fen < b.min_fen;
-  const reserve = Math.max(b.min_fen, 1);
+  // The bar's scale is the cash, or the highest tick if one is above it.
+  const scale = Math.max(b.cash_fen, b.min_fen, ...markers.map((m) => m.fen), 1);
+  const pct = (fen: number) => Math.min(Math.max((fen / scale) * 100, 0), 100);
   const room = Math.max(b.cash_fen - b.min_fen, 0);
+  const ordered = [...markers].sort((x, y) => x.fen - y.fen);
   return (
     <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-cash-card">
       <h2 id="hv2-cash-title" className={cardTitle} data-testid="hv2-metric-cash-label">
@@ -44,12 +76,31 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
             {b.headroom_text ? <span className="tabular-nums"> {b.headroom_text}</span> : null}
           </span>
         </div>
-        <div role="img" aria-label={cash.note} className="mt-2 flex h-2.5 gap-1" data-testid="home-buffer-bar">
-          <span className="relative overflow-hidden rounded-pill bg-line-strong" style={{ flexGrow: reserve, flexBasis: 0 }}>
-            {below ? <span className="absolute inset-y-0 left-0 rounded-pill bg-bad-solid" style={{ width: `${Math.min(Math.max((b.cash_fen / reserve) * 100, 0), 100)}%` }} data-testid="home-buffer-cash" /> : null}
-          </span>
-          {!below && room > 0 ? <span className="rounded-pill bg-f-green" style={{ flexGrow: room, flexBasis: 0 }} data-testid="home-buffer-cash" /> : null}
+        <div className="relative mt-2" data-testid="home-buffer-track">
+          <div role="img" aria-label={cash.note} className="flex h-2.5 gap-1" data-testid="home-buffer-bar">
+            <span className="relative overflow-hidden rounded-pill bg-line-strong" style={{ width: `${pct(b.min_fen)}%` }}>
+              {below ? <span className="absolute inset-y-0 left-0 rounded-pill bg-bad-solid" style={{ width: `${Math.min(Math.max((b.cash_fen / Math.max(b.min_fen, 1)) * 100, 0), 100)}%` }} data-testid="home-buffer-cash" /> : null}
+            </span>
+            {!below && room > 0 ? <span className="rounded-pill bg-f-green" style={{ width: `${(room / scale) * 100}%` }} data-testid="home-buffer-cash" /> : null}
+          </div>
+          {ordered.map((m) => (
+            <Tick key={m.key} marker={m} at={pct(m.fen)} slide={!reduced} />
+          ))}
+          {ordered.length ? (
+            <div className="relative mt-3 h-5 text-supporting font-semibold tabular-nums" aria-hidden>
+              {ordered.map((m, i) => (
+                <span key={m.key} className={`absolute top-0 whitespace-nowrap ${m.key === "rec" ? "text-f-purple-ink" : "text-ink"} ${i === 0 && ordered.length > 1 ? "-translate-x-full pr-1" : "pl-1"}`} style={{ left: `${pct(m.fen)}%` }} data-testid={`hv2-cash-tick-label-${m.key}`}>
+                  {m.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
+        {caption ? (
+          <p className="mt-1.5 text-supporting text-ink-2" data-testid="hv2-cash-markers">
+            {caption}
+          </p>
+        ) : null}
       </div>
     </section>
   );
@@ -163,11 +214,11 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
 }
 
 /**
- * The outlook card while a deal is selected (round two): the deal's own paths on the small chart, the request in grey and FLOW's recommended reply in purple, so the owner sees how the deal affects
- * the company's cash. The figure is the request's lowest cash in the server's short word (risk red when it breaches the minimum), the pill when that is, the footer the recommended reply's own lowest;
- * Expand opens the deal's cash chart under the deal's card. Nothing is computed here. Null while the picture is not here (the caller keeps the company's outlook).
+ * The deal's own cash impact (round four: it moved INTO the Deal context panel, as its first block): the request's lowest cash in the server's short word (risk red when it breaches the minimum) with
+ * when that is, "As they asked", the small chart with the two paths (the request grey, FLOW's recommended reply purple) and the reply's own lowest; Expand opens the deal's cash chart under the
+ * deal's card. Nothing is computed here. Null while the picture is not here.
  */
-export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { h: HomeView; picture: OfferPictureView | null | undefined; expanded: boolean; onExpand: (open: boolean) => void; controls?: string }) {
+export function DealCashBlock({ h, picture, expanded, onExpand }: { h: HomeView; picture: OfferPictureView | null | undefined; expanded: boolean; onExpand: (open: boolean) => void }) {
   const { t } = useI18n();
   const paths = (picture?.paths ?? []).filter((p) => p.kind === "asked" || p.kind === "reply");
   const asked = paths.find((p) => p.kind === "asked") ?? null;
@@ -179,38 +230,84 @@ export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { 
   ];
   const lowestDay = asked.series.filter((p) => p.day >= h.day).reduce<HomeSeriesPoint | null>((a, b) => (a === null || b.closing_fen < a.closing_fen ? b : a), null)?.day ?? h.day;
   return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card" data-mode="deal">
+    <div className="mt-3 border-b border-line pb-3" data-testid="hv2-deal-cash" data-mode="deal">
       <div className="flex items-start justify-between gap-3">
-        <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
+        <h3 className="text-[15px] font-semibold text-ink" data-testid="hv2-metric-lowest-label">
           {t("hv2.deal.outlook")}
-        </h2>
+        </h3>
         {asked.lowest_when ? (
           <StatusPill tone="amber" testId="hv2-outlook-when">
             {asked.lowest_when}
           </StatusPill>
         ) : null}
       </div>
-      {asked.lowest_short ? (
-        <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
-          {asked.lowest_short}
+      <div className="mt-1.5 flex items-baseline gap-3">
+        {asked.lowest_short ? (
+          <p className={`font-display text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+            {asked.lowest_short}
+          </p>
+        ) : null}
+        <p className="text-supporting text-ink-3" data-testid="hv2-outlook-asked">
+          {asked.label || t("hv2.deal.outlook.asked")}
         </p>
-      ) : null}
-      <p className="mt-1.5 text-sm text-ink-3" data-testid="hv2-outlook-asked">
-        {asked.label || t("hv2.deal.outlook.asked")}
-      </p>
-      <div className="mt-2 max-sm:max-w-xs">
+      </div>
+      <div className="mt-1.5">
         <MiniChart lines={lines} mainKey="asked" floor={picture.floor_fen} today={h.day} window={picture.picture_days ?? h.cash.picture_days ?? WINDOW_FALLBACK} dotDay={lowestDay} dotCls="stroke-bad-solid" />
       </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
+      <div className="mt-1 flex items-center justify-between gap-3 text-sm text-ink">
         <p className="tabular-nums" data-testid="hv2-outlook-rec">
           {rec.label}
           {rec.lowest_short ? ` ${rec.lowest_short}` : ""}
         </p>
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+        <button type="button" aria-expanded={expanded} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
           {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
           <ExpandIcon open={expanded} />
         </button>
       </div>
+    </div>
+  );
+}
+
+/** The leading number and its percent sign of a share word ("19.5% of what you are owed" is "19.5%"): the centre of the owed donut says the figure, the legend keeps the server's whole phrase. */
+const percentOf = (share: string | null | undefined): string | null => /^\s*(\d+(?:\.\d+)?\s*%)/.exec(share ?? "")?.[1] ?? null;
+
+/**
+ * "What you are owed, by customer" (round four: on a selection the outlook card becomes this donut): a slice for each customer with something outstanding, from the `/customers` rows the page already
+ * reads (name, `outstanding_display`, `share_text`, the server's words); the selected customer's slice is lifted 4 px and named in the centre ("Zhuhai · ¥150,000 · 19.5%"); another slice or its
+ * row SELECTS that customer (the address changes and the cards follow).
+ */
+export function owedRowsOf(customers: WorklistCustomer[] | null | undefined): WorklistCustomer[] {
+  return (customers ?? []).filter((c) => c.share_text && percentOf(c.share_text) !== null && !/^\s*0(\.0+)?\s*%/.test(c.share_text));
+}
+
+export function OwedCard({ customers, selected, onSelect }: { customers: WorklistCustomer[] | null | undefined; selected: string | null; onSelect: (customerId: string) => void }) {
+  const { t } = useI18n();
+  const rows = owedRowsOf(customers);
+  if (!rows.length) return null;
+  const at = rows.findIndex((c) => c.customer_id === selected);
+  const on = at >= 0 ? rows[at] : null;
+  return (
+    <section aria-labelledby="hv2-owed-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-owed-card">
+      <h2 id="hv2-owed-title" className={cardTitle} data-testid="hv2-owed-title">
+        {t("hv2.owed.title")}
+      </h2>
+      <Breakdown
+        stacked
+        size={128}
+        testId="hv2-owed"
+        rows={rows.map((c) => ({ label: c.name, amount_display: c.outstanding_display, share_text: c.share_text as string }))}
+        lifted={at >= 0 ? at : null}
+        onPick={(i) => onSelect(rows[i].customer_id)}
+        centre={
+          on ? (
+            <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-5 text-center leading-tight" data-testid="hv2-owed-centre">
+              <span className="max-w-full truncate text-supporting text-ink-3">{on.short}</span>
+              <b className="font-display text-[15px] font-bold tabular-nums text-ink">{on.outstanding_display}</b>
+              <span className="text-supporting tabular-nums text-ink-3">{percentOf(on.share_text)}</span>
+            </span>
+          ) : undefined
+        }
+      />
     </section>
   );
 }
