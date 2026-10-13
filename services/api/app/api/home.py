@@ -62,6 +62,7 @@ from app.api.presentation import (
 from app.api.presentation import (
     needs_owner_reason as needs_owner_reason_words,
 )
+from app.api.receipt import plan_receipt
 from app.api.receipt_basis import BasisReader, agreement_days, annotate
 from app.api.runtime import get_runtime
 from app.books import current_books
@@ -660,7 +661,7 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         if_nothing = t(lang, "Interest keeps running on the drawn balance.", "已提款余额将继续产生利息。")
         after = t(lang, "The balance is repaid and the interest stops.", "余额还清，利息停止。")
 
-    return {
+    result: dict[str, Any] = {
         "alert_id": alert.id,
         "kind": alert.kind.value,
         "plan_source": rec.source,
@@ -704,6 +705,10 @@ def next_action(state: FinancialState, obs: list[Any], mandate: Mandate, found: 
         "plan_series": plan_series,
         "plan_traj": after_traj,
     }
+    # the plan-run confirmation: the plan's own words in the commitment receipt's order (nothing is computed for it)
+    result["receipt"] = plan_receipt(lang, action=result, restores_reserve=not (
+        alert.kind == AlertKind.RESERVE_BREACH_AHEAD and alert.inputs.get("cure_restores_reserve") == "false"))
+    return result
 
 def _approvals(state: FinancialState, obs: list[Any], mandate: Mandate, approvals: list[Any], found: list[Alert],
                today: int, lang: str, *, use_router: bool = True, commitments: list[Any] | None = None) -> list[dict[str, Any]]:
@@ -1212,7 +1217,7 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
     dscr_text = f"{dscr.text}×" if dscr is not None else None
     lev = month1.leverage if month1 is not None else None
     leverage_text = f"{lev.text}×" if lev is not None else None
-    return displayed({
+    out: dict[str, Any] = displayed({
         "day": today,
         "state_version": state.state_version,
         "lang": lang,
@@ -1287,3 +1292,14 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
                         "基于今日账目的保守预测：未确认的收款不计入。"),
         "partial": partial.view(lang),
     })
+    if v2 and out.get("home_v2") is not None:  # the line under the headline counts the worklist from this finished read, once
+        from app.api import home_v2
+
+        with rt.lock:
+            try:
+                out["home_v2"]["summary_text"] = home_v2.summary_text(rt, out, lang, reconciled)
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("the worklist could not be counted for the Home V2 summary")
+                partial.add("home_v2")
+                out["partial"] = partial.view(lang)
+    return out

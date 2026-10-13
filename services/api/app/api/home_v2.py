@@ -31,6 +31,12 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           `?decision=` (and `?scenario=late`), `scenario_title_text` ("Foshan · Payment terms · As they asked vs Option A ·
                           Expected payments"; null without a decision)
     links                 where the rest of the company's picture lives
+    summary_text          (filled by the Home read once it is whole, `summary_text()`) the line under the headline: the funding action ("One funding action ready." / waiting for approval / "Nothing to run.")
+                          and the worklist's Needs you rows by kind ("Two deal decisions need you."; "One approval and one collection need you.");
+                          null when there is neither
+    upcoming              [{label, amount_display, when, kind}] the three nearest cash movements of the books, from the rail's own rows (a row the
+                          plan would add is conditional and is left out), in day order; `amount_display` the rail's signed short figure, `kind`
+                          "outflow" or "inflow"; empty when the rail holds none
 
 A plan that is ready and has not run is "planned" in these words, the financing vocabulary's own (`state_of` PLANNED, "计划中"), as in the
 funding KPI's eyebrow; `funding.state` PROPOSED is its code. A lot that has been run is "arranged" until it lands and "received" once it has (`state_of`).
@@ -207,6 +213,69 @@ def _breach_eyebrow(c: HomeRead) -> str:
         return _eyebrow(lang, "Next action", "下一步")
     n = max(c.breach_day - c.today, 0)
     return t(lang, f"NEXT ACTION · WITHIN {n} {'DAY' if n == 1 else 'DAYS'}", f"下一步 · {n} 天内")
+
+
+_ONES = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+
+
+def _count_word(lang: str, n: int) -> str:
+    return _ONES[n] if lang == "en" and n < len(_ONES) else str(n)
+
+
+def _kind_phrase(lang: str, kind: str, n: int) -> str | None:
+    """"two deal decisions", "one approval", "one collection", "one contract to review": what waits in the worklist, by kind (the
+    worklist's own kinds); None for a kind this sentence has no word for."""
+    many = n != 1
+    words = {"DECISION": (t(lang, f"deal decision{'s' if many else ''}", "项交易决定")),
+             "APPROVAL": (t(lang, f"approval{'s' if many else ''}", "项审批")),
+             "COLLECTION": (t(lang, f"collection{'s' if many else ''}", "项催收")),
+             "SETUP": (t(lang, f"contract{'s' if many else ''} to review", "份合同待审核"))}
+    word = words.get(kind)
+    if word is None:
+        return None
+    return f"{_count_word(lang, n)} {word}" if lang == "en" else f"{n} {word}"
+
+
+def _needs_sentence(lang: str, kinds: dict[str, int]) -> str | None:
+    """"Two deal decisions need you." / "One approval and one collection need you.": the worklist's Needs you rows in words, by kind in the
+    order decisions, approvals, collections, contracts; the verb agrees with the total. Null when nothing waits."""
+    parts = [p for kind in ("DECISION", "APPROVAL", "COLLECTION", "SETUP") if kinds.get(kind) and (p := _kind_phrase(lang, kind, kinds[kind]))]
+    total = sum(n for k, n in kinds.items() if k in ("DECISION", "APPROVAL", "COLLECTION", "SETUP"))
+    if not parts:
+        return None
+    if lang == "en":
+        joined = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + f" and {parts[-1]}"
+        return f"{_cap(joined)} {'needs' if total == 1 else 'need'} you."
+    return "、".join(parts) + "需要您处理。"
+
+
+def summary_text(rt: Any, home: dict[str, Any], lang: str, reconciled: Any | None = None) -> str | None:
+    """`summary_text`, the line under the headline ("One funding action ready. Two deal decisions need you."): the company's funding action
+    (the plan the worklist's alert answers: ready to run, or waiting for the owner's approval; else "Nothing to run.") and the worklist's own
+    Needs you counts by kind. Null when there is neither an action nor anything for the owner. It is built from the finished Home read (`home`,
+    its `next_action`) and the request's own reconciliation, so the worklist is counted from what this read holds and the request reconciles
+    and runs the alerts no more often than before. Call under `rt.lock`; the caller names a failure in `partial`."""
+    from app.api import worklist
+
+    action = home.get("next_action")
+    needs = _needs_sentence(lang, worklist.kind_counts(rt, lang, home=home, reconciled=reconciled))
+    if action is not None and _is_plan(action):
+        text = (t(lang, "One funding action waits for your approval.", "有 1 项融资操作等待您批准。") if action.get("pending_approval_id")
+                else t(lang, "One funding action ready.", "有 1 项融资操作可以执行。"))
+    elif needs is not None:
+        text = t(lang, "Nothing to run.", "没有需要执行的操作。")
+    else:
+        return None
+    return f"{text}{_sp(lang)}{needs}" if needs else text
+
+
+def _upcoming(c: HomeRead, rail: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """`upcoming`, the three nearest cash movements of the books in day order, from the rail's own rows (label, signed short amount, `when`): a
+    row the plan would add is conditional and no movement of the books, so it is not here; a row with no amount names none. `kind` is the
+    amount's direction. Empty when the rail holds none."""
+    rows = sorted((r for r in rail or [] if not r.get("planned") and r.get("amount_fen")), key=lambda r: (r["day"], r["key"]))[:3]
+    return [{"label": _cap(str(r["label"])), "amount_display": r["amount_short"], "when": r["when"],
+             "kind": "outflow" if r["amount_fen"] < 0 else "inflow"} for r in rows]
 
 
 def _next_arrivals(c: HomeRead) -> str:
@@ -502,7 +571,8 @@ def _links(c: HomeRead) -> list[dict[str, str]]:
 
 def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any], rail: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links. `rail` is the cash block's events rail."""
-    return {"kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
+    return {"summary_text": None, "upcoming": _upcoming(c, rail),
+            "kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
             "action": _action(c, att, funding_line), "chart": _chart(c, rail), "links": _links(c)}
 
 

@@ -8,6 +8,9 @@ Per receivable still to collect (OPEN or FINANCED with something outstanding), a
     summary            adds invoice_count, overdue_count, financed_count, count_text, repays_line, next_expected.amount_short and the two h1 lines
                        (headline, headline_second), all counted and chosen here
     amount_short       the outstanding at a glance ("¥420k"); recourse_text the standing sentence about a receipt that falls short
+    breakdown          [{label, amount_display, share_text}] the financing repayment and the cash remaining, shares of the face; empty
+                       with no financing to repay. `net_after_repayment_display` is the net's own "about" word; `collection_due_text`
+                       "In 32 days" / "5 days overdue"
     financing_state    ARRANGED | RECEIVED | REPAID | NONE (never mixed)
     governed_by        {contract_ref, terms_days, rebate_bp, terms_label, terms_text}: the confirmed contract, the terms on this invoice
                        and the rebate agreed with the buyer; the text never opens with the label's own words
@@ -23,6 +26,7 @@ after it falls due with no grace period, and a missed promise counts as overdue.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from fractions import Fraction
 from typing import Any, NamedTuple
 
 from app.api.presentation import Lang, fmt_short, invoice_words, option_label, party_name, t, when_text
@@ -39,7 +43,7 @@ from app.domain.models import (
 )
 from app.domain.money import bp, fmt_pct, fmt_yuan, fmt_yuan_about
 from app.strategy.net import NetAtCollection, net_at_collection
-from app.strategy.words import buyer_short, net_words, whole_yuan
+from app.strategy.words import buyer_short, net_words, share_text, whole_yuan
 
 DUE_SOON_DAYS = 7  # within this many days before the due day
 _OPEN = ("OPEN", "FINANCED")
@@ -146,6 +150,28 @@ def _names(names: Sequence[str], lang: Lang) -> str:
     return t(lang, ", ".join(names[:-1]) + " and " + names[-1], "、".join(names))
 
 
+def _breakdown(r: Receivable, net: NetAtCollection, lang: Lang) -> list[dict[str, str]]:
+    """What the invoice's face becomes at collection, as the Home's selected-invoice card shows it: the part the receipt repays to the invoice
+    financing (the outstanding less the net, the same difference `repays_line` takes, with its charges) and the cash remaining (the net), each
+    as a share of the face (`share_text`, whole percent). Only legs the row carries: a repayment to the credit line is not on the row, so
+    it is not here; an invoice with no financing to repay has nothing to break down and says so with an empty list."""
+    repaid = r.outstanding_fen - net.net_fen
+    if net.financing_state not in _FINANCED or repaid <= 0 or r.face_fen <= 0:
+        return []
+    legs = [(t(lang, "Invoice financing repayment", "发票融资还款"), repaid), (t(lang, "Cash remaining", "剩余现金"), net.net_fen)]
+    return [{"label": label, "amount_display": whole_yuan(fen), "share_text": share_text(Fraction(fen, r.face_fen), lang, whole=True)}
+            for label, fen in legs]
+
+
+def _collection_due(r: Receivable, today: int, lang: Lang) -> str:
+    """"In 32 days", "Today", "5 days overdue": when the invoice is to be collected, in the row's own distance word (`when_text`)."""
+    if today > r.due_day:
+        n = today - r.due_day
+        return t(lang, f"{n} {'day' if n == 1 else 'days'} overdue", f"已逾期 {n} 天")
+    when = when_text(r.due_day, today, lang)
+    return when[:1].upper() + when[1:] if lang == "en" else when
+
+
 def _net_block(net: NetAtCollection, words: Mapping[str, str | None]) -> dict[str, Any]:
     return {**net.model_dump(mode="json"), **words}
 
@@ -250,6 +276,8 @@ def receivable_rows(state: FinancialState, today: int, lang: Lang, *, books: Boo
             "days_late": max(0, today - r.due_day),
             "net": (block := _net_block(net, net_words(lang, net, buyer_name=buyer, today=today, due_day=r.due_day))),
             "net_short": block["net_short"], "recourse_text": recourse,
+            "breakdown": _breakdown(r, net, lang), "net_after_repayment_display": block["net_short"],
+            "collection_due_text": _collection_due(r, today, lang),
             "financing_state": net.financing_state,
             "governed_by": _governed_by(r, refs.get(r.counterparty_id), _rebate_bp(commitments, r.counterparty_id), lang),
             "early_payment": _early_payment(books, r, today, lang),

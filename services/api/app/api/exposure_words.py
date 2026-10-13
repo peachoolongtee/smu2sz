@@ -23,7 +23,6 @@ invoice later, "paid 2 days after the offer" for an early payment, else "until t
 from __future__ import annotations
 
 import logging
-import re
 from fractions import Fraction
 from typing import Any
 from urllib.parse import quote
@@ -47,8 +46,12 @@ from app.api.presentation import (
     t,
     when_text,
 )
+from app.api.selection import SAFE as _SAFE
+from app.api.selection import customer_link as _customer_link
+from app.api.selection import deal_of as _deal_of
+from app.api.selection import invoice_of as _invoice_of
+from app.api.selection import query_buyer
 from app.books import Books
-from app.decisions.identity import offer_id_of
 from app.domain.models import FinancialState, LedgerEventKind, Mandate, Mode
 from app.financial import EngineError, project
 from app.strategy.concentration import concentration
@@ -59,7 +62,6 @@ from app.strategy.words import buyer_short, net_later_text, share_text
 
 log = logging.getLogger("termsledger.decisions")
 
-_SAFE = re.compile(r"[A-Za-z0-9_.:\-]{1,80}")
 _OPEN = ("OPEN", "FINANCED")
 
 
@@ -207,32 +209,6 @@ def with_path_words(paths: list[dict[str, Any]], words: dict[str, dict[str, Any]
 
 
 # ---------------------------------------------------------------- the back link (built from the query, never cached)
-
-
-def query_buyer(state: FinancialState, customer: str | None, invoice: str | None) -> str | None:
-    """The buyer a query names: `customer` when it is a buyer on the books, else the buyer the `invoice` belongs to."""
-    buyer_ids = {c.id for c in state.counterparties if c.role == "BUYER"}
-    owner_of = next((x.counterparty_id for x in state.receivables if x.id == invoice), None) if invoice else None
-    return customer if customer in buyer_ids else owner_of if owner_of in buyer_ids else None
-
-
-def _deal_of(rt: Any, buyer: str, decision: str | None) -> bool:
-    """The query's `decision` is a plain key of a deal this buyer is the counterparty of (anything else is ignored, never echoed)."""
-    offer_id = offer_id_of(decision) if decision and _SAFE.fullmatch(decision) else None
-    offer = rt.store.get_offer(offer_id) if offer_id else None
-    return offer is not None and offer.counterparty_id == buyer
-
-
-def _invoice_of(state: FinancialState, buyer: str, invoice: str | None) -> bool:
-    """The query's `invoice` is one of this buyer's receivables."""
-    return bool(invoice) and any(x.id == invoice and x.counterparty_id == buyer for x in state.receivables)
-
-
-def _customer_link(state: FinancialState, lang: Lang, buyer: str, query: list[str]) -> dict[str, str]:
-    """The Customer page's link, "Back to {who}": the one set of words, carrying `query` when it has any."""
-    who = buyer_short(party_name(state, buyer))
-    return {"label": t(lang, f"Back to {who}", f"返回{who}"),
-            "href": f"/customers/{quote(buyer, safe='')}" + (f"?{'&'.join(query)}" if query else "")}
 
 
 def customer_back(rt: Any, state: FinancialState, lang: Lang, *, customer: str | None, invoice: str | None, decision: str | None,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from app.api.auth import counterparty_for_key, is_agent, require_owner
 from app.api.decisions import latest_verdict_for
 from app.api.display import displayed
 from app.api.runtime import Runtime, get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.compiler import compile_offer, compile_term_sheet
 from app.domain.fixtures import load_offers, offer_documents
 from app.domain.models import SourceDocument
@@ -82,9 +84,10 @@ def intake_offer(rt: Runtime, body: OfferIn) -> dict:
 
 
 @router.get("/offers/{offer_id}", dependencies=[Depends(require_owner)])
-def get_offer(offer_id: str) -> dict:
+def get_offer(offer_id: str, lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict:
     """The compiled offer as stored (its latest version) with the id of the latest verdict stored for it and its decision id
-    (ADR-0011), so a page can open an offer without the session cache (ledger F06). Owner only."""
+    (ADR-0011), so a page can open an offer without the session cache (ledger F06), and the `context` of the URL contract
+    (`app.api.selection`: the selections this record honours, the way back, and what it could not use). Owner only."""
     from app.decisions.identity import deal_id
 
     rt = get_runtime()
@@ -94,8 +97,9 @@ def get_offer(offer_id: str) -> dict:
             raise HTTPException(404, {"code": "OFFER_NOT_FOUND", "offer_id": offer_id})
         latest = latest_verdict_for(rt, offer_id)
         documents = [json.loads(rt.documents[d].model_dump_json()) for d in offer.doc_ids if d in rt.documents]
+        context = build_context(rt, lang, sel, page="offer", buyer=offer.counterparty_id, deal=deal_id(offer_id))
     return {"offer": displayed(json.loads(offer.model_dump_json())), "documents": documents,
-            "latest_verdict_id": latest.id if latest is not None else None, "decision_id": deal_id(offer_id)}
+            "latest_verdict_id": latest.id if latest is not None else None, "decision_id": deal_id(offer_id), "context": context}
 
 
 @router.post("/facilities/compile", dependencies=[Depends(require_owner)])

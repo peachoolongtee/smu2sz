@@ -109,9 +109,18 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     ctx = _TurnContext(store=store, executor=executor, day=day, owner_key_hex=owner_key_hex,
                        owner_authenticated=owner_authenticated and req.actor == "OWNER", session=session, lang=lang,
                        trace_id=f"{session.id}:{session.turn}", request_id=req.request_id, extras=verdict_extras)
+    scoped: page.ScopeResult | None = None
     if ctx.owner_authenticated:  # the page's context and the Home read are lent to the owner's turn only
         ctx.reads = owner_reads
-        ctx.binding = page.resolve(store, req.context, day=day, state=store.get_state(),
+        context = req.context
+        if req.scope is not None:  # the URL contract's scope replaces the offer, decision and invoice the page sent, and any deal it last bound
+            scoped = page.resolve_scope(store, req.scope, state=store.get_state(), lang=lang)
+            context = scoped.context(req.context)
+            page.drop_page_binding(session)
+            ctx.scope_used = scoped.used
+            if not req.counterparty_id:
+                session.counterparty_id = scoped.customer_id
+        ctx.binding = page.resolve(store, context, day=day, state=store.get_state(),
                                    latest_verdict=owner_reads.latest_verdict if owner_reads is not None else None)
         page.apply(session, ctx.binding)
 
@@ -122,6 +131,9 @@ def handle(req: NlRequest, *, store: LedgerStore, executor: Executor, day: int, 
     parse_source = "actor"
     if req.actor == "COUNTERPARTY":
         turn = counterparty_message(ctx, req.text, req.counterparty_id)
+    elif scoped is not None and scoped.clarification is not None:  # a scope the server cannot honour is asked about, never guessed
+        parse_source = "scope"
+        turn = Turn(intent=Intent.AMBIGUOUS, reply=scoped.clarification)
     else:
         parsed = _parse(ctx, req.text, classifier_backends)
         parse_source = parsed.source
@@ -735,4 +747,4 @@ def _response(ctx: NlContext, turn: Turn, parse_source: str, before: set[str],
         operations=[r.model_dump(mode="json") for r in ctx.results], clarification=turn.clarification,
         awaiting_confirmation=turn.awaiting, amended=turn.amended, replayed=replayed, negotiation=turn.negotiation,
         security_events=events, parse_source=parse_source, trace_id=ctx.trace_id,
-        context_echo=ctx.binding.echo if ctx.binding is not None else None)
+        context_echo=ctx.binding.echo if ctx.binding is not None else None, scope_used=ctx.scope_used)

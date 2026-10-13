@@ -10,8 +10,9 @@ import re
 import threading
 from bisect import bisect_right
 from collections import Counter, OrderedDict
+from fractions import Fraction
 from functools import reduce
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -33,8 +34,10 @@ from app.api.presentation import (
 )
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
+from app.api.selection import Selection, build_context, selection
 from app.api.workspace import _months, _posted_discount
 from app.books import current_books
+from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
     FundingActionKind,
@@ -51,6 +54,7 @@ from app.funding import plan
 from app.mandate import tier_for
 from app.operations import lengthens_terms
 from app.operations.executor import only_early_pay
+from app.strategy.words import share_text
 from app.verifier import counter_recheck
 from app.verifier.evaluate import CAP_CODES
 from app.verifier.screen import SECURITY_CODES
@@ -452,18 +456,37 @@ def _scenario_assumption(lang: str, kind: str, legs: str | None, *, funded: bool
     return say(lang, "Assumes the buyer accepts this reply; no new funding is needed.", "假设买方接受此回复；无需新增融资。")
 
 
+def _ask_words(state: Any, bound: list[Any], buyer: str | None, once: int, lang: str) -> tuple[list[dict[str, str]], dict[str, str | None]]:
+    """(`ask_breakdown`, `ask_facts`) of the offer as asked, the figures the deal card shows. The invoice value is the face of the one immediate
+    discount the buyer asks (its base), the requested discount the amount the projection posted for it (`once`, the path's own `cost_once`),
+    and the buyer's discount takes the second from the first: the two rows are shares of the face (`share_text`, whole percent). With no such
+    discount (none, several, or one with no face or posted amount) there is no breakdown and no invoice value or discount; the requested
+    term is the terms the ask extends to (its terms extension), null when the ask leaves the terms alone."""
+    early = [o for o in bound if o.type == ObligationType.IMMEDIATE_DISCOUNT]
+    face = early[0].base.amount_fen if len(early) == 1 else None
+    ext = any(o.type == ObligationType.TERMS_EXTENSION for o in bound)
+    days = _payment_days(state, bound, buyer) if ext else None
+    term = say(lang, f"{days} days", f"{days} 天") if days is not None else None
+    if face is None or face <= 0 or once <= 0 or once > face:
+        return [], {"invoice_value_display": None, "requested_discount_display": None, "requested_term_text": term}
+    rows = [(say(lang, "After buyer discount", "买方折扣后"), face - once), (say(lang, "Requested discount", "买方要求的折扣"), once)]
+    return ([{"label": label, "amount_display": whole(fen), "share_text": share_text(Fraction(fen, face), lang, whole=True)} for label, fen in rows],
+            {"invoice_value_display": whole(face), "requested_discount_display": whole(once), "requested_term_text": term})
+
+
 def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable: bool, needs_owner: bool, tag: str | None,
                 cost_display: str, cost_note: str, cost: dict[str, Any], terms: list[dict[str, Any]], decides: str,
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
                 lang: str, reason: str | None = None, recommended_reason: str | None = None,
-                scenario_assumption: str | None = None) -> dict[str, Any]:
+                scenario_assumption: str | None = None, ask: tuple[list[dict[str, str]], dict[str, str | None]] | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
             "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason,
             "scenario_assumption_text": scenario_assumption, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
-            "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band}
+            "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band,
+            "ask_breakdown": ask[0] if ask is not None else None, "ask_facts": ask[1] if ask is not None else None}
 
 
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
@@ -507,7 +530,7 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         authority=authority, authority_text=authority_text, assumption=None, reply_text=None, series=asked_view["series"],
         low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
         breach_when=asked_view["first_breach_when"], band=band, lang=lang,
-        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False))]
+        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang))]
 
     by_id = {r["counter_id"]: r for r in replies}
     who: dict[str, tuple[str | None, str, bool, str]] = {}  # per reply: (authority, its words, whether the owner decides, the rule that says so)
@@ -663,7 +686,7 @@ def _word(kind: str, n: int, crossing: str, lang: str, lowest_of: list[str] | No
         if crossing == "both":  # one path goes below the reserve on the day another comes back above it
             return say(lang, "Paths cross the reserve", "路径穿过储备")
         return say(lang, "Below the reserve", "低于储备") if crossing == "down" else say(lang, "Back above the reserve", "回到储备之上")
-    return say(lang, f"Day {n}", f"第 {n} 天")
+    return say(lang, f"End, {_chip(n, lang).lower()}", f"终点，{_chip(n, lang)}")  # a distance from today, never a day number
 
 
 def _who_decides(lang: str, live: list[dict[str, Any]], names: dict[str, str]) -> str:
@@ -785,7 +808,8 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
             text = f"{text} {who}" if who else text
         have = [k for k in _KINDS if k in kinds[d]]
         kind = have[0] if have else "end"
-        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "decisive": d == decisive,
+        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "when": when_text(d, today, lang),
+                    "decisive": d == decisive,
                     "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
                                 [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
                                 if named and d in lowest_by_day else None), "text": text, "values": values,
@@ -902,9 +926,12 @@ def cached_picture(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
 
 
 @router.get("/offers/{offer_id}/picture")
-def get_picture(offer_id: str, lang: str = "en") -> dict[str, Any]:
-    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only."""
+def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, Depends(selection)]) -> dict[str, Any]:
+    """The cash picture of an offer: `asked` (the offer as it stands, no new funding) and one line per reply. Display only. `context` is the
+    URL contract's (`app.api.selection`): the selections this offer honours, the way back, and what it could not use."""
     rt = get_runtime()
     lang = "zh" if lang == "zh" else "en"
     with rt.lock:
-        return cached_picture(rt, offer_id, lang)
+        offer = rt.store.get_offer(offer_id)
+        context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
+        return {**cached_picture(rt, offer_id, lang), "context": context}

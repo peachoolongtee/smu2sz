@@ -24,6 +24,7 @@ from app.api.presentation import (
     t,
     when_text,
 )
+from app.api.receipt import send_receipt
 from app.domain.models import CommitmentStatus, FinancialState, LedgerEventKind, Mandate
 from app.domain.money import fmt_yuan
 
@@ -69,9 +70,17 @@ def _months(horizon_days: int) -> int:
     return max(1, round(horizon_days * 12 / 365))
 
 
+_RECHECK = ("Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+            "按这些数字原样发送此方案；如果账目已有变动，FLOW 会先向您展示新的数字。")
 _LIVE_AGREEMENT = {CommitmentStatus.PROPOSED: ("Waiting for your approval", "等待您批准"),
                    CommitmentStatus.ACCEPTED: ("Accepted, not in force yet", "已接受，尚未生效"),
                    CommitmentStatus.ACTIVE: ("In force", "已生效")}
+
+
+def _send_runs_funding(send_plan: Any) -> bool:
+    """Whether the send would run funding today: the plan has legs, can run now and every leg is a draw or an invoice-financing request."""
+    return bool(send_plan is not None and send_plan.actions and send_plan.executable_now
+                and all(a.kind.value in ("DRAW", "FINANCE_INVOICE") for a in send_plan.actions))
 
 
 def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str, counter: dict[str, Any] | None = None) -> list[str]:
@@ -79,8 +88,7 @@ def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: i
     cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
     lines = [t(lang, f"Records the agreement with {buyer} (needs your approval when it changes terms)",
                f"记录与{buyer}的协议（若改变条款，需要您批准）")]
-    runnable = (send_plan is not None and send_plan.actions and send_plan.executable_now
-                and all(a.kind.value in ("DRAW", "FINANCE_INVOICE") for a in send_plan.actions))
+    runnable = _send_runs_funding(send_plan)
     if runnable:
         legs = [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in send_plan.actions]
         lines += funding_lines(state, legs, None, today, lang)
@@ -101,10 +109,11 @@ def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] 
 
 
 def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: Mandate, today: int, lang: str,
-          offer: Any = None, commitments: Sequence[Any] = (), send_plan: Any = None) -> dict[str, Any]:
+          offer: Any = None, commitments: Sequence[Any] = (), send_plan: Any = None, authority_text: str | None = None) -> dict[str, Any]:
     """The workspace for one evaluated offer. `view` is the evaluate view being returned, `bundle` the verifier's bundle, `offer` the
     compiled offer, `commitments` the books' agreements and `send_plan` the router's plan for the gap that would remain if the buyer
-    accepts the recommended counter (what the send would run)."""
+    accepts the recommended counter (what the send would run). `authority_text` is the sentence the offer picture gives the recommended
+    reply (who decides it), for the send receipt; null when it could not be read."""
     verdict = bundle.verdict
     bound = {o.id: o for o in bundle.bound_obligations}
     months = _months(mandate.forward_concession_horizon_days)
@@ -163,6 +172,12 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                    "forward_value_fen": c.forward_value_fen, "forward_value_display": fmt_yuan(c.forward_value_fen),
                    "text": (t(lang, "; ", "；")).join(obligation_sentence(state, o, today, lang) for o in c.obligations)}
                   for c in commitments if c.counterparty_id == cp and c.status in _LIVE_AGREEMENT]
+    send_lines = send_scope_lines(state, buyer_name, send_plan, today, lang, chosen) if chosen is not None else []
+    lands = [a.lands_day for a in send_plan.actions] if chosen is not None and _send_runs_funding(send_plan) else []
+    receipt_block = (send_receipt(lang, buyer=buyer_name, lines=send_lines, recheck_text=t(lang, _RECHECK[0], _RECHECK[1]),
+                                  cost_display=chosen["supplier_cost_display"], funds_when=when_text(max(lands), today, lang) if lands else None,
+                                  funds_today=bool(lands) and max(lands) <= today, authority_text=authority_text)
+                     if chosen is not None else None)
     return {
         "order": list(ORDER),
         "buyer": {"title": t(lang, "Who is asking", "提出方"), "counterparty_id": cp, "name": buyer_name,
@@ -177,9 +192,9 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
         "priced_response": ({
             "counter_id": chosen["id"], "label": chosen["label"], "label_text": option_label(chosen["label"], lang),
             "send_scope": send_scope_text(lang, option_label(chosen["label"], lang)),
-            "send_scope_lines": send_scope_lines(state, buyer_name, send_plan, today, lang, chosen),
-            "recheck_text": t(lang, "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
-                              "按这些数字原样发送此方案；如果账目已有变动，FLOW 会先向您展示新的数字。"),
+            "send_scope_lines": send_lines,
+            "recheck_text": t(lang, _RECHECK[0], _RECHECK[1]),
+            "receipt": receipt_block,
             "supplier_cost_display": chosen["supplier_cost_display"], "forward_value_display": chosen["forward_value_display"],
             "verdict_id": verdict.id, "state_version": view["state_version"],
         } if chosen is not None else None),

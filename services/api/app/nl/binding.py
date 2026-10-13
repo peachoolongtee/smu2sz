@@ -9,13 +9,15 @@ leaves the turn exactly as if no context had been sent.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from app.decisions.identity import offer_id_of
 from app.domain.models import FinancialState, Verdict
 from app.domain.ports import LedgerStore
-from app.nl.models import ContextEcho, NlPageContext
+from app.nl.models import ContextEcho, NlPageContext, NlScope, ScopeUsed
 from app.nl.sessions import Session
 
 # GET /home as a function of (lang, since_day): injected by the API layer, which owns the presentation helpers. None
@@ -105,3 +107,104 @@ def apply(session: Session, binding: Binding | None) -> None:
     session.bound_verdict_id = binding.verdict_id
     session.last_offer_id = binding.offer_id
     session.last_verdict_id = binding.verdict_id
+
+
+# ---------------------------------------------------------------- the scope of the question (the URL contract, ticket #130)
+
+_SCENARIO = re.compile(r"asked|counter:[0-9]{1,3}")
+
+
+@dataclass(frozen=True)
+class ScopeResult:
+    """The scope a request named, checked against the stores: what it is (`used`), the buyer it belongs to, the ids the turn is bound to
+    (`offer_id`, `invoice_id`), or the sentence that asks which one the owner means (`clarification`) when the server cannot honour it."""
+
+    used: ScopeUsed | None
+    customer_id: str | None = None
+    offer_id: str | None = None
+    invoice_id: str | None = None
+    clarification: str | None = None
+
+    def context(self, sent: NlPageContext | None) -> NlPageContext:
+        """The page context of the turn: the page and the last-visit day the request sent, and the scope's own offer and invoice. The ids the
+        page sent are dropped: a stale prior offer never answers a scoped question."""
+        return NlPageContext(page=sent.page if sent is not None else "/", offer_id=self.offer_id, invoice_id=self.invoice_id,
+                             since_day=sent.since_day if sent is not None else None)
+
+
+def _say(lang: str, en: str, zh: str) -> str:
+    return zh if lang == "zh" else en
+
+
+def _short(name: str) -> str:
+    words = name.replace(",", " ").split()
+    return words[0] if words else name
+
+
+def resolve_scope(store: LedgerStore, scope: NlScope, *, state: FinancialState, lang: str) -> ScopeResult:
+    """Check a scope against the stores. The most specific key names the scope (a decision, else an invoice, else a customer, else the whole
+    company); the others must belong to it. A key that names nothing the server has, or that belongs to another customer, is not guessed
+    at: the result carries the sentence that asks which one is meant."""
+    names = {c.id: c.name for c in state.counterparties if c.role == "BUYER"}
+
+    def ask(en: str, zh: str) -> ScopeResult:
+        return ScopeResult(used=None, clarification=_say(lang, en, zh))
+
+    customer = scope.customer
+    if customer is not None and customer not in names:
+        return ask("I cannot find the customer you selected, so I have not guessed. Which customer do you mean?",
+                   "我找不到您选择的客户，所以没有猜测。您指的是哪位客户？")
+    offer = None
+    if scope.decision is not None:
+        offer_id = offer_id_of(scope.decision)
+        offer = store.get_offer(offer_id) if offer_id else None
+        if offer is None or offer.counterparty_id not in names:
+            return ask("I cannot find the negotiation you selected, so I have not guessed. Which negotiation do you mean?",
+                       "我找不到您选择的谈判，所以没有猜测。您指的是哪一项谈判？")
+        if customer is not None and offer.counterparty_id != customer:
+            who = _short(names[customer])
+            return ask(f"The negotiation you selected is not with {who}, so I cannot tell which one you mean. "
+                       "Tell me which customer or negotiation to look at.",
+                       f"您选择的谈判不是与{who}进行的，我无法确定您指的是哪一个。请告诉我要看哪位客户或哪一项谈判。")
+        customer = offer.counterparty_id
+    invoice = None
+    if scope.invoice is not None:
+        invoice = next((r for r in state.receivables if r.id == scope.invoice), None)
+        if invoice is None or invoice.counterparty_id not in names:
+            return ask("I cannot find the invoice you selected, so I have not guessed. Which invoice do you mean?",
+                       "我找不到您选择的发票，所以没有猜测。您指的是哪张发票？")
+        if customer is not None and invoice.counterparty_id != customer:
+            who = _short(names[customer])
+            return ask(f"The invoice you selected is not {who}'s, so I cannot tell which one you mean. Tell me which customer or invoice to look at.",
+                       f"您选择的发票不属于{who}，我无法确定您指的是哪一个。请告诉我要看哪位客户或哪张发票。")
+        customer = invoice.counterparty_id
+    if scope.scenario is not None:
+        verdict = _verdict_for(store, offer.offer_id, None) if offer is not None else None
+        k = scope.scenario.split(":")[1] if ":" in scope.scenario else ""
+        fits = (offer is not None and _SCENARIO.fullmatch(scope.scenario) is not None
+                and (scope.scenario == "asked" or (verdict is not None and k.isdigit() and int(k) < len(verdict.counters))))
+        if not fits:
+            return ask("The scenario you selected does not belong to a negotiation I can find, so I have not guessed. Which scenario do you mean?",
+                       "您选择的情景不属于我能找到的任何谈判，所以没有猜测。您指的是哪种情景？")
+    if offer is not None:
+        label = _say(lang, f"The negotiation with {names[offer.counterparty_id]}", f"与{names[offer.counterparty_id]}的谈判")
+        return ScopeResult(ScopeUsed(kind="decision", label=label), offer.counterparty_id, offer_id=offer.offer_id,
+                           invoice_id=invoice.id if invoice is not None else None)
+    if invoice is not None:
+        who = names[invoice.counterparty_id]
+        return ScopeResult(ScopeUsed(kind="invoice", label=_say(lang, f"The invoice to {who}", f"开给{who}的发票")), invoice.counterparty_id,
+                           invoice_id=invoice.id)
+    if customer is not None:
+        return ScopeResult(ScopeUsed(kind="customer", label=names[customer]), customer)
+    return ScopeResult(ScopeUsed(kind="company", label=_say(lang, "Your whole company", "整个公司")))
+
+
+def drop_page_binding(session: Session) -> None:
+    """A scoped request supersedes the deal the page last pointed the session at: the page-bound offer and verdict are forgotten (a deal the
+    owner evaluated in the conversation itself stays), so a question about a customer or an invoice is never answered about a stale offer."""
+    if session.bound_verdict_id is None:
+        return
+    if session.last_verdict_id == session.bound_verdict_id:
+        session.last_verdict_id = None
+        session.last_offer_id = None
+    session.bound_verdict_id = None
