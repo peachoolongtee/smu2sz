@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
 import { openStoryFold, STORY_STEPS } from "./helpers";
 
 /**
@@ -47,8 +47,7 @@ test("Home, Cash, Receivables, Activity, Approvals and the customer overview at 
 test("Deals: the inbox, a checked deal with its priced response, and the decision page", async ({ page }) => {
   await page.goto("/deals");
   await expect(page.getByTestId("deals-select")).toBeVisible();
-  await page.getByTestId("inbox-back").click();
-  await expect(page.getByTestId("inbox-list")).toBeVisible();
+  await openInbox(page);
   await scan(page, "/deals inbox");
   await checkedDeal(page);
   await scan(page, "/deals checked");

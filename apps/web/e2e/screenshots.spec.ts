@@ -53,7 +53,7 @@ test("Business pages on the opening books, after the deal is read and checked, a
   await page.goto("/deals");
   await shoot(page, "02-deals-inbox", p);
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("queue-ask").or(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT"))).toBeVisible();
+  await expect(page.getByTestId("deal-ask-quote")).toBeVisible();
   await shoot(page, "03-deals-read", p);
   await page.getByRole("button", { name: "Check against my limits" }).click();
   await expect(verdictHeading(page)).toBeVisible();

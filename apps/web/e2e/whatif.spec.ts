@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { resetBooks } from "./helpers";
+import { checkedDeal, resetBooks } from "./helpers";
 
 /**
  * What-if sandbox in mock mode: the page opens on the buyer's actual offer (REJECT), moving the terms
@@ -8,7 +8,9 @@ import { resetBooks } from "./helpers";
  */
 test("what-if: moving the terms slider changes the hypothetical verdict", async ({ page, request }) => {
   await resetBooks(request);
-  await page.goto("/whatif");
+  // The sandbox is run for a negotiation: it opens on that offer's own terms (never on a sample).
+  await checkedDeal(page);
+  await page.goto(page.url().replace("/deals", "/whatif"));
   await expect(page.getByRole("heading", { name: "What-if sandbox", level: 1 })).toBeVisible();
 
   const outcome = page.getByTestId("whatif-outcome");

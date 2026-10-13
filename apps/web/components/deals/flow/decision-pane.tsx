@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CustomerName } from "@/components/customer-link";
+import { Disclosure } from "@/components/business/kit";
+import { ChasePayment } from "@/components/business/chase-payment";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
@@ -61,10 +63,20 @@ function SendResult({ n }: { n: NegotiationView }) {
 function RecordBlock({ record, decision }: { record: DecisionView; decision: string }) {
   const { t } = useI18n();
   const ex = record.execution;
-  const money = Boolean(ex && (ex.requested_display || ex.landed_display || ex.in_transit_display));
+  // The money: each lot the record holds, "Received ¥… today" once it has landed and "¥… arrives in 3 days" while it is on its way; else the execution's own sentence when something ran.
+  const lots = (record.settlement ?? []).map((l) => ({
+    key: l.lot_id,
+    landed: l.settled,
+    text: l.settled ? t("deal.money.received", { amount: l.principal_display, when: l.arrival_when }) : t("deal.money.arrives", { amount: l.principal_display, when: l.arrival_when }),
+  }));
+  const ran = Boolean(ex && (ex.requested_display || ex.landed_display || ex.in_transit_display));
   const agreed = record.agreement?.terms ?? [];
   const terms = agreed.length ? agreed : (record.interpretation?.terms ?? []);
   const waiting = record.waiting_for?.text ?? null;
+  // A missed early payment leaves the shortfall to cover: the way to the funding options is always offered beside the chase (the server's own links come first).
+  const sent = record.remaining_task?.links ?? [];
+  const links = record.state === "MISSED" && !sent.some((l) => l.href.startsWith("/cash")) ? [...sent, { label: t("deal.left.compare"), href: "/cash#cash-options" }] : sent;
+  const promise = record.state === "MISSED" ? (record.promises[0] as { receivable_id?: string } | undefined) : undefined;
   return (
     <div className="mt-5 space-y-3" data-testid="deal-record" data-state={record.state}>
       {waiting ? (
@@ -72,9 +84,9 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
           {waiting}
         </p>
       ) : null}
-      {money && ex ? (
+      {lots.length || (ran && ex) ? (
         <p className="text-sm text-ink-2" data-testid="deal-money-lines">
-          {ex.summary_text}
+          {lots.length ? lots.map((l) => <span key={l.key} className="mr-2 inline-block">{l.text}</span>) : ex?.summary_text}
         </p>
       ) : null}
       {record.agreement ? (
@@ -97,6 +109,16 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
         <p className="text-sm text-ink-2" data-testid="deal-left">
           {record.remaining_task.text}
         </p>
+      ) : null}
+      {links.length || promise?.receivable_id ? (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1" data-testid="deal-left-links">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className={quietLink}>
+              {l.label}
+            </Link>
+          ))}
+          {promise?.receivable_id ? <ChasePayment receivableId={promise.receivable_id} buyer={record.counterparty_name ?? ""} /> : null}
+        </div>
       ) : null}
       <p className="text-sm">
         <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
@@ -316,6 +338,39 @@ export function DecisionPane({
 
         {/* Level 1: decide */}
         <div className="mt-5 space-y-5" data-testid="deal-level-decide">
+          {/* What the buyer asked: open while it is the question; once the deal has an outcome it is history, folded and said not to be the agreement. */}
+          {done ? (
+            <Disclosure testId="deal-original" className="border-t border-line pt-1" summary={t("biz.deals.original.ask")}>
+              <div className="pt-2">
+            <div>
+            <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
+            {doc?.text ? (
+              <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
+                <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+                <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
+              </figure>
+            ) : null}
+            {open?.asks_text && !doc?.text ? (
+              <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
+                {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
+              </p>
+            ) : null}
+            {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
+            {asked?.terms.length ? (
+              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
+                {asked.terms.map((x) => (
+                  <div key={x.key} className="min-w-0">
+                    <dt className="text-supporting text-ink-3">{x.label}</dt>
+                    <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </div>
+
+              </div>
+            </Disclosure>
+          ) : (
           <div>
             <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
             {doc?.text ? (
@@ -329,8 +384,9 @@ export function DecisionPane({
                 {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
               </p>
             ) : null}
+            {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
             {asked?.terms.length ? (
-              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3" data-testid="deal-ask-terms">
+              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
                 {asked.terms.map((x) => (
                   <div key={x.key} className="min-w-0">
                     <dt className="text-supporting text-ink-3">{x.label}</dt>
@@ -340,6 +396,8 @@ export function DecisionPane({
               </dl>
             ) : null}
           </div>
+
+          )}
 
           {offer.offer.abstentions.length ? (
             <div data-testid="deal-abstentions">

@@ -108,12 +108,10 @@ test("after the buyer accepts: the dashed line is gone and the moved receipts ar
 test("a counter the buyer refuses changes nothing: no pending line, the terms in force stand", async ({ page }) => {
   await readOffer(page);
   await openReview(page);
-  const response = page.locator("#counters");
-  await response.getByTestId("deal-send").click();
-  const box = response.getByTestId("deal-send-confirm-box");
+  const box = page.locator("#counters").getByTestId("deal-send-confirm-box");
   await box.getByLabel("Holds firm").check();
-  await box.getByTestId("deal-send-confirm").click();
-  await expect(page.getByTestId("deal-recommendation")).toHaveAttribute("data-outcome", "NO_DEAL");
+  await sendCounter(page);
+  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
   await cash(page);
   await expect(page.getByTestId("picture-line-pending")).toHaveCount(0);
   await expect(page.getByTestId("cash-receipts-legend")).toHaveCount(0);

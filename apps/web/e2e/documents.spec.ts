@@ -38,9 +38,8 @@ async function agreeFoshanDeal(page: Page) {
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await openReview(page);
-  const response = page.locator("#counters");
-  await sendCounter(response);
-  await expect(response.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
+  await sendCounter(page);
+  await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A");
 }
 
 /** The Business header keeps the language switch and sign-out inside the account menu; open it when it is there. */

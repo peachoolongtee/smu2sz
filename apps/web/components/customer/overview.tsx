@@ -26,9 +26,9 @@ function FigureState({ figure }: { figure: OverviewFigure }) {
   const key = stateKey(figure.state);
   if (!key || !figure.state_text) return null;
   return (
-    <p className="mt-1" data-testid={`customer-figure-${figure.key}-state`} data-state={key}>
+    <dd className="mt-1" data-testid={`customer-figure-${figure.key}-state`} data-state={key}>
       <StateWord state={key}>{figure.state_text}</StateWord>
-    </p>
+    </dd>
   );
 }
 
@@ -59,12 +59,16 @@ function Figure({ figure, provenance }: { figure: OverviewFigure; provenance: st
   );
 }
 
-/** Where the contribution comes from: the figure's own word, else the weakest link of its economics (the margin's note, then the sales'), the server's words as they are. */
+/**
+ * Where the contribution comes from, said beside it: the figure's own word (`provenance_text`); else the weakest link of its economics (the margin's note, then the sales') unless
+ * the figure's own note already says it ("a year, estimated contribution; margin assumed for the Demo, not confirmed by you"). The server's words as they are.
+ */
 function provenanceOf(view: CustomerOverviewView): string | null {
-  const own = view.figures?.find((f) => f.key === "value")?.provenance_text;
-  if (own) return own;
+  const figure = view.figures?.find((f) => f.key === "value");
+  if (figure?.provenance_text) return figure.provenance_text;
   const rows = view.economics ?? [];
-  return rows.find((r) => r.key === "gross_margin")?.note ?? rows.find((r) => r.key === "annual_sales")?.note ?? null;
+  const word = rows.find((r) => r.key === "gross_margin")?.note ?? rows.find((r) => r.key === "annual_sales")?.note ?? null;
+  return word && !(figure?.note ?? "").includes(word) ? word : null;
 }
 
 /**
@@ -83,7 +87,7 @@ function Focus({ view }: { view: CustomerOverviewView }) {
   if (!decision) {
     if (!view.none_text && !rest.length) return null;
     return (
-      <section aria-label={t("customer.decision")} className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
+      <section aria-label={t("customer.decision")} className="mb-4 flex flex-wrap items-center justify-between gap-x-8 gap-y-3" data-testid="customer-decision-none">
         {view.none_text ? <p className="min-w-0 flex-[2_1_20rem] text-pretty text-sm text-ink-2">{view.none_text}</p> : null}
         {links.length ? <ActionGroup>{links}</ActionGroup> : null}
       </section>
@@ -92,7 +96,7 @@ function Focus({ view }: { view: CustomerOverviewView }) {
   // Nothing is the owner's to do while the buyer's reply is awaited: the way into the negotiation is an outlined button, not the page's filled one.
   const waitsOnBuyer = decision.kind === "awaiting_buyer";
   return (
-    <section aria-labelledby="customer-decision-title" className="mt-4 border-t border-line pt-4" id="customer-decision" data-testid="customer-decision">
+    <section aria-labelledby="customer-decision-title" className="mb-4 border-b border-line pb-4" id="customer-decision" data-testid="customer-decision">
       <h3 id="customer-decision-title" className="text-supporting font-bold" data-kind={decision.kind ?? ""}>
         {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
         <StateWord tone={waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
@@ -294,8 +298,9 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
           <h2 id="customer-work-title" className="type-section mb-3 text-ink">
             {t("customer.outstanding", { name: view.name })}
           </h2>
-          <OutstandingWork customerId={view.customer_id} rows={tasks} focusKey={focus?.row.key ?? null} name={view.name} />
+          {/* The task in focus and its one action come first (on a phone the button is in the first screen); the list of everything open follows. */}
           <Focus view={view} />
+          <OutstandingWork customerId={view.customer_id} rows={tasks} focusKey={focus?.row.key ?? null} name={view.name} />
         </section>
       ) : null}
       {hasEconomics || hasExposure ? (

@@ -3,7 +3,7 @@
 import "@/app/flow-look.css";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
@@ -24,6 +24,13 @@ import { QueuePanel } from "./queue-table";
 import { buildQueue, rowDecision, tabOf, taskRows, type TabKey } from "./queue-model";
 
 const XL = "(min-width: 1280px)";
+const subscribeXl = (onChange: () => void) => {
+  const list = window.matchMedia(XL);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+};
+/** True from the two-pane width (`xl`); false below it and while rendering on the server. */
+const useTwoPanes = () => useSyncExternalStore(subscribeXl, () => window.matchMedia(XL).matches, () => false);
 
 /**
  * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it, the queue (one row per task, by who owes the next step) beside the selected negotiation. The
@@ -57,6 +64,7 @@ export function DealsPage() {
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;
   const [sending, setSending] = useState(false);
   const paneRef = useRef<HTMLDivElement>(null);
+  const twoPanes = useTwoPanes();
 
   // ---- the address is the selection
   const go = (patch: Record<string, string | null>, how: "push" | "replace" = "push") => router[how](patchedHref(pathname, search, patch), { scroll: false });
@@ -135,6 +143,53 @@ export function DealsPage() {
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
+  const LIST = (
+        <div key="list" className="min-w-0 space-y-5">
+          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null} onShowAll={() => go({ customer: null, buyer: null })} />
+          {/* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */}
+          {queue === undefined ? null : (
+          <div className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
+            {inboxOpen ? null : (
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
+                <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
+                <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
+                  {t("deals.inbox.show")}
+                </Button>
+              </div>
+            )}
+            {inboxOpen ? (
+              <InboxList
+                currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
+                readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+                known={known}
+                busy={reading}
+                today={clock.data?.day ?? books.data?.day ?? 0}
+                mode={mode}
+                statusFor={statusFor}
+                onOpen={(m) => void openMessage(m)}
+                loadError={books.error}
+                onRetry={books.reload}
+                onCollapse={() => setInboxPref(false)}
+                refusals={ledger.data?.refusals ?? null}
+              />
+            ) : null}
+          </div>
+          )}
+        </div>
+  );
+  const PANE = (
+        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
+          {decision ? (
+            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
+          ) : queue === undefined ? null : (
+            <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
+              <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
+              <p className="mt-1 max-w-[56ch] text-sm text-ink-2">{t("deals.select.body")}</p>
+            </section>
+          )}
+        </div>
+  );
+
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
       <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
@@ -153,49 +208,10 @@ export function DealsPage() {
           <ErrorState error={readError} />
         </div>
       ) : null}
+      {/* the two columns, named once so their order can follow the width */}
+      {/* Below the two-pane width a selected negotiation comes first (its decision is inside the first screen of a phone) and the queue follows; from `xl` the queue is the left pane. The DOM order is the reading and focus order. */}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:items-start">
-        <div className="min-w-0 space-y-5">
-          <QueuePanel queue={queue} customers={customers.data} loading={deals.loading || worklist.loading} error={dealsError} onRetry={deals.reload} tab={tab} onTab={onTab} selectedDecision={decision} locked={sending} onSelect={select} onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null} onShowAll={() => go({ customer: null, buyer: null })} />
-          {/* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */}
-          {queue === undefined ? null : (
-          <div className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
-            {inboxOpen ? null : (
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
-                <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
-                <Button size="sm" onClick={() => setInboxPref(true)} aria-expanded={false} aria-controls="inbox-list" data-testid="inbox-back">
-                  {t("deals.inbox.show")}
-                </Button>
-              </div>
-            )}
-            {inboxOpen ? (
-              <InboxList
-                currentDocId={null}
-                readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
-                known={known}
-                busy={reading}
-                today={clock.data?.day ?? books.data?.day ?? 0}
-                mode={mode}
-                statusFor={statusFor}
-                onOpen={(m) => void openMessage(m)}
-                loadError={books.error}
-                onRetry={books.reload}
-                onCollapse={() => setInboxPref(false)}
-                refusals={ledger.data?.refusals ?? null}
-              />
-            ) : null}
-          </div>
-          )}
-        </div>
-        <div ref={paneRef} className="min-w-0 scroll-mt-4" aria-live="polite" data-testid="deals-detail">
-          {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
-          ) : queue === undefined ? null : (
-            <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
-              <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
-              <p className="mt-1 max-w-[56ch] text-sm text-ink-2">{t("deals.select.body")}</p>
-            </section>
-          )}
-        </div>
+        {!twoPanes && decision ? <>{PANE}{LIST}</> : <>{LIST}{PANE}</>}
       </div>
       <div id="deals-investigate" className="mt-5 empty:hidden" />
       {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}

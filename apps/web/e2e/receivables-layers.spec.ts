@@ -92,8 +92,8 @@ test("day 0: the answer, three plain cards, one invoice with no financing, and t
   await expect(link).toHaveText(row.buyer_name);
   await expect(link).toHaveClass(/\bhit\b/);
   expect(new URL((await link.getAttribute("href")) ?? "", "http://x").pathname).toBe(`/customers/${row.buyer_id}`);
-  // Every customer name is the shared CustomerName: it carries the context the URL holds (none here, so the plain link).
-  expect(await link.getAttribute("href")).toBe(`/customers/${row.buyer_id}`);
+  // Every customer name is the shared CustomerName: it carries the row's own invoice and the origin (ticket #126), whatever the address holds.
+  expect(await link.getAttribute("href")).toBe(`/customers/${row.buyer_id}?invoice=${row.receivable_id}&from=invoice`);
   // The selected invoice: the condition as the heading; with no financing the breakdown is the invoice and the cash.
   await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.condition_text);
   await expect(page.getByTestId("recv3-detail-title")).toContainText(row.net.net_short);
@@ -373,9 +373,9 @@ test("the late-payment test is the buyer's own read, with no deal in context: th
   await expect(page.getByText("coming back keeps this invoice selected")).toBeVisible();
 });
 
-test("the customer link carries the context of the URL it is on, in the shared order", async ({ page }) => {
+test("the customer link carries that row's own invoice and the origin, never what the address holds for another row (audit UX07, UX34)", async ({ page }) => {
   await page.goto("/receivables?decision=deal%3AOFF-x&path=asked&invoice=RCV-A");
-  await expect(page.getByTestId("recv-customer-RCV-A")).toHaveAttribute("href", "/customers/BUYER-1?decision=deal%3AOFF-x&path=asked&invoice=RCV-A");
+  await expect(page.getByTestId("recv-customer-RCV-A")).toHaveAttribute("href", "/customers/BUYER-1?invoice=RCV-A&from=invoice");
 });
 
 test("day 34: the buyer read is the one taken on day 34's books", async ({ page }) => {

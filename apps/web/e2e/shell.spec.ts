@@ -109,6 +109,7 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
   await expect(page.getByTestId("next-step")).toBeVisible();
+  const deal = page.url(); // the address is the selection
   await page.goto("/");
   const side = page.getByTestId("nav-pills");
   await expect(side.getByTestId("nav-count-deals")).toHaveText("1");
@@ -116,7 +117,7 @@ test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's
   await expect(side.getByTestId("nav-count-receivables")).toHaveCount(0);
 
   // After FLOW's check: the read, the cost in the bad tone (it is over the owner's limit), the replies ready.
-  await page.goto("/deals");
+  await page.goto(deal);
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   await page.goto("/");

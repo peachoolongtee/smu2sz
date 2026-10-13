@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { openReview, runPlan, sendCounter, verdictHeading } from "./helpers";
+import { checkedDeal, openCompare, openReview, runPlan, sendCounter } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -19,12 +19,10 @@ async function hook(page: Page, key: string, value: string) {
   await page.evaluate(([k, v]) => sessionStorage.setItem(k, v), [key, value]);
 }
 
-/** Opens the first Foshan message and checks it against the limits, as the owner does. */
-async function checked(page: Page) {
-  await page.goto("/deals");
-  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
+/** Opens the first Foshan message and checks it against the limits, as the owner does; returns the address of the negotiation (the address is the selection). */
+async function checked(page: Page): Promise<string> {
+  await checkedDeal(page);
+  return page.url();
 }
 
 async function advanceTo(page: Page, day: number) {
@@ -37,6 +35,7 @@ async function advanceTo(page: Page, day: number) {
 test("the steps follow the record: Response ready names the recommendation, a send moves it to Sent and Agreed", async ({ page }) => {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("deal-pane")).toBeVisible();
   // Read but not checked: the record is RECEIVED. The chip is the record's state in the server's words and tone; there is no step line.
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "RECEIVED");
@@ -55,84 +54,62 @@ test("the steps follow the record: Response ready names the recommendation, a se
   await sendCounter(page.locator("#counters"));
   await expect(steps).toHaveAttribute("data-state", "AGREED");
   await expect(steps).toContainText("Agreed");
-  await expect(page.getByTestId("deal-stage").locator("li[aria-current=step]")).toHaveText("Agreed");
-  await expect(page.getByTestId("deal-stage").locator('li[data-status="done"]')).toHaveText(["Received", "Analysed", "Response ready", "Sent"]);
   // The agreements card keeps the deal, with the record's word for where it stands.
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Agreed");
 });
 
-test("the send names its option, says the reply is simulated, and carries what was shown; Option B has its own send", async ({ page }) => {
+test("the send names its option, says the reply is simulated, and carries what was shown; Option B is reviewed on its own", async ({ page }) => {
   await checked(page);
   await openReview(page);
   const response = page.locator("#counters");
   const send = response.getByTestId("deal-send");
-  await expect(send).toHaveText("Send Option A (simulated buyer reply)");
-  await expect(response.getByTestId("deal-send-scope")).toContainText("Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)");
-  await expect(response.getByTestId("deal-send-scope-lines")).toContainText("Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)");
-  // The send is described by its scope sentence for assistive tools.
-  await expect(send).toHaveAttribute("aria-describedby", /scope-deal-option-Option-A/);
-  // Option B is a path of its own: picking its column puts it in the bar, with its own send.
-  await page.getByTestId("path-col-pick-2").click();
-  await expect(page.getByTestId("queue-recommends")).toContainText("you approve first");
+  await expect(send).toHaveText("Send Option A to Foshan");
+  await expect(response.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)");
+  await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
+  await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
+  await page.getByTestId("queue-review-close").click();
+  // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
+  await openCompare(page);
+  await page.locator('[data-testid^="deal-use-CTR-"]:visible').last().click();
+  await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
+  await expect(page.getByTestId("queue-authority")).toContainText("Needs your approval");
   await openReview(page);
-  const b = page.getByTestId("path-reply");
-  await expect(b.getByRole("button", { name: "Send Option B (simulated buyer reply)" })).toBeVisible();
-  await expect(b.getByTestId("deal-send-scope")).toContainText("Sends Option B to the buyer");
-  // The page's one filled call to action is the bar's: Option A's send gives way to Option B's, never two at once.
-  await expect(b.getByRole("button", { name: /^Send Option B/ })).toHaveClass(/bg-brand-600/);
-  await expect(response.getByTestId("deal-send")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
+  await expect(page.getByTestId("deal-send")).toHaveCount(1);
+  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("55-day terms accepted");
 });
 
-test("COUNTER_CHANGED, the verdict was replaced: the current proposal takes the old one's place and nothing was sent", async ({ page }) => {
-  await checked(page);
-  await hook(page, "tl-mock-counter-changed", "replaced");
-  await openReview(page);
-  const response = page.locator("#counters");
-  await expect(response).toHaveAttribute("data-counters", "evaluated");
-  await sendCounter(response);
-  const changed = response.getByTestId("deal-counter-changed");
-  await expect(changed).toBeVisible();
-  await expect(changed).toHaveAttribute("role", "alert");
-  await expect(changed).toContainText("The books moved since this was shown");
-  await expect(changed).toContainText("Here is the current proposal. Nothing was sent.");
-  // The current counters took the old ones' place (the bar now sends from them, bound to the verdict the API named) and can be sent; nothing was sent, so the record
-  // is where it was, and the confirmation that was open is gone.
-  await expect(response).toHaveAttribute("data-counters", "current");
-  await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
-  await expect(response.getByTestId("deal-send-confirm-box")).toHaveCount(0);
-  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
-  await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
-  await expect(changed.getByTestId("deal-check-again")).toHaveCount(0);
-  // Sending the proposal that is now shown goes through.
-  await sendCounter(response);
-  await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A.");
-  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
-});
-
-test("COUNTER_CHANGED, the books moved: the old proposal is withdrawn and Check again gets a current one", async ({ page }) => {
-  await checked(page);
-  await hook(page, "tl-mock-counter-changed", "moved");
-  await openReview(page);
-  const response = page.locator("#counters");
-  await sendCounter(response);
-  const changed = response.getByTestId("deal-counter-changed");
-  await expect(changed).toContainText("The books moved since this was shown");
-  await expect(changed).toContainText("Nothing was sent. Check again to get a current one.");
-  // No counter is offered to send until the check is run again.
-  await expect(response.getByTestId("deal-send")).toHaveCount(0);
-  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
-  await changed.getByTestId("deal-check-again").click();
-  await expect(changed).toHaveCount(0);
-  await expect(response.getByTestId("deal-send")).toHaveText("Send Option A (simulated buyer reply)");
-});
+for (const story of ["replaced", "moved"] as const) {
+  test(`COUNTER_CHANGED, ${story === "moved" ? "the books moved" : "the verdict was replaced"}: nothing was sent, and Check again is the explicit step to a current proposal`, async ({ page }) => {
+    await checked(page);
+    await hook(page, "tl-mock-counter-changed", story);
+    await openReview(page);
+    await sendCounter(page);
+    const changed = page.getByTestId("deal-counter-changed");
+    await expect(changed).toBeVisible();
+    await expect(changed).toHaveAttribute("role", "alert");
+    await expect(changed).toContainText("The books moved since this was shown");
+    await expect(changed).toContainText("Nothing was sent. Check again to get a current one.");
+    // Nothing was sent: the record is where it was, and no send is offered until the check is run again.
+    await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
+    await expect(page.getByTestId("deal-negotiation")).toHaveCount(0);
+    await changed.getByTestId("deal-check-again").click();
+    await expect(changed).toHaveCount(0);
+    // The owner reviews the current proposal and sends it.
+    await openReview(page);
+    await sendCounter(page);
+    await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A.");
+    await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
+  });
+}
 
 test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment did not arrive' without it, never Agreed", async ({ page }) => {
-  await checked(page);
+  const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
-  await page.goto("/deals");
+  await page.goto(deal);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
   await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Fulfilled");
@@ -141,11 +118,11 @@ test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment
 test("day 34 without the receipt: the line and the agreements card say the early payment did not arrive", async ({ page }) => {
   await page.goto("/");
   await hook(page, "tl-mock-no-receipt", "1");
-  await checked(page);
+  const deal = await checked(page);
   await openReview(page);
   await sendCounter(page.locator("#counters"));
   await advanceTo(page, 34);
-  await page.goto("/deals");
+  await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
   await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
@@ -161,9 +138,9 @@ test("day 34 without the receipt: the line and the agreements card say the early
   const original = page.getByTestId("deal-original");
   await expect(original.locator("> summary")).toHaveText("The original ask (not agreed)");
   await expect(original).not.toHaveAttribute("open", "");
-  await expect(page.getByTestId("deal-impact-total")).toBeHidden();
+  await expect(page.getByTestId("deal-ask-quote")).toBeHidden();
   await original.locator("> summary").click();
-  await expect(page.getByTestId("deal-impact-total")).toBeVisible();
+  await expect(page.getByTestId("deal-ask-quote")).toBeVisible();
 });
 
 test("the execution summary is the record's: the agreement in its words, what ran, what has landed", async ({ page }) => {

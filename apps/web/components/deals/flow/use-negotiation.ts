@@ -38,11 +38,14 @@ export function useNegotiation(decision: string | null): Negotiation {
   const offer = offerFor?.offer ?? null;
   const record = useDecision(decision && offerId ? decision : null);
   const hasOffer = Boolean(offer);
+  // The picture and the exposure are read only while the owner has a reply to read (RESPONSE_READY): a deal not yet checked has none (404), and once it has an outcome, or waits on the buyer
+  // or the approval, the record says where it stands and the cash lines are history. They wait for the record, so no read is wasted.
+  const wantRead = hasOffer && record.data !== undefined && (record.data === null || record.data.state === "RESPONSE_READY");
   const pictureRead = useAsync(
-    async () => (offerId && hasOffer ? { offerId, picture: await getOfferPicture(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null),
-    [offerId, hasOffer, lang, offerFor?.offer?.latest_verdict_id ?? null],
+    async () => (offerId && wantRead ? { offerId, picture: await getOfferPicture(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null),
+    [offerId, wantRead, lang, offerFor?.offer?.latest_verdict_id ?? null],
   );
-  const exposureRead = useAsync(async () => (offerId && hasOffer ? { offerId, view: await getOfferExposure(offerId, lang) } : null), [offerId, hasOffer, lang, offerFor?.offer?.latest_verdict_id ?? null]);
+  const exposureRead = useAsync(async () => (offerId && wantRead ? { offerId, view: await getOfferExposure(offerId, lang) } : null), [offerId, wantRead, lang, offerFor?.offer?.latest_verdict_id ?? null]);
   const pictureFor = pictureRead.data && pictureRead.data.offerId === offerId ? pictureRead.data : undefined;
   const exposureFor = exposureRead.data && exposureRead.data.offerId === offerId ? exposureRead.data : undefined;
   const error = offerRead.error ?? pictureRead.error ?? exposureRead.error ?? record.error;
@@ -56,8 +59,9 @@ export function useNegotiation(decision: string | null): Negotiation {
     offerId,
     offer,
     record: !offerId ? null : record.data,
-    picture: !offerId || !hasOffer ? null : pictureFor === undefined ? undefined : pictureFor.picture,
-    exposure: !offerId || !hasOffer ? null : exposureFor === undefined ? undefined : exposureFor.view,
+    // `undefined` is on its way; null is none (not read, not evaluated, or no longer wanted).
+    picture: !offerId || !hasOffer || record.data === undefined ? null : !wantRead ? null : pictureFor === undefined ? undefined : pictureFor.picture,
+    exposure: !offerId || !hasOffer || record.data === undefined ? null : !wantRead ? null : exposureFor === undefined ? undefined : exposureFor.view,
     loading: Boolean(offerId) && (offerFor === undefined || (hasOffer && record.data === undefined)),
     missing: Boolean(offerId) && offerFor !== undefined && offerFor.offer === null,
     error,

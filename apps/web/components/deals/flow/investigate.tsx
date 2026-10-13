@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { Disclosure } from "@/components/business/kit";
+import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { Button, ErrorState, LoadingBlock } from "@/components/ui";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
 import { OpenSection } from "@/components/ui/open-section";
@@ -61,7 +62,7 @@ function EnvelopePackages({ buyerId }: { buyerId: string }) {
   if (!e || e.refused || !e.packages.length) return null;
   const classes = (["flow_may", "needs_owner", "over_limit"] as const).map((c) => ({ c, items: e.packages.filter((p) => packageClass(p) === c) })).filter((x) => x.items.length);
   return (
-    <OpenSection title={t("deals.envelope.title")} subtitle={t("deals.envelope.sub", { buyer: e.buyer_name })} testId="deal-envelope" id="deal-envelope-section">
+    <OpenSection title={t("deals.envelope.title")} subtitle={t("deals.envelope.sub", { buyer: e.buyer_name })} testId="deal-envelope-packages" id="deal-envelope-section">
       <div className="space-y-4">
         {classes.map(({ c, items }) => (
           <div key={c} data-testid={`envelope-class-${c}`}>
@@ -344,6 +345,12 @@ export function Investigate({
           </Disclosure>
         ) : null}
       </OpenSection>
+      {/* What the owner can live with for this buyer (the strategy build): the ceilings and the levers behind a fold, then the packages by who may send them. */}
+      {STRATEGY_MVP ? (
+        <div className="mt-8" data-testid="deal-before-they-ask">
+          <BeforeTheyAsk buyerId={buyerId} />
+        </div>
+      ) : null}
       <EnvelopePackages buyerId={buyerId} />
         </>
       ) : null}

@@ -43,9 +43,9 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(page.getByTestId("customer-figure-share-note")).toHaveText("one open invoice; not its share of your sales");
   // The Demo's sales and margin give the server's estimate; the browser makes none of its own.
   await expect(page.getByTestId("customer-figure-value-value")).toHaveText("about ¥1.09m");
-  await expect(page.getByTestId("customer-figure-value-note")).toHaveText("a year, estimated contribution");
-  // Where it comes from is said beside it, in the server's words (the margin is the weakest link).
-  await expect(page.getByTestId("customer-figure-value-provenance")).toHaveText("assumed for the Demo, not confirmed by you");
+  // Where it comes from is said beside it, in the server's words (the margin is the weakest link), once.
+  await expect(page.getByTestId("customer-figure-value-note")).toHaveText("a year, estimated contribution; margin assumed for the Demo, not confirmed by you");
+  await expect(page.getByTestId("customer-figure-value-provenance")).toHaveCount(0);
   // No decision waits: the server's line, the two links that remain, and no filled primary on the page.
   const none = page.getByTestId("customer-decision-none");
   await expect(none).toContainText("No commercial decision is waiting for you with Foshan.");
@@ -232,7 +232,7 @@ for (const lang of ["en", "zh"] as const) {
   }
 }
 
-test("the keyboard, from the top of the page, reaches the back link, the way to all tasks, then the primary and the other two links in order", async ({ page }) => {
+test("the keyboard, from the top of the page, reaches the back link, then the primary and the other two links in order", async ({ page }) => {
   await checkedDeal(page);
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-decision-primary")).toBeVisible();
@@ -242,7 +242,7 @@ test("the keyboard, from the top of the page, reaches the back link, the way to 
     const id = await page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
     if (id.startsWith("customer-")) order.push(id);
   }
-  expect(order.slice(0, 5)).toEqual(["customer-back", "customer-all-tasks", "customer-decision-primary", "customer-action-invoices", "customer-action-stress"]);
+  expect(order.slice(0, 4)).toEqual(["customer-back", "customer-decision-primary", "customer-action-invoices", "customer-action-stress"]);
 });
 
 /** In-spec patches of the recorded read (the mock's `tl-mock-overview-patch` key merges these fields over the recording): the fields the recording does not carry. */
