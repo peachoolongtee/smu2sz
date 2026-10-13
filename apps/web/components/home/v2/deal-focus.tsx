@@ -4,6 +4,7 @@ import { useId, useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { pointAt, shown } from "@/components/home/v2/company-chart";
 import { Breakdown } from "@/components/home/v2/breakdown";
+import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { Announce, Dismiss, LeaveLink } from "@/components/home/v2/focus-parts";
 import { ActionGroup } from "@/components/ui/action-group";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
@@ -17,6 +18,7 @@ import { offerOfDecision } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { ExposurePathWords, ExposureStress, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, WorklistCustomer, WorklistNeedsRow, WorklistWaitingRow } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
+import { useDelayed } from "@/lib/use-delayed";
 
 type Tone = "ok" | "warn" | "bad" | "info" | "neutral";
 const AUTH_TONE: Record<string, Tone> = { flow_may: "ok", needs_owner: "warn", over_limit: "bad" };
@@ -91,10 +93,12 @@ export function DealFocusPanel({
   const { t, lang } = useI18n();
   const uid = useId();
   const offerId = offerOfDecision(decision);
-  const overview = useAsync(() => getCustomerFocus(customerId, lang, { decision }), [customerId, decision, lang]);
-  const exposure = useAsync(() => getDealExposure(offerId, lang, customerId).catch(() => null), [offerId, customerId, lang]);
-  const deals = useAsync(() => getDeals(lang).catch(() => null), [lang]);
-  const serverTitle = useAsync(() => getDealTitle(decision, lang), [decision, lang]);
+  const overview = useAsync(() => fromWarm(key.overview(customerId, decision, lang), () => getCustomerFocus(customerId, lang, { decision })), [customerId, decision, lang]);
+  const exposure = useAsync(() => fromWarm(key.exposure(offerId, customerId, lang), () => getDealExposure(offerId, lang, customerId).catch(() => null)), [offerId, customerId, lang]);
+  const deals = useAsync(() => fromWarm(key.deals(lang), () => getDeals(lang).catch(() => null)), [lang]);
+  const serverTitle = useAsync(() => fromWarm(key.title(decision, lang), () => getDealTitle(decision, lang)), [decision, lang]);
+  // The card keeps its height while its first read is on its way and shows a skeleton only after 300 ms, so a quick read never flashes one and nothing below jumps.
+  const slow = useDelayed(overview.data === undefined && !overview.error, 300);
   const v = overview.data;
   const settled = !overview.loading && v !== undefined;
   const gone = settled && v.context?.deal !== decision;
@@ -219,6 +223,7 @@ export function DealFocusPanel({
 
   const requestCost = asked && (asked.cost_forward_display || asked.cost_display) ? t("hv2.deal.request", { amount: asked.cost_forward_display ?? asked.cost_display, note: asked.cost_note }) : null;
   const recCost = recommended ? (recommended.cost_once_display ? t("dq.cost.once", { amount: recommended.cost_once_display, buyer }) : recommended.cost_total_display ? t("dq.cost.total", { amount: recommended.cost_total_display, basis: recommended.cost_basis_text ?? "", buyer }) : null) : null;
+  const consequenceOpen = view.chart || view.timing === "late";
   // The card's three figures, every word the server's: what is outstanding with the buyer (the overview's own figure) and the asked path's early-payment and payment-terms words.
   // The server's `ask_facts` (invoice value, requested discount, requested term) when it sends them; until then the overview's outstanding figure and the asked path's own term words.
   const facts = asked?.ask_facts ?? null;
@@ -231,7 +236,7 @@ export function DealFocusPanel({
   ].filter((k): k is { key: string; label: string; value: string } => k !== null);
 
   return (
-    <div id="home-focus" data-testid="home-deal-focus" data-decision={decision} className="f-card f-card-white min-w-0 p-6">
+    <div id="home-focus" data-testid="home-deal-focus" data-decision={decision} className="f-card f-card-white min-w-0 p-4">
       <Announce text={title} />
       <div key={decision} className="motion-swap">
         {gone ? (
@@ -240,14 +245,16 @@ export function DealFocusPanel({
             <Button onClick={onCustomer}>{v?.name ?? buyer}</Button>
           </div>
         ) : !v ? (
-          <div className="mt-4">{overview.error ? <ErrorState error={t("hv2.focus.failed")} onRetry={overview.reload} /> : <LoadingBlock rows={3} label={t("hv2.focus.working")} />}</div>
+          <div className="mt-4 min-h-[22rem]" data-testid="hv2-deal-reserved">
+            {overview.error ? <ErrorState error={t("hv2.focus.failed")} onRetry={overview.reload} /> : slow ? <LoadingBlock rows={3} label={t("hv2.focus.working")} /> : null}
+          </div>
         ) : (
           <>
             {/* Level 1: the decision */}
             <div data-testid="hv2-level-decision">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
+                  <h2 id="home-focus-title" tabIndex={-1} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="focus-title">
                     {title}
                   </h2>
                   <p className="mt-1.5 text-[15px] text-ink-3" data-testid="hv2-customer-line">
@@ -257,11 +264,11 @@ export function DealFocusPanel({
                 <Dismiss onDismiss={onAll} />
               </div>
               {kpis.length ? (
-                <dl className="mt-4 grid grid-cols-1 gap-y-3 border-y border-line py-4 sm:grid-cols-3 sm:gap-x-6" data-testid="hv2-deal-kpis">
+                <dl className="mt-2 grid grid-cols-1 gap-y-2 border-y border-line py-2.5 sm:grid-cols-3 sm:gap-x-6" data-testid="hv2-deal-kpis">
                   {kpis.map((k) => (
                     <div key={k.key} className="min-w-0" data-testid={`hv2-deal-kpi-${k.key}`}>
-                      <dt className="text-[15px] text-ink-3">{k.label}</dt>
-                      <dd className="mt-1 break-words font-display text-[26px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-ink sm:text-[30px]">{k.value}</dd>
+                      <dt className="text-supporting text-ink-3">{k.label}</dt>
+                      <dd className="mt-1 break-words font-display text-[24px] font-bold leading-tight tracking-[-0.02em] tabular-nums text-ink">{k.value}</dd>
                     </div>
                   ))}
                 </dl>
@@ -272,11 +279,11 @@ export function DealFocusPanel({
                   {row.why_first_text}
                 </p>
               ) : null}
-              <p className="mt-4 max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-ask">
+              <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink" data-testid="deal-ask">
                 {open ? t("dq.ask", { buyer, asks: open.asks_text }) : (decisionCard?.text ?? "")}
               </p>
               {recommended ? (
-                <div className="mt-4 space-y-1" data-testid="hv2-recommendation">
+                <div className="mt-2 space-y-0.5" data-testid="hv2-recommendation">
                   <p className="text-supporting font-bold text-brand-700" data-testid="deal-recommends">
                     {t("hv2.deal.recommends", { label: recommended.label })}
                   </p>
@@ -292,25 +299,19 @@ export function DealFocusPanel({
                     </p>
                   ) : null}
                 </div>
-              ) : decisionCard ? (
-                <p className="mt-3 text-sm text-ink-2" data-testid="deal-text">
-                  {decisionCard.text}
+              ) : null}
+              {/* The one commit area: what waits, then [Review the counter] filled, the two quiet toggles and the way into Deals, in one row */}
+              {decisionCard ? (
+                <p className="mt-2 border-t border-line pt-2 text-sm text-ink" data-testid="hv2-deal-next">
+                  <span data-testid="hv2-deal-next-line">{decisionCard.eyebrow}</span>
                 </p>
               ) : null}
-              {decisionCard ? (
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-line pt-4" data-testid="hv2-deal-next">
-                  <p className="min-w-0 text-[15px] text-ink">
-                    <span className="block" data-testid="hv2-deal-next-line">
-                      {decisionCard.eyebrow}
-                    </span>
-                    {row?.status_text ? <span className="mt-0.5 block text-sm text-ink-3">{row.status_text}</span> : null}
-                  </p>
+              <ActionGroup className="mt-2" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
+                {decisionCard ? (
                   <ButtonLink href={decisionCard.primary.href} variant="primary" data-testid="deal-primary">
                     {decisionCard.primary.label}
                   </ButtonLink>
-                </div>
-              ) : null}
-              <ActionGroup className="mt-4" testId="hv2-deal-actions" label={t("hv2.deal.actions")}>
+                ) : null}
                 {paths.length > 1 ? (
                   <Button aria-expanded={view.compare} aria-controls={`${uid}-compare`} onClick={() => onView({ compare: !view.compare })} data-testid="hv2-compare-toggle">
                     {t("hv2.deal.compare")}
@@ -333,7 +334,8 @@ export function DealFocusPanel({
               </ActionGroup>
             </div>
 
-            {/* Level 2: the consequence */}
+            {/* Level 2: the consequence, closed until the Cash impact toggle (or a timing assumption in the address) opens it */}
+            {consequenceOpen ? (
             <OpenSection title={t("hv2.deal.consequence")} subtitle={t("hv2.deal.consequence.note")} testId="hv2-level-consequence" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="hv2-assumption">
                 <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
@@ -368,6 +370,7 @@ export function DealFocusPanel({
                 ) : null}
               </div>
             </OpenSection>
+            ) : null}
 
             {/* Level 3: investigation, only on request */}
             {view.compare && paths.length > 1 ? (

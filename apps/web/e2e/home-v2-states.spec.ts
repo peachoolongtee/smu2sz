@@ -174,8 +174,11 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   } else await expect(page.getByTestId("home-kpi-funding-value")).toHaveCount(0);
   if (v2.kpis.funding.state === "ARRANGED" && v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
   // The line under the headline is the server's summary of what waits (none when nothing does); Upcoming cash movements are the server's three nearest movements.
-  if (v2.summary_text) await expect(page.getByTestId("hv2-summary")).toHaveText(v2.summary_text);
+  // The line under the headline is the server's count sentence; its first sentence ("One funding action ready.") is the card's when the card carries the plan's control.
+  const summary = v2.summary_text ? (v2.action.control ? v2.summary_text.replace(/^[^.。]*[.。]\s*/, "") : v2.summary_text) : "";
+  if (summary) await expect(page.getByTestId("hv2-summary")).toHaveText(summary);
   else await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-state-pill")).toHaveCount(0); // "FLOW action ready" is said once, by the card
   const upcoming = v2.upcoming ?? [];
   await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(upcoming.length);
   for (const [i, u] of upcoming.entries()) {
@@ -184,8 +187,6 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
     await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toContainText(u.when);
     await expect(page.getByTestId("hv2-upcoming-row").nth(i)).toHaveAttribute("data-kind", u.kind);
   }
-  // The state pill: the alert's kind word while one is up, else the status word.
-  await expect(page.getByTestId("hv2-state-pill")).toBeVisible();
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
@@ -207,9 +208,10 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
 }
 
 /** The worklist's words: the alert, the counts, and every row of every tab, in the read's order, each of its shape. */
-async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
+async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView, showAlert: boolean) {
   const alert = scope.getByTestId("home-worklist-alert");
-  if (read.alert) {
+  // The alert row is shown only on a Home with no plan card (funding NONE); with a card, the card is the alert.
+  if (read.alert && showAlert) {
     const said = read.alert as typeof read.alert & { kind_text?: string | null; pending_text?: string | null };
     await expect(alert).toContainText(said.pending_text ?? said.text);
     await expect(alert).toContainText(said.kind_text ?? said.eyebrow);
@@ -269,7 +271,7 @@ async function look(context: BrowserContext, reads: Reads, s: State, extra?: (pa
         try {
           if (company) await expectCompany(page, lang, reads.home[lang], s.filled);
           const scope = await worklist(page, width, lang, reads.work[lang]);
-          await expectWorklist(scope, lang, reads.work[lang]);
+          await expectWorklist(scope, lang, reads.work[lang], reads.home[lang].home_v2!.kpis.funding.state === "NONE");
           await extra?.(page, width, lang, scope);
         } finally {
           await page.close();
@@ -334,7 +336,8 @@ test(STATES[12].name, async ({ request, context }) => {
     await expect(page.getByTestId("home-action-back")).toBeVisible();
     expect(await filledBrand(page)).toBe(0);
     const again = phone(width) ? await worklist(page, width, lang, reads.work[lang]) : page.getByTestId("home-worklist-panel");
-    await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
+    if (reads.home[lang].home_v2!.kpis.funding.state === "NONE") await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
+    else await expect(again.getByTestId("home-worklist-alert")).toHaveCount(0);
     await expect(again.getByTestId("home-tab-needs_you-badge")).toHaveText(String(reads.work[lang].counts.needs_you));
   });
 });
@@ -365,6 +368,9 @@ test(STATES[13].name, async ({ request, context }) => {
     const focus = await get<{ decision: { headline_short: string; primary: { label: string } } }>(request, `/customers/BUYER-1/overview?lang=${lang}&decision=${encodeURIComponent(row.key)}`);
     await expect(page.getByTestId("focus-title")).toHaveText(reads.work[lang].needs_you[0].subject_text);
     await expect(page.getByTestId("deal-primary")).toHaveText(focus.decision.primary.label);
+    // The consequence is closed until the Cash impact toggle opens it.
+    await expect(page.getByTestId("deal-scenario-panel")).toHaveCount(0);
+    await page.getByTestId("hv2-chart-toggle").click();
     await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "current");
   }, "/", { company: false });
 });

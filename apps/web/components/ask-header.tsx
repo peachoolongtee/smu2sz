@@ -2,57 +2,62 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { ChatIcon } from "@/components/icons";
+import { getWorklist } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { sendMessage, setPanelOpen } from "@/lib/chat";
-import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { useAsync } from "@/lib/use-async";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
-const EXAMPLES: DictKey[] = ["ask.ph.1", "ask.ph.2", "ask.ph.3"];
-const TYPE_MS = 42;
-const HOLD_MS = 1900;
+const TYPE_MS = 38;
+const HOLD_MS = 1700;
 
 /**
- * The placeholder's typewriter: each example is typed a letter at a time, held, then the next one is typed. It stops (and shows the whole example) while the input has focus or holds text, and
- * there is no animation at all under reduced motion (the first example, whole). The words are the dictionary's (en and zh); the placeholder is a hint, the input's name is "Ask FLOW".
+ * The placeholder's typewriter: each example is typed a letter at a time and held, then the next; the last, "Ask FLOW anything…", is typed and rests (no further cycling until the next page load).
+ * It stops (showing the whole line) while the input has focus or holds text, and under reduced motion it is the resting line, whole, and nothing moves.
  */
-function useTypewriter(
-  examples: string[],
-  paused: boolean,
-  still: boolean,
-): string {
+function useTypewriter(lines: string[], paused: boolean, still: boolean): string {
   const [i, setI] = useState(0);
-  const [n, setN] = useState(0);
-  const full = examples[i % examples.length] ?? "";
+  const [n, setN] = useState(1);
+  const last = lines.length - 1;
+  const full = lines[Math.min(i, last)] ?? "";
   useEffect(() => {
     if (paused || still) return;
     if (n < full.length) {
       const id = window.setTimeout(() => setN(n + 1), TYPE_MS);
       return () => window.clearTimeout(id);
     }
+    if (i >= last) return; // the resting line holds
     const id = window.setTimeout(() => {
-      setI((v) => (v + 1) % examples.length);
-      setN(0);
+      setI(i + 1);
+      setN(1);
     }, HOLD_MS);
     return () => window.clearTimeout(id);
-  }, [n, full, paused, still, examples.length]);
-  if (still || paused) return full;
+  }, [n, i, full, paused, still, last]);
+  if (still) return lines[last] ?? "";
+  if (paused) return full;
   return full.slice(0, n);
 }
 
 /**
- * Ask FLOW in the Business header (from `lg`; a phone keeps the bottom bar's "Ask"): a rounded input left of the mode switch, its placeholder cycling through example questions as a quiet typewriter.
- * Focus widens it (`--dur-fast`). Enter sends what was typed to Ask FLOW (under the page's scope: the Home's address, see lib/chat-context.ts) and opens the Ask FLOW panel with the question already
- * sent; the input clears. The icon opens the panel without a question (it is the entry the floating pill used to be).
+ * Ask FLOW in the Business header (from `lg`; a phone keeps the bottom bar's "Ask"): a rounded 36 px input in the centre of the header (the viewport's centre), 420 px wide and 520 px on focus (a
+ * little narrower at `lg` so the header fits), its placeholder a typewriter over six questions the chat answers, ending on "Ask FLOW anything…". Focus widens it from its centre (`--dur-fast`). Enter
+ * sends what was typed to Ask FLOW (under the page's scope: the Home's address, see lib/chat-context.ts) and opens the Ask FLOW panel with the question already sent; the input clears. The icon at its
+ * right opens the panel without a question; pressing it never blurs the input (so the input does not narrow under the pointer). The late-payment example names the first worklist customer in the
+ * server's word when there is one.
  */
 export function AskHeaderInput() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { token } = useAuth();
   const reduced = useReducedMotion();
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const id = useId();
   const ref = useRef<HTMLInputElement>(null);
+  const worklist = useAsync(() => (token ? getWorklist(lang, null).catch(() => null) : Promise.resolve(null)), [lang, Boolean(token)]);
+  const name = worklist.data?.customers[0]?.short || t("ask.ph.name");
   const placeholder = useTypewriter(
-    EXAMPLES.map((k) => t(k)),
+    [t("ask.ph.1"), t("ask.ph.2"), t("ask.ph.3"), t("ask.ph.4", { name }), t("ask.ph.5"), t("ask.ph.rest")],
     focused || text !== "",
     reduced,
   );
@@ -63,10 +68,8 @@ export function AskHeaderInput() {
     setPanelOpen(true);
     void sendMessage(q, undefined, "OWNER");
   }
-  // The slot keeps the closed width and the right edge, so the header around it never moves: focus widens the input to the left over the quiet items beside it, and the opener
-  // sits at the right edge (a pointer that presses it blurs the input, which narrows again, and must still be over it when the button is released).
   return (
-    <div className="relative z-20 hidden h-10 w-56 shrink-0 lg:block xl:w-72">
+    <div className="relative z-20 hidden h-9 w-[380px] shrink-0 items-center justify-center lg:flex xl:w-[520px]">
       <form
         role="search"
         aria-label={t("ask.input")}
@@ -74,7 +77,7 @@ export function AskHeaderInput() {
           e.preventDefault();
           submit();
         }}
-        className={`absolute right-0 top-0 flex h-10 items-center rounded-pill border border-line-ui bg-card pl-4 pr-1 transition-[width] duration-(--dur-fast) focus-within:border-ink ${focused ? "w-[22rem] xl:w-[26rem]" : "w-full"}`}
+        className={`flex h-9 items-center rounded-pill border border-line-ui bg-card pl-4 pr-1 transition-[width] duration-(--dur-fast) focus-within:border-ink ${focused ? "w-full" : "w-[300px] xl:w-[420px]"}`}
         data-testid="ask-header"
       >
         <label htmlFor={id} className="sr-only">
@@ -93,8 +96,7 @@ export function AskHeaderInput() {
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
             // Enter sends; Enter while an IME (Chinese input) is composing only confirms the candidate.
-            if (e.key === "Enter" && e.nativeEvent.isComposing)
-              e.preventDefault();
+            if (e.key === "Enter" && e.nativeEvent.isComposing) e.preventDefault();
           }}
           className="h-full min-w-0 flex-1 bg-transparent pr-2 text-sm text-ink outline-none placeholder:text-ink-3"
           data-testid="ask-input"
@@ -103,9 +105,10 @@ export function AskHeaderInput() {
           type="button"
           aria-haspopup="dialog"
           aria-label={t("chat.open")}
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => setPanelOpen(true)}
           data-testid="chat-open"
-          className="motion-press grid size-8 shrink-0 place-items-center rounded-pill text-ink hover:bg-panel"
+          className="motion-press grid size-7 shrink-0 place-items-center rounded-pill text-ink hover:bg-panel"
         >
           <ChatIcon className="size-4" />
         </button>

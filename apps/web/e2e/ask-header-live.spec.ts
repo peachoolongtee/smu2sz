@@ -1,4 +1,5 @@
-import { expect, test } from "./fixtures";
+import { DEMO_TOKEN, expect, test } from "./fixtures";
+import { en, zh } from "../lib/dictionary";
 import { resetBooks } from "./helpers";
 
 /** Live only: the header's Ask FLOW sends the question under the Home's scope (the URL contract) and the panel's chip says the server's own label for the scope it answered in (`scope_used`). */
@@ -38,3 +39,21 @@ test("on the company's Home the scope is empty and the server answers in the com
   await expect(page.getByTestId("chat-panel").getByTestId("chat-reply").first()).toBeVisible({ timeout: 30000 });
   await expect(page.getByTestId("chat-scope")).toHaveAttribute("data-scope", "company");
 });
+
+// Every placeholder is a question the chat answers (round three): asked in both languages against the real chat route, none is out of scope or ambiguous, and each gets a reply.
+const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+for (const lang of ["en", "zh"] as const) {
+  const d = lang === "en" ? en : zh;
+  const questions = [d["ask.ph.1"], d["ask.ph.2"], d["ask.ph.3"], d["ask.ph.4"].replace("{name}", "Foshan"), d["ask.ph.5"]];
+  test(`the header's example questions are answered by the chat (${lang}): none is out of scope or ambiguous`, async ({ request }) => {
+    await resetBooks(request);
+    for (const [i, text] of questions.entries()) {
+      const res = await request.post(`${API}/nl`, { headers: { "X-Owner-Token": DEMO_TOKEN }, data: { session_id: `ph-${lang}-${i}`, actor: "OWNER", text, lang, context: { page: "/" }, scope: {} } });
+      expect(res.ok(), text).toBeTruthy();
+      const body = (await res.json()) as { intent: string; reply: string; clarification: unknown };
+      expect(["OUT_OF_SCOPE", "AMBIGUOUS"], `${text} -> ${body.intent}`).not.toContain(body.intent);
+      expect(body.clarification, text).toBeNull();
+      expect(body.reply.trim().length, text).toBeGreaterThan(0);
+    }
+  });
+}

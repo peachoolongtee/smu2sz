@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import { UnderlineTabs, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
+import { warmSelection } from "@/components/home/v2/prefetch";
 import { type HomeSelection, NO_SELECTION, rowHref, rowSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { CustomersView, HomeTone, WorklistCustomer, WorklistNeedsRow, WorklistSeverity, WorklistView, WorklistWaitingRow } from "@/lib/types";
@@ -61,7 +62,7 @@ function isSelected(sel: Partial<HomeSelection> | null, current: HomeSelection):
 
 /** A row of Needs you or Waiting: "Customer · Decision", the status (who acts), the one consequence; a quoted differentiator only when the server sends one for two alike subjects. */
 export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: WorklistNeedsRow | WorklistWaitingRow; selection?: HomeSelection; onLeave?: () => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   // A row that is the Home's own selection opens in place (the address changes, nothing else); any other row leads where the server says.
   const sel = rowSelection(row);
   return (
@@ -76,6 +77,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
       selectLabel={t("hv2.row.select")}
+      onWarm={() => (sel ? warmSelection(sel, lang) : undefined)}
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}
@@ -85,7 +87,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
 
 /** A row of Customers: the name, its negotiations and which need the owner, what is outstanding and its share; the weightiest tone as its dot and word. */
 export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { customer: WorklistCustomer; selection?: HomeSelection; onLeave?: () => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const sel = { customer: customer.customer_id, decision: null };
   return (
     <WorklistRow
@@ -96,6 +98,7 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       onClick={onLeave}
       subject={customer.name}
       selectLabel={t("hv2.row.select")}
+      onWarm={() => warmSelection(sel, lang)}
       nextStep={customer.detail_text}
       pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}
       severity={<Severity severity={TONE_SEVERITY[customer.tone]} />}
@@ -115,7 +118,7 @@ function scrollToAction(reduced: boolean) {
  * together), a search over the rows already fetched (by the customers' `search_terms`; nothing is computed), a header row (Customer / deal, Next step, Status), the rows and the way to the
  * full list. A row opens its item in place. The same body is the desktop table and the phone list.
  */
-export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECTION, onLeave }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void; selection?: HomeSelection; onLeave?: () => void }) {
+export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECTION, onLeave, showAlert = true }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void; selection?: HomeSelection; onLeave?: () => void; showAlert?: boolean }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const uid = useId();
@@ -129,7 +132,8 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
   const people = read.customers.filter((c) => match(c.name, c.short, c.status_text, termsOf(c.customer_id)));
   const everything = [...needs, ...waiting];
   const shown = tab === "all" ? everything.length : tab === "needs_you" ? needs.length : tab === "waiting" ? waiting.length : people.length;
-  const alert = read.alert;
+  // The alert row is the recommendation card's when the card is on the page (it IS the alert, with Run and Compare): shown only on a Home with no plan card.
+  const alert = showAlert ? read.alert : null;
   const toAction = () => {
     onAlertGo?.();
     window.setTimeout(() => scrollToAction(reduced), 0);
@@ -214,15 +218,15 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
  * The worklist card (`f-card`): "Your worklist" with its count, "All deals ↗" at the right, then the table. `read` null is a server that does not have the worklist; the page then has no
  * card. A read in flight is a loading block, a read that failed is the error state with Retry. A fresh read does not reorder the list while focus is in it.
  */
-export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo, selection }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void; selection?: HomeSelection }) {
+export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo, selection, showAlert }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void; selection?: HomeSelection; showAlert?: boolean }) {
   const { t } = useI18n();
   const [settled, handlers] = useSettled(read ?? undefined);
   const titleId = useId();
   return (
-    <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-5">
+    <section aria-labelledby={titleId} {...handlers} data-testid="home-worklist-panel" className="motion-reveal f-card min-w-0 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <h2 id={titleId} className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-worklist-title">
+          <h2 id={titleId} className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink" data-testid="hv2-worklist-title">
             {t("hv2.work.title")}
           </h2>
           {settled ? (
@@ -242,7 +246,7 @@ export function WorklistPanel({ read, customers, loading, error, onRetry, onAler
       ) : !settled ? (
         <div className="mt-3">{loading ? <LoadingBlock rows={3} label={t("hv2.work.loading")} /> : null}</div>
       ) : (
-        <WorklistBody read={settled} customers={customers ?? null} onAlertGo={onAlertGo} selection={selection} />
+        <WorklistBody read={settled} customers={customers ?? null} onAlertGo={onAlertGo} selection={selection} showAlert={showAlert} />
       )}
     </section>
   );

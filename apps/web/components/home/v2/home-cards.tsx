@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import type { HomeSeriesPoint, HomeV2, HomeView, OfferPictureView } from "@/lib/types";
 
 /** The card's title: the display face, 20 px, sentence case, never an uppercase eyebrow. */
-export const cardTitle = "font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink";
+export const cardTitle = "font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink";
 
 /**
  * "Cash available today" (the mockup's first card): the server's figure, its note ("¥100k above your ¥300k minimum"), and the reserve bar: a track to the minimum and a green part for
@@ -22,11 +22,11 @@ export function CashCard({ kpis }: { kpis: HomeV2["kpis"] }) {
   const reserve = Math.max(b.min_fen, 1);
   const room = Math.max(b.cash_fen - b.min_fen, 0);
   return (
-    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4 sm:p-5" data-testid="hv2-cash-card">
+    <section aria-labelledby="hv2-cash-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-cash-card">
       <h2 id="hv2-cash-title" className={cardTitle} data-testid="hv2-metric-cash-label">
         {t("hv2.card.cash")}
       </h2>
-      <p className={`mt-2 font-display text-[34px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-4 sm:text-[36px] ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
+      <p className={`mt-2 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:mt-3 ${below ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-cash-value">
         {cash.value_display}
       </p>
       {cash.note ? (
@@ -86,12 +86,12 @@ function MiniChart({ lines, floor, today, window, dotDay, dotCls, mainKey }: { l
   const main = drawn.find((l) => l.key === mainKey)?.segs ?? [];
   const dotV = main.find((q) => dotDay >= q.d0 && dotDay < q.d1)?.v ?? main[main.length - 1]?.v ?? floor;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} aria-hidden className="block h-auto w-full overflow-visible" data-testid="hv2-mini">
-      <line x1={pad} x2={W - pad} y1={y(floor)} y2={y(floor)} className="stroke-line-strong" strokeWidth={1} />
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="block h-14 w-full overflow-visible" data-testid="hv2-mini">
+      <line x1={pad} x2={W - pad} y1={y(floor)} y2={y(floor)} className="stroke-line-strong" strokeWidth={1} vectorEffect="non-scaling-stroke" />
       {drawn.map((l) => (
-        <path key={l.key} d={path(l.segs)} fill="none" strokeLinejoin="miter" strokeDasharray={l.dash} strokeWidth={l.width} className={l.cls} data-testid={l.testId} />
+        <path key={l.key} d={path(l.segs)} fill="none" strokeLinejoin="miter" strokeDasharray={l.dash} strokeWidth={l.width} vectorEffect="non-scaling-stroke" className={l.cls} data-testid={l.testId} />
       ))}
-      <circle cx={x(dotDay)} cy={y(dotV)} r={4} className={dotCls} />
+      <line x1={x(dotDay)} x2={x(dotDay)} y1={y(dotV)} y2={y(dotV)} strokeWidth={8} strokeLinecap="round" vectorEffect="non-scaling-stroke" className={dotCls} />
     </svg>
   );
 }
@@ -101,7 +101,7 @@ function MiniOutlook({ cash, today, plan }: { cash: HomeView["cash"]; today: num
   const lines: MiniLine[] = [];
   if (plan) lines.push({ key: "plan", points: plan, cls: "stroke-ink-3", width: 1.75, dash: "4 3", testId: "hv2-mini-plan" });
   lines.push({ key: "base", points: cash.series, cls: "stroke-chart-base", width: 2.25, testId: "hv2-mini-current" });
-  return <MiniChart lines={lines} mainKey="base" floor={cash.floor_fen} today={today} window={Math.max(cash.picture_days || WINDOW_FALLBACK, cash.events_rail_days ?? 0)} dotDay={cash.lowest_day} dotCls="fill-chart-base" />;
+  return <MiniChart lines={lines} mainKey="base" floor={cash.floor_fen} today={today} window={Math.max(cash.picture_days || WINDOW_FALLBACK, cash.events_rail_days ?? 0)} dotDay={cash.lowest_day} dotCls="stroke-chart-base" />;
 }
 
 const ExpandIcon = ({ open }: { open: boolean }) => (
@@ -119,7 +119,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
   const low = kpis.lowest_ahead;
   const withPlan = low.with_plan ?? null;
   return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4 sm:p-5" data-testid="hv2-outlook-card">
+    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card">
       <div className="flex items-start justify-between gap-3">
         <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
           {t("hv2.card.outlook")}
@@ -130,7 +130,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
           </StatusPill>
         ) : null}
       </div>
-      <p className={`mt-3 font-display text-[34px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[36px] ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+      <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${low.tone === "bad" ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
         {low.value_display}
       </p>
       <p className="mt-1.5 text-sm text-ink-3">
@@ -145,7 +145,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
       <div className="mt-2 max-sm:max-w-xs">
         <MiniOutlook cash={h.cash} today={h.day} plan={plan} />
       </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-sm text-ink">
+      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
         {withPlan?.label && withPlan.value_text ? (
           <p className="tabular-nums" data-testid="home-kpi-lowest-plan">
             <span className="inline-block first-letter:uppercase">{withPlan.label}</span> {withPlan.value_text}
@@ -153,7 +153,7 @@ export function OutlookCard({ h, kpis, plan, expanded, onExpand, controls }: { h
         ) : (
           <span />
         )}
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
           {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
           <ExpandIcon open={expanded} />
         </button>
@@ -179,7 +179,7 @@ export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { 
   ];
   const lowestDay = asked.series.filter((p) => p.day >= h.day).reduce<HomeSeriesPoint | null>((a, b) => (a === null || b.closing_fen < a.closing_fen ? b : a), null)?.day ?? h.day;
   return (
-    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4 sm:p-5" data-testid="hv2-outlook-card" data-mode="deal">
+    <section aria-labelledby="hv2-outlook-title" className="motion-reveal f-card flex min-w-0 flex-col p-4" data-testid="hv2-outlook-card" data-mode="deal">
       <div className="flex items-start justify-between gap-3">
         <h2 id="hv2-outlook-title" className={cardTitle} data-testid="hv2-metric-lowest-label">
           {t("hv2.deal.outlook")}
@@ -191,7 +191,7 @@ export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { 
         ) : null}
       </div>
       {asked.lowest_short ? (
-        <p className={`mt-3 font-display text-[34px] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[36px] ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
+        <p className={`mt-3 font-display text-[32px] font-bold leading-none tracking-[-0.03em] tabular-nums ${asked.first_breach_when !== null ? "text-bad-fg" : "text-ink"}`} data-testid="home-kpi-lowest-value">
           {asked.lowest_short}
         </p>
       ) : null}
@@ -199,14 +199,14 @@ export function DealOutlookCard({ h, picture, expanded, onExpand, controls }: { 
         {asked.label || t("hv2.deal.outlook.asked")}
       </p>
       <div className="mt-2 max-sm:max-w-xs">
-        <MiniChart lines={lines} mainKey="asked" floor={picture.floor_fen} today={h.day} window={picture.picture_days ?? h.cash.picture_days ?? WINDOW_FALLBACK} dotDay={lowestDay} dotCls="fill-bad-solid" />
+        <MiniChart lines={lines} mainKey="asked" floor={picture.floor_fen} today={h.day} window={picture.picture_days ?? h.cash.picture_days ?? WINDOW_FALLBACK} dotDay={lowestDay} dotCls="stroke-bad-solid" />
       </div>
-      <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-sm text-ink">
+      <div className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-ink">
         <p className="tabular-nums" data-testid="hv2-outlook-rec">
           {rec.label}
           {rec.lowest_short ? ` ${rec.lowest_short}` : ""}
         </p>
-        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
+        <button type="button" aria-expanded={expanded} aria-controls={controls} onClick={() => onExpand(!expanded)} className="motion-press -mr-2 inline-flex min-h-8 items-center gap-1.5 rounded-control px-2 font-semibold hover:bg-subtle touch:min-h-11" data-testid="hv2-outlook-expand">
           {expanded ? t("hv2.card.close") : t("hv2.card.expand")}
           <ExpandIcon open={expanded} />
         </button>
@@ -230,17 +230,17 @@ export function UpcomingCard({ h }: { h: HomeView }) {
         .slice(0, 3)
         .map((e) => ({ key: e.key, label: e.label_short ?? e.label, amount: e.amount_short, when: e.when, kind: (e.amount_fen ?? 0) < 0 ? "outflow" : "inflow" }));
   return (
-    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-5" data-testid="hv2-upcoming">
-      <h2 id="hv2-upcoming-title" className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
+    <section aria-labelledby="hv2-upcoming-title" className="motion-reveal f-card min-w-0 p-4" data-testid="hv2-upcoming">
+      <h2 id="hv2-upcoming-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {t("hv2.upcoming.title")}
       </h2>
       {events.length ? (
-        <ul className="mt-5 divide-y divide-line" data-testid="hv2-upcoming-list">
+        <ul className="mt-3 divide-y divide-line" data-testid="hv2-upcoming-list">
           {events.map((e) => (
-            <li key={e.key} className="flex items-start justify-between gap-4 py-3.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
+            <li key={e.key} className="flex min-h-11 items-center justify-between gap-4 py-1.5 first:pt-0" data-testid="hv2-upcoming-row" data-kind={e.kind}>
               <span className="min-w-0 text-[15px] text-ink">
-                <span className="block first-letter:uppercase">{e.label}</span>
-                <span className="mt-0.5 block text-sm text-ink-3 first-letter:uppercase">{e.when}</span>
+                <span className="block leading-tight first-letter:uppercase">{e.label}</span>
+                <span className="block text-supporting text-ink-3 first-letter:uppercase">{e.when}</span>
               </span>
               <b className="shrink-0 font-semibold tabular-nums text-ink">{e.amount}</b>
             </li>

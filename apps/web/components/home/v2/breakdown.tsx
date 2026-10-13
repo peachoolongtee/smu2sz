@@ -38,11 +38,11 @@ export function Breakdown({ rows, total, testId = "hv2-breakdown" }: { rows: Bre
   const pick = (i: number) => setActive((a) => (a === i ? null : i));
   const sentence = (i: number) => t("hv2.break.sentence", { label: rows[i].label, amount: rows[i].amount_display, share: rows[i].share_text, total: total ?? "" });
   return (
-    <div className="mt-3 border-b border-line pb-3" data-testid={testId}>
-      <div className="grid items-center gap-x-6 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+    <div className="mt-2 border-b border-line pb-2" data-testid={testId}>
+      <div className="grid items-center gap-x-5 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)]">
         {donut ? (
-          <div className="relative mx-auto size-[120px] shrink-0 sm:mx-0" data-testid={`${testId}-donut`}>
-            <svg viewBox="0 0 132 132" width="120" height="120" className="overflow-visible" role="group" aria-label={t("hv2.break.label")} style={{ ["--f-c" as string]: C }}>
+          <div className="relative mx-auto size-[96px] shrink-0 sm:mx-0" data-testid={`${testId}-donut`}>
+            <svg viewBox="0 0 132 132" width="96" height="96" className="overflow-visible" role="group" aria-label={t("hv2.break.label")} style={{ ["--f-c" as string]: C }}>
               {(sizes as number[]).map((n, i) => {
                 const len = (n / sum) * C;
                 return (
@@ -76,7 +76,7 @@ export function Breakdown({ rows, total, testId = "hv2-breakdown" }: { rows: Bre
                 );
               })}
             </svg>
-            {total ? <span className="pointer-events-none absolute inset-0 grid place-items-center px-5 text-center text-supporting font-semibold tabular-nums text-ink">{total}</span> : null}
+            {total ? <span className="pointer-events-none absolute inset-0 grid place-items-center px-4 text-center text-supporting font-semibold tabular-nums text-ink">{total}</span> : null}
           </div>
         ) : null}
         <ul className="min-w-0 space-y-1" data-testid={`${testId}-rows`}>
@@ -86,11 +86,11 @@ export function Breakdown({ rows, total, testId = "hv2-breakdown" }: { rows: Bre
                 type="button"
                 aria-pressed={active === i}
                 onClick={() => pick(i)}
-                className={`motion-press flex w-full items-start justify-between gap-4 rounded-[12px] px-2.5 py-2 text-left transition-colors duration-(--dur-fast) hover:bg-subtle ${active === i ? "bg-card ring-1 ring-f-purple" : ""}`}
+                className={`motion-press flex w-full items-start justify-between gap-4 rounded-[12px] px-2.5 py-1 text-left transition-colors duration-(--dur-fast) hover:bg-subtle ${active === i ? "bg-card ring-1 ring-f-purple" : ""}`}
               >
                 <span className="flex min-w-0 items-start gap-3">
-                  <span aria-hidden className={`mt-2 size-2.5 shrink-0 rounded-pill ${DOT[i % DOT.length]}`} />
-                  <span className="min-w-0 text-[15px] text-ink">
+                  <span aria-hidden className={`mt-1.5 size-2.5 shrink-0 rounded-pill ${DOT[i % DOT.length]}`} />
+                  <span className="min-w-0 text-sm text-ink">
                     <span className="block">{r.label}</span>
                     {r.share_text ? (
                       <span className="block text-supporting text-ink-3" data-testid={`${testId}-share-${i}`}>
