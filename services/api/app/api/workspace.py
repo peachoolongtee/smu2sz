@@ -127,6 +127,7 @@ def priced_response(counter: dict[str, Any], *, view: dict[str, Any], verdict_id
         "receipt": send_receipt(lang, buyer=buyer, lines=lines, recheck_text=recheck, cost_display=counter["supplier_cost_display"],
                                 funds_when=when_text(max(lands), today, lang) if lands else None,
                                 funds_today=bool(lands) and max(lands) <= today, authority_text=authority_text,
+                                unfunded=bool(send_plan is not None and send_plan.actions and not _send_runs_funding(send_plan)),
                                 if_declined_lines=(funding_lines(state, [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in decline_plan.actions],
                                                                  None, today, lang) if _send_runs_funding(decline_plan) else [])),
         "supplier_cost_display": counter["supplier_cost_display"], "forward_value_display": counter["forward_value_display"],

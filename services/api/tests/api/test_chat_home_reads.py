@@ -92,7 +92,8 @@ def test_the_home_reads_are_said_in_business_words_with_no_ids_no_day_numbers_an
 
     assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
     agree_on_rcv_a(api)  # a promise, an agreement and a pending application: every kind of row the reads can list
-    names = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Government-guaranteed working-capital loan"]
+    names = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "Dongguan", "Zhuhai Kitchenware Wholesale Co.", "Zhuhai",
+             "Government-guaranteed working-capital loan"]
     for n, (en, zh) in enumerate(QUESTIONS_BUSINESS):
         for scope in (None, {"customer": "BUYER-2"}):
             body: dict[str, Any] = {"session_id": f"biz-{lang}-{n}-{scope is not None}", "text": en if lang == "en" else zh, "lang": lang}

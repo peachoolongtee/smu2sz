@@ -34,6 +34,7 @@ from app.api.presentation import (
     facility_name,
     kind_text,
     lands_difference,
+    lapsed_offer_text,
     leg_words,
     obligation_sentence,
     option_label,
@@ -120,6 +121,18 @@ def offer_as_asked(state: FinancialState, mandate: Mandate, commitments: Sequenc
 def is_lapsed(state: FinancialState, mandate: Mandate, commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
     """Whether the offer's reply can no longer be drawn on today's books (`offer_as_asked` has no trajectory)."""
     return offer_as_asked(state, mandate, commitments, offer_id, verdict)[1] is None
+
+
+def lapsed_conflict(rt: Runtime, offer_id: str, verdict: Any, lang: str) -> HTTPException | None:
+    """The 409 `OFFER_LAPSED` {code, message, message_when} an action on a lapsed offer answers with (the one the exposure routes give), else None.
+    A lapsed offer is closed: it is not evaluated again and nothing is sent on it. Call under `rt.lock`."""
+    if verdict is None:
+        return None
+    state, mandate, held = rt.store.get_state(), rt.store.get_mandate(), tuple(rt.store.commitments())
+    if not is_lapsed(state, mandate, held, offer_id, verdict):
+        return None
+    said = lapsed_offer_text("zh" if lang == "zh" else "en", lapsed_by_agreement(held, offer_id, verdict))
+    return HTTPException(409, detail={"code": "OFFER_LAPSED", "message": said, "message_when": said})
 
 
 def lapsed_by_agreement(commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
@@ -319,7 +332,7 @@ def waiting_view(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str
     name = _party_name(ctx, w)
     return {"code": w.code.value, "party": w.party.value, "party_name": name, "day": w.day,
             "when": when_text(w.day, ctx.today, lang) if w.day is not None else None,
-            "text": waiting_text(w.code.value, name or "", w.day, ctx.today, lang, family=ds.family)}
+            "text": waiting_text(w.code.value, name or "", w.day, ctx.today, lang, family=ds.family, lapsed=ds.state == DealState.LAPSED)}
 
 
 def _money_legs(ds: DecisionState) -> list[Any]:
@@ -544,7 +557,7 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
                  "REJECTED": t(lang, "You declined it.", "您已拒绝。")}.get(approval or "")
     awaited = next((p["detail_when"] for p in promises if p.get("status") == "AWAITED" and p.get("detail_when")), None)
     return agreement_receipt(lang, buyer=party_name(ctx.state, c.counterparty_id), terms=_agreed_terms(ctx, c, lang),
-                             status_text=_status_text(c, ds, lang), forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
+                             status_text=execution_view(ctx, ds, lang)["summary_text"], forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
                              economic_effect_text=economic_effect_text(c, ctx.mandate.forward_concession_horizon_days, lang),
                              expires_when=when_text(c.expires_day, ctx.today, lang), authority_text=authority, awaited=awaited)
 
@@ -596,7 +609,7 @@ def remaining_task_view(ctx: Context, ds: DecisionState, inp: DecisionInputs, la
     if ds.residual is not None and w.code == WaitCode.OWNER_DECISION:
         text = remaining_task_words(ds.residual.shortfall_fen, ds.residual.starts_day, ctx.today, lang, ds.residual.committed_cure)
     else:
-        text = waiting_text(w.code.value, _party_name(ctx, w) or "", w.day, ctx.today, lang, family=ds.family)
+        text = waiting_text(w.code.value, _party_name(ctx, w) or "", w.day, ctx.today, lang, family=ds.family, lapsed=ds.state == DealState.LAPSED)
     return {"text": text, "code": w.code.value, "links": remaining_links(ctx, ds, lang) if ds.residual is not None and w.code == WaitCode.OWNER_DECISION else []}
 
 
