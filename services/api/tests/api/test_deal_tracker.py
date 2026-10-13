@@ -129,7 +129,7 @@ def test_just_after_the_agreement_expected_is_set_and_nothing_has_been_paid(api:
     assert "funding" not in _lines(d)
     assert d["headline_text"] == "Nothing has happened on this deal yet"
     assert [(p["party"], p["state"]) for p in d["promises"]] == [("buyer", "awaited"), ("buyer", "awaited"), ("you", "in_force")]
-    assert d["promise_counts"] == {"buyer_kept": 0, "buyer_total": 2, "text": "The buyer has kept zero of two promises on this deal."}
+    assert d["promise_counts"] == {"buyer_kept": 0, "buyer_total": 2, "buyer_paid_late": 0, "text": "The buyer has kept zero of two promises on this deal."}
     assert d["cost"]["to_come"]["amount_fen"] == POSTED_DISCOUNT_FEN  # the discount posted on the awaited promise
     assert d["next"] is None and d["closeout_text"] is None
     assert d["links"]["record_href"] == f"/decisions/{did}" and d["links"]["activity_href"] == f"/activity?decision={did}"
@@ -400,13 +400,18 @@ def test_once_every_invoice_of_the_deal_is_paid_the_deal_has_ended_with_its_clos
         "receivable_id": "RCV-A", "amount_fen": rest.face_fen - rest.settled_fen, "bank_reference": "BANK-REST"})
     assert paid.json()["result"]["status"] == "EXECUTED", paid.text
     d = _tracker(api, did, lang)
-    assert d["next"] is None and [p["state"] for p in d["promises"] if p["party"] == "buyer"] == ["kept", "kept"]
+    assert d["next"] is None and [p["state"] for p in d["promises"] if p["party"] == "buyer"] == ["kept", "paid_late"]
     assert d["stages"][-1]["state"] == "done" and d["stages"][-1]["key"] == "fulfilled"
     assert d["cost"]["actual"]["amount_fen"] == 396839 and d["cost"]["unmeasured_fen"] == 84157 and d["cost"]["difference_fen"] == 178219
+    late = next(p for p in d["promises"] if p["state"] == "paid_late")
+    assert late["tone"] == "warn" and late["state_word"] == ("Paid late" if lang == "en" else "逾期支付") and "34" not in late["detail_text"]
+    assert d["promise_counts"]["buyer_kept"] == 1 and d["promise_counts"]["buyer_paid_late"] == 1
     if lang == "en":
+        assert late["detail_text"].endswith("2 days ago, 2 days late.") or "days late" in late["detail_text"]
+        assert d["promise_counts"]["text"] == "The buyer has kept one of two promises on this deal; one was paid late."
         assert d["closeout_text"] == ("This deal cost ¥3,968.39 against ¥3,027.77 expected, including ¥1,782.19 of funding on top; "
-                                      "¥841.57 of the expected cost was never measured. The buyer kept 2 of 2 promises.")
-        assert d["headline_text"] == "This deal closed with extra cost on top of the terms you agreed" and d["state_word"] == "Completed"
+                                      "¥841.57 of the expected cost was never measured. The buyer kept 1 of 2 promises; 1 was paid late.")
+        assert d["headline_text"] == "This deal closed with extra cost on top of the terms you agreed" and d["state_word"] == "Paid late"
         assert d["state_text"] == "The buyer paid the early part it promised. Every invoice on this deal has been paid."
     else:
         assert "¥3,968.39" in d["closeout_text"] and "¥1,782.19" in d["closeout_text"] and re.search(r"[\u4e00-\u9fff]", d["closeout_text"])

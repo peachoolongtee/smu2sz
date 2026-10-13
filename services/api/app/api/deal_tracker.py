@@ -154,13 +154,27 @@ def _buyer_promises(ctx: Context, c: Any, promised: list[Any], receivables: list
     out: list[dict[str, Any]] = []
     table = {"RECEIVED": ("kept", "ok", t(lang, "Kept", "已兑现")), "AWAITED": ("awaited", "neutral", t(lang, "Awaited", "等待中")),
              "LAPSED": ("missed", "bad", t(lang, "Missed", "已错过")), "SETTLED_OTHERWISE": ("part", "warn", t(lang, "Part kept", "部分兑现"))}
+    paid_on = _receipt_days(ctx)
+    day_of = {r.seq: r.day for r in ctx.receipts if r.day is not None}
+
+    def days_late(n: int) -> str:
+        return t(lang, f"{n} {'day' if n == 1 else 'days'} late", f"逾期 {n} 天")
+
     for p in promised:
         state, tone, word = table.get(p.status, ("awaited", "neutral", t(lang, "Awaited", "等待中")))
         detail = reconciliation_words(ctx.state, p.detail, ctx.today, promise=True, lang=lang, agreements=agreements) or ""
+        arrived = day_of.get(p.receipt_seq) if p.receipt_seq is not None else None
+        if state == "kept" and arrived is not None and p.promised_day is not None and arrived > p.promised_day:
+            late = arrived - p.promised_day  # a promise met after its day is not kept
+            state, tone, word = "paid_late", "warn", t(lang, "Paid late", "逾期支付")
+            detail = t(lang, f"The early payment of {fmt_yuan(p.expected_fen)} was due {when_text(p.promised_day, ctx.today, lang)} and "
+                             f"arrived {when_text(arrived, ctx.today, lang)}, {days_late(late)}.",
+                       f"{fmt_yuan(p.expected_fen)} 的提前付款应于{when_text(p.promised_day, ctx.today, lang)}到账，"
+                       f"实际于{when_text(arrived, ctx.today, lang)}到账，{days_late(late)}。")
         out.append({"party": "buyer", "party_text": who,
                     "title_text": t(lang, f"Pay {fmt_yuan(p.expected_fen)} early", f"提前支付 {fmt_yuan(p.expected_fen)}"),
                     "detail_text": detail, "state": state, "state_word": word, "tone": tone,
-                    "evidence_href": _entry_href(p.receipt_seq) if state in ("kept", "part") else None,
+                    "evidence_href": _entry_href(p.receipt_seq) if state in ("kept", "part", "paid_late") else None,
                     "_seq": p.receipt_seq})
     for r in receivables:
         owed = r.face_fen - r.settled_fen
@@ -168,6 +182,13 @@ def _buyer_promises(ctx: Context, c: Any, promised: list[Any], receivables: list
         if r.status == "SETTLED" or owed <= 0:
             state, tone, word = "kept", "ok", t(lang, "Kept", "已兑现")
             detail = t(lang, f"{words[:1].upper()}{words[1:]} has been paid.", f"{words}已付清。")
+            paid = paid_on.get(r.id)
+            if paid is not None and paid > r.due_day:
+                state, tone, word = "paid_late", "warn", t(lang, "Paid late", "逾期支付")
+                detail = t(lang, f"{words[:1].upper()}{words[1:]} was due {when_text(r.due_day, ctx.today, lang)} and was paid "
+                                 f"{when_text(paid, ctx.today, lang)}, {days_late(paid - r.due_day)}.",
+                           f"{words}应于{when_text(r.due_day, ctx.today, lang)}付清，实际于{when_text(paid, ctx.today, lang)}付清，"
+                           f"{days_late(paid - r.due_day)}。")
         else:
             state = "late" if r.due_day < ctx.today else "awaited"
             tone, word = ("bad", t(lang, "Late", "已逾期")) if state == "late" else ("neutral", t(lang, "Awaited", "等待中"))
@@ -515,13 +536,15 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     rows = [*buyer_rows, *_owner_promises(ctx, ds, promised, lang)]
     for r in rows:
         r.pop("_seq", None)
-    kept = sum(1 for r in buyer_rows if r["state"] == "kept")
+    kept = sum(1 for r in buyer_rows if r["state"] == "kept")  # met on or before its day
+    paid_late = sum(1 for r in buyer_rows if r["state"] == "paid_late")
     total = len(buyer_rows)
     if total == 0:
         counts_text = t(lang, "The buyer has made no promise on this deal yet.", "买方在这笔交易中还没有作出承诺。")
     else:
-        counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(total, lang)} promises on this deal.",
-                        f"买方在这笔交易的 {total} 项承诺中已兑现 {kept} 项。")
+        counts_text = t(lang, f"The buyer has kept {_num(kept, lang)} of {_num(total, lang)} promises on this deal"
+                              + (f"; {_num(paid_late, lang)} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else "."),
+                        f"买方在这笔交易的 {total} 项承诺中已兑现 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。"))
     behaviour = None
     try:
         from app.books import books_from_store
@@ -548,6 +571,8 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         word, wtone = t(lang, "Payment late", "付款逾期"), "bad"
     elif "part" in states:
         word, wtone = t(lang, "Part kept", "部分兑现"), "warn"
+    elif "paid_late" in states:
+        word, wtone = t(lang, "Paid late", "逾期支付"), "warn"
     elif ended and ds.state == DealState.FULFILLED:
         word, wtone = t(lang, "Completed", "已完成"), "ok"
     elif ended and c.status in (CommitmentStatus.REVOKED, CommitmentStatus.EXPIRED):
@@ -581,8 +606,8 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
             sentence += " The cost expected at agreement was not recorded."
             sentence_zh += "达成协议时的预期成本没有记录。"
         if total:
-            sentence += f" The buyer kept {kept} of {total} promises."
-            sentence_zh += f"买方在 {total} 项承诺中兑现了 {kept} 项。"
+            sentence += f" The buyer kept {kept} of {total} promises" + (f"; {paid_late} {'was' if paid_late == 1 else 'were'} paid late." if paid_late else ".")
+            sentence_zh += f"买方在 {total} 项承诺中兑现了 {kept} 项" + (f"；有 {paid_late} 项逾期后才付款。" if paid_late else "。")
         closeout = t(lang, sentence, sentence_zh)
     else:
         closeout = None
@@ -619,7 +644,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
         "agreed_when": agreed_when, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
         "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, states, ended, lapsed), "cost": cost, "promises": rows,
-        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "text": counts_text}, "buyer": buyer_view, "next": nxt,
+        "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",
                   "activity_href": f"/activity?decision={quote(ds.decision_id, safe=':')}"},
