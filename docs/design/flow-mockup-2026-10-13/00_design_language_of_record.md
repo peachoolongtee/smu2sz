@@ -1,9 +1,12 @@
 # The design language of record (owner, 13 Oct 2026): the FLOW mockup
 
-The owner's mockup in this folder (19 screens at 2x, `FLOW-interactive.html` with its CSS, `README.txt`) is the final design
-language for Home and the reference for every screen the overhaul (map #121) rebuilds. Home adopts it now with minor
-improvements; the other screens adopt it slice by slice, each checked against the 12 Oct audit (`FLOW-dev-audit.md`) so that
-the new screens fix the flows the audit found broken, not only the look.
+The owner's mockup (the HOME screens only: 01–06 desktop states, 18 the phone Home, 19 the phone collection state, plus
+`FLOW-interactive.html` with its CSS and `README.txt`) is the final design language for Home. The owner's instruction of
+13 Oct: take only the Home page from the mockup; its other screens (funding review, Cash, Receivables, Customer, Documents,
+Activity, What-if, Capex, Approvals) are NOT references, because they do not encompass the audit's findings, the flows or
+the backend; they were removed from this folder. The visual language below (colours, tones, cards, buttons, type) carries to
+the other screens as a style only; their structure comes from the overhaul map #121's decisions and the 12 Oct audit
+(`FLOW-dev-audit.md`), never from the mockup.
 
 ## The language, as the HTML defines it
 - Canvas `#e5e8e8`; panel `#f8f9f9`; card white; text `#151b1c`; muted `#586468`; hairline `#d8dddd`.
@@ -48,7 +51,6 @@ the new screens fix the flows the audit found broken, not only the look.
 10. Everything the Home V2 build already settled and the mockup does not contradict stays (the funding disclosure, the
     approval line's two forms, the compact inspector behind the lowest point, the fluid width when the rail is collapsed).
 
-## How the other screens adopt it
-Each overhaul slice takes its mockup screens as the reference (Deals 02–05 and 16–17; Cash 07–09; Receivables 10;
-Customer 11; Documents 12; Activity 13; What-if 14; Capex 15; phone 18–19), prototypes only the deltas the audit requires
-(docs/design/flow-mockup-2026-10-13/01_mockup_vs_audit.md lists them per screen), and keeps the words rules above.
+## The other screens
+They take the visual language only. Each overhaul slice (map #121) is structured by its decision tickets and the audit's
+findings for that page, prototyped as those tickets say, and styled with the tokens above and the kit that Home's build adds.
