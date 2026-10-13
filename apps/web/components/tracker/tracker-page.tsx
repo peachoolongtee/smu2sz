@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { CostBlock } from "@/components/tracker/cost-block";
-import { Block, EvidenceLink, Pill } from "@/components/tracker/parts";
+import { Block, EvidenceLink, PILL_TONE, pillClass } from "@/components/tracker/parts";
 import { ButtonLink, EmptyState, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
 import type { Selection } from "@/lib/selection";
 import { useTracker, type TrackerStageState, type TrackerView } from "@/lib/tracker";
@@ -60,9 +61,9 @@ function Body({ d }: { d: TrackerView }) {
         </h1>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {d.state_word ? (
-            <Pill tone={d.state_tone} testId="tracker-state" data-tone={d.state_tone}>
+            <StatusPill tone={PILL_TONE[d.state_tone]} className={pillClass(d.state_tone)} testId="tracker-state" data-state-tone={d.state_tone}>
               {d.state_word}
-            </Pill>
+            </StatusPill>
           ) : null}
           {d.state_text ? <p className="min-w-0 flex-1 basis-64 text-body-lg text-ink-2">{d.state_text}</p> : null}
         </div>
@@ -103,7 +104,9 @@ function Body({ d }: { d: TrackerView }) {
                   <p className="mt-1 text-body text-ink-2">{p.detail_text}</p>
                   <EvidenceLink href={p.evidence_href} />
                 </div>
-                <Pill tone={p.tone}>{p.state_word}</Pill>
+                <StatusPill tone={PILL_TONE[p.tone]} className={pillClass(p.tone)} data-state-tone={p.tone}>
+                  {p.state_word}
+                </StatusPill>
               </li>
             ))}
           </ul>

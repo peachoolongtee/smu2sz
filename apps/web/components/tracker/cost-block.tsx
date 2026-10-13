@@ -3,10 +3,11 @@
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { TrackerCost, TrackerLine } from "@/lib/tracker";
-import { Block, EvidenceLink } from "./parts";
+import { FundingLegend, FundingRows, FundingSegments, isFunding } from "./funding-on-top";
+import { LineRow } from "./line-row";
+import { Block } from "./parts";
 
 const ACTUAL_INK = { bad: "text-bad-fg", ok: "text-ok-fg", neutral: "text-ink" } as const;
-const LINE_INK = { bad: "text-bad-fg", warn: "text-warn-fg", ok: "text-ok-fg", neutral: "text-ink" } as const;
 
 function Figure({ label, testId, children, note }: { label: string; testId: string; children: ReactNode; note?: string | null }) {
   return (
@@ -19,64 +20,31 @@ function Figure({ label, testId, children, note }: { label: string; testId: stri
 }
 
 /**
- * The two-part bar: what was expected, then what it costs beyond that. It is plotted from the server's fen numbers only (a width, never a label);
- * the words beside it are the server's. With the cost at or under the expectation the bar is the cost so far against the expected length.
+ * The bar: one segment per line the server has a figure for, the agreed terms in ink and the funding on top in the bad tone (`FundingSegments`), each
+ * sized by its own fen number (a width, never a label), with a legend of the lines' own labels so colour is never alone.
  */
-function CostBar({ cost }: { cost: TrackerCost }) {
-  const { t } = useI18n();
-  const over = cost.difference_fen > 0;
-  const lead = over ? cost.expected.amount_fen : cost.actual.amount_fen;
-  const rest = over ? cost.difference_fen : cost.expected.amount_fen - cost.actual.amount_fen;
+function CostBar({ lines }: { lines: TrackerLine[] }) {
+  const terms = lines.filter((l) => !isFunding(l) && l.actual_fen !== null && l.actual_fen > 0);
+  const hasFunding = lines.some((l) => isFunding(l) && l.actual_fen !== null && l.actual_fen > 0);
+  if (!terms.length && !hasFunding) return null;
   return (
-    <div data-testid="tracker-bar" data-over={over ? "true" : "false"}>
+    <div data-testid="tracker-bar">
       <div aria-hidden className="flex h-4 overflow-hidden rounded-pill bg-track">
-        <div className="motion-grow bg-ink" style={{ flex: Math.max(lead, 1) }} />
-        {rest > 0 ? <div className={`motion-grow ${over ? "bg-bad-solid" : "bg-track"}`} style={{ flex: rest }} /> : null}
+        {terms.map((l) => (
+          <div key={l.key} className="motion-grow bg-ink" style={{ flex: l.actual_fen as number }} data-testid={`tracker-bar-${l.key}`} />
+        ))}
+        <FundingSegments lines={lines} />
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-supporting text-ink-2">
-        <li className="flex items-center gap-1.5">
-          <span aria-hidden className="size-2.5 rounded-full bg-ink" />
-          {over ? t("tracker.bar.expected") : t("tracker.bar.sofar")}
-        </li>
-        {over ? (
-          <li className="flex items-center gap-1.5">
-            <span aria-hidden className="size-2.5 rounded-full bg-bad-solid" />
-            {t("tracker.bar.more")} <span className="font-semibold tabular-nums text-bad-fg">{cost.difference_display}</span>
+        {terms.map((l) => (
+          <li key={l.key} className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-ink" />
+            {l.label}
           </li>
-        ) : null}
+        ))}
+        <FundingLegend lines={lines} />
       </ul>
     </div>
-  );
-}
-
-function LineCells({ l }: { l: TrackerLine }) {
-  const { t } = useI18n();
-  return (
-    <>
-      <th scope="row" className="px-0 py-3 text-left align-top font-semibold text-ink max-sm:block max-sm:pb-1 sm:pr-4">
-        {l.label}
-      </th>
-      <td className="py-3 align-top tabular-nums max-sm:flex max-sm:justify-between max-sm:gap-4 max-sm:py-0.5 sm:text-right">
-        <span className="text-supporting text-ink-3 sm:hidden">{t("tracker.col.expected")}</span>
-        <span className="whitespace-nowrap">{l.expected_display}</span>
-      </td>
-      <td className={`py-3 align-top max-sm:flex max-sm:justify-between max-sm:gap-4 max-sm:py-0.5 sm:pl-4 sm:text-right ${LINE_INK[l.tone]}`}>
-        <span className="text-supporting text-ink-3 sm:hidden">{t("tracker.col.actual")}</span>
-        <span className="min-w-0 max-sm:text-right sm:text-right">
-          {l.actual_display ? <span className={`block whitespace-nowrap tabular-nums ${l.tone === "neutral" ? "" : "font-semibold"}`}>{l.actual_display}</span> : null}
-          {l.actual_note_text ? <span className={`block text-supporting ${l.actual_display ? "text-ink-2" : ""}`}>{l.actual_note_text}</span> : null}
-        </span>
-      </td>
-      <td className="py-3 align-top text-supporting text-ink-2 max-sm:block max-sm:pb-1 max-sm:pt-0.5 sm:pl-6">
-        <span className="text-supporting text-ink-3 sm:hidden">{t("tracker.col.sure")}: </span>
-        {l.certainty_text}
-        {l.evidence_href ? (
-          <span className="block">
-            <EvidenceLink href={l.evidence_href} />
-          </span>
-        ) : null}
-      </td>
-    </>
   );
 }
 
@@ -97,18 +65,27 @@ export function CostBlock({ cost }: { cost: TrackerCost }) {
             {cost.actual.amount_display}
           </p>
         </Figure>
-        <Figure label={t("tracker.toCome")} testId="tracker-to-come" note={toCome.amount_display ? toCome.note_text : null}>
-          {toCome.amount_display ? (
-            <p className="type-value font-display text-ink" data-testid="tracker-to-come-figure">
-              {toCome.amount_display}
+        {(cost.unmeasured_fen ?? 0) > 0 && cost.unmeasured_display ? (
+          <Figure label={t("tracker.unmeasured")} testId="tracker-unmeasured">
+            <p className="type-value font-display text-ink" data-testid="tracker-unmeasured-figure">
+              {cost.unmeasured_display}
             </p>
-          ) : (
-            <p className="text-body-lg font-semibold text-ink">{toCome.note_text}</p>
-          )}
-        </Figure>
+          </Figure>
+        ) : null}
       </div>
 
-      <CostBar cost={cost} />
+      <div className="text-body text-ink-2" data-testid="tracker-to-come">
+        {toCome.amount_display ? (
+          <p>
+            <span className="font-semibold text-ink">{t("tracker.toCome")}: </span>
+            <span className="font-semibold tabular-nums text-ink" data-testid="tracker-to-come-figure">{toCome.amount_display}</span> {toCome.note_text}
+          </p>
+        ) : (
+          <p>{toCome.note_text}</p>
+        )}
+      </div>
+
+      <CostBar lines={cost.lines} />
 
       <table className="w-full border-collapse text-left text-body">
         <caption className="sr-only">{t("tracker.lines")}</caption>
@@ -129,11 +106,10 @@ export function CostBlock({ cost }: { cost: TrackerCost }) {
           </tr>
         </thead>
         <tbody>
-          {cost.lines.map((l) => (
-            <tr key={l.key} data-testid={`tracker-line-${l.key}`} data-certainty={l.certainty} className="border-b border-line last:border-b-0 max-sm:block max-sm:py-3">
-              <LineCells l={l} />
-            </tr>
+          {cost.lines.filter((l) => !isFunding(l)).map((l) => (
+            <LineRow key={l.key} l={l} />
           ))}
+          <FundingRows lines={cost.lines} />
         </tbody>
       </table>
 

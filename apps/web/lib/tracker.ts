@@ -27,8 +27,8 @@ export interface TrackerStage {
 export interface TrackerLine {
   key: string;
   label: string;
-  expected_fen: number;
-  expected_display: string;
+  expected_fen: number | null;
+  expected_display: string | null;
   actual_fen: number | null;
   actual_display: string | null;
   actual_note_text: string | null;
@@ -39,9 +39,13 @@ export interface TrackerLine {
 }
 
 export interface TrackerCost {
-  expected: { amount_fen: number; amount_display: string; basis_text: string; certainty: TrackerCertainty };
-  actual: { amount_fen: number; amount_display: string; note_text: string; tone: "bad" | "ok" | "neutral" };
+  expected: { amount_fen: number | null; amount_display: string | null; basis_text: string | null; certainty: TrackerCertainty };
+  actual: { amount_fen: number; amount_display: string; note_text: string | null; tone: "bad" | "ok" | "neutral" };
   to_come: { amount_fen: number | null; amount_display: string | null; note_text: string };
+  /** The part of the expected cost no record holds yet. */
+  unmeasured_fen: number | null;
+  unmeasured_display: string | null;
+  /** The cost on top of the agreed terms (the counted funding lines), unsigned. */
   difference_fen: number;
   difference_display: string;
   lines: TrackerLine[];
@@ -73,6 +77,7 @@ export interface TrackerView {
   state_tone: TrackerTone;
   state_text: string | null;
   stages: TrackerStage[];
+  /** On an unavailable read the server sends the cost with every part null; the page draws it only when `available`. */
   cost: TrackerCost | null;
   promises: TrackerPromise[];
   promise_counts: { buyer_kept: number; buyer_total: number; text: string } | null;

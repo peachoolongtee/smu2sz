@@ -1,21 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { textLinkClass } from "@/components/ui";
-import { StateWord } from "@/components/ui/state-word";
-import type { StateTone } from "@/components/ui/state-word-model";
+import type { PillTone } from "@/components/ui/status-pill";
 import { useI18n } from "@/lib/i18n";
 import type { TrackerTone } from "@/lib/tracker";
 
-const FILL: Record<StateTone, string> = { neutral: "bg-subtle", ok: "bg-ok-bg", warn: "bg-warn-bg", bad: "bg-bad-bg", info: "bg-info-bg" };
-
-/** A server word as a pill: the kit's `StateWord` (a mark, the word, the tone's ink) on the tone's fill. The word is the accessible name; colour is never alone. */
-export function Pill({ tone, children, testId, ...data }: { tone: TrackerTone | "info"; children: ReactNode; testId?: string; [attr: `data-${string}`]: string | undefined }) {
-  return (
-    <span className={`inline-flex max-w-full rounded-pill px-2.5 py-1 ${FILL[tone]}`} data-testid={testId} {...data}>
-      <StateWord tone={tone}>{children}</StateWord>
-    </span>
-  );
-}
+/**
+ * The server's tone on the kit's `StatusPill` (components/ui/status-pill.tsx): ok is green, warn amber, neutral the neutral fill. The pill has no
+ * red of its own, so a `bad` tone takes the neutral pill with the kit's bad tint; the word is always shown, colour is never the only channel.
+ */
+export const PILL_TONE: Record<TrackerTone, PillTone> = { ok: "green", warn: "amber", bad: "neutral", neutral: "neutral" };
+export const pillClass = (tone: TrackerTone): string => (tone === "bad" ? "bg-bad-bg! text-bad-fg!" : "");
 
 /** The quiet link to the evidence behind a line or a promise (the server's address). */
 export function EvidenceLink({ href }: { href: string | null }) {
