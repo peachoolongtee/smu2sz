@@ -11,7 +11,8 @@ export function DecisionHighlight({
   facts,
   hero,
   middle,
-  stackMiddle = false,
+  aside,
+  below,
   note,
   children,
   testId,
@@ -23,11 +24,13 @@ export function DecisionHighlight({
   facts?: { label: string; value: string }[];
   /** The hero fact (the cost to the owner): a 13 px label, the figure at 28 px with a 2 px brand rule under it, and its basis word beside it in the quiet ink. */
   hero?: { label: string; value: string; basis?: string | null; testId?: string };
-  /** Beside the hero fact: the funding, as a timeline or as text. */
+  /** Beside the hero fact: the funding timing (a fact that can open the funding's composition). */
   middle?: ReactNode;
-  /** On a phone the middle goes under the hero fact (a list of rows) instead of beside it (a sentence). */
-  stackMiddle?: boolean;
-  /** One quiet line under the actions (who approves). */
+  /** The third fact (who decides), at the right. */
+  aside?: ReactNode;
+  /** Under the facts row, inside the block: what the funding timing fact opens. */
+  below?: ReactNode;
+  /** One 13 px line under the actions (who approves): quiet when none is needed, in the warn tone when the owner must. */
   note?: ReactNode;
   children?: ReactNode;
   testId?: string;
@@ -47,21 +50,20 @@ export function DecisionHighlight({
         </p>
       ) : null}
       {hero ? (
-        <div className={`mt-2.5 grid gap-x-5 gap-y-2 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-4 sm:pt-3 ${stackMiddle ? "" : "max-sm:grid-cols-[auto_minmax(0,1fr)]"}`} data-testid="hv2-action-facts">
-          <div className={`min-w-0 ${stackMiddle ? "max-sm:flex max-sm:items-baseline max-sm:justify-between max-sm:gap-3" : ""}`}>
-            <p className="text-supporting text-ink-3">{hero.label}</p>
-            <p className="mt-0.5 sm:mt-1">
-              <span className="inline-block border-b-2 border-brand-600 pb-1 font-display text-[24px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink sm:text-[28px]" data-testid={hero.testId ?? "hv2-hero-value"}>
-                {hero.value}
-              </span>
-            </p>
-            {hero.basis ? (
-              <p className="mt-1.5 line-clamp-2 max-w-[16rem] text-supporting text-ink-2 max-sm:hidden" title={hero.basis} data-testid="hv2-hero-basis">
-                {hero.basis}
+        <div className="mt-2.5 border-t border-line-strong pt-2.5 sm:mt-4 sm:pt-3" data-testid="hv2-action-facts">
+          <div className={`grid grid-cols-2 gap-x-6 gap-y-2.5 ${aside ? "sm:grid-cols-[auto_minmax(0,1fr)_auto]" : "sm:grid-cols-[auto_minmax(0,1fr)]"}`}>
+            <div className="min-w-0">
+              <p className="text-supporting text-ink-3">{hero.label}</p>
+              <p className="mt-0.5 sm:mt-1">
+                <span className="inline-block border-b-2 border-brand-600 pb-1 font-display text-[24px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink sm:text-[28px]" title={hero.basis ?? undefined} data-testid={hero.testId ?? "hv2-hero-value"}>
+                  {hero.value}
+                </span>
               </p>
-            ) : null}
+            </div>
+            {middle ? <div className="min-w-0 max-sm:order-last max-sm:col-span-2 sm:border-l sm:border-line-strong sm:pl-6">{middle}</div> : null}
+            {aside ? <div className="min-w-0 max-sm:border-l max-sm:border-line-strong max-sm:pl-4 sm:border-l sm:border-line-strong sm:pl-6">{aside}</div> : null}
           </div>
-          {middle ? <div className={`min-w-0 sm:border-l sm:border-line-strong sm:pl-8 ${stackMiddle ? "" : "max-sm:border-l max-sm:border-line-strong max-sm:pl-4"}`}>{middle}</div> : null}
+          {below}
         </div>
       ) : null}
       {!hero && facts?.length ? (

@@ -72,4 +72,5 @@ app.include_router(worklist_router)
 @app.get("/health")
 def health() -> dict[str, object]:
     s = get_settings()
-    return {"ok": True, "llm_mode": s.llm_mode, "features": s.features.__dict__}
+    # home_v2 stays on /health as a constant for one release: a web build that still asks (the old Home gate) reads true. Remove it next release.
+    return {"ok": True, "llm_mode": s.llm_mode, "features": {**s.features.__dict__, "home_v2": True}}

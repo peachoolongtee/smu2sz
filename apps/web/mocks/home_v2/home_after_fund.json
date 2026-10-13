@@ -4232,6 +4232,9 @@
         "primary": null,
         "secondary": null,
         "control": null,
+        "approval_text": null,
+        "approval_needed": false,
+        "consequence_text": null,
         "legs": [
           {
             "label": "Credit-line draw",
@@ -4243,7 +4246,8 @@
             "repaid_when": "in 32 days",
             "state": "RECEIVED",
             "state_text": "Received",
-            "authority_text": "Within your signed limits; nothing for you to do."
+            "authority_text": "Within your signed limits; nothing for you to do.",
+            "share_text": "37%"
           },
           {
             "label": "Invoice financing",
@@ -4255,7 +4259,8 @@
             "repaid_when": null,
             "state": "ARRANGED",
             "state_text": "Arranged",
-            "authority_text": "Within your signed limits; nothing for you to do."
+            "authority_text": "Within your signed limits; nothing for you to do.",
+            "share_text": "63%"
           }
         ],
         "cost_basis_text": null
@@ -8696,6 +8701,9 @@
         "primary": null,
         "secondary": null,
         "control": null,
+        "approval_text": null,
+        "approval_needed": false,
+        "consequence_text": null,
         "legs": [
           {
             "label": "信用额度提款",
@@ -8707,7 +8715,8 @@
             "repaid_when": "32 天后",
             "state": "RECEIVED",
             "state_text": "已到账",
-            "authority_text": "在您签署的授权内，您无需做任何事。"
+            "authority_text": "在您签署的授权内，您无需做任何事。",
+            "share_text": "37%"
           },
           {
             "label": "发票融资",
@@ -8719,7 +8728,8 @@
             "repaid_when": null,
             "state": "ARRANGED",
             "state_text": "已安排",
-            "authority_text": "在您签署的授权内，您无需做任何事。"
+            "authority_text": "在您签署的授权内，您无需做任何事。",
+            "share_text": "63%"
           }
         ],
         "cost_basis_text": null

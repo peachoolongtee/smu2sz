@@ -6,7 +6,9 @@
     "alert": {
       "key": "company-cash",
       "eyebrow": "Company cash",
+      "kind_text": "FLOW action ready",
       "text": "Reserve unsafe in 12 days. A funding plan is ready.",
+      "pending_text": "¥405k funding plan available · no approval needed · waits for your go",
       "tone": "bad",
       "primary": {
         "label": "Run or compare",
@@ -19,6 +21,7 @@
       "customers": 2
     },
     "needs_you": [],
+    "needs_you_empty_text": "Nothing else needs you.",
     "waiting": [],
     "customers": [
       {
@@ -57,7 +60,9 @@
     "alert": {
       "key": "company-cash",
       "eyebrow": "公司现金",
+      "kind_text": "FLOW 已备好行动",
       "text": "现金储备将在 12 天后变得不安全。融资方案已准备好。",
+      "pending_text": "¥405k 融资方案可用 · 无需批准 · 等待您确认",
       "tone": "bad",
       "primary": {
         "label": "执行或比较",
@@ -70,6 +75,7 @@
       "customers": 2
     },
     "needs_you": [],
+    "needs_you_empty_text": "没有其他事项需要您处理。",
     "waiting": [],
     "customers": [
       {

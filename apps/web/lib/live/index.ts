@@ -34,7 +34,6 @@ import type {
   InputSaveResult,
   InputSheetView,
   CustomersView,
-  FeaturesView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -162,12 +161,7 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
-  /** GET /health's feature switches (no owner token needed): the page asks whether Home V2 is on before it draws the new Home. */
-  getFeatures: async (): Promise<FeaturesView> => {
-    const raw = await http<{ features?: FeaturesView }>("GET", "/health", { auth: "none", silent: true });
-    return raw.features ?? {};
-  },
-  /** GET /worklist (flag `home_v2`): Home V2's right panel, in the language asked for. Null when the flag is off (403) or the route is absent (404): the older Home stands. */
+  /** GET /worklist: Home V2's right panel, in the language asked for. Null when the route is absent (404) or refused (403), as for an older server. */
   getWorklist: (lang: "en" | "zh", sinceDay: number | null = null) =>
     nullWhenOff(() => http<WorklistView>("GET", `/worklist?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`)),
   /** GET /customers/{id}/overview with Home V2's selections: `decision` and `scenario` come back validated in `context.deal` and `context.scenario` (null when they do not name this buyer's deal). */

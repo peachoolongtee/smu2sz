@@ -5701,6 +5701,9 @@
           "href": "/cash#cash-options"
         },
         "control": "RUN_PLAN",
+        "approval_text": "No approval needed",
+        "approval_needed": false,
+        "consequence_text": "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days.",
         "legs": [
           {
             "label": "Credit-line draw",
@@ -5712,7 +5715,8 @@
             "repaid_when": "in 32 days",
             "state": "PLANNED",
             "state_text": "Planned",
-            "authority_text": "Within your signed limits. No additional approval required."
+            "authority_text": "Within your signed limits. No additional approval required.",
+            "share_text": "37%"
           },
           {
             "label": "Invoice financing",
@@ -5724,7 +5728,8 @@
             "repaid_when": null,
             "state": "PLANNED",
             "state_text": "Planned",
-            "authority_text": "Within your signed limits. No additional approval required."
+            "authority_text": "Within your signed limits. No additional approval required.",
+            "share_text": "63%"
           }
         ],
         "cost_basis_text": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid."
@@ -11686,6 +11691,9 @@
           "href": "/cash#cash-options"
         },
         "control": "RUN_PLAN",
+        "approval_text": "无需批准",
+        "approval_needed": false,
+        "consequence_text": "现金将在 12 天后首次低于您的最低现金。若没有新增融资，缺口将在 30 天后达到 ¥405k。",
         "legs": [
           {
             "label": "信用额度提款",
@@ -11697,7 +11705,8 @@
             "repaid_when": "32 天后",
             "state": "PLANNED",
             "state_text": "计划中",
-            "authority_text": "在您签署的授权内，无需额外批准。"
+            "authority_text": "在您签署的授权内，无需额外批准。",
+            "share_text": "37%"
           },
           {
             "label": "发票融资",
@@ -11709,7 +11718,8 @@
             "repaid_when": null,
             "state": "PLANNED",
             "state_text": "计划中",
-            "authority_text": "在您签署的授权内，无需额外批准。"
+            "authority_text": "在您签署的授权内，无需额外批准。",
+            "share_text": "63%"
           }
         ],
         "cost_basis_text": "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。"

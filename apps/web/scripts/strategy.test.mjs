@@ -32,7 +32,6 @@ test("every strategy read goes through useStrategyAsync, which is the idle hook 
   for (const [file, call] of [
     ["app/cash/page.tsx", "getPriceCurve"],
     ["app/receivables/legacy.tsx", "getReceivablesWorth"], // the page of before (the fallback) keeps the ranking read
-    ["app/page.tsx", "getReceivablesWorth"],
   ]) {
     const uses = source(file).split("\n").filter((line) => line.includes(`${call}(`));
     assert.ok(uses.length > 0, `${file} no longer calls ${call}`);

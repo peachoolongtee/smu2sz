@@ -1,4 +1,4 @@
-"""GET /home, Home V2's fields (wave 1, the server half): `home_v2` behind FEATURE_HOME_V2 (the three KPIs, the one company-side action,
+"""GET /home, Home V2's fields (wave 1, the server half): `home_v2` (always on: the three KPIs, the one company-side action,
 the chart's scope and inspector, the links), before and after the plan runs, in both languages.
 
 Golden day 0: cash ¥400,000 against a ¥300,000 minimum; payroll in 12 days takes the books to ¥60,000 and then −¥105,000 in 30 days; FLOW's
@@ -29,7 +29,6 @@ HREFS = r".*href"
 
 @pytest.fixture
 def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
-    monkeypatch.setenv("FEATURE_HOME_V2", "1")
     runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     runtime.reset()
     set_runtime(runtime)
@@ -73,18 +72,19 @@ def _v2(api: TestClient, lang: str = "en") -> dict[str, Any]:
 # ---------------------------------------------------------------- the gate
 
 
-def test_with_the_flag_off_the_home_read_carries_no_v2_field_and_is_otherwise_the_same(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_home_read_always_carries_the_v2_block_and_a_caller_may_leave_it_out(api: TestClient) -> None:
     _offer(api)
     on = _home(api)
-    monkeypatch.delenv("FEATURE_HOME_V2", raising=False)
-    off = _home(api)
-    assert "home_v2" in on and "home_v2" not in off
-    assert {k: v for k, v in on.items() if k != "home_v2"} == off
+    assert on["home_v2"] is not None and on["home_v2"]["kpis"]
+    from app.api.home import read_home
+
+    off = read_home("en", v2=False)
+    assert "home_v2" not in off
+    assert {k: v for k, v in on.items() if k != "home_v2"}.keys() == off.keys()
 
 
-def test_the_flag_is_off_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("FEATURE_HOME_V2", raising=False)
-    assert get_settings().features.home_v2 is False
+def test_there_is_no_home_v2_flag() -> None:
+    assert not hasattr(get_settings().features, "home_v2")
 
 
 # ---------------------------------------------------------------- golden: before the plan runs

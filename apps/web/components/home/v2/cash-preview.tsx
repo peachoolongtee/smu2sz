@@ -95,6 +95,10 @@ export function CashPreview({
   lowestDay,
   words,
   below,
+  under,
+  height,
+  inspectOpen,
+  onInspect,
   testId = "hv2-chart",
   chartTestId = "home-chart",
   id,
@@ -113,6 +117,13 @@ export function CashPreview({
   words: (day: number) => InspectorWords;
   /** Under the strip: the links of this chart. */
   below?: ReactNode;
+  /** Right under the chart, before the strip: the lines that say what it shows. */
+  under?: ReactNode;
+  /** A fixed height in px (the compact Home chart); else 280, 220 on a phone. */
+  height?: number;
+  /** The inspector strip is open or closed (a press on the lowest point, `?inspect=1`); undefined keeps it always open (the deal's chart). */
+  inspectOpen?: boolean;
+  onInspect?: (open: boolean) => void;
   testId?: string;
   chartTestId?: string;
   id?: string;
@@ -122,6 +133,8 @@ export function CashPreview({
   const frame = useRef<HTMLDivElement>(null);
   const W = useWidth(frame);
   const hintId = useId();
+  const inspectorId = useId();
+  const showStrip = inspectOpen !== false;
   const [chosen, setChosen] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
@@ -144,7 +157,7 @@ export function CashPreview({
   const hi = Math.max(...levels);
   const yLo = axisOk && axis ? Math.min(axis.min_fen, lo) : lo - Math.max((hi - lo) * 0.14, 1);
   const yHi = axisOk && axis ? Math.max(axis.max_fen, hi) : hi + Math.max((hi - lo) * 0.08, 1);
-  const H = W < 520 ? 220 : 280;
+  const H = height ?? (W < 520 ? 220 : 280);
   const gutter = axisOk && axis ? Math.ceil(Math.max(...axis.ticks.map((k) => k.label.length * FONT * 0.6))) + 8 : 0;
   const pl = PAD.l + gutter;
   const pr = W - PAD.r;
@@ -217,9 +230,15 @@ export function CashPreview({
           setChosen(snap(localX(e)));
         }}
         onKeyDown={(e) => {
+          if (e.key === "Escape" && inspectOpen === true) {
+            e.stopPropagation();
+            onInspect?.(false);
+            return;
+          }
           if (e.target !== e.currentTarget) return;
           if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
             e.preventDefault();
+            if (inspectOpen === false) onInspect?.(true);
             step(e.key === "ArrowRight" ? 1 : -1);
           } else if (e.key === "Home" || e.key === "End") {
             e.preventDefault();
@@ -267,18 +286,24 @@ export function CashPreview({
           <button
             type="button"
             aria-label={t("hv2.chart.lowestAria")}
-            aria-pressed={baseDay === lowest}
+            aria-pressed={onInspect ? undefined : baseDay === lowest}
+            aria-expanded={onInspect ? inspectOpen === true : undefined}
+            aria-controls={onInspect && inspectOpen ? inspectorId : undefined}
             data-testid="home-lowest-point"
             onClick={(e) => {
               e.stopPropagation();
               setChosen(lowest);
+              if (onInspect) onInspect(inspectOpen !== true);
             }}
             className="absolute z-10 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill"
             style={{ left: xOf(lowest), top: yOf(valueAt(mainSegs, lowest)) }}
           />
         ) : null}
       </div>
+      {under}
+      {showStrip ? (
       <div
+        id={inspectorId}
         role="region"
         aria-label={t("hv2.chart.inspector")}
         aria-live="polite"
@@ -311,6 +336,7 @@ export function CashPreview({
           </p>
         ) : null}
       </div>
+      ) : null}
       <div className="sr-only">
         <table data-testid="home-picture-table">
           <caption>{t("biz.picture.table")}</caption>
@@ -349,7 +375,7 @@ export function FullTimelineLink() {
   const { t } = useI18n();
   return (
     <Link href="/cash" className="font-bold text-brand-700 underline-offset-[3px] hover:underline" data-testid="home-chart-full">
-      {t("hv2.chart.full")} <span aria-hidden>→</span>
+      {t("hv2.chart.explore")} <span aria-hidden>→</span>
     </Link>
   );
 }

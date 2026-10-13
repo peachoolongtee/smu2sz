@@ -152,7 +152,7 @@ test("the approval question, its decided card with the execution summary, the re
   await expect(page.getByTestId("record-state")).toBeVisible();
   await scan(page, "decision record");
   await page.goto("/");
-  await expect(page.getByTestId("home-fact-arriving")).toBeVisible(); // the fact that says what is on its way
+  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible(); // the strip's funding cell says what is on its way
   await scan(page, "/ funding on its way");
   await page.goto("/cash");
   await expect(page.locator("h1").first()).toBeVisible();
@@ -164,8 +164,8 @@ test("the remaining task, when the cure left the reserve short", async ({ page }
   await page.evaluate(() => sessionStorage.setItem("tl-mock-no-receipt", "residual"));
   await advanceTo(page, 34);
   await page.goto("/");
-  await expect(page.getByTestId("home-remaining-text")).toBeVisible();
-  await scan(page, "/ remaining task");
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  await scan(page, "/ after a cure that left the reserve short");
   await page.goto("/cash");
   await expect(page.getByTestId("home-remaining-text")).toBeVisible();
   await scan(page, "/cash remaining task");

@@ -6,7 +6,7 @@ import { en, zh } from "../lib/dictionary";
 import type { HomeView, WorklistView } from "../lib/types";
 
 /**
- * Home V2, the state matrix (design/home-v2-2026-10-12/04_state_recipes.md): twelve states of the real page against the real API (the live project, FEATURE_HOME_V2 on), no recordings.
+ * Home V2, the state matrix (design/home-v2-2026-10-12/04_state_recipes.md): twelve states of the real page against the real API (the live project), no recordings.
  * Each test resets the Demo, drives the API with the recipe's sequence, then reads GET /home and GET /worklist itself and holds the page to those words (a money word is never written
  * here). Each state is opened at 1440 and 390 (the worklist sheet open) in English and Chinese. The dictionary supplies the labels the page owns; the server supplies everything else.
  */
@@ -168,11 +168,11 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   for (const [id, k] of [["cash", v2.kpis.cash_available], ["lowest", v2.kpis.lowest_ahead], ["funding", v2.kpis.funding]] as const) {
     await expect(page.getByTestId(`hv2-metric-${id}-label`)).toHaveText(label(lang, `hv2.metric.${id}` as keyof typeof en));
     await expect(page.getByTestId(`home-kpi-${id}-value`)).toHaveText(k.value_display);
-    if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(page.getByTestId("home-buffer-headroom")).toHaveText(v2.kpis.cash_available.buffer.headroom_text);
-    // The note is the read's (the short one when the server sends it); on a phone the funding cell leaves it to the recommendation's facts once its status line stands in.
+    // Each level has one job: the cash note is the headroom with the dictionary's word ("+¥100k buffer"), the lowest one the server's short note, the funding cell its status line (the sentence is the recommendation's fact).
     const note = page.getByTestId(`home-kpi-${id}-note`);
     if (id === "lowest") await expect(note).toHaveText(v2.kpis.lowest_ahead.short_note ?? k.note);
-    else if (id === "funding" && v2.kpis.funding.status_text && (page.viewportSize()?.width ?? 1440) < 768) await expect(note).toBeHidden();
+    else if (id === "funding" && v2.kpis.funding.status_text) await expect(note).toHaveCount(0);
+    else if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(note).toHaveText(`${v2.kpis.cash_available.buffer.headroom_text} ${label(lang, "hv2.metric.buffer")}`);
     else await expect(note).toHaveText(k.note);
   }
   if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
@@ -181,6 +181,16 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
   for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
+  // The approval is one line under the actions, bound to the server's two fields: the tick form for text with approval_needed false, the warn form when true, none for null.
+  if (v2.action.variant === "ACTION") {
+    const line = page.getByTestId("hv2-approval");
+    if (v2.action.approval_text) {
+      await expect(line).toHaveText(v2.action.approval_text);
+      await expect(line).toHaveAttribute("data-needs-owner", String(v2.action.approval_needed === true));
+    } else await expect(line).toHaveCount(0);
+    if (v2.action.facts?.length === 3) await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
+    if (v2.action.control === "APPROVE_PLAN") expect(v2.action.approval_needed, "a plan that waits for the owner").toBe(true);
+  }
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
 }
 
@@ -188,8 +198,9 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
 async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
   const alert = scope.getByTestId("home-worklist-alert");
   if (read.alert) {
-    await expect(alert).toContainText(read.alert.text);
-    await expect(alert).toContainText(read.alert.eyebrow);
+    const said = read.alert as typeof read.alert & { kind_text?: string | null; pending_text?: string | null };
+    await expect(alert).toContainText(said.pending_text ?? said.text);
+    await expect(alert).toContainText(said.kind_text ?? said.eyebrow);
     await expect(scope.getByTestId("home-worklist-alert-go")).toContainText(read.alert.primary.label);
   } else await expect(alert).toHaveCount(0);
   const tabs = [["needs_you", read.needs_you], ["waiting", read.waiting], ["customers", read.customers]] as const;
@@ -203,8 +214,12 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
     const el = scope.getByTestId("home-worklist-row");
     if (rows.length === 0) {
       await expect(el).toHaveCount(0);
-      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
-      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+      const said = (read as WorklistView & { needs_you_empty_text?: string | null }).needs_you_empty_text;
+      if (tab === "needs_you" && said) await expect(scope.getByTestId("home-worklist-empty")).toContainText(said);
+      else {
+        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
+        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+      }
       continue;
     }
     await expect(el).toHaveCount(rows.length);
@@ -250,13 +265,8 @@ async function look(context: BrowserContext, reads: Reads, s: State, extra?: (pa
 
 // ---------------------------------------------------------------- the tests
 
-test.beforeEach(async ({ request }, testInfo) => {
-  test.skip(testInfo.project.name !== "live", "live-only: the real API with FEATURE_HOME_V2 on");
-  const health = await (await request.get(`${API}/health`)).json();
-  // The flag is set when this spec is named or E2E_HOME_V2=1 (playwright.config.ts): there it must be on, and a missing flag fails. In a whole-project run the API keeps the older Home and this spec has nothing to hold.
-  const flagged = process.env.E2E_HOME_V2 === "1" || process.argv.some((arg) => arg.includes("home-v2-states"));
-  if (!flagged) test.skip(!health.features.home_v2, "FEATURE_HOME_V2 is off on this API; run `e2e/home-v2-states.spec.ts --project=live` to set it");
-  else expect(health.features.home_v2, "the API under test must run with FEATURE_HOME_V2=1 (the config sets it for this spec)").toBe(true);
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== "live", "live-only: the real API");
 });
 
 for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
@@ -277,6 +287,13 @@ for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
       }
       if (s.name.startsWith("06a")) expect(w.needs_you[0].customer_id).toBeNull();
       if (s.name.startsWith("06b")) for (const f of reads.home[lang].home_v2!.action.facts ?? [reads.home[lang].home_v2!.action]) await expect(page.getByTestId("hv2-action")).toContainText("value" in f ? f.value : f.text);
+      if (s.name.startsWith("06b")) {
+        // The approval line is PRESENT in the warn form, with the server's sentence in the language on screen.
+        const line = page.getByTestId("hv2-approval");
+        await expect(line).toHaveAttribute("data-needs-owner", "true");
+        await expect(line).toHaveText(lang === "zh" ? "需要您批准后才会执行" : "Needs your approval before it runs");
+        expect(reads.home[lang].home_v2!.action.approval_needed).toBe(true);
+      }
       if (s.name.startsWith("07")) await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText(label(lang, "hv2.metric.funding"));
     });
   });
@@ -301,7 +318,7 @@ test(STATES[12].name, async ({ request, context }) => {
     await expect(page.getByTestId("home-action-back")).toBeVisible();
     expect(await filledBrand(page)).toBe(0);
     const again = phone(width) ? await worklist(page, width, lang, reads.work[lang]) : page.getByTestId("home-worklist-panel");
-    await expect(again.getByTestId("home-worklist-alert")).toContainText(reads.work[lang].alert!.text);
+    await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
     await expect(again.getByTestId("home-tab-needs_you-badge")).toHaveText(String(reads.work[lang].counts.needs_you));
   });
 });

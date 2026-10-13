@@ -165,19 +165,6 @@ test.describe("desktop", () => {
     expect(await filledBrand(page)).toBe(0);
   });
 
-  test("Home day 34: one line says what to do about the invoice that saves the most", async ({ page, request }) => {
-    await advanceTo34(page, request);
-    await page.goto("/");
-    await expect(page.getByTestId("home-card-overdue")).toHaveText("¥163k"); // the late invoice, on the receivables card
-    await expect(page.getByTestId("home-attention-queue")).toContainText("Foshan is 2 days late"); // and the late buyer, by name, in the queue
-    const line = page.getByTestId("home-top-action");
-    await expect(line).toHaveCount(1);
-    // Anything late leads: the overdue sentence first, the savings sentence under it.
-    await expect(line).toContainText("is 2 days late: ask them to pay.");
-    await expect(page.getByTestId("home-top-action-second")).toContainText("Call Foshan Home Retail Co.");
-    expect(await proseOf(page)).not.toMatch(DAY_N);
-    expect(await filledBrand(page)).toBeLessThanOrEqual(1);
-  });
   test("Deals day 0: the Before they ask card answers in the server's words, opens its details, and adds no filled button; Option B opens from the response card", async ({ page }) => {
     await openEx01(page);
     const card = page.locator("#deal-envelope");

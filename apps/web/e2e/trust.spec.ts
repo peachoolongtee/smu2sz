@@ -85,9 +85,7 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
   const hero = page.getByTestId("home-status");
   await expect(hero).toContainText("Below reserve today");
-  // Already under the minimum: today's cash (¥45k) is the figure beside the chart, and nothing says "N days ago".
-  await expect(page.getByTestId("home-fact-today")).toHaveText("¥45k");
-  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
+  // Already under the minimum: nothing in the header says "N days ago".
   await expect(hero).not.toContainText(/ago/);
   // The Cash page reads the same facts and starts its chart today.
   await page.goto("/cash");
@@ -96,21 +94,12 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥45k");
 });
 
-test("a part-paid promise: Home says it once in the server's sentence, Receivables names the four facts and the window", async ({ page }) => {
+test("a part-paid promise: Receivables names the four facts and the window", async ({ page }) => {
   await story(page, "tl-mock-no-receipt", "half");
   await page.goto("/demo");
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
-  await page.goto("/");
-  // The late row may sit behind "Show more"; open it when it does.
-  const more = page.getByTestId("home-changes-more");
-  if (await more.count()) await more.locator("> summary").click();
-  // On Home the server's sentence names all four facts and the window, so there are no tiles beneath it (a fact is said once).
-  const late = page.getByTestId("home-change-LATE").filter({ hasText: "Received ¥127,506.90" });
-  await expect(late).toHaveCount(1);
-  await expect(late.getByTestId("home-change-text")).toContainText("it cleared ¥128,600.00 of the invoice, including a ¥1,093.10 early-payment discount; ¥291,400.00 remains and is overdue; the early-payment window has ended");
-  await expect(page.getByTestId("home-change-facts")).toHaveCount(0);
   // The Receivables receipt row is where the four facts are named: a short lead, the facts (the balance largest) and the window in words.
   await page.goto("/receivables");
   const facts = page.getByTestId("receipt-facts-rec-receipt-1");

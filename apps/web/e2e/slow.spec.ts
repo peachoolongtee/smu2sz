@@ -71,7 +71,7 @@ test("a partial home says which supporting facts were not read, with Retry; the 
   let partial = true;
   await page.route(isApi(/^\/home$/), (route) => (partial ? withFields(route, { partial: { missing: ["Buyer names", "Collections ranking"] } }) : route.continue()));
   await page.goto("/");
-  await expect(page.getByTestId("home-read-when")).toHaveText(/^Read /);
+  await expect(page.getByTestId("home-read-when")).toHaveText(/^Updated /); // (its accessible name carries the server's "Read ..." word)
   const warn = page.getByTestId("partial-read");
   await expect(warn).toContainText("Some supporting facts could not be read: Buyer names, Collections ranking.");
   await expect(warn).toHaveAttribute("role", "alert");

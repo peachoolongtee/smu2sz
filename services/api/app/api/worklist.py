@@ -3,7 +3,7 @@
     GET /worklist?lang=en|zh&since_day=<n>
     GET /customers?lang=en|zh
 
-Behind FEATURE_HOME_V2 (off: the standard 403 FEATURE_DISABLED), owner only, read-only. One composition of reads the other pages already
+Always on (the Home reads them), owner only, read-only. One composition of reads the other pages already
 make; nothing is ranked, priced, projected or decided a second time:
 
     alert        the company cash alert (the Home read's own status, first breach and next action) when the reserve is unsafe or a cure
@@ -72,7 +72,6 @@ from app.api.customer_overview import customer_context
 from app.api.deal_offers import open_deals
 from app.api.decisions import Context, load_context
 from app.api.display import displayed
-from app.api.features import require_feature
 from app.api.financing_words import financing_state_words, state_of
 from app.api.home import Partial, read_home
 from app.api.home_hybrid import _ASK_ORDER, _pending_lots
@@ -615,7 +614,6 @@ def counts(rt: Runtime, lang: Lang) -> dict[str, int]:
 
 @router.get("/worklist")
 def get_worklist(lang: Literal["en", "zh"] = Query("en"), since_day: int | None = Query(None, ge=0)) -> dict[str, Any]:
-    require_feature("home_v2")
     rt = get_runtime()
     with rt.lock:
         body = _cached(rt, lang, since_day)
@@ -625,7 +623,6 @@ def get_worklist(lang: Literal["en", "zh"] = Query("en"), since_day: int | None 
 @router.get("/customers")
 def get_customers(lang: Literal["en", "zh"] = Query("en")) -> dict[str, Any]:
     """The customers of the worklist (the same rows), with the terms a page filters the list it already holds by."""
-    require_feature("home_v2")
     rt = get_runtime()
     with rt.lock:
         body = _cached(rt, lang, None)

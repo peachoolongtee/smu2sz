@@ -12,8 +12,8 @@ const TONE: Record<HomeTone, MetricTone> = { ok: "ink", warn: "warn", bad: "bad"
 
 /**
  * A thin scale that tells what the number cannot: where the minimum sits and where today's cash is against it. A 2 px track, a `warn` tick at the minimum, a 10 px brand dot;
- * not a progress bar (nothing fills). Its accessible name is the read's own note (the sentence says the distance); the fen only place the marks. The short headroom figure
- * (`headroom_text`, green) sits above the dot and the minimum's words under the tick when the server sends them.
+ * not a progress bar (nothing fills). Its accessible name is the read's own note (the sentence says the distance); the fen only place the marks. The headroom ("+¥100k buffer") is the cell's one note and
+ * the minimum's words sit under the tick.
  */
 export function CashBufferIndicator({ buffer, label }: { buffer: Buffer; label: string }) {
   const { t } = useI18n();
@@ -24,14 +24,7 @@ export function CashBufferIndicator({ buffer, label }: { buffer: Buffer; label: 
   const cash = at(buffer.cash_fen);
   const clamp = (pos: number) => Math.min(Math.max(pos, 14), 86);
   return (
-    <div role="img" aria-label={label} className="mt-3 max-w-[220px]" data-testid="home-buffer" data-min={min.toFixed(0)} data-cash={cash.toFixed(0)}>
-      <div className="relative h-4 sm:h-5">
-        {buffer.headroom_text ? (
-          <span className="absolute -translate-x-1/2 whitespace-nowrap text-supporting font-bold text-ok-fg" style={{ left: `${clamp(cash)}%` }} data-testid="home-buffer-headroom">
-            {buffer.headroom_text}
-          </span>
-        ) : null}
-      </div>
+    <div role="img" aria-label={label} className="mt-2 max-w-[220px]" data-testid="home-buffer" data-min={min.toFixed(0)} data-cash={cash.toFixed(0)}>
       <div className="relative h-3.5">
         <span className="absolute inset-x-0 top-1.5 h-0.5 rounded-pill bg-line" />
         <span className="absolute top-px h-3 w-0.5 rounded-pill bg-warn-solid" style={{ left: `${min}%` }} data-testid="home-buffer-min" />
@@ -70,7 +63,7 @@ export function CompanyStrip({ kpis }: { kpis: HomeV2["kpis"] }) {
         label={t("hv2.metric.cash")}
         value={cash.value_display}
         tone={cash.tone === "ok" ? "ok" : TONE[cash.tone ?? "neutral"]}
-        note={cash.note}
+        note={cash.buffer.headroom_text ? `${cash.buffer.headroom_text} ${t("hv2.metric.buffer")}` : cash.note}
         infoLabel={t("hv2.metric.info", { label: t("hv2.metric.cash") })}
       >
         <CashBufferIndicator buffer={cash.buffer} label={cash.note} />
@@ -97,8 +90,7 @@ export function CompanyStrip({ kpis }: { kpis: HomeV2["kpis"] }) {
         labelMark={undefined}
         value={funding.value_display}
         tone={funded ? "plan" : "ink"}
-        note={funding.note}
-        noteSm={!funding.status_text}
+        note={funding.status_text ? null : funding.note}
         info={funding.hint}
         infoLabel={t("hv2.metric.info", { label: t("hv2.metric.funding") })}
       >

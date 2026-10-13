@@ -31,7 +31,6 @@ HREFS = r".*href"
 
 @pytest.fixture
 def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
-    monkeypatch.setenv("FEATURE_HOME_V2", "1")
     runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     runtime.reset()
     set_runtime(runtime)
@@ -84,22 +83,11 @@ def _strings(x: Any) -> Iterator[str]:
 # ---------------------------------------------------------------- the gate
 
 
-def test_the_flag_is_off_by_default_and_listed_on_health(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("FEATURE_HOME_V2", raising=False)
-    assert get_settings().features.home_v2 is False
+def test_the_routes_are_always_on_and_health_still_lists_the_constant() -> None:
+    assert not hasattr(get_settings().features, "home_v2")
     from app.main import app
 
-    assert TestClient(app).get("/health").json()["features"]["home_v2"] is False
-    monkeypatch.setenv("FEATURE_HOME_V2", "1")
-    assert get_settings().features.home_v2 is True
-    assert TestClient(app).get("/health").json()["features"]["home_v2"] is True
-
-
-def test_with_the_flag_off_the_route_is_the_standard_403(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("FEATURE_HOME_V2", raising=False)
-    r = api.get("/worklist")
-    assert r.status_code == 403
-    assert r.json()["detail"] == {"code": "FEATURE_DISABLED", "feature": "home_v2", "message": "Home V2 is switched off (FEATURE_HOME_V2)."}
+    assert TestClient(app).get("/health").json()["features"]["home_v2"] is True  # constant for one release
 
 
 def test_the_owner_alone_may_read(api: TestClient) -> None:

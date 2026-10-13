@@ -141,8 +141,8 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
         <WorklistAlertLine
           testId="home-worklist-alert"
           tone={alert.tone === "bad" ? "bad" : "warn"}
-          eyebrow={alert.eyebrow}
-          text={alert.text}
+          eyebrow={alert.kind_text ?? alert.eyebrow}
+          text={alert.pending_text ?? alert.text}
           describedBy={`${uid}-alert-note`}
           action={
             alert.primary.href === "/" ? (
@@ -180,6 +180,9 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
           <div data-testid="home-worklist-empty">
             {q ? (
               <WorklistEmpty title={t("hv2.work.empty.none")} body={t("hv2.work.empty.search", { q: query.trim() })} />
+            ) : tab === "needs_you" && read.needs_you_empty_text ? (
+              // The server's own words, alert-aware ("Nothing else needs you." while the plan waits for the owner's go): they stand alone, never under "All caught up."
+              <WorklistEmpty title={read.needs_you_empty_text} />
             ) : (
               <WorklistEmpty title={t("hv2.work.empty.title")} body={t(tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers")} />
             )}

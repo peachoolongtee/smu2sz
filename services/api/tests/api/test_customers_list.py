@@ -24,7 +24,6 @@ FIELDS = {"customer_id", "short", "name", "negotiations_count", "needs_you_count
 
 @pytest.fixture
 def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
-    monkeypatch.setenv("FEATURE_HOME_V2", "1")
     runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     runtime.reset()
     set_runtime(runtime)
@@ -53,13 +52,6 @@ def _get(api: TestClient, lang: str = "en") -> dict[str, Any]:
     assert r.status_code == 200, r.text
     body: dict[str, Any] = r.json()
     return body
-
-
-def test_the_route_is_the_standard_403_with_the_flag_off(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("FEATURE_HOME_V2", raising=False)
-    r = api.get("/customers")
-    assert r.status_code == 403
-    assert r.json()["detail"]["code"] == "FEATURE_DISABLED" and r.json()["detail"]["feature"] == "home_v2"
 
 
 def test_the_owner_alone_may_read(api: TestClient) -> None:

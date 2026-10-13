@@ -33,9 +33,6 @@ const databaseUrl = process.env.E2E_DATABASE_URL || "memory";
 const strategy = process.env.E2E_STRATEGY === "1";
 const strategyWeb: Record<string, string> = strategy ? { NEXT_PUBLIC_STRATEGY_MVP: "1" } : {};
 const strategyApi: Record<string, string> = strategy ? { FEATURE_ENVELOPE: "1", FEATURE_PRICE_CURVE: "1", FEATURE_COLLECTIONS_WORTH: "1" } : {};
-// Home V2 is a runtime flag on the API. e2e/home-v2-states.spec.ts needs it on; it is on when E2E_HOME_V2=1 or that spec is named on the command line, and the other live specs keep the older Home.
-const homeV2 = process.env.E2E_HOME_V2 === "1" || process.argv.some((a) => a.includes("home-v2-states"));
-const homeV2Api: Record<string, string> = homeV2 ? { FEATURE_HOME_V2: "1" } : {};
 
 const desktop = { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } };
 
@@ -107,7 +104,7 @@ export default defineConfig({
                   // A server already on :8000 could hold state from a previous run or point at a real database.
                   reuseExistingServer: false,
                   // FEATURE_EXPOSURE: the Deals page is the decision queue once the open offer has its exposure read.
-                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...homeV2Api, ...strategyApi },
+                  env: { TERMSLEDGER_NO_DOTENV: "1", DATABASE_URL: databaseUrl, LLM_MODE: "cache", CORS_ORIGINS: `http://localhost:${LIVE_PORT}`, FEATURE_EXPOSURE: "1", ...strategyApi },
                 },
               ]),
           {

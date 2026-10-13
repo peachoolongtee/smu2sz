@@ -2763,8 +2763,8 @@ export interface HomeChangesCard {
 }
 
 /**
- * Home V2 (behind the server's FEATURE_HOME_V2): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
- * server wrote in the language asked for; `*_fen` and `day` only place a mark. Absent when the flag is off: the page is then the older Home.
+ * Home V2 (the Home): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
+ * server wrote in the language asked for; `*_fen` and `day` only place a mark. Not flagged: the Home reads it always.
  */
 export interface HomeV2Kpi {
   eyebrow: string;
@@ -2784,6 +2784,8 @@ export interface HomeV2Leg {
   state: string;
   state_text: string;
   authority_text: string | null;
+  /** The leg's share of the plan total as the server words it ("37%"); absent until it sends it (the bar then has no labels). */
+  share_text?: string | null;
   /** Where the leg sits on the timeline and how big it is, when the server sends them (days from today, fen); without them the legs are spaced evenly and sized alike. */
   lands_day?: number | null;
   repaid_day?: number | null;
@@ -2791,10 +2793,16 @@ export interface HomeV2Leg {
 }
 
 export interface HomeV2Action {
+  /** The one line under the title that reconciles with the strip: the first breach day and the lowest point; absent until the server sends it (the Home read's note stands in). */
+  consequence_text?: string | null;
   /** The word that says what the cost figure is ("one-off", "estimated all-in"), beside it; absent until the server sends it. */
   cost_basis_text?: string | null;
   /** The funding plan's legs, for the timeline; absent until the server sends them (the funding fact is then the text). */
   legs?: HomeV2Leg[] | null;
+  /** The approval in one sentence ("No approval needed", "Needs your approval before it runs"); null when the action carries no plan. */
+  approval_text?: string | null;
+  /** True exactly when the owner must approve before it runs (the line is then in the warn form). */
+  approval_needed?: boolean;
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
   facts?: { label: string; value: string }[];
   variant: "ACTION" | "QUIET";
@@ -2863,6 +2871,9 @@ export interface WorklistAlert {
   text: string;
   tone: HomeTone;
   primary: { label: string; href: string };
+  /** The alert as the pending action ("FLOW action ready" and "¥405k funding plan available · no approval needed · waits for your go"), in the server's words; absent until it sends them (`eyebrow` and `text` are then shown). */
+  kind_text?: string | null;
+  pending_text?: string | null;
 }
 
 /** A row of Needs you: a decision only a person can take. */
@@ -2923,6 +2934,8 @@ export interface WorklistView {
   needs_you: WorklistNeedsRow[];
   waiting: WorklistWaitingRow[];
   customers: WorklistCustomer[];
+  /** What the empty Needs you tab says, alert-aware ("Nothing else needs you." while the plan waits for the owner's go); absent until the server sends it. */
+  needs_you_empty_text?: string | null;
   partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
 }
 
@@ -2934,11 +2947,6 @@ export interface CustomersView {
   customers: WorklistCustomer[];
   search_terms: { customer_id: string; terms: string[] }[];
   partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
-}
-
-/** GET /health's switches (the server's feature flags); a flag the server does not know is absent. */
-export interface FeaturesView {
-  home_v2?: boolean;
 }
 
 export interface HomeView {
@@ -3063,7 +3071,7 @@ export interface HomeView {
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;
-  /** Home V2 (server flag FEATURE_HOME_V2): the three KPIs, the one action, the chart's scope and the links. Absent with the flag off, and the page is the older Home. */
+  /** Home V2: the three KPIs, the one action, the chart's scope and the links. Null when the server could not read it (then `partial` says so and the page offers Retry). */
   home_v2?: HomeV2 | null;
 }
 
