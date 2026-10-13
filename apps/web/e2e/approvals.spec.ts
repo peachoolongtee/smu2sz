@@ -1,6 +1,6 @@
 import { expect, test as signedOut } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
-import { filledBrand, runPlan } from "./helpers";
+import { filledBrand, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -89,6 +89,7 @@ test("an approval card expands in place to the operation, the reason, the amount
 
 test("an approval born of the reserve alert says what declining leaves, in days from today", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");
@@ -153,6 +154,7 @@ signedOut("signed out, an owner page asks for the sign-in in words, not an error
 
 async function toPendingCure(page: import("@playwright/test").Page) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");

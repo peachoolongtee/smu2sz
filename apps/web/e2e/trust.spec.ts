@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { openOperatorTools } from "./helpers";
 
 /**
  * Wave 1 (map #65), mock mode. Each story is one recording from the real API (mocks/w1_approval_stories.json and the no-receipt home
@@ -78,6 +79,7 @@ test("an approval the executor refuses ends as 'could not run', with no buttons 
 test("day 34 without a receipt: the Home says it is below the reserve today, never 'N days ago'", async ({ page }) => {
   await story(page, "tl-mock-no-receipt", "1");
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -97,6 +99,7 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
 test("a part-paid promise: Receivables names the four facts and the window", async ({ page }) => {
   await story(page, "tl-mock-no-receipt", "half");
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

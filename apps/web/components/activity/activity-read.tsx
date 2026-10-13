@@ -161,7 +161,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
       ) : null}
 
       {showSecurity ? (
-        <section aria-labelledby="activity-security-title" data-testid="activity-security" className="border-t border-line pt-4">
+        <section id="activity-refused" aria-labelledby="activity-security-title" data-testid="activity-security" className="border-t border-line pt-4">
           <h2 id="activity-security-title" className="type-section text-ink">
             {t("activity.security")}
           </h2>

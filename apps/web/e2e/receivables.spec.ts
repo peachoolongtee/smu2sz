@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { openOperatorTools } from "./helpers";
 
 /**
  * The Receivables page of before (the fallback while the server has no GET /receivables; the page on that read is e2e/receivables-layers.spec.ts).
@@ -25,6 +26,7 @@ test.beforeEach(async ({ context }, testInfo) => {
 /** The story page's clock moves the simulated day; the page is then opened as the owner does. */
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

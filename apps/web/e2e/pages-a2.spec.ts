@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { filledBrand, runPlan } from "./helpers";
+import { filledBrand, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * Pages A1, part 2 (mock mode): every page touched by the second pass has one h1 (the page's own heading, or the server's sentence on Cash and
@@ -31,6 +31,7 @@ for (const [path, ready] of [
 
 test("a decision's record: one h1, the waiting approval's review link is the one filled primary, no sideways scroll at 390 px", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, openCompare, openReview, runPlan, sendCounter } from "./helpers";
+import { checkedDeal, openCompare, openReview, runPlan, sendCounter, openOperatorTools } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -27,6 +27,7 @@ async function checked(page: Page): Promise<string> {
 
 async function advanceTo(page: Page, day: number) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill(String(day));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText(String(day));

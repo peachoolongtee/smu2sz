@@ -54,7 +54,7 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
     const button = page.getByTestId("demo-next");
     await expect(button).toBeEnabled();
     // The owner's step: the strip only opens the approval; the decision is the card's one filled Approve, and then the strip moves the story on.
-    if ((await button.textContent())?.includes("Open the approval")) {
+    if ((await button.textContent())?.match(/Open the approval|Review the approval/)) {
       await button.click();
       await page.getByRole("button", { name: /^Approve/ }).click();
       await expect(page.getByText("0 pending")).toBeVisible();
@@ -132,4 +132,15 @@ export async function checkedDeal(page: Page, message = "EX01"): Promise<void> {
   await page.getByTestId(`inbox-msg-${message}`).click();
   await page.getByTestId("queue-check-button").click();
   await page.getByTestId("queue-recommends").waitFor();
+}
+
+/**
+ * The Demo page keeps its clock, its reset and the engine views in "Operator tools", closed until wanted. Opens the fold when the page is the Demo and it is closed,
+ * so a spec can reach the day field (`home-days`, `home-advance`) there. Anywhere else there is nothing to open.
+ */
+export async function openOperatorTools(page: Page): Promise<void> {
+  const fold = page.getByTestId("demo-operator-tools");
+  if (!new URL(page.url()).pathname.startsWith("/demo")) return;
+  await fold.waitFor();
+  if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
 }

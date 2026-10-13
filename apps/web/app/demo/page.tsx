@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlternateSection } from "@/components/demo/alternate-dialog";
+import { TodayCard } from "@/components/home/today-card";
 import { Disclosure } from "@/components/business/kit";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
@@ -79,6 +80,12 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
               )}
             </div>
             {g.note_text ? <p className="mt-1 text-supporting text-ink-3">{g.note_text}</p> : null}
+            {/* The day, and any number of days to move it by: the clock group's own control (its fields keep their ids). */}
+            {g.key === "clock" ? (
+              <fieldset disabled={busy} className="mt-3 min-w-0">
+                <TodayCard onAdvanced={() => undefined} folded />
+              </fieldset>
+            ) : null}
           </div>
         ))}
         {view.main ? (

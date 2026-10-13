@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, openOperatorTools } from "./helpers";
 import after from "../mocks/receivables/after_fund.json";
 import afterZh from "../mocks/receivables/after_fund_zh.json";
 import day0 from "../mocks/receivables/day0.json";
@@ -36,6 +36,7 @@ test.beforeEach(async ({ context }, testInfo) => {
 
 async function advanceTo34(page: Page, to = "/receivables") {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

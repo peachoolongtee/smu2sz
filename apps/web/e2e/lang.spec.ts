@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { resetBooks, runPlan } from "./helpers";
+import { resetBooks, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * Language parity on the Business pages (wayfinder #65 Wave 7, F28): in Chinese the approvals queue and the decision record say their sentences in
@@ -18,6 +18,7 @@ async function setLang(page: Page, lang: "en" | "zh") {
 async function toDay34(page: Page, request: APIRequestContext) {
   if (test.info().project.name !== "live") {
     await page.goto("/demo");
+    await openOperatorTools(page);
     await page.getByTestId("home-days").fill("34");
     await page.getByTestId("home-advance").click();
     await expect(page.getByTestId("home-day")).toContainText("34");

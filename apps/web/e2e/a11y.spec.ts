@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
 import { openStoryFold, STORY_STEPS } from "./helpers";
 
 /**
@@ -25,6 +25,7 @@ async function scan(page: Page, label: string) {
 async function advanceTo(page: Page, day: number) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill(String(day));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText(`Day ${day}`);

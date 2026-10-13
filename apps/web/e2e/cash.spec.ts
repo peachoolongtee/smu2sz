@@ -1,5 +1,5 @@
 import { expect, proseOf, test } from "./fixtures";
-import { filledBrand, runPlan, walkStory } from "./helpers";
+import { filledBrand, runPlan, walkStory, openOperatorTools } from "./helpers";
 
 /**
  * Cash & funding (mock mode): the risk with headroom said directly, the plan, the options in two groups that are never
@@ -169,6 +169,7 @@ test("covered after the walk: the comparison taken when the plan was chosen is h
 
 test("day 34 with a gap open: the options are today's plan, never the day-0 comparison", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -197,6 +198,7 @@ test("day 34 with a gap open: the options are today's plan, never the day-0 comp
 
 test("day 34: the first breach is also the worst point, so the figures row says it once", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -292,6 +294,7 @@ test("your funding sources: a utilisation bar per facility with the server's lim
   await expect(line.getByTestId("cash-facility-bar")).toHaveAttribute("data-pct", "0");
   await expect(line).toContainText("cash in same day");
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

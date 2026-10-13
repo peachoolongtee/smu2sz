@@ -1,558 +1,210 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { STORY_STEPS, stripOf, verdictHeading, walkStory } from "./helpers";
-
-/** Since Wave 3 the Inbox folds to one row once a deal is selected: open it before reading which message is current. */
-async function expectSelectedMessage(page: Page, id: string): Promise<void> {
-  // (the page waits for the deal's exposure read before it shows the queue; the inbox is folded or open once it has)
-  await expect(page.getByTestId("inbox-collapsed").or(page.getByTestId(`inbox-msg-${id}`))).toBeVisible();
-  if (await page.getByTestId("inbox-collapsed").isVisible().catch(() => false)) await page.getByTestId("inbox-back").click();
-  await expect(page.getByTestId(`inbox-msg-${id}`)).toHaveAttribute("aria-current", "true");
-}
-
+import { filledBrand, openOperatorTools } from "./helpers";
 
 /**
- * Walks the guided Demo, the late-payment loop of docs/DEMO_FLOW.md in six scenes and eleven steps, and asserts the numbers the server formats.
- * The same spec runs in both Playwright projects: `desktop` (mock data, recorded from the API) and `live` (the real FastAPI service). Only the
- * identifiers the server generates differ (approval ids, commitment ids), so those are matched by pattern or read from the session.
+ * The Demo story (Slice D, ticket #145), read from GET /demo/story. The same spec runs in both Playwright projects: `desktop` (the recorded reads, picked by the mock's own state)
+ * and `live` (the real FastAPI service). One current scene with the page's only filled button, the owner's step that only opens the approval, another set of books behind a
+ * confirmation dialog with a one-click restore, the operator tools folded away and the proof appendix. Every sentence on the page is the server's.
  */
 
-const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
-const STORY_KEY = "tl-demo-v3";
+const next = (page: Page) => page.getByTestId("demo-next");
 
-/** The Demo's session as the browser keeps it: the story's offer, the cure it queued and the pointer. */
-async function session(page: Page): Promise<{ step: number; storyOfferId: string | null; cure: { approvalId: string; decisionId: string | null; amount: string; landsDay: number | null } | null }> {
-  return page.evaluate((key) => JSON.parse(sessionStorage.getItem(key) ?? "{}"), STORY_KEY);
+async function openDemo(page: Page): Promise<void> {
+  await page.goto("/demo");
+  await expect(page.getByTestId("demo-current")).toBeVisible();
 }
 
-/** The ledger's entry count on the ledger page (0 when the books hold no operation). */
-async function ledgerEntries(page: Page): Promise<number> {
-  await page.goto("/ledger");
-  const status = page.getByTestId("chain-status");
-  const empty = page.getByText("No operations yet");
-  await expect(status.or(empty)).toBeVisible();
-  if (await empty.isVisible()) return 0;
-  return Number(/(\d+) entries/.exec((await status.textContent()) ?? "")?.[1]);
+/** The story page as the owner would read it, reset first: the opening books (live shares one API between specs). */
+async function freshDemo(page: Page): Promise<void> {
+  await openDemo(page);
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 }
 
-/** How many times the ledger holds an operation of this kind (the Activity page lists one row per entry). */
-async function activityRows(page: Page, kind: string): Promise<number> {
-  await page.goto("/activity");
-  await expect(page.getByTestId("activity-list")).toBeVisible();
-  return page.getByTestId(`activity-${kind}`).count();
+/** One press of the page's next control; the step opens its screen, so the story page is opened again afterwards. */
+async function pressNext(page: Page): Promise<void> {
+  await expect(next(page)).toBeEnabled();
+  await next(page).click();
+  await page.waitForLoadState("domcontentloaded");
+  await expect(page.getByTestId("tour")).toHaveCount(0);
 }
 
-test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  const narration = page.getByTestId("demo-step-narration");
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await expect(page.getByTestId("demo-next")).toHaveText(/Start demo/);
-
-  // Scene 1, the buyer asks: the books are reset and the message is read; Deals shows the original request beside the interpreted terms.
-  await page.getByTestId("demo-next").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expect(stripOf(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await expect(narration).toContainText("Offer from Foshan Home Retail Co.");
-  await expectSelectedMessage(page, "EX01");
-  // (the queue says the ask once, in the server's words for the three terms)
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("60 days going forward");
-
-  // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
-  await walkStory(page, 1, 1);
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
-  await expect(page.getByTestId("deal-cost-asked")).toContainText("¥28,326.92");
-  await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("queue-cost")).toContainText("¥3,027.77");
-
-  // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
-  await walkStory(page, 1, 2);
-  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
-  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
-  await expect(page.getByTestId("commitments-live")).toBeVisible();
-  await expect(narration).toContainText("Agreed.");
-  await walkStory(page, 1, 3);
-  await expect(page).toHaveURL(/\/cash/);
-  await expect(narration).toContainText("Funding of ¥149,986.20 was requested and has landed.");
-  await expect(narration).toContainText("Cash in hand is ¥550k.");
-  await expect(page.getByTestId("cash-headline")).toBeVisible();
-
-  // Scene 4, reality diverges: the one synthetic bank event, labelled as such, then time passes with nothing received.
-  await walkStory(page, 1, 4);
-  await expect(page).toHaveURL(/\/receivables/);
-  await expect(page.getByTestId("demo-step-title")).toContainText("(synthetic)");
-  await expect(narration).toContainText("Synthetic bank event DEMO-RCPT-1: the agreed early payment arrived.");
-  await expect(narration).toContainText("The deal now reads: Fulfilled.");
-  await expect(page.getByTestId("promised-RCV-A")).toHaveAttribute("data-status", "RECEIVED");
-  await walkStory(page, 1, 5);
-  await expect(page).toHaveURL(/\/$/);
-  await expect(narration).toContainText("32 days passed and the clock recorded no receipt.");
-  // Home detects the missed later receipt: the reserve breach and the cure priced above the autonomous ceiling, queued with the owner's click.
-  const risk = page.getByTestId("home-next-action");
-  await expect(risk).toContainText("¥1,782.19");
-  // Who decides: the line under the actions carries the server's `approval_text` in its warn form, because this cure is queued for the owner.
-  await expect(risk.getByTestId("hv2-approval")).toHaveText("Needs your approval before it runs");
-  await expect(risk.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true");
-  await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
-
-  // Scene 5, the owner stays in control: the cure is queued, not run.
-  await walkStory(page, 1, 6);
-  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  await expect(narration).toContainText("Queued, not run: Approve ¥200,000.00 of invoice financing?");
-  await expect(page.getByText("1 pending")).toBeVisible();
-  // The owner approves ON THE CARD (its one filled Approve); the strip's button only opens the approval, and then moves the story on.
-  const card = page.locator('[id^="approval-APR-"]').first();
-  await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Approve/ })).toHaveCount(1);
-  await card.getByRole("button", { name: /^Approve/ }).click();
-  await expect(card.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByTestId("demo-next")).toHaveText("Next");
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  await expect(narration).toContainText("Approved by the owner.");
-  // Then the funding settles: landed, not in transit.
-  await walkStory(page, 1, 8);
-  await expect(page).toHaveURL(/\/cash/);
-  await expect(narration).toContainText("the funding has landed");
-
-  // Scene 6, outcome and proof: Home, then Activity with the evidence export beside it.
-  await walkStory(page, 1, 9);
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(narration).toContainText("The deal: Fulfilled.");
-  await expect(narration).toContainText("The funding: ");
-  await walkStory(page, 1, 10);
-  await expect(page).toHaveURL(/\/activity/);
-  await expect(page.getByTestId("chain-status")).toContainText("Record chain checks passed");
-  await expect(narration).toContainText("The record check says: Record chain checks passed.");
-  await expect(page.getByTestId("demo-step-link")).toHaveAttribute("href", "/evidence");
-  await expect(page.getByTestId("demo-next")).toBeDisabled();
-
-  // The receipt is labelled synthetic where the owner reads the books, and it is the only receipt.
-  const receipt = page.getByTestId("activity-RECEIVE_PAYMENT");
-  await expect(receipt).toHaveCount(1);
-  await expect(receipt).toContainText("Synthetic bank event, reference DEMO-RCPT-1");
-  await expect(page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first()).toBeVisible();
-
-  // Both records end where the story says: the deal fulfilled by the receipt, the cure settled by its landing.
-  const s = await session(page);
-  expect(s.storyOfferId).toBeTruthy();
-  await page.goto(`/decisions/${encodeURIComponent(`deal:${s.storyOfferId}`)}`);
-  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "FULFILLED");
-  await page.goto(`/decisions/${encodeURIComponent(s.cure?.decisionId ?? "")}`);
-  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLED");
-
-  // The engine pages keep the story's books: the ledger holds the receipt and the executed advance.
-  await page.goto("/ledger");
-  await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
-  await expect(page.getByText("Get cash early on an invoice").first()).toBeVisible();
-  await page.goto("/evidence");
-  const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-evidence").click()]);
-  expect(download.suggestedFilename()).toBe("termsledger-evidence.jsonl");
+test("one filled next control at every step of the walk; the owner's step only opens the approval", async ({ page }) => {
+  test.setTimeout(240_000);
+  await freshDemo(page);
+  let sawOwner = false;
+  for (let i = 0; i < 16; i++) {
+    await openDemo(page);
+    // Exactly one filled button on the page, and it is the next control.
+    expect(await filledBrand(page), `filled buttons at press ${i}`).toBe(1);
+    await expect(next(page)).toBeVisible();
+    if ((await page.getByTestId("demo-progress").textContent())?.startsWith("All")) break;
+    if ((await next(page).getAttribute("data-owner")) === "true") {
+      sawOwner = true;
+      // The owner's step is a link to the approval, with the sentence that says the approval is the owner's own click; nothing has been approved yet.
+      await expect(next(page)).toHaveAttribute("href", /\/approvals/);
+      await expect(page.getByTestId("demo-owner-text")).toBeVisible();
+      await expect(page.getByTestId("demo-scene-owner")).toHaveAttribute("data-state", "current");
+      await next(page).click();
+      const approve = page.getByRole("button", { name: /^Approve/ });
+      await expect(approve).toBeVisible();
+      // The test is the owner here: the one click on the approval card.
+      await approve.click();
+      await expect(page.getByText("0 pending")).toBeVisible();
+      continue;
+    }
+    await pressNext(page);
+  }
+  expect(sawOwner).toBe(true);
+  await openDemo(page);
+  await expect(page.getByTestId("demo-progress")).toContainText(/^All/);
+  for (const id of ["buyer", "decision", "agreement", "reality", "owner", "proof"]) await expect(page.getByTestId(`demo-scene-${id}`)).toHaveAttribute("data-state", "done");
+  // Complete: the next control starts the story again, from scene one.
+  await next(page).click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 });
 
-test("the approve step needs the owner's click: nothing approves while the story waits, the strip only opens the card, and a second Run is a Show", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/demo");
-  await walkStory(page, 7);
-  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  const waiting = page.getByText("1 pending");
-  await expect(waiting).toBeVisible();
-  // Time passes in the browser and the cure is still waiting: neither the stepper nor the page decides for the owner.
-  await page.waitForTimeout(1500);
-  await page.goto("/approvals");
-  await expect(page.getByText("1 pending")).toBeVisible();
-  // One decision, one filled Approve: the card's. The strip says where it is ("Scene 5 of 6, step 7 of 11") and only opens the approval.
-  await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Approve/ })).toHaveCount(1);
-  await expect(page.getByTestId("demo-step-title")).toContainText("Scene 5 of 6, step 7 of 11");
-  await expect(stripOf(page)).toContainText(`step 7 of ${STORY_STEPS}`);
-  // The story page shows the step's state, not a second button for the same decision.
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-waiting-8")).toContainText("Waiting for your approval");
-  await expect(page.getByTestId("story-run-8")).toHaveCount(0);
-  await expect(page.getByTestId("story-next")).toHaveText("Open the approval");
-  await expect(page.getByTestId("story-run-9")).toBeDisabled();
-  // The owner's click is the card's.
-  await page.goto("/approvals");
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByTestId("demo-next")).toHaveText("Next");
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-  const advances = await activityRows(page, "SUBMIT_INVOICE_FOR_FINANCING");
-  // A second Run of the finished step approves nothing again (and Replay of it is the same Run): the books are as they were.
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-8").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-  expect(await activityRows(page, "SUBMIT_INVOICE_FOR_FINANCING")).toBe(advances);
+test("each done scene shows what happened and its proof, and every proof link opens a record that exists", async ({ page }) => {
+  test.setTimeout(240_000);
+  await freshDemo(page);
+  for (let i = 0; i < 3; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const done = page.locator('[data-testid^="demo-scene-"][data-state="done"]');
+  expect(await done.count()).toBeGreaterThan(0);
+  await expect(page.getByTestId("demo-result-buyer")).not.toBeEmpty();
+  const links = await page.locator('[data-testid^="demo-proof-"] a').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href") ?? ""));
+  expect(links.length).toBeGreaterThan(0);
+  for (const href of links) {
+    await page.goto(href);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    const entry = /[?&]entry=(\d+)/.exec(href)?.[1];
+    if (entry) await expect(page.getByTestId(`trust-entry-${entry}`)).toHaveAttribute("aria-current", "true");
+    await expect(page.getByText(/not found|404/i)).toHaveCount(0);
+  }
 });
 
-test("Back then Next only shows the steps already finished: the ledger, the clock and the receipt do not move", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/demo");
-  await walkStory(page, 5); // the buyer asks, FLOW decides, the agreement acts, cash, the synthetic bank event
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText(/^Day \d+$/);
-  const day = await page.getByTestId("home-day").textContent();
-
-  const back = page.getByRole("button", { name: "Back" });
-  await back.click();
-  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
-  await back.click();
-  await expect(stripOf(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  // Next is a Show up to the highest finished step: the pointer moves, the screen opens, nothing runs.
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
-  await expect(page).toHaveURL(/\/cash/);
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 5 of ${STORY_STEPS}`);
-  await expect(page).toHaveURL(/\/receivables/);
-  expect(await ledgerEntries(page)).toBe(entries);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText(day ?? "");
-  // The story page agrees: every step up to the fifth is still done, and the next one runs (Run) rather than shows.
-  await expect(page.getByTestId("story-show-5")).toBeVisible();
-  await expect(page.getByTestId("story-run-6")).toBeEnabled();
-  // Beyond the highest finished step Next runs: the sixth step lets time pass.
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 6 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-step-narration")).toContainText("days passed");
+test("another set of books: the dialog shows the loss, cancel changes nothing, confirm loads the busy books and restore brings the story back at scene one", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  const open = page.getByTestId("demo-alternate-open");
+  await expect(page.getByTestId("demo-alternate-dialog")).toBeHidden();
+  await open.click();
+  const dialog = page.getByTestId("demo-alternate-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(dialog).toHaveAccessibleName(/./);
+  // The loss preview, in words, from the books as they stand; the dialog's one filled button is the confirmation.
+  await expect(page.getByTestId("demo-alternate-loss").locator("li").first()).toBeVisible();
+  await expect(dialog.getByRole("button")).toHaveCount(2);
+  // Escape closes it and focus returns to the button that opened it; nothing changed.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Cancel does the same.
+  await open.click();
+  await page.getByTestId("demo-alternate-cancel").click();
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Confirm loads the busy books: the banner offers the restore, the story is put aside and the next control opens Home.
+  await open.click();
+  await page.getByTestId("demo-alternate-confirm").click();
+  const banner = page.getByTestId("demo-loaded-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveAttribute("role", "status");
+  await expect(page.getByTestId("story")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(1);
+  await expect(next(page)).toHaveAttribute("href", "/");
+  // One click puts the main books back, at the first scene.
+  await page.getByTestId("demo-restore").click();
+  await expect(banner).toHaveCount(0);
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+  await expect(page.getByTestId("demo-restored")).toBeVisible();
 });
 
-test("a step waits for the one before it: scenes and Run buttons ahead are disabled, the next one is not", async ({ page }) => {
-  await page.goto("/demo");
-  const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");
-  expect(await jumps.count()).toBe(6);
-  await expect(jumps.nth(0)).toBeEnabled(); // the first scene starts the story, like Start demo
-  for (let i = 1; i < 6; i++) await expect(jumps.nth(i)).toBeDisabled();
-  await expect(page.getByTestId("story-run-1")).toBeEnabled();
-  await expect(page.getByTestId("story-run-2")).toBeDisabled();
-  await walkStory(page, 2);
-  await expect(jumps.nth(0)).toBeEnabled();
-  await expect(jumps.nth(1)).toBeEnabled();
-  await expect(jumps.nth(2)).toBeEnabled(); // the next scene starts with Next
-  await expect(jumps.nth(3)).toBeDisabled();
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-run-3")).toBeEnabled();
-  await expect(page.getByTestId("story-run-4")).toBeDisabled();
+test("operator tools are closed by default and hold the clock, the books and the engine views", async ({ page }) => {
+  await openDemo(page);
+  const tools = page.getByTestId("demo-operator-tools");
+  await expect(tools).toBeVisible();
+  expect(await tools.evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
+  await expect(page.getByTestId("home-days")).toBeHidden();
+  await openOperatorTools(page);
+  await expect(page.getByTestId("demo-tools-clock")).toBeVisible();
+  await expect(page.getByTestId("demo-tools-books")).toBeVisible();
+  await expect(page.getByTestId("demo-tools-engine")).toBeVisible();
+  await expect(page.getByTestId("home-days")).toBeVisible();
+  // The old cards and the scenario select are gone; the optional scenes are inside the tools.
+  await expect(page.getByTestId("story-scenario")).toHaveCount(0);
+  await expect(page.getByTestId("more-run-security")).toBeVisible();
 });
 
-test("the optional scenes run from More to show and never move the story's pointer", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  await walkStory(page, STORY_STEPS);
-  await page.goto("/demo");
-  await expect(page.getByTestId("more-reworded")).toContainText("Open \"The buyer walks away\" first.");
-  await expect(page.getByTestId("more-run-reworded")).toBeDisabled();
-
-  // The capex question: evaluated on the books the story left, applying stays the owner's click on the Capex page.
-  await page.getByTestId("more-run-capex").click();
-  await expect(page).toHaveURL(/\/capex/);
-  await expect(page.getByTestId("capex-as-of")).toContainText("Computed today");
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-  await expect(page.getByTestId("capex-apply")).toBeEnabled();
-
-  // The attack message is read on its own offer; the story's message is the current one again when the story is shown.
-  await page.goto("/demo");
+test("the optional scenes run from the operator tools and never move the story's pointer", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  await openDemo(page);
+  await pressNext(page);
+  await openDemo(page);
+  const progress = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
   await page.getByTestId("more-run-security").click();
   await expect(page).toHaveURL(/\/security/);
-  await expect(page.locator('[data-testid^="event-"]').first()).toBeVisible();
-  await expect(page.locator('[data-testid^="event-"]').filter({ hasText: "UNKNOWN_COUNTERPARTY" }).first()).toBeVisible();
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await page.getByTestId("story-show-2").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expectSelectedMessage(page, "EX01");
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-
-  // The engine's own pages open as they are.
-  await page.goto("/demo");
-  await page.getByRole("link", { name: "Debt Desk" }).click();
-  await expect(page).toHaveURL(/\/funding/);
-
-  // The buyer who walks away replaces the books, so it is the one scene after which the story starts over, and it says so beforehand.
-  await page.goto("/demo");
-  await expect(page.getByTestId("more-walk")).toContainText("Replaces the books: the story starts over afterwards.");
-  await page.getByTestId("more-run-walk").click();
-  await expect(page).toHaveURL(/\/verdict/);
-  await expect(page.getByTestId("negotiation-result")).toContainText("NO DEAL");
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await page.goto("/demo");
-  await page.getByTestId("more-run-reworded").click();
-  await expect(page).toHaveURL(/\/verdict/);
-  await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
+  await openDemo(page);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(progress);
 });
 
-test("the capex application stays the owner's click and its approval is logged", async ({ page }) => {
-  await page.goto("/demo");
-  await page.getByTestId("more-run-capex").click();
-  await expect(page).toHaveURL(/\/capex/);
-  await expect(page.getByText("¥380,885.77").first()).toBeVisible();
-  await page.goto("/approvals");
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await page.goto("/capex");
-  await page.getByTestId("capex-apply").click();
-  await expect(page.getByTestId("capex-applied")).toBeVisible();
-  await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Approve/ }).first().click();
-  await expect(page.getByText("Approved").first()).toBeVisible();
-  await page.goto("/ledger");
-  await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
+test("in Chinese the page reads in Chinese with one filled next control", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await openDemo(page);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByTestId("demo-progress")).toContainText("六");
+  expect(await filledBrand(page)).toBe(1);
+  await expect(page.getByTestId("demo-operator-tools")).toContainText("操作");
+  await page.getByTestId("demo-alternate-open").click();
+  await expect(page.getByTestId("demo-alternate-loss")).toBeVisible();
+  await page.keyboard.press("Escape");
 });
 
-test("the label toggle switches the UI to Chinese and back", async ({ page }) => {
-  await page.goto("/mandate");
-  await page.getByLabel("中文").check();
-  await expect(page.getByRole("heading", { name: "授权书", level: 1 })).toBeVisible();
-  await page.getByLabel("English").check();
-  await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
-});
-
-test("reset clears the session back to the demo's starting point", async ({ page }) => {
-  await page.goto("/demo");
-  await page.getByTestId("demo-next").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  await page.getByTestId("demo-reset").click();
-  await expect(page).toHaveURL(/\/demo/);
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await page.goto("/ledger");
-  // The demo opens on the three demo documents read by the agent and confirmed by the owner; nothing else is logged.
-  const ops = page.locator("#operations tbody tr");
-  await expect(ops).toHaveCount(3);
-  await expect(ops.filter({ hasText: "Confirm document" })).toHaveCount(3);
-  await expect(page.getByTestId("chain-status")).toContainText("3 entries");
-});
-
-// ---------------------------------------------------------------- Show, Replay, Reset and the in-flight lock (Wave 6, ticket #75)
-
-const strip = stripOf;
-
-/** The strip's "step n of 11" as a number, or null while it shows the idle text. */
-async function progressOf(page: Page): Promise<number | null> {
-  const m = new RegExp(`step (\\d+) of ${STORY_STEPS}`).exec((await strip(page).textContent()) ?? "");
-  return m ? Number(m[1]) : null;
-}
-
-test("rapid clicks on Start and Next end at the last step, in order, with the books of one walk", async ({ page }, testInfo) => {
-  test.setTimeout(240_000);
-  await page.goto("/demo");
-  const next = page.getByTestId("demo-next");
-  await expect(next).toHaveText(/Start demo/);
-
-  // Raw clicks every 50 ms with no waiting: a disabled button swallows a click as it does for a hand. The eighth step is the owner's approval:
-  // the strip's button only opens the card, so the story waits at step 7 until the owner presses the card's Approve, and then the clicks go on.
-  const seen: (number | null)[] = [];
-  const started = Date.now();
-  let clicks = 0;
-  while (Date.now() - started < 150_000) {
-    await next.evaluate((el) => (el as HTMLButtonElement).click());
-    clicks++;
-    await page.waitForTimeout(50);
-    const n = await progressOf(page);
-    seen.push(n);
-    if (n === 7 && (await next.textContent())?.includes("Open the approval") && page.url().includes("/approvals")) {
-      await page.getByRole("button", { name: /^Approve/ }).click();
-      await expect(page.getByText("0 pending")).toBeVisible();
-    }
-    if (n === STORY_STEPS && clicks >= 30) break; // at least thirty presses, the last ones past the end of the story
+test("on a phone the current scene and its button are in the first screen and the two side blocks are closed folds", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openDemo(page);
+  await expect(next(page)).toBeInViewport();
+  const box = (await next(page).boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(844);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  for (const id of ["demo-alternate-fold", "demo-operator-tools"]) {
+    await expect(page.getByTestId(id)).toBeVisible();
+    expect(await page.getByTestId(id).evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
   }
-  const rapidMs = Date.now() - started;
-
-  // Never the idle text once started, never a step back, and the last step is reached.
-  const firstStep = seen.findIndex((n) => n !== null);
-  expect(firstStep).toBeGreaterThanOrEqual(0);
-  const afterStart = seen.slice(firstStep);
-  expect(afterStart.every((n) => n !== null)).toBe(true);
-  for (let i = 1; i < afterStart.length; i++) expect(afterStart[i]!, `progress went back at sample ${i}: ${afterStart.join(",")}`).toBeGreaterThanOrEqual(afterStart[i - 1]!);
-  expect(afterStart.at(-1)).toBe(STORY_STEPS);
-  await expect(next).toBeDisabled();
-
-  // The books of one walk: the same ledger as a guarded walk (no scene ran twice, no second negotiation, one receipt).
-  const rapidEntries = await ledgerEntries(page);
-  await page.goto("/demo");
-  await page.getByTestId("story-reset").click();
-  await expect(strip(page)).toContainText("Walk the story");
-  const guardedStarted = Date.now();
-  await walkStory(page, STORY_STEPS);
-  const guardedMs = Date.now() - guardedStarted;
-  const guardedEntries = await ledgerEntries(page);
-  expect(rapidEntries).toBeGreaterThan(0);
-  expect(rapidEntries).toBe(guardedEntries);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-
-  const timing = { project: testInfo.project.name, steps: STORY_STEPS, rapid: { clicks, ms: rapidMs, ledgerEntries: rapidEntries, progress: afterStart.filter((n, i) => i === 0 || n !== afterStart[i - 1]) }, guarded: { ms: guardedMs, ledgerEntries: guardedEntries } };
-  console.log(`DEMO_TIMING ${JSON.stringify(timing)}`);
-  await testInfo.attach("demo-timing", { body: JSON.stringify(timing, null, 1), contentType: "application/json" });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 });
 
-test("Show opens a finished step and changes nothing; Replay runs it again and is safe on a story that moves time; Reset resets", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  await walkStory(page, 3); // the buyer asks, FLOW decides, the agreement acts
-
-  // Move the clock to day 7 from the story page.
-  await page.goto("/demo");
-  await page.getByTestId("home-plus-7").click();
-  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-
-  // Finished steps offer Show and Replay; the next one offers Run, and the ones after it wait.
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-show-1")).toBeVisible();
-  await expect(page.getByTestId("story-replay-1")).toHaveAttribute("aria-label", /erases the books/);
-  await expect(page.getByTestId("story-replay-3")).toHaveAttribute("aria-label", /runs this step again and changes the books/);
-  await expect(page.getByTestId("story-show-4")).toHaveCount(0);
-  await expect(page.getByTestId("story-run-4")).toBeEnabled();
-
-  // Show on the first step and on a later one: the screen opens, the day and the ledger stay.
-  await page.getByTestId("story-show-1").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await page.goto("/demo");
-  await page.getByTestId("story-show-3").click();
-  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-
-  // Replay of the agreement runs it again: the deal was agreed once and is not agreed twice.
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-3").click();
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-
-  // Replay of the first step is the deliberate reset: day 0, the story at step 1, and nothing logged but the owner's confirmation of
-  // the three demo documents the demo opens on (brief 03).
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-1").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expect(strip(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText("Day 0");
-  expect(await ledgerEntries(page)).toBe(3);
-
-  // Reset starts the story over.
-  await page.goto("/demo");
-  await page.getByTestId("story-next").click();
-  await expect(strip(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await page.getByTestId("story-reset").click();
-  await expect(strip(page)).toContainText("Walk the story");
-  await expect(page.getByTestId("story-show-1")).toHaveCount(0);
-  await expect(page.getByTestId("story-run-1")).toBeVisible();
-});
-
-test("while a step runs every control that conflicts with it is disabled", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "live", "The mock answers in milliseconds; the live API is held back to make the window long enough to see.");
-  await page.route(`${API}/demo/reset`, async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    await route.continue();
-  });
-  await page.goto("/demo");
-  await page.getByTestId("story-next").click();
-  // The first step is running: nothing else can start.
-  for (const id of ["demo-next", "story-next", "demo-reset", "story-reset", "story-run-2", "home-advance", "home-plus-1", "more-run-capex", "more-run-walk"]) await expect(page.getByTestId(id), id).toBeDisabled();
-  const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");
-  expect(await jumps.count()).toBe(6);
-  for (let i = 0; i < 6; i++) await expect(jumps.nth(i)).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Back" })).toBeDisabled();
-  await expect(strip(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-next")).toBeEnabled();
-});
-
-test("a reload in the middle of a step is said, not silently unlocked", async ({ page }) => {
-  await page.goto("/demo");
-  await walkStory(page, 2);
-  // What the browser holds when the tab is closed while step 3 runs: running is saved, busy never is.
-  await page.evaluate((key) => {
-    const s = JSON.parse(sessionStorage.getItem(key) ?? "{}");
-    sessionStorage.setItem(key, JSON.stringify({ ...s, busy: false, running: 2 }));
-  }, STORY_KEY);
-  await page.reload();
-  await expect(page.getByTestId("demo-interrupted")).toContainText("Step 3 was interrupted by a reload");
-  await expect(page.getByTestId("demo-next")).toBeEnabled();
-  await expect(strip(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  // Running the next step clears the notice.
-  await page.getByTestId("demo-next").click();
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-interrupted")).toHaveCount(0);
-});
-
-test("the narration is the server's: a step that was told nothing shows its plain sentence, and a language change drops the old sentences", async ({ page }) => {
-  await page.goto("/demo");
-  await walkStory(page, 2);
-  const narration = page.getByTestId("demo-step-narration");
-  await expect(narration).toContainText("¥28,326.92");
-  // The plain sentences carry no figure: the dictionary never holds one.
-  await page.getByLabel("中文").check();
-  await expect(narration).not.toContainText("¥28,326.92");
-  await expect(narration).toHaveText(/FLOW|检查|报价/);
-  // The sentences were written in English: in English they are told again, nothing was lost.
-  await page.getByLabel("English").check();
-  await expect(narration).toContainText("¥28,326.92");
-});
-
-test("an engine view with Business stored shows the Demo shell and the Demo radio, with a way back", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
-  await page.goto("/demo");
-  await expect(page.getByTestId("demo-strip")).toBeVisible();
-  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
-  await expect(page.getByTestId("tab-bar")).toHaveCount(0);
-
-  await page.getByTestId("back-to-business").click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByLabel("Business", { exact: true })).toBeChecked();
-
-  // Choosing Business on an engine view goes Home.
-  await page.goto("/mandate");
-  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
-  await page.getByLabel("Business", { exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-});
-
-test("what-if and equipment open from Cash inside the Business shell, with a way back to Cash", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
-  await page.goto("/cash");
-  await page.getByRole("link", { name: "Try different terms" }).click();
-  await expect(page).toHaveURL(/\/whatif/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByTestId("back-to-business")).toHaveCount(0);
-  await page.getByTestId("back-to-cash").click();
-  await expect(page).toHaveURL(/\/cash/);
-
-  await page.goto("/capex");
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByTestId("back-to-cash")).toBeVisible();
-});
-
-test("the Demo sidebar's footer is on screen at 768 px of height", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === "phone", "the sidebar is the desktop's");
-  await page.setViewportSize({ width: 1366, height: 768 });
-  await page.goto("/demo");
-  const footer = page.locator("aside").getByText("Synthetic fixture data. No real funds move.");
-  await expect(footer).toBeVisible();
-  // The column scrolls when its links need more than the window: the footer can be brought into view, and it ends inside the window.
-  await footer.scrollIntoViewIfNeeded();
-  const box = (await footer.boundingBox())!;
-  expect(box.y + box.height).toBeLessThanOrEqual(768);
+test("the tour points at the current scene on the Demo and its card does not cover it", async ({ page }) => {
+  await openDemo(page);
+  const menu = page.getByTestId("account-menu");
+  for (let i = 0; i < (await menu.count()); i++) {
+    const summary = menu.nth(i).locator("> summary");
+    if (await summary.isVisible()) {
+      await summary.click();
+      break;
+    }
+  }
+  await page.getByTestId("account-tour").locator("visible=true").first().click();
+  const tour = page.getByTestId("tour");
+  await expect(tour).toContainText("current scene");
+  await page.waitForTimeout(450);
+  const [h, c] = [(await page.getByTestId("tour-hole").boundingBox())!, (await page.getByTestId("tour-card").boundingBox())!];
+  const overlap = h.x < c.x + c.width && c.x < h.x + h.width && h.y < c.y + c.height && c.y < h.y + h.height;
+  expect(overlap).toBe(false);
 });

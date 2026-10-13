@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, openOperatorTools } from "./helpers";
 
 /**
  * Mock-mode specs for the API changes the web caught up with: the alert act bound to what was shown (409 ALERT_CHANGED),
@@ -13,6 +13,7 @@ const MOVE_BOOKS_KEY = "tl-mock-books-moved";
 /** The story page's clock control (Demo mode) moves the clock by days (from `from`), and the day it reaches is shown. */
 async function advanceTo(page: Page, day: number, from = 0) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill(String(day - from));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText(`Day ${day}`);

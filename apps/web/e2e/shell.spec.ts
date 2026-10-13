@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { runPlan, verdictHeading } from "./helpers";
+import { runPlan, verdictHeading, openOperatorTools } from "./helpers";
 
 /**
  * What the shell around the Home says, in mock mode on the recorded story: the header and the navigation, the tour, and the sidebar's counts (the server's `needs_you_text` and
@@ -26,6 +26,7 @@ async function openAccountMenu(page: Page) {
 /** The story page's clock moves the simulated day; the home is then opened through the mode switch. */
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

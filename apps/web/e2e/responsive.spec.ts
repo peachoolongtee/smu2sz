@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
+import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory, openOperatorTools } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -349,6 +349,7 @@ test("on a desktop the queue is the left pane and the negotiation the right one,
 async function toDay34(page: Page) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

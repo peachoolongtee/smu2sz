@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { ActivityRead, ChainBadge } from "@/components/activity/activity-read";
 import { LedgerActivity } from "@/components/activity/ledger-fallback";
 import { Disclosure } from "@/components/business/kit";
@@ -18,7 +19,7 @@ import { useAsync } from "@/lib/use-async";
  * Activity, read from GET /activity: every title, sentence, label and count is the server's. An API that has no such read (an older server) gets the ledger
  * rendering as before, so nothing breaks. A customer or decision in the address pre-filters the read and brings the server's way back.
  */
-export default function ActivityPage() {
+function ActivityBody() {
   const { t, lang } = useI18n();
   const params = useSearchParams();
   const sel = readSelection(params);
@@ -65,5 +66,14 @@ export default function ActivityPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ActivityPage() {
+  // The address is read on the client (a customer or decision in it pre-filters the read): the boundary lets the page build.
+  return (
+    <Suspense fallback={<LoadingBlock rows={4} />}>
+      <ActivityBody />
+    </Suspense>
   );
 }

@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, proseOf, test } from "./fixtures";
-import { openReview, resetBooks, runPlan, sendCounter } from "./helpers";
+import { openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -214,6 +214,7 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
 test("day 34: the deal summary tells the story and points at the approval", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "live", "mock-mode spec: the recorded demo path (deal, receipt on day 2, clock to day 34)");
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

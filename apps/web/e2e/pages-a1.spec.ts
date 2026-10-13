@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { runPlan } from "./helpers";
+import { runPlan, openOperatorTools } from "./helpers";
 
 /**
  * The page pattern of the A1 pass in mock mode (recorded demo path): the answer as the title, one picture, one raised action, unboxed sections.
@@ -20,6 +20,7 @@ test.beforeEach(async ({ context }, testInfo) => {
 
 async function advanceTo34(page: Page, to: string) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
