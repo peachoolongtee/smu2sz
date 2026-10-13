@@ -56,10 +56,20 @@ from app.api.decisions import Context, latest_verdict_for, load_context
 from app.api.financing_words import State, state_of, state_word
 from app.api.home import next_action
 from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
-from app.api.presentation import Lang, agreement_words, deal_back_label, event_words, party_name, t, when_text
+from app.api.presentation import (
+    Lang,
+    agreement_words,
+    deal_back_label,
+    event_words,
+    fmt_short,
+    party_name,
+    t,
+    when_text,
+)
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.api.subjects import deal_lifecycle, lifecycle_text, subject_for
 from app.api.workspace import _months
 from app.books import current_books
 from app.config import DEMO_GROSS_MARGIN_BP, get_settings
@@ -69,6 +79,7 @@ from app.domain.models import CompiledOffer, FinancialState, OperationStatus, Ve
 from app.domain.money import (
     bp,
     fmt_pct,
+    fmt_yuan,
     fmt_yuan_about,
     fmt_yuan_about_short,
     fmt_yuan_rounded,
@@ -144,6 +155,7 @@ class _Read:
     conc: dict[str, Any] | None  # the concentration (strategy.types.Concentration as the exposure block carries it); None when unreadable
     exposure: dict[str, Any] | None  # the exposure block, when the flag is on and it could be read
     planned: dict[str, int] = field(default_factory=dict)  # invoice -> the advance the plan FLOW has ready (not run) would take on it
+    planned_legs: dict[str, dict[str, Any]] = field(default_factory=dict)  # invoice -> that leg of the plan as the Home words it (cost, landing)
 
     @property
     def recommended(self) -> dict[str, Any] | None:
@@ -549,7 +561,11 @@ def _financing(r: _Read) -> dict[str, Any]:
         return _figure("financing", label, t(lang, "Not on record", "无记录"), unrecorded, "warn", state)
     planned = _planned_rows(r)
     if planned:  # the plan is ready and has not run: its advance, said as planned and never counted
-        return _figure("financing", label, whole_yuan(sum(r.planned[x["receivable_id"]] for x in planned)), _if_plan_runs(lang), state=state)
+        advance = sum(r.planned[x["receivable_id"]] for x in planned)
+        against = (t(lang, f"against {r.who}'s invoice", f"以{r.who}的发票做融资") if len(planned) == 1
+                   else t(lang, f"against {len(planned)} of {r.who}'s invoices", f"以{r.who}的 {len(planned)} 张发票做融资"))
+        note = t(lang, f"{fmt_short(advance)} financing planned {against} · not yet received", f"计划融资 {fmt_short(advance)}，{against} · 尚未到账")
+        return _figure("financing", label, whole_yuan(advance), note, state=state)
     if not financed:
         return _figure("financing", label, None,  # no figure to show: null, and the note says why
                        t(lang, f"nothing is financed against {r.who}'s invoices", f"没有以{r.who}的发票做融资"), state=state)
@@ -572,18 +588,17 @@ def _share(r: _Read) -> dict[str, Any]:
         return _figure("share", label, "—", c["aggregate_note"] or "")
     if c["ar_total_fen"] <= 0:
         return _figure("share", label, "—", t(lang, "nothing is owed to you", "目前没有应收款"))
-    n = len(r.rows)
-    count = t(lang, "no open invoice" if n == 0 else "one open invoice" if n == 1 else f"{n} open invoices",
-              "没有未收发票" if n == 0 else f"{n} 张未收发票")
+    tail = ""
     if c.get("annual_sales_share_bp") is not None:  # only when the inputs hold it
         tail = t(lang, f"{share_text(Fraction(c['annual_sales_share_bp'], 10_000), lang)} of your sales",
                  f"占您销售额的 {share_text(Fraction(c['annual_sales_share_bp'], 10_000), lang)}")
-    else:
-        tail = t(lang, "not its share of your sales", "这不是其占您销售额的比例")
     share = c.get("ar_share_bp")
     tone = "warn" if share is not None and share >= assembly.MATERIAL_SHARE_BP else "neutral"
-    return _figure("share", label, share_text(Fraction(c["ar_buyer_fen"], c["ar_total_fen"]), lang),
-                   t(lang, f"{count}; {tail}", f"{count}；{tail}"), tone)
+    shown = share_text(Fraction(c["ar_buyer_fen"], c["ar_total_fen"]), lang)
+    note = t(lang, f"{shown} of currently open receivables", f"占当前未收应收款的 {shown}")
+    if c.get("annual_sales_share_bp") is not None:  # only when the owner's inputs hold it
+        note += " · " + tail
+    return _figure("share", label, shown, note, tone)
 
 
 def _value_figure(r: _Read, contribution: int | None) -> dict[str, Any]:
@@ -872,6 +887,200 @@ def _exposure(r: _Read) -> dict[str, Any] | None:
         "与交易、应收款和现金页面上的数字相同：同一项比较，只读取一次。")}
 
 
+# ---------------------------------------------------------------- the relationship, the flow, the exposure table, the decisions (Slice B round two)
+
+
+def _number_word(n: int, lang: Lang) -> str:
+    return _NUMBER_EN[n] if lang != "zh" and n < len(_NUMBER_EN) else str(n)
+
+
+def _negotiations(r: _Read) -> list[tuple[dict[str, Any], DealState, Any]]:
+    """Every open negotiation of this buyer (an offer waiting on the owner, on the buyer or on an approval), oldest first."""
+    return [x for x in open_deals(r.ctx, r.lang) if x[2].offer.counterparty_id == r.buyer_id]
+
+
+def _relationship_text(r: _Read, contribution: int | None, open_count: int) -> str:
+    """One sentence for the whole relationship: what it contributes a year, what it owes and its share of the open receivables, and how many
+    negotiations are open ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (54.5% of your open receivables), and has three
+    negotiations that could change your cash."). A clause the books cannot support is left out, never guessed."""
+    lang, who = r.lang, r.who
+    c = r.conc
+    parts: list[str] = []
+    if contribution is not None:
+        parts.append(t(lang, f"contributes an estimated {fmt_yuan_about_short(contribution)} a year",
+                       f"每年估计贡献 {fmt_yuan_about_short(contribution, zh=True)}"))
+    owed = sum(x["outstanding_fen"] for x in r.rows)
+    if not r.rows:
+        parts.append(t(lang, "owes you nothing", "目前没有应付给您的款项"))
+    elif c is not None and not c["is_aggregate"] and c["ar_total_fen"] > 0:
+        share = share_text(Fraction(c["ar_buyer_fen"], c["ar_total_fen"]), lang)
+        parts.append(t(lang, f"owes {fmt_short(owed)} ({share} of your open receivables)", f"应付 {fmt_short(owed)}（占您未收应收款的 {share}）"))
+    else:
+        parts.append(t(lang, f"owes {fmt_short(owed)}", f"应付 {fmt_short(owed)}"))
+    if open_count:
+        many = open_count != 1
+        parts.append(t(lang, f"has {_number_word(open_count, lang)} {'negotiations' if many else 'negotiation'} that could change your cash",
+                       f"有 {open_count} 项可能改变您现金的谈判"))
+    else:
+        parts.append(t(lang, "has no open negotiation", "目前没有进行中的谈判"))
+    if lang == "zh":
+        return f"{who}" + "，".join(parts) + "。"
+    joined = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + (", and " if len(parts) > 2 else " and ") + parts[-1]
+    return f"{who} {joined}."
+
+
+def _open_negotiations(r: _Read) -> tuple[list[dict[str, Any]], dict[str, Any] | None, int]:
+    """(the open negotiations as rows, the primary decision, how many others are open). The primary decision is the one the page's `decision`
+    block is about when it waits for the owner, else the first that does; it is null when none waits for the owner."""
+    lang = r.lang
+    found = _negotiations(r)
+    waiting = [x for x in found if x[1] in (DealState.RECEIVED, DealState.RESPONSE_READY)]
+    primary = next((x for x in waiting if r.offer is not None and x[0]["offer_id"] == r.offer["offer_id"]), waiting[0] if waiting else None)
+    rows: list[dict[str, Any]] = []
+    for view, _state, ds in found:
+        subject, demo = subject_for(r.ctx, ds.offer, lang)
+        key = deal_lifecycle(ds)
+        rows.append({"decision_id": deal_id(view["offer_id"]), "subject_text": subject, "subject_demo_text": demo, "lifecycle": key,
+                     "status_text": lifecycle_text(key, lang), "is_primary": primary is not None and primary[0]["offer_id"] == view["offer_id"],
+                     "href": f"/deals?decision={_quoted(deal_id(view['offer_id']))}"})
+    rows.sort(key=lambda x: not x["is_primary"])
+    if primary is None:
+        return rows, None, len(rows)
+    view = primary[0]
+    pic = r.picture if r.offer is not None and view["offer_id"] == r.offer["offer_id"] else None
+    if pic is None and view.get("verdict_id"):
+        try:
+            got = cached_picture(r.rt, view["offer_id"], lang)
+            pic = got if got.get("available") else None
+        except Exception:  # a supporting read: the recommendation is then left out, never guessed
+            log.exception("the offer picture could not be read for the customer's primary decision")
+    rec = next((p for p in (pic or {}).get("paths", []) if p.get("recommended")), None)
+    recommends: str | None = None
+    if rec is not None:
+        recommends = (t(lang, f"FLOW recommends {rec['label']}.", f"FLOW 推荐{rec['label']}。") if rec["kind"] == "reply"
+                      else t(lang, "FLOW recommends accepting as asked.", "FLOW 建议按对方要求接受。"))
+    n = len(waiting)
+    text = (t(lang, f"{r.who} has one commercial decision requiring your response.", f"{r.who}有一项商务决定需要您答复。") if n == 1
+            else t(lang, f"{r.who} has {_number_word(n, lang)} commercial decisions requiring your response.", f"{r.who}有 {n} 项商务决定需要您答复。"))
+    path = f"&path={_quoted(rec['key'])}" if rec is not None else ""
+    return rows, {"decision_id": deal_id(view["offer_id"]), "text": text, "recommends_text": recommends,
+                  "href": f"/deals?decision={_quoted(deal_id(view['offer_id']))}{path}"}, len(rows) - 1
+
+
+def _largest(r: _Read) -> dict[str, Any] | None:
+    return max(r.rows, key=lambda x: (x["outstanding_fen"], -x["due_day"]), default=None)
+
+
+def _step(key: str, label: str, amount: int | str | None, when: str | None = None, note: str | None = None) -> dict[str, Any]:
+    shown = fmt_yuan(amount) if isinstance(amount, int) else amount
+    return {"key": key, "label": label, "amount_display": shown, "when_text": when, "note": note}
+
+
+def _due_words(row: dict[str, Any], lang: Lang) -> str:
+    if row["past_due"]:
+        n = int(row["days_late"])
+        return t(lang, f"overdue by {_days(n, lang)}", f"已逾期 {n} 天")
+    return t(lang, f"due {row['due_when']}", f"{_gap(row['due_when'])}到期".strip())
+
+
+def _receivable_flow(r: _Read) -> list[dict[str, Any]]:
+    """The customer's largest open invoice as a flow: owed, financing, when the financing arrives, the customer pays, the repayment and fees, the net
+    available at collection. The figures are the receivable's and the lot's (`net`, the receivables read) or, while the plan is only ready, the plan's
+    own leg for the invoice (`planned_legs`); nothing is priced here. With no financing linked it is two steps: owed, and the customer pays. A step
+    the books cannot support is left out of the amount (null), never guessed."""
+    row = _largest(r)
+    if row is None:
+        return []
+    lang, who = r.lang, r.who
+    owed = int(row["outstanding_fen"])
+    net = row["net"]
+    pays = _step("customer_pays", t(lang, f"{who} pays the invoice", f"{who}支付发票"), owed, _due_words(row, lang))
+    first = _step("owed", t(lang, f"{who} owes you", f"{who}应付给您"), owed)
+    financed = row["financing_state"] in ("ARRANGED", "RECEIVED")
+    leg = r.planned_legs.get(row["receivable_id"])
+    if not financed and leg is None:
+        return [first, pays]
+    claim: int | None
+    net_text: str | None
+    arrives: str | None
+    fees_note: str | None
+    if financed:
+        advance, claim, arrival = int(net["advance_fen"]), int(net["claim_fen"]), net["arrival_day"]
+        label = t(lang, "Financing received" if row["financing_state"] == "RECEIVED" else "Financing arranged",
+                  "融资已到账" if row["financing_state"] == "RECEIVED" else "融资已安排")
+        said = when_text(arrival, r.today, lang) if arrival is not None else None
+        arrives = (t(lang, f"arrived {said}" if row["financing_state"] == "RECEIVED" else f"arrives {said}",
+                     f"{_gap(said)}到账".strip()) if said else None)
+        note = t(lang, "not counted as cash until it lands", "到账前不计入现金") if row["financing_state"] != "RECEIVED" else None
+        net_text = row["net_after_repayment_display"]
+        fees_note = t(lang, f"{whole_yuan(advance)} advance plus {fmt_yuan(claim - advance)} in charges",
+                      f"{whole_yuan(advance)} 垫款，加 {fmt_yuan(claim - advance)} 费用")
+    else:
+        assert leg is not None
+        advance = int(leg["amount_fen"])
+        cost = leg.get("cost_fen")
+        claim = advance + int(cost) if isinstance(cost, int) else None
+        label = t(lang, "Financing planned", "计划融资")
+        lands = leg.get("lands_when")
+        arrives = t(lang, f"{lands} if the plan runs", f"执行方案后{_gap(lands)}到账".strip()) if lands else None
+        note = _if_plan_runs(lang)
+        net_text = (t(lang, f"about {fmt_yuan_about(owed - claim)}", f"约 {fmt_yuan_about(owed - claim)}") if claim is not None and owed >= claim else None)
+        fees_note = (t(lang, f"{whole_yuan(advance)} advance plus {fmt_yuan(claim - advance)} in charges",
+                       f"{whole_yuan(advance)} 垫款，加 {fmt_yuan(claim - advance)} 费用") if claim is not None else None)
+    day = _due_words(row, lang)
+    return [first,
+            _step("financing", label, advance, None, note),
+            _step("arrives", t(lang, "The financing arrives", "融资到账"), advance, arrives),
+            pays,
+            _step("repayment", t(lang, "Repayment and fees", "还款与费用"), claim, t(lang, f"out of the payment, {day}", f"从回款中扣除，{day}"), fees_note),
+            _step("net", t(lang, "Net available at collection", "回款后可用的净额"), net_text, day, row["net"]["condition_text"])]
+
+
+def _exposure_comparison(r: _Read) -> dict[str, Any] | None:
+    """The late-payment test as a comparison: the expected payment beside the buyer paying every invoice late (30 days), four rows, every cell a
+    sentence about the same path (the one the page leads with) from the exposure block's stress sets; null without the exposure block or when the
+    test cannot be run."""
+    ex = r.exposure
+    if ex is None or "expected" not in ex["stress"]:
+        return None
+    lang = r.lang
+    late = ex["stress"]["paths"].get(r.lead) or ex["stress"]["now"]
+    base = ex["stress"]["expected"]["paths"].get(r.lead) or ex["stress"]["expected"]["now"]
+    if not late.get("available") or not base.get("available"):
+        return None
+    floor = r.rt.store.get_mandate().min_cash_fen
+
+    def lowest(x: dict[str, Any]) -> str:
+        sign = "−" if x["lowest_fen"] < 0 else ""
+        return t(lang, f"{sign}{whole_yuan(abs(x['lowest_fen']))} {x['lowest_when']}", f"{x['lowest_when']}降至 {sign}{whole_yuan(abs(x['lowest_fen']))}"
+                 if x["lowest_fen"] < floor else f"{x['lowest_when']}为 {sign}{whole_yuan(abs(x['lowest_fen']))}")
+
+    def breach(x: dict[str, Any]) -> str:
+        if x["breach_days"] == 0:
+            return t(lang, "None", "没有低于最低现金")
+        start = x.get("first_breach_when")
+        return t(lang, f"{x['breach_days_text']}" + (f", starting {start}" if start else ""),
+                 f"{x['breach_days_text']}" + (f"，自{_gap(start)}起" if start else ""))
+
+    def shortfall(x: dict[str, Any]) -> str:
+        return whole_yuan(floor - x["lowest_fen"]) if x["lowest_fen"] < floor else t(lang, "None", "无")
+
+    def funding(x: dict[str, Any]) -> str:
+        if x["need_fen"] <= 0:
+            return t(lang, "None", "无")
+        need = whole_yuan(x["need_fen"])
+        if not x["plan_admissible"]:
+            return t(lang, f"{need} uncovered", f"{need} 缺口无法覆盖")
+        tail = t(lang, f"{need} covered by FLOW's committed plan", f"{need} 的缺口由 FLOW 已承诺的方案覆盖")
+        return tail + (t(lang, ", with your approval", "，需要您批准") if x["needs_owner"] else "")
+
+    rows = [(t(lang, "Lowest cash", "最低现金"), lowest), (t(lang, "Reserve breach", "储备缺口"), breach),
+            (t(lang, "Maximum shortfall", "最大缺口"), shortfall), (t(lang, "Additional funding needed", "需要额外融资"), funding)]
+    return {"columns": [{"key": "expected", "label": t(lang, "Expected payment", "按期付款")},
+                        {"key": "late", "label": t(lang, f"{late['delay_days']} days late", f"晚付 {late['delay_days']} 天")}],
+            "rows": [{"label": label, "expected_text": say(base), "late_text": say(late)} for label, say in rows]}
+
+
 # ---------------------------------------------------------------- the history
 
 
@@ -1002,12 +1211,13 @@ def _read_exposure(rt: Runtime, state: FinancialState, buyer_id: str, offer_id: 
         return None
 
 
-def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, Any]], today: int, lang: Lang) -> tuple[dict[str, int], bool]:
+def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, Any]], today: int, lang: Lang
+                       ) -> tuple[dict[str, int], bool, dict[str, dict[str, Any]]]:
     """(the buyer's invoices the ready plan would finance, each with its advance, whether it could be read): the invoice-financing legs of the plan the Home shows
     as its next action (`home.next_action`, the same reading), for the buyer's invoices still to collect that are not financed yet. A plan
     that has run is not a plan (its alert is gone and its lots are the books'). Nothing is read when no such invoice is open."""
     if not any(x["financing_state"] not in ("ARRANGED", "RECEIVED") for x in rows):
-        return {}, True
+        return {}, True, {}
     try:
         mandate = rt.store.get_mandate()
         found = alerts(state, mandate, rt.store, rt.day)
@@ -1016,16 +1226,18 @@ def _planned_financing(rt: Runtime, state: FinancialState, rows: list[dict[str, 
                              use_router=rt.settings.features.debt_desk)
     except EngineError:
         log.exception("the plan could not be read for the customer overview")
-        return {}, False
+        return {}, False, {}
     if action is None or action["kind"] != "RESERVE_BREACH_AHEAD":
-        return {}, True
+        return {}, True, {}
     mine = {x["receivable_id"] for x in rows}
     out: dict[str, int] = {}
+    legs: dict[str, dict[str, Any]] = {}
     for leg in action["legs"]:
         rid = leg.get("receivable_id")
         if leg["operation_kind"] == "SUBMIT_INVOICE_FOR_FINANCING" and rid in mine and isinstance(leg.get("amount_fen"), int):
             out[rid] = out.get(rid, 0) + leg["amount_fen"]
-    return out, True
+            legs[rid] = leg
+    return out, True, legs
 
 
 def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool]:
@@ -1060,18 +1272,23 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
         except EngineError:
             log.exception("the concentration could not be read for the customer overview")
             shares, whole = None, False
-    planned, planned_read = _planned_financing(rt, state, rows, today, lang)
+    planned, planned_read, planned_legs = _planned_financing(rt, state, rows, today, lang)
     whole = whole and planned_read
     r = _Read(rt=rt, lang=lang, state=state, today=today, buyer_id=buyer_id, name=name, who=buyer_short(name), rows=rows, inputs=inputs,
-              ctx=ctx, offer=offer, offer_state=offer_state, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block, planned=planned)
+              ctx=ctx, offer=offer, offer_state=offer_state, verdict=verdict if offer is not None else None, picture=picture, conc=shares, exposure=exposure_block, planned=planned, planned_legs=planned_legs)
     econ_rows, econ_note = _economics(r)
     actions = _actions(r)
     decision, none_text = _decision(r, actions)
     figures = [_value_figure(r, _contribution_fen(r)), _outstanding(r), _financing(r), _share(r)]
+    negotiations, primary, others = _open_negotiations(r)
     return {
         "customer_id": buyer_id, "name": name, "lang": lang, "day": today, "state_version": state.state_version,
         "summary_text": t(lang, "What this relationship is worth, and what it puts at risk.", "这段客户关系的价值，以及它带来的风险。"),
         "figures": figures,
+        "relationship_text": _relationship_text(r, _contribution_fen(r), len(negotiations)),
+        "receivable_flow": _receivable_flow(r),
+        "exposure_comparison": _exposure_comparison(r),
+        "open_negotiations": negotiations, "primary_decision": primary, "other_open_count": others,
         "decision": decision, "none_text": none_text if decision is None else None, "actions": actions,
         "economics": econ_rows, "economics_note": econ_note,
         # the inputs sheet is Phase 2 (FEATURE_CUSTOMER_ECONOMICS): until it is on there is nowhere to send the owner, and the label stays
