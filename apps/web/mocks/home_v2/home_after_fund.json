@@ -4231,7 +4231,34 @@
         "facts": [],
         "primary": null,
         "secondary": null,
-        "control": null
+        "control": null,
+        "legs": [
+          {
+            "label": "Credit-line draw",
+            "amount_display": "¥150,000",
+            "amount_fen": 15000000,
+            "lands_when": "today",
+            "lands_day": 0,
+            "cost_display": "¥841.64",
+            "repaid_when": "in 32 days",
+            "state": "RECEIVED",
+            "state_text": "Received",
+            "authority_text": "Within your signed limits; nothing for you to do."
+          },
+          {
+            "label": "Invoice financing",
+            "amount_display": "¥255,000",
+            "amount_fen": 25500000,
+            "lands_when": "in 3 days",
+            "lands_day": 3,
+            "cost_display": "¥2,272.29",
+            "repaid_when": null,
+            "state": "ARRANGED",
+            "state_text": "Arranged",
+            "authority_text": "Within your signed limits; nothing for you to do."
+          }
+        ],
+        "cost_basis_text": null
       },
       "chart": {
         "scope_title": "COMPANY CASH FORECAST",
@@ -8668,7 +8695,34 @@
         "facts": [],
         "primary": null,
         "secondary": null,
-        "control": null
+        "control": null,
+        "legs": [
+          {
+            "label": "信用额度提款",
+            "amount_display": "¥150,000",
+            "amount_fen": 15000000,
+            "lands_when": "今天",
+            "lands_day": 0,
+            "cost_display": "¥841.64",
+            "repaid_when": "32 天后",
+            "state": "RECEIVED",
+            "state_text": "已到账",
+            "authority_text": "在您签署的授权内，您无需做任何事。"
+          },
+          {
+            "label": "发票融资",
+            "amount_display": "¥255,000",
+            "amount_fen": 25500000,
+            "lands_when": "3 天后",
+            "lands_day": 3,
+            "cost_display": "¥2,272.29",
+            "repaid_when": null,
+            "state": "ARRANGED",
+            "state_text": "已安排",
+            "authority_text": "在您签署的授权内，您无需做任何事。"
+          }
+        ],
+        "cost_basis_text": null
       },
       "chart": {
         "scope_title": "公司现金预测",

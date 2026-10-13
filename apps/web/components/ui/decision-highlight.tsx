@@ -47,15 +47,19 @@ export function DecisionHighlight({
         </p>
       ) : null}
       {hero ? (
-        <div className={`mt-3 grid gap-x-5 gap-y-3 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-4 sm:pt-3 ${stackMiddle ? "" : "max-sm:grid-cols-[auto_minmax(0,1fr)]"}`} data-testid="hv2-action-facts">
-          <div className="min-w-0">
+        <div className={`mt-2.5 grid gap-x-5 gap-y-2 border-t border-line-strong pt-2.5 sm:mt-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-4 sm:pt-3 ${stackMiddle ? "" : "max-sm:grid-cols-[auto_minmax(0,1fr)]"}`} data-testid="hv2-action-facts">
+          <div className={`min-w-0 ${stackMiddle ? "max-sm:flex max-sm:items-baseline max-sm:justify-between max-sm:gap-3" : ""}`}>
             <p className="text-supporting text-ink-3">{hero.label}</p>
-            <p className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-              <span className="inline-block border-b-2 border-brand-600 pb-1 font-display text-[24px] font-bold leading-none sm:text-[28px] tracking-[-0.02em] tabular-nums text-ink" data-testid={hero.testId ?? "hv2-hero-value"}>
+            <p className="mt-0.5 sm:mt-1">
+              <span className="inline-block border-b-2 border-brand-600 pb-1 font-display text-[24px] font-bold leading-none tracking-[-0.02em] tabular-nums text-ink sm:text-[28px]" data-testid={hero.testId ?? "hv2-hero-value"}>
                 {hero.value}
               </span>
-              {hero.basis ? <span className="text-supporting text-ink-2">{hero.basis}</span> : null}
             </p>
+            {hero.basis ? (
+              <p className="mt-1.5 line-clamp-2 max-w-[16rem] text-supporting text-ink-2 max-sm:hidden" title={hero.basis} data-testid="hv2-hero-basis">
+                {hero.basis}
+              </p>
+            ) : null}
           </div>
           {middle ? <div className={`min-w-0 sm:border-l sm:border-line-strong sm:pl-8 ${stackMiddle ? "" : "max-sm:border-l max-sm:border-line-strong max-sm:pl-4"}`}>{middle}</div> : null}
         </div>

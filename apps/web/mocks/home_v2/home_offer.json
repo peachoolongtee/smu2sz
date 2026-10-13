@@ -7748,7 +7748,34 @@
           "label": "Compare",
           "href": "/cash#cash-options"
         },
-        "control": "RUN_PLAN"
+        "control": "RUN_PLAN",
+        "legs": [
+          {
+            "label": "Credit-line draw",
+            "amount_display": "¥150,000",
+            "amount_fen": 15000000,
+            "lands_when": "today",
+            "lands_day": 0,
+            "cost_display": "¥841.64",
+            "repaid_when": "in 32 days",
+            "state": "PLANNED",
+            "state_text": "Planned",
+            "authority_text": "Within your signed limits. No additional approval required."
+          },
+          {
+            "label": "Invoice financing",
+            "amount_display": "¥255,000",
+            "amount_fen": 25500000,
+            "lands_when": "in 3 days",
+            "lands_day": 3,
+            "cost_display": "¥2,272.29",
+            "repaid_when": null,
+            "state": "PLANNED",
+            "state_text": "Planned",
+            "authority_text": "Within your signed limits. No additional approval required."
+          }
+        ],
+        "cost_basis_text": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid."
       },
       "chart": {
         "scope_title": "COMPANY CASH FORECAST",
@@ -15777,7 +15804,34 @@
           "label": "比较",
           "href": "/cash#cash-options"
         },
-        "control": "RUN_PLAN"
+        "control": "RUN_PLAN",
+        "legs": [
+          {
+            "label": "信用额度提款",
+            "amount_display": "¥150,000",
+            "amount_fen": 15000000,
+            "lands_when": "今天",
+            "lands_day": 0,
+            "cost_display": "¥841.64",
+            "repaid_when": "32 天后",
+            "state": "PLANNED",
+            "state_text": "计划中",
+            "authority_text": "在您签署的授权内，无需额外批准。"
+          },
+          {
+            "label": "发票融资",
+            "amount_display": "¥255,000",
+            "amount_fen": 25500000,
+            "lands_when": "3 天后",
+            "lands_day": 3,
+            "cost_display": "¥2,272.29",
+            "repaid_when": null,
+            "state": "PLANNED",
+            "state_text": "计划中",
+            "authority_text": "在您签署的授权内，无需额外批准。"
+          }
+        ],
+        "cost_basis_text": "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。"
       },
       "chart": {
         "scope_title": "公司现金预测",

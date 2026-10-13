@@ -58,7 +58,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
   const size = (l: HomeV2Leg) => (big > 0 && l.amount_fen ? 10 + Math.round((l.amount_fen / big) * 8) : 14);
   return (
     <div className="min-w-0" data-testid="hv2-timeline" data-legs={legs.length}>
-      <p className="text-supporting text-ink-3">{t("hv2.timeline.title")}</p>
+      <p className="text-supporting text-ink-3 max-sm:sr-only">{t("hv2.timeline.title")}</p>
       {/* Desktop: the timeline */}
       <div className="relative mt-2 hidden h-[88px] sm:block" role="list" aria-label={t("hv2.timeline.title")} onKeyDown={(e) => e.key === "Escape" && setShown(null)}>
         <span aria-hidden className="absolute left-0 right-[8.5rem] top-3.5 h-0.5 rounded-pill bg-line-strong" />
@@ -66,7 +66,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
           const px = size(l);
           const open = shown === i;
           return (
-            <div key={`${l.label}-${i}`} role="listitem" className="absolute top-0 -translate-x-1/2" style={{ left: `calc(0.75rem + (100% - 8.5rem - 1.5rem) * ${left(l, i) / 100})` }} data-testid={`hv2-leg-${i}`} data-state={l.state}>
+            <div key={`${l.label}-${i}`} role="listitem" className="absolute top-0 -translate-x-1/2" style={{ left: `calc(2.75rem + (100% - 8.5rem - 5.5rem) * ${left(l, i) / 100})` }} data-testid={`hv2-leg-${i}`} data-state={l.state}>
               <button
                 type="button"
                 aria-describedby={open ? `${uid}-${i}` : undefined}
@@ -84,7 +84,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
                   <Glyph state={l.state} className="size-full" />
                 </span>
               </button>
-              <p className="mt-2 max-w-32 text-center text-supporting leading-tight text-ink-2">{l.label}</p>
+              <p className="mt-2 w-22 text-center text-supporting leading-tight text-ink-2">{l.label}</p>
               <p className="text-center text-sm font-bold tabular-nums text-ink">{l.amount_display}</p>
               <div
                 id={`${uid}-${i}`}
@@ -117,7 +117,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
         {legs.map((l, i) => (
           <li key={`${l.label}-${i}`} data-testid={`hv2-leg-row-${i}`}>
             <details className="group">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-8 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
                 <Glyph state={l.state} className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1 text-sm text-ink-2">{l.label}</span>
                 <span className="text-sm font-bold tabular-nums text-ink">{l.amount_display}</span>
@@ -131,7 +131,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
             </details>
           </li>
         ))}
-        <li className="flex items-baseline justify-between py-2 text-sm">
+        <li className="hidden items-baseline justify-between py-2 text-sm">
           <span className="text-ink-3">{t("hv2.timeline.total")}</span>
           <b className="font-display text-base font-bold tabular-nums text-brand-600">{total}</b>
         </li>
