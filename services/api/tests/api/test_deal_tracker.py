@@ -432,7 +432,7 @@ def test_the_stages_follow_the_one_flag_on_the_demo_books_with_the_contract_conf
     did = _agree(api)
     d = _tracker(api, did)
     assert "read" in _stage_states(d), "the deal row's own stages are in use: the contract is confirmed"
-    live_now = lambda x: [s["key"] for s in x["stages"] if s["state"] == "now"]  # noqa: E731
+    live_now = lambda x: [s["key"] for s in x["stages"] if s["state"] == "now"]
     assert _stage_states(d) == {"read": "done", "negotiated": "done", "early_payment": "part", "collecting": "now", "fulfilled": "todo"}
     assert live_now(d) == ["collecting"]
     api.post("/clock/advance", json={"to_day": 2})
