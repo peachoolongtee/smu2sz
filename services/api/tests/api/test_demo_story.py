@@ -301,3 +301,18 @@ def test_unknown_scenario_and_credentials(api: TestClient, rt: Runtime) -> None:
     assert TestClient(app).post("/demo/restore").status_code == 401
     assert api.post("/demo/reset", params={"scenario": "nope"}).status_code == 422
     assert rt.demo_history == []
+
+
+def test_each_step_has_its_own_hint_and_the_owner_step_says_the_plan_waits(api: TestClient, rt: Runtime) -> None:
+    from app.api import demo_story
+
+    for lang in ("en", "zh"):
+        for sid, scene, _, owner in demo_story.STEPS:
+            books = demo_story._Books("OFF-x", {}, type("A", (), {"id": "APR-1"})() if owner else None, [])
+            cur = [s[0] for s in demo_story.STEPS].index(sid)
+            nxt = demo_story._next(lang, True, cur, books, False)
+            text = demo_story.t(lang, demo_story._STEP[sid][2], demo_story._STEP[sid][3])
+            assert nxt["hint_text"] != text and "this button" not in (nxt["hint_text"] + text).lower() and "这个按钮" not in nxt["hint_text"] + text
+    for sid in ("approve",):
+        en = demo_story.t("en", demo_story._STEP[sid][2], demo_story._STEP[sid][3])
+        assert "outside what FLOW may run alone" in en and "approval card" in en

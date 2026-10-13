@@ -214,8 +214,12 @@ def _state(rt: Any, rows: list[dict[str, Any]], valid: bool, today: int, lang: s
     """(word, tone, text) for the status pill and the subheading: what changed most recently and whether anything waits on the owner."""
     waiting = sum(1 for a in rt.store.approvals() if a.status == ApprovalStatus.PENDING)
     newest = next((r for r in rows if r["kind"] == "business"), None)
-    recent = (t(lang, f"The latest change: {newest['title_text']} ({newest['when']}).", f"最近的变化：{newest['title_text']}（{newest['when']}）。")
-              if newest else t(lang, "Nothing has changed in the books yet.", "账目中还没有任何变化。"))
+    if newest:
+        title = str(newest["title_text"]).rstrip()
+        title += "" if title[-1] in ".!?。！？" else t(lang, ".", "。")
+        recent = t(lang, f"Latest, {newest['when']}: {title}", f"最新，{newest['when']}：{title}")
+    else:
+        recent = t(lang, "Nothing has changed in the books yet.", "账目中还没有任何变化。")
     if not valid:
         return (t(lang, "Record check failed", "记录核验未通过"), "bad",
                 recent + " " + t(lang, "The record chain did not pass its check.", "记录链没有通过核验。"))
@@ -223,10 +227,9 @@ def _state(rt: Any, rows: list[dict[str, Any]], valid: bool, today: int, lang: s
         text = t(lang, f"{waiting} approval{' waits' if waiting == 1 else 's wait'} for you.", f"有 {waiting} 项批准事项在等您。")
         return t(lang, "Waiting on you", "等待您处理"), "warn", f"{recent} {text}"
     fresh = any(r["kind"] == "security" and r["day"] == today for r in rows)
-    if fresh:
-        return (t(lang, "Security alert today", "今天有安全警示"), "warn",
-                f"{recent} " + t(lang, "A security alert was recorded today; nothing waits on you.", "今天记录了一条安全警示；没有事项在等您。"))
-    return t(lang, "Nothing waits on you", "没有事项在等您"), "ok", f"{recent} " + t(lang, "Nothing waits on you.", "没有事项在等您。")
+    if fresh:  # the pill says it; the sentence does not say it again
+        return t(lang, "Security alert today", "今天有安全警示"), "warn", recent
+    return t(lang, "Nothing waits on you", "没有事项在等您"), "ok", recent
 
 
 @router.get("/activity")
@@ -240,6 +243,7 @@ def get_activity(lang: str = "en", *, sel: Annotated[Selection, Depends(selectio
         rows.sort(key=lambda r: r["order"], reverse=True)  # newest first: the day, then events after operations of the same day
         n_ops = len(rt.store.operations())
         valid = rt.store.verify_chain()
+        head_hash = rt.store.operations()[-1].entry_hash if n_ops else None
         benign_today = sum(1 for r in rows if r["kind"] == "benign_auth" and r["day"] == today)
         word, tone, text = _state(rt, rows, valid, today, lang)
         for r in rows:
@@ -263,7 +267,7 @@ def get_activity(lang: str = "en", *, sel: Annotated[Selection, Depends(selectio
         "categories": [{"key": k, "label": _label(k, lang), "count": len(rows) if k == "all" else sum(1 for r in rows if r["category"] == k)}
                        for k in keys],
         "rows": rows,
-        "chain": chain_fields(valid, n_ops, lang),
+        "chain": {"chain_valid": valid, "chain_length": n_ops, "head_hash": head_hash, **chain_fields(valid, n_ops, lang)},
         "context": context,
         **last_read(today, lang),
     }

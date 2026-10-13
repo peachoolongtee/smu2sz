@@ -86,6 +86,11 @@ def _check_complete(api: TestClient, rt: Runtime, lang: str = "en") -> dict[str,
             event_id = r["id"][4:]
             assert r["evidence_href"] == f"/trust?view=security&event={event_id}&from=activity" and r["record"]["event_id"] == event_id
         assert r["title_text"] and r["search_text"] == r["search_text"].lower()
+    assert body["state_word"].lower() not in body["state_text"].lower()  # the pill's words are not said again
+    assert not re.search(r"[.。]\s*[(（]|[)）]\s*[.。]|\)\.|。）", body["state_text"])  # no bracketed when-word after a full stop
+    ledger = api.get("/ledger", params={"lang": lang}).json()
+    assert {k: body["chain"][k] for k in ("chain_valid", "chain_length", "head_hash", "chain_text")} == {
+        k: ledger[k] for k in ("chain_valid", "chain_length", "head_hash", "chain_text")}
     return body  # type: ignore[no-any-return]
 
 
