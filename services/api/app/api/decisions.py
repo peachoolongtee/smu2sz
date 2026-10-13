@@ -122,6 +122,14 @@ def is_lapsed(state: FinancialState, mandate: Mandate, commitments: Sequence[Any
     return offer_as_asked(state, mandate, commitments, offer_id, verdict)[1] is None
 
 
+def lapsed_by_agreement(commitments: Sequence[Any], offer_id: str, verdict: Any) -> bool:
+    """Whether another agreement in force settled an invoice this offer was about (the usual cause of a lapse, and the one the state's sentence
+    names); false when the books moved otherwise (the invoice was financed, the days it named passed)."""
+    named = {o.base.receivable_id for o in verdict.bound_obligations if o.base.receivable_id}
+    live = (CommitmentStatus.ACCEPTED, CommitmentStatus.ACTIVE, CommitmentStatus.FULFILLED)
+    return any(c.offer_id != offer_id and c.status in live and any(o.base.receivable_id in named for o in c.obligations) for c in commitments)
+
+
 # ---------------------------------------------------------------- reading the stores once
 
 
@@ -169,6 +177,7 @@ class Context:
     report: Any
     _states: dict[str, tuple[DecisionState, DecisionInputs]] | None = field(default=None, repr=False)
     _index: RecordIndex | None = field(default=None, repr=False)
+    lapsed_by: dict[str, bool] = field(default_factory=dict, repr=False)  # a LAPSED decision -> whether another agreement settled its invoice
 
     @property
     def index(self) -> RecordIndex:
@@ -215,7 +224,10 @@ class Context:
         except Exception:
             log.exception("the offer of decision %s could not be checked against today's books", ds.decision_id)
             return ds
-        return replace(ds, state=DealState.LAPSED, terminal=True) if lapsed else ds
+        if not lapsed:
+            return ds
+        self.lapsed_by[ds.decision_id] = lapsed_by_agreement(self.commitments, ds.offer.offer_id, ds.verdict)
+        return replace(ds, state=DealState.LAPSED, terminal=True)
 
     def states(self) -> dict[str, tuple[DecisionState, DecisionInputs]]:
         """Every decision's state. One that cannot be derived is logged and left out (and not tried again), so a bad entry
@@ -365,7 +377,8 @@ def decision_summary(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang:
     residual = ds.residual is not None
     return {
         "id": ds.decision_id, "family": ds.family, "state": ds.state.value,
-        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual),
+        "state_text": decision_state_text(ds.family, ds.state.value, lang, response=_response_code(ds), residual=residual,
+                                          lapsed_by_agreement=ctx.lapsed_by.get(ds.decision_id, True)),
         "state_tone": decision_state_tone(ds.state.value, awaited=waiting["party"] == Party.OWNER.value, residual=residual),
         "terminal": ds.terminal, "headline": _headline(ctx, ds, lang), "counterparty_name": _counterparty(ctx, ds),
         "amount_display": _amount_display(ctx, ds),

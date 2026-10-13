@@ -308,7 +308,7 @@ def test_a_buyer_with_no_open_deal_has_no_decision_and_says_so(api, rt):
     assert b["decision"] is None
     assert b["none_text"] == "No commercial decision is waiting for you with Dongguan."
     assert b["actions"][0]["href"] == "/receivables?customer=BUYER-2"
-    assert [f["value_display"] for f in b["figures"]] == ["Not known yet", "¥0", "None", "0%"]
+    assert [f["value_display"] for f in b["figures"]] == ["Not known yet", "¥0", None, "0%"]  # no financing: null, the note says so
     assert b["figures"][1]["note"] == "nothing is owed by them"
     assert [a["key"] for a in b["actions"]] == ["invoices"]  # nothing is open, so there is nothing to pay late
     rows = b["exposure"]["rows"]
@@ -324,11 +324,11 @@ def test_a_buyer_with_no_financing_and_no_plan_leg_says_none_and_never_a_state_w
     b = _get(api, "BUYER-2")
     f = _fig(b, "financing")
     assert (f["value_display"], f["note"], f["state"], f["state_text"]) == (
-        "None", "nothing is financed against Dongguan's invoices", "none", "")
+        None, "nothing is financed against Dongguan's invoices", "none", "")
     assert not any(w in json.dumps(b["exposure"]) for w in ("arranged", "received", "repaid", "planned"))
     assert _row(b["exposure"]["rows"], "financing")["value_display"] == "none against this customer's invoices"
     zh = _fig(_get(api, "BUYER-2", lang="zh"), "financing")
-    assert (zh["value_display"], zh["state"], zh["state_text"]) == ("无", "none", "")
+    assert (zh["value_display"], zh["state"], zh["state_text"]) == (None, "none", "")
 
 
 def test_without_inputs_the_demo_buyer_is_projected_from_the_books_and_nothing_else_is_invented(api, rt):

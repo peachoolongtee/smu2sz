@@ -109,6 +109,9 @@ def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_a
                                           "Requests ¥315,000.00 of invoice financing, arriving in 3 days"]
     ex = b["receipt"]["executes_now_text"]
     assert "¥90,000.00" in ex and "today" in ex and "¥315,000.00" in ex and ex != a["receipt"]["executes_now_text"]
+    # Option B costs the supplier ¥0.00 (its price adjustment offsets what it gives away) and its funding is not inside that figure
+    assert b["send_scope_lines"][3] == "Funding cost ¥3,706.46 in addition" and "already inside" not in ex
+    assert a["send_scope_lines"][2].endswith("(already inside the ¥3,027.77 above)")
     assert b["receipt"]["in_hand_vs_future_text"].startswith("The funding arrives in 3 days.")
     assert b["receipt"]["authority_text"] == "It changes your terms, so you approve it first."  # its own authority, not A's
     for r in rs:  # the funding runs on send whether or not the buyer agrees, said in words

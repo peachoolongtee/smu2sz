@@ -101,7 +101,10 @@ def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] 
     """The funding leg's cost, said against the counter's own cost on the same card so the owner never reads two figures under one label:
     "already inside" when the counter's cost is the discount plus this funding (its formula carries the funding figure), else "in addition"."""
     cost = fmt_yuan(send_plan.total_cost_fen)
-    inside = counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+    # A counter whose cost is below the funding cost (Option B's price adjustment offsets what it gives away) does not carry the funding in it,
+    # even when its formula quotes the plan's cost: the funding is then in addition.
+    inside = (counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+              and int(counter.get("supplier_cost_fen") or 0) >= send_plan.total_cost_fen)
     what = t(lang, "for the draw" if all(k == "DRAW" for k, *_ in legs) else "for the funding", "")
     if inside:
         above = counter["supplier_cost_display"]
