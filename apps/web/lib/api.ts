@@ -220,6 +220,11 @@ export async function getPriceCurve(lang: "en" | "zh"): Promise<PriceCurveView |
  * GET /receivables?lang=: the receivable rows with the net each invoice leaves, who governs it and what to do next, and the summary
  * (owner only, no flag). Resolves to null on a server without the route, so the Receivables page keeps its old reads.
  */
+/** The invoice rows Home's selected-invoice card reads (the same GET /receivables; in mock the recording taken with the Home at this point of the story). */
+export async function getHomeInvoices(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  return isMock ? (await mock()).getHomeInvoices(lang) : (await live()).getReceivables(lang);
+}
+
 export async function getReceivables(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
   return isMock ? (await mock()).getReceivables(lang) : (await live()).getReceivables(lang);
 }

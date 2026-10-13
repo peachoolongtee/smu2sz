@@ -23,8 +23,8 @@ export async function resetBooks(request: APIRequestContext): Promise<void> {
 }
 
 const BRAND_600 = "rgb(3, 104, 233)";
-/** The ink primary button of the owner's mockup (`--color-f-btn`), the fill a filled button has inside the mockup scope (`.flow-f`, Deals and Customer). */
-const INK_BTN = "rgb(23, 29, 30)";
+/** The ink primary of the owner's mockup language (Home and the pages that have taken it): the same one filled button. */
+const INK_BUTTON = "rgb(23, 29, 30)";
 
 /** Visible elements filled with the brand blue (or, inside the mockup scope, the ink button): the page's primary actions. */
 export async function filledBrand(page: Page): Promise<number> {
@@ -36,7 +36,7 @@ export async function filledBrand(page: Page): Promise<number> {
     };
     return Array.from(document.querySelectorAll("main button, main a")).filter((el) => visible(el) && fills.includes(getComputedStyle(el).backgroundColor)).length +
       Array.from(document.querySelectorAll('main [data-testid="home-review-primary"]')).filter((el) => visible(el) && fills.includes(getComputedStyle(el).backgroundColor)).length;
-  }, [BRAND_600, INK_BTN]);
+  }, [BRAND_600, INK_BUTTON]);
 }
 
 /** The guided Demo is eleven steps in six scenes (lib/demo.ts DEMO_STEPS): the late-payment loop. */

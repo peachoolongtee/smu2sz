@@ -102,6 +102,10 @@ export function CashPreview({
   testId = "hv2-chart",
   chartTestId = "home-chart",
   id,
+  first,
+  headExtra,
+  chosenDay,
+  onChoose,
 }: {
   cash: HomeView["cash"];
   today: number;
@@ -127,6 +131,13 @@ export function CashPreview({
   testId?: string;
   chartTestId?: string;
   id?: string;
+  /** The section is the first of its card: no hairline above it. */
+  first?: boolean;
+  /** A control at the right of the section's head, after the window switch (the card's Close). */
+  headExtra?: ReactNode;
+  /** The selected day, when something beside the chart (the event chips) selects it too; undefined keeps the chart's own state. */
+  chosenDay?: number | null;
+  onChoose?: (day: number) => void;
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
@@ -135,7 +146,12 @@ export function CashPreview({
   const hintId = useId();
   const inspectorId = useId();
   const showStrip = inspectOpen !== false;
-  const [chosen, setChosen] = useState<number | null>(null);
+  const [ownChosen, setOwnChosen] = useState<number | null>(null);
+  const chosen = chosenDay !== undefined ? chosenDay : ownChosen;
+  const setChosen = (d: number | null) => {
+    setOwnChosen(d);
+    if (d !== null) onChoose?.(d);
+  };
   const [hover, setHover] = useState<number | null>(null);
   const [chosenWindow, setChosenWindow] = useState<number | null>(null);
   const floor = cash.floor_fen;
@@ -204,9 +220,13 @@ export function CashPreview({
       subtitle={subtitle}
       testId={testId}
       titleId="home-picture-title"
+      first={first}
       actions={
-        windows.length > 1 ? (
-          <SegmentedTabs compact label={t("hv2.chart.window")} value={wanted} onChange={setChosenWindow} tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))} />
+        windows.length > 1 || headExtra ? (
+          <div className="flex items-center gap-3">
+            {windows.length > 1 ? <SegmentedTabs compact label={t("hv2.chart.window")} value={wanted} onChange={setChosenWindow} tabs={windows.map((d) => ({ value: d, label: t("biz.forecast.days", { n: d }), testId: `home-window-${d}` }))} /> : null}
+            {headExtra}
+          </div>
         ) : undefined
       }
     >

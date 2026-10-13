@@ -780,6 +780,16 @@ export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | nul
   return homeV2.mockWorklist(homeV2Point(), lang);
 }
 
+/** The invoice rows for Home's selected-invoice card: the recording taken with the Home at this point of the story. Owner only, as live. */
+export async function getHomeInvoices(lang: "en" | "zh"): Promise<ReceivablesRead | null> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
+  }
+  return homeV2.mockInvoices(homeV2Point(), lang);
+}
+
 /** GET /customers/{id}/overview for Home V2's focus: the recording for this point of the story, with the selections it was read with echoed in `context`; an unknown customer is a 404 as the server answers. */
 export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null }): Promise<CustomerOverviewView> {
   await delay();

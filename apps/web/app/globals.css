@@ -202,7 +202,7 @@
   --radius-f-card: 24px;
 
   /* The contract-ingestion prototype's accent: the new cards' outline and "New" tag, and the rule beside a clause quote. */
-  --color-new: #6f3fcf; /* 5.2:1 on the mockup canvas (it was #7c4ddb, 4.3:1 there) */
+  --color-new: #6a38c9;
   --color-new-bg: #f1e9ff;
   --color-new-line: #d9c6fb;
 }
@@ -829,4 +829,52 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
 .recharts-surface:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------
+   Home in the owner's mockup language (docs/design/flow-mockup-2026-10-13). `.home-f` is the page's scope: it maps the kit's own tokens onto the mockup's
+   palette for Home alone (ink and muted, the hairline, the panel, the lavender selection, the ink primary button, the purple current line, the one risk red,
+   24 px cards), so the kit (DecisionHighlight, WorklistRows, MetricStrip, CashPreview, SegmentedTabs, Button) changes look without new primitives and no other page moves.
+   --------------------------------------------------------------------------------------------------------------------------------------------------- */
+@layer components {
+  .home-f {
+    --color-ink: var(--color-f-ink);
+    --color-ink-2: color-mix(in srgb, var(--color-f-ink) 70%, var(--color-f-muted));
+    --color-ink-3: var(--color-f-muted);
+    --color-line: var(--color-f-line);
+    --color-line-strong: var(--color-f-line);
+    --color-line-ui: color-mix(in srgb, var(--color-f-muted) 70%, var(--color-f-line));
+    --color-surface: var(--color-panel);
+    --color-subtle: color-mix(in srgb, var(--color-f-line) 45%, var(--color-panel));
+    --color-track: color-mix(in srgb, var(--color-f-line) 55%, var(--color-panel));
+    --color-brand-600: var(--color-f-btn);
+    --color-brand-700: var(--color-f-ink);
+    --color-brand-50: var(--color-f-purple-soft);
+    --color-brand-100: var(--color-f-purple-soft);
+    --color-chart-base: var(--color-f-purple);
+    --color-chart-axis: var(--color-f-muted);
+    --color-chart-grid: var(--color-f-line);
+    --color-chart-danger: color-mix(in srgb, var(--color-f-amber) 22%, transparent);
+    --color-bad-fg: var(--color-f-risk);
+    --color-bad-solid: var(--color-f-risk);
+    --color-ok-fg: var(--color-f-green-ink);
+    --color-warn-fg: var(--color-f-amber-ink);
+    --radius-card: var(--radius-f-card);
+    --radius-decision: var(--radius-f-card);
+    --radius-tile: 16px;
+    color: var(--color-f-ink);
+  }
+  /* A mockup card: the panel tone on the canvas, 24 px, the one soft shadow; `.f-card-white` is the selected item's card (white). */
+  .f-card {
+    background: var(--color-panel);
+    border-radius: var(--radius-f-card);
+    box-shadow: var(--shadow-f);
+  }
+  .f-card-white {
+    background: var(--color-card);
+  }
+  .f-row {
+    background: var(--color-card);
+    border-radius: 16px;
+  }
 }

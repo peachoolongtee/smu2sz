@@ -396,10 +396,12 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // Today's cash is the strip's first cell; the recommendation is in the page's flow (not sticky), above the chart.
+  // The three cards are one row in the page's flow (not sticky) and the whole row, today's cash among them, is inside the first screen.
   await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
-  const [cardBox, chartBox] = await Promise.all([page.getByTestId("hv2-action").boundingBox(), page.getByTestId("home-chart").boundingBox()]);
-  expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(chartBox!.y + 1);
+  for (const id of ["hv2-cash-card", "hv2-action", "hv2-outlook-card"]) {
+    const box = (await page.getByTestId(id).boundingBox())!;
+    expect(box.y + box.height, id).toBeLessThanOrEqual(768);
+  }
 });
 
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {
