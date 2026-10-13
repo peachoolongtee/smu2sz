@@ -153,7 +153,7 @@ export function WhatIfControlsCard({
               onChange={(e) => set({ settle_face_fen: e.target.checked ? middle.fen : null })}
               className="size-4 accent-brand-600"
             />
-            {t("whatif.partial", { id: controls.receivable_id })}
+            {t("whatif.partial")}
           </label>
           {partial ? (
             <div className="mt-2">

@@ -2312,9 +2312,27 @@ export interface WhatIfControls {
   note: string;
 }
 
+/** POST /whatif for a buyer the sandbox cannot value as a whole (no recurring invoice to extend): no verdict and no controls, and `scope_text` says why. */
+export interface WhatIfUnscoped {
+  hypothetical: true;
+  available: false;
+  buyer_id: string;
+  buyer_name: string;
+  invoice_text: string | null;
+  scope_text: string;
+  controls: null;
+}
+
 /** POST /whatif. Everything is hypothetical: nothing is booked, sent or executed. */
 export interface WhatIfResult {
   hypothetical: true;
+  /** True (or absent from an older server) when the sandbox ran; see `WhatIfUnscoped` for the answer that says it could not. */
+  available?: true;
+  /** Which buyer and invoice it ran on, in words: "the ¥150,000.00 invoice to Zhuhai Kitchenware Wholesale Co., due in 57 days" (no id). Absent from an older server. */
+  buyer_id?: string;
+  buyer_name?: string;
+  invoice_text?: string | null;
+  scope_text?: string | null;
   note: string;
   /** What the simulation honoured of the address (ticket #126): the customer and decision it was run for, or `irrelevant_text` when the selection names nothing it can simulate. */
   context?: PageContext | null;

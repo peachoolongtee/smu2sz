@@ -74,6 +74,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfUnscoped,
   WorklistView,
 } from "./types";
 
@@ -382,7 +383,7 @@ export function alertChanged(e: unknown): AlertChangedDetail | null {
 }
 
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
-export async function whatIf(params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}): Promise<WhatIfResult> {
+export async function whatIf(params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}): Promise<WhatIfResult | WhatIfUnscoped> {
   return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params, scope);
 }
 

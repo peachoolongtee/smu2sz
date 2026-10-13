@@ -67,6 +67,7 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfUnscoped,
   WorklistView,
   ApprovalDecision,
 } from "../types";
@@ -238,13 +239,9 @@ export const live = {
   /** POST /alerts/{id}/act: executes the alert's cure as the agent. The body always binds the act to what was shown (409 ALERT_CHANGED when the books moved). */
   actOnAlert: (id: string, bound: ActRequest) => http<AlertActResult>("POST", `/alerts/${enc(id)}/act`, { body: bound, ownerOn403: true }),
 
-  /** POST /whatif; the customer and decision it is run for ride in the query (the server echoes what it honoured in `context`; a server that does not read them ignores them). */
-  whatIf: (params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}) => {
-    const q = new URLSearchParams();
-    if (scope.customer) q.set("customer", scope.customer);
-    if (scope.decision) q.set("decision", scope.decision);
-    return http<WhatIfResult>("POST", `/whatif${q.size ? `?${q}` : ""}`, { body: params });
-  },
+  /** POST /whatif on the invoice of the negotiation addressed (`offer_id` in the body; none: the books' first buyer with a recurring invoice), the words in `lang`. A buyer the sandbox cannot value as a whole answers `available: false` and says why. */
+  whatIf: (params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}) =>
+    http<WhatIfResult | WhatIfUnscoped>("POST", `/whatif?lang=${scope.lang ?? "en"}`, { body: scope.offerId ? { ...params, offer_id: scope.offerId } : params }),
 
   demoReset: async (scenario?: string): Promise<void> => {
     await http("POST", scenario ? `/demo/reset?scenario=${encodeURIComponent(scenario)}` : "/demo/reset", { body: {} });

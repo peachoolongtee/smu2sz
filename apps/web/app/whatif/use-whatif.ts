@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { whatIf } from "@/lib/api";
-import type { WhatIfParams, WhatIfResult } from "@/lib/types";
+import type { WhatIfParams, WhatIfResult, WhatIfUnscoped } from "@/lib/types";
 
 /** Debounce for slider drags: short enough to feel live, long enough to skip intermediate stops. */
 export const WHATIF_DEBOUNCE_MS = 150;
@@ -12,7 +12,7 @@ export const keyOf = (p: WhatIfParams): string =>
 
 interface Settled {
   key: string;
-  result?: WhatIfResult;
+  result?: WhatIfResult | WhatIfUnscoped;
   error?: Error;
 }
 
@@ -26,7 +26,7 @@ class Queue {
 
   constructor(
     private readonly publish: (update: (prev: Settled) => Settled) => void,
-    private readonly scope: { customer?: string | null; decision?: string | null },
+    private readonly scope: { offerId?: string | null; lang?: "en" | "zh" },
   ) {}
 
   send(p: WhatIfParams): void {
@@ -53,7 +53,7 @@ class Queue {
 
 export interface WhatIfState {
   /** The latest result received (kept while a newer one loads: stale-while-revalidate). */
-  result: WhatIfResult | undefined;
+  result: WhatIfResult | WhatIfUnscoped | undefined;
   error: Error | undefined;
   /** True until the result for exactly these params has arrived. */
   loading: boolean;
@@ -61,7 +61,7 @@ export interface WhatIfState {
   reload: () => void;
 }
 
-export function useWhatIf(params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}): WhatIfState {
+export function useWhatIf(params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}): WhatIfState {
   const [settled, setSettled] = useState<Settled>({ key: "" });
   const [queue] = useState(() => new Queue((update) => setSettled(update), scope));
   const [nonce, setNonce] = useState(0);
