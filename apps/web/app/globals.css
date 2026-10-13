@@ -639,7 +639,7 @@ input[type="radio"] {
     display: none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 64rem) and (prefers-reduced-motion: reduce) {
   .rail-panel,
   .side-label {
     transition: none;
