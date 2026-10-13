@@ -42,9 +42,9 @@ _PLAIN = {"home": ("Back to Home", "返回首页", "/"), "deals": ("Back to Deal
           "cash": ("Back to Cash", "返回现金", "/cash"), "approvals": ("Back to Approvals", "返回批准事项", "/approvals")}
 # what `from` names that is the page itself, per page: never offered as a way back
 _OWN = {"deals": {"deal", "deals"}, "offer": {"deal", "deals"}, "picture": {"deal", "deals"}, "customer": {"customer"},
-        "receivables": {"invoice", "receivables"}, "decision": set()}
+        "receivables": {"invoice", "receivables"}, "decision": set(), "activity": {"activity"}}
 # where a page goes back to when `from` names nothing the selections support
-_DEFAULT = {"deals": ("customer",), "offer": ("customer",), "picture": ("customer",), "receivables": ("customer",), "customer": (), "decision": ()}
+_DEFAULT = {"deals": ("customer",), "offer": ("customer",), "picture": ("customer",), "receivables": ("customer",), "customer": (), "decision": (), "activity": ()}
 
 
 @dataclass(frozen=True)

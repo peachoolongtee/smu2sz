@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.activity import router as activity_router
 from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
@@ -45,6 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(read_router)
+app.include_router(activity_router)
 app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)

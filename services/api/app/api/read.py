@@ -31,6 +31,7 @@ from app.api.presentation import (
     without_record_ids,
 )
 from app.api.runtime import get_runtime
+from app.api.security_words import audit_fields
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
 from app.decisions.identity import decision_id_for
@@ -217,7 +218,8 @@ def get_audit(lang: str = "en") -> dict:
     board = scoreboard(rt.store, allow_for=_counter_allow)  # computed from every stored verdict, not asserted
     return {
         "lang": lang,
-        "events": [displayed(json.loads(e.model_dump_json())) for e in events],
+        "events": [{**displayed(json.loads(e.model_dump_json())), **audit_fields(state, e, max(rt.day, state.as_of_day), lang)}
+                   for e in events],
         "refusals": refusals,
         "refusal_summary": refusal_block(len(refusals), len(events), lang),
         "documents": [json.loads(d.model_dump_json()) for i, d in rt.documents.items() if i in doc_ids],
