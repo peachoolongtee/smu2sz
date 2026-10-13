@@ -22,6 +22,8 @@ make; nothing is ranked, priced, projected or decided a second time:
     customers    the buyers on the books, one row each: `GET /customers` returns these same rows (one function) and `search_terms`
                  (each customer's name and short name), for a page to filter the list it already holds.
     counts       counted from the rows above, never stored: needs_you, waiting, customers.
+    needs_you_empty_text  what an empty Needs you says: "Nothing else needs you." while the alert is up, else "Nothing needs a decision from
+                 you." (the waiting and customers lists carry no word that differs by the alert).
 
 Severity (documented, separate from who acts) is a word about the item's weight, from its authority class and its cash effect:
 
@@ -580,6 +582,8 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None) -> tuple[dict[str, An
     customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations, partial)
     return {
         "lang": lang, "day": ctx.today, "state_version": ctx.state.state_version, "alert": alert,
+        "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
+                                 else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
         "counts": {"needs_you": len(needs_sorted), "waiting": len(waiting_sorted), "customers": len(customers)},
         "needs_you": [_needs_item(r, i == 0, since_day, lang) for i, r in enumerate(needs_sorted)],
         "waiting": waiting_sorted, "customers": customers,
@@ -615,7 +619,7 @@ def get_worklist(lang: Literal["en", "zh"] = Query("en"), since_day: int | None 
     rt = get_runtime()
     with rt.lock:
         body = _cached(rt, lang, since_day)
-    return displayed({k: body[k] for k in ("lang", "day", "state_version", "alert", "counts", "needs_you", "waiting", "customers", "partial")})
+    return displayed({k: body[k] for k in ("lang", "day", "state_version", "alert", "counts", "needs_you", "needs_you_empty_text", "waiting", "customers", "partial")})
 
 
 @router.get("/customers")

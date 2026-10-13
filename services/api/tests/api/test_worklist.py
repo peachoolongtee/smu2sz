@@ -133,6 +133,18 @@ def test_before_the_plan_the_alert_is_there_and_needs_you_holds_the_foshan_decis
     assert w["waiting"] == []
 
 
+def test_the_empty_needs_you_word_follows_the_alert_on_day_zero_and_after_the_plan(api: TestClient) -> None:
+    _offer(api)
+    assert _get(api)["alert"] is not None
+    assert _get(api)["needs_you_empty_text"] == "Nothing else needs you."
+    assert _get(api, "zh")["needs_you_empty_text"] == "没有其他事项需要您处理。"
+    _run_plan(api)
+    assert _get(api)["alert"] is None
+    assert _get(api)["needs_you_empty_text"] == "Nothing needs a decision from you."
+    zh = _get(api, "zh")["needs_you_empty_text"]
+    assert zh == "没有需要您决定的事项。" and english_leaks(zh) == []
+
+
 def test_after_the_plan_the_alert_is_gone_and_the_financing_waits(api: TestClient) -> None:
     _offer(api)
     _run_plan(api)
