@@ -149,6 +149,7 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   // Activity: the owner's confirmations in the server's words, newest first, each opening its record in Documents.
   await page.goto("/activity");
   const confirms = page.getByTestId("activity-list").getByTestId("activity-row").filter({ hasText: "You confirmed" });
+  await expect(confirms.first()).toBeVisible();
   expect(await confirms.count()).toBeGreaterThanOrEqual(3);
   await expect(confirms.first()).toContainText("Nothing in the books changed");
   await confirms.first().getByTestId("activity-open-decision").click();

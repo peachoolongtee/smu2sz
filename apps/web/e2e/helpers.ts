@@ -63,6 +63,10 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
       continue;
     }
     await button.click();
+    // The first step starts the story over: books with work on them (an earlier spec, on the shared live API) are listed first, and this is the owner's confirmation.
+    const dialog = page.getByTestId("books-dialog");
+    await dialog.waitFor({ state: "visible", timeout: 1500 }).catch(() => undefined);
+    if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
     await expect(stripOf(page)).toContainText(/Scene \d of 6|All 6 scenes/);
     await expect(page.getByTestId("demo-next")).toBeEnabled();
   }

@@ -170,8 +170,11 @@ export async function runStoryAction(action: string, push: (route: string) => vo
     await changeBooks(books, resetTo(undefined, push));
     return outcome;
   }
-  const idx = DEMO_STEPS.findIndex((s) => s.id === action);
+  let idx = DEMO_STEPS.findIndex((s) => s.id === action);
   if (idx < 0) return "ignored";
+  // The books are mid-story but this browser has lost its place (another tab, a new session): there is no story offer to go on from, so the story starts over from scene one, and
+  // starting over resets the books, which is asked first like every reset.
+  if (idx > 0 && !demoStore.get().storyOfferId) idx = 0;
   if (idx > reachedOf(demoStore.get()) + 1) demoStore.set((s) => ({ ...s, reached: idx - 1, step: Math.max(s.step, idx - 1) }));
   const run = async () => {
     outcome = await goToStep(idx, push, { mode: "run" });
