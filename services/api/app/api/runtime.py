@@ -56,6 +56,9 @@ class Runtime:
     documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
     intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
     intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
+    # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
+    # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
+    demo_history: list[dict[str, Any]] = field(default_factory=list)
 
     def clock(self) -> int:
         return self.day
