@@ -373,3 +373,43 @@ def test_no_open_invoice_no_second_line(client):
     s = _summary(client)
     assert (s["invoice_count"], s["headline"], s["headline_second"], s["count_text"]) == (0, "Nothing is waiting to be collected.", None, "no open invoices")
     assert s["next_expected"] is None and s["repays_line"] is None
+
+
+# ---------------------------------------------------------------- the row's breakdown and words (the Home invoice card)
+
+
+def test_an_unfinanced_row_has_no_breakdown_and_says_when_it_is_due_and_what_it_nets(client):
+    client.post("/demo/reset", json={})
+    row = _row(client)
+    assert row["breakdown"] == [] and row["net_after_repayment_display"] == row["net_short"] == "about ¥420k"
+    assert row["collection_due_text"] == "In 32 days"
+    zh = _row(client, "zh")
+    assert (zh["breakdown"], zh["net_after_repayment_display"], zh["collection_due_text"]) == ([], "约 ¥420k", "32 天后")
+
+
+@pytest.mark.parametrize(("landed", "claim", "repaid", "kept", "shares", "short"), [
+    (False, 25_727_229, "¥257,272.29", "¥162,727.71", ("61%", "39%"), "about ¥163k"),
+    (True, 25_954_459, "¥259,544.59", "¥160,455.41", ("62%", "38%"), "about ¥160k")])
+def test_a_financed_row_breaks_the_face_into_the_financing_repayment_and_the_cash_remaining(client, landed, claim, repaid, kept, shares, short):
+    _finance(client, landed=landed)
+    row = _row(client)
+    state = get_runtime().store.get_state()
+    lot, f = state.lots[0], next(x for x in state.facilities if x.id == "FAC-IF")
+    assert 25_500_000 + sum(funding_lots.advance_charges(f, lot, 32)[:2]) == claim == row["net"]["claim_fen"]  # the advance with its charges
+    assert row["breakdown"] == [{"label": "Invoice financing repayment", "amount_display": repaid, "share_text": shares[0]},
+                                {"label": "Cash remaining", "amount_display": kept, "share_text": shares[1]}]
+    assert row["net_after_repayment_display"] == short == row["net"]["net_short"]
+    zh = _row(client, "zh")
+    assert [(r["label"], r["amount_display"], r["share_text"]) for r in zh["breakdown"]] == [
+        ("发票融资还款", repaid, shares[0]), ("剩余现金", kept, shares[1])]
+    assert zh["net_after_repayment_display"] == short.replace("about", "约") and english_leaks([zh["breakdown"], zh["collection_due_text"]]) == []
+
+
+def test_the_collection_due_text_counts_the_days_overdue_and_says_today(client):
+    client.post("/demo/reset", json={})
+    get_runtime().day = 32
+    assert _row(client)["collection_due_text"] == "Today" and _row(client, "zh")["collection_due_text"] == "今天"
+    get_runtime().day = 33
+    assert _row(client)["collection_due_text"] == "1 day overdue" and _row(client, "zh")["collection_due_text"] == "已逾期 1 天"
+    get_runtime().day = 40
+    assert _row(client)["collection_due_text"] == "8 days overdue"
