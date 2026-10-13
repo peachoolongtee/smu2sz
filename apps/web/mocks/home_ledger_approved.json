@@ -48,7 +48,10 @@
       "expires_day": 7,
       "mandate_version": 1,
       "forward_value_fen": 0,
-      "forward_value_display": "¥0.00"
+      "forward_value_display": "¥0.00",
+      "forward_label_text": "Forward cost you have promised",
+      "immediate_label_text": "Immediate discount",
+      "immediate_text": "0.85% off ¥257,200.00"
     }
   ],
   "operations": [

@@ -50,7 +50,20 @@
         }
       ],
       "request_text": "Dear Foshan Home Retail Co., the ¥420,000.00 invoice issued 13 days ago is due in 32 days; ¥420,000.00 remains outstanding. Please confirm the payment date. Our agreed payment terms are 45 days from the invoice date. Thank you.",
-      "thread_href": null
+      "thread_href": null,
+      "receipt": {
+        "authorizes_text": "A payment request to Foshan Home Retail Co. for ¥420,000.00.",
+        "executes_now_text": "Nothing is sent from FLOW. You copy the request and send it yourself.",
+        "others_must_agree_text": "Foshan Home Retail Co. has to pay, or confirm a payment date.",
+        "in_hand_vs_future_text": "¥420,000.00 is not counted as cash until Foshan Home Retail Co. pays.",
+        "gross_display": "¥420,000.00",
+        "fees_display": null,
+        "net_display": null,
+        "when_text": "The invoice is due in 32 days.",
+        "assumptions_text": "Agreed payment terms: 45 days from the invoice date.",
+        "authority_text": "Your decision to send; FLOW sends nothing and records nothing.",
+        "remaining_text": null
+      }
     }
   },
   "zh": {
@@ -104,7 +117,20 @@
         }
       ],
       "request_text": "尊敬的Foshan Home Retail Co.：13 天前开具的 ¥420,000.00 发票将于 32 天后到期，尚有 ¥420,000.00 未付。请确认付款日期。按我们约定的账期（自开票日起 45 天），应在到期日付款。谢谢。",
-      "thread_href": null
+      "thread_href": null,
+      "receipt": {
+        "authorizes_text": "向Foshan Home Retail Co.发出一份 ¥420,000.00 的付款请求。",
+        "executes_now_text": "FLOW 不会发送任何内容。请您复制请求并自行发送。",
+        "others_must_agree_text": "Foshan Home Retail Co.需要付款，或确认付款日期。",
+        "in_hand_vs_future_text": "Foshan Home Retail Co.付款之前，¥420,000.00 不计入现金。",
+        "gross_display": "¥420,000.00",
+        "fees_display": null,
+        "net_display": null,
+        "when_text": "发票将于 32 天后到期。",
+        "assumptions_text": "约定账期：自开票日起 45 天。",
+        "authority_text": "是否发送由您决定；FLOW 不发送也不记录。",
+        "remaining_text": null
+      }
     }
   }
 }

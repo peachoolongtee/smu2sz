@@ -5004,6 +5004,158 @@
     "empty_text": "最近没有变化。",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": "有 1 项融资操作可以执行。1 项催收需要您处理。",
+    "upcoming": [
+      {
+        "label": "发放工资",
+        "amount_display": "−¥200k",
+        "when": "8 天后",
+        "kind": "outflow"
+      },
+      {
+        "label": "Foshan付款",
+        "amount_display": "+¥420k",
+        "when": "13 天后",
+        "kind": "inflow"
+      },
+      {
+        "label": "支付债务还款",
+        "amount_display": "−¥45k",
+        "when": "26 天后",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "可用现金",
+        "value_display": "¥44,986.20",
+        "note": "比您 ¥300k 的最低现金低 ¥255k",
+        "tone": "bad",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 4498620,
+          "min_display": "¥300k",
+          "headroom_text": "−¥255k",
+          "cash_display": "¥44,986.20"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "未来最低现金",
+        "value_display": "−¥155,013.80",
+        "note": "比您的最低现金低 ¥455k（8 天后） · 当前账目，方案已执行",
+        "short_note": "8 天后缺口 ¥455k",
+        "tone": "bad",
+        "with_plan_hint": "如果 FLOW 的方案执行：¥0，前提是资金按计划到账。",
+        "with_plan": {
+          "label": "采用方案后",
+          "value_text": "¥0"
+        }
+      },
+      "funding": {
+        "state": "PROPOSED",
+        "eyebrow": "计划中的融资",
+        "value_display": "¥155,013.80",
+        "note": "发票融资 ¥155k，3 天后",
+        "status_text": "可以执行",
+        "hint": "取决于您是否执行方案；不计入现金。"
+      }
+    },
+    "action": {
+      "variant": "ACTION",
+      "key": "funding:ALERT-RESERVE-34",
+      "tone": "bad",
+      "eyebrow": "下一步 · 0 天内",
+      "title": "请在现金储备今天被突破之前筹措 ¥155,013.80。",
+      "text": "FLOW 的方案因其成本需要您批准：发票融资 ¥155k（3 天后），计划中 · 成本 ¥1,381.32 · 需要您批准。",
+      "facts": [
+        {
+          "label": "预计成本",
+          "value": "¥1,381.32"
+        },
+        {
+          "label": "融资",
+          "value": "发票融资 ¥155k（3 天后），计划中"
+        },
+        {
+          "label": "批准",
+          "value": "需要您批准"
+        }
+      ],
+      "primary": {
+        "label": "执行融资方案",
+        "href": "/cash#cash-options"
+      },
+      "secondary": {
+        "label": "比较",
+        "href": "/cash#cash-options"
+      },
+      "control": "RUN_PLAN",
+      "approval_text": "需要您批准后才会执行",
+      "approval_needed": true,
+      "consequence_text": "现金将在今天首次低于您的最低现金。即使方案已执行，缺口仍将在 8 天后达到 ¥455k。",
+      "legs": [
+        {
+          "label": "发票融资",
+          "amount_display": "¥155,013.80",
+          "amount_fen": 15501380,
+          "lands_when": "3 天后",
+          "lands_day": 3,
+          "cost_display": "¥1,381.32",
+          "repaid_when": null,
+          "state": "PLANNED",
+          "state_text": "计划中",
+          "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+          "share_text": "100%"
+        }
+      ],
+      "cost_basis_text": "发票融资按整 30 天计费，直至发票付清。"
+    },
+    "chart": {
+      "scope_title": "公司现金预测",
+      "legend": [
+        {
+          "label": "当前账目 · 方案已执行",
+          "kind": "current"
+        },
+        {
+          "label": "如果 FLOW 的方案执行（计划中）",
+          "kind": "planned"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "最低点 · 8 天后",
+        "projected_display": "−¥155,013.80",
+        "minimum_display": "¥300,000",
+        "third_label": "缺口",
+        "third_display": "¥455,013.80",
+        "note": "采用 FLOW 的方案（计划中）：¥0，前提是方案执行且资金按计划到账。"
+      },
+      "lowest": {
+        "cause": "发放工资"
+      },
+      "scenario_title_text": null,
+      "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
+    },
+    "links": [
+      {
+        "label": "现金的去向",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "融资额度余量",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "应收款的到期时间",
+        "href": "/receivables"
+      },
+      {
+        "label": "全部交易",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": {
     "alert_id": "ALERT-RESERVE-34",
     "kind": "RESERVE_BREACH_AHEAD",
@@ -5084,6 +5236,19 @@
         "amount_display": "¥155,013.80"
       }
     ],
+    "receipt": {
+      "authorizes_text": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥155,013.80",
+      "executes_now_text": "在您批准之前不会执行任何操作。",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": "到账：¥155k 3 天后。",
+      "gross_display": "¥155,013.80",
+      "fees_display": "¥1,381.32",
+      "net_display": null,
+      "when_text": "最后一笔资金将于 3 天后到账。",
+      "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
+      "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+      "remaining_text": "在最低点（8 天后），现金仍比最低现金储备低 ¥300,000.00；今天低 ¥255,013.80。"
+    },
     "after_lowest_display": "¥0.00"
   },
   "approvals": [],

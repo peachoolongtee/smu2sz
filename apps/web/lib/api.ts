@@ -11,7 +11,6 @@
 
 import { API_MODE } from "./config";
 import { ApiError } from "./errors";
-import { readOverview, readPicture } from "./server-null";
 import type { CustomerContext } from "./customer-href";
 import type {
   ActRequest,
@@ -326,7 +325,7 @@ export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | n
 
 /** GET /customers/{id}/overview for Home V2's customer and deal focus: the selections ride in the query and come back validated in `context` (`deal`, `scenario`). Owner only. */
 export async function getCustomerFocus(id: string, lang: "en" | "zh", sel: { decision?: string | null; scenario?: string | null } = {}): Promise<CustomerOverviewView> {
-  return readOverview(isMock ? await (await mock()).getCustomerFocus(id, lang, sel) : await (await live()).getCustomerFocus(id, lang, sel));
+  return isMock ? (await mock()).getCustomerFocus(id, lang, sel) : (await live()).getCustomerFocus(id, lang, sel);
 }
 
 /** GET /offers/{id}/exposure for Home V2's deal focus (every path's words in one read). Null when the server has the exposure read off or does not know the offer. */
@@ -345,7 +344,7 @@ export async function getDealTitle(decision: string, lang: "en" | "zh"): Promise
 
 /** GET /offers/{id}/picture for Home V2's deal focus: the paths with their words (authority evidence, the scenario's assumption) and series. The deal's own mock is Home V2's recording. */
 export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promise<OfferPictureView | null> {
-  return readPicture(isMock ? await (await mock()).getDealPicture(offerId, lang) : await (await live()).getOfferPicture(offerId, lang).catch(() => null));
+  return isMock ? (await mock()).getDealPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang).catch(() => null);
 }
 
 /** GET /clock: the simulated day. */
@@ -459,7 +458,7 @@ export async function getNavCounts(lang: "en" | "zh" = "en"): Promise<NavCounts>
 
 /** GET /offers/{offer_id}/picture?lang=: the cash line of an offer as asked and of each reply FLOW has ready. Display only. */
 export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferPictureView> {
-  return readPicture(isMock ? await (await mock()).getOfferPicture(offerId, lang) : await (await live()).getOfferPicture(offerId, lang));
+  return isMock ? (await mock()).getOfferPicture(offerId, lang) : (await live()).getOfferPicture(offerId, lang);
 }
 
 /**
@@ -468,7 +467,7 @@ export async function getOfferPicture(offerId: string, lang: "en" | "zh" = "en")
  * from it. A 404 means the books hold no such customer.
  */
 export async function getCustomerOverview(id: string, lang: "en" | "zh", ctx: CustomerContext = {}): Promise<CustomerOverviewView> {
-  return readOverview(isMock ? await (await mock()).getCustomerOverview(id, lang, ctx) : await (await live()).getCustomerOverview(id, lang, ctx));
+  return isMock ? (await mock()).getCustomerOverview(id, lang, ctx) : (await live()).getCustomerOverview(id, lang, ctx);
 }
 
 /**

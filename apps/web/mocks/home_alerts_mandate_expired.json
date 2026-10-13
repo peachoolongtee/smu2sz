@@ -52,7 +52,7 @@
       "basis": "CONSERVATIVE",
       "amount_display": "¥420,000.00",
       "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 48 days ago is 48 days past due",
-      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 48 days ago and is still FINANCED. The cash forecast no longer counts on a dated receipt. The financing advance falls due with it."
+      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 48 days ago and is still financed. The cash forecast no longer counts on a dated receipt. The financing advance falls due with it."
     },
     {
       "id": "ALERT-MANDATE-EXPIRY",
@@ -193,7 +193,7 @@
       "basis": "CONSERVATIVE",
       "amount_display": "¥162,800.00",
       "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 63 days ago is 63 days past due",
-      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 63 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
+      "detail_when": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 63 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-PASTDUE-RI:BUYER-1:32",
@@ -237,7 +237,7 @@
       "basis": "CONSERVATIVE",
       "amount_display": "¥420,000.00",
       "title_when": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 18 days ago is 18 days past due",
-      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 18 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt."
+      "detail_when": "¥420,000.00 outstanding from Foshan Home Retail Co. was due 18 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt."
     },
     {
       "id": "ALERT-HEADROOM-107",

@@ -540,7 +540,7 @@
       },
       "cost_display": "0.58%",
       "rate_basis": "bill discount rate 0.58%",
-      "time_to_cash_display": "1 days",
+      "time_to_cash_display": "1 day",
       "covenant_effect": "no debt",
       "admissible": false,
       "needs_owner_approval": false,

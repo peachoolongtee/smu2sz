@@ -25,6 +25,7 @@
   "parse_source": "opener",
   "trace_id": "rec-home-en:1",
   "context_echo": null,
+  "scope_used": null,
   "proactive": true,
   "has_news": true
 }

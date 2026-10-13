@@ -3364,12 +3364,138 @@
       {
         "id": "alert:ALERT-PASTDUE-RCV-A",
         "when": "6 days ago",
-        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN.",
+        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still unpaid.",
         "kind": "LATE"
       }
     ],
     "empty_text": "Nothing has changed lately.",
     "href": "/activity"
+  },
+  "home_v2": {
+    "summary_text": "Nothing to run. One collection needs you.",
+    "upcoming": [
+      {
+        "label": "Payroll is paid",
+        "amount_display": "−¥200k",
+        "when": "in 4 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "Foshan pays",
+        "amount_display": "+¥420k",
+        "when": "in 9 days",
+        "kind": "inflow"
+      },
+      {
+        "label": "Debt service is paid",
+        "amount_display": "−¥45k",
+        "when": "in 22 days",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "CASH AVAILABLE",
+        "value_display": "¥500,000",
+        "note": "¥200k above your ¥300k minimum",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 50000000,
+          "min_display": "¥300k",
+          "headroom_text": "+¥200k",
+          "cash_display": "¥500,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "LOWEST CASH AHEAD",
+        "value_display": "¥300,000",
+        "note": "reaches your minimum in 4 days · current books, the plan ran",
+        "short_note": "At your minimum in 4 days",
+        "tone": "warn",
+        "with_plan_hint": "No hypothetical applied.",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "NONE",
+        "eyebrow": "FUNDING",
+        "value_display": "None",
+        "note": "Funding landed · ¥200k of invoice financing is in your cash, repaid from Foshan's receipt in 9 days.",
+        "status_text": null,
+        "hint": null
+      }
+    },
+    "action": {
+      "variant": "QUIET",
+      "key": null,
+      "tone": "ok",
+      "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
+      "title": "Your cash is covered on the plan that ran.",
+      "text": "Next: Foshan pays ¥420k in 9 days (owed). Your worklist still holds 1 item for you.",
+      "facts": [],
+      "primary": null,
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": null,
+      "legs": [
+        {
+          "label": "Invoice financing",
+          "amount_display": "¥200,000",
+          "amount_fen": 20000000,
+          "lands_when": "yesterday",
+          "lands_day": -1,
+          "cost_display": "¥1,782.19",
+          "repaid_when": null,
+          "state": "RECEIVED",
+          "state_text": "Received",
+          "authority_text": "You approved this plan: it needed your approval because of its cost.",
+          "share_text": "100%"
+        }
+      ],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "COMPANY CASH FORECAST",
+      "legend": [
+        {
+          "label": "Current books · the plan ran",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "The lowest point · in 4 days",
+        "projected_display": "¥300,000",
+        "minimum_display": "¥300,000",
+        "third_label": "Above your minimum",
+        "third_display": "¥0",
+        "note": "At your minimum; nothing below it in the window."
+      },
+      "lowest": {
+        "cause": "payroll is paid"
+      },
+      "scenario_title_text": null,
+      "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
+    },
+    "links": [
+      {
+        "label": "Where the cash goes",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "Facility headroom",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "What you are owed, by when",
+        "href": "/receivables"
+      },
+      {
+        "label": "All deals",
+        "href": "/deals"
+      }
+    ]
   },
   "next_action": null,
   "approvals": [],
@@ -3433,8 +3559,8 @@
       "seq": null,
       "kind": "LATE",
       "actor": "",
-      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN.",
-      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN.",
+      "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still unpaid.",
+      "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still unpaid.",
       "event_detail": null,
       "when": "6 days ago",
       "id": "alert:ALERT-PASTDUE-RCV-A",
@@ -3442,7 +3568,7 @@
       "commitment_id": null,
       "decision_id": null,
       "superseded_by": null,
-      "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN.",
+      "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still unpaid.",
       "why_it_matters": "The forecast stays at or above your minimum.",
       "why_it_matters_as_of": "now",
       "what_remains": null,
@@ -3495,7 +3621,7 @@
       "id": "ALERT-PASTDUE-RCV-A",
       "kind": "RECEIVABLE_PAST_DUE",
       "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 6 days ago is 6 days past due",
-      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
+      "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 6 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt.",
       "day": 32,
       "when": "6 days ago"
     },

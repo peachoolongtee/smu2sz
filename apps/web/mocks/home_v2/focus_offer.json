@@ -189,13 +189,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "Back to Deals",
             "href": "/deals"
           },
-          "customer": "BUYER-1",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       },
       "BUYER-2": {
@@ -227,7 +231,7 @@
           {
             "key": "financing",
             "label": "Financing linked",
-            "value_display": "None",
+            "value_display": null,
             "note": "nothing is financed against Dongguan's invoices",
             "tone": "neutral",
             "state": "none",
@@ -326,13 +330,17 @@
         "history": [],
         "partial": null,
         "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "Back to Deals",
             "href": "/deals"
           },
-          "customer": "BUYER-2",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       }
     },
@@ -525,13 +533,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "Back to the Foshan deal",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       },
       "asked": {
@@ -722,13 +734,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": "asked",
           "back": {
             "label": "Back to the Foshan deal",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": "asked"
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       },
       "counter:0": {
@@ -919,13 +935,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": "counter:0",
           "back": {
             "label": "Back to the Foshan deal",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": "counter:0"
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       }
     }
@@ -1120,13 +1140,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "返回交易",
             "href": "/deals"
           },
-          "customer": "BUYER-1",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       },
       "BUYER-2": {
@@ -1158,7 +1182,7 @@
           {
             "key": "financing",
             "label": "已关联的融资",
-            "value_display": "无",
+            "value_display": null,
             "note": "没有以Dongguan的发票做融资",
             "tone": "neutral",
             "state": "none",
@@ -1257,13 +1281,17 @@
         "history": [],
         "partial": null,
         "context": {
+          "customer": "BUYER-2",
+          "decision": null,
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "返回交易",
             "href": "/deals"
           },
-          "customer": "BUYER-2",
-          "deal": null,
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": null
         }
       }
     },
@@ -1456,13 +1484,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": null,
           "back": {
             "label": "返回与Foshan的交易",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": null
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       },
       "asked": {
@@ -1653,13 +1685,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": "asked",
           "back": {
             "label": "返回与Foshan的交易",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": "asked"
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       },
       "counter:0": {
@@ -1850,13 +1886,17 @@
         ],
         "partial": null,
         "context": {
+          "customer": "BUYER-1",
+          "decision": "deal:OFF-f806f79b6c21",
+          "path": null,
+          "invoice": null,
+          "scenario": "counter:0",
           "back": {
             "label": "返回与Foshan的交易",
             "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
           },
-          "customer": "BUYER-1",
-          "deal": "deal:OFF-f806f79b6c21",
-          "scenario": "counter:0"
+          "irrelevant_text": null,
+          "deal": "deal:OFF-f806f79b6c21"
         }
       }
     }

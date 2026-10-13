@@ -152,9 +152,9 @@
       "reason": "Apply for facility Equipment term loan (¥600,000.00).",
       "next_step_text": null,
       "next_step_href": null,
-      "result_state_text": "Approved, done",
-      "result_tone": "ok",
-      "result_message": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed",
+      "result_state_text": "Approved and submitted",
+      "result_tone": "info",
+      "result_message": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits",
       "decided_when": "today",
       "created_when": "today"
     },
@@ -177,10 +177,10 @@
     },
     "execution": {
       "status": "EXECUTED",
-      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed"
+      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits"
     },
-    "result_state_text": "Approved, done",
-    "result_tone": "ok",
+    "result_state_text": "Approved and submitted",
+    "result_tone": "info",
     "receipt": null,
     "execution_status": "EXECUTED"
   },

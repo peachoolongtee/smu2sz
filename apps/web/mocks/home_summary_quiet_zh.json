@@ -3527,6 +3527,118 @@
     "empty_text": "最近没有变化。",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": null,
+    "upcoming": [
+      {
+        "label": "Foshan付款",
+        "amount_display": "+¥257k",
+        "when": "2 天后",
+        "kind": "inflow"
+      },
+      {
+        "label": "发放工资",
+        "amount_display": "−¥340k",
+        "when": "12 天后",
+        "kind": "outflow"
+      },
+      {
+        "label": "支付供应商款项",
+        "amount_display": "−¥120k",
+        "when": "20 天后",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "可用现金",
+        "value_display": "¥549,986.20",
+        "note": "比您 ¥300k 的最低现金高 ¥250k",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 54998620,
+          "min_display": "¥300k",
+          "headroom_text": "+¥250k",
+          "cash_display": "¥549,986.20"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "未来最低现金",
+        "value_display": "¥300,000",
+        "note": "30 天后达到您的最低现金 · 当前账目，方案已执行",
+        "short_note": "30 天后正好是最低现金",
+        "tone": "warn",
+        "with_plan_hint": "未应用任何假设。",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "NONE",
+        "eyebrow": "融资",
+        "value_display": "无",
+        "note": "目前没有安排融资。",
+        "status_text": null,
+        "hint": null
+      }
+    },
+    "action": {
+      "variant": "QUIET",
+      "key": null,
+      "tone": "ok",
+      "eyebrow": "公司层面没有需要您处理的事项",
+      "title": "按已执行的方案，您的现金是安全的。",
+      "text": "接下来：Foshan将于 32 天后支付 ¥420k（已约定）。",
+      "facts": [],
+      "primary": null,
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": null,
+      "legs": [],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "公司现金预测",
+      "legend": [
+        {
+          "label": "当前账目 · 方案已执行",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "最低点 · 30 天后",
+        "projected_display": "¥300,000",
+        "minimum_display": "¥300,000",
+        "third_label": "高于您的最低现金",
+        "third_display": "¥0",
+        "note": "正好在您的最低现金上；预测期内没有低于它的时候。"
+      },
+      "lowest": {
+        "cause": "一笔贷款还款支出"
+      },
+      "scenario_title_text": null,
+      "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
+    },
+    "links": [
+      {
+        "label": "现金的去向",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "融资额度余量",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "应收款的到期时间",
+        "href": "/receivables"
+      },
+      {
+        "label": "全部交易",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
