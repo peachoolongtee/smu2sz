@@ -2764,7 +2764,7 @@ export interface HomeChangesCard {
 
 /**
  * Home V2 (the Home): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
- * server wrote in the language asked for; `*_fen` and `day` only place a mark. Absent when the flag is off: the page is then the older Home.
+ * server wrote in the language asked for; `*_fen` and `day` only place a mark. Not flagged: the Home reads it always.
  */
 export interface HomeV2Kpi {
   eyebrow: string;

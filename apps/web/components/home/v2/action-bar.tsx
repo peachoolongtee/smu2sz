@@ -17,7 +17,7 @@ function factsOf(a: HomeV2Action) {
   return a.facts?.length ? a.facts : undefined;
 }
 
-/** The plan's own confirm-and-run control (the same ids as the older Home): the page's one filled button, "Compare funding options" an outline button beside it, the confirmation under the row. */
+/** The plan's own confirm-and-run control (the ids `fix-open-*`, `fix-*` and `fix-cancel-*`): the page's one filled button, "Compare funding options" an outline button beside it, the confirmation under the row. */
 function PlanControls({ a, run, stateVersion, fixer }: { a: HomeV2Action; run: HomeNextAction; stateVersion: number; fixer: ReturnType<typeof useFixAlert> }) {
   const { t } = useI18n();
   const { primary, panel } = usePlanRun(run, stateVersion, fixer);

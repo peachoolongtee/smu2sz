@@ -23,10 +23,9 @@ import { useNarrow } from "@/lib/use-narrow";
 const DOT: Record<HomeTone, string> = { ok: "bg-ok-solid", warn: "bg-warn-solid", bad: "bg-bad-solid", neutral: "bg-ink-3" };
 
 /**
- * Home V2 (the server's FEATURE_HOME_V2): "Home", the status sentence as the headline with its dot, "Updated today", then the company strip, the recommendation, the company
+ * Home V2, the Home: "Home", the status sentence as the headline with its dot, "Updated today", then the company strip, the recommendation, the company
  * cash forecast and the links, with the worklist in a pane on the right (a bottom sheet on a phone). A selected customer or deal replaces the recommendation with the health
- * band and shows its own panel in place. The page renders this only when the server's switch is on AND the Home read carries `home_v2`; otherwise it is the older Home,
- * untouched. Every word and figure is the server's or the dictionary's; the mode switch and the account control stay in the shell's top bar.
+ * band and shows its own panel in place. When the server could not read `home_v2` the header stays with Retry and nothing else. Every word and figure is the server's or the dictionary's; the mode switch and the account control stay in the shell's top bar.
  */
 export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer: ReturnType<typeof useFixAlert>; loading: boolean; onRetry: () => void }) {
   const { lang, t } = useI18n();

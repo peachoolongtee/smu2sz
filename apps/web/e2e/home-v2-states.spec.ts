@@ -188,7 +188,8 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
     await expect(line).toHaveAttribute("data-needs-owner", String(Boolean(h.next_action?.needs_owner)));
     await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
   }
-  if (v2.action.control === "APPROVE_PLAN") await expect(page.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true");
+  // Where the server sends no facts (06b: a standalone application waits, and the action is a link to the approval) it sends no approval sentence either, and the page does not write one.
+  if (v2.action.variant === "ACTION" && !v2.action.facts?.length) await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
 }
 
