@@ -170,3 +170,25 @@ def test_an_invalid_seed_file_is_a_500_not_a_silent_skip(api: TestClient, rt: Ru
     monkeypatch.setattr("app.api.demo_seed.scenario_seed", lambda name: {"offerz": []})
     r = api.post("/demo/reset", params={"scenario": "busy"})
     assert r.status_code == 500 and r.json()["detail"]["step"] == "seed file"
+
+
+# ---------------------------------------------------------------- the scenario allowlist
+
+
+def test_the_four_demo_scenarios_are_accepted(api: TestClient) -> None:
+    for name in ("golden_sme", "short_facilities", "public_sme"):
+        r = api.post("/demo/reset", params={"scenario": name})
+        assert r.status_code == 200 and r.json()["scenario"] == name, (name, r.text)
+
+
+@pytest.mark.parametrize("name", ["nope", "", "../golden_sme", "golden_sme.events", "busy.seed"])
+def test_any_other_name_is_a_422_that_wipes_nothing(api: TestClient, rt: Runtime, name: str) -> None:
+    _busy(api)
+    before = (len(rt.store.verdicts()), len(rt.store.commitments()), len(rt.store.approvals("PENDING")))
+    r = api.post("/demo/reset", params={"scenario": name})
+    assert r.status_code == 422
+    detail = r.json()["detail"]
+    assert detail["code"] == "UNKNOWN_SCENARIO" and detail["scenarios"] == ["golden_sme", "short_facilities", "public_sme", "busy"]
+    assert "Nothing was reset" in detail["message"] and "没有名为" in api.post("/demo/reset", params={"scenario": name, "lang": "zh"}).json()["detail"]["message_when"]
+    assert (len(rt.store.verdicts()), len(rt.store.commitments()), len(rt.store.approvals("PENDING"))) == before
+    assert rt.scenario == "busy"
