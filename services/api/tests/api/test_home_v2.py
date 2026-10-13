@@ -547,7 +547,7 @@ BASIS_EN = ("Estimated through the expected repayment of the Bank credit line in
 BASIS_ZH = "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。"
 
 
-LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text"]
+LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text", "share_text"]
 
 
 def _legs(api: TestClient, lang: str = "en") -> list[dict[str, Any]]:
@@ -564,9 +564,10 @@ def test_the_legs_on_day_zero_are_the_plans_two_planned_legs_and_leave_the_sente
     assert legs == [
         {"label": "Credit-line draw", "amount_display": "¥150,000", "amount_fen": 15_000_000, "lands_when": "today", "lands_day": 0,
          "cost_display": "¥841.64", "repaid_when": "in 32 days",
-         "state": "PLANNED", "state_text": "Planned", "authority_text": authority},
+         "state": "PLANNED", "state_text": "Planned", "authority_text": authority, "share_text": "37.0%"},
         {"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
-         "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority}]
+         "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority,
+         "share_text": "63.0%"}]
     assert action["text"] == ("FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
                               " · cost ¥3,113.93 · no approval needed.")
     assert [f["value"] for f in action["facts"]] == ["¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
@@ -652,7 +653,7 @@ def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_appr
     legs, basis = home_v2._action_legs(plan(None, financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert legs == [{"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
                      "cost_display": None, "repaid_when": None, "state": "PLANNED", "state_text": "Planned",
-                     "authority_text": "Needs your approval: its cost."}]
+                     "authority_text": "Needs your approval: its cost.", "share_text": "100%"}]  # the only leg is all of the plan
     assert basis is None  # no cost at all: no basis
     # a cost: the plan's own basis sentence, whatever the legs; no cost: none
     _, basis = home_v2._action_legs(plan("¥100.00", financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
@@ -699,3 +700,21 @@ def test_the_consequence_is_null_with_no_breach_or_no_shortfall() -> None:
         assert home_v2._consequence_text(none) is None  # type: ignore[arg-type]
         above = SimpleNamespace(lang=lang, today=0, breach_day=3, low=(10, 5), floor=0)
         assert home_v2._consequence_text(above) is None  # type: ignore[arg-type]
+
+
+def test_each_legs_share_of_the_plan_is_the_words_layers_percent_on_day_zero_after_the_plan_and_in_chinese(api: TestClient) -> None:
+    _offer(api)
+    assert [leg["share_text"] for leg in _legs(api)] == ["37.0%", "63.0%"]  # 150 / 405 and 255 / 405
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37.0%", "63.0%"]
+    _run_plan(api)
+    assert [leg["share_text"] for leg in _legs(api)] == ["37.0%", "63.0%"]  # the same shares once the plan has run
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37.0%", "63.0%"]
+
+
+def test_a_legs_share_is_null_when_the_plans_total_is_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(home_v2, "_leg", lambda c, **kw: {"amount_fen": 0})
+    c = SimpleNamespace(lang="en", today=0, record=None, action={
+        "kind": "RESERVE_BREACH_AHEAD", "receive_fen": 1, "needs_owner": False, "cost_total_display": None, "authority_text": "",
+        "legs": [{"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 0, "cost_fen": None, "cost_due_day": None}]})
+    legs, _ = home_v2._action_legs(c, {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert legs == [{"amount_fen": 0, "share_text": None}]

@@ -34,6 +34,7 @@ funding KPI's eyebrow; `funding.state` PROPOSED is its code. A lot that has been
 from __future__ import annotations
 
 import logging
+from fractions import Fraction
 from typing import Any, NamedTuple
 from urllib.parse import quote
 
@@ -58,6 +59,7 @@ from app.domain.models import FundingLot
 from app.financial.lots import ensure_lots
 from app.strategy import words as basis_words
 from app.strategy.payments import STRESS_DELAY_DAYS
+from app.strategy.words import share_text
 
 log = logging.getLogger("termsledger.decisions")
 _LANDING = ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING")
@@ -296,7 +298,7 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
     One leg per leg that lands, in the order the sentence says them. The plan that is ready: its
     own actions, PLANNED. Once it has run (and nothing else is the action): the stored quote's legs with their lots, ARRANGED until the cash
     lands, RECEIVED once it has (`state_of`). A leg's cost is the engine's own line for that action, null where it priced none (never a share
-    of the total); a draw's repayment day is the one the plan or the quote carries."""
+    of the total); a draw's repayment day is the one the plan or the quote carries. `share_text` is the leg's share of the plan's total (the legs' amounts summed), null when that total is zero."""
     a = c.action
     out: list[dict[str, Any]] = []
     basis: str | None = None
@@ -315,6 +317,9 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
                 continue
             out.append(_leg(c, kind=leg.kind, amount_fen=leg.amount_fen, lands_day=day, lands_when=None, cost_fen=leg.cost_fen,
                             repay_day=leg.cost_end_day, state=state_of(lot, repaid=lot is None), authority=str(funding_line["authority_text"] or "")))
+    total = sum(leg["amount_fen"] for leg in out)  # each leg's share of the plan's total, the words layer's own percent word (`share_text`)
+    for leg in out:
+        leg["share_text"] = share_text(Fraction(leg["amount_fen"], total), c.lang) if total > 0 else None
     return out, basis
 
 
