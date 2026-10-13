@@ -378,3 +378,5 @@ git checkout -- services/api/evals                               # drop regenera
 Credentials in demo mode: owner `X-Owner-Token: demo-owner-token`, agent `X-Agent-Key: demo-agent-key`, bank feed
 `X-Bank-Feed-Key: demo-bank-feed-key`, buyer channel keys `X-Counterparty-Key: demo-buyer-1-key` (BUYER-1) and
 `demo-buyer-2-key` (BUYER-2).
+
+**Paused work of 14 Oct 2026 (second machine).** Slice D (Activity and Demo, #145) and the deal tracker (map #148) are built, verified twice by independent agents and pushed on their branches, not yet merged: what stands, what is unproven, the open owner decisions and the kickoff are in `docs/handover/16_session_handoff_2026-10-14_slice_d_and_tracker.md`. Read handoffs 14 and 15 with it.
