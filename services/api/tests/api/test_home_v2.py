@@ -109,7 +109,7 @@ def test_before_the_plan_the_three_kpis(api: TestClient) -> None:
 def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> None:
     _offer(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k != "legs"} == {  # the legs have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
         "variant": "ACTION", "key": "funding:ALERT-RESERVE-12", "tone": "bad", "eyebrow": "NEXT ACTION · WITHIN 12 DAYS",
         "title": "Secure ¥405,000 before payroll in 12 days.",
         "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · "
@@ -154,7 +154,7 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
     _offer(api)
     _run_plan(api)
     v2 = _v2(api)
-    assert {k: v for k, v in v2["action"].items() if k != "legs"} == {  # the legs have their own tests below
+    assert {k: v for k, v in v2["action"].items() if k not in ("legs", "cost_basis_text")} == {  # the legs and the basis have their own tests below
         "variant": "QUIET", "key": None, "tone": "ok", "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
@@ -540,7 +540,7 @@ def test_the_chart_title_moves_no_figure(api: TestClient) -> None:
 # ---------------------------------------------------------------- action.legs: the plan, leg by leg
 
 
-LEG_KEYS = ["label", "amount_display", "lands_when", "cost_display", "repaid_when", "state", "state_text", "authority_text"]
+LEG_KEYS = ["label", "amount_display", "amount_fen", "lands_when", "lands_day", "cost_display", "repaid_when", "state", "state_text", "authority_text"]
 
 
 def _legs(api: TestClient, lang: str = "en") -> list[dict[str, Any]]:
@@ -555,14 +555,16 @@ def test_the_legs_on_day_zero_are_the_plans_two_planned_legs_and_leave_the_sente
     assert [list(leg) for leg in legs] == [LEG_KEYS, LEG_KEYS]
     authority = "Within your signed limits. No additional approval required."
     assert legs == [
-        {"label": "Credit-line draw", "amount_display": "¥150,000", "lands_when": "today", "cost_display": "¥841.64", "repaid_when": "in 32 days",
+        {"label": "Credit-line draw", "amount_display": "¥150,000", "amount_fen": 15_000_000, "lands_when": "today", "lands_day": 0,
+         "cost_display": "¥841.64", "repaid_when": "in 32 days",
          "state": "PLANNED", "state_text": "Planned", "authority_text": authority},
-        {"label": "Invoice financing", "amount_display": "¥255,000", "lands_when": "in 3 days", "cost_display": "¥2,272.29", "repaid_when": None,
-         "state": "PLANNED", "state_text": "Planned", "authority_text": authority}]
+        {"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
+         "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority}]
     assert action["text"] == ("FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
                               " · cost ¥3,113.93 · no approval needed.")
     assert [f["value"] for f in action["facts"]] == ["¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
                                                      "No approval needed"]
+    assert action["cost_basis_text"] == "once, nothing ongoing"
     # the legs' costs are the engine's own lines: they are the plan's cost and no share of it is made up here
     assert ["¥841.64", "¥2,272.29"] == [leg["cost_display"] for leg in legs]
 
@@ -574,6 +576,9 @@ def test_the_legs_in_chinese_on_day_zero(api: TestClient) -> None:
         ("信用额度提款", "¥150,000", "今天", "32 天后", "PLANNED", "计划中"), ("发票融资", "¥255,000", "3 天后", None, "PLANNED", "计划中")]
     assert [leg["authority_text"] for leg in legs] == ["在您签署的授权内，无需额外批准。"] * 2
     assert english_leaks(legs) == [] and [leg["cost_display"] for leg in legs] == ["¥841.64", "¥2,272.29"]
+    assert [(leg["lands_day"], leg["amount_fen"]) for leg in legs] == [(0, 15_000_000), (3, 25_500_000)]
+    zh_action = _v2(api, "zh")["action"]
+    assert zh_action["cost_basis_text"] == "一次性，之后无持续成本" and english_leaks(zh_action["cost_basis_text"]) == []
 
 
 def test_after_the_plan_runs_the_draw_has_landed_and_the_financing_is_arranged(api: TestClient) -> None:
@@ -588,6 +593,8 @@ def test_after_the_plan_runs_the_draw_has_landed_and_the_financing_is_arranged(a
         ("Credit-line draw", "¥150,000", "today", "¥841.64", "in 32 days", "RECEIVED", "Received"),
         ("Invoice financing", "¥255,000", "in 3 days", "¥2,272.29", None, "ARRANGED", "Arranged")]
     assert {leg["authority_text"] for leg in legs} == {"Within your signed limits; nothing for you to do."}
+    assert [(leg["lands_day"], leg["amount_fen"]) for leg in legs] == [(0, 15_000_000), (3, 25_500_000)]
+    assert action["cost_basis_text"] == "once, nothing ongoing" and _v2(api, "zh")["action"]["cost_basis_text"] == "一次性，之后无持续成本"
 
 
 def test_after_the_plan_runs_the_legs_in_chinese(api: TestClient) -> None:
@@ -608,28 +615,43 @@ def test_once_the_invoice_financing_lands_both_legs_are_received(api: TestClient
         ("Credit-line draw", "4 days ago", "RECEIVED", "Received"), ("Invoice financing", "yesterday", "RECEIVED", "Received")]
     assert [(leg["lands_when"], leg["state"], leg["state_text"]) for leg in zh] == [("4 天前", "RECEIVED", "已到账"), ("昨天", "RECEIVED", "已到账")]
     assert [leg["cost_display"] for leg in en] == ["¥841.64", "¥2,272.29"] and english_leaks(zh) == []
+    assert [(leg["lands_day"], leg["amount_fen"]) for leg in en] == [(-4, 15_000_000), (-1, 25_500_000)]
+    assert [leg["lands_day"] for leg in zh] == [-4, -1]
+    assert _v2(api)["action"]["cost_basis_text"] == "once, nothing ongoing"
 
 
 def test_the_legs_are_empty_when_nothing_is_a_plan_ready_or_run() -> None:
     quiet = {"variant": "QUIET"}
     for lang in ("en", "zh"):
         no_plan = SimpleNamespace(lang=lang, today=0, action=None, record=None)
-        assert home_v2._action_legs(no_plan, quiet, {"state": "none", "authority_text": None}) == []  # type: ignore[arg-type]
-        assert home_v2._action_legs(no_plan, quiet, None) == []  # type: ignore[arg-type]
-        assert home_v2._action_legs(no_plan, {"variant": "ACTION"}, {"state": "arranged", "authority_text": ""}) == []  # type: ignore[arg-type]
+        assert home_v2._action_legs(no_plan, quiet, {"state": "none", "authority_text": None}) == ([], None)  # type: ignore[arg-type]
+        assert home_v2._action_legs(no_plan, quiet, None) == ([], None)  # type: ignore[arg-type]
+        assert home_v2._action_legs(no_plan, {"variant": "ACTION"}, {"state": "arranged", "authority_text": ""}) == ([], None)  # type: ignore[arg-type]
         no_cash = SimpleNamespace(lang=lang, today=0, record=None, action={
             "kind": "RESERVE_BREACH_AHEAD", "receive_fen": None, "legs": [{"operation_kind": "APPLY_FOR_FACILITY", "amount_fen": None,
                                                                           "lands_when": None}]})
-        assert home_v2._action_legs(no_cash, {"variant": "ACTION"}, None) == []  # type: ignore[arg-type]
+        assert home_v2._action_legs(no_cash, {"variant": "ACTION"}, None) == ([], None)  # type: ignore[arg-type]
 
 
 def test_a_leg_with_no_engine_cost_says_null_and_a_plan_waiting_carries_the_approval_sentence(api: TestClient) -> None:
-    _offer(api)
-    c = SimpleNamespace(lang="en", today=0, action={
-        "kind": "RESERVE_BREACH_AHEAD", "receive_fen": 25_500_000, "authority_text": "Needs your approval: its cost.", "needs_owner": True,
-        "legs": [{"operation_kind": "SUBMIT_INVOICE_FOR_FINANCING", "amount_fen": 25_500_000, "lands_when": "in 3 days", "cost_fen": None,
-                  "cost_due_day": None},
-                 {"operation_kind": "APPLY_FOR_FACILITY", "amount_fen": None, "lands_when": None, "cost_fen": None}]})
-    legs = home_v2._action_legs(c, {"variant": "ACTION"}, None)  # type: ignore[arg-type]
-    assert legs == [{"label": "Invoice financing", "amount_display": "¥255,000", "lands_when": "in 3 days", "cost_display": None, "repaid_when": None,
-                     "state": "PLANNED", "state_text": "Planned", "authority_text": "Needs your approval: its cost."}]
+    def plan(cost_total: str | None, *legs: dict[str, Any]) -> SimpleNamespace:
+        return SimpleNamespace(lang="en", today=2, action={
+            "kind": "RESERVE_BREACH_AHEAD", "receive_fen": 25_500_000, "authority_text": "Needs your approval: its cost.", "needs_owner": True,
+            "cost_total_display": cost_total, "cost_basis": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+            "legs": [*legs, {"operation_kind": "APPLY_FOR_FACILITY", "amount_fen": None, "lands_when": None, "cost_fen": None}]})
+
+    financing = {"operation_kind": "SUBMIT_INVOICE_FOR_FINANCING", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 5,
+                 "cost_fen": None, "cost_due_day": None}
+    legs, basis = home_v2._action_legs(plan(None, financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert legs == [{"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
+                     "cost_display": None, "repaid_when": None, "state": "PLANNED", "state_text": "Planned",
+                     "authority_text": "Needs your approval: its cost."}]
+    assert basis is None  # no cost at all: no basis
+    # a cost with an unpriced leg is not a one-off: the plan's own basis sentence stands; a draw with no repayment day is not one either
+    _, basis = home_v2._action_legs(plan("¥100.00", financing), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    draw = {"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 2, "cost_fen": 100, "cost_due_day": None}
+    _, basis = home_v2._action_legs(plan("¥1.00", draw), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert basis == "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    _, basis = home_v2._action_legs(plan("¥1.00", {**draw, "cost_due_day": 30}), {"variant": "ACTION"}, None)  # type: ignore[arg-type]
+    assert basis == "once, nothing ongoing"
