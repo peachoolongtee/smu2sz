@@ -184,6 +184,17 @@ def test_a_subject_does_not_change_when_a_sibling_negotiation_closes(api: TestCl
         assert before.get(did, subject) == subject
 
 
+def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(api: TestClient) -> None:
+    _busy(api)
+    q = _queue(api)
+    topics = {(r["customer_short"], r["kind"], r["topic_text"]) for r in _negotiation_rows(q)}
+    assert {("Zhuhai", "DECISION", "Payment terms"), ("Dongguan", "DECISION", "Rebate"), ("Foshan", "BUYER_REPLY", "Rebate"),
+            ("Foshan", "DECISION", "Payment terms"), ("Foshan", "DECISION", "Early-payment discount")} == topics
+    assert all(r["topic_text"] is None for r in (*q["needs_you"], *q["waiting"]) if r["kind"] in ("COLLECTION", "APPROVAL"))
+    zh = {r["topic_text"] for r in _negotiation_rows(_queue(api, "zh"))}
+    assert zh == {"付款账期", "返利", "提前付款折扣"}
+
+
 # ---------------------------------------------------------------- 3. lifecycle
 
 

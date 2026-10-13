@@ -101,7 +101,7 @@ def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: i
     """The lines under "Send this counter": what sending authorizes (`send_authorizes`: the exact counter, recorded as a proposed agreement that
     stands only if the buyer accepts, and no word about who approves it), and the funding the send would run, from the router plan's own legs
     and cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
-    lines = [send_authorizes(lang, option=option_label(counter["label"], lang) if counter is not None else None, who=who or buyer)]
+    lines = [send_authorizes(lang, option=option_label(counter.get("label"), lang) or None if counter is not None else None, who=who or buyer)]
     runnable = _send_runs_funding(send_plan)
     if runnable:
         legs = [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in send_plan.actions]

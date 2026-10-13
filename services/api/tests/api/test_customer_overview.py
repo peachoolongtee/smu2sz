@@ -33,7 +33,7 @@ NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "D
 EX01 = {"fixture_id": "EX01_PACKAGE"}
 RAW_ID = re.compile(r"\b(?:RCV|BUYER|FAC|LOT|CMT|OFF|CTR|VER|OP|APR|DOC)-[A-Za-z0-9]|RI:|\bday -?\d")
 HREFS = r".*href"  # the routes a page links to carry ids and the same text in both languages
-ID_KEYS = ("key", "customer_id", "lang", "customer", "deal", "scenario")  # the last three are `context` echoes of the URL selections: ids, not sentences
+ID_KEYS = ("key", "customer_id", "lang", "customer", "deal", "scenario", "decision_id", "subject_demo_text")  # the last three are `context` echoes of the URL selections: ids, not sentences
 
 
 @pytest.fixture
@@ -126,10 +126,10 @@ def test_before_the_plan_the_page_is_the_board_in_english(api, rt):
     assert (value["label"], value["value_display"], value["note"]) == ("Relationship value", "about ¥1.09m", "a year, estimated contribution; margin assumed for the Demo, not confirmed by you")
     assert (owed["value_display"], owed["note"], owed["tone"]) == ("¥420,000", "due in 32 days, nothing overdue", "neutral")
     assert (financing["label"], financing["value_display"], financing["note"]) == (
-        "Financing linked", "¥255,000", "if you run the plan · not counted as cash")  # the plan's advance, planned and not counted
+        "Financing linked", "¥255,000", "¥255k financing planned against Foshan's invoice · not yet received")  # the plan's advance, planned and not counted
     assert (financing["state"], financing["state_text"]) == ("planned", "Planned")
     assert (share["value_display"], share["note"], share["tone"]) == (
-        "100%", "one open invoice; not its share of your sales", "warn")
+        "100%", "100% of currently open receivables", "warn")
     d = b["decision"]
     assert d["eyebrow"] == "One commercial decision waits for you"
     assert d["text"] == ("Foshan wants early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate. "
@@ -240,9 +240,9 @@ def test_the_chinese_page_has_the_same_figures_and_no_english_left(api, rt):
     assert english_leaks(zh, NAMES, raw_fields=[HREFS]) == []
     assert unchanged_words(en, zh, NAMES, raw_fields=[HREFS]) == []
     assert [f["value_display"] for f in zh["figures"]] == ["约 ¥109万", "¥420,000", "¥255,000", "100%"]
-    assert zh["figures"][2]["note"] == "执行方案后才会到账 · 不计入现金" and (zh["figures"][2]["state"], zh["figures"][2]["state_text"]) == ("planned", "计划中")
+    assert zh["figures"][2]["note"] == "计划融资 ¥255k，以Foshan的发票做融资 · 尚未到账" and (zh["figures"][2]["state"], zh["figures"][2]["state_text"]) == ("planned", "计划中")
     assert zh["figures"][1]["note"] == "32 天后到期，没有逾期"
-    assert zh["figures"][3]["note"] == "1 张未收发票；这不是其占您销售额的比例"
+    assert zh["figures"][3]["note"] == "占当前未收应收款的 100%"
     assert zh["decision"]["eyebrow"] == "有一项商务决定等待您处理"
     assert zh["decision"]["primary"]["label"] == "查看还价" and zh["decision"]["authority_text"] == "FLOW 可以在无需您批准的情况下发送这份还价。"
     assert "FLOW 建议以方案 A（如被接受，一次性成本 ¥3,027.77）还价" in zh["decision"]["text"]
@@ -386,13 +386,13 @@ def test_the_share_of_sales_is_never_stated_unless_the_inputs_hold_it(api, rt):
     _before(api, rt)
     b = _get(api)
     shares = json.dumps([_fig(b, "share"), b["economics"], b["economics_note"]])
-    assert _fig(b, "share")["note"] == "one open invoice; not its share of your sales"
+    assert _fig(b, "share")["note"] == "100% of currently open receivables"
     assert "% of your sales" not in shares and "share of sales" not in shares
     # the concentration holds one only when the inputs give every customer's sales; then, and only then, it is said
     r = SimpleNamespace(lang="en", rows=[{"x": 1}], conc={
         "is_aggregate": False, "ar_total_fen": 100, "ar_buyer_fen": 50, "ar_share_bp": 5000, "annual_sales_share_bp": 1234,
         "aggregate_note": None})
-    assert overview._share(r)["note"] == "one open invoice; 12.3% of your sales"
+    assert overview._share(r)["note"] == "50% of currently open receivables · 12.3% of your sales"
 
 
 def test_an_aggregate_buyer_has_no_share_of_its_own(api, rt):
@@ -847,7 +847,8 @@ def test_the_financing_figure_moves_planned_arranged_received_in_the_one_vocabul
                                      "share": ("none", "")}
     assert _states(b["exposure"]["rows"])["financing"] == ("planned", planned)  # the plan is ready and has not run: nothing is financed yet
     assert _fig(b, "financing")["value_display"] == "¥255,000"  # the plan's advance, not "None": it reads as planned and is not counted
-    assert _fig(b, "financing")["note"] == ("if you run the plan · not counted as cash" if lang == "en" else "执行方案后才会到账 · 不计入现金")
+    assert _fig(b, "financing")["note"] == ("¥255k financing planned against Foshan's invoice · not yet received" if lang == "en"
+                                            else "计划融资 ¥255k，以Foshan的发票做融资 · 尚未到账")
     _run_plan(api)
     b = _get(api, lang=lang)
     seen.append(_fig(b, "financing")["state_text"])
