@@ -880,7 +880,7 @@ def test_the_agreement_waiting_for_approval_is_titled_by_the_buyer(api: TestClie
     assert not [x for x in _all_strings(item) if QUESTION.search(x)]
 
 
-INTERNAL = {"en": re.compile(r"router|valuation window", re.I), "zh": re.compile(r"路由|估值期")}
+INTERNAL = {"en": re.compile(r"router|valuation window", re.IGNORECASE), "zh": re.compile(r"路由|估值期")}
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])
