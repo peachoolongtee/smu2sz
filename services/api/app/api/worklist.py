@@ -485,8 +485,22 @@ def _alert(home: dict[str, Any], lang: Lang) -> dict[str, Any] | None:
     else:
         tail = t(lang, " No funding plan is ready yet.", "目前还没有准备好的融资方案。")
         label, href = t(lang, "See the options", "查看选项"), "/cash#cash-options"
-    return {"key": "company-cash", "eyebrow": t(lang, "Company cash", "公司现金"), "text": head + tail,
+    return {"key": "company-cash", "eyebrow": t(lang, "Company cash", "公司现金"), "kind_text": t(lang, "FLOW action ready", "FLOW 已备好行动") if cure else None,
+            "text": head + tail, "pending_text": _pending_text(action, lang) if cure else None,
             "tone": "bad" if unsafe else "warn", "primary": {"label": label, "href": href}}
+
+
+def _pending_text(action: dict[str, Any] | None, lang: Lang) -> str | None:
+    """"¥405k funding plan available · no approval needed · waits for your go": the plan the alert answers, in the amount and the approval
+    words the Home's action carries (`receive_fen`; a pending approval or a plan that needs the owner is "needs your approval"). Null when the
+    plan brings no cash to name (an application for a facility)."""
+    receive = (action or {}).get("receive_fen")
+    if action is None or not receive:
+        return None
+    approval = (t(lang, "needs your approval", "需要您批准") if action.get("pending_approval_id") or action.get("needs_owner")
+                else t(lang, "no approval needed", "无需批准"))
+    return t(lang, f"{fmt_yuan_short(receive)} funding plan available · {approval} · waits for your go",
+             f"{fmt_yuan_short(receive)} 融资方案可用 · {approval} · 等待您确认")
 
 
 # ---------------------------------------------------------------- customers
