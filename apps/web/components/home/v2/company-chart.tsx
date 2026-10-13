@@ -2,7 +2,7 @@
 
 import { CashPreview, FullTimelineLink, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { useI18n } from "@/lib/i18n";
-import type { HomeSeriesPoint, HomeV2Chart, HomeView } from "@/lib/types";
+import type { HomeSeriesPoint, HomeV2, HomeV2Chart, HomeView } from "@/lib/types";
 
 export const pointAt = (points: HomeSeriesPoint[] | null | undefined, day: number): HomeSeriesPoint | undefined => {
   let best: HomeSeriesPoint | undefined;
@@ -20,7 +20,7 @@ export const shown = (p: HomeSeriesPoint | undefined): string => p?.display ?? p
  * the lowest point). The strip says that day's words: When, the projected cash, the plan's cash, the shortfall (or the minimum), and, under it, "On that day, ..." with the
  * server's cause and the day's own events. The one link is "Full timeline in Cash & Funding".
  */
-export function CompanyChart({ h, chart }: { h: HomeView; chart: HomeV2Chart }) {
+export function CompanyChart({ h, chart, kpis, inspect, onInspect }: { h: HomeView; chart: HomeV2Chart; kpis: HomeV2["kpis"]; inspect: boolean; onInspect: (open: boolean) => void }) {
   const { t } = useI18n();
   const cash = h.cash;
   const current = chart.legend.find((l) => l.kind === "current");
@@ -56,8 +56,16 @@ export function CompanyChart({ h, chart }: { h: HomeView; chart: HomeV2Chart }) 
       cash={cash}
       today={h.day}
       title={t("hv2.chart.title")}
-      subtitle={current?.label}
       lines={lines}
+      height={200}
+      inspectOpen={inspect}
+      onInspect={onInspect}
+      under={
+        <div className="mt-2 space-y-0.5 text-sm text-ink-2" data-testid="hv2-chart-lines">
+          <p data-testid="hv2-chart-without">{t("hv2.chart.without", { value: kpis.lowest_ahead.value_display, when: cash.lowest_when })}</p>
+          {kpis.lowest_ahead.with_plan ? <p data-testid="hv2-chart-with">{t("hv2.chart.with", { value: kpis.lowest_ahead.with_plan.value_text })}</p> : null}
+        </div>
+      }
       floorLabel={t("biz.picture.reserve", { amount: cash.floor_short })}
       selectable={selectable}
       initialDay={lowest}
@@ -65,14 +73,13 @@ export function CompanyChart({ h, chart }: { h: HomeView; chart: HomeV2Chart }) 
       words={words}
       legend={
         <>
-          <LegendItem kind="base">{current?.label}</LegendItem>
-          <LegendItem kind="below">{t("hv2.chart.below")}</LegendItem>
+          <LegendItem kind="base">{t("hv2.legend.current")}</LegendItem>
           {plan ? (
             <LegendItem kind="plan" quiet={t("hv2.chart.conditional")}>
-              {planned?.label}
+              {t("hv2.legend.plan")}
             </LegendItem>
           ) : null}
-          <LegendItem kind="reserve">{t("biz.picture.reserve", { amount: cash.floor_short })}</LegendItem>
+          <LegendItem kind="reserve">{t("hv2.legend.reserve")}</LegendItem>
         </>
       }
       below={

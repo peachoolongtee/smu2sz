@@ -2784,6 +2784,8 @@ export interface HomeV2Leg {
   state: string;
   state_text: string;
   authority_text: string | null;
+  /** The leg's share of the plan total as the server words it ("37%"); absent until it sends it (the bar then has no labels). */
+  share_text?: string | null;
   /** Where the leg sits on the timeline and how big it is, when the server sends them (days from today, fen); without them the legs are spaced evenly and sized alike. */
   lands_day?: number | null;
   repaid_day?: number | null;
@@ -2791,6 +2793,8 @@ export interface HomeV2Leg {
 }
 
 export interface HomeV2Action {
+  /** The one line under the title that reconciles with the strip: the first breach day and the lowest point; absent until the server sends it (the Home read's note stands in). */
+  consequence_text?: string | null;
   /** The word that says what the cost figure is ("one-off", "estimated all-in"), beside it; absent until the server sends it. */
   cost_basis_text?: string | null;
   /** The funding plan's legs, for the timeline; absent until the server sends them (the funding fact is then the text). */
@@ -2863,6 +2867,9 @@ export interface WorklistAlert {
   text: string;
   tone: HomeTone;
   primary: { label: string; href: string };
+  /** The alert as the pending action ("FLOW action ready" and "¥405k funding plan available · no approval needed · waits for your go"), in the server's words; absent until it sends them (`eyebrow` and `text` are then shown). */
+  kind_text?: string | null;
+  pending_text?: string | null;
 }
 
 /** A row of Needs you: a decision only a person can take. */
@@ -2923,6 +2930,8 @@ export interface WorklistView {
   needs_you: WorklistNeedsRow[];
   waiting: WorklistWaitingRow[];
   customers: WorklistCustomer[];
+  /** What the empty Needs you tab says, alert-aware ("Nothing else needs you." while the plan waits for the owner's go); absent until the server sends it. */
+  needs_you_empty_text?: string | null;
   partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
 }
 

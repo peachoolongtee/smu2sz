@@ -39,6 +39,15 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const selection = readSelection(params);
   const dealView = readDealView(params);
   const focusing = selection.customer !== null;
+  // Two small views of the default Home are in the address too: the funding's composition (`funding=1`) and the chart's inspector (`inspect=1`).
+  const fundingOpen = params.get("funding") === "1";
+  const inspectOpen = params.get("inspect") === "1";
+  const setFlag = (key: "funding" | "inspect", on: boolean) => {
+    const q = new URLSearchParams(params.toString());
+    if (on) q.set(key, "1");
+    else q.delete(key);
+    router.replace(q.size ? `/?${q.toString()}` : "/", { scroll: false });
+  };
   const go = (next: Partial<HomeSelection>, view: Partial<HomeDealView> = {}, how: "push" | "replace" = "push") => router[how](selectionHref(next, view), { scroll: false });
   const clear = useCallback(
     (back: "row" | "action" = "row") => {
@@ -96,11 +105,11 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
         </h1>
       </header>
       <PartialRead partial={h.partial} onRetry={onRetry} />
-      <div className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,7fr)_minmax(340px,3fr)] xl:items-start">
+      <div className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_minmax(340px,30%)] xl:items-start">
         <div className="min-w-0 space-y-4 sm:space-y-6">
           <CompanyStrip kpis={v2.kpis} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-          <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} fundingTotal={v2.kpis.funding.value_display} onBack={focusing ? () => clear("action") : undefined} />
+          <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} fundingTotal={v2.kpis.funding.value_display} fundingOpen={fundingOpen} onFunding={(on) => setFlag("funding", on)} onBack={focusing ? () => clear("action") : undefined} />
           {narrow && worklist.data ? <WorklistSheet read={worklist.data} customers={customers.data ?? null} selection={selection} /> : null}
           {focusing ? (
             selection.decision ? (
@@ -120,7 +129,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
               <CustomerFocusPanel customerId={selection.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
             )
           ) : (
-            <CompanyChart h={h} chart={v2.chart} />
+            <CompanyChart h={h} chart={v2.chart} kpis={v2.kpis} inspect={inspectOpen} onInspect={(on) => setFlag("inspect", on)} />
           )}
           <HomeV2Links links={v2.links} />
         </div>
