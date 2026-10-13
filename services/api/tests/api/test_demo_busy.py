@@ -1,7 +1,7 @@
-"""The busy company (POST /demo/reset?scenario=busy): the golden books plus a third customer and two overdue invoices, opened mid-conversation.
+"""The busy company (POST /demo/reset?scenario=busy): the golden books plus six more customers and two overdue invoices, opened mid-conversation.
 
 The scenario's seed file (`fixtures/scenarios/busy.seed.json`) is replayed after the books are seeded, through the functions the routes
-call: six offers submitted and evaluated, one deal (EX03) negotiated to an agreement with a promise, one facility application queued for the
+call: eleven offers submitted and evaluated, one deal (EX03) negotiated to an agreement with a promise, one facility application queued for the
 owner. What is pinned is the shape of the day-0 worklist (tiers, kinds, customers and counts), not the words or the money in it."""
 
 from __future__ import annotations
@@ -20,7 +20,9 @@ from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
-SEEDED = ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "EX08B_JOINT_BUYER2", "EX09_TERMS_BUYER3"]
+SEEDED = ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "EX08B_JOINT_BUYER2", "EX09_TERMS_BUYER3",
+          "EX13_EARLY_BUYER4", "EX14_TERMS_BUYER5", "EX15_REBATE_BUYER6", "EX16_PACKAGE_BUYER7", "EX17_CLAIMED_REBATE_BUYER8"]
+NEWER = ["BUYER-4", "BUYER-5", "BUYER-6", "BUYER-7", "BUYER-8"]  # each on a supply agreement in fixtures/contracts/
 
 
 @pytest.fixture
@@ -64,16 +66,17 @@ def test_the_day_zero_worklist(api: TestClient) -> None:
     _busy(api)
     w = _worklist(api)
     assert w["day"] == 0
-    # Needs you: the four open decisions (two Foshan, Dongguan, Zhuhai), the facility approval, and Dongguan's overdue invoices
+    # Needs you: the nine open decisions (two Foshan, one for every other customer), the facility approval, and Dongguan's overdue invoices
     assert _shape(w["needs_you"]) == Counter({
         ("DECISION", "BUYER-1"): 2, ("DECISION", "BUYER-2"): 1, ("DECISION", "BUYER-3"): 1,
-        ("APPROVAL", None): 1, ("COLLECTION", "BUYER-2"): 1})
-    # Waiting: the buyer's reply to the conflicting message, and the promised payment of the agreed deal
-    assert _shape(w["waiting"]) == Counter({("BUYER_REPLY", "BUYER-1"): 1, ("PROMISE", "BUYER-1"): 1})
-    assert w["counts"] == {"needs_you": 6, "waiting": 2, "customers": 3}
-    assert w["alert"] is not None and w["alert"]["key"] == "company-cash"
+        **{("DECISION", b): 1 for b in NEWER}, ("APPROVAL", None): 1, ("COLLECTION", "BUYER-2"): 1})
+    # Waiting: the buyer's reply to the conflicting message, the promised payment of the agreed deal, and GreenSky's invoice coming due
+    assert _shape(w["waiting"]) == Counter({("BUYER_REPLY", "BUYER-1"): 1, ("PROMISE", "BUYER-1"): 1, ("SETTLEMENT", "BUYER-5"): 1})
+    assert w["counts"] == {"needs_you": 11, "waiting": 3, "customers": 8}
+    # the newer customers' receipts keep the projected cash above the reserve: no company-wide alert on day 0
+    assert w["alert"] is None
     assert all(r["owner"] == "NEEDS_YOU" for r in w["needs_you"]) and all(r["owner"] == "WAITING" for r in w["waiting"])
-    assert len({r["key"] for r in w["needs_you"] + w["waiting"]}) == 8
+    assert len({r["key"] for r in w["needs_you"] + w["waiting"]}) == 14
 
 
 def test_the_approval_is_the_facility_application_and_the_deal_is_an_agreement(api: TestClient, rt: Runtime) -> None:
@@ -93,20 +96,44 @@ def test_every_offer_was_submitted_and_evaluated_in_the_seeds_order(api: TestCli
     verdicts = rt.store.verdicts()
     assert len(verdicts) == len({v.offer_id for v in verdicts}) == len(SEEDED)
     outcomes = Counter(v.outcome.value for v in verdicts)
-    assert outcomes == Counter({"REJECT": 1, "COUNTER": 2, "NO_VERDICT": 1, "NEEDS_OWNER_APPROVAL": 2})
+    assert outcomes == Counter({"REJECT": 3, "COUNTER": 2, "NO_VERDICT": 1, "NEEDS_OWNER_APPROVAL": 5})
     [zhuhai] = [v for v in verdicts if (rt.store.get_offer(v.offer_id) or pytest.fail("offer missing")).counterparty_id == "BUYER-3"]
     assert zhuhai.outcome.value == "NEEDS_OWNER_APPROVAL"
 
 
-def test_three_customers_and_two_overdue_invoices(api: TestClient) -> None:
+def test_eight_customers_and_two_overdue_invoices(api: TestClient) -> None:
     _busy(api)
     customers = api.get("/customers").json()["customers"]
-    assert [c["customer_id"] for c in customers] and {c["customer_id"] for c in customers} == {"BUYER-1", "BUYER-2", "BUYER-3"}
-    assert len(customers) == 3
+    assert {c["customer_id"] for c in customers} == {"BUYER-1", "BUYER-2", "BUYER-3", *NEWER}
+    assert len(customers) == 8
     rows = api.get("/receivables").json()["rows"]
     late = [r for r in rows if r["collection_state"] == "OVERDUE"]
     assert sorted((r["receivable_id"], r["buyer_id"], r["days_late"]) for r in late) == [("RCV-B1", "BUYER-2", 30), ("RCV-B2", "BUYER-2", 15)]
-    assert {r["buyer_id"] for r in rows} == {"BUYER-1", "BUYER-2", "BUYER-3"}
+    assert {r["buyer_id"] for r in rows} == {"BUYER-1", "BUYER-2", "BUYER-3", *NEWER}
+
+
+def test_the_busy_books_confirm_the_golden_documents_and_the_newer_customers_contracts(api: TestClient, rt: Runtime) -> None:
+    """The three golden documents and the five supply agreements written for the busy books, each read and confirmed; every
+    supply agreement matches its customer's books (the deal summary's checks warn of nothing)."""
+    _busy(api)
+    fixtures = [f["id"] for f in api.get("/fixtures/contracts").json()["contracts"]]
+    assert fixtures[:3] == ["FHR_SUPPLY_AGREEMENT", "MB_CREDIT_LINE_AGREEMENT", "GBR_INVOICE_FINANCING_AGREEMENT"] and len(fixtures) == 8
+    rows = rt.store.contract_guard_rows()
+    assert len(rows) == 8 and all(r.status == "CONFIRMED" for r in rows)
+    assert {r.counterparty_id for r in rows if r.kind == "BUYER_CONTRACT"} == {"BUYER-1", *NEWER}
+    from app.deals import deal_summary
+
+    for b in NEWER:
+        checks = deal_summary(rt.store, b, rt.day)["checks"]
+        assert checks and all(c["status"] != "warn" for c in checks), (b, checks)
+
+
+def test_the_golden_books_list_only_their_own_documents(api: TestClient) -> None:
+    api.post("/demo/reset")
+    assert [f["id"] for f in api.get("/fixtures/contracts").json()["contracts"]] == [
+        "FHR_SUPPLY_AGREEMENT", "MB_CREDIT_LINE_AGREEMENT", "GBR_INVOICE_FINANCING_AGREEMENT"]
+    r = api.post("/documents", json={"fixture_id": "TL_CNC_SUPPLY_AGREEMENT"})
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "UNKNOWN_FIXTURE"
 
 
 def test_the_golden_buyers_figures_are_unchanged(api: TestClient, rt: Runtime) -> None:

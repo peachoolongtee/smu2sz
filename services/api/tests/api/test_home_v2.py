@@ -804,8 +804,8 @@ def test_the_summary_composes_the_funding_action_and_the_worklist_counts_on_day_
 
 def test_the_summary_on_the_busy_day_names_each_kind_and_has_nothing_to_run(api: TestClient) -> None:
     _busy(api)
-    assert _v2(api)["summary_text"] == "Nothing to run. Four deal decisions, one approval and one collection need you."
-    assert _v2(api, "zh")["summary_text"] == "没有需要执行的操作。4 项交易决定、1 项审批、1 项催收需要您处理。"
+    assert _v2(api)["summary_text"] == "Nothing to run. Nine deal decisions, one approval and one collection need you."
+    assert _v2(api, "zh")["summary_text"] == "没有需要执行的操作。9 项交易决定、1 项审批、1 项催收需要您处理。"
 
 
 def test_the_summary_words_agree_with_the_count_and_name_only_what_is_present() -> None:
@@ -846,7 +846,7 @@ def test_upcoming_on_the_busy_day_leads_with_the_inflow_and_is_in_day_order(api:
     up = _v2(api)["upcoming"]
     assert [(u["label"], u["amount_display"], u["when"], u["kind"]) for u in up] == [
         ("Foshan pays", "+¥420k", "in 2 days", "inflow"), ("Payroll is paid", "−¥340k", "in 12 days", "outflow"),
-        ("A supplier payment goes out", "−¥120k", "in 20 days", "outflow")]
+        ("Jiangmen pays", "+¥48k", "in 19 days", "inflow")]
 
 
 def test_upcoming_leaves_out_planned_rows_and_is_empty_with_no_rail() -> None:

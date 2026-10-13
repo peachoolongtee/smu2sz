@@ -57,6 +57,23 @@ EXPECTED: dict[str, dict[str, Any]] = {
     "EX09_TERMS_BUYER3": {"status": "COMPILED", "obligations": [
         (T.TERMS_EXTENSION, None, 15, None, "FIRM", "RECURRING_BOUNDED", 1, []),
     ]},
+    # the busy company's newer customers (fixtures/scenarios/busy.json)
+    "EX13_EARLY_BUYER4": {"status": "COMPILED", "obligations": [
+        (T.IMMEDIATE_DISCOUNT, 50, None, None, "FIRM", "ONE_OFF", None, []),
+    ]},
+    "EX14_TERMS_BUYER5": {"status": "COMPILED", "obligations": [
+        (T.TERMS_EXTENSION, None, 15, None, "FIRM", "RECURRING_BOUNDED", 1, []),
+    ]},
+    "EX15_REBATE_BUYER6": {"status": "COMPILED", "obligations": [
+        (T.CONTINGENT_REBATE, 100, None, 10_000_000, "CONTINGENT", "ONE_OFF", None, []),
+    ]},
+    "EX16_PACKAGE_BUYER7": {"status": "COMPILED", "obligations": [
+        (T.IMMEDIATE_DISCOUNT, 100, None, 2_800_000, "FIRM", "ONE_OFF", None, []),
+        (T.TERMS_EXTENSION, None, None, None, "FIRM", "RECURRING_PERPETUAL", None, ["current_terms_days"]),
+    ]},
+    "EX17_CLAIMED_REBATE_BUYER8": {"status": "COMPILED", "authority": {"PRIOR_AGREEMENT"}, "obligations": [
+        (T.CLAIMED_PRIOR_CONCESSION, 150, None, None, "CLAIMED_UNEVIDENCED", "ONE_OFF", None, []),
+    ]},
     "EX10_FASTCAPITAL": {
         "status": "COMPILED",
         "authority": {"PRE_APPROVAL", "PRIOR_AGREEMENT", "URGENCY"},

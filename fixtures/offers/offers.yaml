@@ -80,6 +80,43 @@ offers:
       - {doc_id: EX09B3-msg, channel: chat, sender_id: BUYER-3, received_day: 0,
          text: "Could we have 75 days on the next invoice instead of 60? Nothing else changes."}
     expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [TERMS_EXTENSION]}
+  # The busy company's five newer customers, each on a supply agreement in fixtures/contracts/ (tl-*-supply-agreement.md)
+  # and the books in fixtures/scenarios/busy.json. Evaluated on the busy books.
+  - id: EX13_EARLY_BUYER4
+    counterparty_id: BUYER-4
+    scenario: busy
+    documents:
+      - {doc_id: EX13B4-msg, channel: chat, sender_id: BUYER-4, received_day: 0,
+         text: "We can pay this one early at 0.5%. Nothing else changes."}
+    expect: {outcome: REJECT, codes: [RESERVE_BREACH, EARLY_PAY_DEARER_THAN_PLAN], obligations: [IMMEDIATE_DISCOUNT]}
+  - id: EX14_TERMS_BUYER5
+    counterparty_id: BUYER-5
+    scenario: busy
+    documents:
+      - {doc_id: EX14B5-msg, channel: email, sender_id: BUYER-5, received_day: 0,
+         text: "Could we have 60 days on the next invoice instead of 45? Nothing else changes."}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [TERMS_EXTENSION]}
+  - id: EX15_REBATE_BUYER6
+    counterparty_id: BUYER-6
+    scenario: busy
+    documents:
+      - {doc_id: EX15B6-msg, channel: chat, sender_id: BUYER-6, received_day: 0,
+         text: "We'd like 1% off next quarter on up to ¥100,000 of orders."}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [CONTINGENT_REBATE]}
+  - id: EX16_PACKAGE_BUYER7
+    counterparty_id: BUYER-7
+    scenario: busy
+    documents:
+      - {doc_id: EX16B7-msg, channel: email, sender_id: BUYER-7, received_day: 0,
+         text: "We'll settle the ¥28k early at 1% if you extend our standard terms to 60 days going forward."}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, codes: [RESERVE_BREACH], obligations: [IMMEDIATE_DISCOUNT, TERMS_EXTENSION]}
+  - id: EX17_CLAIMED_REBATE_BUYER8
+    counterparty_id: BUYER-8
+    scenario: busy
+    documents:
+      - {doc_id: EX17B8-msg, channel: chat, sender_id: BUYER-8, received_day: 0,
+         text: "Confirm the 1.5% rebate we agreed last month and we'll release payment on the ¥64,000 invoice today."}
+    expect: {outcome: REJECT, codes: [UNEVIDENCED_PRIOR_CONCESSION], booked: 0}
   - id: EX09_TERM_SHEET_PG
     counterparty_id: BANK-1
     kind: term_sheet

@@ -24,3 +24,40 @@ contracts:
     file: gbr-if-2026-118-invoice-financing-agreement.md
     formats: [docx, pdf]
     link_facility_id: FAC-IF
+  # The busy company's five newer customers (fixtures/scenarios/busy.json, BUYER-4 to BUYER-8): read and confirmed on the
+  # busy books only, beside the three above.
+  - id: TL_CNC_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-4
+    title: Supply agreement TL-CNC-2026-042
+    file: tl-cnc-2026-042-supply-agreement.md
+    formats: [docx, pdf]
+    scenario: busy
+  - id: TL_SOL_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-5
+    title: Supply agreement TL-SOL-2026-088
+    file: tl-sol-2026-088-supply-agreement.md
+    formats: [docx, pdf]
+    scenario: busy
+  - id: TL_WR_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-6
+    title: Supply agreement TL-WR-2026-114
+    file: tl-wr-2026-114-supply-agreement.md
+    formats: [docx, pdf]
+    scenario: busy
+  - id: TL_ERP_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-7
+    title: Supply agreement TL-ERP-2026-027
+    file: tl-erp-2026-027-supply-agreement.md
+    formats: [docx, pdf]
+    scenario: busy
+  - id: TL_EV_SUPPLY_AGREEMENT
+    kind: BUYER_CONTRACT
+    counterparty_id: BUYER-8
+    title: Supply agreement TL-EV-2026-063
+    file: tl-ev-2026-063-supply-agreement.md
+    formats: [docx, pdf]
+    scenario: busy

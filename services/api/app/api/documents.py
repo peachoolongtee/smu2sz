@@ -73,7 +73,7 @@ def post_document(body: DocumentIn, lang: Lang = "en") -> dict:
     rt = get_runtime()
     title = body.title
     if body.fixture_id is not None:
-        fx = load_contract_fixtures().get(body.fixture_id)
+        fx = load_contract_fixtures(rt.scenario).get(body.fixture_id)  # the documents written for the books in use
         if fx is None:
             raise HTTPException(404, {"code": "UNKNOWN_FIXTURE", "message": "no such demo document"})
         kind, cp = DocumentKind(fx["kind"]), fx["counterparty_id"]
@@ -182,13 +182,13 @@ def reject_document(document_id: str, body: DecisionIn, lang: Lang = "en") -> di
 
 
 def confirm_demo_documents(rt: Runtime) -> None:
-    """The demo's starting point: the three demo documents already read by the agent and confirmed by the owner, so the
-    deal summary is ready once a deal is agreed on Deals. Each is read from its fixture text exactly as an upload is,
-    and confirmed through the executor as the owner, so three CONFIRM_DOCUMENT entries open the chain. Nothing in the
-    books changes."""
+    """The demo's starting point: the scenario's demo documents already read by the agent and confirmed by the owner, so
+    the deal summary is ready once a deal is agreed on Deals. Each is read from its fixture text exactly as an upload is,
+    and confirmed through the executor as the owner, so one CONFIRM_DOCUMENT entry per document opens the chain. Nothing
+    in the books changes."""
     with rt.lock:
         state = rt.store.get_state()
-        for fixture_id, fx in load_contract_fixtures().items():
+        for fixture_id, fx in load_contract_fixtures(rt.scenario).items():
             name, data = contract_fixture_bytes(fixture_id, None)
             record = read_document(extract_text(name, data), DocumentKind(fx["kind"]), fx["counterparty_id"],
                                    title=fx["title"], source=f"fixture:{fixture_id}", day=rt.day,
@@ -202,6 +202,7 @@ def confirm_demo_documents(rt: Runtime) -> None:
 
 @router.get("/fixtures/contracts")
 def list_contract_fixtures() -> dict:
+    """The demo documents written for the books in use (the busy books add their own customers' contracts)."""
     return {"contracts": [{"id": k, "kind": v["kind"], "counterparty_id": v["counterparty_id"], "title": v["title"],
                            "formats": ["md", *v.get("formats", [])], "link_facility_id": v.get("link_facility_id")}
-                          for k, v in load_contract_fixtures().items()]}
+                          for k, v in load_contract_fixtures(get_runtime().scenario).items()]}

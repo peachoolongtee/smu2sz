@@ -66,15 +66,25 @@ def offer_documents(offer_id: str) -> list[SourceDocument]:
 CONTRACTS = FIXTURES / "contracts"
 
 
-def load_contract_fixtures() -> dict[str, dict]:
-    """Demo contracts and lender agreements (fixtures/contracts/contracts.yaml), keyed by id. Synthetic."""
+# The scenarios whose books a contract's `scenario` was written for: the busy books extend the golden ones.
+_CONTRACT_SCENARIOS = {"golden_sme": ("golden_sme",), "busy": ("golden_sme", "busy")}
+
+
+def load_contract_fixtures(scenario: str | None = "golden_sme") -> dict[str, dict]:
+    """Demo contracts and lender agreements (fixtures/contracts/contracts.yaml), keyed by id. Synthetic.
+
+    A contract names the scenario whose books it was written to match (`scenario`, default the golden books); `scenario`
+    picks the contracts that match those books (none for a scenario without any), and None picks every one."""
     data = yaml.safe_load((CONTRACTS / "contracts.yaml").read_text(encoding="utf-8"))
-    return {c["id"]: c for c in data["contracts"]}
+    if scenario is None:
+        return {c["id"]: c for c in data["contracts"]}
+    wanted = _CONTRACT_SCENARIOS.get(scenario, ())
+    return {c["id"]: c for c in data["contracts"] if c.get("scenario", "golden_sme") in wanted}
 
 
 def contract_fixture_bytes(fixture_id: str, fmt: str | None = None) -> tuple[str, bytes]:
     """(file name, raw bytes) of a demo document: its canonical text file, or the generated `fmt` copy."""
-    c = load_contract_fixtures()[fixture_id]
+    c = load_contract_fixtures(None)[fixture_id]
     path = CONTRACTS / c["file"]
     if fmt is not None:
         path = path.with_suffix(f".{fmt}")
