@@ -141,6 +141,8 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         unchanged = say(lang, "Unchanged", "不变")
         terms = (unchanged, unchanged)
     early = [o for o in obligations if o.type == ObligationType.IMMEDIATE_DISCOUNT]
+    early_row: tuple[str | None, str | None]
+    other_row: tuple[str | None, str | None]
     if early:
         parts = []
         for o in early:
