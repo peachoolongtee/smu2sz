@@ -155,8 +155,8 @@ def fund_gap(ctx: NlContext, slots: Slots, *, execute: bool = True) -> Turn:
         plan = alt
     legs, flagged = runnable_legs(ctx, plan)
     head = (blocked + " " if blocked else "") + t(
-        ctx, f"Router plan (committed facilities only): {plan.label}, need {fmt_yuan(plan.need_fen)}.",
-        f"融资路由方案（仅已承诺额度）：{plan.label}，需求 {fmt_yuan(plan.need_fen)}。")
+        ctx, f"Funding plan (committed facilities only): {plan.label}, need {fmt_yuan(plan.need_fen)}.",
+        f"融资方案（仅已承诺额度）：{plan.label}，需求 {fmt_yuan(plan.need_fen)}。")
     if not execute:
         funding_ops(ctx, steps, plan)
         when = landing.line(ctx, legs, executed=False)

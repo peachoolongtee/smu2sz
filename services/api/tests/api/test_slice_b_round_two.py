@@ -389,7 +389,7 @@ def test_cost_rows_are_table_rows_with_the_totals_basis_as_it_is_today(api: Test
     pic = api.get(f"/offers/{offer_id}/picture", params={"lang": lang}).json()
     asked, a, b = pic["paths"]
     for p in pic["paths"]:
-        assert all(set(r) == {"key", "label", "amount_display", "basis_text"} for r in p["cost_rows"])
+        assert all(set(r) == {"key", "label", "amount_display", "basis_text", "note"} for r in p["cost_rows"])
         assert p["cost_rows"][0]["key"] == "immediate_discount" and p["cost_rows"][-1]["key"] == "total"
         total = _rows(p)["total"]
         assert total["basis_text"] == p["cost_basis_text"] and total["amount_display"] == p["cost_total_display"]  # the basis exactly as today
@@ -820,3 +820,121 @@ def test_an_approval_with_no_deadline_says_none_and_the_words_are_by_kind() -> N
 def test_the_busy_application_has_no_deadline(api: TestClient) -> None:
     item = _apply(api, "en")
     assert item["deadline_text"] is None and item["deadline_day"] is None
+
+
+# ---------------------------------------------------------------- the verifier's three word defects
+
+
+QUESTION = re.compile(r"Approve [^\"]*\?|批准[^\"]*？")
+
+
+def _all_strings(x: Any) -> list[str]:
+    return [text for _path, text in _strings(x)]
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_a_waiting_application_states_what_it_asks_and_no_question_remains(api: TestClient, lang: str) -> None:
+    item = _apply(api, lang)
+    title = {"en": "Apply for ¥200,000 in working-capital financing", "zh": "申请 ¥200,000 的营运资金融资"}[lang]
+    assert item["title_text"] == item["presentation"]["headline"] == title and item["decided_text"] is None
+    assert not [x for x in _all_strings(item) if QUESTION.search(x)]  # no "Approve …?" anywhere on the item
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_a_decided_application_says_what_came_of_it(api: TestClient, lang: str) -> None:
+    item = _apply(api, lang)
+    assert api.post(f"/approvals/{item['id']}", json={"decision": "APPROVE"}).status_code == 200
+    after = next(a for a in api.get("/approvals/queue", params={"lang": lang}).json()["approvals"] if a["id"] == item["id"])
+    said = {"en": "You authorized the application; FLOW sent it to the lender.", "zh": "您已授权该申请；FLOW 已将其提交给贷款方。"}[lang]
+    assert after["decided_text"] == after["presentation"]["headline"] == said
+    assert not [x for x in _all_strings(after) if QUESTION.search(x)]
+    other = _apply(api, lang)  # a fresh set of books: decline this one
+    assert api.post(f"/approvals/{other['id']}", json={"decision": "REJECT"}).status_code == 200
+    declined = next(a for a in api.get("/approvals/queue", params={"lang": lang}).json()["approvals"] if a["id"] == other["id"])
+    assert declined["decided_text"] == declined["presentation"]["headline"] == {
+        "en": "You declined; the application was not sent.", "zh": "您已拒绝；该申请未提交。"}[lang]
+    assert not [x for x in _all_strings(declined) if QUESTION.search(x)]
+
+
+def test_the_titles_and_decided_words_by_kind(rt: Runtime) -> None:
+    from app.api.presentation import approval_title, decided_text
+
+    state = rt.store.get_state()
+    fac = next(f for f in state.facilities if f.kind.value == "CREDIT_LINE")
+    assert approval_title(state, "DRAW_FACILITY", {"amount_fen": 15_000_000, "facility_id": fac.id}, None, "en") == f"Draw ¥150,000 on the {fac.name}"
+    assert approval_title(state, "SUBMIT_INVOICE_FOR_FINANCING", {"amount_fen": 25_500_000}, None, "zh") == "申请 ¥255,000 的发票融资"
+    assert approval_title(state, "REPAY_FACILITY", {"amount_fen": 100_000, "facility_id": fac.id}, None, "en") == f"Repay ¥1,000 to the {fac.name}"
+    assert approval_title(state, "RECORD_COMMITMENT", {}, "Foshan", "zh") == "记录与Foshan的协议"
+    assert decided_text("DRAW_FACILITY", "PENDING", None, "en") is None
+    assert decided_text("RECORD_COMMITMENT", "APPROVED", "EXECUTED", "en") == "You authorized the agreement; FLOW recorded it."
+    assert decided_text("APPLY_FOR_FACILITY", "APPROVED", "REFUSED", "en") == "You authorized the application, but it could not run. No money moved."
+    assert decided_text("REPAY_FACILITY", "REJECTED", "DECLINED", "zh") == "您已拒绝；没有还款。"
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_the_agreement_waiting_for_approval_is_titled_by_the_buyer(api: TestClient, lang: str) -> None:
+    _queued_counter(api)
+    item = api.get("/approvals/queue", params={"lang": lang}).json()["approvals"][0]
+    assert item["title_text"] == item["presentation"]["headline"] == {"en": "Record the agreement with Foshan Home Retail Co.",
+                                                                       "zh": "记录与Foshan Home Retail Co.的协议"}[lang]
+    assert not [x for x in _all_strings(item) if QUESTION.search(x)]
+
+
+INTERNAL = {"en": re.compile(r"router|valuation window", re.I), "zh": re.compile(r"路由|估值期")}
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_business_prose_after_a_send_names_no_router_and_no_valuation_window(api: TestClient, lang: str) -> None:
+    _busy(api)
+    busy_offer = next(d["open_offer"]["offer_id"] for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
+    view = api.post(f"/offers/{busy_offer}/evaluate", params={"lang": lang}, json=EX01).json()  # the evaluate view, before the books move
+    agree_on_rcv_a(api)
+    agreed = next(d for d in api.get("/decisions").json()["decisions"] if d["state"] == "AGREED")
+    detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
+    said = detail["execution"]["summary_text"]
+    assert said.endswith({"en": "The gap was not funded: today's funding plan could not run.", "zh": "缺口未获融资：今天的融资方案无法执行。"}[lang])
+    prose = [said, *_all_strings(detail["agreement"]["receipt"]), detail["agreement"]["status_text"], *detail["agreement"]["terms"]]
+    # the picture's cost words, the evaluate view's cost windows and the queue's economic effect
+    for deal in api.get("/deals", params={"lang": lang}).json()["deals"]:
+        if deal["open_offer"] is None:
+            continue
+        pic = api.get(f"/offers/{deal['open_offer']['offer_id']}/picture", params={"lang": lang}).json()
+        for p in pic["paths"]:
+            prose += [p["cost_note"], p["cost_basis_text"], *_all_strings(p["cost_rows"]), *_all_strings(p["cost_components"])]
+    prose += _all_strings(view["workspace"]["financial_impact"]) + _all_strings(view["workspace"]["priced_responses"])
+    leaks = [x for x in prose if x and INTERNAL[lang].search(x)]
+    assert leaks == []
+    assert prose  # the loop above read something
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_an_agreement_with_no_forward_cost_says_the_months_not_the_valuation_window(lang: str) -> None:
+    from app.api.presentation import economic_effect_text
+
+    c = type("C", (), {"forward_value_fen": 0, "obligations": []})()  # no obligation at all: nothing but the early-payment discount
+    said = economic_effect_text(c, 365, lang)
+    assert said == {"en": "No cost over the next 12 months beyond the early-payment discount.",
+                    "zh": "除提前付款折扣外，未来 12 个月内没有其他成本。"}[lang]
+    assert economic_effect_text(c, None, lang) == {"en": "No cost beyond the early-payment discount.", "zh": "除提前付款折扣外，没有其他成本。"}[lang]
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_a_funding_cost_the_send_will_not_run_says_so_in_the_table(api: TestClient, lang: str) -> None:
+    _busy(api)
+    deal = next(d for d in api.get("/deals").json()["deals"] if d["counterparty_id"] == "BUYER-1")
+    offer = deal["open_offer"]["offer_id"]
+    pic = api.get(f"/offers/{offer}/picture", params={"lang": lang}).json()
+    reply = next(p for p in pic["paths"] if p["kind"] == "reply" and p["recommended"])
+    funding = _rows(reply)["funding"]
+    assert funding["amount_display"] == "¥2,919.20"  # the figure is the plan's, unchanged
+    assert funding["note"] == {"en": "if the plan runs; it cannot run today", "zh": "若方案得以执行才会产生；今天无法执行"}[lang]
+    receipt = next(p for p in api.post(f"/offers/{offer}/evaluate", params={"lang": lang}, json=EX01).json()["workspace"]["priced_responses"]
+                   if p["counter_id"] == reply["key"])["receipt"]
+    assert receipt["executes_now_text"].startswith({"en": "No funding runs when you send", "zh": "发送时不会办理融资"}[lang])  # the table says what the receipt says
+    assert all(r["note"] is None for r in reply["cost_rows"] if r["key"] != "funding")
+
+
+def test_a_funding_cost_that_runs_on_send_carries_no_note(api: TestClient) -> None:
+    offer_id, _ = _golden(api)
+    a = api.get(f"/offers/{offer_id}/picture").json()["paths"][1]
+    assert _rows(a)["funding"]["amount_display"] == "¥841.57" and all(r["note"] is None for r in a["cost_rows"])
