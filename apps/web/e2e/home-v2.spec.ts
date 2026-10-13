@@ -117,15 +117,21 @@ test("the header and the metric strip: the status sentence, 'Updated today', and
 test("the recommendation: the server's facts, the plan's control is the one filled button, 'Compare funding options' an outline", async ({ page }) => {
   await open(page, { offer: true });
   const a = homeOffer.en.home_v2.action;
-  await expect(page.getByTestId("home-action-eyebrow")).toHaveText("FLOW recommends");
+  await expect(page.getByTestId("home-action-eyebrow")).toHaveText("What we recommend");
   await expect(page.getByTestId("home-action-title")).toHaveText(a.title);
   const facts = a.facts ?? [];
-  if (facts.length) {
+  if (facts.length === 3) {
+    // The cost is the hero fact (the server's value, under its own label), the funding the server's sentence until it sends the legs, who approves one quiet line under the actions.
     const dl = page.getByTestId("hv2-action-facts");
-    for (const f of facts) {
-      await expect(dl).toContainText(f.label);
-      await expect(dl).toContainText(f.value);
-    }
+    await expect(dl).toContainText("Cost to you");
+    await expect(page.getByTestId("hv2-hero-value")).toHaveText(facts[0].value);
+    expect(await page.getByTestId("hv2-hero-value").evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(28);
+    await expect(page.getByTestId("hv2-hero-value")).toHaveCSS("border-bottom-width", "2px");
+    await expect(page.getByTestId("hv2-funding-text")).toContainText(facts[1].value);
+    const approval = page.getByTestId("hv2-approval");
+    await expect(approval).toHaveText(facts[2].value);
+    expect(await approval.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(13);
+    expect((await approval.boundingBox())!.y).toBeGreaterThan((await page.getByTestId("next-action-alternatives").boundingBox())!.y);
     await expect(page.getByTestId("home-action-text")).toHaveText(homeOffer.en.cash.headline_note);
   } else await expect(page.getByTestId("home-action-text")).toHaveText(a.text);
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
@@ -137,6 +143,73 @@ test("the recommendation: the server's facts, the plan's control is the one fill
   await expect(page.getByTestId(`fix-confirm-${ALERT}`)).toBeVisible();
   await page.getByTestId(`fix-cancel-${ALERT}`).click();
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+});
+
+// The plan's legs are the server's `action.legs[]` (a batch the server is adding): until it is recorded, the spec lays a leg list over the recorded read through the mock's patch key.
+const LEGS = {
+  en: [
+    { label: "Bank credit line", amount_display: "¥150k", lands_when: "today", cost_display: "¥840.00", repaid_when: "in 32 days", state: "planned", state_text: "planned", authority_text: "No approval needed", lands_day: 0, amount_fen: 15000000 },
+    { label: "Invoice financing", amount_display: "¥255k", lands_when: "in 3 days", cost_display: "¥2,272.29", repaid_when: "in 32 days", state: "planned", state_text: "planned", authority_text: "No approval needed", lands_day: 3, amount_fen: 25500000 },
+  ],
+  zh: [
+    { label: "银行信用额度", amount_display: "¥150k", lands_when: "今天", cost_display: "¥840.00", repaid_when: "32 天后", state: "planned", state_text: "计划中", authority_text: "无需批准", lands_day: 0, amount_fen: 15000000 },
+    { label: "发票融资", amount_display: "¥255k", lands_when: "3 天后", cost_display: "¥2,272.29", repaid_when: "32 天后", state: "planned", state_text: "计划中", authority_text: "无需批准", lands_day: 3, amount_fen: 25500000 },
+  ],
+};
+
+test("the funding as a timeline when the server sends the legs: one marker per leg with its source and amount, the total at the right, a card with the leg's words on hover and focus; still one filled button", async ({ page }) => {
+  const v2 = { ...homeOffer.en.home_v2, action: { ...homeOffer.en.home_v2.action, legs: LEGS.en } };
+  await page.context().addInitScript(([patch]) => sessionStorage.setItem("tl-mock-home-patch", JSON.stringify({ home_v2: patch })), [v2] as const);
+  await open(page, { offer: true });
+  const line = page.getByTestId("hv2-timeline");
+  await expect(line).toBeVisible();
+  await expect(page.getByTestId("hv2-funding-text")).toHaveCount(0);
+  await expect(line).toHaveAttribute("data-legs", "2");
+  for (const [i, leg] of LEGS.en.entries()) {
+    await expect(page.getByTestId(`hv2-leg-${i}`)).toContainText(leg.label);
+    await expect(page.getByTestId(`hv2-leg-${i}`)).toContainText(leg.amount_display);
+    await expect(page.getByTestId(`hv2-leg-${i}`)).toHaveAttribute("data-state", "planned");
+  }
+  // Sized by amount, the larger leg's marker is the larger.
+  const sizes = await Promise.all([0, 1].map(async (i) => (await page.getByTestId(`hv2-leg-marker-${i}`).boundingBox())!.width));
+  expect(sizes[1]).toBeGreaterThan(sizes[0]);
+  await expect(page.getByTestId("hv2-timeline-total")).toHaveText(v2.kpis.funding.value_display);
+  // Hovering a marker opens its card (the leg's own words), leaving closes it; focus does the same; Escape closes it.
+  const card = page.getByTestId("hv2-leg-card-1");
+  await expect(card).toBeHidden();
+  await page.getByTestId("hv2-leg-marker-1").hover();
+  await expect(card).toBeVisible();
+  for (const w of [LEGS.en[1].label, LEGS.en[1].amount_display, LEGS.en[1].lands_when, LEGS.en[1].cost_display, LEGS.en[1].repaid_when, LEGS.en[1].authority_text]) await expect(card).toContainText(w);
+  await page.mouse.move(5, 5);
+  await expect(card).toBeHidden();
+  await page.getByTestId("hv2-leg-marker-0").focus();
+  await expect(page.getByTestId("hv2-leg-card-0")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("hv2-leg-card-0")).toBeHidden();
+  expect(await filledBrand(page)).toBe(1);
+  await expect(page.getByTestId("hv2-approval")).toHaveText(homeOffer.en.home_v2.action.facts![2].value);
+});
+
+test("the legs on a phone are stacked rows that open on a tap; in Chinese they are the server's words", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const v2 = { ...homeOffer.zh.home_v2, action: { ...homeOffer.zh.home_v2.action, legs: LEGS.zh } };
+  await page.context().addInitScript(([patch]) => sessionStorage.setItem("tl-mock-home-patch", JSON.stringify({ home_v2: patch })), [v2] as const);
+  await open(page, { lang: "zh", offer: true });
+  const rows = page.getByTestId("hv2-timeline-rows");
+  await expect(rows).toBeVisible();
+  for (const [i, leg] of LEGS.zh.entries()) {
+    const row = page.getByTestId(`hv2-leg-row-${i}`);
+    await expect(row).toContainText(leg.label);
+    await expect(row).toContainText(leg.amount_display);
+  }
+  const first = page.getByTestId("hv2-leg-row-0");
+  await expect(first.getByTestId("hv2-leg-cost")).toBeHidden();
+  await first.locator("summary").click();
+  await expect(first.getByTestId("hv2-leg-cost")).toContainText(LEGS.zh[0].cost_display);
+  await expect(first.getByTestId("hv2-leg-lands")).toContainText(LEGS.zh[0].lands_when);
+  await expect(first.getByTestId("hv2-leg-authority")).toContainText(LEGS.zh[0].authority_text);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  expect(await filledBrand(page)).toBe(1);
 });
 
 test("running the plan: no alert, the arranged funding, the quiet recommendation with no filled button, the financing on the worklist", async ({ page }) => {
@@ -598,7 +671,7 @@ test("zh parity: the strip, the recommendation, the worklist and the deal in Chi
   await page.getByTestId("hv2-metric-funding-info").click();
   await expect(page.getByTestId("hv2-metric-funding-pop")).toHaveText(v2.kpis.funding.hint);
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
-  await expect(page.getByTestId("home-action-eyebrow")).toHaveText("FLOW 建议");
+  await expect(page.getByTestId("home-action-eyebrow")).toHaveText("我们的建议");
   await expect(page.getByTestId("hv2-inspector-note")).toHaveText(v2.chart.lowest_inspector.note);
   await expect(page.getByTestId("home-legend")).toContainText("取决于方案执行");
   const w = worklistOffer.zh;
