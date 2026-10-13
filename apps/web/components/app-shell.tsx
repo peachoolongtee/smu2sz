@@ -10,12 +10,12 @@ import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } f
 import type { DictKey } from "@/lib/dictionary";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ArrowLeftIcon, ChevronRightIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
+import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
-import { toggleSidebar, useSidebarCollapsed } from "@/lib/use-sidebar";
+import { toggleSidebarPin, useSidebarPinned } from "@/lib/use-sidebar";
 import { Badge, Button, Segmented, textLinkClass } from "./ui";
 
 /** Business mode: six sections, each a question the owner asks. */
@@ -329,28 +329,68 @@ function useDock(ref: RefObject<HTMLElement | null>) {
 
 /** The phone tab bar: one icon and word per section. The current tab's icon takes its section's hue, its word stays in ink, and a bar slides to it. */
 /**
- * The sidebar's toggle, at its foot and on a laptop only (1024 to 1366 px; wider screens always have the full sidebar): an icon button whose chevron points the way it
- * will move, with its name as the tooltip (hover and keyboard focus) and as the accessible name. It collapses the sidebar to its icons and opens it again, and the
- * choice is kept (lib/use-sidebar.ts); `aria-expanded` says where the sidebar is now.
+ * The rail's "Keep open" (a pin), at its foot: it pins the rail open and lays the page out beside it, and releases it again; `aria-pressed` says which. Its name is "Keep open" (the
+ * rail shows the word while it is open, the pin alone while it is collapsed). The choice is kept (lib/use-sidebar.ts).
  */
 function SidebarToggle({ controls }: { controls: string }) {
   const { t } = useI18n();
-  const collapsed = useSidebarCollapsed();
-  const label = t(collapsed ? "nav.sidebar.expand" : "nav.sidebar.collapse");
+  const pinned = useSidebarPinned();
+  const label = t("nav.sidebar.pin");
   return (
     <button
       type="button"
-      onClick={toggleSidebar}
-      aria-expanded={!collapsed}
+      onClick={toggleSidebarPin}
+      aria-pressed={pinned}
       aria-controls={controls}
       aria-label={label}
       data-testid="sidebar-toggle"
-      className="side-toggle side-tip-host motion-press relative mb-1 hidden min-h-11 w-full items-center gap-3 rounded-control px-3 text-ink-2 hover:bg-subtle hover:text-ink laptop:flex"
+      className="side-toggle motion-press relative mb-1 flex min-h-11 w-full items-center gap-3 rounded-control px-2.5 text-sm font-medium text-ink-2 hover:bg-subtle hover:text-ink"
     >
-      <ChevronRightIcon width={20} height={20} className={`shrink-0 text-ink-3 ${collapsed ? "" : "rotate-180"}`} />
-      <span aria-hidden className="side-tip">{label}</span>
+      <svg viewBox="0 0 20 20" width="20" height="20" fill={pinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden className={`shrink-0 ${pinned ? "text-brand-600" : "text-ink-3"}`}>
+        <path d="M7 3h6l-1 5 3 3H5l3-3-1-5Z" />
+        <path d="M10 11v6" />
+      </svg>
+      <span aria-hidden className="side-label">
+        {label}
+      </span>
     </button>
   );
+}
+
+/**
+ * The rail's own open state: it opens at once when the pointer is on it or focus moves into it, and closes 150 ms after the pointer leaves or focus moves out, so a brush past
+ * the edge does not flicker it. Pinned, it is always open (the layout says so from <html>). It is an overlay: the page beside it does not move.
+ */
+function useRail() {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => cancel, []);
+  const show = () => {
+    cancel();
+    setOpen(true);
+  };
+  const hide = () => {
+    cancel();
+    timer.current = setTimeout(() => setOpen(false), 150);
+  };
+  return {
+    open,
+    handlers: {
+      onPointerEnter: show,
+      onPointerLeave: hide,
+      onFocus: show,
+      onBlur: (e: React.FocusEvent<HTMLElement>) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hide();
+      },
+      onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.key === "Escape") setOpen(false);
+      },
+    },
+  };
 }
 
 const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
@@ -369,6 +409,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const counts = useNavCounts();
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
+  const rail = useRail();
   return (
     <div className="min-h-dvh">
       <SkipLink />
@@ -391,36 +432,41 @@ function BusinessShell({ children }: { children: ReactNode }) {
       </header>
       {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
-      <div className="shell-grid lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] flex-col border-r border-line bg-canvas px-3 pb-20 pt-5 lg:flex">
-          <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
-            <ul className="space-y-1">
-              {BUSINESS_NAV.map((n) => {
-                const active = pathname === n.href;
-                const section = TAB_SECTION[n.href];
-                const Icon = SECTIONS[section].icon;
-                return (
-                  <li key={n.href}>
-                    <Link
-                      href={n.href}
-                      aria-current={active ? "page" : undefined}
-                      aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
-                      className={`side-link motion-press relative flex min-h-11 items-center gap-3 rounded-control px-3 text-sm ${
-                        active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
-                      }`}
-                    >
-                      <Icon width={20} height={20} className={active ? "text-brand-600" : "text-ink-3"} />
-                      <span className="side-label">{t(n.key)}</span>
-                      <NavCount href={n.href} n={counts[n.href as NavKey]} className="side-count ml-auto" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-          <div className="mt-auto">
-            <p className="side-foot px-3 pb-2 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
-            <SidebarToggle controls="nav-pills" />
+      <div className="shell-grid lg:grid lg:grid-cols-[3.5rem_minmax(0,1fr)]">
+        {/* The rail: a 56 px column of icons; its panel opens over the page to 200 px (no reflow) on hover or focus, or stays open once pinned. */}
+        <aside className="rail relative hidden lg:block" data-rail={rail.open ? "open" : "closed"} {...rail.handlers} data-testid="nav-rail">
+          <div className="sticky top-16 h-[calc(100dvh-4rem)]">
+            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden border-r border-line bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
+              <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
+                <ul className="space-y-1">
+                  {BUSINESS_NAV.map((n) => {
+                    const active = pathname === n.href;
+                    const section = TAB_SECTION[n.href];
+                    const Icon = SECTIONS[section].icon;
+                    return (
+                      <li key={n.href}>
+                        <Link
+                          href={n.href}
+                          aria-current={active ? "page" : undefined}
+                          aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
+                          className={`side-link motion-press relative flex min-h-11 items-center gap-3 rounded-control px-2.5 text-sm ${
+                            active ? "bg-surface font-bold text-brand-700 shadow-[0_1px_3px_rgb(36_50_74/0.10)]" : "font-medium text-ink-2 hover:bg-subtle hover:text-ink"
+                          }`}
+                        >
+                          <Icon width={20} height={20} className={`shrink-0 ${active ? "text-brand-600" : "text-ink-3"}`} />
+                          <span className="side-label">{t(n.key)}</span>
+                          <NavCount href={n.href} n={counts[n.href as NavKey]} className="side-count ml-auto" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+              <div className="mt-auto">
+                <p className="side-foot px-3 pb-2 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+                <SidebarToggle controls="nav-pills" />
+              </div>
+            </div>
           </div>
         </aside>
       <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
