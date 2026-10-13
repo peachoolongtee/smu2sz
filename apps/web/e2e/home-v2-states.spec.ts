@@ -168,11 +168,11 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   for (const [id, k] of [["cash", v2.kpis.cash_available], ["lowest", v2.kpis.lowest_ahead], ["funding", v2.kpis.funding]] as const) {
     await expect(page.getByTestId(`hv2-metric-${id}-label`)).toHaveText(label(lang, `hv2.metric.${id}` as keyof typeof en));
     await expect(page.getByTestId(`home-kpi-${id}-value`)).toHaveText(k.value_display);
-    if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(page.getByTestId("home-buffer-headroom")).toHaveText(v2.kpis.cash_available.buffer.headroom_text);
-    // The note is the read's (the short one when the server sends it); on a phone the funding cell leaves it to the recommendation's facts once its status line stands in.
+    // Each level has one job: the cash note is the headroom with the dictionary's word ("+¥100k buffer"), the lowest one the server's short note, the funding cell its status line (the sentence is the recommendation's fact).
     const note = page.getByTestId(`home-kpi-${id}-note`);
     if (id === "lowest") await expect(note).toHaveText(v2.kpis.lowest_ahead.short_note ?? k.note);
-    else if (id === "funding" && v2.kpis.funding.status_text && (page.viewportSize()?.width ?? 1440) < 768) await expect(note).toBeHidden();
+    else if (id === "funding" && v2.kpis.funding.status_text) await expect(note).toHaveCount(0);
+    else if (id === "cash" && v2.kpis.cash_available.buffer.headroom_text) await expect(note).toHaveText(`${v2.kpis.cash_available.buffer.headroom_text} ${label(lang, "hv2.metric.buffer")}`);
     else await expect(note).toHaveText(k.note);
   }
   if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
@@ -188,8 +188,9 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
 async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
   const alert = scope.getByTestId("home-worklist-alert");
   if (read.alert) {
-    await expect(alert).toContainText(read.alert.text);
-    await expect(alert).toContainText(read.alert.eyebrow);
+    const said = read.alert as typeof read.alert & { kind_text?: string | null; pending_text?: string | null };
+    await expect(alert).toContainText(said.pending_text ?? said.text);
+    await expect(alert).toContainText(said.kind_text ?? said.eyebrow);
     await expect(scope.getByTestId("home-worklist-alert-go")).toContainText(read.alert.primary.label);
   } else await expect(alert).toHaveCount(0);
   const tabs = [["needs_you", read.needs_you], ["waiting", read.waiting], ["customers", read.customers]] as const;
@@ -203,8 +204,12 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView) {
     const el = scope.getByTestId("home-worklist-row");
     if (rows.length === 0) {
       await expect(el).toHaveCount(0);
-      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
-      await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+      const said = (read as WorklistView & { needs_you_empty_text?: string | null }).needs_you_empty_text;
+      if (tab === "needs_you" && said) await expect(scope.getByTestId("home-worklist-empty")).toContainText(said);
+      else {
+        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, "hv2.work.empty.title"));
+        await expect(scope.getByTestId("home-worklist-empty")).toContainText(label(lang, tab === "needs_you" ? "hv2.work.empty.needs" : tab === "waiting" ? "hv2.work.empty.waiting" : "hv2.work.empty.customers"));
+      }
       continue;
     }
     await expect(el).toHaveCount(rows.length);
