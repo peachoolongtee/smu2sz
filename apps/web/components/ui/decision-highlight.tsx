@@ -30,7 +30,7 @@ export function DecisionHighlight({
   aside?: ReactNode;
   /** Under the facts row, inside the block: what the funding timing fact opens. */
   below?: ReactNode;
-  /** One quiet line under the actions (who approves). */
+  /** One 13 px line under the actions (who approves): quiet when none is needed, in the warn tone when the owner must. */
   note?: ReactNode;
   children?: ReactNode;
   testId?: string;
@@ -51,7 +51,7 @@ export function DecisionHighlight({
       ) : null}
       {hero ? (
         <div className="mt-2.5 border-t border-line-strong pt-2.5 sm:mt-4 sm:pt-3" data-testid="hv2-action-facts">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className={`grid grid-cols-2 gap-x-6 gap-y-2.5 ${aside ? "sm:grid-cols-[auto_minmax(0,1fr)_auto]" : "sm:grid-cols-[auto_minmax(0,1fr)]"}`}>
             <div className="min-w-0">
               <p className="text-supporting text-ink-3">{hero.label}</p>
               <p className="mt-0.5 sm:mt-1">

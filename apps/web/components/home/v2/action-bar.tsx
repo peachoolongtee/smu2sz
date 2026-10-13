@@ -5,7 +5,7 @@ import { usePlanRun } from "@/components/business/next-action";
 import type { useFixAlert } from "@/components/home/fix-alert";
 import { ActionGroup } from "@/components/ui/action-group";
 import { FundingComposition, FundingFact, useFunding } from "@/components/home/v2/funding-composition";
-import { AlertIcon } from "@/components/icons";
+import { AlertIcon, CheckIcon } from "@/components/icons";
 import { DecisionHighlight, HealthBand } from "@/components/ui/decision-highlight";
 import { Button, ButtonLink, textLinkClass } from "@/components/ui";
 import { useId } from "react";
@@ -37,7 +37,7 @@ function PlanControls({ a, run, stateVersion, fixer }: { a: HomeV2Action; run: H
 }
 
 /**
- * The recommendation (`DecisionHighlight`): "FLOW recommends", the server's title, one line, the server's facts (Estimated cost, Funding, Approval) and then the plan's
+ * The recommendation (`DecisionHighlight`): "What we recommend", the server's title, one line, the cost and the funding facts and then the plan's
  * confirm-and-run control as the page's one filled button with "Compare funding options" outlined beside it. Without a control there is no filled button: an action with only a
  * way to look (the options) is an outline button and a quiet link, and the quiet variant ("nothing needs you from the company side") is the same block with no buttons.
  * While a customer or a deal is selected it is the health band instead: one row, the company's sentence and cost, and an OUTLINED "Review funding plan" that returns to it.
@@ -91,8 +91,8 @@ export function HomeV2ActionBar({
   const run = action.control && nextAction ? nextAction : null;
   const facts = factsOf(action);
   // The card is compact: the title, one line that reconciles with the strip (the server's `consequence_text`; until it sends it, the Home read's note), the three facts in one row
-  // (the cost to the owner as the hero figure, the funding timing, who decides) and the actions. The funding timing carries the composition of the plan (hover or focus, a tap, `?funding=1`).
-  // Who approves is one more line under the actions only when the owner must approve.
+  // (the cost to the owner as the hero figure, the funding timing) and the actions. The funding timing carries the composition of the plan (hover or focus, a tap, `?funding=1`).
+  // Who approves is one 13 px line under the actions, in both forms: the check glyph and the server's sentence in the quiet ink, or the warn glyph and the sentence in the warn tone when the owner must approve.
   const three = facts?.length === 3 ? facts : null;
   const legs = action.legs?.length ? action.legs : null;
   const needsOwner = Boolean(nextAction?.needs_owner);
@@ -110,19 +110,11 @@ export function HomeV2ActionBar({
               <FundingFact label={three[1].label} value={three[1].value} open={funding.open} id={`${uid}-fact`} controls={`${uid}-comp`} toggle={funding.toggle} pointer={funding.pointer} focus={funding.focus} hasLegs={Boolean(legs)} />
             ) : undefined
           }
-          aside={
-            three ? (
-              <div data-testid="hv2-authority">
-                <p className="text-supporting text-ink-3">{three[2].label}</p>
-                <p className="mt-1 text-supporting font-bold text-ink sm:text-sm">{three[2].value}</p>
-              </div>
-            ) : undefined
-          }
           below={three && legs && funding.open ? <FundingComposition legs={legs} total={fundingTotal ?? ""} id={`${uid}-comp`} labelledBy={`${uid}-fact`} basis={action.cost_basis_text} pointer={funding.pointer} /> : undefined}
           note={
-            three && needsOwner ? (
-              <p className="flex items-center gap-1.5 font-semibold text-warn-fg" data-testid="hv2-approval">
-                <AlertIcon className="size-3.5 shrink-0 text-warn-solid" />
+            three ? (
+              <p className={`flex items-center gap-1.5 ${needsOwner ? "font-semibold text-warn-fg" : ""}`} data-testid="hv2-approval" data-needs-owner={needsOwner}>
+                {needsOwner ? <AlertIcon className="size-3.5 shrink-0 text-warn-solid" /> : <CheckIcon className="size-3.5 shrink-0 text-ok-solid" />}
                 {three[2].value}
               </p>
             ) : undefined

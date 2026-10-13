@@ -34,7 +34,6 @@ import type {
   InputSaveResult,
   InputSheetView,
   CustomersView,
-  FeaturesView,
   DealsView,
   NavCounts,
   OfferPictureView,
@@ -751,23 +750,26 @@ export async function getHome(lang: "en" | "zh"): Promise<HomeView> {
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   const counter = openOfferStage() === "evaluated";
   const older = home.mockHome(dealt, lang, counter);
-  // Home V2: with its session key set, the recording taken with FEATURE_HOME_V2 for this point of the story (the older read otherwise).
-  return withHomePatch((await homeV2.mockHomeV2(homeV2.homeV2Point(dealt, counter), lang, older)) ?? older);
+  // Home V2 is the Home: the recording of this point of the story whole; where none was taken (a deal made, day 2, day 34 and later) the older read the other pages
+  // take their figures from, with the `home_v2` block of the nearest recording.
+  const recorded = homeV2.homeV2Recorded(dealt, counter);
+  if (recorded) return withHomePatch(await homeV2.mockHomeV2(recorded, lang, older));
+  return withHomePatch({ ...older, home_v2: await homeV2.mockHomeV2Block(homeV2.homeV2Point(dealt, counter), lang) });
 }
 
-/** GET /health's switches: Home V2 is on while its session key is set (lib/mock/home-v2.ts). */
-export async function getFeatures(): Promise<FeaturesView> {
-  await delay();
-  return homeV2.mockFeatures();
-}
-
-/** The point of the story the Home V2 lists were recorded at. */
+/** The point of the story the Home V2 lists were recorded at (the nearest recording where none was taken). */
 function homeV2Point(): ReturnType<typeof homeV2.homeV2Point> {
   const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
   return homeV2.homeV2Point(dealt, openOfferStage() === "evaluated");
 }
 
-/** GET /worklist (Home V2): the recording for this point of the story; null (as a server with the flag off) without the session key or where none was taken. Owner only, as live. */
+/** The point the open package offer was recorded at; null while that offer is not the one open on the books. */
+function homeV2Recorded(): ReturnType<typeof homeV2.homeV2Recorded> {
+  const dealt = Object.values(load().negotiated).some((n) => n.outcome === "DEAL");
+  return homeV2.homeV2Recorded(dealt, openOfferStage() === "evaluated");
+}
+
+/** GET /worklist (Home V2): the recording for this point of the story (the nearest where none was taken). Owner only, as live. */
 export async function getWorklist(lang: "en" | "zh"): Promise<WorklistView | null> {
   await delay();
   if (!getOwnerToken()) {
@@ -790,14 +792,14 @@ export async function getDealPicture(offerId: string, lang: "en" | "zh"): Promis
   await delay();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
-  const view = await homeV2.mockDealPicture(homeV2Point(), lang);
+  const view = await homeV2.mockDealPicture(homeV2Recorded(), lang);
   return view ? { ...view, offer_id: offerId } : null;
 }
 
 /** The deal chart's title for Home V2: Home V2's recording while the package offer is open; else null. */
 export async function getDealTitle(lang: "en" | "zh"): Promise<string | null> {
   await delay();
-  return homeV2.mockDealTitle(homeV2Point(), lang);
+  return homeV2.mockDealTitle(homeV2Recorded(), lang);
 }
 
 /** GET /offers/{id}/exposure for Home V2's deal focus: the recording of the package offer's exposure while that offer is open on the books, else absent (null). */
@@ -805,7 +807,7 @@ export async function getDealExposure(offerId: string, lang: "en" | "zh"): Promi
   await delay();
   const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
   if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
-  const view = await homeV2.mockDealExposure(homeV2Point(), lang);
+  const view = await homeV2.mockDealExposure(homeV2Recorded(), lang);
   return view ? { ...view, offer_id: offerId } : null;
 }
 

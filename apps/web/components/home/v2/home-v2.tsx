@@ -12,6 +12,7 @@ import { DealFocusPanel } from "@/components/home/v2/deal-focus";
 import { HomeV2Links } from "@/components/home/v2/link-row";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { WorklistSheet } from "@/components/home/v2/worklist-sheet";
+import { ErrorState } from "@/components/ui";
 import { getCustomers, getWorklist } from "@/lib/api";
 import { type HomeDealView, type HomeSelection, NO_SELECTION, readDealView, readSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
@@ -77,33 +78,44 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     if (!focusing || !narrow) return;
     document.getElementById("home-focus")?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [panelKey, focusing, narrow]);
-  if (!v2) return null;
   const cash = h.cash;
   const tone = cash.status_tone ?? "neutral";
   const headline = cash.headline_conditional || h.headline;
+  const header = (
+    <header className="motion-reveal mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1.5 sm:mb-6" data-testid="home-status" data-status={h.status}>
+      <p className="text-supporting font-bold text-ink-3" data-testid="hv2-page-name">
+        {t("hv2.title")}
+      </p>
+      {cash.last_read_when ? (
+        <p className="text-supporting text-ink-3" aria-label={t("biz.readWhen", { when: cash.last_read_when })} data-testid="home-read-when">
+          {t("hv2.updated")}
+        </p>
+      ) : null}
+      <h1 className="col-span-2 flex items-baseline gap-2.5 font-display text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:gap-3 sm:text-[28px]" data-testid="hv2-headline">
+        <span aria-hidden className={`size-2.5 shrink-0 -translate-y-0.5 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
+        <span className="sr-only" data-testid="home-status-word">
+          {cash.status_word ?? h.status_text}
+        </span>
+        <span data-testid="home-headline">{headline}</span>
+      </h1>
+    </header>
+  );
+  // The block the server could not read: the status stays, and the page says so with Retry (never an empty page).
+  if (!v2)
+    return (
+      <div aria-busy={loading} data-testid="home-v2" className="min-w-0">
+        {header}
+        <PartialRead partial={h.partial} onRetry={onRetry} />
+        {h.partial?.missing?.length ? null : <ErrorState error={t("hv2.unread")} onRetry={onRetry} />}
+      </div>
+    );
   const buyer = worklist.data?.customers.find((c) => c.customer_id === selection.customer)?.short ?? "";
   const row = selection.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === selection.decision) ?? null) : null;
   // A worklist the server does not have (null) leaves the page without the pane; a failed one says so in the pane, with Retry.
   const hasWorklist = worklist.data !== null;
   return (
     <div aria-busy={loading} data-testid="home-v2" className="min-w-0">
-      <header className="motion-reveal mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1.5 sm:mb-6" data-testid="home-status" data-status={h.status}>
-        <p className="text-supporting font-bold text-ink-3" data-testid="hv2-page-name">
-          {t("hv2.title")}
-        </p>
-        {cash.last_read_when ? (
-          <p className="text-supporting text-ink-3" aria-label={t("biz.readWhen", { when: cash.last_read_when })} data-testid="home-read-when">
-            {t("hv2.updated")}
-          </p>
-        ) : null}
-        <h1 className="col-span-2 flex items-baseline gap-2.5 font-display text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:gap-3 sm:text-[28px]" data-testid="hv2-headline">
-          <span aria-hidden className={`size-2.5 shrink-0 -translate-y-0.5 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
-          <span className="sr-only" data-testid="home-status-word">
-            {cash.status_word ?? h.status_text}
-          </span>
-          <span data-testid="home-headline">{headline}</span>
-        </h1>
-      </header>
+      {header}
       <PartialRead partial={h.partial} onRetry={onRetry} />
       <div className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_minmax(340px,30%)] xl:items-start">
         <div className="min-w-0 space-y-4 sm:space-y-6">

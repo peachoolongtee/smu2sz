@@ -386,11 +386,10 @@ test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the pl
   await page.goto("/");
   const alertId = (await page.getByTestId("home-next-action").getAttribute("data-alert"))!;
   expect(await bottomOf(page, `fix-open-${alertId}`)).toBeLessThanOrEqual(700);
-  // The minimum is named on the chart's own line, and today's cash is the first fact; the card is in the page's flow (not sticky), above the chart.
-  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
-  await expect(page.getByTestId("home-fact-today")).toBeVisible();
-  await page.setViewportSize({ width: 1366, height: 900 });
-  await expect(page.getByTestId("home-chart")).toContainText("Minimum cash reserve ¥300k");
+  // Today's cash is the strip's first cell; the recommendation is in the page's flow (not sticky), above the chart.
+  await expect(page.getByTestId("home-kpi-cash-value")).toBeVisible();
+  const [cardBox, chartBox] = await Promise.all([page.getByTestId("hv2-action").boundingBox(), page.getByTestId("home-chart").boundingBox()]);
+  expect(cardBox!.y + cardBox!.height).toBeLessThanOrEqual(chartBox!.y + 1);
 });
 
 test("at tablet width (820) the open invoices are one card each, so no column is clipped", async ({ page }, testInfo) => {

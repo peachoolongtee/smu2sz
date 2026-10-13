@@ -85,15 +85,18 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
 // and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet
 // with the economics fields refused and the server's sentence for it), which the mock serves while the spec's hook key is set.
-// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of three
+// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of six
 // moments the mock chooses among (lib/mock/home-v2.ts), { en, zh } of GET /home (the full read, with its `home_v2` block), GET /worklist and GET /customers:
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
+//   day34       the deal made, the day-2 receipt, the clock at day 34 (the late invoice; the reserve alert open with its cure)
+//   pending     the day-34 cure queued for the owner's approval
+//   after       the cure approved
 // and, for the focus panels (slice 2; deal_title_offer.json = { en, zh } of GET /home?decision= `chart.scenario_title_text`; picture_offer.json = { en, zh } of GET /offers/<EX01>/picture, for the paths' words), focus_<point>.json = { en, zh } of { customers: { <id>: GET /customers/<id>/overview }, deals: { none | asked | counter:0:
 // the same read with the open decision and that scenario, so `context` echoes them } } (deals only at `offer`), and exposure_offer.json = { en, zh } of GET /offers/<EX01>/exposure?customer=.
-// The API needs FEATURE_HOME_V2=1 and the flags above:
-//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 FEATURE_HOME_V2=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
+// The API needs the flags above (Home V2 has none):
+//   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 FEATURE_EXPOSURE=1 SKIP_PERF_BENCH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8182
 //   node scripts/record-mocks.mjs --api http://localhost:8182 --home-v2
 //
 // Verified by running the recorder twice on the same API and on two fresh APIs: `git status --short apps/web/mocks` is empty.
@@ -488,16 +491,16 @@ if (OVERVIEW) {
   process.exit(0);
 }
 
-// --home-v2: the Home V2 reads at three moments and nothing else (see the header).
+// --home-v2: the Home V2 reads at six moments and nothing else (see the header).
 if (HOME_V2) {
   mkdirSync(join(OUT, "home_v2"), { recursive: true });
   const reads = async () => {
     const both = async (read) => ({ en: await inLang("en", () => read("en")), zh: await inLang("zh", () => read("zh")) });
     const home = await both((lang) => live.getHome(lang));
-    if (!home.en.home_v2) throw new Error("the Home read carries no home_v2: start the API with FEATURE_HOME_V2=1");
+    if (!home.en.home_v2) throw new Error("the Home read carries no home_v2: the API is older than Home V2");
     const worklist = await both((lang) => live.getWorklist(lang));
     const customers = await both((lang) => live.getCustomers(lang));
-    if (!worklist.en || !customers.en) throw new Error("GET /worklist or /customers is off: start the API with FEATURE_HOME_V2=1");
+    if (!worklist.en || !customers.en) throw new Error("GET /worklist or /customers is absent: the API is older than Home V2");
     // The focus panels' reads: every customer's overview, and at the point where an offer is open its deal under each scenario and its exposure.
     const decisionRow = worklist.en.needs_you.find((r) => r.kind === "DECISION");
     const focusOf = async (lang) => {
@@ -517,6 +520,7 @@ if (HOME_V2) {
   };
   const keep = (point, got) => {
     for (const kind of ["home", "worklist", "customers", "focus"]) write(`home_v2/${kind}_${point}.json`, got[kind]);
+    if (point !== "offer") return; // the deal's own reads belong to the moment its offer is open
     if (got.exposure) write("home_v2/exposure_offer.json", got.exposure);
     if (got.picture) write("home_v2/picture_offer.json", got.picture);
     if (got.title) write("home_v2/deal_title_offer.json", got.title);
@@ -532,6 +536,21 @@ if (HOME_V2) {
     const a = (await live.getHome("en")).next_action;
     await live.actOnAlert(a.alert_id, { state_version: a.state_version, suggestions: a.suggestions });
     keep("after_fund", await reads());
+  }
+  // Day 34 (the deal, the day-2 receipt, the clock to day 34: the late invoice and the reserve alert open), then the cure queued for the owner's approval, then approved.
+  await toDay34();
+  keep("day34", await reads());
+  {
+    const alerts = await live.getAlerts();
+    const reserve = alerts.alerts.find((x) => x.id.startsWith("ALERT-RESERVE") && x.actionable);
+    if (!reserve) throw new Error("no actionable reserve alert on day 34: the demo path has changed");
+    await live.actOnAlert(reserve.id, {
+      state_version: alerts.state_version,
+      suggestions: reserve.suggested.map((x) => ({ operation_kind: x.operation_kind, facility_id: x.facility_id, receivable_id: x.receivable_id, amount_fen: x.amount_fen })),
+    });
+    keep("pending", await reads());
+    await live.decideApproval((await live.getApprovals())[0].id, "APPROVE");
+    keep("after", await reads());
   }
   await live.demoReset();
   console.log(`recorded ${written.length} Home V2 files into ${join(OUT, "home_v2")} from ${API}`);

@@ -75,7 +75,7 @@ test("reduced motion: one transition per token keeps only opacity, at its own to
 });
 
 test("three card types: a standard card has a hairline and no shadow, the decision card one soft shadow and no frost, the selected card the tint and a 3 px rule", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/cash"); // the plan bar there is the page's decision card
   await expect(page.getByTestId("home-next-action").first()).toBeVisible({ timeout: 15_000 });
   const styles = await page.evaluate(() => {
     const read = (el: Element) => {
@@ -102,7 +102,7 @@ test("three card types: a standard card has a hairline and no shadow, the decisi
   expect(styles.selected.bg).toBe("rgb(230, 241, 255)");
   expect(styles.selected.left).toBe("3px");
   expect(styles.selected.leftColor).toBe("rgb(3, 104, 233)");
-  // The attention card on Home is the decision card: solid, one soft shadow, no frost.
+  // The plan bar on Cash & funding is the decision card: solid, one soft shadow, no frost.
   expect(styles.live?.shadow).toBe(styles.decision.shadow);
   expect(styles.live?.blur).toBe("none");
   expect(styles.live?.bg).toBe("rgb(255, 255, 255)");
@@ -131,8 +131,8 @@ const smallFinancialText = (page: import("@playwright/test").Page) =>
   });
 
 test("type scale: the roles are variables, the headline steps with the screen, and no figure or qualification on the five pages is under 13 px", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
+  await page.goto("/cash"); // the page headline role (Home V2's own header is a fixed 20 / 28 px)
+  await expect(page.getByTestId("cash-headline")).toBeVisible({ timeout: 15_000 });
   const vars = await page.evaluate(() => {
     const probe = (v: string) => {
       const el = document.createElement("div");
@@ -152,9 +152,9 @@ test("type scale: the roles are variables, the headline steps with the screen, a
   expect(vars["--text-section"]).toBeGreaterThanOrEqual(17);
   expect(vars["--text-section"]).toBeLessThanOrEqual(20);
   expect(vars["--text-value"]).toBe(30);
-  // The Home headline is 36 px on a desktop, 34 px at tablet width and 26 px on a phone; a major value is 30, 28 and 24: the headline always dominates it.
+  // The page headline is 36 px on a desktop, 34 px at tablet width and 26 px on a phone; a major value is 30, 28 and 24: the headline always dominates it.
   const size = (id: string) => page.getByTestId(id).evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-  const head = async () => size("home-headline");
+  const head = async () => size("cash-headline");
   expect(vars["--text-headline"]).toBe(36);
   expect(await head()).toBe(36);
   await page.setViewportSize({ width: 820, height: 900 });
@@ -255,8 +255,8 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
   }
 
-  // The rail never covers the page's primary button: collapsed it is 56 px at 1280 and 1440; opened by the pointer it is a layer over the page that may overlap at 1280 (it is open
-  // only while the pointer or focus is on it, and closes after they leave) and does not at 1440; pinned, the page is laid out beside it (no overlap at 1280).
+  // The rail never covers the page's primary button at rest: collapsed it is 56 px at 1280 and 1440; opened by the pointer it is a layer over the page that may overlap (it is open
+  // only while the pointer or focus is on it, and closes after they leave); pinned, the page is laid out beside it (no overlap at 1280).
   for (const width of [1280, 1440] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
@@ -268,7 +268,7 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect.poll(() => panelWidth(page)).toBe(200);
     // The open rail reads as a layer: a soft shadow, and only while it is open.
     expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
-    if (width === 1440) expect((await primary.boundingBox())!.x, "1440 open").toBeGreaterThan(200);
+    // (Home is fluid, its content starts at the rail's edge plus a 32 px gutter, so the open layer may lie over its left edge at any laptop width; it closes when the pointer leaves, and pinned the page is laid out beside it, below.)
     await page.mouse.move(width - 100, 600);
     await expect.poll(() => panelWidth(page)).toBe(56);
     expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).toBe("none");

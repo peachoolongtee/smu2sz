@@ -86,7 +86,7 @@ export function Metric({
                 setOpen(false);
               }
             }}
-            className={`motion-press grid size-5 shrink-0 place-items-center rounded-pill hover:bg-brand-50 hover:text-brand-600 ${open ? "bg-brand-50 text-brand-600" : "text-ink-3"}`}
+            className={`hit motion-press grid size-5 shrink-0 place-items-center rounded-pill hover:bg-brand-50 hover:text-brand-600 ${open ? "bg-brand-50 text-brand-600" : "text-ink-3"}`}
             data-testid={`hv2-metric-${id}-info`}
           >
             <InfoIcon className="size-3.5" />

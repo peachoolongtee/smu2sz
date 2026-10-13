@@ -2763,7 +2763,7 @@ export interface HomeChangesCard {
 }
 
 /**
- * Home V2 (behind the server's FEATURE_HOME_V2): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
+ * Home V2 (the Home): the `home_v2` block of GET /home, and GET /worklist and GET /customers. Every word and figure is a string the
  * server wrote in the language asked for; `*_fen` and `day` only place a mark. Absent when the flag is off: the page is then the older Home.
  */
 export interface HomeV2Kpi {
@@ -2945,11 +2945,6 @@ export interface CustomersView {
   partial: { missing: string[]; missing_text?: string[]; text?: string } | null;
 }
 
-/** GET /health's switches (the server's feature flags); a flag the server does not know is absent. */
-export interface FeaturesView {
-  home_v2?: boolean;
-}
-
 export interface HomeView {
   day: Day;
   state_version: number;
@@ -3072,7 +3067,7 @@ export interface HomeView {
 
   counts: Record<AlertSeverity, number>;
   note_basis: string;
-  /** Home V2 (server flag FEATURE_HOME_V2): the three KPIs, the one action, the chart's scope and the links. Absent with the flag off, and the page is the older Home. */
+  /** Home V2: the three KPIs, the one action, the chart's scope and the links. Null when the server could not read it (then `partial` says so and the page offers Retry). */
   home_v2?: HomeV2 | null;
 }
 

@@ -46,14 +46,16 @@ test("the Home headline sits on the canvas with no card; the status is a tone do
   expect(contrast(await bg(dot), CANVAS)).toBeGreaterThan(3);
   expect(contrast(await color(word), CANVAS)).toBeGreaterThan(4.5);
   expect(contrast(await color(page.getByTestId("home-headline")), CANVAS)).toBeGreaterThan(4.5);
-  expect(contrast(await color(page.getByTestId("home-note")), CANVAS)).toBeGreaterThan(4.5);
   // The headline is one colour: the server's sentence is never parsed or part-coloured.
   expect(await page.getByTestId("home-headline").evaluate((el) => el.children.length)).toBe(0);
-  // The plan bar is the one raised surface, a DecisionCard (#112): a solid white fill (no frost) and its one soft shadow.
-  const bar = page.getByTestId("home-next-action");
-  expect(await bar.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+  // The recommendation is the one tinted block (Home V2's DecisionHighlight): a solid fill with no frost, no gradient and no shadow; its one line meets AA on it.
+  const bar = page.getByTestId("hv2-action");
+  const fill = await bg(bar);
+  expect(fill).not.toBe("rgba(0, 0, 0, 0)");
   expect(await bar.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
-  expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
+  expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
+  expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).toBe("none");
+  expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5);
   // Calm when healthy: the dot turns amber, and there is still no deep block.
   await page.getByTestId("fix-open-ALERT-RESERVE-12").click();
   await page.getByTestId("fix-ALERT-RESERVE-12").click();

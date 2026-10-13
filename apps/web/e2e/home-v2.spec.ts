@@ -2,7 +2,6 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
 import { filledBrand } from "./helpers";
-import day0 from "../mocks/home_summary_day0.json";
 import homeDay0 from "../mocks/home_v2/home_day0.json";
 import homeOffer from "../mocks/home_v2/home_offer.json";
 import homeAfter from "../mocks/home_v2/home_after_fund.json";
@@ -16,14 +15,13 @@ import pictureRec from "../mocks/home_v2/picture_offer.json";
 import customersOffer from "../mocks/home_v2/customers_offer.json";
 
 /**
- * Home V2 (the web page behind the server's FEATURE_HOME_V2), after the refinement: the header, the metric strip, the recommendation, the company cash forecast with its fixed
+ * Home V2 (the Home), after the refinement: the header, the metric strip, the recommendation, the company cash forecast with its fixed
  * inspector, the link row and the worklist as an inbox (a pane from `xl`, a bottom sheet on a phone); a selected customer or deal in place, the deal in three levels.
  *
- * Every string below is read from the recordings taken with the flag on (`mocks/home_v2/*.json`, `scripts/record-mocks.mjs --home-v2`): the words are the server's. The mock
- * plays a server with the flag on while the session key `tl-mock-home-v2` is set (lib/mock/home-v2.ts); without it the switch answers off and the Home is the older one.
+ * Every string below is read from the recordings (`mocks/home_v2/*.json`, `scripts/record-mocks.mjs --home-v2`): the words are the server's. The mock serves them always
+ * (lib/mock/home-v2.ts), the story state choosing the opening books, the package offer read, or the books after the plan ran.
  * The "offer" state is the opening books with the package offer read by FLOW (the plan is still ready; Needs you holds the Foshan decision).
  */
-const KEY = "tl-mock-home-v2";
 const ALERT = "ALERT-RESERVE-12";
 type Lang = "en" | "zh";
 
@@ -31,14 +29,13 @@ async function overflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-/** The session key and the language are set before the page loads. With `offer`, the owner has FLOW read the package offer first (the Deals page), as the Deals spec does. */
-async function open(page: Page, { lang = "en", flag = true, offer = false }: { lang?: Lang; flag?: boolean; offer?: boolean } = {}) {
+/** The language is set before the page loads. With `offer`, the owner has FLOW read the package offer first (the Deals page), as the Deals spec does. */
+async function open(page: Page, { lang = "en", offer = false }: { lang?: Lang; offer?: boolean } = {}) {
   await page.context().addInitScript(
-    ([key, on, l]) => {
-      if (on) sessionStorage.setItem(key as string, "1");
+    ([l]) => {
       localStorage.setItem("tl-lang", JSON.stringify({ lang: l }));
     },
-    [KEY, flag, lang] as const,
+    [lang] as const,
   );
   if (offer) {
     await page.goto("/deals");
@@ -49,28 +46,12 @@ async function open(page: Page, { lang = "en", flag = true, offer = false }: { l
     await expect(page.getByTestId("queue-heading")).toHaveText(headline);
   }
   await page.goto("/");
-  await expect(page.getByTestId(flag ? "home-v2" : "home-status")).toBeVisible();
-  if (flag) await expect(page.getByTestId("home-chart")).toBeVisible();
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  await expect(page.getByTestId("home-chart")).toBeVisible();
 }
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "mock-mode spec on the recorded story (the phone is measured inside it)");
-});
-
-test("flag off: the older Home, exactly, and no Home V2 anywhere", async ({ page }) => {
-  await open(page, { flag: false });
-  await expect(page.getByTestId("home-headline")).toHaveText(day0.cash.headline_conditional);
-  await expect(page.getByTestId("home-v2")).toHaveCount(0);
-  await expect(page.getByTestId("home-worklist")).toHaveCount(0);
-  await expect(page.getByTestId("home-next-action")).toBeVisible();
-  await expect(page.getByTestId("rail-mark-0")).toBeAttached();
-});
-
-test("a read that carries home_v2 under a server that says the switch is off is the older Home", async ({ page }) => {
-  await page.context().addInitScript(([v2]) => sessionStorage.setItem("tl-mock-home-patch", JSON.stringify({ home_v2: v2 })), [homeDay0.en.home_v2] as const);
-  await open(page, { flag: false });
-  await expect(page.getByTestId("home-headline")).toHaveText(day0.cash.headline_conditional);
-  await expect(page.getByTestId("home-v2")).toHaveCount(0);
 });
 
 test("the header and the metric strip: the status sentence, 'Updated today', and the three cells are the read's", async ({ page }) => {
@@ -117,7 +98,7 @@ test("the header and the metric strip: the status sentence, 'Updated today', and
   await expect(page.getByRole("progressbar")).toHaveCount(0);
 });
 
-test("the recommendation is compact: the title, one line that reconciles with the strip, three facts in a row, the actions; the approval line only when approval is needed", async ({ page }) => {
+test("the recommendation is compact: the title, one line that reconciles with the strip, two facts in a row, the actions, then one approval line in both forms", async ({ page }) => {
   await open(page, { offer: true });
   const a = homeOffer.en.home_v2.action as typeof homeOffer.en.home_v2.action & { consequence_text?: string | null };
   await expect(page.getByTestId("home-action-eyebrow")).toHaveText("What we recommend");
@@ -129,23 +110,76 @@ test("the recommendation is compact: the title, one line that reconciles with th
   await expect(page.getByTestId("hv2-action-facts")).toContainText("Cost to you");
   await expect(page.getByTestId("hv2-hero-value")).toHaveText(facts[0].value);
   await expect(page.getByTestId("hv2-funding-fact")).toContainText(facts[1].value);
-  await expect(page.getByTestId("hv2-authority")).toContainText(facts[2].value);
+  // The facts row keeps the cost and the funding only; who approves is the one line under the actions, not a fact.
+  await expect(page.getByTestId("hv2-action-facts")).not.toContainText(facts[2].label);
+  await expect(page.getByTestId("hv2-authority")).toHaveCount(0);
   // The facts are one row; nothing else (no timeline, no composition) is on the card until the funding fact is asked.
-  const row = await Promise.all(["hv2-hero-value", "hv2-funding-fact", "hv2-authority"].map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.y)));
+  const row = await Promise.all(["hv2-hero-value", "hv2-funding-fact"].map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.y)));
   expect(Math.max(...row) - Math.min(...row)).toBeLessThan(40);
   await expect(page.getByTestId("hv2-timeline")).toHaveCount(0);
   await expect(page.getByTestId("hv2-funding-composition")).toHaveCount(0);
-  // Approval is said once, in the Authority fact; no extra line unless the owner must approve.
-  await expect(page.getByTestId("hv2-approval")).toHaveCount(0);
+  // Approval is said once, as one 13 px line under the actions: with no approval needed the check glyph and the server's sentence in the quiet ink.
+  const approval = page.getByTestId("hv2-approval");
+  await expect(approval).toHaveText(facts[2].value);
+  await expect(approval).toHaveAttribute("data-needs-owner", "false");
+  await expect(approval.locator("svg")).toHaveCount(1);
+  expect(await approval.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBe(13);
+  expect(await approval.evaluate((n) => getComputedStyle(n).fontWeight)).not.toBe("600");
+  const [actionsBox, lineBox] = await Promise.all([page.getByTestId("home-attention-run").boundingBox(), approval.boundingBox()]);
+  expect(lineBox!.y).toBeGreaterThan(actionsBox!.y + actionsBox!.height - 1);
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
   await expect(page.getByTestId("next-action-alternatives")).toHaveText("Compare funding options");
   await expect(page.getByTestId("next-action-alternatives")).toHaveAttribute("href", a.secondary.href);
   expect(await filledBrand(page)).toBe(1);
-  // The two presses of the older Home: ask, then run exactly that; cancel returns.
+  // The plan's two presses: ask, then run exactly that; cancel returns.
   await page.getByTestId(`fix-open-${ALERT}`).click();
   await expect(page.getByTestId(`fix-confirm-${ALERT}`)).toBeVisible();
   await page.getByTestId(`fix-cancel-${ALERT}`).click();
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+});
+
+test("when the owner must approve, the same line is a warn-tone alert line with the server's approval sentence, still one line and no box", async ({ page }) => {
+  // A temporary in-spec patch of the recorded read (no recording has an approval waiting): the next action needs the owner and the action's third fact says so in a sentence of its own.
+  const sentence = "Needs your approval before it runs";
+  const action = { ...homeOffer.en.home_v2.action, facts: homeOffer.en.home_v2.action.facts!.map((f, i) => (i === 2 ? { ...f, value: sentence } : f)) };
+  await page.context().addInitScript(
+    ([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)),
+    ["tl-mock-home-patch", { next_action: { ...homeOffer.en.next_action!, needs_owner: true }, home_v2: { ...homeOffer.en.home_v2, action } }] as const,
+  );
+  await open(page, { offer: true });
+  const approval = page.getByTestId("hv2-approval");
+  await expect(approval).toHaveText(sentence);
+  await expect(approval).toHaveAttribute("data-needs-owner", "true");
+  await expect(approval.locator("svg")).toHaveCount(1);
+  expect(await approval.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBe(13);
+  expect(await approval.evaluate((n) => getComputedStyle(n).color)).not.toBe(await page.getByTestId("home-action-text").evaluate((n) => getComputedStyle(n).color));
+  expect(await approval.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgba(0, 0, 0, 0)"); // a line, not a box
+  expect((await approval.boundingBox())!.height).toBeLessThan(26);
+  await expect(page.getByTestId("hv2-action-facts")).not.toContainText("Approval");
+});
+
+// A block the server could not read (a supporting read failed): the status stays, the page says so with Retry, and never shows an empty page. In-spec patches of the recorded read.
+test("failed read: a home_v2 the server could not read leaves the status, the server's sentence and Retry, and no strip", async ({ page }) => {
+  const text = "Part of the home page could not be read: the company forecast.";
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: null, partial: { missing: ["home_v2"], missing_text: ["the company forecast"], text } }] as const);
+  await page.goto("/");
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  await expect(page.getByTestId("home-headline")).toHaveText(homeDay0.en.cash.headline_conditional || homeDay0.en.headline);
+  await expect(page.getByTestId("partial-read")).toContainText(text);
+  await expect(page.getByTestId("partial-retry")).toBeVisible();
+  await expect(page.getByTestId("home-kpi-cash-value")).toHaveCount(0);
+  await expect(page.getByTestId("home-chart")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-action")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(0); // Retry is not a filled button
+});
+
+test("failed read: a home_v2 that is absent without a sentence says so in the dictionary's words, with Retry", async ({ page }) => {
+  await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-home-patch", { home_v2: null }] as const);
+  await page.goto("/");
+  await expect(page.getByTestId("home-v2")).toBeVisible();
+  await expect(page.locator("main").getByRole("alert")).toContainText("This part of the home page could not be read");
+  await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  await expect(page.getByTestId("partial-read")).toHaveCount(0);
 });
 
 // The plan's legs are the server's `action.legs[]`, recorded with the rest of the read (`home_offer.json`).

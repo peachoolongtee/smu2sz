@@ -6,7 +6,7 @@ import { en, zh } from "../lib/dictionary";
 import type { HomeView, WorklistView } from "../lib/types";
 
 /**
- * Home V2, the state matrix (design/home-v2-2026-10-12/04_state_recipes.md): twelve states of the real page against the real API (the live project, FEATURE_HOME_V2 on), no recordings.
+ * Home V2, the state matrix (design/home-v2-2026-10-12/04_state_recipes.md): twelve states of the real page against the real API (the live project), no recordings.
  * Each test resets the Demo, drives the API with the recipe's sequence, then reads GET /home and GET /worklist itself and holds the page to those words (a money word is never written
  * here). Each state is opened at 1440 and 390 (the worklist sheet open) in English and Chinese. The dictionary supplies the labels the page owns; the server supplies everything else.
  */
@@ -181,6 +181,14 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
   for (const f of v2.action.facts ?? []) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
+  // The approval is one line under the actions in both forms: the quiet check line, or (the owner must approve) the warn line with the server's sentence.
+  if (v2.action.variant === "ACTION" && v2.action.facts?.length === 3) {
+    const line = page.getByTestId("hv2-approval");
+    await expect(line).toHaveText(v2.action.facts[2].value);
+    await expect(line).toHaveAttribute("data-needs-owner", String(Boolean(h.next_action?.needs_owner)));
+    await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
+  }
+  if (v2.action.control === "APPROVE_PLAN") await expect(page.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true");
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
 }
 
@@ -255,13 +263,8 @@ async function look(context: BrowserContext, reads: Reads, s: State, extra?: (pa
 
 // ---------------------------------------------------------------- the tests
 
-test.beforeEach(async ({ request }, testInfo) => {
-  test.skip(testInfo.project.name !== "live", "live-only: the real API with FEATURE_HOME_V2 on");
-  const health = await (await request.get(`${API}/health`)).json();
-  // The flag is set when this spec is named or E2E_HOME_V2=1 (playwright.config.ts): there it must be on, and a missing flag fails. In a whole-project run the API keeps the older Home and this spec has nothing to hold.
-  const flagged = process.env.E2E_HOME_V2 === "1" || process.argv.some((arg) => arg.includes("home-v2-states"));
-  if (!flagged) test.skip(!health.features.home_v2, "FEATURE_HOME_V2 is off on this API; run `e2e/home-v2-states.spec.ts --project=live` to set it");
-  else expect(health.features.home_v2, "the API under test must run with FEATURE_HOME_V2=1 (the config sets it for this spec)").toBe(true);
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== "live", "live-only: the real API");
 });
 
 for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {

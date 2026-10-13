@@ -37,7 +37,6 @@ import type {
   InputSaveResult,
   InputSheetView,
   CustomersView,
-  FeaturesView,
   DealsView,
   DocumentDecision,
   DocumentsList,
@@ -298,21 +297,12 @@ export async function getHome(lang: "en" | "zh", sinceDay: number | null = null)
   return isMock ? (await mock()).getHome(lang) : (await live()).getHome(lang, sinceDay);
 }
 
-/** GET /health's feature switches. Read once the Home read carries `home_v2` (a server with the flag off never sends it, so the older Home asks nothing). Never rejects: a server that cannot say has the switch off. */
-export async function getFeatures(): Promise<FeaturesView> {
-  try {
-    return isMock ? (await mock()).getFeatures() : await (await live()).getFeatures();
-  } catch {
-    return {};
-  }
-}
-
-/** GET /worklist (Home V2): the alert, the three tabs and their counts. Null when the server has Home V2 off. Owner only. */
+/** GET /worklist (Home V2): the alert, the three tabs and their counts. Null when the server does not have the route. Owner only. */
 export async function getWorklist(lang: "en" | "zh", sinceDay: number | null = null): Promise<WorklistView | null> {
   return isMock ? (await mock()).getWorklist(lang) : (await live()).getWorklist(lang, sinceDay);
 }
 
-/** GET /customers (Home V2): the customers and the terms the search filters them by. Null when the server has Home V2 off. Owner only. */
+/** GET /customers (Home V2): the customers and the terms the search filters them by. Null when the server does not have the route. Owner only. */
 export async function getCustomers(lang: "en" | "zh"): Promise<CustomersView | null> {
   return isMock ? (await mock()).getCustomers(lang) : (await live()).getCustomers(lang);
 }

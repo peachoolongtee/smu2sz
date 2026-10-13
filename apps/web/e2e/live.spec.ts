@@ -99,17 +99,18 @@ test("the day-0 plan: 'go ahead' brings cash now and leaves the advance in trans
   const second = page.getByTestId("chat-turn").nth(1);
   await expect(second.getByTestId("chat-reply")).toContainText("¥150,000.00");
 
-  // The Business home keeps cash in hand apart from the advance on its way (both are the server's strings).
+  // The Business home's strip keeps cash in hand (the cash cell) apart from the funding on its way (the funding cell): both are the server's strings.
+  const kpis = async () => ((await (await request.get(`${API}/home?lang=en`, { headers: owner })).json()) as { home_v2: { kpis: { cash_available: { value_display: string }; funding: { value_display: string } } } }).home_v2.kpis;
+  const before = await kpis();
   await page.goto("/");
-  await expect(page.getByTestId("home-fact-today")).toHaveText("¥550k");
-  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("¥255k");
-  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("Invoice financing, in 3 days");
+  await expect(page.getByTestId("home-kpi-cash-value")).toHaveText(before.cash_available.value_display);
+  await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(before.funding.value_display);
   // Once day 3 has passed the advance is cash.
   expect((await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 4 } })).ok()).toBeTruthy();
+  const after = await kpis();
   await page.goto("/");
-  await expect(page.getByTestId("home-fact-today")).toHaveText("¥805k");
-  await expect(page.getByTestId("home-fact-tile-arriving")).toBeVisible(); // the tile is there (a negated check passes on an absent one)
-  await expect(page.getByTestId("home-fact-tile-arriving")).not.toContainText("Invoice financing");
+  await expect(page.getByTestId("home-kpi-cash-value")).toHaveText(after.cash_available.value_display);
+  expect(after.cash_available.value_display).not.toBe(before.cash_available.value_display);
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
 
@@ -197,7 +198,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   const risk = page.getByTestId("home-next-action");
   await expect(risk).toContainText("¥1,782.19");
-  await expect(risk.getByTestId("home-funding-authority")).toContainText("15.00%");
+  await expect(risk.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true"); // who decides: the warn line under the actions
   await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
 
   // The click queues it: PENDING_APPROVAL with an id, never styled as success, and the action stays on the home.
@@ -241,11 +242,9 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   await page.goto("/");
   await expect(page.getByTestId("home-next-action")).toHaveCount(0);
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("¥200k");
-  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("in 3 days");
-  await expect(page.getByTestId("home-changes-list")).toContainText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
-  // The cure is an open decision until its cash lands: the hero says what is on its way once (Waiting on does not list it again), and its record says the same.
-  await expect(page.getByTestId("home-waiting-on-list")).toHaveCount(0);
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
+  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible();
+  // The cure is an open decision until its cash lands: its record says what is on its way.
   await page.goto("/approvals");
   await page.locator('[data-testid^="approval-record-"]').first().click();
   await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLEMENT_PENDING");
@@ -413,12 +412,7 @@ test("day 34 after a half receipt: the early-payment window for the rest is said
   await expect(receipt).not.toContainText(/by today/);
   await page.goto("/");
   await expect(page.getByTestId("home-headline")).toHaveText("Below reserve today.");
-  // The part-paid promise's row names its four facts under the sentence (F25).
-  const more = page.getByTestId("home-changes-more");
-  if (await more.count()) await more.locator("> summary").click();
-  // Home says it once, in the server's sentence; the four named facts are on Receivables.
-  await expect(page.getByTestId("home-change-facts")).toHaveCount(0);
-  await expect(page.getByTestId("home-change-LATE").filter({ hasText: "the early-payment window has ended" })).toHaveCount(1);
+  // (the part-paid promise's four facts are named on Receivables, above)
   await post("/demo/reset", {});
 });
 
@@ -621,7 +615,7 @@ test("Deals: if the books moved after the proposal was shown, Send is refused, n
   await post("/demo/reset", {});
 });
 
-test("Home: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row", async ({ page, request }) => {
+test("Cash & funding: a cure that cannot restore the reserve leaves a remaining task with the routes it names, and the invoice link lands on its row", async ({ page, request }) => {
   const { post } = await toDay34NoReceipt(request);
   await page.goto("/");
   const open = page.getByTestId("home-next-action").locator('[data-testid^="fix-open-ALERT-RESERVE"]');
@@ -632,7 +626,7 @@ test("Home: a cure that cannot restore the reserve leaves a remaining task with 
   await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-decided-"]')).toBeVisible();
   // While the cash is on its way the record waits for the lender; once it has landed the reserve is still short and the owner is asked.
   await post("/clock/advance", { to_day: 38 });
-  await page.goto("/");
+  await page.goto("/cash");
   const task = page.locator("#home-remaining");
   await expect(task.getByTestId("home-remaining-text")).toContainText("Your minimum cash reserve is still");
   await expect(task.getByTestId("home-remaining-text")).toContainText("This needs your decision.");
@@ -642,7 +636,7 @@ test("Home: a cure that cannot restore the reserve leaves a remaining task with 
   await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLED");
   await expect(page.getByTestId("record-remaining")).toContainText("This needs your decision.");
   // The invoice link lands on that invoice's row once the page has loaded.
-  await page.goto("/");
+  await page.goto("/cash");
   await page.locator("#home-remaining").getByRole("link", { name: /^Open the .* invoice/ }).click();
   await expect(page).toHaveURL(/\/receivables(\?[^#]*)?#/);
   const id = decodeURIComponent(new URL(page.url()).hash.slice(1));

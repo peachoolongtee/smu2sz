@@ -230,7 +230,7 @@ test("a refused approval ends in the record's words: it could not run, no money 
   await expect(page.getByTestId("record-state")).toContainText("Could not run");
 });
 
-test("Home: after the cure is approved, 'Waiting on' lists what is open and links to its record; Activity links each row to its record", async ({ page }) => {
+test("after the cure is approved, Home's strip says the funding is on its way; the approval links to its record; Activity links each row to its record", async ({ page }) => {
   await advanceTo(page, 34);
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
@@ -238,9 +238,9 @@ test("Home: after the cure is approved, 'Waiting on' lists what is open and link
   await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
-  // The position says what is on its way (the "Arriving next" fact), so "Waiting on" does not list the same funding again.
-  await expect(page.getByTestId("home-fact-tile-arriving")).toContainText("in 3 days");
-  await expect(page.getByTestId("home-waiting-on-list")).toHaveCount(0);
+  // The strip's funding cell says what is on its way (from the server's recording of the approved cure).
+  await expect(page.getByTestId("home-kpi-funding-value")).toBeVisible();
+  await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
   await page.goto("/approvals");
   await page.getByTestId("approval-record-APR-000001").click();
   await expect(page).toHaveURL(/\/decisions\/alert%3AALERT-RESERVE-42/);
@@ -257,11 +257,11 @@ test("Home: after the cure is approved, 'Waiting on' lists what is open and link
   await expect(page.getByText("That record is not here")).toBeVisible();
 });
 
-test("Home carries the remaining task, with the routes it names, after a cure that did not restore the reserve", async ({ page }) => {
+test("Cash & funding carries the remaining task, with the routes it names, after a cure that did not restore the reserve", async ({ page }) => {
   await page.goto("/");
   await hook(page, "tl-mock-no-receipt", "residual");
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   const task = page.locator("#home-remaining");
   await expect(task.getByTestId("home-remaining-text")).toContainText("Your minimum cash reserve is still ¥100,000.00 short from today");
   await expect(task.getByTestId("home-remaining-text")).toContainText("This needs your decision.");
@@ -284,12 +284,12 @@ test("Home carries the remaining task, with the routes it names, after a cure th
   await expect(row).toBeInViewport();
 });
 
-test("in Chinese the record page and the Home blocks read in Chinese from the recordings", async ({ page }) => {
+test("in Chinese the record page and the remaining task on Cash & funding read in Chinese from the recordings", async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await hook(page, "tl-mock-no-receipt", "residual");
   await advanceTo(page, 34);
-  await page.goto("/");
+  await page.goto("/cash");
   await expect(page.locator("#home-remaining")).toContainText("需要您决定");
   await page.locator("#home-remaining").getByRole("link", { name: "查看记录" }).click();
   await expect(page.getByTestId("record-state")).toContainText("已融资，储备仍有缺口");

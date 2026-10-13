@@ -1,0 +1,144 @@
+{
+  "en": {
+    "lang": "en",
+    "day": 34,
+    "state_version": 7,
+    "alert": {
+      "key": "company-cash",
+      "eyebrow": "Company cash",
+      "kind_text": "FLOW action ready",
+      "text": "Reserve unsafe in 8 days. The funding plan waits for your approval.",
+      "pending_text": "¥200k funding plan available · needs your approval · waits for your go",
+      "tone": "bad",
+      "primary": {
+        "label": "Review the plan",
+        "href": "/approvals#approval-APR-000001"
+      }
+    },
+    "counts": {
+      "needs_you": 1,
+      "waiting": 0,
+      "customers": 2
+    },
+    "needs_you": [
+      {
+        "key": "collection:BUYER-1",
+        "kind": "COLLECTION",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · ¥163k overdue",
+        "status_text": "Payment overdue · Your follow-up needed",
+        "consequence_text": "2 days overdue.",
+        "owner": "NEEDS_YOU",
+        "severity": "CRITICAL",
+        "deadline_day": 32,
+        "differentiator_text": null,
+        "why_first_text": "Why first: a payment you expected has not arrived.",
+        "href": "/?customer=BUYER-1",
+        "is_new": false
+      }
+    ],
+    "needs_you_empty_text": "Nothing else needs you.",
+    "waiting": [],
+    "customers": [
+      {
+        "customer_id": "BUYER-1",
+        "short": "Foshan",
+        "name": "Foshan Home Retail Co.",
+        "negotiations_count": 0,
+        "needs_you_count": 1,
+        "outstanding_display": "¥1,002,800",
+        "share_text": "100% of what you are owed",
+        "tone": "bad",
+        "status_text": "1 needs you",
+        "detail_text": "¥1,002,800 outstanding · 100% of what you are owed",
+        "href": "/?customer=BUYER-1"
+      },
+      {
+        "customer_id": "BUYER-2",
+        "short": "Dongguan",
+        "name": "Dongguan Office Supplies Ltd.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥0",
+        "share_text": null,
+        "tone": "neutral",
+        "status_text": "Nothing open",
+        "detail_text": "¥0 outstanding",
+        "href": "/?customer=BUYER-2"
+      }
+    ],
+    "partial": null
+  },
+  "zh": {
+    "lang": "zh",
+    "day": 34,
+    "state_version": 7,
+    "alert": {
+      "key": "company-cash",
+      "eyebrow": "公司现金",
+      "kind_text": "FLOW 已备好行动",
+      "text": "现金储备将在 8 天后变得不安全。融资方案正等待您批准。",
+      "pending_text": "¥200k 融资方案可用 · 需要您批准 · 等待您确认",
+      "tone": "bad",
+      "primary": {
+        "label": "查看方案",
+        "href": "/approvals#approval-APR-000001"
+      }
+    },
+    "counts": {
+      "needs_you": 1,
+      "waiting": 0,
+      "customers": 2
+    },
+    "needs_you": [
+      {
+        "key": "collection:BUYER-1",
+        "kind": "COLLECTION",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · 逾期 ¥163k",
+        "status_text": "款项已逾期 · 需要您跟进",
+        "consequence_text": "已逾期 2 天。",
+        "owner": "NEEDS_YOU",
+        "severity": "CRITICAL",
+        "deadline_day": 32,
+        "differentiator_text": null,
+        "why_first_text": "优先处理的原因：您预期的一笔款项没有到账。",
+        "href": "/?customer=BUYER-1",
+        "is_new": false
+      }
+    ],
+    "needs_you_empty_text": "没有其他事项需要您处理。",
+    "waiting": [],
+    "customers": [
+      {
+        "customer_id": "BUYER-1",
+        "short": "Foshan",
+        "name": "Foshan Home Retail Co.",
+        "negotiations_count": 0,
+        "needs_you_count": 1,
+        "outstanding_display": "¥1,002,800",
+        "share_text": "占您应收款的 100%",
+        "tone": "bad",
+        "status_text": "1 项需要您处理",
+        "detail_text": "未收 ¥1,002,800 · 占您应收款的 100%",
+        "href": "/?customer=BUYER-1"
+      },
+      {
+        "customer_id": "BUYER-2",
+        "short": "Dongguan",
+        "name": "Dongguan Office Supplies Ltd.",
+        "negotiations_count": 0,
+        "needs_you_count": 0,
+        "outstanding_display": "¥0",
+        "share_text": null,
+        "tone": "neutral",
+        "status_text": "没有进行中的事项",
+        "detail_text": "未收 ¥0",
+        "href": "/?customer=BUYER-2"
+      }
+    ],
+    "partial": null
+  }
+}
