@@ -382,10 +382,16 @@ function useRail() {
     handlers: {
       onPointerEnter: show,
       onPointerLeave: hide,
-      onFocus: show,
+      // A mouse that has moved on is not held by the focus its click left behind: only keyboard focus (focus-visible) opens it.
+      onFocus: (e: React.FocusEvent<HTMLElement>) => {
+        if ((e.target as HTMLElement).matches(":focus-visible")) show();
+      },
       onBlur: (e: React.FocusEvent<HTMLElement>) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) hide();
       },
+      // The same for a pointer that only sends mouse events.
+      onMouseEnter: show,
+      onMouseLeave: hide,
       onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === "Escape") setOpen(false);
       },

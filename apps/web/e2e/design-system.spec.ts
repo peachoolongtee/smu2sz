@@ -202,6 +202,24 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "0");
     const before = await mainBox(page);
 
+    // Collapsed, the rail shows icons and the pin only: no text of any kind is visible in it (the Demo note, the words, the count's number), and the Ask FLOW pill is its icon.
+    const visibleText = () =>
+      page.getByTestId("nav-rail").evaluate((root) => {
+        const out: string[] = [];
+        const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+          const text = (n.textContent ?? "").trim();
+          const el = n.parentElement;
+          if (!text || !el) continue;
+          const cs = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          if (cs.display === "none" || cs.visibility === "hidden" || parseFloat(cs.fontSize) === 0 || r.width <= 1 || r.height <= 1 || parseFloat(cs.opacity) === 0) continue;
+          out.push(text);
+        }
+        return out;
+      });
+    expect(await visibleText(), `${width} collapsed rail text`).toEqual([]);
+    await expect(page.getByTestId("chat-open").locator(".ask-label")).toBeHidden();
     // The pointer on the rail opens the panel to 200 px over the page: the main column neither moves nor changes width.
     await nav.getByRole("link", { name: "Deals" }).hover();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
@@ -209,13 +227,24 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(nav.getByRole("link", { name: "Deals" }).locator(".side-label")).toHaveCSS("opacity", "1");
     expect(await railColumn(page)).toBe(56);
     expect(await mainBox(page)).toEqual(before);
+    expect((await visibleText()).length, "the open rail says its words").toBeGreaterThan(3);
     // Leaving it closes it after a short moment, not at once.
     await page.mouse.move(width - 300, 400);
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
     await expect.poll(() => panelWidth(page)).toBe(56);
+    // The whole 56 px column is the target, its footer included: the real pointer at x = 15 near the bottom opens it, and so does the top edge.
+    for (const y of [height - 90, 120]) {
+      await page.mouse.move(width - 300, 400);
+      await expect.poll(() => panelWidth(page)).toBe(56);
+      await page.mouse.move(15, y);
+      await expect.poll(() => panelWidth(page), `${width} at (15, ${y})`).toBe(200);
+      await page.mouse.move(width - 300, 400);
+      await expect.poll(() => panelWidth(page)).toBe(56);
+    }
 
     // Keyboard: focus in the rail opens it, every destination is reached with Tab, and focus out closes it again.
-    await nav.getByRole("link", { name: "Home" }).focus();
+    for (let i = 0; i < 8 && !(await nav.getByRole("link", { name: "Home" }).evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
+    await expect(nav.getByRole("link", { name: "Home" })).toBeFocused();
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     for (const name of NAV.slice(1)) {
       await page.keyboard.press("Tab");
@@ -308,7 +337,7 @@ test("rail: reduced motion opens it at once, and axe finds nothing serious on th
     expect(await railColumn(page)).toBe(56);
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
     const closed = await new AxeBuilder({ page }).analyze();
-    await page.getByTestId("nav-pills").getByRole("link", { name: "Home" }).focus();
+    for (let i = 0; i < 8 && !(await page.getByTestId("nav-pills").getByRole("link", { name: "Home" }).evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "open");
     expect(await panelWidth(page)).toBe(200);
     const open = await new AxeBuilder({ page }).analyze();

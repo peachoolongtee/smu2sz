@@ -601,41 +601,52 @@ input[type="radio"] {
       width var(--dur-fast) var(--ease-ui),
       box-shadow var(--dur-fast) var(--ease-ui);
   }
-  .rail[data-rail="open"] .rail-panel,
+  /* Open = the shell's own state (hover and keyboard focus, closing 150 ms after they leave) OR the pointer is on the column right now OR keyboard focus is in it: the CSS alone
+     opens it, so it never depends on a script event reaching an element. A mouse click's focus does not hold it open (only :focus-visible does). */
+  .rail:is([data-rail="open"], :hover, :has(:focus-visible)) .rail-panel,
   html[data-sidebar="pinned"] .rail-panel {
     width: 12.5rem;
   }
-  .rail[data-rail="open"] .rail-panel {
+  .rail:is([data-rail="open"], :hover, :has(:focus-visible)) .rail-panel {
     box-shadow: var(--shadow-pop);
   }
   html[data-sidebar="pinned"] .rail .rail-panel {
     box-shadow: none;
   }
-  html:not([data-sidebar="pinned"]) .rail[data-rail="closed"] .side-label {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-    white-space: nowrap;
-  }
   .side-label {
     white-space: nowrap;
     transition: opacity var(--dur-fast) var(--ease-ui);
   }
-  html:not([data-sidebar="pinned"]) .rail[data-rail="closed"] .side-count {
+  /* Collapsed: icons and the pin only. Nothing that cannot fit stays: the words, the Demo note and the Ask FLOW word are out of sight and out of the tab order (the links keep their
+     full accessible names, and the Ask button its name). */
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-label {
     position: absolute;
-    top: 0.125rem;
-    right: 0.375rem;
-    margin-left: 0;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    visibility: hidden;
   }
-  html:not([data-sidebar="pinned"]) .rail[data-rail="closed"] .side-foot {
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-count {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    margin-left: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+  html:not([data-sidebar="pinned"]) .rail:not([data-rail="open"], :hover, :has(:focus-visible)) .side-foot {
     display: none;
   }
-  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]) .ask-trigger {
+  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]:not(:hover)) .ask-trigger {
     left: 0.5rem;
     width: 2.5rem;
     padding-inline: 0;
   }
-  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]) .ask-trigger .ask-label {
+  html:not([data-sidebar="pinned"]) body:has(.rail[data-rail="closed"]:not(:hover)) .ask-trigger .ask-label {
     display: none;
   }
 }

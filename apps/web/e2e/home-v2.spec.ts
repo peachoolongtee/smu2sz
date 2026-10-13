@@ -170,6 +170,16 @@ test("the funding as a timeline: one marker per leg with its source and amount, 
   expect(Math.min(...sizes)).toBeGreaterThanOrEqual(10);
   const xs = await Promise.all(legs.map(async (_, i) => (await page.getByTestId(`hv2-leg-marker-${i}`).boundingBox())!.x));
   expect(xs[1]).toBeGreaterThan(xs[0]);
+  // The labels never run into each other: two legs that land close together alternate (below the line, then above it) with a leader to the marker; none of the boxes intersect.
+  const boxes = await Promise.all(legs.map(async (_, i) => (await page.getByTestId(`hv2-leg-label-${i}`).boundingBox())!));
+  const meets = (a: { x: number; y: number; width: number; height: number }, b: typeof a) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  expect(meets(boxes[0], boxes[1]), "the two labels do not intersect").toBe(false);
+  const layout = await line.getAttribute("data-layout");
+  if (layout === "staggered") {
+    await expect(page.getByTestId("hv2-leg-leader-0")).toBeVisible();
+    await expect(page.getByTestId("hv2-leg-leader-1")).toBeVisible();
+    expect(boxes[0].y).not.toBe(boxes[1].y);
+  }
   await expect(page.getByTestId("hv2-timeline-total")).toHaveText(v2.kpis.funding.value_display);
   // The cost is the hero figure with the plan's own basis beside it; each leg's cost is in its card, as the server sent it.
   await expect(page.getByTestId("hv2-hero-value")).toHaveText(v2.action.facts![0].value);
@@ -179,13 +189,17 @@ test("the funding as a timeline: one marker per leg with its source and amount, 
   await expect(card).toBeHidden();
   await page.getByTestId("hv2-leg-marker-1").hover();
   await expect(card).toBeVisible();
+  // (the pointer's own hover over the marker's 24 px hit area, not a synthetic event)
   for (const w of [legs[1].label, legs[1].amount_display, legs[1].state_text, legs[1].lands_when, legs[1].cost_display, legs[1].authority_text]) await expect(card).toContainText(w!);
+  await expect(card.getByTestId("hv2-leg-cost")).toContainText(legs[1].cost_display!);
+  await expect(card.getByTestId("hv2-leg-lands")).toContainText(legs[1].lands_when);
   await page.mouse.move(5, 5);
   await expect(card).toBeHidden();
   await page.getByTestId("hv2-leg-marker-0").focus();
   const first = page.getByTestId("hv2-leg-card-0");
   await expect(first).toBeVisible();
   await expect(first).toContainText(legs[0].repaid_when!);
+  await expect(first.getByTestId("hv2-leg-repaid")).toContainText(legs[0].repaid_when!);
   await page.keyboard.press("Escape");
   await expect(first).toBeHidden();
   expect(await filledBrand(page)).toBe(1);
