@@ -155,11 +155,24 @@ class Runtime:
 
     def reset_demo(self, scenario: str = "golden_sme") -> None:
         """POST /demo/reset: the scenario's books (`reset`), then, on the golden books, the demo documents read by the
-        agent and confirmed by the owner, so the deal summary is ready once a deal is agreed. `reset` alone (tests,
-        harnesses) leaves the chain empty."""
+        agent and confirmed by the owner, so the deal summary is ready once a deal is agreed, then the scenario's seed
+        (offers evaluated, a deal agreed, an approval queued) when it has one. `reset` alone (tests, harnesses) leaves the chain empty."""
         with self.lock:
             self.reset(scenario)
             _confirm_demo_documents(self, scenario)
+            self._replay_seed(scenario)
+
+    def _replay_seed(self, scenario: str) -> None:
+        """The scenario's seed file, when it has one (offers, negotiations, operations; `app.api.demo_seed`). A step that fails
+        puts the plain scenario back, so a failed seed never leaves half of itself standing, and the error (naming the step)
+        reaches the caller."""
+        from app.api.demo_seed import DemoSeedError, replay
+
+        try:
+            replay(self, scenario)
+        except DemoSeedError:
+            self.reset(scenario)
+            raise
 
 
 def _confirm_demo_documents(rt: Runtime, scenario: str) -> None:

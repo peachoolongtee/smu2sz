@@ -64,6 +64,12 @@ def post_offer(body: OfferIn, x_owner_token: str | None = Header(default=None),
     rt = get_runtime()
     if not (rt.is_owner(x_owner_token) or is_agent(x_agent_key) or counterparty_for_key(x_counterparty_key)):
         enforce_intake_cap(rt, "POST /offers", body.counterparty_id)
+    return intake_offer(rt, body)
+
+
+def intake_offer(rt: Runtime, body: OfferIn) -> dict:
+    """Compile the documents and store the offer: the part of POST /offers after the caller is known. The demo's seed replay
+    (`app.api.demo_seed`) takes the same path, so a seeded offer is the offer the route would have stored."""
     docs, cp = _docs(body)
     offer = compile_offer(docs, cp)
     try:

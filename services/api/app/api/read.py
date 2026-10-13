@@ -25,6 +25,7 @@ from app.api.presentation import (
     last_read,
     live_windows,
     party_name,
+    t,
     when_text,
     window_is_live,
     without_record_ids,
@@ -239,13 +240,28 @@ def get_evidence() -> str:
     return build(rt)
 
 
+# The scenarios fixtures/scenarios/ holds for the demo; a name outside it never reaches the reset, which wipes the books first.
+DEMO_SCENARIOS = ("golden_sme", "short_facilities", "public_sme", "busy")
+
+
 @router.post("/demo/reset")
-def demo_reset(scenario: str = "golden_sme") -> dict:
+def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
+    from app.api.demo_seed import DemoSeedError
     from app.api.runtime import ResetRefused
 
+    if scenario not in DEMO_SCENARIOS:
+        lang = "zh" if lang == "zh" else "en"
+        names = ", ".join(DEMO_SCENARIOS)
+        raise HTTPException(422, {
+            "code": "UNKNOWN_SCENARIO", "scenario": scenario, "scenarios": list(DEMO_SCENARIOS),
+            "message": f"There is no demo scenario called {scenario!r}; choose one of {names}. Nothing was reset.",
+            "message_when": t(lang, f"There is no demo scenario called {scenario!r}; choose one of {names}. Nothing was reset.",
+                              f"没有名为 {scenario!r} 的演示场景；请从 {names} 中选择。未重置任何内容。")})
     rt = get_runtime()
     try:
         rt.reset_demo(scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
+    except DemoSeedError as e:
+        raise HTTPException(500, {"code": "DEMO_SEED_FAILED", "step": e.step, "message": str(e)}) from e
     return {"ok": True, "scenario": scenario, "day": rt.day}
