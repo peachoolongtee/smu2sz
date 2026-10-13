@@ -3,7 +3,8 @@
 import { useId, useMemo } from "react";
 import { CashPreview, LegendItem, type InspectorWords, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { pointAt, shown } from "@/components/home/v2/company-chart";
-import { Breakdown } from "@/components/home/v2/breakdown";
+import { sizeOf } from "@/components/home/v2/breakdown";
+import { SegmentedBar } from "@/components/home/v2/segmented-bar";
 import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { Announce, Dismiss, LeaveLink } from "@/components/home/v2/focus-parts";
 import { ActionGroup } from "@/components/ui/action-group";
@@ -273,7 +274,16 @@ export function DealFocusPanel({
                   ))}
                 </dl>
               ) : null}
-              {asked?.ask_breakdown?.length ? <Breakdown rows={asked.ask_breakdown} total={facts?.invoice_value_display} testId="hv2-deal-breakdown" /> : null}
+              {asked?.ask_breakdown?.length ? (
+                <div className="mt-2 border-b border-line pb-2.5" data-testid="hv2-deal-line">
+                  {/* The invoice, then the discount asked, then the net: parts along a line of money (the server's rows, discount first), animated in from the left; each segment says its row. */}
+                  <SegmentedBar
+                    testId="hv2-deal-breakdown"
+                    lead={facts?.invoice_value_display ? `${t("hv2.deal.invoice")} ${facts.invoice_value_display}` : undefined}
+                    segments={[...asked.ask_breakdown].reverse().map((r) => ({ label: r.label, amount_display: r.amount_display, share_text: r.share_text, weight: sizeOf(r.share_text) }))}
+                  />
+                </div>
+              ) : null}
               {row && "why_first_text" in row && row.why_first_text ? (
                 <p className="mt-2 border-l-2 border-line-strong pl-3 text-sm text-ink-2" data-testid="home-why-first">
                   {row.why_first_text}

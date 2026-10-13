@@ -895,3 +895,21 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     }
   }
 }
+
+/* The segmented bar of round four draws in from the left over 300 ms on first paint (one transform); none under reduced motion. */
+@layer components {
+  @keyframes f-bar-in {
+    from {
+      transform: scaleX(0);
+    }
+  }
+  .f-bar {
+    transform-origin: left;
+    animation: f-bar-in 300ms var(--ease-ui) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .f-bar {
+      animation: none;
+    }
+  }
+}

@@ -14,7 +14,7 @@ import { useAsync } from "@/lib/use-async";
  * server sentence (the row's consequence), "Customer profile" (an outlined button to the customer's page) and the "Agreement & supporting evidence" fold (the deal's own sentence from the
  * overview read: what the buyer asks and what FLOW recommends). For a customer with no deal chosen it is "Customer context" with the overview's own sentence. Every word is the server's.
  */
-export function ContextCard({ customerId, decision, row, customer, onBack }: { customerId: string; decision: string | null; row: WorklistNeedsRow | WorklistWaitingRow | null; customer: WorklistCustomer | null; onBack: () => void }) {
+export function ContextCard({ customerId, decision, row, customer, onBack, dealCash }: { customerId: string; decision: string | null; row: WorklistNeedsRow | WorklistWaitingRow | null; customer: WorklistCustomer | null; onBack: () => void; dealCash?: React.ReactNode }) {
   const { t, lang } = useI18n();
   const overview = useAsync(() => getCustomerFocus(customerId, lang, decision ? { decision } : {}), [customerId, decision, lang]);
   const v = overview.data;
@@ -32,6 +32,8 @@ export function ContextCard({ customerId, decision, row, customer, onBack }: { c
       <h2 id="hv2-context-title" className="font-display text-[18px] font-bold leading-tight tracking-[-0.01em] text-ink">
         {decision ? t("hv2.context.title") : t("hv2.context.titleCustomer")}
       </h2>
+      {/* The deal's own cash impact (as asked against FLOW's reply): the first block of the panel */}
+      {dealCash}
       <p className="mt-3 border-b border-line pb-4 text-[15px] text-ink-3" data-testid="hv2-context-subject">
         {[row?.subject_text, name].filter(Boolean).join(" · ")}
       </p>

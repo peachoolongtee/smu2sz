@@ -140,6 +140,8 @@ async function open(context: BrowserContext, lang: Lang, width: number, url = "/
   return page;
 }
 const phone = (width: number) => width < 1024;
+/** Round four's rule: the worklist's alert row stands in only when the Home renders no recommendation card (the action has no title and no control), whatever the funding state. */
+const noCard = (h: HomeView) => !(h.home_v2!.action.title || h.home_v2!.action.control);
 const label = (lang: Lang, key: keyof typeof en, vars: Record<string, string | number> = {}) =>
   Object.entries(vars).reduce((t, [k, v]) => t.replace(`{${k}}`, String(v)), DICT[lang][key] as string);
 
@@ -190,8 +192,8 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("hv2-action")).toHaveCount(1);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", v2.action.variant === "QUIET" ? "quiet" : "action");
-  // The cost and the funding sentence are on the card (the third fact, who approves, is the approval line below).
-  for (const f of (v2.action.facts ?? []).slice(0, 2)) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
+  // The cost is on the card (the funding legs are its inline bar, below; who approves is the approval line above the actions).
+  for (const f of (v2.action.facts ?? []).slice(0, 1)) await expect(page.getByTestId("hv2-action")).toContainText(f.value);
   if (v2.action.control === "RUN_PLAN") await expect(page.getByTestId(`fix-open-${h.next_action!.alert_id}`)).toBeVisible();
   // The approval is one line under the actions, bound to the server's two fields: the tick form for text with approval_needed false, the warn form when true, none for null.
   if (v2.action.variant === "ACTION") {
@@ -200,8 +202,11 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
       await expect(line).toHaveText(v2.action.approval_text);
       await expect(line).toHaveAttribute("data-needs-owner", String(v2.action.approval_needed === true));
     } else await expect(line).toHaveCount(0);
-    // The facts row is the cost and who decides: the approval line shares it (the server's sentence, after the cost).
-    if (v2.action.approval_text && v2.action.facts?.length === 3) await expect(page.getByTestId("hv2-action-facts")).toContainText(v2.action.approval_text);
+    // The approval line sits directly above the actions, which are pinned to the card's bottom (round four); the facts row is the cost alone.
+    if (v2.action.approval_text && v2.action.control) {
+      const [lineBox, actionsBox] = await Promise.all([line.boundingBox(), page.getByTestId("hv2-action-buttons").boundingBox()]);
+      expect(actionsBox!.y - (lineBox!.y + lineBox!.height), "the approval line is directly above the actions").toBeLessThan(16);
+    }
     if (v2.action.control === "APPROVE_PLAN") expect(v2.action.approval_needed, "a plan that waits for the owner").toBe(true);
   }
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);
@@ -210,7 +215,7 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
 /** The worklist's words: the alert, the counts, and every row of every tab, in the read's order, each of its shape. */
 async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView, showAlert: boolean) {
   const alert = scope.getByTestId("home-worklist-alert");
-  // The alert row is shown only on a Home with no plan card (funding NONE); with a card, the card is the alert.
+  // The alert row is shown only on a Home that renders no recommendation card (no title, no control); with a card, the card is the alert.
   if (read.alert && showAlert) {
     const said = read.alert as typeof read.alert & { kind_text?: string | null; pending_text?: string | null };
     await expect(alert).toContainText(said.pending_text ?? said.text);
@@ -237,6 +242,11 @@ async function expectWorklist(scope: Locator, lang: Lang, read: WorklistView, sh
       continue;
     }
     await expect(el).toHaveCount(rows.length);
+    // Under All the two lists are told apart by heading rows with their counts (12 px uppercase); on one tab there is none.
+    if (tab === "all") {
+      const heads = [read.needs_you.length ? `${label(lang, "hv2.work.needs")} (${read.needs_you.length})` : null, read.waiting.length ? `${label(lang, "hv2.work.waiting")} (${read.waiting.length})` : null].filter((x): x is string => x !== null);
+      await expect(scope.getByTestId("hv2-group-heading")).toHaveText(heads);
+    } else await expect(scope.getByTestId("hv2-group-heading")).toHaveCount(0);
     for (const [i, row] of rows.entries()) {
       const li = el.nth(i);
       if ("customer_id" in row && "short" in row) {
@@ -271,7 +281,7 @@ async function look(context: BrowserContext, reads: Reads, s: State, extra?: (pa
         try {
           if (company) await expectCompany(page, lang, reads.home[lang], s.filled);
           const scope = await worklist(page, width, lang, reads.work[lang]);
-          await expectWorklist(scope, lang, reads.work[lang], reads.home[lang].home_v2!.kpis.funding.state === "NONE");
+          await expectWorklist(scope, lang, reads.work[lang], noCard(reads.home[lang]));
           await extra?.(page, width, lang, scope);
         } finally {
           await page.close();
@@ -317,6 +327,42 @@ for (const s of STATES.filter((x) => !/^1[12] /.test(x.name))) {
   });
 }
 
+// Round four, section 4: on the busy books (an application waiting for approval, funding NONE) the Home renders a recommendation card, so the worklist's alert row is absent; the card is the one that says "FLOW action ready".
+test("busy books: a recommendation card and no alert row, at 1440 and 390, in both languages", async ({ request, context }) => {
+  await post(request, "/demo/reset?scenario=busy", {});
+  const reads = { home: {}, work: {} } as Reads;
+  for (const lang of LANGS) {
+    reads.home[lang] = await get<HomeView>(request, `/home?lang=${lang}`);
+    reads.work[lang] = await get<WorklistView>(request, `/worklist?lang=${lang}`);
+  }
+  const v2 = reads.home.en.home_v2!;
+  expect(Boolean(v2.action.title || v2.action.control), "the busy books carry a recommendation").toBe(true);
+  expect(reads.work.en.alert, "the worklist read still carries the alert; the page does not show it").toBeTruthy();
+  for (const lang of LANGS) {
+    for (const width of WIDTHS) {
+      const page = await open(context, lang, width);
+      try {
+        await expect(page.getByTestId("hv2-action")).toBeVisible();
+        await expect(page.getByTestId("home-action-title")).toHaveText(reads.home[lang].home_v2!.action.title);
+        await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
+        // The card's consequence is never cut, the actions are at its bottom and the funding legs (when it has them) are its inline bar.
+        const text = reads.home[lang].home_v2!.action.consequence_text;
+        if (text && width >= 1024) {
+          const said = page.getByTestId("home-action-text");
+          await expect(said).toHaveText(text);
+          expect(await said.evaluate((n) => n.scrollHeight <= n.clientHeight + 1), "the consequence is not clipped").toBe(true);
+        }
+        const [card, actions] = await Promise.all([page.getByTestId("hv2-action").boundingBox(), page.getByTestId("hv2-action-buttons").boundingBox()]);
+        expect(Math.round(card!.y + card!.height - (actions!.y + actions!.height))).toBeLessThanOrEqual(20);
+        const legs = reads.home[lang].home_v2!.action.legs ?? [];
+        await expect(page.getByTestId("hv2-funding-bar")).toHaveCount(legs.length ? 1 : 0);
+      } finally {
+        await page.close();
+      }
+    }
+  }
+});
+
 test(STATES[12].name, async ({ request, context }) => {
   const s = STATES[12];
   const reads = await drive(request, s);
@@ -336,7 +382,7 @@ test(STATES[12].name, async ({ request, context }) => {
     await expect(page.getByTestId("home-action-back")).toBeVisible();
     expect(await filledBrand(page)).toBe(0);
     const again = phone(width) ? await worklist(page, width, lang, reads.work[lang]) : page.getByTestId("home-worklist-panel");
-    if (reads.home[lang].home_v2!.kpis.funding.state === "NONE") await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
+    if (noCard(reads.home[lang])) await expect(again.getByTestId("home-worklist-alert")).toContainText((reads.work[lang].alert as NonNullable<WorklistView["alert"]>).pending_text ?? reads.work[lang].alert!.text);
     else await expect(again.getByTestId("home-worklist-alert")).toHaveCount(0);
     await expect(again.getByTestId("home-tab-needs_you-badge")).toHaveText(String(reads.work[lang].counts.needs_you));
   });
