@@ -36,4 +36,5 @@
 - **First breach / worst point**: two different days on one trajectory. The first breach is the first day cash is below the reserve; the worst point is the day cash is lowest. They are named separately wherever both are shown.
 - **Business action**: what the owner should do about an offer (accept, counter, decline, wait for approval), as distinct from the verifier's **verdict** (ACCEPT, COUNTER, REJECT, NEEDS_OWNER_APPROVAL). A REJECT verdict with counters is the business action "counter".
 - **Net economic cost**: a counter's cost to the supplier after any compensating term (a price adjustment) is netted against the funding cost it offsets. Gross funding cost and the offset are always shown beside a net figure.
+- **Buyer reliability**: how reliably a buyer pays, learned from its invoices (imported history, then every bank-feed receipt and every promise from an accepted deal). A score and a grade (Reliable, Watch, Risky, Unrated) with its reasons. Advisory only: it ranks deals for the owner and never enters a verdict (ADR-0011).
 - **In transit**: funding or a payment that is committed or approved but has not yet settled; it is not cash on hand until it lands.
