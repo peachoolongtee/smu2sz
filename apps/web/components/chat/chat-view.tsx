@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { Suspense, useEffect, useRef, type KeyboardEvent } from "react";
 import { Badge, Button, EmptyState, Segmented, inputClass } from "@/components/ui";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { Spinner } from "@/components/icons";
 import { requestSignIn, useAuth } from "@/lib/auth";
 import {
@@ -21,7 +22,10 @@ import {
 import { promptsFor, type Prompt } from "@/lib/chat-prompts";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
-import type { NlActor, NlContextEcho } from "@/lib/types";
+import type { NlActor, NlScopeUsed } from "@/lib/types";
+import { useChatScope } from "@/lib/chat-scope";
+import { useDecision } from "@/lib/use-decision";
+import type { ScopeKind } from "@/lib/selection";
 import { useBusinessShell } from "@/lib/use-business-today";
 import { useChatFacts } from "@/lib/use-chat-facts";
 import { AssistantTurn } from "./assistant-turn";
@@ -122,20 +126,63 @@ function Suggestions({ prompts, disabled, compact, role }: { prompts: Prompt[]; 
   );
 }
 
-/** What the server used from the page for the last answer, said quietly above the composer: "Discussing: the Foshan Home Retail Co. offer". Names, never ids. */
-function Discussing({ echo }: { echo: NlContextEcho }) {
+/** The kind words of the chip, in the dictionary. */
+const KIND_LABEL: Record<ScopeKind, DictKey> = { company: "chat.scope.company", customer: "chat.scope.customer", invoice: "chat.scope.invoice", decision: "chat.scope.decision" };
+
+/**
+ * The scope chip, before the composer (ticket #130): what the next question is about, from the address, with the kinds it can be asked at (Company always; Customer, Invoice and
+ * Decision when the page holds them). The owner can widen it; the choice is for this route and is gone when the route changes. It names what it is about in words (the deal's
+ * decision record names the customer), never an id.
+ */
+function ScopeChip({ disabled }: { disabled: boolean }) {
   const { t } = useI18n();
-  const what = echo.counterparty_name ? t("chat.discussing.offer", { who: echo.counterparty_name }) : echo.invoice_id ? t("chat.discussing.invoice") : null;
-  if (!what) return null;
+  const { kinds, chosen, choose } = useChatScope();
+  const record = useDecision(chosen.decision ?? null).data;
+  const name = chosen.decision ? (record?.headline ?? record?.counterparty_name ?? null) : null;
   return (
-    <p className="text-meta text-ink-3" data-testid="chat-discussing">
-      {t("chat.discussing", { what })}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5" role="group" aria-label={t("chat.scope.label")} data-testid="chat-scope" data-kind={chosen.kind}>
+      <span className="text-supporting font-bold text-ink-2">{t("chat.scope.about")}</span>
+      <SegmentedTabs
+        compact
+        label={t("chat.scope.label")}
+        value={chosen.kind}
+        onChange={(k) => !disabled && choose(k)}
+        tabs={kinds.map((k) => ({ value: k, label: t(KIND_LABEL[k]), testId: `chat-scope-${k}` }))}
+      />
+      {name ? (
+        <span className="text-supporting text-ink-3" data-testid="chat-scope-name">
+          {name}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * What the server used for the last answer, said quietly above the composer: "Answered about: Customer, Foshan Home Retail Co.". When it used another kind than the one the
+ * owner chose, that is said too, not hidden.
+ */
+function Discussing({ used, asked }: { used: NlScopeUsed; asked: ScopeKind | null }) {
+  const { t } = useI18n();
+  const mismatch = asked !== null && used.kind !== asked;
+  return (
+    <p className={`text-supporting ${mismatch ? "font-medium text-warn-fg" : "text-ink-3"}`} data-testid="chat-discussing" data-mismatch={mismatch ? "true" : "false"}>
+      {mismatch ? t("chat.scope.mismatch", { asked: t(KIND_LABEL[asked]), used: used.label }) : t("chat.scope.used", { what: used.label })}
     </p>
   );
 }
 
 /** The conversation: role switch, transcript, suggested prompts and composer. Used by /chat and the slide-over. */
 export function ChatView({ variant }: { variant: "page" | "panel" }) {
+  // The scope reads the address, which a statically built page may not have yet: the conversation waits for it.
+  return (
+    <Suspense fallback={null}>
+      <ChatViewInner variant={variant} />
+    </Suspense>
+  );
+}
+
+function ChatViewInner({ variant }: { variant: "page" | "panel" }) {
   const { t, lang } = useI18n();
   const chat = useChat();
   const { token } = useAuth();
@@ -151,7 +198,9 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
   const prompts = promptsFor(role, lang, pathname, { business, facts });
   const signedOut = role === "OWNER" && !token;
   const lastAnswer = [...conv.messages].reverse().find((m): m is Extract<ChatMessage, { from: "assistant" }> => m.from === "assistant");
+  // The server's `scope_used`; a server that does not send it yet still echoes what it bound (`context_echo`), which says the same in fewer words.
   const echo = lastAnswer?.response.context_echo ?? null;
+  const used: NlScopeUsed | null = lastAnswer?.response.scope_used ?? (echo?.counterparty_name ? { kind: echo.offer_id ? "decision" : "customer", label: echo.counterparty_name } : echo?.invoice_id ? { kind: "invoice", label: t("chat.discussing.invoice") } : null);
 
   useEffect(() => {
     // While waiting, show the spinner under the question. Once an answer lands, show it from its first line
@@ -276,7 +325,8 @@ export function ChatView({ variant }: { variant: "page" | "panel" }) {
       ) : null}
 
       <Suggestions prompts={prompts} disabled={conv.busy} compact={conv.messages.length > 0} role={role} />
-      {echo ? <Discussing echo={echo} /> : null}
+      {used ? <Discussing used={used} asked={lastAnswer?.asked?.kind ?? null} /> : null}
+      {role === "OWNER" ? <ScopeChip disabled={conv.busy} /> : null}
       <Composer role={role} counterpartyId={chat.counterpartyId} busy={conv.busy} business={business} />
     </div>
   );

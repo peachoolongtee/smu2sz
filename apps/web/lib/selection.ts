@@ -94,9 +94,9 @@ export function scopeOf(pathname: string | null | undefined, params: Params | nu
   const p = pathname ?? "";
   const customer = customerPathId ?? sel.customer ?? undefined;
   // Which keys each route means: a page's own selection, and nothing carried over from another.
-  const usesDecision = p === "/" || p.startsWith("/deals") || p.startsWith("/customers") || p.startsWith("/whatif") || p.startsWith("/cash");
-  const usesInvoice = p.startsWith("/receivables") || p.startsWith("/cash") || p.startsWith("/customers");
-  const usesCustomer = p === "/" || p.startsWith("/deals") || p.startsWith("/customers") || p.startsWith("/receivables") || p.startsWith("/whatif") || p.startsWith("/cash");
+  const usesDecision = p === "/" || p.startsWith("/chat") || p.startsWith("/deals") || p.startsWith("/customers") || p.startsWith("/whatif") || p.startsWith("/cash");
+  const usesInvoice = p.startsWith("/chat") || p.startsWith("/receivables") || p.startsWith("/cash") || p.startsWith("/customers");
+  const usesCustomer = p === "/" || p.startsWith("/chat") || p.startsWith("/deals") || p.startsWith("/customers") || p.startsWith("/receivables") || p.startsWith("/whatif") || p.startsWith("/cash");
   const scope: ChatScope = { kind: "company" };
   if (usesCustomer && customer) {
     scope.kind = "customer";

@@ -12,6 +12,7 @@ import { STRESS_DAYS, StressAside } from "@/components/receivables/stress-aside"
 import { Summary } from "@/components/receivables/summary";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { getBuyerExposure, getDecisionExposure, getReceivables, getReconciliation, getState } from "@/lib/api";
+import { usePageScope } from "@/lib/chat-scope";
 import { useI18n } from "@/lib/i18n";
 import { withContext } from "@/lib/receivables-context";
 import type { BuyerExposureView, ReceivableRow, ReceivablesRead } from "@/lib/types";
@@ -83,6 +84,8 @@ function Layers({ read, reload }: { read: ReceivablesRead; reload: () => void })
   // The chosen invoice is the address's; when the filter hides it the first visible one takes its place (none: the detail is hidden).
   const chosen = rows.find((r) => r.receivable_id === invoiceParam) ?? null;
   const selected: ReceivableRow | null = chosen && shown.includes(chosen) ? chosen : (shown[0] ?? null);
+  // Ask FLOW asks about the invoice the owner sees, even when it is the default row and not in the address yet.
+  usePageScope(selected ? { invoice: selected.receivable_id, customer: selected.buyer_id ?? undefined } : null);
 
   const choose = (id: string | null) => {
     const q = new URLSearchParams(params.toString());

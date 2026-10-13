@@ -12,6 +12,8 @@ import { onSignedIn, onSignedOut } from "./auth";
 import { getLang } from "./i18n";
 import { getMode, shellFor } from "./mode";
 import { nlContext } from "./chat-context";
+import { currentScope, legacyContextOf, toNlScope } from "./chat-scope-model";
+import type { ScopeKind } from "./selection";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
 import { createStore } from "./create-store";
@@ -23,7 +25,7 @@ export type CounterpartyId = (typeof COUNTERPARTIES)[number];
 export type ChatMessage =
   | { id: string; from: "user"; text: string }
   /** `restored`: read back from the browser after a refresh; its buttons are history, and a pending plan or approval lives on the Approvals page. */
-  | { id: string; from: "assistant"; response: NlResponse; restored?: boolean }
+  | { id: string; from: "assistant"; response: NlResponse; restored?: boolean; asked?: { kind: ScopeKind } }
   | { id: string; from: "error"; text: string; status: number };
 
 interface Conversation {
@@ -126,6 +128,9 @@ async function run(a: Attempt): Promise<NlResponse | null> {
   const sessionId = conv.sessionId ?? newSessionId();
   const generation = conv.generation;
   patchConv(a.role, (c) => ({ ...c, sessionId, busy: true }));
+  // What the question is about: the scope shown before it was asked (the address, as the owner narrowed it), and nothing from an earlier page.
+  const scope = a.role === "OWNER" ? currentScope() : null;
+  const started = typeof performance !== "undefined" ? performance.now() : 0;
   try {
     const response = await nl({
       session_id: sessionId,
@@ -134,21 +139,33 @@ async function run(a: Attempt): Promise<NlResponse | null> {
       text: a.text,
       lang: getLang(),
       request_id: a.requestId,
-      // The owner's page, as ids: the deal it evaluated, the invoice row it has open, the last visit. A buyer's turn names none.
-      context: a.role === "OWNER" ? nlContext() : undefined,
+      // The owner's page (the route and the last visit, with today's two ids derived from the scope) and the scope itself. A buyer's turn names none.
+      context: scope ? nlContext(undefined, legacyContextOf(scope)) : undefined,
+      scope: scope ? toNlScope(scope) : undefined,
     }, { business: a.role === "OWNER" && onBusinessShell() });
+    logDuration(a, scope?.kind ?? null, started, "answered");
     delete failed[a.role];
     patchConv(a.role, (c) =>
-      c.generation !== generation ? c : { ...c, busy: false, sessionId: response.session_id, messages: [...c.messages, { id: uid("a"), from: "assistant", response }] },
+      c.generation !== generation ? c : { ...c, busy: false, sessionId: response.session_id, messages: [...c.messages, { id: uid("a"), from: "assistant", response, ...(scope ? { asked: { kind: scope.kind } } : {}) }] },
     );
     return response;
   } catch (e) {
+    logDuration(a, scope?.kind ?? null, started, "failed");
     failed[a.role] = a;
     const status = e instanceof ApiError ? e.status : 0;
     const text = errorMessage(e);
     patchConv(a.role, (c) => (c.generation !== generation ? c : { ...c, busy: false, messages: [...c.messages, { id: uid("e"), from: "error", text, status }] }));
     return null;
   }
+}
+
+/**
+ * How long a turn took, in the console, in development only (ticket #130: the six-customer question timed out once in the audit, UX35, and is to be measured before anything is
+ * diagnosed). The request id and the scope's kind say which turn it was; no text, no figure.
+ */
+function logDuration(a: Attempt, kind: string | null, started: number, outcome: "answered" | "failed"): void {
+  if (process.env.NODE_ENV === "production" || typeof performance === "undefined") return;
+  console.info(`[ask-flow] ${outcome} in ${Math.round(performance.now() - started)} ms (request ${a.requestId}, scope ${kind ?? "none"})`);
 }
 
 /**

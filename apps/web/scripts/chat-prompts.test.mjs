@@ -43,7 +43,7 @@ test("a question whose prerequisite is missing is hidden, not shown to fail", ()
 });
 
 test("every other Business route gets the Home questions, and nothing from the Demo set", () => {
-  for (const page of ["/approvals", "/activity", "/limits", "/chat", null, undefined]) {
+  for (const page of ["/approvals", "/limits", "/chat", null, undefined]) {
     assert.deepEqual(ids(business(page, FULL)), ["page-changed", "page-attention"], String(page));
   }
   const all = JSON.stringify(["/", "/deals", "/cash", "/receivables"].flatMap((p) => business(p, FULL)));
@@ -70,17 +70,22 @@ test("every suggested question is one the API's rules read (the same list as tes
   }
 });
 
-test("the page context carries ids and a day only", () => {
+test("Customer and Activity have prompts of their own, each one the API's rules read", () => {
+  assert.deepEqual(ids(business("/customers/BUYER-1", FULL)), ["page-owes", "page-overdue", "page-late", "page-waiting"]);
+  assert.deepEqual(ids(business("/activity", FULL)), ["page-changed", "page-waiting", "page-latepay"]);
+  const py = readFileSync(fileURLToPath(new URL("../../../services/api/tests/nl/test_business_page_prompts.py", import.meta.url)), "utf8");
+  for (const page of ["/customers/BUYER-2", "/activity"]) for (const lang of ["en", "zh"]) for (const p of business(page, FULL, lang)) assert.ok(py.includes(`"${p.text}"`), `${lang} ${p.text}`);
+});
+
+test("the page context carries the route and a day, and the scope's two ids; nothing from the session", () => {
   assert.equal(pageOf("/deals"), "/deals");
   assert.equal(pageOf("/deals?x=1#top"), "/dealsx1top"); // never more than the API's pattern allows
   assert.equal(pageOf(""), "/");
   assert.ok(pageOf("/" + "a".repeat(200)).length <= 64);
-  demoStore.set((s) => ({ ...s, offerId: null, verdicts: {} }));
-  assert.deepEqual(Object.keys(nlContext("/deals")).filter((k) => k !== "since_day"), ["page"]); // no deal yet
+  // a deal this tab evaluated is not carried: the global prior-offer context is gone (audit UX01, UX20)
   demoStore.set((s) => ({ ...s, offerId: "OFF-1", offers: {}, verdicts: { "OFF-1": { offer_id: "OFF-1", counters: [{ label: "Option A" }] } } }));
-  const ctx = nlContext("/deals");
-  assert.equal(ctx.page, "/deals");
-  assert.equal(ctx.offer_id, "OFF-1");
+  assert.deepEqual(Object.keys(nlContext("/deals")).filter((k) => k !== "since_day"), ["page"]);
+  const ctx = nlContext("/deals", { offer_id: "OFF-2", invoice_id: "RCV-B" });
+  assert.equal(ctx.offer_id, "OFF-2");
   for (const key of Object.keys(ctx)) assert.ok(["page", "offer_id", "decision_id", "invoice_id", "since_day"].includes(key), key);
-  assert.ok(!("invoice_id" in nlContext("/deals"))); // an invoice is named only from Receivables
 });

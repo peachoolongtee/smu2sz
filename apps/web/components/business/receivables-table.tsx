@@ -1,12 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Avatar, Disclosure, FoldChevron, initials, toneFor } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
 import { CustomerName } from "@/components/customer-link";
 import { ActionChip, ActionText, RankingNote, WorthSentence, WorthText } from "@/components/business/strategy";
 import { Badge, toggleClass } from "@/components/ui";
-import { focusInvoice } from "@/lib/chat-context";
+import { usePageScope } from "@/lib/chat-scope";
 import { isOverdue } from "@/lib/receivables-order";
 import { useI18n } from "@/lib/i18n";
 import type { OutstandingReceivable, ReceivableWorth, ReceivablesWorthView } from "@/lib/types";
@@ -76,10 +76,10 @@ export function ReceivablesTable({
     ...(soon > 0 ? [{ id: "soon" as const, label: t("biz.recv.filter.soon"), n: soon }] : []),
   ];
   const showFilters = invoices.length > 1 && filters.length > 1;
-  // Ask FLOW is told which invoice row is open (an id only), so "What happens if this payment is late?" is about that one.
-  useEffect(() => () => focusInvoice(null), []);
+  // Ask FLOW is told which invoice row is open (an id only), so "What happens if this payment is late?" is about that one; the scope goes with the page.
+  const openInvoice = invoices.find((o) => open.has(o.receivable_id));
+  usePageScope(openInvoice ? { invoice: openInvoice.receivable_id, customer: openInvoice.counterparty_id } : null);
   const toggle = (id: string) => {
-    focusInvoice(open.has(id) ? null : id);
     setOpen((cur) => {
       const next = new Set(cur);
       if (!next.delete(id)) next.add(id);

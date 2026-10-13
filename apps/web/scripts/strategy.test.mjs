@@ -184,8 +184,8 @@ test("the worth cell is one server figure (net_saving_display, or worth_text whe
   assert.doesNotMatch(source("lib/dictionary.ts"), /before any discount/);
 });
 
-test("without the flag the Deals page does not hand the compare state to the response card, and the strategy spec gates as the config does", () => {
-  assert.match(source("app/deals/page.tsx"), /\.\.\.\(STRATEGY_MVP \? \{ compareOpen, onCompareChange/);
+test("without the flag the Deals page reads no envelope, and the strategy spec gates as the config does", () => {
+  assert.match(source("components/deals/flow/investigate.tsx"), /STRATEGY_MVP \? await getEnvelope/);
   assert.match(source("e2e/strategy.spec.ts"), /test\.skip\(process\.env\.E2E_STRATEGY !== "1"/);
   assert.match(source("playwright.config.ts"), /process\.env\.E2E_STRATEGY === "1"/);
 });

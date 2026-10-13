@@ -2590,6 +2590,16 @@ export const en = {
   "customer.allTasks": "All of {name}'s tasks in Deals",
   "deals.only": "Showing {name} only.",
   "deals.showAll": "Show everyone",
+  "chat.scope.label": "What your question is about",
+  "chat.scope.about": "Asking about",
+  "chat.scope.company": "Company",
+  "chat.scope.customer": "Customer",
+  "chat.scope.invoice": "Invoice",
+  "chat.scope.decision": "Decision",
+  "chat.scope.used": "Answered about: {what}",
+  "chat.scope.mismatch": "You asked about the {asked}; FLOW answered about: {used}",
+  "chat.p.page.owes": "Who owes us money?",
+  "chat.p.page.latepay": "Which payments are late?",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5178,4 +5188,14 @@ export const zh: Record<DictKey, string> = {
   "customer.allTasks": "在交易页查看{name}的全部事项",
   "deals.only": "只显示{name}。",
   "deals.showAll": "显示全部客户",
+  "chat.scope.label": "您的问题涉及的范围",
+  "chat.scope.about": "提问范围",
+  "chat.scope.company": "公司",
+  "chat.scope.customer": "客户",
+  "chat.scope.invoice": "发票",
+  "chat.scope.decision": "决定",
+  "chat.scope.used": "回答所依据的范围：{what}",
+  "chat.scope.mismatch": "您问的是{asked}；FLOW 回答所依据的范围是：{used}",
+  "chat.p.page.owes": "谁欠我们钱？",
+  "chat.p.page.latepay": "哪些回款没到？",
 };
