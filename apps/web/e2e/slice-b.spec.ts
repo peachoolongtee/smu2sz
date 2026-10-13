@@ -364,6 +364,23 @@ test.describe("live", () => {
     await expect(page.locator('[data-testid="queue-row"][data-tier="needs_you"][data-kind="DECISION"]').filter({ hasText: "Foshan" })).toHaveCount(0);
   });
 
+  test("the approval says what approving does and, once approved, the server's own result words; the queue row says the same", async ({ page, request }) => {
+    await busy(request);
+    const port = process.env.E2E_API_PORT ?? 8000;
+    const rows = async () => ((await (await request.get(`http://localhost:${port}/approvals/queue?lang=en`, { headers: { "X-Owner-Token": DEMO_TOKEN } })).json()) as { approvals: { id: string; result_state_text: string | null }[] }).approvals;
+    await page.goto("/deals");
+    const row = page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]');
+    await expect(row).toContainText("Approving submits the application; nothing runs until the bank commits.");
+    await page.goto("/approvals");
+    const card = page.locator("#approval-APR-000001");
+    await card.getByRole("button", { name: /^Approve ¥200,000\.00/ }).click();
+    const served = (await rows()).find((r) => r.id === "APR-000001")!.result_state_text;
+    expect(served, "the server names the result").toBeTruthy();
+    await expect(card.getByTestId("approval-state-APR-000001")).toHaveText(served!);
+    await expect(card).toContainText(/submitted/i);
+    await expect(card).not.toContainText(/\bdone\b/i);
+  });
+
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {
     await resetBooks(request);
     await page.goto("/deals");
