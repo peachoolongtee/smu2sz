@@ -534,7 +534,8 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
     rows: list[tuple[tuple[int, int, int, str], dict[str, Any]]] = []
     for buyer in (c for c in state.counterparties if c.role == "BUYER"):
         mine = [r for r in needs if r.customer_id == buyer.id]
-        waits = sum(1 for w in waiting if w["customer_id"] == buyer.id)
+        waits = sum(1 for w in waiting if w["customer_id"] == buyer.id and w["kind"] != "PROMISE")  # as the queue counts: a promise belongs to its agreement
+        promises = sum(1 for w in waiting if w["customer_id"] == buyer.id and w["kind"] == "PROMISE")
         conc: dict[str, Any] | None = None
         if books is not None:
             try:
@@ -547,7 +548,8 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
         n, k = negotiations.get(buyer.id, 0), len(mine)
         parts = [t(lang, f"{n} open {'negotiation' if n == 1 else 'negotiations'}", f"{n} 项进行中的谈判") if n else None,
                  (t(lang, f"{k} {'needs' if k == 1 else 'need'} you", f"{k} 项需要您处理") if k else
-                  t(lang, f"{waits} waiting", f"{waits} 项在等待") if waits else None)]
+                  t(lang, f"{waits} waiting", f"{waits} 项在等待") if waits else
+                  t(lang, f"{promises} {'payment' if promises == 1 else 'payments'} promised", f"{promises} 笔承诺付款") if promises else None)]
         status = " · ".join(p for p in parts if p) or t(lang, "Nothing open", "没有进行中的事项")
         weight = min((_SEVERITY_RANK[r.severity] for r in mine), default=3)
         has_share = share is not None and conc is not None and conc["ar_buyer_fen"] > 0

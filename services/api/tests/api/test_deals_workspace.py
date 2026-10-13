@@ -148,10 +148,11 @@ def test_an_offer_with_no_counter_has_no_priced_responses(client, rt):
     assert _eval(client, "SEC_DEMO_FASTCAPITAL")["workspace"]["priced_responses"] == []
 
 
-def test_a_reply_that_runs_nothing_on_send_says_nothing_about_funding(client, rt):
-    """On the busy books the gap cannot be funded today whatever the buyer answers, so EX01's Option A runs nothing and its receipt claims nothing."""
+def test_a_reply_that_runs_nothing_on_send_says_so_before_the_send(client, rt):
+    """On the busy books the gap cannot be funded today whatever the buyer answers, so EX01's Option A runs no funding and its receipt says so
+    (the words the record uses after the send: the gap was not funded)."""
     client.post("/demo/reset", params={"scenario": "busy"}, headers=OWNER)
     ws = _eval(client)["workspace"]
     [a] = ws["priced_responses"]
-    assert a["label"] == "Option A" and a["receipt"]["executes_now_text"] is None
+    assert a["label"] == "Option A" and a["receipt"]["executes_now_text"] == "No funding runs when you send: today's plan cannot run; the gap stays open."
     assert a["receipt"]["assumptions_text"] == a["recheck_text"]

@@ -63,7 +63,7 @@ def test_zhuhais_offer_simulates_zhuhais_invoice_and_foshans_gives_rcv_a_as_befo
     assert zhuhai["params"]["receivable_id"] == "RCV-C1" and zhuhai["params"]["receivable_face_fen"] == 15_000_000
     assert zhuhai["params"]["current_terms_days"] == 60 and zhuhai["forward"] != foshan["forward"]  # its own recurring invoice, its own figures
     assert zhuhai["buyer_id"] == "BUYER-3" and foshan["buyer_id"] == "BUYER-1"
-    assert zhuhai["available"] is True and zhuhai["scope_text"] is None
+    assert zhuhai["available"] is True and zhuhai["scope_text"].startswith("The sandbox applies the terms to every Zhuhai invoice")
     assert zhuhai["controls"]["receivable_id"] == "RCV-C1" and zhuhai["controls"]["receivable_face_fen"] == 15_000_000
     assert zhuhai["controls"]["current_terms_days"] == 60
 

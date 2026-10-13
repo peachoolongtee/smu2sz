@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from app.alerts import Severity, alerts
 from app.api.auth import require_feature, require_owner
-from app.api.decisions import execution_view, latest_verdict_for, load_context, record_fact
+from app.api.decisions import execution_view, lapsed_conflict, latest_verdict_for, load_context, record_fact
 from app.api.display import displayed
 from app.api.home import _alert_actions, _series, next_action
 from app.api.presentation import (
@@ -176,6 +176,8 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
     if offer is None:
         raise HTTPException(404, "offer not found; POST /offers first")
     with rt.lock:
+        if (closed := lapsed_conflict(rt, offer_id, latest_verdict_for(rt, offer_id), lang)) is not None:
+            raise closed  # a lapsed offer is not read again: evaluating it would reopen it as a question to the buyer
         state, mandate = rt.store.get_state(), rt.store.get_mandate()
         bundle = evaluate(offer, state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=rt.day,
                           owner_declared=_owner_declared(body.fixture_id if body else None),
@@ -432,9 +434,13 @@ def _negotiate_locked(rt: Runtime, offer_id: str, body: NegotiateIn, profile: st
                 standing = _open_agreement(rt, latest, chosen)
                 if standing is not None:  # the owner learns it already went, whatever the books have done since
                     raise _already_sent(rt, offer_id, standing, lang)
+            if (closed := lapsed_conflict(rt, offer_id, latest, lang)) is not None:
+                raise closed  # a lapsed offer is closed: nothing is sent on it, and the buyer is not asked
             if (body.state_version is not None and body.state_version != version) or latest.state_version != version:
                 raise _counter_changed(rt, offer, latest, version, "BOOKS_CHANGED", lang)  # also when the verdict is on old books
             verdict = latest
+        elif (closed := lapsed_conflict(rt, offer_id, verdict, lang)) is not None:
+            raise closed
     counters = [chosen] if chosen is not None else list(verdict.counters)
     if not counters:
         raise HTTPException(409, "the verdict has no counter to negotiate")

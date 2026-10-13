@@ -16,8 +16,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import require_owner
+from app.api.offer_picture import FLOW_MAY, NEEDS_OWNER, OVER_LIMIT, cached_picture
 from app.api.presentation import invoice_words, party_name, t, when_text
 from app.api.runtime import get_runtime
+from app.api.workspace import _months
 from app.domain.models import Commitment, FinancialState, Mandate
 from app.strategy.words import buyer_short
 from app.whatif import PRESETS, WhatIfParamError, WhatIfRequest, presets, resolve, simulate
@@ -68,10 +70,11 @@ def _buyer_for(rt: Any, state: FinancialState, offer_id: str | None, buyer_id: s
     return None
 
 
-def _scope(state: FinancialState, today: int, buyer_id: str | None, lang: str) -> dict[str, Any]:
+def _scope(state: FinancialState, today: int, buyer_id: str | None, lang: str, *, months: int = 12, negotiation: bool = False) -> dict[str, Any]:
     """Which buyer and invoice the sandbox ran on, in words: `invoice_text` names the invoice the sliders act on ("the ¥150,000.00 invoice to
-    Zhuhai Kitchenware Wholesale Co., due in 57 days", no id), and `scope_text` says why there is none when the buyer has no recurring invoice to
-    extend (null when the sandbox ran). `available` says whether it did."""
+    Zhuhai Kitchenware Wholesale Co., due in 57 days", no id), and `scope_text` says what the sandbox assumes ("The sandbox applies the terms to
+    every Zhuhai invoice for the next 12 months, not only the next one; the negotiation itself asks for one invoice.") or, when the buyer has no
+    recurring invoice to extend, why there is none. `available` says whether it ran."""
     lang = "zh" if lang == "zh" else "en"
     try:
         ctx = resolve(state, today, buyer_id)
@@ -91,14 +94,57 @@ def _scope(state: FinancialState, today: int, buyer_id: str | None, lang: str) -
         return {"available": False, "buyer_id": buyer_id, "buyer_name": who,
                 "invoice_text": (_invoice_text(state, opens[0].id, opens[0].due_day, today, lang) if opens else None), "scope_text": reason}
     due = ctx.receivable.due_day
+    short = buyer_short(party_name(state, ctx.counterparty_id))
+    assumption = t(lang, f"The sandbox applies the terms to every {short} invoice for the next {months} months, not only the next one"
+                         + ("; the negotiation itself asks for one invoice." if negotiation else "."),
+                   f"沙盘把这些条款应用于{short}未来 {months} 个月内的每一张发票，而不只是下一张"
+                   + ("；这项谈判本身只涉及一张发票。" if negotiation else "。"))
     return {"available": True, "buyer_id": ctx.counterparty_id, "buyer_name": party_name(state, ctx.counterparty_id),
-            "invoice_text": _invoice_text(state, ctx.receivable.id, due, today, lang), "scope_text": None}
+            "invoice_text": _invoice_text(state, ctx.receivable.id, due, today, lang), "scope_text": assumption}
 
 
 def _invoice_text(state: FinancialState, receivable_id: str, due_day: int, today: int, lang: str) -> str:
     when = when_text(due_day, today, "zh" if lang == "zh" else "en")
     return t("zh" if lang == "zh" else "en", f"{invoice_words(state, receivable_id, 'en')}, due {when}",
              f"{invoice_words(state, receivable_id, 'zh')}，{when}到期")
+
+
+def _compare_text(rt: Any, offer_id: str | None, lang: str) -> str | None:
+    """The negotiation's own figure when the address carries an offer, from the offer picture's "as they asked" path (its cost words and who
+    decides), so the owner reads one number for one ask beside the sandbox's: "The negotiation as asked: ¥668.32 over 12 months, within your
+    limit." Null without an offer, or when the picture cannot be drawn on today's books (the sandbox then says nothing about the ask)."""
+    if offer_id is None:
+        return None
+    try:
+        with rt.lock:
+            pic = cached_picture(rt, offer_id, lang)
+    except HTTPException:
+        return None
+    asked = next((p for p in pic.get("paths") or [] if p.get("key") == "asked"), None)
+    if not pic.get("available") or asked is None:
+        return None
+    total, basis = asked.get("cost_total_display"), asked.get("cost_basis_text")
+    once, forward = asked.get("cost_once_display"), asked.get("cost_forward_display")
+    months = _months(rt.store.get_mandate().forward_concession_horizon_days)
+    if total is not None:
+        cost = t(lang, f"{total} {basis}", f"{total}（{basis}）")
+    else:
+        cost = t(lang, f"{once} once and {forward} over {months} months", f"一次性 {once}，另加 {months} 个月内 {forward}")
+    limit = {FLOW_MAY: (", within your limit", "，在您的限额内"), NEEDS_OWNER: (", within your limit", "，在您的限额内"),
+             OVER_LIMIT: (", over your limit", "，超出您的限额")}.get(str(asked.get("authority")), ("", ""))
+    return t(lang, f"The negotiation as asked: {cost}{limit[0]}.",
+             f"按对方要求的谈判：{cost}{limit[1]}。")
+
+
+def _cash_text(reserve: dict[str, Any], lang: str) -> str | None:
+    """The word beside "Lowest cash": the cash line against the minimum, not the verifier's delta (the books can be below the minimum with or
+    without the package). Null when there is no cash line to judge."""
+    days = reserve.get("below_days")
+    if days is None:
+        return None
+    if days == 0:
+        return t(lang, "Stays above it", "始终高于储备")
+    return t(lang, f"Below it for {days} {'day' if days == 1 else 'days'}", f"有 {days} 天低于储备")
 
 
 @router.get("/whatif/presets")
@@ -110,10 +156,12 @@ def get_presets(offer_id: str | None = Query(None, max_length=120), buyer_id: st
     rt = get_runtime()
     state = rt.store.get_state()
     buyer = _buyer_for(rt, state, offer_id, buyer_id)
+    months = _months(rt.store.get_mandate().forward_concession_horizon_days)
     try:
-        scope = _scope(state, rt.day, buyer, lang)
+        scope = _scope(state, rt.day, buyer, lang, months=months, negotiation=offer_id is not None)
     except WhatIfParamError as e:
         raise HTTPException(422, str(e)) from e
+    scope["compare_text"] = _compare_text(rt, offer_id, lang) if scope["available"] else None
     if not scope["available"]:
         return {"hypothetical": True, **scope}
     try:
@@ -133,10 +181,12 @@ def post_whatif(request: WhatIfRequest, lang: str = Query("en")) -> dict[str, An
     rt = get_runtime()
     state = rt.store.get_state()
     buyer = _buyer_for(rt, state, request.offer_id, request.buyer_id)
+    months = _months(rt.store.get_mandate().forward_concession_horizon_days)
     try:
-        scope = _scope(state, rt.day, buyer, lang)
+        scope = _scope(state, rt.day, buyer, lang, months=months, negotiation=request.offer_id is not None)
     except WhatIfParamError as e:
         raise HTTPException(422, str(e)) from e
+    scope["compare_text"] = _compare_text(rt, request.offer_id, lang) if scope["available"] else None
     if not scope["available"]:
         return {"hypothetical": True, **scope, "controls": None}
     params = request.sliders()
@@ -147,4 +197,6 @@ def post_whatif(request: WhatIfRequest, lang: str = Query("en")) -> dict[str, An
     except WhatIfParamError as e:
         raise HTTPException(422, str(e)) from e
     _start_prewarm(buyer)
-    return {**result.model_dump(), **scope, "controls": {"hypothetical": True, **controls}}
+    body = result.model_dump()
+    body["reserve"] = {**body["reserve"], "cash_text": _cash_text(body["reserve"], lang)}
+    return {**body, **scope, "controls": {"hypothetical": True, **controls}}

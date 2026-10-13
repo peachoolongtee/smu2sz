@@ -222,12 +222,17 @@ def _break_even(params: WhatIfParams, state: FinancialState, mandate: Mandate) -
 
 
 def _reserve(v: Violation | None, traj: dict[str, Any] | None) -> dict[str, Any]:
+    """The reserve verdict. `breach_day` and its siblings are the verifier's: a breach the hypothetical package CAUSES (none when the books are
+    already below the minimum without it). `below_days` is the cash line's own: how many days of the horizon close below the minimum, whatever the
+    cause, so the word beside "lowest cash" can follow that lowest cash (`stays_above` is its negation; both null without a trajectory)."""
+    below = sum(1 for d in traj["days"] if d["below_floor"]) if traj else None
+    own = {"below_days": below, "stays_above": below == 0 if below is not None else None}
     if v is None:
         return {"breach_day": None, "curable": None, "cure_cost_fen": None, "cure_cost_display": None,
-                "observed": None, "first_unfunded_day": traj["first_breach_day"] if traj else None}
+                "observed": None, "first_unfunded_day": traj["first_breach_day"] if traj else None, **own}
     return displayed({"breach_day": v.day, "curable": v.curable, "cure_cost_fen": v.cure_cost_fen,
                       "observed": v.observed, "cure_note": v.cure_note,
-                      "first_unfunded_day": traj["first_breach_day"] if traj else None})
+                      "first_unfunded_day": traj["first_breach_day"] if traj else None, **own})
 
 
 def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: str,

@@ -291,7 +291,7 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
     slots = p.slots
     if slots.counterparty_id is None and s.counterparty_id:
         slots = slots.model_copy(update={"counterparty_id": s.counterparty_id})
-    if (p.intent in cap.OWNER_ONLY or p.intent == Intent.CHANGES or {"waiting", "arrival"} & set(p.matched)) \
+    if (p.intent in cap.OWNER_ONLY or p.intent == Intent.CHANGES or {"waiting", "arrival", "owed"} & set(p.matched)) \
             and not ctx.owner_authenticated:
         return cap.needs_sign_in(ctx, p.intent)
     match p.intent:
@@ -311,6 +311,8 @@ def _dispatch(ctx: NlContext, p: Parsed, text: str) -> Turn:
                 return reads.waiting(ctx)
             if "arrival" in p.matched:
                 return reads.arrival(ctx)
+            if "owed" in p.matched:
+                return reads.owed(ctx)
             ctx.scope_read = "company"  # the cash status is the company's, whatever the request narrowed to
             return status(ctx)
         case Intent.CHANGES:

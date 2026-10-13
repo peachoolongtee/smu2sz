@@ -1834,6 +1834,8 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     """An abstention's reason in the owner's words. The compiler's "conflicting sources: the documents state 2 different values for order_size"
     becomes "The message and its attachment give two different order sizes"; `channels` are the channels of the documents the abstention quotes
     (chat, email, portal: the message; attachment). None for a reason this has no sentence for (the page then says nothing of it)."""
+    if reason.startswith("unresolved reference"):  # "as usual" / "same arrangement": the terms it points to are not on the books, so nothing was booked
+        return t(lang, "The buyer refers to an earlier arrangement that is not in your books.", "买方提到了一项此前的约定，但您的账目中没有这项记录。")
     m = _CONFLICT.match(reason)
     if m is None:
         return None
@@ -1895,8 +1897,11 @@ def decision_state_tone(state: str, *, awaited: bool, residual: bool) -> str:
     return "info"
 
 
-def waiting_text(code: str, party: str, day: int | None, today: int, lang: Lang, *, family: str = "DEAL") -> str:
-    """What FLOW is waiting for, as one sentence. `party` is the name of the buyer or the lender where there is one."""
+def waiting_text(code: str, party: str, day: int | None, today: int, lang: Lang, *, family: str = "DEAL", lapsed: bool = False) -> str:
+    """What FLOW is waiting for, as one sentence. `party` is the name of the buyer or the lender where there is one. `lapsed`: the decision is a
+    negotiation that lapsed, which nobody is waiting on and nothing was completed for."""
+    if lapsed:
+        return t(lang, "Nothing to do: this offer lapsed.", "无需处理：该报价已失效。")
     when = when_text(day, today, lang) if day is not None else ""
     if code == "OWNER_RESPONSE":
         return t(lang, "Waiting for your response.", "等待您的回复。")
