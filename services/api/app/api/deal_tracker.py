@@ -393,6 +393,7 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -
             "actual_note_text": note, "certainty": certainty, "certainty_text": certainty_text + extra,
             "tone": "bad" if shown else "neutral", "evidence_href": f"/decisions/{quote(fid, safe=':')}",
             "relation": relation, "counted": shown, "related_fen": cost, "related_display": _money(cost),
+            "figure_fen": cost, "figure_display": _money(cost), "counted_note_text": None if eligible else note,
             "_pending": pending, "_pending_fen": cost if (pending and eligible) else None,
         })
     return out
@@ -416,6 +417,7 @@ def _planned_funding(ds: DecisionState, lang: str) -> tuple[dict[str, Any] | Non
         "certainty_text": t(lang, "The cost FLOW planned for funding the rest of the gap when you agreed; the charge itself is not yet booked.",
                             "达成协议时 FLOW 为弥补其余缺口计划的融资成本；费用本身尚未入账。"),
         "tone": "neutral", "evidence_href": None, "relation": None, "counted": ran,
+        "figure_fen": cost, "figure_display": fmt_yuan(cost), "counted_note_text": None,
     }
     return line, cost
 
@@ -563,6 +565,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         "tone": ("bad" if concession_expected is not None and booked_fen > concession_expected
                  else "ok" if ended and not unmeasured and concession_expected is not None else "neutral"),
         "evidence_href": _entry_href(first_seq), "relation": None, "counted": True,
+        "figure_fen": booked_fen, "figure_display": fmt_yuan(booked_fen), "counted_note_text": None,
     }
     lines = [terms_line, *([planned_line] if planned_line is not None else []), *fund]
     actual = sum(x["actual_fen"] for x in lines if x["actual_fen"] is not None)
@@ -583,6 +586,10 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     if on_top:
         parts.append(t(lang, f"Includes {fmt_yuan(on_top)} of funding on top of the terms you agreed.",
                        f"其中包含 {fmt_yuan(on_top)} 在您同意的条款之外的融资成本。"))
+    not_counted = sum(x["related_fen"] for x in fund if x["counted_note_text"] and x["related_fen"] is not None)
+    if not_counted:
+        parts.append(t(lang, f"{fmt_yuan(not_counted)} of funding related to this deal is shown but not counted.",
+                       f"与这笔交易相关的 {fmt_yuan(not_counted)} 融资仅显示，不计入。"))
     if over and expected is not None:
         parts.append(t(lang, f"The booked cost is {fmt_yuan(base - expected)} above the expected cost.",
                        f"已入账的成本比预期高 {fmt_yuan(base - expected)}。"))
