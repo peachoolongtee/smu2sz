@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";

@@ -94,6 +94,7 @@ import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
 import sliceDActivity from "../../mocks/slice_d/activity.json";
+import sliceDAudit from "../../mocks/slice_d/audit.json";
 import sliceDRestore from "../../mocks/slice_d/restore.json";
 import sliceDStory from "../../mocks/slice_d/story.json";
 import bankReceiptJson from "../../mocks/bank_receipt.json";
@@ -375,10 +376,19 @@ export async function planFunding(_req: PlanRequest): Promise<FundingView> {
   return clone(cast<FundingView>(home.mockClock().day >= home.NEWS_DAY ? fundingDay34Json : fundingJson));
 }
 
+/** The owner-words kind of each operation kind, read from the recorded ledgers: a row the mock seeds (the document confirmations) carries the server's own `kind_text`. */
+function recordedKindTexts(): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const rec of [cast<LedgerView>(ledgerApproved), cast<LedgerView>(ledgerDay34)]) for (const o of rec.operations) if (o.kind_text && !out.has(o.kind)) out.set(o.kind, o.kind_text);
+  return out;
+}
+
 export async function getLedger(): Promise<LedgerView> {
   await delay();
   seedStory();
   const s = load();
+  const kinds = recordedKindTexts();
+  for (const o of s.ops) if (!o.kind_text && kinds.has(o.kind)) o.kind_text = kinds.get(o.kind);
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
   const valid = chainValid(s.ops);
   // The chain words and the refusal block are the API's own, recorded: the set-aside count is the recorded Audit's once the security scene has run.
@@ -469,7 +479,8 @@ export async function getAudit(): Promise<AuditView> {
   await delay();
   seedStory();
   const s = load();
-  const scene = cast<AuditView>(auditSec);
+  // The security view reads the recorded moment the Activity rows were recorded at, so each row's evidence link names an event this view has.
+  const scene = cast<AuditView>(sliceDAudit);
   const refusals = s.ops.filter((o) => o.status === "REFUSED");
   if (!s.securityScene) {
     return clone({

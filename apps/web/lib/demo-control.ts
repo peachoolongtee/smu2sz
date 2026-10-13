@@ -163,3 +163,8 @@ export async function runStoryAction(action: string, push: (route: string) => vo
   if (idx > reachedOf(demoStore.get()) + 1) demoStore.set((s) => ({ ...s, reached: idx - 1, step: Math.max(s.step, idx - 1) }));
   return goToStep(idx, push, { mode: "run" });
 }
+
+/** `seen` for GET /demo/story: the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it. */
+export function seenOf(reached: number): string | null {
+  return DEMO_STEPS.slice(0, reached + 1).reverse().find((s) => s.id === "cash" || s.id === "outcome" || s.id === "proof")?.id ?? null;
+}

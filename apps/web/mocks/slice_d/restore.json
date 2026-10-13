@@ -159,7 +159,7 @@
         "label": "Receive the buyer's message",
         "action": "ask",
         "href": null,
-        "hint_text": "The books are reset and the buyer's message is read. Deals shows it beside the terms FLOW found in it.",
+        "hint_text": "Opens Deals on the buyer's message.",
         "owner": false
       },
       "alternate": {
@@ -428,7 +428,7 @@
         "label": "接收买方的消息",
         "action": "ask",
         "href": null,
-        "hint_text": "账目已重置，买方的消息已被读取。交易页面把它与 FLOW 读出的条款并排展示。",
+        "hint_text": "在交易页面打开买方的消息。",
         "owner": false
       },
       "alternate": {

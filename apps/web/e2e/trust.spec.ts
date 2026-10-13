@@ -136,6 +136,8 @@ test.describe("the trust views are chosen by the address", () => {
     await expect(entry).toBeFocused();
     await expect(entry).toBeInViewport();
     await expect(entry).toContainText("The record you opened");
+    // The seeded document confirmations carry the ledger's own words, not the fallback.
+    await expect(page.getByTestId("trust-entry-1").getByTestId("trust-entry-kind")).not.toHaveText("Record entry");
     // Only that entry is marked; each entry says what it is in words, never the engine's kind code.
     await expect(page.locator('[data-marked="true"]')).toHaveCount(1);
     for (const kind of await page.getByTestId("trust-entry-kind").allTextContents()) expect(kind).not.toMatch(/^[A-Z][A-Z_]{3,}$/);

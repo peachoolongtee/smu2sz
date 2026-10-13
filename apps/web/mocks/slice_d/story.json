@@ -155,7 +155,7 @@
         "label": "Receive the buyer's message",
         "action": "ask",
         "href": null,
-        "hint_text": "The books are reset and the buyer's message is read. Deals shows it beside the terms FLOW found in it.",
+        "hint_text": "Opens Deals on the buyer's message.",
         "owner": false
       },
       "alternate": {
@@ -418,7 +418,7 @@
         "label": "接收买方的消息",
         "action": "ask",
         "href": null,
-        "hint_text": "账目已重置，买方的消息已被读取。交易页面把它与 FLOW 读出的条款并排展示。",
+        "hint_text": "在交易页面打开买方的消息。",
         "owner": false
       },
       "alternate": {
@@ -683,7 +683,7 @@
         "label": "Check the offer",
         "action": "decide",
         "href": null,
-        "hint_text": "FLOW works out what the offer costs, what it does to cash, and the one response it recommends.",
+        "hint_text": "Opens Deals with FLOW's reading of the offer.",
         "owner": false
       },
       "alternate": {
@@ -947,7 +947,7 @@
         "label": "检查报价",
         "action": "decide",
         "href": null,
-        "hint_text": "FLOW 算出这份报价的成本、对现金的影响，以及它推荐的唯一回复。",
+        "hint_text": "在交易页面打开 FLOW 对报价的解读。",
         "owner": false
       },
       "alternate": {
@@ -1223,7 +1223,7 @@
         "label": "Send the recommended counter",
         "action": "agree",
         "href": null,
-        "hint_text": "The recommended counter goes to the simulated buyer, who accepts. The agreement and its funding are booked.",
+        "hint_text": "Sends the counter and opens the agreement.",
         "owner": false
       },
       "alternate": {
@@ -1497,7 +1497,7 @@
         "label": "发送推荐的反报价",
         "action": "agree",
         "href": null,
-        "hint_text": "推荐的反报价发给模拟买方，买方接受。协议及其融资已记入账目。",
+        "hint_text": "发送反报价并打开协议。",
         "owner": false
       },
       "alternate": {
@@ -1773,7 +1773,7 @@
         "label": "See the cash",
         "action": "cash",
         "href": null,
-        "hint_text": "Cash shows what is in hand now, what is still on its way, and what the agreement did to the books.",
+        "hint_text": "Opens Cash. Nothing changes.",
         "owner": false
       },
       "alternate": {
@@ -2049,7 +2049,7 @@
         "label": "查看现金",
         "action": "cash",
         "href": null,
-        "hint_text": "现金页面显示手头现金、仍在途中的资金，以及协议对账目做了什么。",
+        "hint_text": "打开现金页面。不会改变任何内容。",
         "owner": false
       },
       "alternate": {
@@ -2340,7 +2340,7 @@
         "label": "Receive the bank payment",
         "action": "bank",
         "href": null,
-        "hint_text": "A synthetic bank event posts the one receipt of the story, the early payment the buyer agreed to. The clock never records a receipt.",
+        "hint_text": "One synthetic bank receipt, then the clock moves.",
         "owner": false
       },
       "alternate": {
@@ -2629,7 +2629,7 @@
         "label": "接收银行付款",
         "action": "bank",
         "href": null,
-        "hint_text": "一次模拟的银行事件登记故事中唯一的一笔收款，即买方约定的提前付款。时钟从不记录收款。",
+        "hint_text": "登记一笔模拟银行收款，然后时钟前进。",
         "owner": false
       },
       "alternate": {
@@ -2920,7 +2920,7 @@
         "label": "Let time pass",
         "action": "time",
         "href": null,
-        "hint_text": "The clock moves to the day the buyer's second payment is overdue. Nothing is recorded as received.",
+        "hint_text": "Moves the clock to the overdue day and opens Home.",
         "owner": false
       },
       "alternate": {
@@ -3210,7 +3210,7 @@
         "label": "让时间流逝",
         "action": "time",
         "href": null,
-        "hint_text": "时钟走到买方第二笔付款逾期的那一天。没有任何东西被记为已收到。",
+        "hint_text": "把时钟推进到逾期当天并打开首页。",
         "owner": false
       },
       "alternate": {
@@ -3511,7 +3511,7 @@
         "label": "Queue the cure for the owner",
         "action": "queue",
         "href": null,
-        "hint_text": "The cure costs more than the agent may approve alone, so it waits for the owner. Nothing has run.",
+        "hint_text": "Queues the cure and opens it in Approvals.",
         "owner": false
       },
       "alternate": {
@@ -3810,7 +3810,7 @@
         "label": "把解决方案交给老板批准",
         "action": "queue",
         "href": null,
-        "hint_text": "这项解决方案的成本超过代理可独自批准的上限，因此等待老板。尚未执行任何操作。",
+        "hint_text": "把解决方案排入队列，并在批准事项中打开。",
         "owner": false
       },
       "alternate": {
@@ -4103,7 +4103,7 @@
         "scene_id": "owner",
         "step_id": "approve",
         "title_text": "The owner stays in control",
-        "text": "The owner decides on the approval card. This button is that decision; nothing approves in the owner's place.",
+        "text": "FLOW prepared the funding plan. It is outside what FLOW may run alone, so it waits for the owner, who decides on the approval card.",
         "owner": true,
         "owner_text": "The approval is your own click. This story never presses it for you; open the approval and decide."
       },
@@ -4111,7 +4111,7 @@
         "label": "Review the approval",
         "action": null,
         "owner": true,
-        "hint_text": "The owner decides on the approval card. This button is that decision; nothing approves in the owner's place.",
+        "hint_text": "Opens the approval. Approve there, then come back.",
         "href": "/approvals#approval-APR-000001"
       },
       "alternate": {
@@ -4403,7 +4403,7 @@
         "scene_id": "owner",
         "step_id": "approve",
         "title_text": "老板掌控全局",
-        "text": "老板在审批卡上作出决定。这个按钮就是那个决定；没有任何东西会代替老板批准。",
+        "text": "FLOW 已准备好融资方案。它超出了 FLOW 可独自执行的范围，因此等待老板，由老板在批准卡上作出决定。",
         "owner": true,
         "owner_text": "批准是您自己的一次点击。这个故事绝不会代您点击；请打开批准事项并作出决定。"
       },
@@ -4411,7 +4411,7 @@
         "label": "查看批准事项",
         "action": null,
         "owner": true,
-        "hint_text": "老板在审批卡上作出决定。这个按钮就是那个决定；没有任何东西会代替老板批准。",
+        "hint_text": "打开批准事项。请在那里作出决定，然后回来。",
         "href": "/approvals#approval-APR-000001"
       },
       "alternate": {
@@ -4713,7 +4713,7 @@
         "label": "Let the funding settle",
         "action": "settle",
         "href": null,
-        "hint_text": "The clock moves to the day after the funding lands, so the cash is in hand and no longer in transit.",
+        "hint_text": "Moves the clock to when the funding lands and opens Cash.",
         "owner": false
       },
       "alternate": {
@@ -5013,7 +5013,7 @@
         "label": "让资金到账",
         "action": "settle",
         "href": null,
-        "hint_text": "时钟走到资金到账的次日，于是这笔钱已在手头，不再在途中。",
+        "hint_text": "把时钟推进到资金到账之日，并打开现金页面。",
         "owner": false
       },
       "alternate": {
@@ -5328,7 +5328,7 @@
         "label": "See where the books stand",
         "action": "outcome",
         "href": null,
-        "hint_text": "Home shows today's cash and the risk that remains.",
+        "hint_text": "Opens Home on where the books stand.",
         "owner": false
       },
       "alternate": {
@@ -5641,7 +5641,7 @@
         "label": "查看账目现状",
         "action": "outcome",
         "href": null,
-        "hint_text": "首页显示今天的现金和剩余的风险。",
+        "hint_text": "在首页打开账目现状。",
         "owner": false
       },
       "alternate": {
@@ -5956,7 +5956,7 @@
         "label": "Open the record and the proof",
         "action": "proof",
         "href": null,
-        "hint_text": "Activity lists everything that happened, with what changed, why it matters and what remains. The evidence export can be checked on its own.",
+        "hint_text": "Opens Activity, the record of everything that happened.",
         "owner": false
       },
       "alternate": {
@@ -6269,7 +6269,7 @@
         "label": "打开记录与证明",
         "action": "proof",
         "href": null,
-        "hint_text": "动态页面列出发生的一切，包括变了什么、为什么重要以及还剩什么。证据导出可以单独核验。",
+        "hint_text": "打开动态页面，查看发生的一切记录。",
         "owner": false
       },
       "alternate": {

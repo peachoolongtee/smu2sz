@@ -61,7 +61,8 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
       await expect(button).toHaveText("Next");
     }
     await button.click();
-    await expect(stripOf(page)).toContainText(`step ${i + 1} of ${STORY_STEPS}`);
+    await expect(stripOf(page)).toContainText(/Scene \d of 6|All 6 scenes/);
+    await expect(page.getByTestId("demo-next")).toBeEnabled();
   }
 }
 

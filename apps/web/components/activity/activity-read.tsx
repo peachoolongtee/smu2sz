@@ -93,10 +93,19 @@ function BusinessRow({ row }: { row: ActivityRow }) {
         ) : null}
         {row.why_text ? <Labelled label={t("biz.activity.why")} text={row.why_text} testId="activity-why" /> : null}
         {row.remaining_text ? <Labelled label={t("biz.activity.remains")} text={row.remaining_text} testId="activity-remains" /> : null}
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-supporting text-ink-3">
-          {row.status_word ? <span data-testid="activity-status">{row.status_word}</span> : null}
-          <span data-testid="activity-actor">{row.actor_text}</span>
-          {row.customer_name ? <span>{row.customer_name}</span> : null}
+        <p className="mt-1 text-supporting text-ink-3" data-testid="activity-meta">
+          {[
+            row.status_word ? { id: "activity-status", text: row.status_word } : null,
+            { id: "activity-actor", text: row.actor_text },
+            row.customer_name ? { id: "activity-customer", text: row.customer_name } : null,
+          ]
+            .filter((x): x is { id: string; text: string } => x !== null)
+            .map((x, i) => (
+              <span key={x.id}>
+                {i > 0 ? <span aria-hidden> · </span> : null}
+                <span data-testid={x.id}>{x.text}</span>
+              </span>
+            ))}
         </p>
         <EvidenceFold row={row} />
       </div>
@@ -216,7 +225,7 @@ export function ChainBadge({ chain }: { chain: ActivityView["chain"] }) {
   if (!chain.chain_text) return null;
   return (
     <div className="flex items-center gap-2" data-testid="chain-status">
-      <Badge tone={chain.chain_valid === false ? "bad" : "ok"} title={`${chain.chain_scope_text ?? ""} ${chain.chain_length ? t("ledger.entries", { n: chain.chain_length }) : ""}`.trim()}>
+      <Badge tone={chain.chain_valid ? "ok" : "bad"} title={`${chain.chain_scope_text ?? ""} ${t("ledger.entries", { n: chain.chain_length })}`.trim()}>
         {chain.chain_text}
       </Badge>
     </div>

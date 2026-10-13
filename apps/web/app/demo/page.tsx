@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,8 +12,8 @@ import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
 import { advanceClock, getDemoStory, restoreDemo } from "@/lib/api";
-import { goToMore, resetDemo, runStoryAction } from "@/lib/demo-control";
-import { DEMO_STEPS, MORE, type MoreId } from "@/lib/demo";
+import { goToMore, resetDemo, runStoryAction, seenOf } from "@/lib/demo-control";
+import { MORE, type MoreId } from "@/lib/demo";
 import { bump, reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
@@ -123,8 +124,7 @@ export default function DemoPage() {
   const router = useRouter();
   const demo = useDemo();
   const reached = reachedOf(demo);
-  // `seen` is the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it.
-  const seen = DEMO_STEPS.slice(0, reached + 1).reverse().find((s) => s.id === "cash" || s.id === "outcome" || s.id === "proof")?.id ?? null;
+  const seen = seenOf(reached);
   const story = useAsync(() => getDemoStory(lang, seen), [lang, seen]);
   const [working, setWorking] = useState(false);
   const [restored, setRestored] = useState<string | null>(null);
@@ -254,7 +254,7 @@ export default function DemoPage() {
               </p>
               {view.proof.chain.chain_text ? (
                 <p className="mt-1">
-                  <Badge tone={view.proof.chain.chain_valid === false ? "bad" : "ok"} title={view.proof.chain.chain_scope_text}>
+                  <Badge tone={view.proof.chain.chain_valid ? "ok" : "bad"} title={view.proof.chain.chain_scope_text}>
                     {view.proof.chain.chain_text}
                   </Badge>
                 </p>

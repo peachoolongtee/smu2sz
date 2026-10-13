@@ -202,3 +202,31 @@ test("the tour points at the current scene on the Demo and its card does not cov
   const overlap = h.x < c.x + c.width && c.x < h.x + h.width && h.y < c.y + c.height && c.y < h.y + h.height;
   expect(overlap).toBe(false);
 });
+
+test("the strip on the other pages follows the server's story: its progress, its chips and its one next control are the page's", async ({ page }) => {
+  test.setTimeout(120_000);
+  await freshDemo(page);
+  await openDemo(page);
+  const label = (await next(page).textContent())?.trim();
+  await pressNext(page);
+  // The page is now Deals, in the Demo shell, with the strip.
+  const strip = page.getByRole("region", { name: "Guided demo" });
+  await expect(strip.getByTestId("demo-progress")).toHaveText(/Scene 2 of 6/);
+  await expect(strip).not.toContainText(/step \d+ of 11/);
+  await expect(strip.getByTestId("demo-chip-buyer")).toHaveAttribute("data-state", "done");
+  await expect(strip.getByTestId("demo-chip-decision")).toHaveAttribute("data-state", "current");
+  await expect(strip.getByTestId("demo-story-link")).toHaveAttribute("href", "/demo");
+  // One forward control; it is the server's next, so the page agrees.
+  await expect(strip.getByRole("button", { name: /^Back$/ })).toHaveCount(0);
+  const stripLabel = (await strip.getByTestId("demo-next").textContent())?.trim();
+  expect(stripLabel).not.toBe(label);
+  await openDemo(page);
+  expect((await next(page).textContent())?.trim()).toBe(stripLabel);
+});
+
+test("the filled buttons are the design language's ink, on a direct load of the Demo page and of its dialog", async ({ page }) => {
+  await openDemo(page);
+  await expect(next(page)).toHaveCSS("background-color", "rgb(23, 29, 30)");
+  await page.getByTestId("demo-alternate-open").click();
+  await expect(page.getByTestId("demo-alternate-confirm")).toHaveCSS("background-color", "rgb(23, 29, 30)");
+});

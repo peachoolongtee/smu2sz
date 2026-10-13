@@ -132,7 +132,7 @@ signedOut("the stepper's Start resumes by itself after the owner signs in from t
   await dialog.getByLabel("Owner token").fill("mock-owner");
   await dialog.getByRole("button", { name: "Sign in" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("step 1 of 11");
+  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(/Scene 2 of 6/);
 });
 
 signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {

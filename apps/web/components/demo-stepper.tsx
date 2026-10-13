@@ -1,122 +1,97 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { onSignedIn } from "@/lib/auth";
-import { backStep, goToStep, nextStep, resetDemo, type StepMode } from "@/lib/demo-control";
+import { getDemoStory } from "@/lib/api";
+import { runStoryAction, seenOf } from "@/lib/demo-control";
+import { DEMO_STEPS } from "@/lib/demo";
 import { reachedOf, useDemo } from "@/lib/demo-store";
-import { DEMO_STEPS, SCENES, stepRoute } from "@/lib/demo";
 import { stepNarration } from "@/lib/demo-text";
-import { useCureWaiting } from "@/lib/use-cure-waiting";
 import { useI18n } from "@/lib/i18n";
-import { ArrowLeftIcon, ArrowRightIcon, ResetIcon } from "./icons";
-import { Button, toggleClass } from "./ui";
+import { useAsync } from "@/lib/use-async";
+import { ArrowRightIcon } from "./icons";
+import { Button, ButtonLink } from "./ui";
 
 /**
- * The guided story's control bar, Demo mode only: the six scenes of the late-payment loop, with reset. The step that is the owner's own
- * decision names what it approves on its button, and nothing here presses it for them.
+ * The story's strip on every other page, Demo mode only. It holds no pointer of its own: where the story stands (the progress words, the current scene, each scene chip's state)
+ * and its one forward control are the server's (`GET /demo/story`), the same read and the same `runStoryAction` as the story page. The owner's step is a link to the approval,
+ * never a button that decides. A quiet link goes back to the story page. The narration of what the last step did is the responses' own words, shown only for a step whose
+ * sentence holds no count (the proof step's entry count is left to the pages that list the entries).
  */
 export function DemoStepper() {
   const i18n = useI18n();
-  const { t, te } = i18n;
+  const { t, lang } = i18n;
   const router = useRouter();
+  const pathname = usePathname();
   const demo = useDemo();
-  const step = demo.step;
-  // The highest finished step: Back lowers the pointer, not this. A step up to here is shown (the books hold its result), only the one after it runs.
   const reached = reachedOf(demo);
-  const current = step >= 0 ? DEMO_STEPS[step] : null;
-  const last = DEMO_STEPS.length - 1;
+  const story = useAsync(() => getDemoStory(lang, seenOf(reached)), [lang, reached]);
+  const view = story.data;
 
   // The step a 401 interrupted: once the owner signs in from the dialog it opened, it runs by itself (as the chat resends its turn).
-  const interrupted = useRef<number | null>(null);
-
-  async function goTo(target: number, mode: StepMode = "run") {
+  const interrupted = useRef<string | null>(null);
+  async function press(action: string) {
     interrupted.current = null;
-    const outcome = await goToStep(target, router.push, { mode });
-    if (outcome === "unauthorized") interrupted.current = target;
+    const outcome = await runStoryAction(action, router.push);
+    if (outcome === "unauthorized") interrupted.current = action;
   }
-
-  async function next() {
-    interrupted.current = null;
-    const target = step + 1;
-    const outcome = await nextStep(router.push);
-    if (outcome === "unauthorized") interrupted.current = target;
-  }
-
   useEffect(
     () =>
       onSignedIn(() => {
-        const target = interrupted.current;
-        if (target !== null) void goTo(target);
+        const action = interrupted.current;
+        if (action) void press(action);
       }),
-    // goTo only reads the demo store and the router, so the first render's copy is the one to keep.
+    // press only reads the demo store and the router, so the first render's copy is the one to keep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
-  const upcoming = DEMO_STEPS[step + 1] ?? null;
-  // The owner's own step: while the cure waits, the decision is the card's one filled Approve, and this button only opens it.
-  const pathname = usePathname();
-  const cureWaiting = useCureWaiting();
-  const opensApproval = Boolean(upcoming?.owner && cureWaiting);
-  const nextLabel = step < 0 ? t("demo.start") : opensApproval ? t("demo.openApproval") : t("demo.next");
-  const sceneNo = current ? SCENES.findIndex((x) => x.id === current.scene) + 1 : 0;
-  const narration = current ? stepNarration(i18n, current.id, demo) : "";
-
-  // The story page carries its own one next control; the strip would be a second.
+  // The story page is the story: it carries its own one next control, so the strip is not drawn there.
   if (pathname === "/demo") return null;
+
+  const lastRun = reached >= 0 ? DEMO_STEPS[reached] : null;
+  const narration = lastRun && lastRun.id !== "proof" ? stepNarration(i18n, lastRun.id, demo) : "";
+
   return (
     <div className="border-t border-line bg-brand-50 px-4 py-2 lg:px-8" aria-label={t("demo.region")} role="region">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {/* The navy strip above the page already says DEMO on a phone, where the six scene buttons need the whole width. */}
-          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-meta font-bold uppercase tracking-wide text-white max-sm:hidden">
-            {t("demo.label")}
-          </span>
+          {/* The navy strip above the page already says DEMO on a phone, where the six scene chips need the whole width. */}
+          <span className="rounded-pill bg-brand-600 px-2 py-0.5 text-meta font-bold uppercase tracking-wide text-white max-sm:hidden">{t("demo.label")}</span>
           <ol className="flex flex-wrap items-center gap-1" aria-label={t("demo.scenes")}>
-            {SCENES.map((s, n) => {
-              const active = current?.scene === s.id;
-              return (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    // A scene that is already behind us is shown, never re-run; the next one starts; the ones after it wait their turn (the story moves time).
-                    disabled={demo.busy || s.first > reached + 1}
-                    onClick={() => void goTo(s.first, s.first <= reached ? "show" : "run")}
-                    aria-current={active ? "step" : undefined}
-                    title={t("demo.jump", { scene: te("scene", s.id) })}
-                    className={toggleClass(active, "sm")}
-                  >
-                    {/* On a phone the six scenes are numbered pills (one row); the name is the tooltip and the accessible name. */}
-                    <span aria-hidden className="sm:hidden">
-                      {n + 1}
-                    </span>
-                    <span className="max-sm:sr-only">{te("scene.short", s.id)}</span>
-                  </button>
-                </li>
-              );
-            })}
+            {(view?.scenes ?? []).map((s) => (
+              <li
+                key={s.id}
+                data-testid={`demo-chip-${s.id}`}
+                data-state={s.state}
+                aria-current={s.state === "current" ? "step" : undefined}
+                title={`${s.label}: ${s.state_text}`}
+                className={`inline-flex min-h-8 items-center rounded-pill border px-3 text-meta font-semibold ${s.state === "current" ? "border-brand-600 bg-brand-50 text-brand-700" : s.state === "done" ? "border-line bg-surface text-ink" : "border-line bg-subtle text-ink-3"}`}
+              >
+                <span aria-hidden className="sm:hidden">
+                  {s.n}
+                </span>
+                <span className="max-sm:sr-only">{s.label}</span>
+              </li>
+            ))}
           </ol>
         </div>
 
         <div className="min-w-0 flex-1 basis-56" aria-live="polite">
-          {current ? (
+          {view ? (
             <>
               <p className="truncate text-sm font-semibold text-ink" data-testid="demo-step-title">
-                <span className="mr-1.5 font-normal text-ink-3 tabular-nums">
-                  {t("demo.progress", { scene: sceneNo, scenes: SCENES.length, n: step + 1, total: DEMO_STEPS.length })}
+                <span className="mr-1.5 font-normal text-ink-3 tabular-nums" data-testid="demo-progress">
+                  {view.progress_text}
                 </span>
-                {te("demo.step", current.id)}
+                {view.current?.title_text ?? ""}
               </p>
-              {/* What the server just told this step, in two lines at most; the full sentence is the tooltip and the story page's. */}
-              <p className="line-clamp-2 text-meta text-ink-2" title={narration} data-testid="demo-step-narration">
-                {narration}
-              </p>
-              {current.link ? (
-                <Link href={current.link.route} className="mt-0.5 inline-block text-meta font-medium text-brand-700 underline underline-offset-2" data-testid="demo-step-link">
-                  {t(current.link.label)}
-                </Link>
+              {narration ? (
+                <p className="line-clamp-2 text-meta text-ink-2" title={narration} data-testid="demo-step-narration">
+                  {narration}
+                </p>
               ) : null}
             </>
           ) : (
@@ -132,26 +107,22 @@ export function DemoStepper() {
 
         {/* Below sm the last 3rem of this row is Ask FLOW (chat-panel.tsx fixes it to the bar's corner). */}
         <div className="flex items-center gap-1.5 max-sm:mr-12">
-          <Button size="sm" variant="ghost" onClick={() => backStep(router.push)} disabled={demo.busy || step <= 0} aria-label={t("demo.back")}>
-            <ArrowLeftIcon />
-            <span className="hidden sm:inline">{t("demo.back")}</span>
-          </Button>
-          <Button
-            size="sm"
-            variant={opensApproval ? "secondary" : "primary"}
-            loading={demo.busy}
-            disabled={step >= last}
-            // Next after a Back only shows the steps already finished (it moves the pointer and re-runs nothing); it runs the first one that is not.
-            onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void next())}
-            data-testid="demo-next"
-          >
-            {nextLabel}
-            <ArrowRightIcon />
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => void resetDemo(router.push)} disabled={demo.busy} data-testid="demo-reset">
-            <ResetIcon />
-            {t("demo.reset")}
-          </Button>
+          <Link href="/demo" className="motion-press hit inline-flex min-h-8 items-center rounded-pill px-2 text-sm font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50 touch:min-h-11" data-testid="demo-story-link">
+            {t("trust.back.demo")}
+          </Link>
+          {view ? (
+            view.next.href ? (
+              <ButtonLink href={view.next.href} size="sm" variant="primary" data-testid="demo-next" data-owner={view.next.owner ? "true" : undefined}>
+                {view.next.label}
+                <ArrowRightIcon />
+              </ButtonLink>
+            ) : (
+              <Button size="sm" variant="primary" loading={demo.busy} onClick={() => void press(view.next.action ?? "")} data-testid="demo-next">
+                {view.next.label}
+                <ArrowRightIcon />
+              </Button>
+            )
+          ) : null}
         </div>
       </div>
       {demo.error ? (

@@ -4215,9 +4215,9 @@ export interface ActivityView {
   rows: ActivityRow[];
   /** The same chain words GET /ledger returns. */
   chain: {
-    chain_valid?: boolean;
-    chain_length?: number;
-    head_hash?: string | null;
+    chain_valid: boolean;
+    chain_length: number;
+    head_hash: string | null;
     chain_text?: string | null;
     chain_scope_text?: string;
   } & Record<string, unknown>;

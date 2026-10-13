@@ -33,6 +33,8 @@ test("one title, the state as a pill and a sentence, and the business rows first
   await expect(rows.first()).toBeVisible();
   const approved = rows.filter({ hasText: "You approved" }).first();
   await expect(approved.getByTestId("activity-event")).toContainText("You approved");
+  // The status and the actor are one quiet line with a separator, in the server's words.
+  await expect(approved.getByTestId("activity-meta")).toContainText(/\S · \S/);
   await expect(approved.getByTestId("activity-open-decision")).toHaveText("Open this decision");
   await expect(approved.getByTestId("activity-open-decision")).toHaveAttribute("href", /^\/decisions\/alert:ALERT-RESERVE-42/);
   // The sentence leads; why it matters and what remains are labelled; the record is audit detail, folded.
@@ -86,6 +88,14 @@ test("the failed sign-ins are one line apart from the real alert, their rows und
   await benign.getByTestId("activity-benign-rows").locator("> summary").click();
   const rendered = (await page.getByTestId("activity-row").count()) + (await page.getByTestId("activity-alert").count());
   expect(rendered).toBe(total);
+  // An alert's evidence link names an event the security view has: it lands on it, marked.
+  const alert = page.getByTestId("activity-alert").first();
+  await alert.getByTestId("activity-evidence").locator("> summary").click();
+  const href = (await alert.getByTestId("activity-evidence-link").getAttribute("href"))!;
+  const id = /event=([^&]+)/.exec(href)![1];
+  await alert.getByTestId("activity-evidence-link").click();
+  await expect(page.getByTestId(`event-${id}`)).toHaveAttribute("aria-current", "true");
+  await expect(page.getByTestId("trust-back")).toHaveText("Back to Activity");
 });
 
 test("search and each category only hide rows; a filter that leaves nothing says nothing was removed", async ({ page }, info) => {

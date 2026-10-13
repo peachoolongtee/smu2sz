@@ -50,7 +50,7 @@
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
 //
-// --slice-d records ONLY apps/web/mocks/slice_d/{activity,story,restore}.json and exits (Slice D, ticket #145): GET /activity and GET /demo/story in both
+// --slice-d records ONLY apps/web/mocks/slice_d/{activity,story,restore,audit}.json and exits (Slice D, ticket #145): GET /activity and GET /demo/story in both
 // languages, and POST /demo/restore, at the moments the mock walks through. The walk is the Demo's own: lib/demo.ts DEMO_STEPS run in order through the
 // live adapters (the stepper section above records the same walk for the pages), the owner's approval pressed by this recorder between `queue` and
 // `approve` exactly as the section above does (the product never presses it). The story is read with `seen` = the last view step shown (cash, outcome or proof), as the Demo page sends it.
@@ -58,6 +58,7 @@
 //   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy }: each { en, zh } of GET /activity; `security` is the
 //                 settled books after two refused sign-ins and the FastCapital scene (benign sign-ins beside a real alert); `busy` is the busy company
 //   restore.json  { en, zh } of POST /demo/restore, made on the busy books
+//   audit.json    GET /audit at the `security` moment (the same events the Activity rows link to), served by the mock for the security view
 // lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` once the busy books are loaded.
 //   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8221
 //   node scripts/record-mocks.mjs --api http://localhost:8221 --slice-d
@@ -563,6 +564,7 @@ if (SLICE_D) {
   await refuse();
   await runSecurityScene();
   await takeActivity("security");
+  const audit = await live.getAudit(); // the security view of the same moment: its event ids are the ones the Activity rows link to
   // The busy company, and the one-click restore made on it.
   await live.demoReset("busy");
   clearDemo();
@@ -573,6 +575,7 @@ if (SLICE_D) {
   write("slice_d/story.json", story);
   write("slice_d/activity.json", activity);
   write("slice_d/restore.json", restore);
+  write("slice_d/audit.json", audit);
   console.log(`recorded ${written.length} files into ${join(OUT, "slice_d")} from ${API}`);
   process.exit(0);
 }

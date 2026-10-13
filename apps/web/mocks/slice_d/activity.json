@@ -5,7 +5,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed. (today). Nothing waits on you.",
+      "state_text": "Latest, today: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed.",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -127,6 +127,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -147,7 +150,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -269,6 +272,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -291,7 +297,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed. (today). Nothing waits on you.",
+      "state_text": "Latest, today: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed.",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -413,6 +419,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -433,7 +442,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -555,6 +564,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -577,7 +589,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed. (today). Nothing waits on you.",
+      "state_text": "Latest, today: You confirmed the invoice financing agreement, as FLOW read it. Nothing in the books changed.",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -699,6 +711,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -719,7 +734,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：您已确认发票融资协议，按 FLOW 读取的内容。账本未作任何更改。",
       "summary": {
         "business_count": 3,
         "security_alert_count": 0,
@@ -841,6 +856,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 3,
+        "head_hash": "c5756ec1390b325bdda89cbd84252f29a1a292379faec010d023a51ce55b5588",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -863,7 +881,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: ¥149,986.20 drawn on the Bank credit line. Cash received today. (today). Nothing waits on you.",
+      "state_text": "Latest, today: ¥149,986.20 drawn on the Bank credit line. Cash received today.",
       "summary": {
         "business_count": 5,
         "security_alert_count": 0,
@@ -1059,6 +1077,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 5,
+        "head_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -1079,7 +1100,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：已从Bank credit line提取 ¥149,986.20。资金今天已到账。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：已从Bank credit line提取 ¥149,986.20。资金今天已到账。",
       "summary": {
         "business_count": 5,
         "security_alert_count": 0,
@@ -1275,6 +1296,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 5,
+        "head_hash": "ed69c466fbd62c670597d9ff2ba4e9665eaa8b4e2a9b0bc1ab6c388e034ee073",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -1297,7 +1321,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: Received ¥255,013.80 from Foshan Home Retail Co. (today). Nothing waits on you.",
+      "state_text": "Latest, today: Received ¥255,013.80 from Foshan Home Retail Co.",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -1567,6 +1591,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 7,
+        "head_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -1587,7 +1614,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：已收到Foshan Home Retail Co.的 ¥255,013.80。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：已收到Foshan Home Retail Co.的 ¥255,013.80。",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -1857,6 +1884,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 7,
+        "head_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -1879,7 +1909,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: Received ¥255,013.80 from Foshan Home Retail Co. (32 days ago). Nothing waits on you.",
+      "state_text": "Latest, 32 days ago: Received ¥255,013.80 from Foshan Home Retail Co.",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -2181,6 +2211,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 8,
+        "head_hash": "fc6f9d59e3c5c0aa81e99948e2464f7329a228364d3a6ba029d27142953edd71",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -2201,7 +2234,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：已收到Foshan Home Retail Co.的 ¥255,013.80。（32 天前）。 没有事项在等您。",
+      "state_text": "最新，32 天前：已收到Foshan Home Retail Co.的 ¥255,013.80。",
       "summary": {
         "business_count": 6,
         "security_alert_count": 0,
@@ -2503,6 +2536,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 8,
+        "head_hash": "fc6f9d59e3c5c0aa81e99948e2464f7329a228364d3a6ba029d27142953edd71",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -2525,7 +2561,7 @@
       "title_text": "Activity",
       "state_word": "Waiting on you",
       "state_tone": "warn",
-      "state_text": "The latest change: Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. (today). 1 approval waits for you.",
+      "state_text": "Latest, today: Waiting for your approval: ¥200,000.00 of invoice financing at 32.5% a year, above the 15.00% limit you signed for funding without your approval. 1 approval waits for you.",
       "summary": {
         "business_count": 7,
         "security_alert_count": 0,
@@ -2859,6 +2895,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 9,
+        "head_hash": "a9aa8337b3c603fbf3470d4ade86db85dbaed308cf84fb015a03702c94fd09f3",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -2879,7 +2918,7 @@
       "title_text": "动态",
       "state_word": "等待您处理",
       "state_tone": "warn",
-      "state_text": "最近的变化：等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。（今天）。 有 1 项批准事项在等您。",
+      "state_text": "最新，今天：等待您批准：¥200,000.00 的发票融资，年化成本 32.5%，高于您签署的无需批准融资上限 15.00%。 有 1 项批准事项在等您。",
       "summary": {
         "business_count": 7,
         "security_alert_count": 0,
@@ -3213,6 +3252,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 9,
+        "head_hash": "a9aa8337b3c603fbf3470d4ade86db85dbaed308cf84fb015a03702c94fd09f3",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -3235,7 +3277,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days. (today). Nothing waits on you.",
+      "state_text": "Latest, today: You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.",
       "summary": {
         "business_count": 8,
         "security_alert_count": 0,
@@ -3601,6 +3643,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 10,
+        "head_hash": "3793280cbc5ee5265d7a95dabd12dd88109a28bd32de7f8ac74cf70e0a5761fa",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -3621,7 +3666,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：您已批准¥200,000.00 的发票融资。资金将于3 天后到账。（今天）。 没有事项在等您。",
+      "state_text": "最新，今天：您已批准¥200,000.00 的发票融资。资金将于3 天后到账。",
       "summary": {
         "business_count": 8,
         "security_alert_count": 0,
@@ -3987,6 +4032,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 10,
+        "head_hash": "3793280cbc5ee5265d7a95dabd12dd88109a28bd32de7f8ac74cf70e0a5761fa",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -4009,7 +4057,7 @@
       "title_text": "Activity",
       "state_word": "Nothing waits on you",
       "state_tone": "ok",
-      "state_text": "The latest change: You approved ¥200,000.00 of invoice financing. Cash received yesterday. (4 days ago). Nothing waits on you.",
+      "state_text": "Latest, 4 days ago: You approved ¥200,000.00 of invoice financing. Cash received yesterday.",
       "summary": {
         "business_count": 8,
         "security_alert_count": 0,
@@ -4407,6 +4455,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 11,
+        "head_hash": "5c4c08e371a149db9f2ddecf863cd3be23c83676ce9e5586f06d8c3321dd2865",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -4427,7 +4478,7 @@
       "title_text": "动态",
       "state_word": "没有事项在等您",
       "state_tone": "ok",
-      "state_text": "最近的变化：您已批准¥200,000.00 的发票融资。资金已于昨天到账。（4 天前）。 没有事项在等您。",
+      "state_text": "最新，4 天前：您已批准¥200,000.00 的发票融资。资金已于昨天到账。",
       "summary": {
         "business_count": 8,
         "security_alert_count": 0,
@@ -4825,6 +4876,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 11,
+        "head_hash": "5c4c08e371a149db9f2ddecf863cd3be23c83676ce9e5586f06d8c3321dd2865",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -4847,7 +4901,7 @@
       "title_text": "Activity",
       "state_word": "Security alert today",
       "state_tone": "warn",
-      "state_text": "The latest change: You approved ¥200,000.00 of invoice financing. Cash received yesterday. (4 days ago). A security alert was recorded today; nothing waits on you.",
+      "state_text": "Latest, 4 days ago: You approved ¥200,000.00 of invoice financing. Cash received yesterday.",
       "summary": {
         "business_count": 8,
         "security_alert_count": 7,
@@ -5529,6 +5583,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 11,
+        "head_hash": "5c4c08e371a149db9f2ddecf863cd3be23c83676ce9e5586f06d8c3321dd2865",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -5549,7 +5606,7 @@
       "title_text": "动态",
       "state_word": "今天有安全警示",
       "state_tone": "warn",
-      "state_text": "最近的变化：您已批准¥200,000.00 的发票融资。资金已于昨天到账。（4 天前）。 今天记录了一条安全警示；没有事项在等您。",
+      "state_text": "最新，4 天前：您已批准¥200,000.00 的发票融资。资金已于昨天到账。",
       "summary": {
         "business_count": 8,
         "security_alert_count": 7,
@@ -6231,6 +6288,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 11,
+        "head_hash": "5c4c08e371a149db9f2ddecf863cd3be23c83676ce9e5586f06d8c3321dd2865",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
@@ -6253,7 +6313,7 @@
       "title_text": "Activity",
       "state_word": "Waiting on you",
       "state_tone": "warn",
-      "state_text": "The latest change: Waiting for your approval: an application for ¥200,000.00 on Government-guaranteed working-capital loan. (today). 1 approval waits for you.",
+      "state_text": "Latest, today: Waiting for your approval: an application for ¥200,000.00 on Government-guaranteed working-capital loan. 1 approval waits for you.",
       "summary": {
         "business_count": 2,
         "security_alert_count": 0,
@@ -6348,6 +6408,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 2,
+        "head_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -6368,7 +6431,7 @@
       "title_text": "动态",
       "state_word": "等待您处理",
       "state_tone": "warn",
-      "state_text": "最近的变化：等待您批准：在Government-guaranteed working-capital loan申请 ¥200,000.00。（今天）。 有 1 项批准事项在等您。",
+      "state_text": "最新，今天：等待您批准：在Government-guaranteed working-capital loan申请 ¥200,000.00。 有 1 项批准事项在等您。",
       "summary": {
         "business_count": 2,
         "security_alert_count": 0,
@@ -6463,6 +6526,9 @@
         }
       ],
       "chain": {
+        "chain_valid": true,
+        "chain_length": 2,
+        "head_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
