@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
+import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
 import { canSortLatest, dealTabCounts, DEAL_TABS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
@@ -20,22 +21,25 @@ type Select = (customer: string | null, decision: string, invoice: string | null
 /** The subject with the customer's name as the link: "Foshan · Early settlement on the ¥420k invoice" links "Foshan"; a subject that does not start with the short name is linked whole. */
 function Subject({ row, decision, invoice }: { row: QueueRowView; decision: string | null; invoice: string | null }) {
   const short = row.customer_short;
+  // Business never shows an id; the Demo view may carry the offer's (the server's `subject_demo_text`).
+  const mode = useMode();
+  const subject = mode === "demo" ? (row.subject_demo_text ?? row.subject_text) : row.subject_text;
   // A row with no customer (a funding request) has no name link: plain text, so a click on the words reaches the row's own link.
-  if (!row.customer_id) return <span className="font-bold text-ink">{row.subject_text}</span>;
+  if (!row.customer_id) return <span className="font-bold text-ink">{subject}</span>;
   const link = (children: string) => (
     <CustomerName id={row.customer_id} decision={decision} invoice={invoice} className="pointer-events-auto relative z-10 font-bold text-ink" testId="queue-customer">
       {children}
     </CustomerName>
   );
-  if (short && row.subject_text.startsWith(short)) {
+  if (short && subject.startsWith(short)) {
     return (
       <>
         {link(short)}
-        {row.subject_text.slice(short.length)}
+        {subject.slice(short.length)}
       </>
     );
   }
-  return link(row.subject_text);
+  return link(subject);
 }
 
 /** Financial risk is its own mark, never the pill's: a dot (amber for a caution, risk red for critical) and the severity word for a reader who cannot see the dot. A normal row has none. */
@@ -98,6 +102,7 @@ function CompactRow({ tier, row, selected, locked, onSelect }: { tier: DealTier;
 /** One negotiation as a row of Home's worklist table (the page widens to the full width for it): the subject and its qualifier, the consequence as the next step, the lifecycle pill. */
 function TableRow({ tier, row, selected, locked, hrefOf, onSelect }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; hrefOf: (t: RowTarget) => string; onSelect: Select }) {
   const { t } = useI18n();
+  const mode = useMode();
   const target = rowTarget(row);
   const pill = rowPill(tier, row);
   return (
@@ -114,7 +119,7 @@ function TableRow({ tier, row, selected, locked, hrefOf, onSelect }: { tier: Dea
           onSelect(target.customer, target.decision, target.invoice);
         }
       }}
-      subject={row.subject_text}
+      subject={mode === "demo" ? (row.subject_demo_text ?? row.subject_text) : row.subject_text}
       isNew={row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={row.differentiator_text}
@@ -217,7 +222,7 @@ export function QueuePanel({
   }));
   const emptyFor = (): { title: string; body?: string } => {
     if (q.trim()) return { title: t("hv2.work.empty.none"), body: t("hv2.work.empty.search", { q: q.trim() }) };
-    if (counts.all === 0) return { title: t("deals.empty.none"), body: t("deals.empty.none.body") };
+    if (counts.all === 0 && queue.customers.length === 0) return { title: t("deals.empty.none"), body: t("deals.empty.none.body") };
     // The server's own words for an empty tab (alert-aware: "Nothing else needs you." while the plan waits for the owner's go).
     const served = tab === "needs_you" ? queue.needs_you_empty_text : tab === "waiting" ? queue.waiting_empty_text : tab === "agreements" ? queue.agreements_empty_text : null;
     if (served) return { title: served };

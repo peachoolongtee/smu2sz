@@ -152,9 +152,22 @@ export function SendBlock({
         </div>
       ) : null}
       {reviewing ? (
-        <div id="counters" role="region" aria-label={t("dq.review.region")} className="space-y-4 pt-1" data-testid="queue-review">
+        <div id="counters" role="region" aria-label={t("dq.review.region")} className="space-y-5 pt-1" data-testid="queue-review">
           {receipt ? (
-            <CommitmentReceipt receipt={receipt} id={`${uid}-receipt`} title={t("receipt.title.send", { label: path.label })} />
+            <section aria-labelledby={`${uid}-receipt-title`} className="min-w-0 space-y-5" data-testid="commitment-receipt">
+              <h3 id={`${uid}-receipt-title`} className="font-display text-base font-extrabold leading-snug text-ink">
+                {t("receipt.title.send", { label: path.label })}
+              </h3>
+              <Statements receipt={receipt} />
+              <div data-testid="send-terms">
+                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.review.terms")}</h4>
+                <TermsTable paths={[path]} heads={[path.label]} caption={t("deals.review.terms")} testId="send-terms-table" />
+              </div>
+              <div data-testid="send-cost">
+                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
+                <CostTable paths={[path]} heads={[path.label]} caption={t("deals.cost.title")} testId="send-cost-table" />
+              </div>
+            </section>
           ) : verdict ? (
             <p className="rounded-tile border border-line bg-subtle px-3.5 py-2.5 text-sm text-ink-2" role="status" data-testid="deal-unpriced">
               {t("receipt.unpriced")}
@@ -163,27 +176,32 @@ export function SendBlock({
             <LoadingBlock rows={3} label={t("deals.review.reading")} />
           ) : null}
           {verdict && !receipt ? null : (
-          <div className="space-y-2" data-testid="deal-send-confirm-box">
-            <p className="text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-supporting font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
-              <Segmented<BuyerProfile>
-                label={t("biz.deals.send.profile")}
-                name={`deal-buyer-profile-${uid}`}
-                value={profile}
-                onChange={setProfile}
-                options={[
-                  { value: "cooperative", label: t("biz.deals.send.cooperative") },
-                  { value: "hard_line", label: t("biz.deals.send.hardLine") },
-                ]}
-              />
+            <div className="space-y-2" data-testid="deal-send-confirm-box">
+              <p className="text-sm text-ink-2">{t("biz.deals.send.confirmBody")}</p>
+              {/* The simulated buyer's lean is the Demo's control; Business sends with the cooperative buyer and says the reply is simulated. */}
+              {mode === "demo" ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-supporting font-medium text-ink-2">{t("biz.deals.send.profile")}</span>
+                    <Segmented<BuyerProfile>
+                      label={t("biz.deals.send.profile")}
+                      name={`deal-buyer-profile-${uid}`}
+                      value={profile}
+                      onChange={setProfile}
+                      options={[
+                        { value: "cooperative", label: t("biz.deals.send.cooperative") },
+                        { value: "hard_line", label: t("biz.deals.send.hardLine") },
+                      ]}
+                    />
+                  </div>
+                  {profile === "hard_line" ? (
+                    <p className="text-sm text-ink-2" data-testid="deal-send-refusal">
+                      {t("biz.deals.send.ifRefuseOne")}
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
             </div>
-            {profile === "hard_line" ? (
-              <p className="text-sm text-ink-2" data-testid="deal-send-refusal">
-                {t("biz.deals.send.ifRefuseOne")}
-              </p>
-            ) : null}
-          </div>
           )}
           <ActionGroup testId="deal-commit" label={t("deals.commit")}>
             {/* No server receipt for this reply: no Send (a send the owner cannot read first is not offered). */}
@@ -196,6 +214,21 @@ export function SendBlock({
               {t("dq.review.close")}
             </button>
           </ActionGroup>
+          {receipt ? (
+            <Disclosure testId="send-fold" summary={t("deals.review.fold")} className="border-t border-line pt-1">
+              <div className="space-y-3 pt-2">
+                <CommitmentReceipt receipt={receipt} id={`${uid}-rest`} title={t("deals.review.fold")} hideTitle omit={["authorizes", "executes_now", "remaining"]} testId="send-fold-lines" />
+                {recordHref ? (
+                  <p className="text-sm">
+                    <span className="mr-2 text-supporting font-bold text-ink-3">{t("deals.review.audit")}</span>
+                    <Link href={recordHref} className={quietLink} data-testid="send-record-link">
+                      {t("deals.record")}
+                    </Link>
+                  </p>
+                ) : null}
+              </div>
+            </Disclosure>
+          ) : null}
         </div>
       ) : null}
       {slow ? (
@@ -214,5 +247,24 @@ export function SendBlock({
       ) : null}
       {error ? <ErrorState error={error} /> : null}
     </div>
+  );
+}
+
+/** The three statements above the send button: what it authorizes, what happens immediately, what does not happen yet. The server's words, in this order; a statement it did not write is not drawn. */
+function Statements({ receipt }: { receipt: CommitmentReceiptView }) {
+  const { t } = useI18n();
+  const wanted = new Set(["authorizes", "executes_now", "remaining"]);
+  const label = { authorizes: "deals.review.authorizing", executes_now: "deals.review.now", remaining: "deals.review.later" } as const;
+  const lines = receiptLines(receipt).filter((l) => wanted.has(l.key));
+  if (!lines.length) return null;
+  return (
+    <dl className="divide-y divide-line border-y border-line" data-testid="send-statements">
+      {lines.map((l, i) => (
+        <div key={l.key} className="py-3" data-testid={`receipt-line-${l.key}`} data-line={i}>
+          <dt className="text-supporting font-bold text-ink-3">{t(label[l.key as keyof typeof label])}</dt>
+          <dd className="m-0 mt-0.5 min-w-0 whitespace-pre-line break-words text-[15px] leading-snug text-ink">{l.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

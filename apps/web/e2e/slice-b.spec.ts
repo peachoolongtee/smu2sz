@@ -87,15 +87,16 @@ test.describe("mock", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await checkedDeal(page);
     await openReview(page);
-    const lines = page.locator('[data-testid^="receipt-line-"]');
-    expect(await lines.count()).toBeGreaterThanOrEqual(4);
+    // The three statements (authorizing, immediately, not yet) come before the button; the rest of the receipt is the fold after it.
+    const lines = page.locator('[data-testid="send-statements"] [data-testid^="receipt-line-"]');
+    expect(await lines.count()).toBeGreaterThanOrEqual(3);
     const order = await lines.evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-line"))));
     expect(order).toEqual([...order].sort((a, b) => a - b));
     const lastLine = (await lines.last().boundingBox())!;
     const send = (await page.getByTestId("deal-send").boundingBox())!;
     expect(lastLine.y + lastLine.height, "the last line ends before the button begins").toBeLessThanOrEqual(send.y);
     expect(await page.evaluate(() => {
-      const last = Array.from(document.querySelectorAll('[data-testid^="receipt-line-"]')).pop()!;
+      const last = Array.from(document.querySelectorAll('[data-testid="send-statements"] [data-testid^="receipt-line-"]')).pop()!;
       const button = document.querySelector('[data-testid="deal-send"]')!;
       return Boolean(last.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING);
     })).toBe(true);
@@ -126,7 +127,7 @@ test.describe("mock", () => {
     await expect(page.getByRole("dialog", { name: "Ask FLOW" }).locator('[data-testid^="prompt-"]')).toHaveText(["What changed today?", "What are we waiting for?", "Which payments are late?", "Who owes us money?"]);
   });
 
-  test("the queue's five tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
+  test("the queue's four tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
     for (const lang of ["en", "zh"] as const) {
       await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
       for (const width of [1440, 820, 390]) {
@@ -135,7 +136,7 @@ test.describe("mock", () => {
         const card = page.getByTestId("deals-queue");
         await expect(card).toBeVisible();
         const box = (await card.boundingBox())!;
-        for (const tab of ["all", "needs_you", "waiting", "agreements", "customers"]) {
+        for (const tab of ["all", "needs_you", "waiting", "agreements"]) {
           const t = page.getByTestId(`queue-tab-${tab}`);
           await expect(t, `${lang} ${width}: ${tab} is shown`).toBeVisible();
           const b = (await t.boundingBox())!;
@@ -145,8 +146,8 @@ test.describe("mock", () => {
         const tabs = page.getByTestId("queue-tabs");
         expect(await tabs.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${lang} ${width}: the tab row does not scroll or clip`).toBe(true);
         // The last tab is reachable by the pointer as it stands.
-        await page.getByTestId("queue-tab-customers").click();
-        await expect(page.getByTestId("queue-tab-customers")).toHaveAttribute("aria-selected", "true");
+        await page.getByTestId("queue-tab-agreements").click();
+        await expect(page.getByTestId("queue-tab-agreements")).toHaveAttribute("aria-selected", "true");
       }
     }
   });
@@ -194,6 +195,7 @@ test.describe("mock", () => {
     await expect(page.getByTestId("capex-applied")).toBeVisible();
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
+    await card.getByTestId("approval-details-APR-000001").locator("> summary").click();
     for (const label of ["Amount", "Funding source", "If you decline"]) {
       const el = card.getByText(label, { exact: true }).first();
       await expect(el, label).toBeVisible();

@@ -27,8 +27,8 @@ export function dealTabOf(raw: string | null): DealTab | null {
   return raw && (DEAL_TABS as string[]).includes(raw) ? (raw as DealTab) : null;
 }
 
-/** The negotiations of the queue, in tier order (what the server filed first stays first). */
-export const negotiationRows = (q: Queue): DealRow[] => taskRows(q).filter((x) => isNegotiation(x.row));
+/** The negotiations of the queue, in tier order (what the server filed first stays first); the Agreements tab also holds the promised payments under the agreements, as the server's `queue.deals.agreements` counts them. */
+export const negotiationRows = (q: Queue): DealRow[] => taskRows(q).filter((x) => isNegotiation(x.row) || (x.tier === "agreements" && x.row.kind === "PROMISE"));
 
 /** The tab counts: the server's `queue.deals` when it sends them (negotiations only), else the negotiation rows held (a count of lines). */
 export function dealTabCounts(q: Queue): Record<DealTab, number> {
@@ -47,11 +47,13 @@ export function dealTabCounts(q: Queue): Record<DealTab, number> {
 
 export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed";
 const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed"]);
+/** The server's key for "More information needed" is `more_information`. */
+const ALIAS: Record<string, Lifecycle> = { more_information: "more_info" };
 
 /** The lifecycle the server names for a negotiation (`lifecycle`, any case, spaces or dashes as underscores); null when it names none (an older server). */
 export function lifecycleOf(row: Pick<QueueRowView, "lifecycle">): Lifecycle | null {
   const key = row.lifecycle?.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  return key && LIFECYCLES.has(key) ? (key as Lifecycle) : null;
+  return key ? (ALIAS[key] ?? (LIFECYCLES.has(key) ? (key as Lifecycle) : null)) : null;
 }
 
 /** The pill's tone by lifecycle: amber is the owner's turn (a counter ready, a review, a question), lavender somebody else's (waiting for the buyer), green agreed, neutral closed (declined, lapsed). */
@@ -231,6 +233,9 @@ export function timingOf(picture: Pick<OfferPictureView, "current_terms_days" | 
 
 /** A path's cost as one headline and the words that say what it covers: the forward cost with its two-part note when it has both a forward and a one-off part, else its total. */
 export function costHeadline(p: PicturePath): { display: string | null; basis: string | null } {
+  // The server's own total row, when the path carries its cost as rows: the figure and the basis words it states for that total.
+  const total = p.cost_rows?.find((r) => r.key === "total" && r.amount_display);
+  if (total) return { display: total.amount_display, basis: total.basis_text || null };
   if (p.cost_forward_display && p.cost_once_display) return { display: p.cost_forward_display, basis: p.cost_note || null };
   return { display: p.cost_total_display ?? p.cost_once_display ?? p.cost_display ?? null, basis: p.cost_basis_text ?? p.cost_note ?? null };
 }
@@ -249,7 +254,10 @@ export interface CostRow {
 export function costRows(paths: PicturePath[]): CostRow[] {
   const rows: CostRow[] = [];
   paths.forEach((p, i) => {
-    for (const c of p.cost_components ?? []) {
+    // The server's rows (`cost_rows`, the total apart) else its older components; a component with no amount for a path is that path's missing cell.
+    const parts = p.cost_rows?.length ? p.cost_rows.filter((r) => r.key !== "total").map((r) => ({ key: r.key, label: r.label, display: r.amount_display, basis_text: r.basis_text })) : (p.cost_components ?? []);
+    for (const c of parts) {
+      if (!c.display) continue;
       const key = c.key ?? c.label;
       let row = rows.find((r) => r.key === key);
       if (!row) {
@@ -271,4 +279,10 @@ export function costRows(paths: PicturePath[]): CostRow[] {
 export function paneStatus(row: QueueRowView | null, stateText: string | null | undefined, stateCode: string): { tone: PillTone; text: string } {
   if (row && lifecycleOf(row) && row.status_text) return { tone: rowPill("needs_you", row).tone, text: row.status_text };
   return { tone: recordTone(stateCode), text: stateText ?? row?.status_text ?? "" };
+}
+
+/** A lifecycle key and the server's word for it as a pill (the customer page's negotiations carry both); an unknown or absent key is the owner's turn. */
+export function lifecyclePill(lifecycle: string | null | undefined, text: string): { tone: PillTone; text: string; lifecycle: Lifecycle | null } {
+  const lc = lifecycleOf({ lifecycle });
+  return { tone: lc ? LIFECYCLE_TONE[lc] : "amber", text, lifecycle: lc };
 }

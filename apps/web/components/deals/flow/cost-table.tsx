@@ -15,15 +15,15 @@ export function CostTable({ paths, heads, testId = "deal-cost-table", caption }:
   if (!paths.length) return null;
   const rows = costRows(paths);
   const totals = paths.map(costHeadline);
-  const rowHead = "border-b border-line py-2.5 pr-3 text-left align-top text-supporting font-bold text-ink-3";
-  const cell = "border-b border-line px-3 py-2.5 align-top text-sm";
+  const rowHead = "border-b border-line py-2.5 pr-2 text-left align-top sm:pr-3 text-supporting font-bold text-ink-3";
+  const cell = "border-b border-line px-2 py-2.5 sm:px-3 align-top text-sm";
   const figure = (display: string | null, bad: boolean) => (display ? <span className={`block font-display text-base font-bold tabular-nums ${bad ? "text-bad-fg" : "text-ink"}`}>{display}</span> : NONE);
   return (
     <div className="overflow-x-auto" data-testid={testId}>
       <table className="w-full table-fixed border-separate border-spacing-0">
         <caption className="sr-only">{caption}</caption>
         <colgroup>
-          <col className="w-[34%]" />
+          <col className="w-[30%] sm:w-[34%]" />
           {paths.map((p) => (
             <col key={p.key} />
           ))}
@@ -32,7 +32,7 @@ export function CostTable({ paths, heads, testId = "deal-cost-table", caption }:
           <tr>
             <td className="border-b border-line-strong" />
             {paths.map((p, i) => (
-              <th key={p.key} scope="col" className="border-b border-line-strong px-3 py-2 text-left align-bottom text-sm font-bold text-ink">
+              <th key={p.key} scope="col" className="border-b border-line-strong px-2 py-2 sm:px-3 text-left align-bottom text-sm font-bold text-ink">
                 {heads[i]}
               </th>
             ))}

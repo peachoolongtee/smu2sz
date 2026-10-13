@@ -37,14 +37,14 @@ export function TermsTable({ paths, heads, subs = [], testId = "deal-terms-table
   const cols = paths.length + 1;
   const authority = paths.map((p) => ({ text: p.authority_text ?? p.decides_text, tone: AUTH_TONE[p.authority ?? ""] ?? "neutral" }));
   const status = paths.map((p) => ({ text: p.tag_text, tone: toneOfDeal(p.tag_tone) }));
-  const rowHead = "border-b border-line py-2.5 pr-3 text-left align-top text-supporting font-bold text-ink-3";
-  const cell = "border-b border-line px-3 py-2.5 align-top text-sm";
+  const rowHead = "border-b border-line py-2.5 pr-2 text-left align-top sm:pr-3 text-supporting font-bold text-ink-3";
+  const cell = "border-b border-line px-2 py-2.5 sm:px-3 align-top text-sm";
   return (
     <div className="overflow-x-auto" data-testid={testId}>
       <table className="w-full table-fixed border-separate border-spacing-0" data-testid={`${testId}-table`}>
         <caption className="sr-only">{caption}</caption>
         <colgroup>
-          <col className="w-[34%]" />
+          <col className="w-[30%] sm:w-[34%]" />
           {paths.map((p) => (
             <col key={p.key} />
           ))}
@@ -53,7 +53,7 @@ export function TermsTable({ paths, heads, subs = [], testId = "deal-terms-table
           <tr>
             <td className="border-b border-line-strong" />
             {paths.map((p, i) => (
-              <th key={p.key} scope="col" className="border-b border-line-strong px-3 py-2 text-left align-bottom text-sm font-bold text-ink" data-testid={`${testId}-head-${p.kind === "asked" ? "asked" : "reply"}`}>
+              <th key={p.key} scope="col" className="border-b border-line-strong px-2 py-2 sm:px-3 text-left align-bottom text-sm font-bold text-ink" data-testid={`${testId}-head-${p.kind === "asked" ? "asked" : "reply"}`}>
                 {heads[i]}
                 {subs[i] ? <span className="block text-supporting font-normal text-ink-3">{subs[i]}</span> : null}
               </th>

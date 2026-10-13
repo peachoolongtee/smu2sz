@@ -51,7 +51,14 @@ export function DealsPage() {
   const tab = dealTabOf(params.get("tab")) ?? "all";
   // Home's table is the queue's layout from 20 negotiations; the compact rows are the default (a view choice, held by the page so the queue can take the full width).
   const [layout, setLayout] = useState<QueueLayout>("compact");
-  const view: DealView = { compare: params.get("compare") === "1", chart: params.get("chart") === "1", late: sel.scenario === "late" };
+  const showRaw = params.get("show");
+  const view: DealView = {
+    compare: params.get("compare") === "1",
+    chart: params.get("chart") === "1",
+    late: sel.scenario === "late",
+    investigate: params.get("investigate") === "1",
+    show: showRaw === "cost" || showRaw === "cash" || showRaw === "none" ? showRaw : null,
+  };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
   const [opened] = useState<DealsContext>(() => ({ customer: sel.customer ?? null, invoice: sel.invoice ?? null, path: sel.path ?? null, decision: sel.decision ?? null, from: sel.from ?? null }));
@@ -73,18 +80,20 @@ export function DealsPage() {
   const go = (patch: Record<string, string | null>, how: "push" | "replace" = "push") => router[how](patchedHref(pathname, search, patch), { scroll: false });
   const select = (customer: string | null, dec: string, invoice: string | null) => {
     if (sending) return;
-    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null });
+    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null, investigate: null, show: null });
   };
-  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null });
+  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null, investigate: null, show: null });
   const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
   // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
-  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null }));
+  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null, investigate: null, show: null }));
   const onView = (patch: Partial<DealView>) =>
     go(
       {
         ...(patch.compare !== undefined ? { compare: patch.compare ? "1" : null } : {}),
         ...(patch.chart !== undefined ? { chart: patch.chart ? "1" : null } : {}),
         ...(patch.late !== undefined ? { scenario: patch.late ? "late" : null } : {}),
+        ...(patch.investigate !== undefined ? { investigate: patch.investigate ? "1" : null, compare: null, chart: null } : {}),
+        ...(patch.show !== undefined ? { show: patch.show } : {}),
       },
       "replace",
     );

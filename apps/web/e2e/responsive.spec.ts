@@ -229,7 +229,11 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   const ids = twoPanes ? detail : [...detail, "inbox-collapsed"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
-    return el ? el.getBoundingClientRect().top + scrollY : -1;
+    if (!el) return -1;
+    // From `xl` the negotiation scrolls on its own (round two): its parts are placed within that scroller; below it the window's scroll is the page's.
+    const box = document.querySelector('[data-testid="deals-detail"]');
+    const own = box && getComputedStyle(box).overflowY === "auto" && box.contains(el);
+    return own ? el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop : el.getBoundingClientRect().top + scrollY;
   }), ids);
   expect(tops.every((y) => y >= 0)).toBe(true);
   expect(tops).toEqual([...tops].sort((a, b) => a - b));

@@ -19,6 +19,7 @@ import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import { AnalysisCards, type ShowKey } from "./analysis-cards";
 import { CostTable } from "./cost-table";
 import { costHeadline, paneStatus, timingOf } from "./deal-model";
 import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
@@ -33,12 +34,13 @@ export interface DealView {
   compare: boolean;
   chart: boolean;
   late: boolean;
+  /** "Full analysis" is open (`investigate=1`): the Investigate level with the reasons. */
+  investigate: boolean;
+  /** Which of the two cards is open (`show=cost|cash`; `none` both folded); null is the default card. */
+  show: ShowKey | null;
 }
 
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
-
-/** A sentence the server wrote opens with a capital in the place it stands. */
-const upper = "first-letter:uppercase";
 
 function Announce({ text }: { text: string }) {
   return (
@@ -308,6 +310,8 @@ export function DecisionPane({
   const timingTabs = Boolean(exposure?.stress.paths);
 
   const timing = picture ? timingOf(picture, asked, focus) : null;
+  // The open card: the address's, else the one the recommendation reason names (cash when the request breaches the reserve or exceeds the mandate, whose authority row is in the cash table), cost when the server does not say.
+  const shown: ShowKey = view.show ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
@@ -512,7 +516,7 @@ export function DecisionPane({
                   onSent={setSent}
                   onBusy={setBusyBoth}
                 >
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
+                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
                   {mode === "demo" ? (
                     <Link href="/verdict#negotiation" className={quietLink}>
                       {t("biz.deals.negotiateLink")}
@@ -521,7 +525,7 @@ export function DecisionPane({
                 </SendBlock>
               ) : (
                 <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
+                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
                   {mode === "demo" ? (
                     <Link href="/verdict#negotiation" className={quietLink}>
                       {t("biz.deals.negotiateLink")}
@@ -545,63 +549,75 @@ export function DecisionPane({
                 </div>
               ) : null}
             </OpenSection>
-            <OpenSection title={t("deals.cost.title")} subtitle={t("deals.cost.note")} testId="deal-cost-section" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
-              <CostTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label))} caption={t("deals.cost.title")} />
-            </OpenSection>
-            <OpenSection
-              title={t("hv2.deal.consequence")}
-              subtitle={t("hv2.deal.consequence.note")}
-              testId="deal-level-consequence"
-              className="mt-6 sm:mt-6 pt-6 sm:pt-6"
-              actions={
-                paths.length > 1 ? (
-                  <Button size="sm" aria-expanded={view.compare} aria-controls="deal-compare" aria-label={t("deals.more.aria")} onClick={() => onView({ compare: !view.compare })} data-testid="deal-compare-toggle">
-                    {t("deals.more")}
-                    <Chevron on={view.compare} />
+            {/* Cost and cash: two cards under the diagram, one open to its full table (the address), the other folded to its headline; then the quiet way to the full analysis. */}
+            <div className="mt-6 border-t border-line pt-6" data-testid="deal-level-consequence" role="region" aria-label={t("deals.cards.region")}>
+              <AnalysisCards
+                open={shown}
+                onShow={(k) => onView({ show: k })}
+                costTitle={t("deals.card.cost")}
+                cashTitle={t("deals.card.cash")}
+                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display }))}
+                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value }))}
+                costBody={
+                  <div data-testid="deal-cost-section">
+                    <p className="mb-2 text-supporting text-ink-3">{t("deals.cost.note")}</p>
+                    <CostTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label))} caption={t("deals.cost.title")} />
+                  </div>
+                }
+                cashBody={
+                  <div data-testid="deal-cash-section">
+                    <p className="text-supporting text-ink-3">{t("hv2.deal.consequence.note")}</p>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
+                      <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
+                      {timingTabs ? (
+                        <SegmentedTabs
+                          compact
+                          label={t("hv2.deal.timing")}
+                          value={late ? "late" : "expected"}
+                          onChange={(x) => onView({ late: x === "late" })}
+                          tabs={[
+                            { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
+                            { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
+                          ]}
+                        />
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
+                    <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
+                      <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
+                      {assumptions.length ? (
+                        <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
+                          {assumptions.map(({ p, text }) => (
+                            <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
+                              <b className="font-bold text-ink">{p.label}.</b> {text}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </div>
+                }
+              />
+              {paths.length > 1 ? (
+                <p className="mt-3">
+                  <Button size="sm" aria-expanded={view.investigate} aria-controls="deal-investigate-panel" onClick={() => onView({ investigate: !view.investigate })} data-testid="deal-compare-toggle">
+                    {t("deals.full")}
+                    <Chevron on={view.investigate} />
                   </Button>
-                ) : null
-              }
-            >
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
-                <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
-                {timingTabs ? (
-                  <SegmentedTabs
-                    compact
-                    label={t("hv2.deal.timing")}
-                    value={late ? "late" : "expected"}
-                    onChange={(x) => onView({ late: x === "late" })}
-                    tabs={[
-                      { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
-                      { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
-                    ]}
-                  />
-                ) : null}
-              </div>
-              <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
-              <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
-                <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
-                {assumptions.length ? (
-                  <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
-                    {assumptions.map(({ p, text }) => (
-                      <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
-                        <b className="font-bold text-ink">{p.label}.</b> {text}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            </OpenSection>
+                </p>
+              ) : null}
+            </div>
           </>
         ) : null}
 
       </div>
     </section>
   );
-  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart) && !done);
+  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart || view.investigate) && !done);
   const investigate =
     investigating && picture ? (
-      <div className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
-        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare} chartOpen={view.chart} />
+      <div id="deal-investigate-panel" className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
+        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare || view.investigate} chartOpen={view.chart || view.investigate} why={view.investigate} />
       </div>
     ) : null;
   return (
@@ -620,20 +636,12 @@ function Chevron({ on }: { on: boolean }) {
   );
 }
 
-/** "Cash impact" (the deal's cash chart, an outlined toggle) and the way to try other terms: the commit area's companions (the filled button is the commit's; the full comparison is "More" in the cash comparison). */
-function CompareButtons({ view, onView, hasChart, whatif }: { view: DealView; onView: (patch: Partial<DealView>) => void; hasChart: boolean; whatif: string }) {
+/** The commit area's companion: the way to try other terms (the filled button is the commit's; the cash chart and every response are the full analysis, under the cost and cash cards). */
+function CompareButtons({ whatif }: { whatif: string }) {
   const { t } = useI18n();
   return (
-    <>
-      {hasChart ? (
-        <Button aria-expanded={view.chart} aria-controls="deal-chart" onClick={() => onView({ chart: !view.chart })} data-testid="deal-chart-toggle">
-          {t("hv2.deal.cash")}
-          <Chevron on={view.chart} />
-        </Button>
-      ) : null}
-      <Link href={whatif} className={`${quietLink} px-1`} data-testid="deal-whatif">
-        {t("deals.whatif")}
-      </Link>
-    </>
+    <Link href={whatif} className={`${quietLink} px-1`} data-testid="deal-whatif">
+      {t("deals.whatif")}
+    </Link>
   );
 }

@@ -63,9 +63,9 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await walkStory(page, 1, 1);
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
-  await expect(page.getByTestId("deal-cost-asked")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("queue-cost")).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-cost-table-total-reply")).toContainText("¥3,027.77");
 
   // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
   await walkStory(page, 1, 2);

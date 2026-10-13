@@ -1309,6 +1309,8 @@ export interface ApprovalPresentation {
   terms_state_text?: string | null;
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
+  /** The terms of a real stored quote (`label`, `value_text`); empty when the quote carries none. */
+  terms_rows?: ApprovalSummaryRow[] | null;
 }
 
 /** One stage of an approval's lifecycle (You authorize, Lender reviews, Funding decision): the server's label and sentence and where it stands; a stage is never shown done before it is. */
@@ -1322,7 +1324,8 @@ export interface ApprovalLifecycleStage {
 export interface ApprovalSummaryRow {
   key?: string;
   label: string;
-  value_text: string;
+  /** Null where the row has no word for it: the row is left out. */
+  value_text: string | null;
 }
 
 export type ApprovalExecutionStatus = "EXECUTED" | "REFUSED" | "PENDING" | "DECLINED" | "DUPLICATE";
@@ -1357,6 +1360,7 @@ export interface ApprovalDetail {
   terms_state_text?: string | null;
   lifecycle?: ApprovalLifecycleStage[] | null;
   summary_rows?: ApprovalSummaryRow[] | null;
+  terms_rows?: ApprovalSummaryRow[] | null;
 }
 
 /** The colour of a state, chosen by the server. */
@@ -3490,6 +3494,8 @@ export interface QueueRowView {
   why_first_text?: string | null;
   /** The negotiation's lifecycle key (round two): counter_ready, owner_review, awaiting_buyer, more_info, agreed, declined, lapsed. `status_text` is then the lifecycle word alone. Absent from an older server (the tier decides the pill's tone and `status_text` is "state . who acts"). */
   lifecycle?: string | null;
+  /** The subject with the offer's id appended: the Demo view's (Business never shows an id). */
+  subject_demo_text?: string | null;
   /** The day of the negotiation's latest activity (round two): the "Latest activity" sort. Absent: that sort is not offered. */
   last_activity_day?: Day | null;
   /** The fallback read (today's worklist) writes these; the server's queue does not. */
@@ -3867,6 +3873,8 @@ export interface PicturePath {
   cost_forward_display?: string | null;
   /** The parts of a cost, in the server's words: the immediate discount, the forward payment-term cost, the rebate, the funding cost (round two: each with its `key` and the basis words that say its horizon); absent when the cost is a plain figure. */
   cost_components?: { key?: string | null; label: string; display: string; basis_text?: string | null }[] | null;
+  /** Round two: the cost as table rows, `{key, label, amount_display, basis_text}`: the immediate discount, the forward payment-term cost, the rebate, (a price offset), the funding cost and a `total` row whose basis is the path's `cost_basis_text`; an amount is null where the path has no such component. */
+  cost_rows?: { key: string; label: string; amount_display: string | null; basis_text?: string | null }[] | null;
   /** Round two: the payment term of this path in days (plotting only: the timing diagram's bar) and the server's words for it; null for a path with no terms change. */
   terms_days?: number | null;
   terms_days_text?: string | null;
@@ -3879,6 +3887,8 @@ export interface PicturePath {
   /** The evidence for who decides (why the verifier classed it so), and the reason this path is the recommended one; each absent until the server sends it. */
   authority_reason_text?: string | null;
   recommended_reason_text?: string | null;
+  /** What the recommendation reason is about ("cost": the reply is within limits and cheaper; "cash": the request breaches the reserve): the card that opens by default. Absent: cost. */
+  recommended_reason_kind?: string | null;
   /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
   scenario_assumption_text?: string | null;
   /** The asked path only: what the invoice becomes under the ask (after the buyer's discount, the requested discount), each with its share of the face in the server's words; null or empty without an immediate discount. */
@@ -4117,9 +4127,12 @@ export interface FlowStep {
   key: string;
   label: string;
   value_display?: string | null;
+  /** The server's own name for the figure (`receivable_flow` is a list of steps with `amount_display` and `note`). */
+  amount_display?: string | null;
   when_text?: string | null;
   /** One more sentence for the step ("arrives in 3 days if the plan runs"). */
   text?: string | null;
+  note?: string | null;
   /** The state vocabulary's key when the step is a money state (planned, arranged, received, repaid, owed ...). */
   state?: string | null;
   state_text?: string | null;
@@ -4140,10 +4153,21 @@ export interface ReceivableFlow {
   links?: FlowLink[] | null;
 }
 
+export interface OverviewNegotiation {
+  decision_id: string;
+  subject_text: string;
+  subject_demo_text?: string | null;
+  lifecycle?: string | null;
+  status_text: string;
+  is_primary?: boolean;
+  href: string;
+}
+
 /** The exposure as a comparison (round two): a column per timing (expected payment, 30 days late) and a row per measure, every cell the server's words. */
 export interface ExposureComparison {
   columns: { key: string; label: string }[];
-  rows: { key: string; label: string; cells: (string | { text: string; tone?: OverviewTone | null } | null)[] }[];
+  /** A row's cells in the columns' order (`cells`), or the server's `<column key>_text` fields (`expected_text`, `late_text`). */
+  rows: ({ key?: string; label: string; cells?: (string | { text: string; tone?: OverviewTone | null } | null)[] } & { [cell: `${string}_text`]: string | null | undefined })[];
   assumption_text?: string | null;
   explore?: { label: string; href: string } | null;
 }
@@ -4199,9 +4223,13 @@ export interface CustomerOverviewView {
   relationship_text?: string | null;
   figures?: OverviewFigure[];
   /** Round two: the receivable-to-financing-to-net-collection flow for the customer's largest open invoice. */
-  receivable_flow?: ReceivableFlow | null;
+  receivable_flow?: ReceivableFlow | FlowStep[] | null;
   /** Round two: the exposure as a two-column comparison (expected payment, 30 days late). */
   exposure_comparison?: ExposureComparison | null;
+  /** Round two: every open negotiation of this customer (`decision_id`, `subject_text`, `subject_demo_text`, `lifecycle`, `status_text`, `is_primary`, `href`), the primary decision block (`text`, `recommends_text`, `href`) and how many other negotiations are open. */
+  open_negotiations?: OverviewNegotiation[] | null;
+  primary_decision?: { decision_id: string; text: string; recommends_text?: string | null; href: string } | null;
+  other_open_count?: number | null;
   decision?: OverviewDecision | null;
   /** The line shown instead of the decision card when nothing waits. */
   none_text?: string | null;

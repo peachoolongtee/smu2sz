@@ -55,7 +55,6 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await openReview(page);
   await scan(page, "/deals the receipt");
   await openCompare(page);
-  await page.getByTestId("deal-chart-toggle").click();
   await expect(page.getByTestId("deal-chart")).toBeVisible();
   await scan(page, "/deals compare and chart open");
   const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
@@ -74,10 +73,7 @@ test("contract ingestion and the send step: the documents and a review, the buye
   await scan(page, "/documents review");
   await checkedDeal(page);
   await openReview(page);
-  const review = page.getByTestId("queue-review");
-  await review.getByTestId("deal-send-confirm-box").getByLabel("Holds firm").check();
   await scan(page, "/deals the send step");
-  await review.getByTestId("deal-send-confirm-box").getByLabel("Open to a counter").check();
   await sendCounter(page);
   await expect(page.getByTestId("deal-summary-BUYER-1")).toBeVisible();
   await scan(page, "/deals the deal summary");
