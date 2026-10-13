@@ -37,6 +37,9 @@ function SideCard({ id, title, subtitle, narrow, children }: { id: string; title
   );
 }
 
+/** The books the server can reset to (`POST /demo/reset?scenario=`); `public_sme` is not offered on this page. */
+type DemoScenario = "golden_sme" | "short_facilities" | "busy";
+
 /**
  * The judge's page: the late-payment loop in six scenes, each step one click, with the clock, the scenario switch, the optional scenes
  * and the side doors. The one brand fill on the page is the strip's Start demo / Next; every button here is a secondary pill.
@@ -46,7 +49,7 @@ export default function DemoPage() {
   const { t, te } = i18n;
   const router = useRouter();
   const demo = useDemo();
-  const [scenario, setScenario] = useState<"golden_sme" | "short_facilities">("golden_sme");
+  const [scenario, setScenario] = useState<DemoScenario>("golden_sme");
   const current = demo.step;
   // On a phone the clock, the optional scenes and the books are one closed fold each: the page is the story.
   const narrow = useNarrow();
@@ -221,13 +224,15 @@ export default function DemoPage() {
                 <select
                   value={scenario}
                   disabled={demo.busy}
-                  onChange={(e) => setScenario(e.target.value as "golden_sme" | "short_facilities")}
+                  onChange={(e) => setScenario(e.target.value as DemoScenario)}
                   className={`w-full ${inputClass}`}
                   data-testid="story-scenario"
                 >
                   <option value="golden_sme">{t("story.scenario.golden")}</option>
                   <option value="short_facilities">{t("story.scenario.short")}</option>
+                  <option value="busy">{t("story.scenario.busy")}</option>
                 </select>
+                {scenario === "busy" ? <span className="mt-1 block text-meta text-ink-3">{t("story.scenario.busy.help")}</span> : null}
               </label>
               <Button variant="secondary" disabled={demo.busy} onClick={() => void resetDemo(router.push, scenario === "golden_sme" ? undefined : scenario)} data-testid="story-reset">
                 <ResetIcon />
