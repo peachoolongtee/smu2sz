@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { BuyerAsks } from "@/components/deals/asks";
@@ -16,7 +16,10 @@ import { QueueDetail } from "@/components/deals/queue/queue-detail";
 import { QueueReadOnly } from "@/components/deals/queue/queue-readonly";
 import { QueueBody, QueueHead } from "@/components/deals/queue/queue";
 import { PathsBody, PathsReply, usePathsState } from "@/components/deals/paths-section";
+import { FoldCard } from "@/components/business/surface";
+import { DealList, useDealRows } from "@/components/deals/deal-list";
 import { DealTools } from "@/components/deals/tools";
+import { ArrowLeftIcon } from "@/components/icons";
 import { AdvancedDetails, SelectedBuyer, WorkspaceAsksCost, WorkspaceWhy } from "@/components/deals/workspace";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { Button, Callout, Card, ErrorState, LoadingBlock, PageHeader, ButtonLink, type Tone } from "@/components/ui";
@@ -47,10 +50,19 @@ import { Disclosure } from "@/components/business/kit";
 export default function DealsPage() {
   return (
     <Suspense fallback={<LoadingBlock rows={3} />}>
-      <Deals />
+      <KeyedDeals />
     </Suspense>
   );
 }
+
+/** A card on the list opens `/deals?buyer=…` in the same page: keyed by the buyer, the page starts on that buyer's deal. */
+function KeyedDeals() {
+  const params = useSearchParams();
+  return <Deals key={params.get("buyer") ?? "all"} />;
+}
+
+/** The address names nothing (the Deals tab itself): the page is the list of every deal. Anything it names (a buyer, a deal, a tab) opens the deal in full. */
+const DETAIL_PARAMS = ["buyer", "decision", "customer", "invoice", "path", "tab", "open"];
 
 function Deals() {
   const { t, te, lang } = useI18n();
@@ -70,6 +82,8 @@ function Deals() {
   const [compareFor, setCompareFor] = useState<string | null>(null);
   // The offer for which the owner asked for the full inbox ("Back to inbox"); selecting another deal folds it again.
   const [inboxFor, setInboxFor] = useState<string | null>(null);
+  const listMode = !DETAIL_PARAMS.some((k) => params.get(k));
+  const router = useRouter();
   const books = useAsync(getState, []);
   // The books' refusal block: the set-aside line in the inbox is the ledger's count, never the page's.
   const ledger = useAsync(() => getLedger(lang), [lang]);
@@ -271,13 +285,15 @@ function Deals() {
   const pickNow = pathsState.picked?.key ?? null;
   const offerNow = offer?.offer.offer_id ?? null;
   useEffect(() => {
+    if (listMode) return; // the list writes nothing to the address
     const changedByOwner = lastOffer.current !== null && offerNow !== null && offerNow !== lastOffer.current && fromAddress.current !== offerNow;
     if (offerNow) lastOffer.current = offerNow;
     if (queueOn && decisionNow) setQuery({ decision: decisionNow, ...(changedByOwner ? { path: null } : {}) });
-  }, [queueOn, decisionNow, offerNow]);
+  }, [listMode, queueOn, decisionNow, offerNow]);
   useEffect(() => {
+    if (listMode) return;
     if (queueOn && !pathParam && pickNow) setQuery({ path: pickNow });
-  }, [queueOn, pathParam, pickNow]);
+  }, [listMode, queueOn, pathParam, pickNow]);
   const queuePaths: typeof pathsState = {
     ...pathsState,
     onPick: (key) => {
@@ -443,6 +459,55 @@ function Deals() {
   const order = ["heading", "next", "priced_response", "paths", "buyer", "folds", "buyer_asks", "why", "before", "original", "agreements", "advanced"];
   const errorNode = error ? <ErrorState key="error" error={error} /> : null;
 
+  // The rows are read from what the page already has: the deals read, the deals' records, the offers read and the inbox.
+  const listRows = useDealRows({
+    deals: dealsView.data?.deals ?? [],
+    records: records.data?.decisions ?? [],
+    offers: Object.values(demo.offers),
+    negotiations: demo.negotiations,
+    verdicts: demo.verdicts,
+    readDocIds: Object.values(demo.offers).map((o) => o.documents[0]?.doc_id).filter((d): d is string => Boolean(d)),
+    known,
+    nameOf: buyerName,
+    today,
+  });
+  if (listMode)
+    return (
+      <>
+        <PageHeader section="deals" title={t("nav.deals")} subtitle={t("deals.list.pageSub")} />
+        <div className="space-y-6">
+          <DealTools />
+          {dealsError ? <ErrorState error={dealsError} onRetry={dealsView.reload} /> : null}
+          {books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : null}
+          {(dealsView.loading && !dealsView.data) || (!books.data && !books.error) ? <LoadingBlock rows={3} /> : <DealList rows={listRows} />}
+          {/* Every message, as it arrived: a dropdown under the list. Opening one reads it and opens its deal in full. */}
+          <FoldCard title={t("deals.list.messages")} hint={t("deals.list.messages.hint", { n: INBOX.length })} testId="deal-list-messages">
+            <InboxList
+              currentDocId={null}
+              readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+              known={known}
+              busy={reading}
+              today={today}
+              mode={mode}
+              statusFor={statusFor}
+              onOpen={(m) => void openMessage(m).then(() => router.push(`/deals?open=${encodeURIComponent(m.id)}`))}
+              loadError={books.error}
+              onRetry={books.reload}
+              collapsed={false}
+              refusals={ledger.data?.refusals ?? null}
+            />
+          </FoldCard>
+        </div>
+      </>
+    );
+  // The way back to the list, above the deal.
+  const allDeals = (
+    <Link href="/deals" className="inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 hover:underline touch:min-h-11" data-testid="deal-list-back">
+      <ArrowLeftIcon width={14} height={14} />
+      {t("deals.list.back")}
+    </Link>
+  );
+
   if (queuePending)
     return (
       <>
@@ -539,7 +604,7 @@ function Deals() {
       <>
         <PageHeader section="deals" title={t("nav.deals")} subtitle={(narrow || short) && offer ? undefined : rows.some((r) => r.tab === "needs") ? t("dq.sub.needs") : t("dq.sub.none")} />
         <div className="space-y-5">
-          <DealTools />
+          {backLink ? null : allDeals}
           {backLink ? (
             <Link href={backLink.href} className="inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
               ‹ {backLink.label}
@@ -562,7 +627,7 @@ function Deals() {
     <>
       {offer && ready ? null : <PageHeader section="deals" title={t("nav.deals")} subtitle={offer && narrow ? undefined : t("biz.deals.subtitle")} />}
       <div className="space-y-5">
-        <DealTools />
+        {allDeals}
         {inbox}
 
         {errorNode}
