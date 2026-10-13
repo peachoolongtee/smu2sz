@@ -665,7 +665,7 @@ def _word(kind: str, n: int, crossing: str, lang: str, lowest_of: list[str] | No
         if crossing == "both":  # one path goes below the reserve on the day another comes back above it
             return say(lang, "Paths cross the reserve", "路径穿过储备")
         return say(lang, "Below the reserve", "低于储备") if crossing == "down" else say(lang, "Back above the reserve", "回到储备之上")
-    return say(lang, f"Day {n}", f"第 {n} 天")
+    return say(lang, f"End, {_chip(n, lang).lower()}", f"终点，{_chip(n, lang)}")  # a distance from today, never a day number
 
 
 def _who_decides(lang: str, live: list[dict[str, Any]], names: dict[str, str]) -> str:
@@ -787,7 +787,8 @@ def _moments(paths: list[dict[str, Any]], today: int, floor: int, horizon_days: 
             text = f"{text} {who}" if who else text
         have = [k for k in _KINDS if k in kinds[d]]
         kind = have[0] if have else "end"
-        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "decisive": d == decisive,
+        out.append({"day": d, "label": _chip(d - today, lang), "title": _chip(d - today, lang), "when": when_text(d, today, lang),
+                    "decisive": d == decisive,
                     "kind": kind, "kinds": have, "word": _word(kind, d - today, "both" if d in down and d in up else "down" if d in down else "up", lang,
                                 [(say(lang, "as asked", "按对方要求") if k == asked["key"] else names[k]) for k in lowest_by_day[d]]
                                 if named and d in lowest_by_day else None), "text": text, "values": values,

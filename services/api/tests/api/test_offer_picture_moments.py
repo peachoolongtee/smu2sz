@@ -86,8 +86,8 @@ def test_the_list_is_ascending_at_most_six_with_one_decisive_and_every_word_in_b
     assert [m["kind"] for m in en] == ["today", "lowest", "reserve_cross", "lowest", "reserve_cross", "end"]
     assert all(m["kind"] in KINDS and m["kind"] == m["kinds"][0] for m in en)
     assert [m["word"] for m in en] == ["Today", "Lowest, Option A and Option B", "Below the reserve", "Lowest, as asked",
-                                           "Back above the reserve", "Day 66"]
-    assert [m["word"] for m in zh] == ["今天", "最低点，方案 A、方案 B", "低于储备", "最低点，按对方要求", "回到储备之上", "第 66 天"]
+                                           "Back above the reserve", "End, in 66 days"]
+    assert [m["word"] for m in zh] == ["今天", "最低点，方案 A、方案 B", "低于储备", "最低点，按对方要求", "回到储备之上", "终点，66 天后"]
     assert next(m for m in en if m["decisive"])["day"] == 47
     assert en[0]["kinds"] == ["today", "paths_part"] and en[2]["kinds"] == ["reserve_cross", "invoice_due"]
     assert [m["day"] for m in en if "invoice_due" in m["kinds"]] == [47] and en[-1]["kinds"] == ["end"]

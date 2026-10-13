@@ -584,6 +584,11 @@ def _add_series(rows: list[dict], actions_by_key: dict[str, list], found: list, 
         row["series"] = _series(state, traj, lang, from_day=today)
 
 
+def _speed(days: int, lang: str) -> str:
+    """How fast a source turns into cash, in the page's language ("same day", "3 days", "当天", "3 天")."""
+    return t(lang, "same day" if days == 0 else f"{days} day" if days == 1 else f"{days} days", "当天" if days == 0 else f"{days} 天")
+
+
 @router.post("/router/plan", dependencies=[Depends(require_feature("debt_desk"))])
 def router_plan(lang: str = "en") -> dict:
     """The router's plan, its menu and the §7.4 comparison. Each comparison row carries its `role` for the owner
@@ -608,7 +613,7 @@ def router_plan(lang: str = "en") -> dict:
         menu.append({
             "facility": displayed(json.loads(fac[r.facility_id].model_dump_json())),
             "cost_display": r.all_in_display, "rate_basis": r.rate_basis,
-            "time_to_cash_display": "same day" if r.time_to_cash_days == 0 else f"{r.time_to_cash_days} days",
+            "time_to_cash_display": _speed(r.time_to_cash_days, lang),
             "covenant_effect": "; ".join(r.covenant_notes) or ("counts in leverage" if r.counts_in_leverage else "no debt"),
             "admissible": r.admissible_for_need, "needs_owner_approval": r.needs_owner_approval,
             "reason_codes": [c.value for c in r.reasons],
