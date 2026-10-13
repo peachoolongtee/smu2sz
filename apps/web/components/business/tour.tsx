@@ -8,11 +8,11 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "../ui";
 
 /**
- * "Show me around": a short tour of the page the owner is on, started from the account sheet and never by itself (no
- * first-visit autoplay, so an automated browser and a returning owner both see the page as it is). Each page has at most
- * two steps, each a spotlight on one part of the page with what it is for and what its buttons do; a step whose part is
- * not on the page now (a quiet home has no recommendation) is skipped. Esc, "Skip" or a click outside closes it.
- * The words are in the dictionary in both languages and use the labels the pages use.
+ * "Show me around": a tour of the page the owner is on, started from the account sheet and never by itself (no first-visit autoplay, so an
+ * automated browser and a returning owner both see the page as it is). Each step is a spotlight on one part of the page: what it is for and how
+ * to use it (what to press, open or point at). On Home it also shows where everything else lives: the sections, the profile menu (limits,
+ * Security & evidence, language, this tour) and Ask FLOW. A step whose part is not on the page now (a quiet home has no plan to run) is skipped.
+ * Esc, "Skip" or a click outside closes it. The words are in the dictionary in both languages and use the labels the pages use.
  */
 
 const tourStore = createStore<{ open: boolean }>({ open: false });
@@ -31,25 +31,54 @@ interface Step {
 }
 
 const NAV: Step = { target: '[data-testid="nav-pills"], [data-testid="tab-bar"]', title: "tour.nav.title", body: "tour.nav.body", extra: "sections" };
+const PROFILE: Step = { target: '[data-testid="account-menu"] > summary', title: "tour.profile.title", body: "tour.profile.body" };
+const ASK: Step = { target: '[data-testid="chat-open"]', title: "tour.ask.title", body: "tour.ask.body" };
+const tid = (id: string) => `[data-testid="${id}"]`;
 
-/** At most two steps per page. */
+/** The steps of each page, in reading order. */
 const STEPS: Record<string, Step[]> = {
-  "/": [{ target: '[data-testid="home-status"]', title: "tour.home.status.title", body: "tour.home.status.body" }, NAV],
+  "/": [
+    { target: tid("home-status"), title: "tour.home.status.title", body: "tour.home.status.body" },
+    { target: tid("home-card-cash"), title: "tour.home.cash.title", body: "tour.home.cash.body" },
+    { target: tid("home-card-funding"), title: "tour.home.plan.title", body: "tour.home.plan.body" },
+    { target: tid("home-card-lowest"), title: "tour.home.lowest.title", body: "tour.home.lowest.body" },
+    { target: tid("home-mix"), title: "tour.home.mix.title", body: "tour.home.mix.body" },
+    { target: tid("home-shortcuts"), title: "tour.home.shortcuts.title", body: "tour.home.shortcuts.body" },
+    { target: tid("home-recent"), title: "tour.home.recent.title", body: "tour.home.recent.body" },
+    NAV,
+    PROFILE,
+    ASK,
+  ],
   "/deals": [
+    { target: tid("deal-tools"), title: "tour.deals.tools.title", body: "tour.deals.tools.body" },
     { target: "#inbox-list", title: "tour.deals.inbox.title", body: "tour.deals.inbox.body" },
-    { target: "#deal-recommendation-card", title: "tour.deals.answer.title", body: "tour.deals.answer.body" },
+    { target: "#deal-recommendation-card, [data-testid=\"queue-recommends\"]", title: "tour.deals.answer.title", body: "tour.deals.answer.body" },
+  ],
+  "/documents": [
+    { target: "#docs-read", title: "tour.docs.read.title", body: "tour.docs.read.body" },
+    { target: "#docs-list", title: "tour.docs.list.title", body: "tour.docs.list.body" },
   ],
   "/cash": [
     { target: "#cash-answer", title: "tour.cash.risk.title", body: "tour.cash.risk.body" },
+    { target: tid("cash-plan-ring"), title: "tour.cash.plan.title", body: "tour.cash.plan.body" },
+    { target: "#cash-chart", title: "tour.cash.chart.title", body: "tour.cash.chart.body" },
     { target: "#cash-options", title: "tour.cash.options.title", body: "tour.cash.options.body" },
+    { target: "#cash-sources-now", title: "tour.cash.sources.title", body: "tour.cash.sources.body" },
+    { target: "#cash-whatif", title: "tour.cash.tools.title", body: "tour.cash.tools.body" },
   ],
   "/receivables": [
-    { target: "#recv-summary", title: "tour.recv.summary.title", body: "tour.recv.summary.body" },
-    { target: "#recv-open", title: "tour.recv.open.title", body: "tour.recv.open.body" },
+    { target: tid("recv3-cards") + ", #recv-summary", title: "tour.recv.summary.title", body: "tour.recv.summary.body" },
+    { target: tid("recv3-list") + ", #recv-open", title: "tour.recv.open.title", body: "tour.recv.open.body" },
+    { target: tid("recv3-selected"), title: "tour.recv.selected.title", body: "tour.recv.selected.body" },
   ],
   "/activity": [
-    { target: "#activity-timeline", title: "tour.activity.list.title", body: "tour.activity.list.body" },
+    { target: tid("activity-view"), title: "tour.activity.view.title", body: "tour.activity.view.body" },
+    { target: "#activity-timeline, [data-testid=\"activity-reconciliation\"]", title: "tour.activity.list.title", body: "tour.activity.list.body" },
     { target: "#activity-refused", title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+  ],
+  "/trust": [
+    { target: tid("trust-view"), title: "tour.trust.view.title", body: "tour.trust.view.body" },
+    { target: '[data-testid="trust-security"], [data-testid="trust-evidence"]', title: "tour.trust.body.title", body: "tour.trust.body.body" },
   ],
   "/approvals": [{ target: '[id^="approval-APR"]', title: "tour.approvals.title", body: "tour.approvals.body" }],
   "/limits": [{ target: "#limits-rules", title: "tour.limits.title", body: "tour.limits.body" }],
@@ -178,9 +207,12 @@ function TourCard({ steps }: { steps: Step[] }) {
   if (hole) {
     const right = window.innerWidth - (hole.left + hole.width);
     const below = window.innerHeight - (hole.top + hole.height);
+    // Below or above, the card lines up with the part (the profile button sits at the top right), kept inside the screen.
+    const width = Math.min(CARD_W, window.innerWidth - 32);
+    const left = Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), window.innerWidth - width - 16);
     if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
-    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left: "50%", translate: "-50% 0" };
-    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left: "50%", translate: "-50% 0" };
+    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left };
+    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };
   }
 

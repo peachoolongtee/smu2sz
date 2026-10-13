@@ -209,7 +209,7 @@ function AccountSheet({ signedIn, children }: { signedIn: boolean; children: Rea
           t("account.menu")
         )}
       </summary>
-      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">{typeof children === "function" ? children(open) : children}</div>
+      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] space-y-3 whitespace-normal break-words rounded-card border border-line bg-surface p-3 shadow-pop">{typeof children === "function" ? children(open) : children}</div>
     </details>
   );
 }
@@ -267,6 +267,10 @@ function AccountMenu() {
       <Link href="/limits" onClick={closeMenu} className={sheetRow} data-testid="account-limits">
         <ShieldCheckIcon className="text-brand-600" />
         {t("nav.limits.menu")}
+      </Link>
+      <Link href="/trust" onClick={closeMenu} className={sheetRow} data-testid="account-trust">
+        <ShieldIcon className="text-brand-600" />
+        {t("nav.trust")}
       </Link>
       <TourRow />
       <LangSwitch />
@@ -661,6 +665,7 @@ const TITLE_KEY: Record<string, DictKey> = {
   ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
   "/approvals": "nav.approvals",
   "/limits": "nav.limits",
+  "/trust": "nav.trust",
 };
 
 /**

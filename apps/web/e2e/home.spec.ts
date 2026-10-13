@@ -345,34 +345,56 @@ test("in Chinese the whole home reads in Chinese: the labels and the server's re
   await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
 });
 
-test("the tour is off by default, starts from the account sheet, has two steps on the home and can be closed", async ({ page }) => {
+test("the tour is off by default, starts from the account sheet, walks every part of the home and where the rest lives, and can be closed", async ({ page }) => {
   await page.goto("/");
+  // Nothing starts by itself, not even on a first visit.
   await page.waitForTimeout(1200);
   await expect(page.getByTestId("tour")).toHaveCount(0);
   await openAccountMenu(page);
   await page.getByTestId("account-tour").click();
   const tour = page.getByTestId("tour");
-  await expect(tour).toBeVisible();
-  await expect(tour).toContainText("Step 1 of 2");
-  await expect(tour).toContainText("Am I safe?");
-  await page.getByTestId("tour-next").click();
-  await expect(tour).toContainText("Step 2 of 2");
-  // The six sections, in the pages' own words; no Buy equipment among them.
-  const sections = tour.getByTestId("tour-sections");
-  await expect(sections.locator("li")).toHaveCount(6);
-  await expect(sections).toContainText("Cash & funding");
-  await expect(sections).toContainText("Attach deals");
-  await expect(sections).not.toContainText("Buy equipment");
-  await expect(tour).toContainText("Ask FLOW");
-  await expect(tour.getByTestId("tour-skip")).toHaveCount(0);
-  await page.getByTestId("tour-next").click();
+  // On the opening books: the heading, the three cards, who funds you, the shortcuts, recent activity, the sections, the profile and Ask FLOW.
+  const titles = ["Am I safe?", "Cash available", "Planned funding", "Lowest cash ahead", "Who funds you", "Shortcuts", "Recent activity", "Where everything lives", "Your profile", "Ask FLOW"];
+  for (const [i, title] of titles.entries()) {
+    await expect(tour).toContainText(`Step ${i + 1} of ${titles.length}`);
+    await expect(page.locator("#tour-title")).toHaveText(title);
+    if (title === "Lowest cash ahead") await expect(tour).toContainText("Expand");
+    if (title === "Where everything lives") {
+      // The six sections, in the pages' own words; no Buy equipment among them.
+      const sections = tour.getByTestId("tour-sections");
+      await expect(sections.locator("li")).toHaveCount(6);
+      await expect(sections).toContainText("Cash & funding");
+      await expect(sections).toContainText("Attach deals");
+      await expect(sections).not.toContainText("Buy equipment");
+    }
+    if (title === "Your profile") await expect(tour).toContainText("Security & evidence");
+    if (i === titles.length - 1) await expect(tour.getByTestId("tour-skip")).toHaveCount(0);
+    await page.getByTestId("tour-next").click();
+  }
   await expect(tour).toHaveCount(0);
+  // Esc closes it at any step; the cash page offers its own.
   await page.goto("/cash");
   await openAccountMenu(page);
   await page.getByTestId("account-tour").click();
   await expect(page.getByTestId("tour")).toContainText("How much risk");
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("tour")).toHaveCount(0);
+});
+
+test("Security & evidence opens from the profile: one page, the security audit and the evidence file", async ({ page }) => {
+  await page.goto("/");
+  await openAccountMenu(page);
+  await page.getByTestId("account-trust").click();
+  await expect(page).toHaveURL(/\/trust$/);
+  await expect(page.locator("h1")).toHaveText("Security & evidence");
+  await expect(page.getByTestId("trust-security")).toBeVisible();
+  await page.getByTestId("trust-view-evidence").click();
+  await expect(page.getByTestId("trust-evidence")).toBeVisible();
+  await expect(page.getByTestId("download-evidence")).toBeVisible();
+  await expect(page).toHaveURL(/#evidence$/);
+  // Opened straight at the evidence, it shows the evidence.
+  await page.goto("/trust#evidence");
+  await expect(page.getByTestId("trust-evidence")).toBeVisible();
 });
 
 // ---- the sidebar counts (GET /nav/counts, recorded) and the strip above the cards

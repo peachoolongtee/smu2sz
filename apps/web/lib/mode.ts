@@ -30,7 +30,7 @@ export function setMode(mode: Mode): void {
 export const OWNER_DETAIL_ROUTES: Record<string, string> = { "/whatif": "/cash", "/capex": "/cash" };
 
 /** Business routes: the owner's six sections, the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
-export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
+export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/receivables", "/approvals", "/activity", "/limits", "/trust", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
 
 /** A decision's record (`/decisions/{id}`) is an owner page opened from Home, Activity or an approval; it has no section of its own. */
 export const DECISION_ROUTE_PREFIX = "/decisions/";

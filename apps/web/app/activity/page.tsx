@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CodeBadge, OpStatusBadge, TierBadge } from "@/components/badges";
 import { BankIcon, SparkIcon, StoreIcon, UserIcon } from "@/components/icons";
 import { CustomerName } from "@/components/customer-link";
@@ -120,7 +120,13 @@ export default function ActivityPage() {
   const books = useAsync(getState, []);
   const [filter, setFilter] = useState<Filter>("all");
   // The two parts of the page: the timeline, and the reconciliation log (opened directly by `#reconciliation`).
-  const [view, setView] = useState<View>(() => (typeof window !== "undefined" && window.location.hash === "#reconciliation" ? "recon" : "timeline"));
+  const [view, setView] = useState<View>("timeline");
+  // The address is read once the page is on screen (the server cannot see a hash): `#reconciliation` opens the log.
+  useEffect(() => {
+    if (window.location.hash !== "#reconciliation") return;
+    const frame = window.requestAnimationFrame(() => setView("recon"));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const data = ledger.data;
   // The server's sentences hold no ids; the one id this page shows is an agreement's buyer, said by name.
   const buyerName = (id: string) => books.data?.state.counterparties.find((x) => x.id === id)?.name ?? id;
