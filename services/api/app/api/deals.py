@@ -12,6 +12,7 @@ from app.api.deal_offers import with_offers
 from app.api.exposure_words import customer_back, query_buyer
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
+from app.api.worklist import queue
 from app.deals import deal_summary, deals
 from app.decisions.identity import deal_id
 
@@ -41,7 +42,7 @@ def list_deals(lang: Literal["en", "zh"] = "en", *, sel: Annotated[Selection, De
     with rt.lock:
         rows = with_offers(rt, deals(rt.store, rt.day, lang), lang)
         _with_back(rt, rows, lang, sel.customer, sel.invoice, sel.path)
-        return {"day": rt.day, "lang": lang, "deals": rows, "context": build_context(rt, lang, sel, page="deals")}
+        return {"day": rt.day, "lang": lang, "deals": rows, "queue": queue(rt, lang), "context": build_context(rt, lang, sel, page="deals")}
 
 
 @router.get("/deals/{counterparty_id}")

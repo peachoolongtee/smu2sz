@@ -22,7 +22,8 @@ from app.persistence import ApprovalStatus
 # The five steps the Deals workspace shows for an offer, and where each decision state stands among them.
 _STAGES = (("received", "Received", "已收到"), ("analysed", "Analysed", "已分析"), ("reply_ready", "Reply ready", "回复已就绪"),
            ("sent", "Sent", "已发送"), ("agreed", "Agreed", "已达成"))
-_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 3}
+# An offer whose reply waits for the owner's approval has not been sent: it stands at "Reply ready" (the owner owes the next step), never "Sent".
+_NOW = {DealState.RECEIVED: 0, DealState.NEEDS_CLARIFICATION: 1, DealState.RESPONSE_READY: 2, DealState.AUTHORIZATION_REQUIRED: 2}
 OPEN = tuple(_NOW)
 OWNER_WAITS = (DealState.RECEIVED, DealState.RESPONSE_READY, DealState.AUTHORIZATION_REQUIRED)
 _COUNT_WORDS = {1: ("One reply is", "一份回复"), 2: ("Two replies are", "两份回复"), 3: ("Three replies are", "三份回复")}
@@ -72,7 +73,9 @@ def _action_text(state: DealState, action: str | None, replies: int, lang: str) 
         return say(lang, "FLOW has not read it yet.", "FLOW 尚未读取。")
     if state == DealState.NEEDS_CLARIFICATION:
         return say(lang, "The buyer needs to clarify first.", "需要买方先澄清。")
-    if state == DealState.AUTHORIZATION_REQUIRED or action == "needs_owner":
+    if state == DealState.AUTHORIZATION_REQUIRED:  # the decision record's own words for this state
+        return say(lang, "Waiting for your approval.", "等待您批准。")
+    if action == "needs_owner":
         return say(lang, "Needs your approval.", "需要您批准。")
     if action == "accept":
         return say(lang, "FLOW can accept it within your limits.", "FLOW 可在您的授权内接受。")
@@ -170,6 +173,8 @@ def needs_you(ctx: Context, offer_state: DealState | None, counterparty_id: str,
     """Whether something in this deal waits for the owner and one short phrase for the first thing: an open offer waiting for the owner's
     reply, a document waiting for review, an approval waiting on this buyer's invoices, a late invoice to chase."""
     mine = {r.id: r for r in ctx.state.receivables if r.counterparty_id == counterparty_id}
+    if offer_state == DealState.AUTHORIZATION_REQUIRED:  # the approval is the task, not a reply
+        return True, say(lang, "An approval is waiting for you", "有一项批准等待您处理")
     if offer_state in OWNER_WAITS:
         return True, say(lang, "An offer is waiting for your reply", "有一份报价等待您答复")
     if pending_documents:

@@ -219,7 +219,13 @@ def _approvals_queue(rt, lang: str) -> dict:
         except Exception:
             log.exception("the decision record could not be read for the approvals queue")
         # The log is parsed once for the request: the decision record's entries when it has them.
-        ran = _decision_runs(rt.store, ctx.entries if ctx is not None else None)
+        entries = ctx.entries if ctx is not None else read_entries(rt.store.operations())[0]
+        ran = _decision_runs(rt.store, entries)
+        # the tier the executor judged, from the first log entry of each approval (as the decision record's `authorization` reads it)
+        judged: dict[str, str] = {}
+        for e in entries:
+            if e.result.approval_id and e.result.approval_id not in judged:
+                judged[e.result.approval_id] = e.result.tier.value
     for a in rt.store.approvals():
         d = asdict(a)
         d["status"] = str(getattr(a.status, "value", a.status))
@@ -230,7 +236,8 @@ def _approvals_queue(rt, lang: str) -> dict:
             d["operation"] = None
         op = d["operation"] or {}
         amt = op.get("amount_fen", op.get("advance_fen"))
-        d.update({"tier": "TIER_2", "created_day": op.get("day"), "amount_fen": amt,
+        # an approval exists only because the executor judged the operation Tier 2, so a record that kept no entry for it is that tier
+        d.update({"tier": judged.get(a.id, "TIER_2"), "created_day": op.get("day"), "amount_fen": amt,
                   "amount_display": fmt_yuan(amt) if isinstance(amt, int) else None,
                   "subject": f"{(a.kind or '').replace('_', ' ').lower()} {op.get('facility_id', '')}".strip()})
         try:

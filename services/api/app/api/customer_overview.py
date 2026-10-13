@@ -648,6 +648,13 @@ def _authority_sentence(path: dict[str, Any], subject: Literal["counter", "reque
     return t(lang, *pair) if pair is not None else path.get("authority_text")
 
 
+def _approval_href(r: _Read) -> str | None:
+    """The approval an offer in AUTHORIZATION_REQUIRED waits on, as the Approvals page opens it; None when the record names none."""
+    found = r.ctx.states().get(r.decision_id() or "")
+    approval = found[0].approval if found is not None else None
+    return f"/approvals#approval-{_quoted(approval.id)}" if approval is not None else None
+
+
 def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] | None, str]:
     lang = r.lang
     none = t(lang, f"No commercial decision is waiting for you with {r.who}.", f"目前没有需要您对{r.who}作出的商务决定。")
@@ -663,6 +670,20 @@ def _decision(r: _Read, actions: list[dict[str, str]]) -> tuple[dict[str, Any] |
             "text": f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}",
             "headline_short": None, "authority_text": None,
             "primary": {"label": t(lang, "Read the offer", "阅读报价"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
+            "secondary": actions}, none
+    said = f"{wants} {offer['action_text']}" if lang != "zh" else f"{wants}{offer['action_text']}"
+    if r.offer_state == DealState.NEEDS_CLARIFICATION:  # the buyer's turn: nothing waits for the owner, as every other read says
+        return {
+            "kind": "awaiting_buyer", "eyebrow": t(lang, "Waiting for the buyer", "等待买方"), "text": said,
+            "headline_short": None, "authority_text": None,
+            "primary": {"label": t(lang, "Open the negotiation", "打开谈判"), "href": f"/deals?decision={_quoted(r.decision_id() or '')}"},
+            "secondary": actions}, none
+    if r.offer_state == DealState.AUTHORIZATION_REQUIRED:  # the reply is queued: what waits for the owner is the approval, not a counter to review
+        return {
+            "kind": "approval", "eyebrow": t(lang, "Waiting for your approval", "等待您批准"), "text": said,
+            "headline_short": None, "authority_text": None,
+            "primary": {"label": t(lang, "Review the approval", "查看批准事项"),
+                        "href": _approval_href(r) or f"/deals?decision={_quoted(r.decision_id() or '')}"},
             "secondary": actions}, none
     rec = r.recommended
     if rec is not None and rec["kind"] == "reply":

@@ -613,7 +613,12 @@ def list_decisions(lang: str = "en", family: str | None = None, open: bool = Fal
     with rt.lock:
         ctx = load_context(rt)
         rows = []
-        for ds, inp in sorted(ctx.states().values(), key=lambda p: _sort_key(p[0]), reverse=True):
+        pairs = list(ctx.states().values())
+        if family in (None, "DEAL"):  # an offer received and not yet evaluated has no log entry: it is a decision in state RECEIVED all the same
+            from app.api.deal_offers import _submitted  # deal_offers reads this module for its context
+
+            pairs += _submitted(ctx)
+        for ds, inp in sorted(pairs, key=lambda p: _sort_key(p[0]), reverse=True):
             if family and ds.family != family:
                 continue
             if open and ds.terminal:
