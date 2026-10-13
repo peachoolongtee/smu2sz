@@ -168,6 +168,7 @@
           "Nothing has been done yet, so nothing is lost."
         ],
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_preview_text": "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -183,6 +184,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Nothing has been done yet, so nothing is lost."
@@ -446,6 +448,7 @@
           "目前还没有做任何事，所以不会损失任何内容。"
         ],
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_preview_text": "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -461,6 +464,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "目前还没有做任何事，所以不会损失任何内容。"
@@ -727,6 +731,7 @@
           "1 offer FLOW has read and priced."
         ],
         "nothing_to_lose": false,
+        "loss_token": "99f4467c74239e90",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 1 of 6 scenes have run. 1 offer FLOW has read and priced. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -742,6 +747,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "99f4467c74239e90",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 1 of 6 scenes have run.",
@@ -1007,6 +1013,7 @@
           "FLOW 已读取并定价的 1 份报价。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "99f4467c74239e90",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 1 / 6 个场景。 FLOW 已读取并定价的 1 份报价。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -1022,6 +1029,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "99f4467c74239e90",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 1 / 6 个场景。",
@@ -1299,6 +1307,7 @@
           "1 offer FLOW has read and priced."
         ],
         "nothing_to_lose": false,
+        "loss_token": "1b9ff2e6cb7e3495",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 2 of 6 scenes have run. 1 offer FLOW has read and priced. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -1314,6 +1323,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "1b9ff2e6cb7e3495",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 2 of 6 scenes have run.",
@@ -1589,6 +1599,7 @@
           "FLOW 已读取并定价的 1 份报价。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "1b9ff2e6cb7e3495",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 2 / 6 个场景。 FLOW 已读取并定价的 1 份报价。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -1604,6 +1615,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "1b9ff2e6cb7e3495",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 2 / 6 个场景。",
@@ -1883,6 +1895,7 @@
           "2 entries in the record."
         ],
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 3 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 2 entries in the record. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -1898,6 +1911,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 3 of 6 scenes have run.",
@@ -2177,6 +2191,7 @@
           "记录中的 2 条记录。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 3 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 2 条记录。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -2192,6 +2207,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 3 / 6 个场景。",
@@ -2486,6 +2502,7 @@
           "2 entries in the record."
         ],
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 3 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 2 entries in the record. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -2501,6 +2518,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 3 of 6 scenes have run.",
@@ -2793,6 +2811,7 @@
           "记录中的 2 条记录。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 3 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 2 条记录。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -2808,6 +2827,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "e70c4ca86094ad52",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 3 / 6 个场景。",
@@ -3103,6 +3123,7 @@
           "The clock goes back to the start: 2 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "eb5a4b8a98ea185d",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 4 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 4 entries in the record. The clock goes back to the start: 2 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -3118,6 +3139,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eb5a4b8a98ea185d",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 4 of 6 scenes have run.",
@@ -3412,6 +3434,7 @@
           "时钟回到起点：模拟的 2 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "eb5a4b8a98ea185d",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 4 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 4 条记录。 时钟回到起点：模拟的 2 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -3427,6 +3450,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eb5a4b8a98ea185d",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 4 / 6 个场景。",
@@ -3732,6 +3756,7 @@
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "d02b8ac77c01b11c",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 4 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 5 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -3747,6 +3772,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "d02b8ac77c01b11c",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 4 of 6 scenes have run.",
@@ -4050,6 +4076,7 @@
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "d02b8ac77c01b11c",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 4 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 记录中的 5 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -4065,6 +4092,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "d02b8ac77c01b11c",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 4 / 6 个场景。",
@@ -4371,6 +4399,7 @@
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "ba8e9981c54d777e",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval, 1 still waiting for you. 6 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -4386,6 +4415,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "ba8e9981c54d777e",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 5 of 6 scenes have run.",
@@ -4691,6 +4721,7 @@
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "ba8e9981c54d777e",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项，其中 1 项仍在等您。 记录中的 6 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -4706,6 +4737,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "ba8e9981c54d777e",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 5 / 6 个场景。",
@@ -5013,6 +5045,7 @@
           "The clock goes back to the start: 34 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "36b1af20f0c81cdb",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 7 entries in the record. The clock goes back to the start: 34 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -5028,6 +5061,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "36b1af20f0c81cdb",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 5 of 6 scenes have run.",
@@ -5333,6 +5367,7 @@
           "时钟回到起点：模拟的 34 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "36b1af20f0c81cdb",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 7 条记录。 时钟回到起点：模拟的 34 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -5348,6 +5383,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "36b1af20f0c81cdb",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 5 / 6 个场景。",
@@ -5668,6 +5704,7 @@
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 5 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -5683,6 +5720,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 5 of 6 scenes have run.",
@@ -6001,6 +6039,7 @@
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 5 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -6016,6 +6055,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 5 / 6 个场景。",
@@ -6336,6 +6376,7 @@
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 6 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -6351,6 +6392,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 6 of 6 scenes have run.",
@@ -6669,6 +6711,7 @@
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 6 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -6684,6 +6727,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 6 / 6 个场景。",
@@ -7006,6 +7050,7 @@
           "The clock goes back to the start: 38 days of simulated time are undone."
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "Loading it replaces the main books. You would lose: Your place in the story: 6 of 6 scenes have run. 1 offer FLOW has read and priced. 1 agreement on the books. 1 approval. 8 entries in the record. The clock goes back to the start: 38 days of simulated time are undone. Restoring puts the main books back at the start of the story, not where you left them.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -7021,6 +7066,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Your place in the story: 6 of 6 scenes have run.",
@@ -7341,6 +7387,7 @@
           "时钟回到起点：模拟的 38 天被撤销。"
         ],
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_preview_text": "加载它会替换主账目。您将失去：您在故事中的进度：已运行 6 / 6 个场景。 FLOW 已读取并定价的 1 份报价。 账目中的 1 项协议。 1 项批准事项。 记录中的 8 条记录。 时钟回到起点：模拟的 38 天被撤销。恢复主账目会回到故事的起点，而不是您离开时的状态。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -7356,6 +7403,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": false,
+        "loss_token": "eda6ede4cd8a7659",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "您在故事中的进度：已运行 6 / 6 个场景。",
@@ -7619,6 +7667,7 @@
           "Nothing has been done on these books yet, so nothing is lost."
         ],
         "nothing_to_lose": true,
+        "loss_token": "59f206f5df3e65e9",
         "loss_preview_text": "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -7634,6 +7683,7 @@
         "scenario": "busy",
         "main": false,
         "nothing_to_lose": true,
+        "loss_token": "59f206f5df3e65e9",
         "loss_title_text": "What these books lose",
         "loss_items": [
           "Nothing has been done on these books yet, so nothing is lost."
@@ -7890,6 +7940,7 @@
           "这些账目上还没有做任何事，所以不会损失任何内容。"
         ],
         "nothing_to_lose": true,
+        "loss_token": "59f206f5df3e65e9",
         "loss_preview_text": "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -7905,6 +7956,7 @@
         "scenario": "busy",
         "main": false,
         "nothing_to_lose": true,
+        "loss_token": "59f206f5df3e65e9",
         "loss_title_text": "这些账目会失去什么",
         "loss_items": [
           "这些账目上还没有做任何事，所以不会损失任何内容。"

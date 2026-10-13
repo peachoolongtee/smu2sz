@@ -172,6 +172,7 @@
           "Nothing has been done yet, so nothing is lost."
         ],
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_preview_text": "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
         "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
         "confirm_title_text": "Load the busy company?",
@@ -187,6 +188,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Nothing has been done yet, so nothing is lost."
@@ -456,6 +458,7 @@
           "目前还没有做任何事，所以不会损失任何内容。"
         ],
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_preview_text": "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。",
         "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
         "confirm_title_text": "加载“繁忙的公司”？",
@@ -471,6 +474,7 @@
         "scenario": "golden_sme",
         "main": true,
         "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "目前还没有做任何事，所以不会损失任何内容。"

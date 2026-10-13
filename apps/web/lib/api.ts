@@ -502,12 +502,12 @@ export function activityMissing(e: unknown): boolean {
 
 /**
  * What a page that may be stale sends with a reset or a restore: `from` is the scenario of the story read it is showing (`books.scenario`); the server refuses (409
- * BOOKS_CHANGED, nothing reset) when the books are another. `confirm` is `confirm_loss=1`, sent only from the confirm button of the dialog that listed what is lost; without it
+ * BOOKS_CHANGED, nothing reset) when the books are another. `confirm` is the `loss_token` of the list the dialog showed (`confirm_loss=<token>`), sent only from that dialog's confirm button; without it
  * the server refuses (409 LOSS_NOT_CONFIRMED, with the list) when the reset would discard work.
  */
 export interface BooksGuard {
   from: string;
-  confirm?: boolean;
+  confirm?: string;
 }
 
 /** GET /demo/story?lang=&seen=: where the story stands (derived from the books), the one next control, the alternate scenario and the operator tools. */

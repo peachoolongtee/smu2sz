@@ -9,6 +9,16 @@
       "message_when": "重置会丢弃这些账目上的工作，而这一点尚未确认；未重置任何内容。"
     }
   },
+  "loss_changed": {
+    "en": {
+      "message": "The books changed since this list was shown; nothing was reset.",
+      "message_when": "The books changed since this list was shown; nothing was reset."
+    },
+    "zh": {
+      "message": "The books changed since this list was shown; nothing was reset.",
+      "message_when": "自显示此清单以来，账目已发生变化；未重置任何内容。"
+    }
+  },
   "books_changed": {
     "en": {
       "message": "The books changed since this page was read; nothing was reset.",

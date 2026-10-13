@@ -4259,6 +4259,8 @@ export interface DemoStoryView {
     scenario: string;
     main: boolean;
     nothing_to_lose: boolean;
+    /** The token of the list of what would be lost: the confirmation of a reset must equal it. */
+    loss_token: string;
     loss_title_text: string;
     loss_items: string[];
     reset_confirm_title_text: string;
@@ -4283,6 +4285,7 @@ export interface DemoStoryView {
     cancel_label: string;
     loaded: boolean;
     nothing_to_lose?: boolean;
+    loss_token: string;
     loaded_text: string | null;
     restore_label: string;
     restore_text: string;

@@ -13,7 +13,13 @@ globalThis.requestAnimationFrame = () => 0;
 const { setOwnerToken } = await import("../lib/auth.ts");
 const { decideApproval, getApprovals, getLedger, getClock } = await import("../lib/api.ts");
 const { DEMO_STEPS, OwnerDecisionPending } = await import("../lib/demo.ts");
-const { backStep, goToStep, nextStep } = await import("../lib/demo-control.ts");
+const { backStep, goToStep } = await import("../lib/demo-control.ts");
+// Next after a Back only shows a finished step (the pointer moves, nothing runs); beyond the highest finished step it runs (what the Demo's next control does).
+const nextStep = (push) => {
+  const d = demoStore.get();
+  const target = d.step + 1;
+  return goToStep(target, push, { mode: target <= reachedOf(d) ? "follow" : "run" });
+};
 const { demoStore, reachedOf, resetSession } = await import("../lib/demo-store.ts");
 
 const stepIndex = (id) => DEMO_STEPS.findIndex((s) => s.id === id);

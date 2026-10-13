@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { onSignedIn } from "@/lib/auth";
+import { onSignedIn, useAuth } from "@/lib/auth";
 import { getDemoStory } from "@/lib/api";
-import { resumeStoryAction, runStoryAction, seenOf } from "@/lib/demo-control";
+import { requestStart, resumeStart, resumeStoryAction, runStoryAction, seenOf } from "@/lib/demo-control";
 import { DEMO_STEPS } from "@/lib/demo";
 import { reachedOf, useDemo } from "@/lib/demo-store";
 import { stepNarration } from "@/lib/demo-text";
@@ -28,11 +28,20 @@ export function DemoStepper() {
   const pathname = usePathname();
   const demo = useDemo();
   const reached = reachedOf(demo);
-  const story = useAsync(() => getDemoStory(lang, seenOf(reached)), [lang, reached]);
-  const view = story.data;
+  // No page asks for the owner's sign-in by itself: the story is read only for a signed-in owner (a visitor sees "Start demo", whose click asks).
+  const signedIn = useAuth().token !== null;
+  const story = useAsync(() => (signedIn ? getDemoStory(lang, seenOf(reached)) : Promise.resolve(null)), [lang, reached, signedIn]);
+  const view = signedIn ? (story.data ?? null) : null;
 
   // The step a 401 interrupted runs by itself once the owner signs in from the dialog it opened.
-  useEffect(() => onSignedIn(() => void resumeStoryAction(router.push)), [router.push]);
+  useEffect(
+    () =>
+      onSignedIn(() => {
+        void resumeStoryAction(router.push);
+        void resumeStart(lang, router.push);
+      }),
+    [router.push, lang],
+  );
   const press = (action: string, books: DemoStoryView["books"]) => void runStoryAction(action, router.push, books);
 
   // The story page is the story: it carries its own one next control, so the strip is not drawn there.
@@ -109,7 +118,12 @@ export function DemoStepper() {
                 <ArrowRightIcon />
               </Button>
             )
-          ) : null}
+          ) : (
+            <Button size="sm" variant="primary" onClick={requestStart} data-testid="demo-next">
+              {t("demo.start")}
+              <ArrowRightIcon />
+            </Button>
+          )}
         </div>
       </div>
       {demo.error ? (

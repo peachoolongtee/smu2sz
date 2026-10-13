@@ -27,7 +27,7 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
-//   - slice_d/*.json (only with --slice-d): the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
+//   - slice_d/*.json (only with --slice-d): every `loss_token` (a fingerprint of the books, which includes the restore history the API accumulates) becomes a fixed token by order of first appearance; the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
 //     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
 //
@@ -58,7 +58,7 @@
 //   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy }: each { en, zh } of GET /activity; `security` is the
 //                 settled books after two refused sign-ins and the FastCapital scene (benign sign-ins beside a real alert); `busy` is the busy company
 //   restore.json  { en, zh } of POST /demo/restore, made on the busy books
-//   guard.json    { loss_not_confirmed, books_changed }: { en, zh } of the message words of the two 409s of POST /demo/reset?from_scenario= (work on the books not confirmed; books that are another)
+//   guard.json    { loss_not_confirmed, loss_changed, books_changed }: { en, zh } of the message words of the 409s of POST /demo/reset?from_scenario= (work on the books not confirmed; books that are another)
 //   audit.json    GET /audit at the `security` moment (the same events the Activity rows link to), served by the mock for the security view
 // lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` once the busy books are loaded.
 //   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8221
@@ -178,6 +178,7 @@ async function inLang(lang, read) {
 }
 
 const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
+const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -227,6 +228,15 @@ function normalise(name, value) {
     // slice_d/*: a funding decision's id ends in the books' state version (alert:ALERT-RESERVE-42:v6), which depends on how many reads came before it; the mock's decision
     // recordings (decisions.json) name the same record as v7, so the walk's id is made the same one.
     .replace(/alert:(ALERT-[A-Z]+-\d+):v\d+/g, (m, id) => (name.startsWith("slice_d/") ? `alert:${id}:v7` : m))
+    // slice_d/*: a loss token is a fingerprint of the books the API holds, including the restore history it accumulates for as long as it runs; it is made a fixed token by
+    // order of first appearance (the mock compares a confirmation with the token of the same recording, so only which books share a token matters).
+    .replace(/"loss_token":"([0-9a-f]+)"/g, (m, tok) => {
+      if (!name.startsWith("slice_d/")) return m;
+      if (!lossTokens.has(name)) lossTokens.set(name, new Map());
+      const seen = lossTokens.get(name);
+      if (!seen.has(tok)) seen.set(tok, sha(`recorded loss token ${seen.size}`).slice(0, 16));
+      return `"loss_token":"${seen.get(tok)}"`;
+    })
     .replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT)
     .replace(/ALERT-EARLYPAY-[0-9a-f]{12}/g, `ALERT-EARLYPAY-${sha("recorded early-pay alert").slice(0, 12)}`)
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
@@ -573,7 +583,7 @@ if (SLICE_D) {
     const { detail } = await res.json();
     return { message: detail.message, message_when: detail.message_when };
   };
-  const guard = { loss_not_confirmed: await both((lang) => refusal("from_scenario=golden_sme", lang)) };
+  const guard = { loss_not_confirmed: await both((lang) => refusal("from_scenario=golden_sme", lang)), loss_changed: await both((lang) => refusal("from_scenario=golden_sme&confirm_loss=1", lang)) };
   // The busy company, and the one-click restore made on it.
   await live.demoReset("busy");
   clearDemo();

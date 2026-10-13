@@ -22,7 +22,8 @@ async function freshDemo(page: Page): Promise<void> {
   await page.getByTestId("demo-tools-books").getByRole("button").first().click();
   // Work on the books (a spec before this one) is listed in the dialog first: this is the owner's confirmation.
   const dialog = page.getByTestId("books-dialog");
-  await page.waitForTimeout(300); // the dialog opens on the click itself
+  // The dialog opens once a fresh read of the books has come back.
+  await dialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => undefined);
   if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
   await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 }
@@ -126,6 +127,7 @@ test("another set of books: the dialog shows the loss, cancel changes nothing, c
   await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
   expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
   await open.click();
+  await expect(dialog).toBeVisible(); // it opens once a fresh read of the books has come back
   // Escape closes it and focus returns to the button that opened it; nothing changed.
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -330,4 +332,90 @@ test("a stale page cannot reset books it did not read: the server's sentence is 
   expect(await entries()).toBe(before);
   // The page reads the story again: it now shows the main books.
   await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+});
+
+test("a double click on a book-replacing control never confirms, at 390 px", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await page.getByTestId("demo-alternate-fold").locator("> summary").click();
+  await openOperatorTools(page);
+  const controls = [
+    { open: page.getByTestId("demo-alternate-open"), dialog: page.getByTestId("demo-alternate-dialog"), confirm: page.getByTestId("demo-alternate-confirm"), cancel: page.getByTestId("demo-alternate-cancel") },
+    { open: page.getByTestId("demo-tools-books").getByRole("button").first(), dialog: page.getByTestId("books-dialog"), confirm: page.getByTestId("books-dialog-confirm"), cancel: page.getByTestId("books-dialog-cancel") },
+    { open: page.getByTestId("more-run-walk"), dialog: page.getByTestId("books-dialog"), confirm: page.getByTestId("books-dialog-confirm"), cancel: page.getByTestId("books-dialog-cancel") },
+  ];
+  for (const c of controls) {
+    await c.open.scrollIntoViewIfNeeded();
+    // The realistic double click: the second click lands wherever the first one put the dialog's confirm, a moment after it opened.
+    await c.open.click();
+    await expect(c.dialog).toBeVisible();
+    const box = (await c.confirm.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await expect(c.confirm).toHaveAttribute("aria-disabled", "true");
+    await page.mouse.click(x, y, { clickCount: 2 });
+    await page.mouse.click(x, y); // even a single click is ignored until the dialog has been open for a moment
+    await expect(c.dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+    await c.cancel.click();
+    await expect(c.dialog).toBeHidden();
+    expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  }
+  // Playwright's own double click on the opener does the same.
+  await controls[0].open.dblclick();
+  await page.waitForTimeout(200);
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // A deliberate click, once the dialog is ready, still confirms (and so does the keyboard).
+  await controls[1].open.click();
+  await expect(controls[1].confirm).not.toHaveAttribute("aria-disabled", "true");
+  await controls[1].confirm.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+});
+
+test("the confirmation is bound to the list shown: a list that changed under an open dialog is replaced, and nothing is reset until a second, informed click", async ({ page, request }, info) => {
+  test.skip(info.project.name !== "live", "a second writer: the live API");
+  test.setTimeout(180_000);
+  const api = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+  const owner = { "X-Owner-Token": "demo-owner-token" };
+  await freshDemo(page);
+  const entries = async () => ((await (await request.get(`${api}/ledger`, { headers: owner })).json()) as { operations: unknown[] }).operations.length;
+  // The page is open on fresh main books and so is the dialog (it always says what loading the alternate books does).
+  await page.getByTestId("demo-alternate-open").click();
+  const dialog = page.getByTestId("demo-alternate-dialog");
+  await expect(dialog).toBeVisible();
+  const emptyList = await page.getByTestId("demo-alternate-loss").innerText();
+  // Meanwhile another writer walks the story to the agreement through the API.
+  const post = async (path: string, data: object) => {
+    const res = await request.post(`${api}${path}`, { headers: owner, data });
+    expect(res.ok(), path).toBeTruthy();
+    return res.json();
+  };
+  const { offer } = await post("/offers", { fixture_id: "EX01_PACKAGE" });
+  await post(`/offers/${offer.offer_id}/evaluate`, { fixture_id: "EX01_PACKAGE" });
+  await post(`/negotiate/${offer.offer_id}`, { buyer_profile: "cooperative" });
+  const before = await entries();
+  // The first confirm, on the list that was shown, replaces nothing: the dialog says the list changed and shows the true one.
+  const confirm = page.getByTestId("demo-alternate-confirm");
+  await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+  await confirm.click();
+  await expect(page.getByTestId("demo-alternate-note")).toBeVisible();
+  await expect(dialog).toBeVisible();
+  expect(await page.getByTestId("demo-alternate-loss").innerText()).not.toBe(emptyList);
+  expect(await entries()).toBe(before);
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  // The second, informed click loads the busy books.
+  await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+  await confirm.click();
+  await expect(page.getByTestId("demo-loaded-banner")).toBeVisible({ timeout: 60_000 });
 });

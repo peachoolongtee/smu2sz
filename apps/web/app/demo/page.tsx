@@ -12,8 +12,9 @@ import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
 import { advanceClock, getDemoStory, restoreDemo } from "@/lib/api";
-import { changeBooks, changeBooksConfirmed, resetTo } from "@/lib/books-guard";
-import { goToMore, runStoryAction, seenOf } from "@/lib/demo-control";
+import { useAuth } from "@/lib/auth";
+import { changeBooks, resetTo } from "@/lib/books-guard";
+import { goToMore, requestStart, runStoryAction, seenOf } from "@/lib/demo-control";
 import { MORE, type MoreId } from "@/lib/demo";
 import { bump, reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -127,18 +128,26 @@ export default function DemoPage() {
   const demo = useDemo();
   const reached = reachedOf(demo);
   const seen = seenOf(reached);
-  const story = useAsync(() => getDemoStory(lang, seen), [lang, seen]);
+  // No page asks for the owner's sign-in by itself: the story is read only for a signed-in owner (a visitor sees "Start demo", whose click asks).
+  const signedIn = useAuth().token !== null;
+  const story = useAsync(() => (signedIn ? getDemoStory(lang, seen) : Promise.resolve(null)), [lang, seen, signedIn]);
   const [working, setWorking] = useState(false);
   const [restored, setRestored] = useState<string | null>(null);
   const busy = demo.busy || working;
-  const view = story.data;
+  const view = signedIn ? (story.data ?? null) : null;
 
-  // The dialog's confirm button is the one thing that sends `confirm_loss=1`: the books it listed are the ones this read names (`from_scenario`).
-  async function loadAlternate(scenario: string) {
+  // The books dialog (the same one every reset uses) lists what the main books lose from a fresh read; its confirm button is the one thing that loads the busy books.
+  async function openAlternate() {
     if (!view) return;
     setRestored(null);
-    await changeBooksConfirmed(view.books, resetTo(scenario, router.push));
-    document.querySelector<HTMLDialogElement>('[data-testid="demo-alternate-dialog"]')?.close();
+    const alt = view.alternate;
+    await changeBooks(view.books, resetTo(alt.scenario, router.push), {
+      always: true,
+      alternate: true,
+      prefix: "demo-alternate",
+      labels: { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text },
+      gives: { heading: t("demo.alt.get"), text: alt.scope_text },
+    });
   }
 
   async function restore() {
@@ -153,7 +162,7 @@ export default function DemoPage() {
           resetSession();
           setRestored(r.restored_text);
         },
-        { title: alt.restore_label, confirm: alt.restore_label, cancel: alt.cancel_label, keeps: alt.restore_text },
+        { labels: { title: alt.restore_label, confirm: alt.restore_label, cancel: alt.cancel_label, keeps: alt.restore_text } },
       );
     } finally {
       setWorking(false);
@@ -185,7 +194,17 @@ export default function DemoPage() {
         }
       />
 
-      {story.error ? (
+      {!signedIn ? (
+        <section aria-label={t("demo.scene.aria")} className="card-standard p-5" data-testid="demo-current">
+          <p className="text-body-lg text-ink-2">{t("demo.idle")}</p>
+          <div className="mt-4">
+            <Button variant="primary" onClick={requestStart} data-testid="demo-next">
+              {t("demo.start")}
+              <ArrowRightIcon />
+            </Button>
+          </div>
+        </section>
+      ) : story.error ? (
         <ErrorState error={story.error} onRetry={story.reload} />
       ) : !view ? (
         <LoadingBlock rows={4} />
@@ -275,7 +294,7 @@ export default function DemoPage() {
           </div>
 
           <div className="min-w-0 space-y-6">
-            <AlternateSection alt={view.alternate} busy={busy} onConfirm={() => void loadAlternate(view.alternate.scenario)} />
+            <AlternateSection alt={view.alternate} busy={busy} onOpen={() => void openAlternate()} />
             <OperatorTools view={view} busy={busy} />
             <Callout tone="info">
               <p>{view.simulation_text}</p>

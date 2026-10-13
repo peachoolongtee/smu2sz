@@ -1,11 +1,12 @@
 "use client";
 
-import { demoReset, type BooksGuard } from "./api";
+import { getDemoStory } from "./api";
 import { changeBooks, isGuardError, resetTo, type Books } from "./books-guard";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
-import { demoStore, reachedOf, recordFacts, resetSession, selectStoryOffer } from "./demo-store";
+import { demoStore, reachedOf, recordFacts, selectStoryOffer } from "./demo-store";
 import { DEMO_STEPS, MORE, OwnerDecisionPending, stepRoute, withBooksGuard, type MoreId } from "./demo";
+import { requestSignIn } from "./auth";
 import { getLang } from "./i18n";
 import { setMode } from "./mode";
 
@@ -83,16 +84,6 @@ export async function goToStep(target: number, push: (route: string) => void, op
   }
 }
 
-/**
- * Next: the step after the pointer. After a Back that is a step already finished, so Next only shows it (the pointer moves, nothing runs and
- * the books are not touched); only the step after the highest finished one is run.
- */
-export function nextStep(push: (route: string) => void): Promise<StepOutcome> {
-  const d = demoStore.get();
-  const target = d.step + 1;
-  return goToStep(target, push, { mode: target <= reachedOf(d) ? "follow" : "run" });
-}
-
 /** Back only moves the pointer: the books already hold the step's result. */
 export function backStep(push: (route: string) => void): void {
   const step = demoStore.get().step;
@@ -153,28 +144,6 @@ async function runMore(id: MoreId, push: (route: string) => void): Promise<StepO
   }
 }
 
-/** Reset the books (owner action) and clear the session; `scenario` picks the server fixture (golden books by default). */
-export async function resetDemo(push: (route: string) => void, scenario?: string, guard?: BooksGuard): Promise<void> {
-  if (inFlight || demoStore.get().busy) return;
-  inFlight = true;
-  setMode("demo");
-  demoStore.set((s) => ({ ...s, busy: true, running: null, error: null }));
-  try {
-    await demoReset(scenario, guard);
-    resetSession();
-    push("/demo");
-  } catch (e) {
-    if (isGuardError(e)) {
-      demoStore.set((s) => ({ ...s, busy: false }));
-      throw e;
-    }
-    // A 401 has opened the sign-in dialog; Reset stays a deliberate click.
-    const unauthorized = e instanceof ApiError && e.status === 401;
-    demoStore.set((s) => ({ ...s, busy: false, error: unauthorized ? null : errorMessage(e) }));
-  } finally {
-    inFlight = false;
-  }
-}
 
 /**
  * The one next control of the story page. `action` is the server's: a step id to run, or `restart` (the main books reset, as the stepper always did). The books are the truth
@@ -217,4 +186,23 @@ export async function runStoryAction(action: string, push: (route: string) => vo
 /** `seen` for GET /demo/story: the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it. */
 export function seenOf(reached: number): string | null {
   return DEMO_STEPS.slice(0, reached + 1).reverse().find((s) => s.id === "cash" || s.id === "outcome" || s.id === "proof")?.id ?? null;
+}
+
+let startPending = false;
+
+/**
+ * The story's start for a visitor who is not signed in: nothing reads the owner's story by itself, so the control says "Start demo" and a click asks for the sign-in; once the owner
+ * has signed in the story is read and its one next control runs (`resumeStart`, called on sign-in).
+ */
+export function requestStart(): void {
+  startPending = true;
+  requestSignIn("required");
+}
+
+export async function resumeStart(lang: "en" | "zh", push: (route: string) => void): Promise<void> {
+  if (!startPending) return;
+  startPending = false;
+  const view = await getDemoStory(lang, seenOf(reachedOf(demoStore.get())));
+  if (view.next.href) push(view.next.href);
+  else await runStoryAction(view.next.action ?? "", push, view.books);
 }

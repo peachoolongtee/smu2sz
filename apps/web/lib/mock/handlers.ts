@@ -483,25 +483,30 @@ export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Pro
  * The server's stale-page guard on a reset or a restore, answered from the mock's own state: another scenario than the page named is 409 BOOKS_CHANGED; work on the books without
  * `confirm_loss` is 409 LOSS_NOT_CONFIRMED with the list the story read carries. The sentences are the API's own, recorded (mocks/slice_d/guard.json).
  */
-function checkGuard(guard?: { from: string; confirm?: boolean }): void {
+function checkGuard(guard?: { from: string; confirm?: string }): void {
   if (!guard) return;
   const lang = getLang() === "zh" ? "zh" : "en";
   type Rec = { en: { message: string; message_when: string }; zh: { message: string; message_when: string } };
-  const rec = cast<{ books_changed: Rec; loss_not_confirmed: Rec }>(sliceDGuard);
+  const rec = cast<{ books_changed: Rec; loss_not_confirmed: Rec; loss_changed: Rec }>(sliceDGuard);
   const now = currentScenario() ?? "golden_sme";
   if (guard.from !== now) {
     const d = rec.books_changed[lang];
     throw new ApiError(409, d.message, { code: "BOOKS_CHANGED", message: d.message, message_when: d.message_when, scenario: now });
   }
-  if (guard.confirm) return;
   const books = pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), storyKey(), lang).books;
-  if (!books.nothing_to_lose) {
+  if (books.nothing_to_lose) return;
+  // Something to lose: the confirmation is the token of the list shown; none is "not confirmed", another is "the list changed".
+  if (!guard.confirm) {
     const d = rec.loss_not_confirmed[lang];
-    throw new ApiError(409, d.message, { code: "LOSS_NOT_CONFIRMED", message: d.message, message_when: d.message_when, loss_items: books.loss_items });
+    throw new ApiError(409, d.message, { code: "LOSS_NOT_CONFIRMED", message: d.message, message_when: d.message_when, loss_items: books.loss_items, loss_token: books.loss_token });
+  }
+  if (guard.confirm !== books.loss_token) {
+    const d = rec.loss_changed[lang];
+    throw new ApiError(409, d.message, { code: "LOSS_CHANGED", message: d.message, message_when: d.message_when, loss_items: books.loss_items, loss_token: books.loss_token });
   }
 }
 
-export async function restoreDemo(lang: "en" | "zh", guard?: { from: string; confirm?: boolean }): Promise<DemoRestoreResult> {
+export async function restoreDemo(lang: "en" | "zh", guard?: { from: string; confirm?: string }): Promise<DemoRestoreResult> {
   await demoReset(undefined, guard);
   return clone(cast<Pair<DemoRestoreResult>>(sliceDRestore)[lang === "zh" ? "zh" : "en"]);
 }
@@ -1198,7 +1203,7 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   } as WhatIfResult);
 }
 
-export async function demoReset(requested?: string, guard?: { from: string; confirm?: boolean }): Promise<void> {
+export async function demoReset(requested?: string, guard?: { from: string; confirm?: string }): Promise<void> {
   await delay();
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
