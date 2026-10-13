@@ -15,6 +15,12 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           plan) or the quiet variant. The commercial decisions are the worklist's (`GET /worklist`), so a healthy
                           company shows no filled primary here. `action.facts` [{label, value}] is the plan's three facts (estimated cost, funding,
                           approval), the very parts `action.text` is built from; empty when the action carries no funding plan.
+                          `action.legs` [{label, amount_display, lands_when, cost_display, repaid_when, state, state_text, authority_text}] is the
+                          plan one entry per landing leg, in the sentence's order: PLANNED while the plan is ready, ARRANGED once it ran and
+                          RECEIVED once the leg's cash landed (`state_of`); `cost_display` is the engine's own line for that action (null where it
+                          priced none), `repaid_when` a draw's repayment day (null otherwise); `lands_day` (days from today) and `amount_fen` are the timeline's
+                          data, never shown. `action.cost_basis_text` is the plan's own basis sentence for its cost (how it is estimated; the final interest depends on the
+                          actual repayment day); null with no cost and once the plan has run. Legs empty with no plan, ready or run.
     chart                 the scope the chart states, its legend (current / planned / hypothetical), the lowest point's inspector and
                           `lowest.cause` (the rail's lowest row, named by its cause; null when the hybrid names none) and, on a read made with
                           `?decision=` (and `?scenario=late`), `scenario_title_text` ("Foshan · Payment terms · As they asked vs Option A ·
@@ -31,7 +37,7 @@ import logging
 from typing import Any, NamedTuple
 from urllib.parse import quote
 
-from app.api.financing_words import state_of, state_word
+from app.api.financing_words import State, state_of, state_word
 from app.api.home import _lowest_ahead
 from app.api.home_hybrid import (
     HomeRead,
@@ -40,6 +46,7 @@ from app.api.home_hybrid import (
     _noun,
     _pending_lots,
     _plan_has_run,
+    _quote_of,
     _short,
     _signed,
     _sp,
@@ -160,10 +167,15 @@ def _funding(c: HomeRead, funding_line: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------- the one next action
 
 
+def _landing_legs(a: dict[str, Any]) -> list[dict[str, Any]]:
+    """The plan's legs that bring cash, in the plan's order: the sentence's legs and `action.legs` are these."""
+    return [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
+
+
 def _legs_text(c: HomeRead, a: dict[str, Any]) -> str:
     lang = c.lang
     kinds = {"DRAW_FACILITY": t(lang, "credit-line draw", "信用额度提款"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
-    legs = [leg for leg in a["legs"] if leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen")]
+    legs = _landing_legs(a)
     parts = [t(lang, f"{_short(leg['amount_fen'])} {kinds[leg['operation_kind']]} {leg['lands_when']}",
                f"{kinds[leg['operation_kind']]} {_short(leg['amount_fen'])}（{leg['lands_when']}）") for leg in legs]
     planned = t(lang, f"both {_planned(lang)}" if len(parts) > 1 else _planned(lang), f"均为{_planned(lang)}" if len(parts) > 1 else _planned(lang))
@@ -254,12 +266,69 @@ def _plan_facts(lang: str, p: _PlanParts) -> list[dict[str, str]]:
             {"label": t(lang, "Approval", "批准"), "value": approval}]
 
 
-def _action(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
+def _is_plan(a: dict[str, Any] | None) -> bool:
+    """The action is a funding plan that brings cash: a reserve breach with legs that land and an amount to receive."""
+    return a is not None and a["kind"] == "RESERVE_BREACH_AHEAD" and bool(_landing_legs(a)) and bool(a.get("receive_fen"))
+
+
+def _leg_label(lang: str, kind: str) -> str:
+    """The leg's source in the sentence's own words, first letter raised in English: it stands alone as a value. No facility name: the books
+    keep it in English only."""
+    words = {"DRAW_FACILITY": t(lang, "credit-line draw", "信用额度提款"), "SUBMIT_INVOICE_FOR_FINANCING": t(lang, "invoice financing", "发票融资")}
+    return _cap(words[kind])
+
+
+def _leg(c: HomeRead, *, kind: str, amount_fen: int, lands_day: int, lands_when: str | None, cost_fen: int | None, repay_day: int | None,
+         state: State, authority: str) -> dict[str, Any]:
+    """One leg. `lands_day` (days from today) and `amount_fen` are data for the timeline's position and the marker's size, never shown: the
+    page shows `lands_when` and `amount_display`."""
+    lang = c.lang
+    return {"label": _leg_label(lang, kind), "amount_display": whole(amount_fen), "amount_fen": amount_fen,
+            "lands_when": lands_when or when_text(lands_day, c.today, lang), "lands_day": lands_day - c.today,
+            "cost_display": whole(cost_fen) if cost_fen is not None else None,
+            "repaid_when": when_text(repay_day, c.today, lang) if kind == "DRAW_FACILITY" and repay_day is not None else None,
+            "state": state, "state_text": _cap(state_word(lang, state)), "authority_text": authority}
+
+
+def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, Any] | None) -> tuple[list[dict[str, Any]], str | None]:
+    """(`action.legs`, `action.cost_basis_text`): the basis is the plan's own sentence (the hybrid's `cost_basis`: how the cost is estimated and
+    that the final interest depends on the actual repayment day), null with no cost and once the plan has run (no basis sentence is carried then).
+    One leg per leg that lands, in the order the sentence says them. The plan that is ready: its
+    own actions, PLANNED. Once it has run (and nothing else is the action): the stored quote's legs with their lots, ARRANGED until the cash
+    lands, RECEIVED once it has (`state_of`). A leg's cost is the engine's own line for that action, null where it priced none (never a share
+    of the total); a draw's repayment day is the one the plan or the quote carries."""
+    a = c.action
+    out: list[dict[str, Any]] = []
+    basis: str | None = None
+    if _is_plan(a) and a is not None:
+        authority = str(a.get("authority_text") or "")
+        basis = str(a["cost_basis"]) if a.get("cost_total_display") and a.get("cost_basis") else None
+        for leg in _landing_legs(a):
+            out.append(_leg(c, kind=leg["operation_kind"], amount_fen=int(leg["amount_fen"]), lands_day=int(leg["lands_day"]), lands_when=str(leg["lands_when"]),
+                            cost_fen=leg.get("cost_fen"), repay_day=leg.get("cost_due_day"), state=state_of(None, planned=True), authority=authority))
+    elif action["variant"] == "QUIET" and funding_line is not None and funding_line["state"] in ("arranged", "landed"):
+        ds = _quote_of(c)
+        for leg in ds.quote.legs if ds is not None and ds.quote is not None else ():
+            lot = next((x for x in ds.lots if x.id == leg.op_id or x.id.startswith(leg.op_id + "#")), None) if ds is not None else None
+            day = lot.arrival_day if lot is not None else leg.lands_day
+            if leg.kind not in _LANDING or not leg.amount_fen or day is None:
+                continue
+            out.append(_leg(c, kind=leg.kind, amount_fen=leg.amount_fen, lands_day=day, lands_when=None, cost_fen=leg.cost_fen,
+                            repay_day=leg.cost_end_day, state=state_of(lot, repaid=lot is None), authority=str(funding_line["authority_text"] or "")))
+    return out, basis
+
+
+def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | None = None) -> dict[str, Any]:
+    out = _action_body(c, att)
+    out["legs"], out["cost_basis_text"] = _action_legs(c, out, funding_line)
+    return out
+
+
+def _action_body(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
     lang, a = c.lang, c.action
     if a is not None and a["kind"] == "RESERVE_BREACH_AHEAD":
         waiting = bool(a.get("pending_approval_id"))
-        landing = any(leg["operation_kind"] in _LANDING and leg.get("lands_when") and leg.get("amount_fen") for leg in a["legs"])
-        if landing and a.get("receive_fen"):  # a plan that brings cash: say how much, before what, and what it is made of
+        if _is_plan(a):  # a plan that brings cash: say how much, before what, and what it is made of
             amount = whole(a["receive_fen"])
             plan = _plan_parts(c, a)
             title = t(lang, f"Secure {amount} before {_before_what(c)}.", f"请在{_before_what(c)}之前筹措 {amount}。")
@@ -385,7 +454,7 @@ def _links(c: HomeRead) -> list[dict[str, str]]:
 def build(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any], rail: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """`home_v2` for `GET /home`: the three KPIs, the one action, the chart's scope and the links. `rail` is the cash block's events rail."""
     return {"kpis": {"cash_available": _cash_available(c), "lowest_ahead": _lowest_ahead_kpi(c), "funding": _funding(c, funding_line)},
-            "action": _action(c, att), "chart": _chart(c, rail), "links": _links(c)}
+            "action": _action(c, att, funding_line), "chart": _chart(c, rail), "links": _links(c)}
 
 
 __all__ = ["build"]
