@@ -1773,6 +1773,8 @@ _DEAL_STATE_WORDS = {
     "LAPSED": ("Lapsed · the invoice it was about has since been settled under another agreement",
                "已失效 · 它所针对的发票此后已按另一份协议结算"),
 }
+# A negotiation also lapses when nothing but the books moved (the invoice was financed, the days it named have passed): said without an agreement.
+_LAPSED_CHANGED = ("Lapsed · the invoice or the dates it was about have since changed", "已失效 · 它所针对的发票或日期此后已有变动")
 _RESPONSE_WORDS = {
     "accept": ("Acceptable, awaiting agreement", "可接受，等待达成协议"),
     "counter": ("Counter recommended", "建议还价"),
@@ -1845,10 +1847,14 @@ def abstention_words(reason: str, channels: Iterable[str], lang: Lang) -> str | 
     return t(lang, f"{who} give {en_n} different {en_what}s.", f"{who}给出了{zh_n}个不同的{zh_what}。")
 
 
-def lapsed_offer_text(lang: Lang) -> str:
-    """Why a negotiation whose invoice has been settled since can no longer be answered: it is closed, and there is nothing to read on it."""
-    return t(lang, "This offer has lapsed: the invoice it was about has since been settled under another agreement, so there is nothing to reply to.",
-             "该报价已失效：它所针对的发票此后已按另一份协议结算，无需再答复。")
+def lapsed_offer_text(lang: Lang, by_agreement: bool = True) -> str:
+    """Why a negotiation whose invoice has changed since can no longer be answered: it is closed, and there is nothing to read on it.
+    `by_agreement` says another agreement settled the invoice (the usual cause); otherwise the invoice or the dates it named have changed."""
+    if by_agreement:
+        return t(lang, "This offer has lapsed: the invoice it was about has since been settled under another agreement, so there is nothing to reply to.",
+                 "该报价已失效：它所针对的发票此后已按另一份协议结算，无需再答复。")
+    return t(lang, "This offer has lapsed: the invoice or the dates it was about have since changed, so there is nothing to reply to.",
+             "该报价已失效：它所针对的发票或日期此后已有变动，无需再答复。")
 
 
 def business_action_text(code: str, lang: Lang) -> str:
@@ -1857,14 +1863,16 @@ def business_action_text(code: str, lang: Lang) -> str:
     return t(lang, en, zh)
 
 
-def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None, residual: bool = False) -> str:
+def decision_state_text(family: str, state: str, lang: Lang, *, response: str | None = None, residual: bool = False,
+                        lapsed_by_agreement: bool = True) -> str:
     """A decision's state in the owner's words. A deal ready for a response says what the verdict recommends ("Acceptable,
     awaiting agreement" for an acceptable offer, never "Agreed": the agreement words follow the commitment only). A funding that is
     done while the reserve is still short says so ("Funded, reserve still short"): `residual` is the decision record's own."""
     if family == "DEAL":
         if state == "RESPONSE_READY":
             return business_action_text(response or "cannot", lang)
-        en, zh = _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state))
+        en, zh = (_LAPSED_CHANGED if state == "LAPSED" and not lapsed_by_agreement
+                  else _DEAL_STATE_WORDS.get(state, (state.replace("_", " ").capitalize(), state)))
     else:
         if residual and state in ("SETTLED", "EXECUTED"):
             return t(lang, "Funded, reserve still short", "已融资，储备仍有缺口")

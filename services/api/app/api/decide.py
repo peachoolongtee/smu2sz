@@ -237,8 +237,13 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
     })
     # The page's order, server-shaped (the Deals workspace): every line is a field of this view or the engine's own posting, in words.
     send_plans: dict[str, Any] = {}
+    decline_plan = None
     if view["counters"] and view["business_action"] == "counter":
         books_s = current_books(state, rt.store.commitments())
+        try:  # the gap as it stands: the funding a send runs even when the buyer declines (`_negotiate_locked` plans it on both outcomes)
+            decline_plan = plan(books_s.state, books_s.with_([]), mandate)
+        except Exception:
+            logging.getLogger("termsledger.decisions").exception("the decline plan could not be read for %s", offer_id)
         for c in v.counters:  # each reply's own plan: the gap that would remain if the buyer accepts THAT counter (what its send would run)
             try:
                 send_plans[c.id] = plan(books_s.state, books_s.with_(list(c.obligations)), mandate)
@@ -247,7 +252,7 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
     paths = _picture_paths(rt, offer_id, view, lang)
     view["workspace"] = build_workspace(
         view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer, commitments=rt.store.commitments(),
-        send_plans=send_plans,
+        send_plans=send_plans, decline_plan=decline_plan,
         authority_texts={k: (str(p["decides_text"]) if p.get("decides_text") else None) for k, p in (paths or {}).items()},
         sendable_ids=None if paths is None else {k for k, p in paths.items() if p.get("sendable")})
     return view

@@ -153,3 +153,24 @@ def test_the_exposure_of_a_lapsed_offer_says_there_is_nothing_to_read_not_a_tran
     # a live offer of the same books still reads
     [live] = [d for d in _decisions(api) if d["counterparty_name"] == "Dongguan Office Supplies Ltd." and d["state"] == "RESPONSE_READY"]
     assert api.get(f"/decisions/{live['id']}/exposure", params={"lang": lang}).status_code == 200
+
+
+@pytest.mark.parametrize("lang,word", [
+    ("en", "Lapsed · the invoice or the dates it was about have since changed"),
+    ("zh", "已失效 · 它所针对的发票或日期此后已有变动")])
+def test_a_lapse_that_no_agreement_caused_does_not_say_one_did(api: TestClient, lang: str, word: str) -> None:
+    """Once the days the Foshan offer named have passed it can no longer be drawn: it is Lapsed, but no agreement settled it."""
+    ex = {"fixture_id": "EX01_PACKAGE"}
+    offer_id = api.post("/offers", json=ex).json()["offer"]["offer_id"]
+    api.post(f"/offers/{offer_id}/evaluate", json=ex)
+    assert _lapsed(api) == []
+    action = api.get("/home").json()["next_action"]
+    done = api.post(f"/alerts/{action['alert_id']}/act", json={"state_version": action["state_version"], "suggestions": action["suggestions"]}).json()
+    assert done["executed"] == 2
+    assert _lapsed(api) == []  # the plan has run and the offer is still live
+    assert api.post("/clock/advance", json={"to_day": 10}).status_code == 200
+    [lapsed] = _lapsed(api, lang)
+    assert lapsed["state_text"] == word and lapsed["terminal"] is True
+    overview = api.get("/customers/BUYER-1/overview", params={"lang": lang}).json()["decision"]
+    assert overview["kind"] == "lapsed" and "another agreement" not in overview["text"] and "另一份协议" not in overview["text"]
+    assert api.get("/deals", params={"lang": lang}).json()["queue"]["needs_you"] == []

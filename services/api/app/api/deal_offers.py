@@ -155,7 +155,7 @@ def _lapsed_offer(ctx: Context, offer: Any, ds: Any, lang: str) -> dict[str, Any
         "offer_id": offer.offer_id, "verdict_id": ds.verdict.id if ds.verdict is not None else None,
         "received_when": when_text(offer.received_day, ctx.today, lang) if offer.received_day is not None else None,
         "asks_text": _join(asked, lang) if asked else None, "read_text": None, "headline_short": None, "headline_note": None,
-        "action_text": lapsed_offer_text(lang), "cost_display": None, "cost_window_text": None, "limit_fen": cap,
+        "action_text": lapsed_offer_text(lang, ctx.lapsed_by.get(ds.decision_id, True)), "cost_display": None, "cost_window_text": None, "limit_fen": cap,
         "limit_display": fmt_yuan(cap), "over_limit": False, "replies_ready": 0, "stages": [], "tone": "info"}
 
 
