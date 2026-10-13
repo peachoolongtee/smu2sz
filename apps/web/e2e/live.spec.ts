@@ -534,7 +534,7 @@ test("Deals: Send carries what was shown, and the record's state follows: Agreed
   });
   const deal = await checkedDeal(page);
   const steps = page.getByTestId("deal-state-chip");
-  await expect(steps).toContainText("Counter recommended");
+  await expect(steps).toContainText("Counter ready");
   await openReview(page);
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
   await sendCounter(page);
