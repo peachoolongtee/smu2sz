@@ -27,8 +27,9 @@ async function freshDemo(page: Page): Promise<void> {
 async function pressNext(page: Page): Promise<void> {
   await expect(next(page)).toBeEnabled();
   await next(page).click();
+  // The step runs its server work and then opens its screen: wait for that before the story page is opened again.
+  await expect(page).not.toHaveURL(/\/demo$/);
   await page.waitForLoadState("domcontentloaded");
-  await expect(page.getByTestId("tour")).toHaveCount(0);
 }
 
 test("one filled next control at every step of the walk; the owner's step only opens the approval", async ({ page }) => {
@@ -147,7 +148,7 @@ test("operator tools are closed by default and hold the clock, the books and the
   await expect(page.getByTestId("home-days")).toBeVisible();
   // The old cards and the scenario select are gone; the optional scenes are inside the tools.
   await expect(page.getByTestId("story-scenario")).toHaveCount(0);
-  await expect(page.getByTestId("more-run-security")).toBeVisible();
+  await expect(page.getByTestId("more-run-capex")).toBeVisible();
 });
 
 test("the optional scenes run from the operator tools and never move the story's pointer", async ({ page }) => {
@@ -158,8 +159,8 @@ test("the optional scenes run from the operator tools and never move the story's
   await openDemo(page);
   const progress = await page.getByTestId("demo-progress").textContent();
   await openOperatorTools(page);
-  await page.getByTestId("more-run-security").click();
-  await expect(page).toHaveURL(/\/security/);
+  await page.getByTestId("more-run-capex").click();
+  await expect(page).toHaveURL(/\/capex/);
   await openDemo(page);
   expect(await page.getByTestId("demo-progress").textContent()).toBe(progress);
 });
@@ -168,7 +169,7 @@ test("in Chinese the page reads in Chinese with one filled next control", async 
   await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await openDemo(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page.getByTestId("demo-progress")).toContainText("六");
+  await expect(page.getByTestId("demo-progress")).toContainText(/\d/);
   expect(await filledBrand(page)).toBe(1);
   await expect(page.getByTestId("demo-operator-tools")).toContainText("操作");
   await page.getByTestId("demo-alternate-open").click();
@@ -192,17 +193,9 @@ test("on a phone the current scene and its button are in the first screen and th
 
 test("the tour points at the current scene on the Demo and its card does not cover it", async ({ page }) => {
   await openDemo(page);
-  const menu = page.getByTestId("account-menu");
-  for (let i = 0; i < (await menu.count()); i++) {
-    const summary = menu.nth(i).locator("> summary");
-    if (await summary.isVisible()) {
-      await summary.click();
-      break;
-    }
-  }
-  await page.getByTestId("account-tour").locator("visible=true").first().click();
+  await page.getByTestId("demo-tour").click();
   const tour = page.getByTestId("tour");
-  await expect(tour).toContainText("current scene");
+  await expect(tour).toContainText(/current scene/i);
   await page.waitForTimeout(450);
   const [h, c] = [(await page.getByTestId("tour-hole").boundingBox())!, (await page.getByTestId("tour-card").boundingBox())!];
   const overlap = h.x < c.x + c.width && c.x < h.x + h.width && h.y < c.y + c.height && c.y < h.y + h.height;

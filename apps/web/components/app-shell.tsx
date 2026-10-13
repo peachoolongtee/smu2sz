@@ -592,6 +592,7 @@ function DemoShell({ children }: { children: ReactNode }) {
       </aside>
 
       <OwnerSignInDialog />
+      <Tour />
 
       <div className="min-w-0">
         <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">

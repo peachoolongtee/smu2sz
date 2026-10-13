@@ -12,7 +12,8 @@ async function story(page: import("@playwright/test").Page, key: string, value: 
   await page.addInitScript(([k, v]) => sessionStorage.setItem(k, v), [key, value]);
 }
 
-test("an agreement approval shows the buyer, the terms and the amount above the buttons", async ({ page }) => {
+test("an agreement approval shows the buyer, the terms and the amount above the buttons", async ({ page }, info) => {
+  test.skip(info.project.name === "live", "mock-mode spec: the recorded approval stories");
   await story(page, "tl-mock-approval-story", "agreement");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
@@ -39,7 +40,8 @@ test("an agreement approval shows the buyer, the terms and the amount above the 
   await expect(card.getByTestId("approval-detail-APR-000001")).toContainText("Terms hash");
 });
 
-test("when the server cannot present the terms, Approve is disabled, the reason is shown and Decline stays", async ({ page }) => {
+test("when the server cannot present the terms, Approve is disabled, the reason is shown and Decline stays", async ({ page }, info) => {
+  test.skip(info.project.name === "live", "mock-mode spec: the recorded approval stories");
   await story(page, "tl-mock-approval-story", "expired");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
@@ -57,7 +59,8 @@ test("when the server cannot present the terms, Approve is disabled, the reason 
   await expect(approve).toBeDisabled();
 });
 
-test("an approval the executor refuses ends as 'could not run', with no buttons and no money moved", async ({ page }) => {
+test("an approval the executor refuses ends as 'could not run', with no buttons and no money moved", async ({ page }, info) => {
+  test.skip(info.project.name === "live", "mock-mode spec: the recorded approval stories");
   await story(page, "tl-mock-approval-story", "refused");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
@@ -76,7 +79,8 @@ test("an approval the executor refuses ends as 'could not run', with no buttons 
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-refused-APR-000001")).toBeVisible();
 });
 
-test("day 34 without a receipt: the Home says it is below the reserve today, never 'N days ago'", async ({ page }) => {
+test("day 34 without a receipt: the Home says it is below the reserve today, never 'N days ago'", async ({ page }, info) => {
+  test.skip(info.project.name === "live", "mock-mode spec: the recorded approval stories");
   await story(page, "tl-mock-no-receipt", "1");
   await page.goto("/demo");
   await openOperatorTools(page);
@@ -96,7 +100,8 @@ test("day 34 without a receipt: the Home says it is below the reserve today, nev
   await expect(page.getByTestId("cash-figures")).toContainText("Cash today ¥45k");
 });
 
-test("a part-paid promise: Receivables names the four facts and the window", async ({ page }) => {
+test("a part-paid promise: Receivables names the four facts and the window", async ({ page }, info) => {
+  test.skip(info.project.name === "live", "mock-mode spec: the recorded approval stories");
   await story(page, "tl-mock-no-receipt", "half");
   await page.goto("/demo");
   await openOperatorTools(page);

@@ -123,7 +123,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
   const s = view.summary;
 
   return (
-    <div className="space-y-6" data-testid="activity-read">
+    <div id="activity-timeline" className="space-y-6" data-testid="activity-read">
       <div className="space-y-3">
         <div className="max-w-md">
           <WorklistSearch value={q} onChange={setQ} label={t("activity.search")} testId="activity-search" />
@@ -213,10 +213,10 @@ export function ActivityRead({ view }: { view: ActivityView }) {
 /** The record-chain words, where the page has always shown them: a badge in the header's actions. */
 export function ChainBadge({ chain }: { chain: ActivityView["chain"] }) {
   const { t } = useI18n();
-  if (!chain.chain_length || chain.chain_text === null || chain.chain_text === undefined) return null;
+  if (!chain.chain_text) return null;
   return (
     <div className="flex items-center gap-2" data-testid="chain-status">
-      <Badge tone={chain.chain_valid ? "ok" : "bad"} title={`${chain.chain_scope_text ?? ""} ${t("ledger.entries", { n: chain.chain_length })}`.trim()}>
+      <Badge tone={chain.chain_valid === false ? "bad" : "ok"} title={`${chain.chain_scope_text ?? ""} ${chain.chain_length ? t("ledger.entries", { n: chain.chain_length }) : ""}`.trim()}>
         {chain.chain_text}
       </Badge>
     </div>

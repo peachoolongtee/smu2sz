@@ -27,6 +27,8 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
+//   - slice_d/*.json (only with --slice-d): the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
+//     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
 //
 // The decision record (Wave 2, ADR-0011) is recorded as snapshots in decisions.json, { name: { en, zh } }, each one GET /decisions/{id} read at
@@ -205,13 +207,13 @@ function rechainByAppearance(name, root) {
 
 /**
  * The restore history (`alternate.history`) is a list the API keeps in memory for as long as it runs, so it grows with every recording made against the same process:
- * the recording keeps only the restore the recording itself made (the last entry, and only in restore.json), so a second run on the same API changes nothing.
+ * its entries also carry relative times ("21 minutes ago"), so the recording keeps none (the mock shows no history) and a second run on the same API changes nothing.
  */
 function trimRestoreHistory(name, root) {
   const visit = (node) => {
     if (Array.isArray(node)) node.forEach(visit);
     else if (node && typeof node === "object") {
-      if (Array.isArray(node.history) && node.history.every((h) => h && typeof h.text === "string")) node.history = name === "slice_d/restore.json" ? node.history.slice(-1) : [];
+      if (Array.isArray(node.history) && node.history.every((h) => h && typeof h.text === "string")) node.history = [];
       Object.values(node).forEach(visit);
     }
   };
@@ -220,6 +222,9 @@ function trimRestoreHistory(name, root) {
 
 function normalise(name, value) {
   const text = JSON.stringify(value)
+    // slice_d/*: a funding decision's id ends in the books' state version (alert:ALERT-RESERVE-42:v6), which depends on how many reads came before it; the mock's decision
+    // recordings (decisions.json) name the same record as v7, so the walk's id is made the same one.
+    .replace(/alert:(ALERT-[A-Z]+-\d+):v\d+/g, (m, id) => (name.startsWith("slice_d/") ? `alert:${id}:v7` : m))
     .replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT)
     .replace(/ALERT-EARLYPAY-[0-9a-f]{12}/g, `ALERT-EARLYPAY-${sha("recorded early-pay alert").slice(0, 12)}`)
     .replace(/NL-[0-9a-f]{16}/g, (id) => {

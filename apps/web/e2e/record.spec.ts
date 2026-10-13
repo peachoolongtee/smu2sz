@@ -226,9 +226,7 @@ test("after the cure is approved, Home's strip says the funding is on its way; t
   await expect(page.getByTestId("record-settlement")).toContainText("¥200,000.00");
   // Activity: each row that belongs to a record opens it.
   await page.goto("/activity");
-  const row = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first();
-  await row.locator("> details > summary").click();
-  await row.getByTestId("activity-record").click();
+  await page.getByTestId("activity-list").getByTestId("activity-open-decision").first().click();
   await expect(page.getByTestId("record-state")).toBeVisible();
   // A record that is not on the books says so in words.
   await page.goto("/decisions/deal%3AOFF-nothing");

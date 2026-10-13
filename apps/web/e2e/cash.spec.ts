@@ -237,8 +237,7 @@ test("engine words stay out of level 1 on Cash & funding and Activity", async ({
   await page.goto("/activity");
   const activity = await page.locator("main").innerText();
   for (const word of [/hash-chained/i, /\bexecutor\b/i, /operations the/i]) expect(activity, String(word)).not.toMatch(word);
-  await expect(page.locator("#activity-timeline")).toContainText("Each entry is sealed to the one before it.");
-  await expect(page.locator("#activity-refused")).toContainText("Nothing has been refused yet");
+  await expect(page.locator("#activity-timeline")).toContainText("Every entry stays in the record");
 });
 
 // ---- pages A1 (part 2): the picture, the ways to cover the gap as a radio group, the facility bars

@@ -180,12 +180,7 @@
         "loaded_text": null,
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
-        "history": [
-          {
-            "when": "1 minute ago",
-            "text": "The main books were replaced by the busy company."
-          }
-        ]
+        "history": []
       },
       "operator_tools": {
         "label": "Operator tools",
@@ -454,12 +449,7 @@
         "loaded_text": null,
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
-        "history": [
-          {
-            "when": "1 分钟前",
-            "text": "主账目被繁忙的公司替换。"
-          }
-        ]
+        "history": []
       },
       "operator_tools": {
         "label": "操作工具",

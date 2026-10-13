@@ -414,28 +414,26 @@ test("at tablet width (820) the open invoices are one card each, so no column is
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 
-test("phone: the Demo story keeps 'More to show', 'Today' and 'The books' under one closed fold each, so the page is short", async ({ page }, testInfo) => {
+test("phone: the Demo story keeps 'Another set of books' and 'Operator tools' under one closed fold each, so the page is short", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "phone", "the folds are the phone's");
   await page.goto("/demo");
-  for (const card of ["story-more", "story-today", "story-reset"]) {
-    const fold = page.getByTestId(`story-fold-${card}`);
+  for (const id of ["demo-alternate-fold", "demo-operator-tools"]) {
+    const fold = page.getByTestId(id);
     await expect(fold).toBeAttached();
     await expect(fold).not.toHaveAttribute("open", "");
   }
   // The controls stay one tap away: a fold opens with the keyboard's Enter and shows what was behind it.
   await expect(page.getByTestId("more-run-capex")).toBeHidden();
-  const books = page.getByTestId("story-fold-story-reset");
-  await books.locator("> summary").focus();
+  const tools = page.getByTestId("demo-operator-tools");
+  await tools.locator("> summary").focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByTestId("story-reset")).toBeVisible();
-  await books.locator("> summary").click();
-  await expect(page.getByTestId("story-reset")).toBeHidden();
+  await expect(page.getByTestId("more-run-capex")).toBeVisible();
+  await tools.locator("> summary").click();
+  await expect(page.getByTestId("more-run-capex")).toBeHidden();
   await expect(page.getByTestId("home-day")).toBeAttached();
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   const view = page.viewportSize()?.height ?? 915;
-  // Measured 2.7 screens at 412 x 915 with the folds and the compact step rows; the eleven steps are the page. Under two is open.
-  // The limit is three screens plus 16 px for the reskin's type: the page title is a 24 px / 32 px serif (was 20 / 28) and a card's padding is 20 px
-  // (was 16), which together add about 8 px to this page. The bound moved by that, not by the page's length.
+  // One current scene, six one-line scenes and two closed folds: the page is short.
   expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3 + 16);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

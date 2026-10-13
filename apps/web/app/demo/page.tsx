@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AlternateSection } from "@/components/demo/alternate-dialog";
 import { TodayCard } from "@/components/home/today-card";
 import { Disclosure } from "@/components/business/kit";
+import { startTour } from "@/components/business/tour";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -162,7 +163,15 @@ export default function DemoPage() {
         </p>
       ) : null}
 
-      <PageHeader title={view?.title_text ?? t("story.title")} subtitle={view ? <span className="max-sm:sr-only">{view.subtitle_text}</span> : undefined} />
+      <PageHeader
+        title={view?.title_text ?? t("story.title")}
+        subtitle={view ? <span className="max-sm:sr-only">{view.subtitle_text}</span> : undefined}
+        actions={
+          <Button variant="ghost" size="sm" onClick={startTour} data-testid="demo-tour">
+            {t("tour.replay")}
+          </Button>
+        }
+      />
 
       {story.error ? (
         <ErrorState error={story.error} onRetry={story.reload} />
@@ -245,7 +254,7 @@ export default function DemoPage() {
               </p>
               {view.proof.chain.chain_text ? (
                 <p className="mt-1">
-                  <Badge tone={view.proof.chain.chain_valid ? "ok" : "bad"} title={view.proof.chain.chain_scope_text}>
+                  <Badge tone={view.proof.chain.chain_valid === false ? "bad" : "ok"} title={view.proof.chain.chain_scope_text}>
                     {view.proof.chain.chain_text}
                   </Badge>
                 </p>
