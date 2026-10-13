@@ -77,7 +77,6 @@ export function CostBlock({ cost }: { cost: TrackerCost }) {
       <div className="text-body text-ink-2" data-testid="tracker-to-come">
         {toCome.amount_display ? (
           <p>
-            <span className="font-semibold text-ink">{t("tracker.toCome")}: </span>
             <span className="font-semibold tabular-nums text-ink" data-testid="tracker-to-come-figure">{toCome.amount_display}</span> {toCome.note_text}
           </p>
         ) : (
