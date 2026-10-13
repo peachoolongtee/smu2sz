@@ -18,7 +18,8 @@ prototype's (`HomeV2Proto.dc.html`) where the prototype has one.
                           `action.approval_text` is the approval in one sentence: the approval fact's own value while the plan is ready to run
                           ("No approval needed"), "Needs your approval before it runs" wherever the action waits for the owner (APPROVE_PLAN, or
                           the application for a facility, which needs the owner), null when the action has no plan to state it for (no
-                          control, or a step with no approval fact); `action.approval_needed` is true exactly when that sentence is given.
+                          control, or a step with no approval fact); `action.approval_needed` is true exactly when that sentence is given
+                          (also a plan ready to run whose approval fact is "Your approval is needed").
                           `action.legs` [{label, amount_display, lands_when, cost_display, repaid_when, state, state_text, authority_text}] is the
                           plan one entry per landing leg, in the sentence's order: PLANNED while the plan is ready, ARRANGED once it ran and
                           RECEIVED once the leg's cash landed (`state_of`); `cost_display` is the engine's own line for that action (null where it
@@ -357,16 +358,19 @@ def _action(c: HomeRead, att: dict[str, Any], funding_line: dict[str, Any] | Non
 
 
 def _approval_words(c: HomeRead, action: dict[str, Any]) -> tuple[str | None, bool]:
-    """(`action.approval_text`, `action.approval_needed`): an action that waits for the owner says so, in one fixed sentence: a plan waiting
-    for the approval (APPROVE_PLAN) and a step with no plan facts whose own words say it needs the owner (an application for a facility,
-    `needs_owner`); a plan ready to run states its approval fact's own value; an action with no plan, or no approval fact to state, has no text."""
+    """(`action.approval_text`, `action.approval_needed`), both from the same fact: an action that waits for the owner says so in one fixed
+    sentence, and `approval_needed` is true with it. That is a plan waiting for the approval (APPROVE_PLAN), a step with no plan facts whose own
+    words say it needs the owner (an application for a facility, `needs_owner`), and a plan ready to run whose approval fact is anything but
+    "No approval needed" (the cure above the autonomous ceiling, queued for the owner). A plan that needs none states its fact's own value; an
+    action with no plan, or no approval fact to state, has no text."""
     lang = c.lang
+    fact = next((f["value"] for f in action["facts"] if f["label"] == t(lang, "Approval", "批准")), None)
+    run = action["control"] == "RUN_PLAN"
     waits = action["control"] == "APPROVE_PLAN" or (
-        action["control"] == "RUN_PLAN" and not action["facts"] and bool((c.action or {}).get("needs_owner")))
+        run and (fact is not None and fact != t(lang, "No approval needed", "无需批准") or (not action["facts"] and bool((c.action or {}).get("needs_owner")))))
     if waits:
         return t(lang, "Needs your approval before it runs", "需要您批准后才会执行"), True
-    fact = next((f["value"] for f in action["facts"] if f["label"] == t(lang, "Approval", "批准")), None)
-    return (fact if action["control"] == "RUN_PLAN" else None), False
+    return (fact if run else None), False
 
 
 def _action_body(c: HomeRead, att: dict[str, Any]) -> dict[str, Any]:
