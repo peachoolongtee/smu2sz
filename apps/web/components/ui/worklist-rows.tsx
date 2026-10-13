@@ -21,7 +21,7 @@ export interface UnderlineTab<T extends string> {
  * The worklist's filters as the mockup's: text tabs, the chosen one a white pill (the count beside each label at 13 px in neutral text; colour is for the status pill only). A tablist:
  * one tab stop, arrow keys, Home and End move and the choice follows the focus.
  */
-export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[] }) {
+export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, dense = false }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[]; /** Tighter padding for a narrow card (the Deals queue's 340 px). */ dense?: boolean }) {
   const track = useRef<HTMLDivElement>(null);
   const selected = tabs.findIndex((t) => t.value === value);
   const els = () => Array.from(track.current?.querySelectorAll<HTMLButtonElement>("[role=tab]") ?? []);
@@ -49,7 +49,7 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
             data-testid={t.testId}
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKey(e, i)}
-            className={`motion-press inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-pill px-3.5 text-[15px] font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
+            className={`motion-press inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-pill ${dense ? "px-2.5 text-sm" : "px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
           >
             {t.label}
             <span className={`text-supporting tabular-nums ${on ? "text-ink" : "text-ink-3"}`} data-testid={t.countTestId}>

@@ -4840,7 +4840,7 @@
         "key": "approval:APR-000001",
         "kind": "approval",
         "eyebrow": "1 approval needs you",
-        "title": "Approve ¥200,000.00 of invoice financing?",
+        "title": "Request ¥200,000 of invoice financing",
         "facts": [
           {
             "label": "Estimated cost",
@@ -5200,7 +5200,8 @@
       "created_day": 34,
       "amount_fen": 20000000,
       "amount_display": "¥200,000.00",
-      "headline": "Approve ¥200,000.00 of invoice financing?",
+      "headline": "Request ¥200,000 of invoice financing",
+      "title_text": "Request ¥200,000 of invoice financing",
       "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
       "facility_name": "Invoice financing (onboarded platform)",
       "buyer_name": "Foshan Home Retail Co.",
@@ -5220,6 +5221,10 @@
   "pending_count": 1,
   "open_decisions": [
     {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",

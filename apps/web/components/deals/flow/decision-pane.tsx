@@ -13,13 +13,19 @@ import { ComparisonTable, type CompareColumn, type CompareRow } from "@/componen
 import { OpenSection } from "@/components/ui/open-section";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
+import { StatusPill } from "@/components/ui/status-pill";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import { AnalysisCards, type ShowKey } from "./analysis-cards";
+import { CostTable } from "./cost-table";
+import { costHeadline, paneStatus, timingOf } from "./deal-model";
 import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
 import { Investigate, lowestOf } from "./investigate";
+import { TermsTable } from "./terms-table";
+import { TimingDiagram } from "./timing-diagram";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
 
@@ -28,12 +34,13 @@ export interface DealView {
   compare: boolean;
   chart: boolean;
   late: boolean;
+  /** "Full analysis" is open (`investigate=1`): the Investigate level with the reasons. */
+  investigate: boolean;
+  /** Which of the two cards is open (`show=cost|cash`; `none` both folded); null is the default card. */
+  show: ShowKey | null;
 }
 
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
-
-/** A sentence the server wrote opens with a capital in the place it stands. */
-const upper = "first-letter:uppercase";
 
 function Announce({ text }: { text: string }) {
   return (
@@ -256,6 +263,9 @@ export function DecisionPane({
   const pair = [asked, focus].filter((p, i, a): p is PicturePath => p !== null && a.indexOf(p) === i);
   const pairColumns: CompareColumn[] = pair.map((p) => ({ key: p.key, head: p.label, tag: <StateWord tone={toneOfDeal(p.tag_tone)}>{p.tag_text}</StateWord>, recommended: p.key === recommended?.key }));
   const lowest = (p: PicturePath) => lowestOf(p, wordsOf(p), stressOf(p), late);
+  // The funding each path's cash rests on, in the server's short words: its own row. A server that does not send it keeps the longer assumption sentence under the table.
+  const fundingOf = (p: PicturePath) => wordsOf(p)?.funding_assumption_text ?? p.funding_assumption_text ?? null;
+  const hasFunding = pair.some((p) => fundingOf(p));
   const pairRows: CompareRow[] = [
     {
       key: "lowest",
@@ -274,41 +284,40 @@ export function DecisionPane({
       }),
     },
     {
-      key: "limits",
-      label: t("hv2.deal.limits"),
-      cells: pair.map((p) => {
-        const w = wordsOf(p);
-        return w?.limit_text ? (
-          <StateWord key={p.key} tone={w.limit_word === "EXCEEDED" ? "bad" : "ok"}>
-            <span className={upper}>{w.limit_text}</span>
-          </StateWord>
-        ) : (
-          <span key={p.key}>{NONE}</span>
-        );
-      }),
-    },
-    {
       key: "approval",
-      label: t("hv2.deal.approval"),
+      label: t("deals.row.authority"),
       cells: pair.map((p) => (
         <StateWord key={p.key} tone={AUTH_TONE[p.authority ?? ""] ?? "neutral"}>
           {p.authority_text ?? p.decides_text}
         </StateWord>
       )),
     },
+    ...(hasFunding
+      ? [
+          {
+            key: "funding",
+            label: t("deals.row.funding"),
+            cells: pair.map((p) => {
+              const f = fundingOf(p);
+              return f ? <Cell key={p.key} note={f} /> : <span key={p.key}>{NONE}</span>;
+            }),
+          },
+        ]
+      : []),
   ];
   // What each path assumes, said under the table (the asked path carries no funding plan, a reply carries its own): one sentence per column, never merged into one.
-  const assumptions = pair.map((p) => ({ p, text: late ? null : (wordsOf(p)?.scenario_assumption_text ?? p.scenario_assumption_text) })).filter((x) => x.text);
+  const assumptions = hasFunding ? [] : pair.map((p) => ({ p, text: late ? null : (wordsOf(p)?.scenario_assumption_text ?? p.scenario_assumption_text) })).filter((x) => x.text);
   const timingTabs = Boolean(exposure?.stress.paths);
 
-  const askCost = asked ? (asked.cost_forward_display ?? asked.cost_total_display ?? asked.cost_display) : null;
-  const askBasis = asked ? (asked.cost_forward_display && asked.cost_once_display ? asked.cost_note : (asked.cost_basis_text ?? asked.cost_note)) : null;
-  const focusCost = focus ? (focus.cost_total_display ?? focus.cost_once_display ?? focus.cost_display) : null;
-  const focusBasis = focus ? (focus.cost_basis_text ?? focus.cost_note) : null;
+  const timing = picture ? timingOf(picture, asked, focus) : null;
+  // The open card: the address's, else the one the recommendation reason names (cash when the request breaches the reserve or exceeds the mandate, whose authority row is in the cash table), cost when the server does not say.
+  const shown: ShowKey = view.show ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
+  const status = paneStatus(row, record?.state_text, stateCode);
+  const analysis = Boolean(picture && evaluated && picture.available !== false && pair.length && !done && !waitsOnApproval);
   const customerLine = (
     <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2" data-testid="deal-customer-line">
       <CustomerName id={buyerId} decision={decision} className="font-bold text-ink" testId="deal-selected-customer">
@@ -329,8 +338,8 @@ export function DecisionPane({
       <div key={decision} className="motion-swap">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="mb-1" data-testid="deal-state-chip" data-state={stateCode}>
-              <StateWord tone={toneOfDeal(record?.state_tone ?? (done ? "neutral" : "warn"))}>{record?.state_text ?? row?.status_text ?? ""}</StateWord>
+            <p className="mb-1.5" data-testid="deal-state-chip" data-state={stateCode}>
+              <StatusPill tone={status.tone}>{status.text}</StatusPill>
             </p>
             <h2 id={`${uid}-title`} tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
               {title}
@@ -361,17 +370,6 @@ export function DecisionPane({
                 {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
               </p>
             ) : null}
-            {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.some((x) => x.value_text) ? (
-              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.filter((x) => x.value_text).map((x) => (
-                  <div key={x.key} className="min-w-0">
-                    <dt className="text-supporting text-ink-3">{x.label}</dt>
-                    <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
           </div>
 
               </div>
@@ -389,17 +387,6 @@ export function DecisionPane({
               <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
                 {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
               </p>
-            ) : null}
-            {/* On a phone the quote says the terms and the review button must be in the first screen: the terms row is for the wider page. */}
-            {asked?.terms.some((x) => x.value_text) ? (
-              <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 max-sm:hidden sm:grid-cols-3" data-testid="deal-ask-terms">
-                {asked.terms.filter((x) => x.value_text).map((x) => (
-                  <div key={x.key} className="min-w-0">
-                    <dt className="text-supporting text-ink-3">{x.label}</dt>
-                    <dd className="m-0 text-[15px] font-bold text-ink">{x.value_text}</dd>
-                  </div>
-                ))}
-              </dl>
             ) : null}
           </div>
 
@@ -490,22 +477,6 @@ export function DecisionPane({
                       </p>
                     ) : null}
                   </div>
-                  <dl className="grid gap-x-8 gap-y-3 pt-1 sm:grid-cols-2" data-testid="deal-costs">
-                    {asked ? (
-                      <div className="min-w-0" data-testid="deal-cost-asked">
-                        <dt className="text-supporting text-ink-3">{t("deals.cost.asked")}</dt>
-                        <dd className="m-0">
-                          <Cell value={askCost} sub={askBasis} bad={asked.authority === "over_limit"} />
-                        </dd>
-                      </div>
-                    ) : null}
-                    <div className="min-w-0" data-testid="queue-cost">
-                      <dt className="text-supporting text-ink-3">{t("deals.cost.reply", { buyer: buyerShort, label: focus.label })}</dt>
-                      <dd className="m-0">
-                        <Cell value={focusCost} sub={focusBasis} />
-                      </dd>
-                    </div>
-                  </dl>
                   {!showsRecommended && recommended ? (
                     <div>
                       <Button size="sm" onClick={() => onPick(null)} disabled={busy} data-testid="path-reply-back">
@@ -530,20 +501,10 @@ export function DecisionPane({
                       ) : null}
                     </div>
                   ) : null}
-                  {asked && askCost ? (
-                    <dl className="grid gap-x-8 gap-y-3 pt-1 sm:grid-cols-2" data-testid="deal-costs">
-                      <div className="min-w-0" data-testid="deal-cost-asked">
-                        <dt className="text-supporting text-ink-3">{t("deals.cost.asked")}</dt>
-                        <dd className="m-0">
-                          <Cell value={askCost} sub={askBasis} bad={asked.authority === "over_limit"} />
-                        </dd>
-                      </div>
-                    </dl>
-                  ) : null}
                 </div>
               )}
 
-              {canSend && focus && picture && mode === "business" ? (
+              {canSend && focus && picture ? (
                 <SendBlock
                   // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
                   key={`${offer.offer.offer_id}:${focus.label}`}
@@ -551,14 +512,20 @@ export function DecisionPane({
                   path={focus}
                   picture={picture}
                   buyer={buyerShort}
+                  recordHref={`/decisions/${encodeURIComponent(decision)}`}
                   onSent={setSent}
                   onBusy={setBusyBoth}
                 >
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
+                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
+                  {mode === "demo" ? (
+                    <Link href="/verdict#negotiation" className={quietLink}>
+                      {t("biz.deals.negotiateLink")}
+                    </Link>
+                  ) : null}
                 </SendBlock>
               ) : (
                 <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-                  {paths.length > 1 ? <CompareButtons view={view} onView={onView} hasChart={paths.some((p) => (p.series ?? []).length > 0)} whatif={whatifHref} /> : null}
+                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
                   {mode === "demo" ? (
                     <Link href="/verdict#negotiation" className={quietLink}>
                       {t("biz.deals.negotiateLink")}
@@ -571,48 +538,92 @@ export function DecisionPane({
           )}
         </div>
 
-        {/* Level 2: the consequence */}
-        {picture && evaluated && picture.available !== false && pair.length && !done && !waitsOnApproval ? (
-          <OpenSection title={t("hv2.deal.consequence")} subtitle={t("hv2.deal.consequence.note")} testId="deal-level-consequence" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
-              <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
-              {timingTabs ? (
-                <SegmentedTabs
-                  compact
-                  label={t("hv2.deal.timing")}
-                  value={late ? "late" : "expected"}
-                  onChange={(x) => onView({ late: x === "late" })}
-                  tabs={[
-                    { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
-                    { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
-                  ]}
-                />
+        {/* The analysis (round two): open sections on dividers, not nested cards. Terms with the timing diagram, what it costs, then the cash comparison. */}
+        {analysis ? (
+          <>
+            <OpenSection title={t("deals.terms.title")} subtitle={t("deals.terms.note")} testId="deal-terms-section" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
+              {/* "FLOW recommends" stands only above the recommended reply; a reply the owner picked is "Your pick". */}
+              <TermsTable
+                paths={pair}
+                heads={pair.map((p) => (p.kind === "asked" ? t("deals.terms.col.asked") : p.key === recommended?.key ? t("deals.terms.col.reply") : t("deals.terms.col.pick", { label: p.label })))}
+                subs={pair.map((p) => (p.kind === "asked" || p.key !== recommended?.key ? null : p.label))}
+                caption={t("deals.terms.title")}
+              />
+              {timing ? (
+                <div className="mt-6">
+                  <TimingDiagram timing={timing} />
+                </div>
+              ) : null}
+            </OpenSection>
+            {/* Cost and cash: two cards under the diagram, one open to its full table (the address), the other folded to its headline; then the quiet way to the full analysis. */}
+            <div className="mt-6 border-t border-line pt-6" data-testid="deal-level-consequence" role="region" aria-label={t("deals.cards.region")}>
+              <AnalysisCards
+                open={shown}
+                onShow={(k) => onView({ show: k })}
+                costTitle={t("deals.card.cost")}
+                cashTitle={t("deals.card.cash")}
+                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display, note: costHeadline(p).basis }))}
+                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value, note: lowest(p).sub }))}
+                costBody={
+                  <div data-testid="deal-cost-section">
+                    <p className="mb-2 text-supporting text-ink-3">{t("deals.cost.note")}</p>
+                    <CostTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label))} caption={t("deals.cost.title")} />
+                  </div>
+                }
+                cashBody={
+                  <div data-testid="deal-cash-section">
+                    <p className="text-supporting text-ink-3">{t("hv2.deal.consequence.note")}</p>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
+                      <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
+                      {timingTabs ? (
+                        <SegmentedTabs
+                          compact
+                          label={t("hv2.deal.timing")}
+                          value={late ? "late" : "expected"}
+                          onChange={(x) => onView({ late: x === "late" })}
+                          tabs={[
+                            { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
+                            { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
+                          ]}
+                        />
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
+                    <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
+                      <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
+                      {assumptions.length ? (
+                        <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
+                          {assumptions.map(({ p, text }) => (
+                            <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
+                              <b className="font-bold text-ink">{p.label}.</b> {text}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </div>
+                }
+              />
+              {paths.length > 1 ? (
+                <p className="mt-3">
+                  <Button size="sm" aria-expanded={view.investigate} aria-controls="deal-investigate-panel" onClick={() => onView({ investigate: !view.investigate })} data-testid="deal-compare-toggle">
+                    {t("deals.full")}
+                    <Chevron on={view.investigate} />
+                  </Button>
+                </p>
               ) : null}
             </div>
-            <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
-            <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
-              <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
-              {assumptions.length ? (
-                <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
-                  {assumptions.map(({ p, text }) => (
-                    <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
-                      <b className="font-bold text-ink">{p.label}.</b> {text}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </OpenSection>
+          </>
         ) : null}
 
       </div>
     </section>
   );
-  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart) && !done);
+  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart || view.investigate) && !done);
   const investigate =
     investigating && picture ? (
-      <div className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
-        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare} chartOpen={view.chart} />
+      <div id="deal-investigate-panel" className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
+        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare || view.investigate} chartOpen={view.chart || view.investigate} why={view.investigate} />
       </div>
     ) : null;
   return (
@@ -623,29 +634,20 @@ export function DecisionPane({
   );
 }
 
-/** "Compare responses" and "Cash impact": the outlined toggles of the decision level (the filled button is the commit's). */
-function CompareButtons({ view, onView, hasChart, whatif }: { view: DealView; onView: (patch: Partial<DealView>) => void; hasChart: boolean; whatif: string }) {
-  const { t } = useI18n();
-  const chevron = (on: boolean) => (
+function Chevron({ on }: { on: boolean }) {
+  return (
     <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`transition-transform duration-(--dur) ${on ? "rotate-180" : ""}`}>
       <path d="m4 6 4 4 4-4" />
     </svg>
   );
+}
+
+/** The commit area's companion: the way to try other terms (the filled button is the commit's; the cash chart and every response are the full analysis, under the cost and cash cards). */
+function CompareButtons({ whatif }: { whatif: string }) {
+  const { t } = useI18n();
   return (
-    <>
-      <Button aria-expanded={view.compare} aria-controls="deal-compare" onClick={() => onView({ compare: !view.compare })} data-testid="deal-compare-toggle">
-        {t("hv2.deal.compare")}
-        {chevron(view.compare)}
-      </Button>
-      {hasChart ? (
-        <Button aria-expanded={view.chart} aria-controls="deal-chart" onClick={() => onView({ chart: !view.chart })} data-testid="deal-chart-toggle">
-          {t("hv2.deal.cash")}
-          {chevron(view.chart)}
-        </Button>
-      ) : null}
-      <Link href={whatif} className={`${quietLink} px-1`} data-testid="deal-whatif">
-        {t("deals.whatif")}
-      </Link>
-    </>
+    <Link href={whatif} className={`${quietLink} px-1`} data-testid="deal-whatif">
+      {t("deals.whatif")}
+    </Link>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Badge, type Tone } from "@/components/ui";
 import { FoldChevron } from "@/components/business/kit";
 import type { DictKey } from "@/lib/dictionary";
@@ -29,6 +30,22 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
   const { t } = useI18n();
   const order: Availability[] = ["ready", "approval", "apply", "unavailable"];
   const rows = [...menu].sort((a, b) => order.indexOf(availability(a)) - order.indexOf(availability(b)));
+  // A link such as /cash#facility-FAC-IF (the receivable flow's financing step) lands on that source: its folds open, it scrolls into view and its summary takes focus.
+  const ids = menu.map((r) => r.facility.id).join("|");
+  useEffect(() => {
+    const land = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (!id.startsWith("facility-")) return;
+      const el = document.getElementById(id);
+      if (!(el instanceof HTMLDetailsElement)) return;
+      for (let d: Element | null = el; d; d = d.parentElement?.closest("details") ?? null) (d as HTMLDetailsElement).open = true;
+      el.scrollIntoView({ block: "center" });
+      el.querySelector<HTMLElement>("summary")?.focus({ preventScroll: true });
+    };
+    land();
+    window.addEventListener("hashchange", land);
+    return () => window.removeEventListener("hashchange", land);
+  }, [ids]);
   return (
     <ul className="space-y-2" data-testid="facility-explainer">
       {rows.map((r) => {
@@ -37,7 +54,7 @@ export function FacilityExplainer({ menu, inPlan }: { menu: MenuRow[]; inPlan: S
         const hasRate = r.cost_display && r.cost_display !== "—";
         return (
           <li key={f.id}>
-            <details className="group rounded-tile border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
+            <details id={`facility-${f.id}`} className="group scroll-mt-24 rounded-tile border border-line open:border-line-strong" data-testid={`facility-${f.id}`}>
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 hover:bg-subtle [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 flex-1 basis-56">
                   <span className="block text-sm font-medium text-ink">{f.name}</span>

@@ -177,7 +177,7 @@ def test_unanswered_clarification_is_asked_again(client, rt):
 
 def test_zh_replies_in_zh(client):
     r = Chat(client, "t-zh").say("帮我补足资金缺口")
-    assert r["lang"] == "zh" and "融资路由方案" in r["reply"]
+    assert r["lang"] == "zh" and "融资方案（仅已承诺额度）" in r["reply"]
 
 
 def test_sessions_are_multi_turn_and_ids_returned(client):

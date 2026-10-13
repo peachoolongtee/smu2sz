@@ -3644,6 +3644,10 @@
   "pending_count": 0,
   "open_decisions": [
     {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "已达成",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "AGREED",

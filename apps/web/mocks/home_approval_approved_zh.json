@@ -26,7 +26,8 @@
   "decided_day": 34,
   "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
   "presentation": {
-    "headline": "您已批准 ¥200,000.00 的发票融资。",
+    "headline": "您已授权该融资申请；FLOW 已将其提交给贷款方。",
+    "title_text": "申请 ¥200,000 的发票融资",
     "what": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
@@ -108,5 +109,36 @@
   },
   "result_state_text": "已批准，资金将于3 天后到账",
   "result_tone": "info",
-  "receipt": null
+  "receipt": null,
+  "commit_label": "授权融资申请",
+  "authorize_text": "批准后，发票将提交融资。预付款到账之前，不算现金。",
+  "terms_state_text": null,
+  "terms_rows": [
+    {
+      "label": "金额",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "成本",
+      "value_text": "¥1,782.19"
+    },
+    {
+      "label": "利率",
+      "value_text": "32.5%"
+    },
+    {
+      "label": "资金到账",
+      "value_text": "3 天后"
+    },
+    {
+      "label": "计算依据",
+      "value_text": "发票融资按整 30 天计费，直至发票付清。"
+    }
+  ],
+  "lifecycle": null,
+  "summary_rows": null,
+  "deadline_text": null,
+  "deadline_day": null,
+  "title_text": "申请 ¥200,000 的发票融资",
+  "decided_text": "您已授权该融资申请；FLOW 已将其提交给贷款方。"
 }

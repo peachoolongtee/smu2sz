@@ -301,8 +301,8 @@ def test_the_queue_is_chinese_on_request_and_english_by_default(client):
     zh = client.get("/approvals/queue", params={"lang": "zh"}).json()["approvals"][0]
     assert en["quote"]["after"] != zh["quote"]["after"] and "现金" in zh["quote"]["after"] and "cash" in en["quote"]["after"]
     assert "现金" in zh["quote"]["if_declined"] and zh["execution"]["summary_text"] == "等待您批准，尚未执行。"
-    assert "现金" in zh["presentation"]["if_decline"] and "批准" in zh["presentation"]["headline"]
-    assert en["presentation"]["headline"].startswith("Approve")
+    assert "现金" in zh["presentation"]["if_decline"] and zh["presentation"]["headline"] == "申请 ¥155,013.80 的发票融资"
+    assert en["presentation"]["headline"] == "Request ¥155,013.80 of invoice financing"
     client.post(f"/approvals/{en['id']}", json={"decision": "APPROVE"})
     decided = client.get("/approvals/queue", params={"lang": "zh"}).json()["approvals"][0]
     assert decided["quote"]["recorded"] is True and "批准" in decided["presentation"]["result_message"] or decided["presentation"]["result_message"]

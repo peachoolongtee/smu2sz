@@ -235,8 +235,8 @@ def _lower_first(text: str) -> str:
 
 
 def _topic(row: dict[str, Any]) -> str:
-    """What a queue row is about: the part of its subject after the customer ("Foshan · Rebate" -> "Rebate")."""
-    return str(row.get("subject_text") or "").partition(" · ")[2].strip()
+    """What a queue row is about in a word or two ("Rebate"): its `topic_text`, else the part of its subject after the customer."""
+    return str(row.get("topic_text") or str(row.get("subject_text") or "").partition(" · ")[2]).strip()
 
 
 def _queue_mine(ctx: NlContext, row: dict[str, Any]) -> bool:

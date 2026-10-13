@@ -55,7 +55,7 @@ test("approving the fix reads \"You approved ...\" on Activity, never the execut
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator("#approval-APR-000001")).toContainText("Approved");
 
   await page.goto("/activity");
@@ -131,7 +131,7 @@ test("each event says what changed, why it matters (labelled Now when it is toda
   // Approved: the history keeps "Approval requested" but says where the decision stands today and links to it; the decision row reads in the present.
   await page.goto("/");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator("#approval-APR-000001")).toContainText("Approved");
   await page.goto("/activity");
   const requested = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "Approval requested:" });

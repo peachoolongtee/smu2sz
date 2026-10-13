@@ -76,7 +76,8 @@ def test_the_send_receipt_keeps_the_three_lines_of_the_ex01_receipt(api: TestCli
     pr = _evaluate(api, "en")["priced_response"]
     r = _whole(pr["receipt"], "en")
     agreement, draw, cost = pr["send_scope_lines"]
-    assert agreement == "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)"
+    # what sending authorizes: the exact counter, recorded as a proposed agreement; nothing about who approves it (the authority sentence says that)
+    assert agreement == "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts."
     assert draw == "Draws ¥149,986.20 on the Bank credit line today"
     assert cost == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
     assert r["authorizes_text"] == agreement and r["executes_now_text"] == f"{draw}; {cost}"
@@ -86,7 +87,8 @@ def test_the_send_receipt_keeps_the_three_lines_of_the_ex01_receipt(api: TestCli
     assert r["authority_text"] == "FLOW can send it. Your approval is not needed."
     assert r["others_must_agree_text"] == "Foshan Home Retail Co. must accept the counter before it takes effect."
     assert r["in_hand_vs_future_text"] == "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives."
-    assert r["when_text"] == "As soon as you confirm." and "has not accepted yet" in r["remaining_text"]
+    assert r["when_text"] == "As soon as you confirm."
+    assert r["remaining_text"] == "The terms take effect only when Foshan accepts; no payment and no financing settles because the counter is sent."
 
 
 def test_the_send_receipt_in_chinese(api: TestClient) -> None:
@@ -94,7 +96,8 @@ def test_the_send_receipt_in_chinese(api: TestClient) -> None:
     r = _whole(pr["receipt"], "zh")
     assert r["authority_text"] == "FLOW 可以发送。无需您批准。"
     assert r["in_hand_vs_future_text"].startswith("提款今天到账。") and r["fees_display"] == "¥3,027.77"
-    assert r["authorizes_text"] == pr["send_scope_lines"][0] and "；" in r["executes_now_text"]
+    assert r["authorizes_text"] == pr["send_scope_lines"][0] == "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。"
+    assert "；" in r["executes_now_text"] and r["remaining_text"] == "只有Foshan接受后条款才会生效；发送还价本身不会结算任何付款或融资。"
 
 
 def test_a_reply_that_cannot_be_sent_has_no_receipt(api: TestClient) -> None:

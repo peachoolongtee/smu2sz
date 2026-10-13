@@ -71,17 +71,25 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await openReview(page);
   const receipt = page.getByTestId("commitment-receipt");
   await expect(receipt).toContainText("What sending Option A does");
-  const keys = await receipt.locator("[data-testid^=receipt-line-]").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("receipt-line-", "")));
-  expect(keys).toEqual(["authorizes", "executes_now", "others_must_agree", "in_hand_vs_future", "fees", "when", "assumptions", "authority", "remaining"]);
-  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement with Foshan Home Retail Co.");
+  // Round two: three statements above the button (authorizing, immediately, not yet), then the terms and the cost of this very send; the rest of the receipt is the fold after the button.
+  const keys = await page.getByTestId("send-statements").locator("[data-testid^=receipt-line-]").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("receipt-line-", "")));
+  expect(keys).toEqual(["authorizes", "executes_now", "remaining"]);
+  await expect(page.getByTestId("send-terms-table-table")).toBeVisible();
+  await expect(page.getByTestId("send-cost-table")).toBeVisible();
+  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
   await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Draws ¥149,986.20 on the Bank credit line today");
+  await page.getByTestId("send-fold").locator("> summary").click();
+  const rest = await page.getByTestId("send-fold-lines").locator("[data-testid^=receipt-line-]").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("receipt-line-", "")));
+  expect(rest).toEqual(["others_must_agree", "in_hand_vs_future", "fees", "when", "assumptions", "authority"]);
   await expect(page.getByTestId("receipt-line-fees")).toContainText("¥3,027.77");
   await expect(page.getByTestId("receipt-line-others_must_agree")).toContainText("must accept the counter");
   await expect(page.getByTestId("receipt-line-gross")).toHaveCount(0); // the server has no gross for a counter: the line is omitted, not invented
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option A to Foshan");
   const box = page.getByTestId("deal-send-confirm-box");
-  await expect(box).toContainText("The buyer's reply is simulated");
-  await expect(box.getByLabel("Open to a counter")).toBeChecked();
+  await expect(box).toContainText("The buyer's reply is simulated in this environment");
+  // The simulated buyer's lean is the Demo's control: Business sends with the cooperative buyer and shows no choice.
+  await expect(box.getByLabel("Open to a counter")).toHaveCount(0);
+  await expect(box.getByLabel("Holds firm")).toHaveCount(0);
   // Not now closes the review and nothing was sent.
   await page.getByTestId("queue-review-close").click();
   await expect(page.getByTestId("queue-review")).toHaveCount(0);
@@ -114,7 +122,7 @@ test("a deep link in a fresh session hydrates the evaluated negotiation: nothing
   await expect(page.getByTestId("deal-recommended-reason")).toBeVisible();
   // The review reads the terms of this send from the server (the same check as "Check again", on the owner's own press) and sends what it showed.
   await page.getByTestId("queue-review-open").click();
-  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement");
+  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("proposed agreement");
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
 });
@@ -153,7 +161,8 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
 });
 
-test("the simulated buyer's lean is chosen in the review; a buyer who holds firm refuses, and the deal ends in No deal", async ({ page }) => {
+test("the simulated buyer's lean is chosen in the review in Demo mode; a buyer who holds firm refuses, and the deal ends in No deal", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
   await checkedDeal(page);
   await openReview(page);
   const box = page.getByTestId("deal-send-confirm-box");
