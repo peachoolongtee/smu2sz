@@ -331,7 +331,7 @@ export function DecisionPane({
             </h2>
             {customerLine}
           </div>
-          <Button size="sm" variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
+          <Button variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
             <span aria-hidden>×</span> {t("deals.dismiss")}
           </Button>
         </header>

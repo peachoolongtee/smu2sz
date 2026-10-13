@@ -52,7 +52,7 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(none.getByRole("link")).toHaveText(["View the invoices", "Stress-test payment"]);
   await expect(page.getByTestId("customer-decision")).toHaveCount(0);
   // What is open with the customer is the queue's own rows for it (here the agreement in force), and the way to the complete queue.
-  await expect(page.getByTestId("customer-all-tasks")).toHaveAttribute("href", "/deals?customer=BUYER-1&from=customer");
+  await expect(page.getByTestId("customer-outstanding")).toHaveCount(0); // nothing is open yet: no list, and no way to an empty queue
   await expect(none.getByRole("link", { name: "View the invoices" })).toHaveAttribute("href", "/receivables?customer=BUYER-1&invoice=RCV-A");
   await expect(none.getByRole("link", { name: "Stress-test payment" })).toHaveAttribute("href", "/cash?stress=BUYER-1:30&invoice=RCV-A&customer=BUYER-1&from=customer");
   // The economics and the exposure panels, each in the server's rows.
@@ -81,6 +81,11 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
   const query = await decisionQuery(page);
   const card = page.getByTestId("customer-decision");
   await expect(card).toContainText("One commercial decision waits for you");
+  // What is open with the customer is the queue's own row for this negotiation, in focus, and the way to the complete queue carries the origin.
+  await expect(page.getByTestId("customer-task")).toHaveCount(1);
+  await expect(page.getByTestId("customer-task")).toHaveAttribute("data-focus", "true");
+  await expect(page.getByTestId("customer-task")).toContainText("Payment terms");
+  await expect(page.getByTestId("customer-all-tasks")).toHaveAttribute("href", "/deals?customer=BUYER-1&from=customer");
   await expect(page.getByTestId("customer-decision-text")).toContainText("FLOW recommends countering with Option A, ¥3,027.77 once if accepted.");
   const primary = page.getByTestId("customer-decision-primary");
   await expect(primary).toHaveText("Review the counter");

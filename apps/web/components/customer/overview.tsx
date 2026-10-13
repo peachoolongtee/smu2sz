@@ -101,7 +101,7 @@ function Focus({ view }: { view: CustomerOverviewView }) {
         {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
         <StateWord tone={waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
       </h3>
-      <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="customer-decision-text">
+      <p className="mt-1 text-pretty font-display text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="customer-decision-text">
         {decision.text}
       </p>
       <ActionGroup className="mt-3" label={t("customer.decision")}>
@@ -276,7 +276,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
             </Link>
           ) : null}
         </div>
-        <PageHeader title={view.name} subtitle={view.summary_text} />
+        <PageHeader title={view.name} subtitle={view.summary_text ? <span className="max-sm:hidden">{view.summary_text}</span> : undefined} />
       </div>
       <PartialRead partial={view.partial} onRetry={onRetry} />
       {view.context?.irrelevant_text ? (
@@ -285,8 +285,8 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
         </p>
       ) : null}
       {view.figures?.length ? (
-        <section aria-label={t("customer.figures")} className="flow-card p-5 sm:p-6" data-testid="customer-figures">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-4 lg:gap-x-0">
+        <section aria-label={t("customer.figures")} className="flow-card p-4 sm:p-6" data-testid="customer-figures">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-4">
             {view.figures.map((f) => (
               <Figure key={f.key} figure={f} provenance={provenanceOf(view)} />
             ))}
@@ -294,7 +294,7 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
         </section>
       ) : null}
       {tasks.length || view.decision || view.none_text || (view.actions ?? []).length ? (
-        <section aria-labelledby="customer-work-title" className="flow-card p-5 sm:p-6" data-testid="customer-work">
+        <section aria-labelledby="customer-work-title" className="flow-card p-4 sm:p-6" data-testid="customer-work">
           <h2 id="customer-work-title" className="type-section mb-3 text-ink">
             {t("customer.outstanding", { name: view.name })}
           </h2>

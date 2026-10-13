@@ -57,7 +57,7 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await expectSelectedMessage(page, "EX01");
   // (the queue says the ask once, in the server's words for the three terms)
   await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
-  await expect(page.getByTestId("deal-ask-terms")).toContainText("60 days");
+  await expect(page.getByTestId("deal-ask-quote")).toContainText("60 days going forward");
 
   // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
   await walkStory(page, 1, 1);

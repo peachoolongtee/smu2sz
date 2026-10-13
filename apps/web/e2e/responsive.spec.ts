@@ -359,7 +359,7 @@ async function bottomOf(page: Page, testId: string): Promise<number> {
   return Math.round(box.y + box.height);
 }
 
-test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash, the approval's buttons)", async ({ page }, testInfo) => {
+test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash); the approval's button follows its terms", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "phone", "the phone's first screen");
   await page.setViewportSize({ width: 412, height: 915 });
   await page.goto("/cash");
@@ -379,8 +379,15 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash,
   await page.goto("/approvals");
   const approve = page.getByRole("button", { name: /^Approve/ }).first();
   await expect(approve).toBeVisible();
-  const box = (await approve.boundingBox())!;
-  expect(Math.round(box.y + box.height), "Approvals pending").toBeLessThanOrEqual(840);
+  // The approval's terms come before its one button at every width (ticket #128, audit UX03), so on a phone the button is no longer in the first screen: it is after the terms,
+  // and still reachable (not hidden, not behind the tab bar once scrolled to).
+  await approve.scrollIntoViewIfNeeded();
+  await expect(approve).toBeInViewport();
+  const terms = page.getByTestId("approval-facts-APR-000001");
+  if (await terms.count()) {
+    const [t, b] = [(await terms.boundingBox())!, (await approve.boundingBox())!];
+    expect(t.y + t.height, "the facts end before the button begins").toBeLessThanOrEqual(b.y);
+  }
 });
 
 test("a 1366 x 768 laptop: Home's primary ends in the first screen, under the plan bar's own 16 px of air", async ({ page }, testInfo) => {

@@ -63,7 +63,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("queue-recommends")).toBeVisible();
   // Reading the same message again costs nothing: it is selected, not read twice.
   await page.getByTestId("inbox-back").click();
-  await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Counter recommended");
+  await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("queue-recommends")).toBeVisible();
 
@@ -143,7 +143,7 @@ test("a buyer who refuses every counter ends in No deal, with what happens next,
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "NO_DEAL");
   await expect(page.getByTestId("deal-state-chip")).toContainText("No deal");
   await expect(page.getByTestId("deal-waiting")).toContainText("Waiting for Invoice financing");
-  await expect(page.getByTestId("deal-money-lines")).toContainText("was requested");
+  await expect(page.getByTestId("deal-money-lines")).toContainText("¥255,000.00 arrives in 3 days");
   await expect(page.getByTestId("deal-send")).toHaveCount(0);
   await expect(page.getByTestId("queue-review-open")).toHaveCount(0);
   expect(await proseOf(page)).not.toMatch(/\bday \d/i);
