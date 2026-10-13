@@ -80,8 +80,8 @@ _STEP = {  # id -> (label en, label zh, description en, description zh, the cont
               "The cure costs more than the agent may approve alone, so it waits for the owner. Nothing has run.",
               "这项解决方案的成本超过代理可独自批准的上限，因此等待老板。尚未执行任何操作。", "Queue the cure for the owner", "把解决方案交给老板批准"),
     "approve": ("The owner approves", "老板批准",
-                "The owner decides on the approval card. This button is that decision; nothing approves in the owner's place.",
-                "老板在审批卡上作出决定。这个按钮就是那个决定；没有任何东西会代替老板批准。", "Review the approval", "查看批准事项"),
+                "FLOW prepared the funding plan. It is outside what FLOW may run alone, so it waits for the owner, who decides on the approval card.",
+                "FLOW 已准备好融资方案。它超出了 FLOW 可独自执行的范围，因此等待老板，由老板在批准卡上作出决定。", "Review the approval", "查看批准事项"),
     "settle": ("Time passes: the funding settles", "时间流逝：资金到账",
                "The clock moves to the day after the funding lands, so the cash is in hand and no longer in transit.",
                "时钟走到资金到账的次日，于是这笔钱已在手头，不再在途中。", "Let the funding settle", "让资金到账"),
@@ -94,6 +94,19 @@ _STEP = {  # id -> (label en, label zh, description en, description zh, the cont
 _STATE_TEXT = {"done": ("Done", "已完成"), "current": ("Now", "进行中"), "next": ("Next", "下一步"), "locked": ("Later", "稍后")}
 _SCENARIO_TITLE = {"busy": ("Busy company", "繁忙的公司"), "golden_sme": ("The main books", "主账目"),
                    "short_facilities": ("Short facilities", "额度不足"), "public_sme": ("Public company", "上市公司")}
+_HINT = {  # id -> (en, zh): where the control takes you or what it does (never the step's own description)
+    "ask": ("Opens Deals on the buyer's message.", "在交易页面打开买方的消息。"),
+    "decide": ("Opens Deals with FLOW's reading of the offer.", "在交易页面打开 FLOW 对报价的解读。"),
+    "agree": ("Sends the counter and opens the agreement.", "发送反报价并打开协议。"),
+    "cash": ("Opens Cash. Nothing changes.", "打开现金页面。不会改变任何内容。"),
+    "bank": ("One synthetic bank receipt, then the clock moves.", "登记一笔模拟银行收款，然后时钟前进。"),
+    "time": ("Moves the clock to the overdue day and opens Home.", "把时钟推进到逾期当天并打开首页。"),
+    "queue": ("Queues the cure and opens it in Approvals.", "把解决方案排入队列，并在批准事项中打开。"),
+    "approve": ("Opens the approval. Approve there, then come back.", "打开批准事项。请在那里作出决定，然后回来。"),
+    "settle": ("Moves the clock to when the funding lands and opens Cash.", "把时钟推进到资金到账之日，并打开现金页面。"),
+    "outcome": ("Opens Home on where the books stand.", "在首页打开账目现状。"),
+    "proof": ("Opens Activity, the record of everything that happened.", "打开动态页面，查看发生的一切记录。"),
+}
 _ENGINE = (("Signed mandate", "已签名授权书", "/mandate"), ("Cash line", "现金线", "/trajectory"), ("Debt Desk", "融资台", "/funding"),
            ("Verdict", "裁决", "/verdict"), ("Ledger", "账本", "/ledger"), ("Evidence export", "证据导出", "/evidence"))
 
@@ -263,7 +276,7 @@ def _next(lang: str, available: bool, cur: int | None, books: _Books, rejected: 
                 "hint_text": t(lang, "All six scenes are done. Starting again resets the books to the start of the story.",
                                "六个场景都已完成。重新开始会把账目重置到故事的起点。")}
     sid, _, _, owner = STEPS[cur]
-    label, hint = t(lang, _STEP[sid][4], _STEP[sid][5]), t(lang, _STEP[sid][2], _STEP[sid][3])
+    label, hint = t(lang, _STEP[sid][4], _STEP[sid][5]), t(lang, *_HINT[sid])
     if owner:
         return {"label": label, "action": None, "owner": True, "hint_text": hint,
                 "href": f"/approvals#approval-{quote(books.cure.id, safe='')}" if books.cure else "/approvals"}
