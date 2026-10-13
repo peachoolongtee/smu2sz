@@ -103,10 +103,9 @@ def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] 
     cost = fmt_yuan(send_plan.total_cost_fen)
     # A counter whose cost is below the funding cost (Option B's price adjustment offsets what it gives away) does not carry the funding in it,
     # even when its formula quotes the plan's cost: the funding is then in addition.
-    inside = (counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
-              and int(counter.get("supplier_cost_fen") or 0) >= send_plan.total_cost_fen)
     what = t(lang, "for the draw" if all(k == "DRAW" for k, *_ in legs) else "for the funding", "")
-    if inside:
+    if (counter is not None and cost in str(counter.get("formula") or "") and counter.get("supplier_cost_display")
+            and int(counter.get("supplier_cost_fen") or 0) >= send_plan.total_cost_fen):
         above = counter["supplier_cost_display"]
         return t(lang, f"Funding cost {cost} {what} (already inside the {above} above)", f"融资成本 {cost}（已计入上方的 {above}）")
     return t(lang, f"Funding cost {cost} in addition", f"融资成本 {cost}（另计）")
