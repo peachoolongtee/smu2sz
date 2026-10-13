@@ -65,7 +65,6 @@ from app.api.presentation import (
 from app.api.receipt_basis import BasisReader, agreement_days, annotate
 from app.api.runtime import get_runtime
 from app.books import current_books
-from app.config import get_settings
 from app.decisions.identity import deal_id, decision_id_for
 from app.domain.models import (
     FinancialState,
@@ -1114,7 +1113,7 @@ def get_home(lang: str = "en", since_day: int | None = None, decision: str | Non
 
 def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True, decision: str | None = None,
               scenario: str | None = None) -> dict[str, Any]:
-    """The Home read. `v2=False` leaves out the Home V2 fields even with FEATURE_HOME_V2 on: a caller that reads only the company's status,
+    """The Home read. `v2=False` leaves out the Home V2 fields (the Home carries them always): a caller that reads only the company's status,
     plan and approvals (the worklist) neither pays for them nor depends on them. `decision` (a deal decision id) and `scenario` ("late",
     else expected) say which deal and payment timing the Home V2 chart is titled for (`home_v2.chart.scenario_title_text`); no figure moves."""
     rt = get_runtime()
@@ -1271,7 +1270,7 @@ def read_home(lang: str = "en", since_day: int | None = None, *, v2: bool = True
         "deals_card": hybrid["deals_card"],
         "receivables_card": hybrid["receivables_card"],
         "changes_card": hybrid["changes_card"],
-        **({"home_v2": hybrid.get("home_v2")} if v2 and get_settings().features.home_v2 else {}),  # FEATURE_HOME_V2: with it off the read carries no V2 field
+        **({"home_v2": hybrid.get("home_v2")} if v2 else {}),  # a caller that passes v2=False (the worklist) reads without them
         "next_action": action,
         "approvals": queue,
         "pending_count": len(pending),

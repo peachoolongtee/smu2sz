@@ -49,7 +49,6 @@ from app.api.presentation import (
 from app.api.presentation import tick_label as _short
 from app.api.receipt_basis import RECEIPT_KINDS, BasisReader, annotate
 from app.books import Books
-from app.config import get_settings
 from app.decisions.identity import deal_id
 from app.decisions.state import DealState, FundingState
 from app.domain.models import FacilityKind, FinancialState, LedgerEventKind, Mandate, Mode, ObligationType
@@ -1223,7 +1222,7 @@ def build(c: HomeRead, *, v2: bool = True) -> dict[str, Any]:
     out: dict[str, Any] = {"cash": cash_block(c, stress_buyer_of(deals or [], att) or _stress_buyer(c, None), deals), "attention": att,
                            "funding_line": line, "deals_card": deals_card(c, deals) if deals is not None else None,
                            "receivables_card": receivables_card(c), "changes_card": changes_card(c)}
-    if v2 and get_settings().features.home_v2:  # Home V2's fields (FEATURE_HOME_V2): a supporting read, named in `partial` when it fails
+    if v2:  # Home V2's fields: a supporting read, named in `partial` when it fails
         out["home_v2"] = _guarded_v2(c, att, line, out["cash"]["events_rail"])
     return out
 

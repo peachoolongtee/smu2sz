@@ -1,4 +1,4 @@
-"""The Home read's Home V2 fields (design/home-v2 rounds 4 and 5, wave 1, the server half): `home_v2` on `GET /home`, behind FEATURE_HOME_V2.
+"""The Home read's Home V2 fields (design/home-v2 rounds 4 and 5, wave 1, the server half): `home_v2` on `GET /home`, always on.
 
 Composed from what the Home hybrid has already read (the position, the facts, the funding lots, the recommended plan, the books' own
 trajectory); no figure is computed here and no state word is invented. Every sentence goes through `t(lang, en, zh)` and is the

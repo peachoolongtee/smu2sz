@@ -25,7 +25,6 @@ SEEDED = ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "E
 
 @pytest.fixture
 def rt(monkeypatch: pytest.MonkeyPatch) -> Iterator[Runtime]:
-    monkeypatch.setenv("FEATURE_HOME_V2", "1")
     runtime = Runtime(settings=get_settings(), store=InMemoryLedgerStore(), owner_key_hex=demo_owner_public_key_hex())
     runtime.reset()
     set_runtime(runtime)
