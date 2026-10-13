@@ -866,6 +866,8 @@ export interface DealWorkspace {
     send_scope_lines?: string[] | null;
     /** One sentence on what the send re-checks (the books are read again; if they moved, the new figures are shown first). Not sent yet: the queue shows it only when present. */
     recheck_text?: string | null;
+    /** The commitment receipt of sending this reply (ticket #128), in the server's words and order; the review shows it above the one commit button. Absent from an older server. */
+    receipt?: CommitmentReceiptView | null;
     supplier_cost_display: string;
     forward_value_display: string;
     verdict_id: string;
@@ -1231,8 +1233,6 @@ export interface ApprovalOperation {
 
 /** Business words the API writes for an approval card (operations.py `presentation`): the question, the names behind the ids, the cost the alert priced and the day the cash lands. */
 export interface ApprovalPresentation {
-  /** The commitment receipt for approving this request (ticket #128); absent from a server that does not send it. */
-  receipt?: CommitmentReceiptView | null;
   headline: string;
   what: string;
   facility_name: string | null;
@@ -1320,6 +1320,8 @@ export interface ApprovalDetail {
   /** The one state word for the row ("Approved, cash arrives in 3 days", "Approved, did not run. No money moved.", "Declined, nothing ran", "Waiting for your approval") and its tone, the server's. Absent in older recordings. */
   result_state_text?: string | null;
   result_tone?: StateTone | null;
+  /** The commitment receipt of a pending approval (ticket #128): what approving authorizes, runs, needs from others and leaves open, in the server's words; null once decided. */
+  receipt?: CommitmentReceiptView | null;
 }
 
 /** The colour of a state, chosen by the server. */
@@ -3376,40 +3378,48 @@ export interface PageContext {
   irrelevant_text?: string | null;
 }
 
-/** One row of the queue: a task (a negotiation, an approval, a collection on an invoice, a promise, an agreement in force). The words are the server's; `id`s are never shown. */
+/** One row of the queue: a task (a negotiation, an approval, a collection on an invoice, a promise, an agreement in force). The words are the server's; the ids are never shown. */
 export interface QueueRowView {
   key: string;
   kind: "DECISION" | "APPROVAL" | "COLLECTION" | "SETUP" | "BUYER_REPLY" | "SETTLEMENT" | "PROMISE" | "AGREEMENT" | string;
+  /** The tier the server filed it in (needs_you, waiting, agreements); absent from the fallback read. */
+  tier?: string;
   customer_id: string | null;
   customer_short?: string | null;
   /** "Foshan · Payment terms": the customer and the deal, in the server's words. */
   subject_text: string;
   /** What tells two alike subjects apart (an invoice, a scope); present only when two rows would read alike. */
   differentiator_text?: string | null;
-  /** The state and who acts ("Counter ready · Reply needed"); `state_text` is the state alone and `next_step_text` the step alone when the server sends them apart. */
+  /** The state and who acts ("Counter ready · Reply needed"). */
   status_text: string;
-  state_text?: string | null;
-  next_step_text?: string | null;
   consequence_text: string;
-  /** The deal's record id and the invoice the task is about, when it has them (the key of a decision row names its deal). */
-  decision?: string | null;
-  invoice?: string | null;
-  owner?: "NEEDS_YOU" | "WAITING" | "AGREED" | string;
+  /** The identity the record gives the task: the deal's record id (`deal:<offer>`), the invoice and the approval it is about; null where it has none. */
+  decision_id?: string | null;
+  invoice_id?: string | null;
+  approval_id?: string | null;
   severity?: WorklistSeverity;
+  deadline_day?: Day | null;
+  expected_day?: Day | null;
+  /** Where the task is done: the deal in place, the approval, the invoice, the customer. */
   href: string;
   is_new?: boolean;
   why_first_text?: string | null;
+  /** The fallback read (today's worklist) writes these; the server's queue does not. */
+  owner?: string;
+  why_first?: never;
 }
 
-/** GET /deals `queue`: the four tiers and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Customers = unique relationships; the company alert is counted nowhere). */
+/** GET /deals `queue`: the three tiers of tasks and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Agreements = agreements and their promises, Customers = unique relationships; the company alert is counted nowhere). The customers themselves are `GET /customers`. */
 export interface DealsQueue {
   counts: { needs_you: number; waiting: number; agreements: number; customers: number };
   alert: WorklistAlert | null;
   needs_you: QueueRowView[];
   waiting: QueueRowView[];
   agreements: QueueRowView[];
-  customers: WorklistCustomer[];
+  /** The words an empty tab says. */
   needs_you_empty_text?: string | null;
+  waiting_empty_text?: string | null;
+  agreements_empty_text?: string | null;
 }
 
 /**
@@ -3640,7 +3650,7 @@ export interface DecisionView extends DecisionSummary {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[] } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];
@@ -3751,8 +3761,6 @@ export interface PicturePath {
   authority?: PathAuthority | null;
   /** The server's words for `authority`; the page falls back to `decides_text` when absent. */
   authority_text?: string | null;
-  /** The commitment receipt for sending this reply (ticket #128); absent from a server that does not send it (the page then uses the words the path already has). */
-  receipt?: CommitmentReceiptView | null;
   /** The cost headline on one basis across the three paths, and the words that name that basis. Absent from an older server (`cost_display` / `cost_note` then). */
   cost_total_display?: string | null;
   cost_basis_text?: string | null;
@@ -4009,7 +4017,7 @@ export interface OverviewAction {
 /** The one commercial decision waiting for the owner; `primary` opens it on Deals with the recommended path selected. */
 export interface OverviewDecision {
   /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read). */
-  kind?: "counter" | "request" | "offer_received";
+  kind?: "counter" | "request" | "offer_received" | "awaiting_buyer" | "approval";
   eyebrow: string;
   text: string;
   headline_short?: string | null;

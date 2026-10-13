@@ -41,12 +41,11 @@ export function pageOf(pathname: string | null | undefined): string {
 
 /**
  * The context to send with an owner turn: the page and the last-visit marker, and nothing about a deal or an invoice. What the question is about travels as the request's `scope`
- * (lib/chat-scope.ts), chosen before it is asked; the old global "the offer this tab evaluated last" is gone (audit UX01, UX20). `legacy` is the same scope in the two ids today's
- * server reads, derived from it and nothing else.
+ * (lib/chat-scope.ts), chosen before it is asked; the old global "the offer this tab evaluated last" is gone (audit UX01, UX20).
  */
-export function nlContext(pathname?: string | null, legacy: { offer_id?: string; invoice_id?: string } = {}): NlPageContext {
+export function nlContext(pathname?: string | null): NlPageContext {
   const page = pageOf(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname));
-  const context: NlPageContext = { page, ...legacy };
+  const context: NlPageContext = { page };
   if (visitAtOpen !== null) context.since_day = visitAtOpen;
   return context;
 }

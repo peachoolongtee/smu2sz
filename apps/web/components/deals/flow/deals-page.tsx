@@ -51,7 +51,7 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
-  const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, WORDS(t));
+  const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? taskRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;

@@ -5912,6 +5912,19 @@
         "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
       ],
       "recheck_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+      "receipt": {
+        "authorizes_text": "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+        "executes_now_text": "Draws ¥149,986.20 on the Bank credit line today; Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)",
+        "others_must_agree_text": "Foshan Home Retail Co. must accept the counter before it takes effect.",
+        "in_hand_vs_future_text": "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives.",
+        "gross_display": null,
+        "fees_display": "¥3,027.77",
+        "net_display": null,
+        "when_text": "As soon as you confirm.",
+        "assumptions_text": "Sends exactly this option at these figures; if the books have moved, FLOW shows you the new figures first.",
+        "authority_text": "FLOW can send it. Your approval is not needed.",
+        "remaining_text": "Foshan Home Retail Co. has not accepted yet; the agreement stands only if it does."
+      },
       "supplier_cost_display": "¥3,027.77",
       "forward_value_display": "¥0.00",
       "verdict_id": "VER-a899ca66120c",

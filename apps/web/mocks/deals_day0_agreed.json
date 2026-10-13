@@ -387,5 +387,66 @@
       "needs_you": false,
       "needs_you_text": null
     }
-  ]
+  ],
+  "queue": {
+    "counts": {
+      "needs_you": 0,
+      "waiting": 0,
+      "agreements": 2,
+      "customers": 2
+    },
+    "alert": null,
+    "needs_you": [],
+    "waiting": [],
+    "agreements": [
+      {
+        "key": "agreement:deal:OFF-f806f79b6c21",
+        "kind": "AGREEMENT",
+        "tier": "AGREEMENTS",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · Payment terms",
+        "status_text": "Agreed",
+        "consequence_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)",
+        "severity": "NORMAL",
+        "deadline_day": null,
+        "expected_day": null,
+        "differentiator_text": null,
+        "decision_id": "deal:OFF-f806f79b6c21",
+        "invoice_id": null,
+        "approval_id": null,
+        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
+      },
+      {
+        "key": "promise:CMT-a78afaa5becb5273:CTR-193394b6ba8b-O2",
+        "kind": "PROMISE",
+        "tier": "AGREEMENTS",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · Payment promised",
+        "status_text": "Expected in 2 days · ¥255k",
+        "consequence_text": "Not counted as cash until it arrives.",
+        "severity": "CAUTION",
+        "deadline_day": null,
+        "expected_day": 2,
+        "differentiator_text": null,
+        "decision_id": "deal:OFF-f806f79b6c21",
+        "invoice_id": "RCV-A",
+        "approval_id": null,
+        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21&invoice=RCV-A"
+      }
+    ],
+    "needs_you_empty_text": "Nothing needs a decision from you.",
+    "waiting_empty_text": "Nothing is waiting on anyone else.",
+    "agreements_empty_text": "No agreement is in force."
+  },
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  }
 }

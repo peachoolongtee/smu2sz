@@ -2552,5 +2552,18 @@
     "summary_text": "等待您批准，尚未执行。"
   },
   "result_state_text": "等待您批准",
-  "result_tone": "warn"
+  "result_tone": "warn",
+  "receipt": {
+    "authorizes_text": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
+    "executes_now_text": "您批准后立即提交：以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00。",
+    "others_must_agree_text": null,
+    "in_hand_vs_future_text": "若您今天批准，资金将于3 天后到账。",
+    "gross_display": "¥200,000.00",
+    "fees_display": "¥1,782.19",
+    "net_display": null,
+    "when_text": "资金将于 3 天后到账。",
+    "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
+    "authority_text": "年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+    "remaining_text": null
+  }
 }

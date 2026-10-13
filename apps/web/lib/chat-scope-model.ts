@@ -8,7 +8,7 @@
  */
 
 import { createStore } from "./create-store";
-import { offerOf, scopeOf, type ChatScope, type ScopeKind } from "./selection";
+import { scopeOf, serverScenario, type ChatScope, type ScopeKind } from "./selection";
 import type { NlScope } from "./types";
 
 /** The narrowest to the widest kind, the order the chip lists them in. */
@@ -75,7 +75,8 @@ export function toNlScope(scope: ChatScope): NlScope | undefined {
   if (scope.customer) out.customer = scope.customer;
   if (scope.invoice) out.invoice = scope.invoice;
   if (scope.decision) out.decision = scope.decision;
-  if (scope.scenario) out.scenario = scope.scenario;
+  const scenario = serverScenario(scope.scenario);
+  if (scenario) out.scenario = scenario;
   return Object.keys(out).length ? out : undefined;
 }
 
@@ -83,14 +84,5 @@ export function toNlScope(scope: ChatScope): NlScope | undefined {
 export function currentScope(): ChatScope {
   if (typeof window === "undefined") return { kind: "company" };
   return resolveScope(window.location.pathname, new URLSearchParams(window.location.search)).chosen;
-}
-
-/** What today's server reads of a scope (`context.offer_id`, `context.invoice_id`), derived from the chosen scope only: nothing of an earlier page is carried. */
-export function legacyContextOf(scope: ChatScope): { offer_id?: string; invoice_id?: string } {
-  const out: { offer_id?: string; invoice_id?: string } = {};
-  const offer = offerOf(scope.decision);
-  if (offer) out.offer_id = offer;
-  if (scope.invoice) out.invoice_id = scope.invoice;
-  return out;
 }
 

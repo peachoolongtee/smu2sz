@@ -46,7 +46,7 @@ function Customer() {
   const needWorklist = deals.data !== undefined && !deals.data?.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang).catch(() => null) : Promise.resolve(null)), [lang, needWorklist]);
   const words = { agreedTerms: (terms: string) => terms, agreedRef: (ref: string) => ref };
-  const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, words);
+  const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, null, words);
   const missing = read.error instanceof ApiError && read.error.status === 404 && (read.error.detail as { code?: string } | undefined)?.code === "CUSTOMER_NOT_FOUND";
 
   if (missing)

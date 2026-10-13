@@ -110,7 +110,20 @@
         "expires_when": "in 7 days",
         "terms": [
           "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
+          "executes_now_text": "Agreed",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "Expires in 7 days.",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
+        }
       },
       "operations": [
         {
@@ -186,6 +199,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -298,7 +320,20 @@
         "expires_when": "7 天后",
         "terms": [
           "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
+          "executes_now_text": "已达成协议",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "7 天后到期。",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
+        }
       },
       "operations": [
         {
@@ -374,6 +409,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -463,6 +507,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -550,6 +603,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -639,6 +701,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -726,6 +797,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -815,6 +895,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -902,6 +991,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": null,
+        "decision": "approval:APR-000001",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -1030,6 +1128,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -1156,6 +1263,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -1300,6 +1416,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-12:v1:plan",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -1442,6 +1567,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-12:v1:plan",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -1551,6 +1685,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -1658,6 +1801,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -1765,6 +1917,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -1870,6 +2031,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -2020,6 +2190,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-34:v6",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -2168,6 +2347,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-34:v6",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -2296,6 +2484,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -2422,6 +2619,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": true
+      },
+      "context": {
+        "customer": null,
+        "decision": "alert:ALERT-RESERVE-42:v7",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -2536,7 +2742,20 @@
         "expires_when": "27 days ago",
         "terms": [
           "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Fulfilled",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "Expires 27 days ago.",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -2638,6 +2857,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -2750,7 +2978,20 @@
         "expires_when": "27 天前",
         "terms": [
           "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "已履行",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "27 天前到期。",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -2852,6 +3093,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -2966,7 +3216,20 @@
         "expires_when": "27 days ago",
         "terms": [
           "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Early payment did not arrive",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "Expires 27 days ago.",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -3068,6 +3331,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -3180,7 +3452,20 @@
         "expires_when": "27 天前",
         "terms": [
           "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "提前付款未到账",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "27 天前到期。",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -3282,6 +3567,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -3445,6 +3739,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -3606,6 +3909,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -3720,7 +4032,20 @@
         "expires_when": "27 days ago",
         "terms": [
           "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time)"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
+          "executes_now_text": "Early payment did not arrive",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "Expires 27 days ago.",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -3796,6 +4121,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -3908,7 +4242,20 @@
         "expires_when": "27 天前",
         "terms": [
           "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）"
-        ]
+        ],
+        "receipt": {
+          "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
+          "executes_now_text": "提前付款未到账",
+          "others_must_agree_text": null,
+          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "gross_display": null,
+          "fees_display": null,
+          "net_display": null,
+          "when_text": "27 天前到期。",
+          "assumptions_text": null,
+          "authority_text": null,
+          "remaining_text": null
+        }
       },
       "operations": [
         {
@@ -3984,6 +4331,15 @@
         "evaluated": true,
         "sent": true,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4063,6 +4419,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-8e944bff0cc9",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4140,6 +4505,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-8e944bff0cc9",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4236,6 +4610,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4330,6 +4713,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4426,6 +4818,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-1559c5b525ed",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4520,6 +4921,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-1559c5b525ed",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4599,6 +5009,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "FASTCAPITAL",
+        "decision": "deal:OFF-833f35d497a5",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4676,6 +5095,15 @@
         "evaluated": true,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "FASTCAPITAL",
+        "decision": "deal:OFF-833f35d497a5",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4744,6 +5172,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-8e944bff0cc9",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4810,6 +5247,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-8e944bff0cc9",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -4880,6 +5326,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -4948,6 +5403,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-f806f79b6c21",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -5018,6 +5482,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-1559c5b525ed",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -5086,6 +5559,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "BUYER-1",
+        "decision": "deal:OFF-1559c5b525ed",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   },
@@ -5154,6 +5636,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "FASTCAPITAL",
+        "decision": "deal:OFF-833f35d497a5",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     },
     "zh": {
@@ -5220,6 +5711,15 @@
         "evaluated": false,
         "sent": false,
         "quoted": false
+      },
+      "context": {
+        "customer": "FASTCAPITAL",
+        "decision": "deal:OFF-833f35d497a5",
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
       }
     }
   }

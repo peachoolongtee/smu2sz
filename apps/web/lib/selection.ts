@@ -54,6 +54,14 @@ export function patchedHref(pathname: string, search: string, patch: Record<stri
   return s ? `${pathname}?${s}` : pathname;
 }
 
+/**
+ * The scenario keys the server's reads validate (`asked`, `counter:<k>`: Home's scenarios). The Deals payment-timing assumption (`scenario=late`) is the address's own and the
+ * server has no such value, so it is never sent to a read or to Ask FLOW (it would be refused as a selection that names nothing).
+ */
+export function serverScenario(scenario: string | null | undefined): string | undefined {
+  return scenario && /^(asked|counter:[0-9]{1,3})$/.test(scenario) ? scenario : undefined;
+}
+
 /** The origin a page stands for: what a link leaving it writes as `from`. A page that is none of these has no origin to name. */
 export function originOf(pathname: string | null | undefined): string | null {
   const p = pathname ?? "";

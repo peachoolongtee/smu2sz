@@ -663,7 +663,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-go:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "negotiate_ex01": {
     "session_id": "rec-ex01-go",
@@ -1367,7 +1368,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-go:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "cancel": {
     "session_id": "rec-ex01-cancel",
@@ -1459,7 +1461,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-cancel:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "explain_en": {
     "session_id": "rec-ex01-why",
@@ -1931,7 +1934,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-why:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "explain_zh": {
     "session_id": "rec-ex01-why-zh",
@@ -2403,7 +2407,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-why-zh:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "goal": {
     "session_id": "rec-goal-go",
@@ -2783,7 +2788,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-go:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "goal_go": {
     "session_id": "rec-goal-go",
@@ -3084,7 +3090,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-go:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "amend_08": {
     "session_id": "rec-goal-08",
@@ -3464,7 +3471,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-08:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "amend_1_refused": {
     "session_id": "rec-goal-1",
@@ -3540,7 +3548,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-1:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "amend_fin": {
     "session_id": "rec-goal-fin",
@@ -3757,7 +3766,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-fin:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "fund_gap": {
     "session_id": "rec-fund",
@@ -3974,7 +3984,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-fund:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "fund_gap_go": {
     "session_id": "rec-fund",
@@ -4038,7 +4049,8 @@
     "parse_source": "rules",
     "trace_id": "rec-fund:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund:t1:9d7259b3a14b",
+    "scope_used": null,
+    "decision_id": "nl:rec-fund:t1:a05f364fdd6a",
     "decision_recorded": true
   },
   "status": {
@@ -4058,7 +4070,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-status:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "clarify_cash": {
     "session_id": "rec-vague",
@@ -4093,7 +4106,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-vague:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "clarify_cash_zh": {
     "session_id": "rec-vague-zh",
@@ -4128,7 +4142,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-vague-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "amend_08_zh": {
     "session_id": "rec-goal-08-zh",
@@ -4508,7 +4523,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-08-zh:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "goal_zh": {
     "session_id": "rec-goal-go-zh",
@@ -4888,7 +4904,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-go-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "goal_go_zh": {
     "session_id": "rec-goal-go-zh",
@@ -5189,7 +5206,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-goal-go-zh:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "evaluate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -5855,7 +5873,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-go-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "negotiate_ex01_zh": {
     "session_id": "rec-ex01-go-zh",
@@ -6559,7 +6578,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-ex01-go-zh:2",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "fund_gap_zh": {
     "session_id": "rec-fund-zh",
@@ -6776,7 +6796,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "fund_gap_go_zh": {
     "session_id": "rec-fund-zh",
@@ -6840,7 +6861,8 @@
     "parse_source": "rules",
     "trace_id": "rec-fund-zh:2",
     "context_echo": null,
-    "decision_id": "nl:rec-fund-zh:t1:0d5c732e1836",
+    "scope_used": null,
+    "decision_id": "nl:rec-fund-zh:t1:0c19ad56478b",
     "decision_recorded": true
   },
   "status_zh": {
@@ -6860,7 +6882,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-status-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "approve_none_zh": {
     "session_id": "rec-approve-zh",
@@ -6879,7 +6902,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-approve-zh:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "approve_none": {
     "session_id": "rec-approve",
@@ -6898,7 +6922,8 @@
     "security_events": [],
     "parse_source": "rules",
     "trace_id": "rec-approve:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "out_of_scope": {
     "session_id": "rec-scope",
@@ -6917,7 +6942,8 @@
     "security_events": [],
     "parse_source": "fallback",
     "trace_id": "rec-scope:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "tier3": {
     "session_id": "rec-tier3",
@@ -6976,7 +7002,8 @@
     ],
     "parse_source": "rules",
     "trace_id": "rec-tier3:1",
-    "context_echo": null
+    "context_echo": null,
+    "scope_used": null
   },
   "fastcapital": {
     "session_id": "rec-buyer-fastcapital",

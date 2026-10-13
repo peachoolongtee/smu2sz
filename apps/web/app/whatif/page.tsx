@@ -52,7 +52,7 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
   const deals = useAsync(() => getDeals(lang, {}).catch(() => null), [lang]);
   const needWorklist = deals.data !== undefined && !deals.data?.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang).catch(() => null) : Promise.resolve(null)), [lang, needWorklist]);
-  const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, { agreedTerms: (x) => x, agreedRef: (x) => x });
+  const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, null, { agreedTerms: (x: string) => x, agreedRef: (x: string) => x });
   const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>

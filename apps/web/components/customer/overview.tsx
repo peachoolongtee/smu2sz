@@ -89,16 +89,19 @@ function Focus({ view }: { view: CustomerOverviewView }) {
       </section>
     );
   }
+  // Nothing is the owner's to do while the buyer's reply is awaited: the way into the negotiation is an outlined button, not the page's filled one.
+  const waitsOnBuyer = decision.kind === "awaiting_buyer";
   return (
     <section aria-labelledby="customer-decision-title" className="mt-4 border-t border-line pt-4" id="customer-decision" data-testid="customer-decision">
-      <h3 id="customer-decision-title" className="text-supporting font-bold text-warn-fg">
-        {decision.eyebrow}
+      <h3 id="customer-decision-title" className="text-supporting font-bold" data-kind={decision.kind ?? ""}>
+        {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
+        <StateWord tone={waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
       </h3>
       <p className="mt-1 text-pretty font-display text-lg font-extrabold leading-snug text-ink" data-testid="customer-decision-text">
         {decision.text}
       </p>
       <ActionGroup className="mt-3" label={t("customer.decision")}>
-        <ButtonLink href={decision.primary.href} variant="primary" data-testid="customer-decision-primary">
+        <ButtonLink href={decision.primary.href} variant={waitsOnBuyer ? "secondary" : "primary"} data-testid="customer-decision-primary">
           {decision.primary.label}
         </ButtonLink>
         {links}
@@ -272,6 +275,11 @@ export function CustomerOverview({ view, onRetry, ctx = {}, queue }: { view: Cus
         <PageHeader title={view.name} subtitle={view.summary_text} />
       </div>
       <PartialRead partial={view.partial} onRetry={onRetry} />
+      {view.context?.irrelevant_text ? (
+        <p className="rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink-2" role="status" data-testid="customer-irrelevant">
+          {view.context.irrelevant_text}
+        </p>
+      ) : null}
       {view.figures?.length ? (
         <section aria-label={t("customer.figures")} className="flow-card p-5 sm:p-6" data-testid="customer-figures">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-4 lg:grid-cols-4 lg:gap-x-0">

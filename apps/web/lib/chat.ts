@@ -12,7 +12,7 @@ import { onSignedIn, onSignedOut } from "./auth";
 import { getLang } from "./i18n";
 import { getMode, shellFor } from "./mode";
 import { nlContext } from "./chat-context";
-import { currentScope, legacyContextOf, toNlScope } from "./chat-scope-model";
+import { currentScope, toNlScope } from "./chat-scope-model";
 import type { ScopeKind } from "./selection";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
@@ -139,8 +139,8 @@ async function run(a: Attempt): Promise<NlResponse | null> {
       text: a.text,
       lang: getLang(),
       request_id: a.requestId,
-      // The owner's page (the route and the last visit, with today's two ids derived from the scope) and the scope itself. A buyer's turn names none.
-      context: scope ? nlContext(undefined, legacyContextOf(scope)) : undefined,
+      // The owner's page (the route and the last visit) and the scope itself. A buyer's turn names none.
+      context: scope ? nlContext() : undefined,
       scope: scope ? toNlScope(scope) : undefined,
     }, { business: a.role === "OWNER" && onBusinessShell() });
     logDuration(a, scope?.kind ?? null, started, "answered");

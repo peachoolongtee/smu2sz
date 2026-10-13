@@ -2612,6 +2612,8 @@ export const en = {
   "receipt.title.approve": "What approving does",
   "deals.agreedTerms": "What was agreed",
   "deals.askedTerms": "What the buyer asked for",
+  "deals.review.reading": "Reading the terms of this send",
+  "receipt.title.agreed": "What this agreement does",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5222,4 +5224,6 @@ export const zh: Record<DictKey, string> = {
   "receipt.title.approve": "批准会怎样",
   "deals.agreedTerms": "达成的条款",
   "deals.askedTerms": "买方的要求",
+  "deals.review.reading": "正在读取这次发送的条款",
+  "receipt.title.agreed": "这份协议的作用",
 };

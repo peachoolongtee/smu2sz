@@ -9,6 +9,7 @@ import type { ExposureContext } from "../api";
 import { buyerExposureQuery } from "./exposure-query";
 import { ApiError } from "../errors";
 import { contextQuery, type CustomerContext } from "../customer-href";
+import { serverScenario } from "../selection";
 import type {
   ActRequest,
   AlertActResult,
@@ -279,10 +280,10 @@ export const live = {
 
   /** GET /customers/{id}/overview: one page's read; the context (`decision`, `path`, `invoice`) only builds the back link. */
   getCustomerOverview: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
-    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery(ctx)}`),
+    http<CustomerOverviewView>("GET", `/customers/${enc(id)}/overview?lang=${lang}${contextQuery({ ...ctx, scenario: serverScenario(ctx.scenario) })}`),
 
   getBuyerInputs: (id: string, lang: "en" | "zh", ctx: CustomerContext = {}) =>
-    http<InputSheetView>("GET", `/buyers/${enc(id)}/inputs?lang=${lang}${contextQuery(ctx)}`),
+    http<InputSheetView>("GET", `/buyers/${enc(id)}/inputs?lang=${lang}${contextQuery({ ...ctx, scenario: serverScenario(ctx.scenario) })}`),
 
   saveInput: (id: string | null, body: InputSaveRequest, lang: "en" | "zh") =>
     http<InputSaveResult>("POST", `${id === null ? "/firm/inputs" : `/buyers/${enc(id)}/inputs`}?lang=${lang}`, { body }),

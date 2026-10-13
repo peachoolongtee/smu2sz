@@ -32,7 +32,7 @@ export function OutstandingWork({ customerId, rows, focusKey, name }: { customer
       <ul className="space-y-2" aria-label={t("customer.outstanding", { name })}>
         {rows.map(({ tier, row }) => {
           const target = rowTarget(row);
-          const href = target.kind === "select" ? selectionHref("/deals", { customer: customerId, decision: target.decision, from: "customer" }) : target.href;
+          const href = target.kind === "select" ? selectionHref("/deals", { customer: customerId, decision: target.decision, invoice: target.invoice, from: "customer" }) : target.href;
           const { state, next } = statusCells(row);
           const focus = row.key === focusKey;
           return (

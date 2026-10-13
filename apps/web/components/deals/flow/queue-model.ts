@@ -1,5 +1,5 @@
 import { customerHref } from "@/lib/customer-href";
-import type { DealView, DealsQueue, DealsView, QueueRowView, WorklistCustomer, WorklistNeedsRow, WorklistView, WorklistWaitingRow } from "@/lib/types";
+import type { CustomersView, DealView, DealsQueue, DealsView, QueueRowView, WorklistCustomer, WorklistNeedsRow, WorklistView, WorklistWaitingRow } from "@/lib/types";
 import type { StateTone } from "@/components/ui/state-word-model";
 
 /**
@@ -13,11 +13,17 @@ export type TabKey = "all" | Tier;
 export const TABS: TabKey[] = ["all", "needs_you", "waiting", "agreements", "customers"];
 
 export interface Queue extends DealsQueue {
+  /** The customers of the Customers tab (`GET /customers`: the relationships, one each); empty until that read arrives. */
+  customers: WorklistCustomer[];
   /** True when the rows came from the fallback (today's worklist and deals reads), not from the server's `queue`. */
   fallback: boolean;
 }
 
-const asRow = (r: WorklistNeedsRow | WorklistWaitingRow): QueueRowView => ({ ...r });
+/** A row of the fallback read: today's worklist row with the identity the queue's rows carry (the deal's record id from its key or its Home link). */
+function asRow(r: WorklistNeedsRow | WorklistWaitingRow, tier: Exclude<Tier, "customers">): QueueRowView {
+  const decision = r.key.startsWith("deal:") ? r.key : r.key.startsWith("buyer-reply:") ? `deal:${r.key.slice("buyer-reply:".length)}` : r.href.startsWith("/?") ? new URLSearchParams(r.href.slice(2)).get("deal") : null;
+  return { ...r, tier, decision_id: decision };
+}
 
 /** One row of terms in force for a customer with a contract on file, in the deals read's own words. */
 function agreementRow(d: DealView, terms: string, ref: string): QueueRowView {
@@ -25,13 +31,12 @@ function agreementRow(d: DealView, terms: string, ref: string): QueueRowView {
   return {
     key: `agreement:${d.counterparty_id}`,
     kind: "AGREEMENT",
+    tier: "agreements",
     customer_id: d.counterparty_id,
     customer_short: null,
     subject_text: d.counterparty_name,
     status_text: pill?.label ?? d.label ?? "",
-    state_text: pill?.label ?? d.label ?? null,
     consequence_text: [terms, ref].filter(Boolean).join(" · "),
-    owner: "AGREED",
     severity: "NORMAL",
     href: customerHref(d.counterparty_id),
   };
@@ -45,9 +50,13 @@ export function termsInForce(d: DealView): string {
     .join(", ");
 }
 
-/** The queue as the page shows it: the server's `queue` when the deals read has one, else the fallback built from the worklist and the deals read. Null when neither read is there. */
-export function buildQueue(deals: DealsView | null | undefined, worklist: WorklistView | null | undefined, words: { agreedTerms: (terms: string) => string; agreedRef: (ref: string) => string }): Queue | null {
-  if (deals?.queue) return { ...deals.queue, fallback: false };
+/**
+ * The queue as the page shows it: the server's `queue` when the deals read has one, else the fallback built from today's worklist and the deals read (one to one, nothing
+ * recomputed). The customers are the customers read's. Null when neither read is there.
+ */
+export function buildQueue(deals: DealsView | null | undefined, worklist: WorklistView | null | undefined, customers: CustomersView | null | undefined, words: { agreedTerms: (terms: string) => string; agreedRef: (ref: string) => string }): Queue | null {
+  const people = customers?.customers ?? worklist?.customers ?? [];
+  if (deals?.queue) return { ...deals.queue, customers: people, fallback: false };
   if (!worklist) return null;
   const agreements = (deals?.deals ?? [])
     .filter((d) => d.has_contract)
@@ -60,10 +69,10 @@ export function buildQueue(deals: DealsView | null | undefined, worklist: Workli
     fallback: true,
     counts: { needs_you: worklist.counts.needs_you, waiting: worklist.counts.waiting, agreements: agreements.length, customers: worklist.counts.customers },
     alert: worklist.alert,
-    needs_you: worklist.needs_you.map(asRow),
-    waiting: worklist.waiting.map(asRow),
+    needs_you: worklist.needs_you.map((r) => asRow(r, "needs_you")),
+    waiting: worklist.waiting.map((r) => asRow(r, "waiting")),
     agreements,
-    customers: worklist.customers,
+    customers: people,
     needs_you_empty_text: worklist.needs_you_empty_text ?? null,
   };
 }
@@ -86,13 +95,9 @@ export function tabOf(raw: string | null): TabKey | null {
   return raw && (TABS as string[]).includes(raw) ? (raw as TabKey) : null;
 }
 
-/** The record id of the deal a row stands for (`deal:<offer>`): the row's own, its key's, or the one in the server's Home link; null for a row that is not a negotiation. */
-export function rowDecision(row: Pick<QueueRowView, "key" | "href" | "decision">): string | null {
-  if (row.decision) return row.decision;
-  if (row.key.startsWith("deal:")) return row.key;
-  if (row.key.startsWith("buyer-reply:")) return `deal:${row.key.slice("buyer-reply:".length)}`;
-  if (row.href.startsWith("/?")) return new URLSearchParams(row.href.slice(2)).get("deal");
-  return null;
+/** The record id of the deal a row stands for (`deal:<offer>`): the row's own, from the record; null for a row that is not a negotiation (an approval, a collection, a customer to set up). */
+export function rowDecision(row: Pick<QueueRowView, "decision_id">): string | null {
+  return row.decision_id ?? null;
 }
 
 /** Which tier holds the negotiation with this decision id, if any (so a selection from the address opens its own tab). */
@@ -103,29 +108,25 @@ export function tierOfDecision(q: Queue, decision: string | null): Tier | null {
 }
 
 /**
- * Where a row leads. A negotiation selects in place (the address takes its customer and decision). Any other task leads to the page that does it: the invoice on Receivables,
- * the approval, or the customer's page; every link carries that row's own customer and invoice and the origin `deal`, never the selected row's.
+ * Where a row leads. A negotiation, an agreement and a promise (each has the deal's record id) select in place, the address taking its customer, decision and invoice. Any other
+ * task leads where the server says it is done (the approval, the invoice, the customer's page); the server wrote those links with the row's own customer and invoice.
  */
-export type RowTarget = { kind: "select"; customer: string | null; decision: string } | { kind: "go"; href: string };
+export type RowTarget = { kind: "select"; customer: string | null; decision: string; invoice: string | null } | { kind: "go"; href: string };
 
 export function rowTarget(row: QueueRowView): RowTarget {
   const decision = rowDecision(row);
-  if (decision) return { kind: "select", customer: row.customer_id, decision };
-  if (!row.href.startsWith("/?") && row.href !== "/") return { kind: "go", href: row.href };
-  if (row.customer_id && row.invoice && (row.kind === "COLLECTION" || row.kind === "SETTLEMENT" || row.kind === "PROMISE")) {
-    return { kind: "go", href: `/receivables?customer=${encodeURIComponent(row.customer_id)}&invoice=${encodeURIComponent(row.invoice)}&from=deal` };
-  }
-  return { kind: "go", href: row.customer_id ? customerHref(row.customer_id, { invoice: row.invoice, from: "deal" }) : row.href };
+  if (decision) return { kind: "select", customer: row.customer_id, decision, invoice: row.kind === "PROMISE" ? (row.invoice_id ?? null) : null };
+  if (row.href && row.href !== "/") return { kind: "go", href: row.href };
+  return { kind: "go", href: row.customer_id ? customerHref(row.customer_id, { invoice: row.invoice_id, from: "deal" }) : "/deals" };
 }
 
 /**
- * The status pill and the next step as two cells. The server writes a status as "state · who acts" ("Counter ready · Reply needed"); when it sends `state_text` and
- * `next_step_text` apart they are used, else the status is split at its own separator. Nothing is composed.
+ * The status pill and the next step as two cells. The server writes a status as "state · who acts" ("Counter ready · Reply needed"): the pill is the state, the next step the
+ * rest, split at the server's own separator. Nothing is composed.
  */
-export function statusCells(row: Pick<QueueRowView, "status_text" | "state_text" | "next_step_text" | "consequence_text">): { state: string; next: string | null } {
-  if (row.state_text) return { state: row.state_text, next: row.next_step_text ?? null };
+export function statusCells(row: Pick<QueueRowView, "status_text">): { state: string; next: string | null } {
   const [state, ...rest] = row.status_text.split(" · ");
-  return { state, next: row.next_step_text ?? (rest.length ? rest.join(" · ") : null) };
+  return { state, next: rest.length ? rest.join(" · ") : null };
 }
 
 /** The pill's tone: amber for what needs the owner (red when the server calls it critical), lavender for what waits on someone else, green for an agreement in force. */

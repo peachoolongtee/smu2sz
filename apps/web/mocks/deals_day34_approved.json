@@ -444,5 +444,67 @@
       "needs_you": false,
       "needs_you_text": null
     }
-  ]
+  ],
+  "queue": {
+    "counts": {
+      "needs_you": 1,
+      "waiting": 1,
+      "agreements": 0,
+      "customers": 2
+    },
+    "alert": null,
+    "needs_you": [
+      {
+        "key": "collection:BUYER-1",
+        "kind": "COLLECTION",
+        "tier": "NEEDS_YOU",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · ¥163k overdue",
+        "status_text": "Payment overdue · Your follow-up needed",
+        "consequence_text": "2 days overdue.",
+        "severity": "CAUTION",
+        "deadline_day": 32,
+        "expected_day": null,
+        "differentiator_text": null,
+        "decision_id": null,
+        "invoice_id": "RCV-A",
+        "approval_id": null,
+        "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=deals"
+      }
+    ],
+    "waiting": [
+      {
+        "key": "settlement:alert:ALERT-RESERVE-42:v7:0",
+        "kind": "SETTLEMENT",
+        "tier": "WAITING",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Invoice financing · ¥200k",
+        "status_text": "Financing arranged, expected in 3 days",
+        "consequence_text": "Not counted as cash until it lands.",
+        "severity": "NORMAL",
+        "deadline_day": null,
+        "expected_day": 37,
+        "differentiator_text": null,
+        "decision_id": null,
+        "invoice_id": null,
+        "approval_id": null,
+        "href": "/cash"
+      }
+    ],
+    "agreements": [],
+    "needs_you_empty_text": "Nothing needs a decision from you.",
+    "waiting_empty_text": "Nothing is waiting on anyone else.",
+    "agreements_empty_text": "No agreement is in force."
+  },
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  }
 }

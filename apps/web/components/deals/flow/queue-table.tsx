@@ -50,13 +50,13 @@ function TaskRow({ tier, row, selected, locked, onSelect }: { tier: Exclude<Tier
     <li className="relative" data-testid="queue-row" data-tier={tier} data-kind={row.kind} data-key={row.key} data-selected={selected ? "true" : "false"}>
       <div className={`flow-row relative grid gap-x-4 gap-y-1 px-4 py-3 ${COLS} items-center`} aria-current={selected ? "true" : undefined}>
         {target.kind === "select" ? (
-          <button type="button" className={cls} aria-label={label} aria-current={selected ? "true" : undefined} disabled={locked} onClick={() => onSelect(target.customer, target.decision, row.invoice ?? null)} data-testid="queue-select" />
+          <button type="button" className={cls} aria-label={label} aria-current={selected ? "true" : undefined} disabled={locked} onClick={() => onSelect(target.customer, target.decision, target.invoice)} data-testid="queue-select" />
         ) : (
           <Link href={target.href} prefetch={false} className={cls} aria-label={label} data-testid="queue-go" />
         )}
         <div className="pointer-events-none relative z-[1] min-w-0">
           <p className="text-[15px] leading-snug text-ink">
-            <Subject row={row} decision={decision} invoice={row.invoice ?? null} />
+            <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
             {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
           </p>
           {row.differentiator_text ? <p className="text-supporting italic text-ink-3">“{row.differentiator_text}”</p> : null}
@@ -175,7 +175,9 @@ export function QueuePanel({
   const emptyFor = (): { title: string; body?: string } => {
     if (q.trim()) return { title: t("hv2.work.empty.none"), body: t("hv2.work.empty.search", { q: q.trim() }) };
     if (everywhereEmpty) return { title: t("deals.empty.none"), body: t("deals.empty.none.body") };
-    if (tab === "needs_you" && queue.needs_you_empty_text) return { title: queue.needs_you_empty_text };
+    // The server's own words for an empty tab (alert-aware: "Nothing else needs you." while the plan waits for the owner's go).
+    const served = tab === "needs_you" ? queue.needs_you_empty_text : tab === "waiting" ? queue.waiting_empty_text : tab === "agreements" ? queue.agreements_empty_text : null;
+    if (served) return { title: served };
     return { title: t(`deals.empty.${tab}` as DictKey) };
   };
   return (

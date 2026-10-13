@@ -77,7 +77,7 @@ test("Customer and Activity have prompts of their own, each one the API's rules 
   for (const page of ["/customers/BUYER-2", "/activity"]) for (const lang of ["en", "zh"]) for (const p of business(page, FULL, lang)) assert.ok(py.includes(`"${p.text}"`), `${lang} ${p.text}`);
 });
 
-test("the page context carries the route and a day, and the scope's two ids; nothing from the session", () => {
+test("the page context carries the route and a day; nothing from the session", () => {
   assert.equal(pageOf("/deals"), "/deals");
   assert.equal(pageOf("/deals?x=1#top"), "/dealsx1top"); // never more than the API's pattern allows
   assert.equal(pageOf(""), "/");
@@ -85,7 +85,5 @@ test("the page context carries the route and a day, and the scope's two ids; not
   // a deal this tab evaluated is not carried: the global prior-offer context is gone (audit UX01, UX20)
   demoStore.set((s) => ({ ...s, offerId: "OFF-1", offers: {}, verdicts: { "OFF-1": { offer_id: "OFF-1", counters: [{ label: "Option A" }] } } }));
   assert.deepEqual(Object.keys(nlContext("/deals")).filter((k) => k !== "since_day"), ["page"]);
-  const ctx = nlContext("/deals", { offer_id: "OFF-2", invoice_id: "RCV-B" });
-  assert.equal(ctx.offer_id, "OFF-2");
-  for (const key of Object.keys(ctx)) assert.ok(["page", "offer_id", "decision_id", "invoice_id", "since_day"].includes(key), key);
+  for (const key of Object.keys(nlContext("/deals"))) assert.ok(["page", "since_day"].includes(key), key);
 });

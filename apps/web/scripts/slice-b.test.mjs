@@ -63,9 +63,9 @@ test("the chip offers the kinds the address holds, narrowest first, Company alwa
   assert.deepEqual(scopeLib.toNlScope(choices[0].scope), { customer: "B1", decision: "deal:O" });
   assert.deepEqual(scopeLib.toNlScope(choices[1].scope), { customer: "B1" });
   assert.equal(scopeLib.toNlScope(choices[2].scope), undefined);
-  // today's server reads the scope as two ids, derived from it
-  assert.deepEqual(scopeLib.legacyContextOf(choices[0].scope), { offer_id: "O" });
-  assert.deepEqual(scopeLib.legacyContextOf(choices[2].scope), {});
+  // the payment-timing assumption is the address's own: the server's scenarios are asked and counter:<k>, so `late` is never sent
+  assert.deepEqual(scopeLib.toNlScope({ kind: "decision", decision: "deal:O", scenario: "late" }), { decision: "deal:O" });
+  assert.deepEqual(scopeLib.toNlScope({ kind: "decision", decision: "deal:O", scenario: "counter:1" }), { decision: "deal:O", scenario: "counter:1" });
   assert.equal(scopeLib.customerOfPath("/customers/BUYER%201/inputs"), "BUYER 1");
   assert.equal(scopeLib.customerOfPath("/deals"), null);
 });
@@ -83,35 +83,40 @@ const words = { agreedTerms: (t) => `Supply terms: ${t}`, agreedRef: (r) => `con
 
 test("the queue has one row per negotiation, never one per customer; the counts are the server's; All is the tasks", () => {
   const deals = { day: 0, deals: [{ counterparty_id: "B1", counterparty_name: "Foshan Home Retail Co.", has_contract: true, contract: { reference: "FHR-1", title: "Supply" }, in_force: [{ key: "payment_terms", label: "Payment terms", value_display: "45 days" }], pills: [{ label: "On track", tone: "ok" }] }] };
-  const q = queue.buildQueue(deals, worklist, words);
+  const q = queue.buildQueue(deals, worklist, null, words);
   assert.equal(q.fallback, true);
   assert.deepEqual(q.needs_you.map((r) => r.key), ["deal:OFF-1", "deal:OFF-2"], "two negotiations with one customer are two rows");
+  assert.deepEqual(q.needs_you.map((r) => r.decision_id), ["deal:OFF-1", "deal:OFF-2"]);
+  assert.equal(q.waiting[0].decision_id, "deal:OFF-3");
   assert.equal(q.agreements.length, 1);
   assert.equal(q.agreements[0].consequence_text, "Supply terms: Payment terms: 45 days · contract FHR-1");
   assert.deepEqual(queue.tabCounts(q), { all: 4, needs_you: 2, waiting: 1, agreements: 1, customers: 2 });
-  // the server's own queue is used as it is
-  const own = { ...q, fallback: undefined, counts: { needs_you: 9, waiting: 0, agreements: 0, customers: 3 } };
-  assert.equal(queue.buildQueue({ day: 0, deals: [], queue: own }, null, words).counts.needs_you, 9);
-  assert.equal(queue.buildQueue(undefined, null, words), null);
+  assert.equal(q.customers.length, 2);
+  // the server's own queue is used as it is, with the customers read beside it
+  const own = { counts: { needs_you: 9, waiting: 0, agreements: 0, customers: 3 }, alert: null, needs_you: [], waiting: [], agreements: [] };
+  const served = queue.buildQueue({ day: 0, deals: [], queue: own }, null, { customers: [worklist.customers[0]] }, words);
+  assert.equal(served.counts.needs_you, 9);
+  assert.equal(served.fallback, false);
+  assert.equal(served.customers.length, 1);
+  assert.equal(queue.buildQueue(undefined, null, null, words), null);
 });
 
-test("a row selects its negotiation in place, any other task leads where it is done, and every id comes from the row itself", () => {
-  const [a, b] = worklist.needs_you;
+test("a negotiation, an agreement and a promise select in place; any other task leads where the server says it is done", () => {
+  const [a, b] = worklist.needs_you.map((r) => ({ ...r, decision_id: r.key }));
   assert.equal(queue.rowDecision(a), "deal:OFF-1");
-  assert.equal(queue.rowDecision(worklist.waiting[0]), "deal:OFF-3");
-  assert.deepEqual(queue.rowTarget(b), { kind: "select", customer: "B1", decision: "deal:OFF-2" });
-  const collection = { key: "collection:B1", kind: "COLLECTION", customer_id: "B1", invoice: "RCV-A", subject_text: "s", status_text: "Overdue", consequence_text: "", href: "/?customer=B1" };
-  assert.deepEqual(queue.rowTarget(collection), { kind: "go", href: "/receivables?customer=B1&invoice=RCV-A&from=deal" });
+  assert.deepEqual(queue.rowTarget(b), { kind: "select", customer: "B1", decision: "deal:OFF-2", invoice: null });
+  const promise = { key: "promise:C1:O1", kind: "PROMISE", customer_id: "B1", decision_id: "deal:OFF-1", invoice_id: "RCV-A", subject_text: "s", status_text: "x", consequence_text: "", href: "/deals?customer=B1&decision=deal%3AOFF-1&invoice=RCV-A" };
+  assert.deepEqual(queue.rowTarget(promise), { kind: "select", customer: "B1", decision: "deal:OFF-1", invoice: "RCV-A" });
+  const collection = { key: "collection:B1", kind: "COLLECTION", customer_id: "B1", invoice_id: "RCV-A", subject_text: "s", status_text: "Overdue", consequence_text: "", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" };
+  assert.deepEqual(queue.rowTarget(collection), { kind: "go", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" });
   const approval = { key: "approval:A1", kind: "APPROVAL", customer_id: null, subject_text: "s", status_text: "Waiting", consequence_text: "", href: "/approvals#approval-A1" };
   assert.deepEqual(queue.rowTarget(approval), { kind: "go", href: "/approvals#approval-A1" });
-  const contract = { key: "agreement:B1", kind: "AGREEMENT", customer_id: "B1", subject_text: "s", status_text: "On track", consequence_text: "", href: "/customers/B1" };
-  assert.deepEqual(queue.rowTarget(contract), { kind: "go", href: "/customers/B1" });
+  assert.equal(queue.rowDecision(approval), null);
 });
 
-test("the status pill and the next step are the server's words, split at its own separator unless it sends them apart", () => {
-  assert.deepEqual(queue.statusCells({ status_text: "Counter ready · Reply needed", consequence_text: "" }), { state: "Counter ready", next: "Reply needed" });
-  assert.deepEqual(queue.statusCells({ status_text: "On track", consequence_text: "" }), { state: "On track", next: null });
-  assert.deepEqual(queue.statusCells({ status_text: "a · b", state_text: "A", next_step_text: "Reply today", consequence_text: "" }), { state: "A", next: "Reply today" });
+test("the status pill and the next step are the server's words, split at its own separator", () => {
+  assert.deepEqual(queue.statusCells({ status_text: "Counter ready · Reply needed" }), { state: "Counter ready", next: "Reply needed" });
+  assert.deepEqual(queue.statusCells({ status_text: "On track" }), { state: "On track", next: null });
   assert.equal(queue.pillTone("needs_you", { severity: "CRITICAL" }), "bad");
   assert.equal(queue.pillTone("needs_you", { severity: "CAUTION" }), "warn");
   assert.equal(queue.pillTone("waiting", {}), "info");
@@ -139,18 +144,17 @@ test("the commitment receipt is eleven lines in the ticket's order, and a line t
   for (const l of receiptModel.RECEIPT_LINES) assert.ok(en[`receipt.${l.key === "executes_now" ? "executesNow" : l.key === "others_must_agree" ? "othersMustAgree" : l.key === "in_hand_vs_future" ? "inHandVsFuture" : l.key}`], l.key);
 });
 
-test("a server's receipt is used as it is; without one the path's own words stand, and the session's three lines only for the very verdict the picture was drawn from", () => {
+test("the send's receipt is the server's block on the priced response of the very verdict; without one the path's own words stand", () => {
   const path = { key: "CTR-1", reply_text: "Terms stay at 45 days.", decides_text: "FLOW can send it. Your approval is not needed.", authority_text: "FLOW can send it", cost_once_display: "¥3,027.77", cost_basis_text: "once, nothing ongoing", scenario_assumption_text: "Assumes the buyer accepts." };
   const own = { authorizes_text: "Sends it", net_display: "¥1" };
-  assert.equal(receipt.receiptOfPath({ ...path, receipt: own }, null, "V1"), own);
-  const fallback = receipt.receiptOfPath(path, null, "V1");
-  assert.deepEqual(fallback, { authorizes_text: "Terms stay at 45 days.", executes_now_text: null, fees_display: "¥3,027.77\nonce, nothing ongoing", assumptions_text: "Assumes the buyer accepts.", authority_text: "FLOW can send it. Your approval is not needed." });
-  const verdict = { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", send_scope_lines: ["Records the agreement", "Draws ¥149,986.20 today", "Funding cost ¥841.57"] } } };
-  const withLines = receipt.receiptOfPath(path, verdict, "V1");
-  assert.equal(withLines.authorizes_text, "Records the agreement");
-  assert.equal(withLines.executes_now_text, "Draws ¥149,986.20 today\nFunding cost ¥841.57");
-  assert.equal(withLines.fees_display, null);
-  assert.equal(receipt.receiptOfPath(path, verdict, "V2").authorizes_text, "Terms stay at 45 days.", "another verdict's lines are never shown");
+  const verdict = { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: own } } };
+  assert.equal(receipt.receiptOfSend(path, verdict), own);
+  // another counter than the one priced has no receipt of its own: the path's words stand
+  const other = receipt.receiptOfSend({ ...path, key: "CTR-2" }, verdict);
+  assert.deepEqual(other, { authorizes_text: "Terms stay at 45 days.", fees_display: "¥3,027.77\nonce, nothing ongoing", assumptions_text: "Assumes the buyer accepts.", authority_text: "FLOW can send it. Your approval is not needed." });
+  // an older server sends none, or an empty one
+  assert.deepEqual(receipt.receiptOfSend(path, { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: null } } }), other);
+  assert.deepEqual(receipt.receiptOfSend(path, null), other);
 });
 
 test("every word the slice owns exists in both languages", () => {

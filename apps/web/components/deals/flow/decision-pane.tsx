@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CustomerName } from "@/components/customer-link";
+import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
 import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
@@ -11,11 +12,9 @@ import { OpenSection } from "@/components/ui/open-section";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
-import { demoStore } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
-import { receiptOfPath } from "@/lib/receipt";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AUTH_TONE, Cell, NONE, toneOfDeal } from "./flow-parts";
 import { Investigate, lowestOf } from "./investigate";
@@ -93,6 +92,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
           </ul>
         </div>
       ) : null}
+      {record.agreement?.receipt ? <CommitmentReceipt receipt={record.agreement.receipt} id={`${decision}-agreement-receipt`.replace(/[^A-Za-z0-9_-]/g, "-")} title={t("receipt.title.agreed")} testId="deal-agreement-receipt" /> : null}
       {record.remaining_task?.text && record.remaining_task.text !== waiting ? (
         <p className="text-sm text-ink-2" data-testid="deal-left">
           {record.remaining_task.text}
@@ -462,7 +462,6 @@ export function DecisionPane({
                   offerId={offer.offer.offer_id}
                   path={focus}
                   picture={picture}
-                  receipt={receiptOfPath(focus, demoStore.get().verdicts[offer.offer.offer_id], picture.verdict_id)}
                   buyer={buyerShort}
                   onSent={setSent}
                   onBusy={setBusyBoth}

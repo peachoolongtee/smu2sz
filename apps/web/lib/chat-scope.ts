@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { chosenStore, pageStore, resolveScope, routeOf } from "./chat-scope-model";
 import type { ChatScope, ScopeKind } from "./selection";
 
-export { currentScope, legacyContextOf, toNlScope } from "./chat-scope-model";
+export { currentScope, toNlScope } from "./chat-scope-model";
 
 /** The chip's state: the kinds on offer, the one in force and the scope it sends; `choose` narrows or widens the question for this route. */
 export function useChatScope() {

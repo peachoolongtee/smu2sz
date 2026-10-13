@@ -7842,7 +7842,24 @@
         "lowest_short": "¥165k",
         "lowest_when": "in 60 days",
         "first_breach_when": "in 47 days",
-        "band_text": "Below your minimum for 15 days"
+        "band_text": "Below your minimum for 15 days",
+        "ask_breakdown": [
+          {
+            "label": "After buyer discount",
+            "amount_display": "¥414,960",
+            "share_text": "99%"
+          },
+          {
+            "label": "Requested discount",
+            "amount_display": "¥5,040",
+            "share_text": "1%"
+          }
+        ],
+        "ask_facts": {
+          "invoice_value_display": "¥420,000",
+          "requested_discount_display": "¥5,040",
+          "requested_term_text": "60 days"
+        }
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -9849,7 +9866,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
         "first_breach_when": null,
-        "band_text": "The next invoice is paid 15 days sooner than as asked"
+        "band_text": "The next invoice is paid 15 days sooner than as asked",
+        "ask_breakdown": null,
+        "ask_facts": null
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -11886,7 +11905,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
         "first_breach_when": null,
-        "band_text": "The next invoice is paid 5 days sooner than as asked"
+        "band_text": "The next invoice is paid 5 days sooner than as asked",
+        "ask_breakdown": null,
+        "ask_facts": null
       }
     ],
     "moments": [
@@ -11894,6 +11915,7 @@
         "day": 0,
         "label": "Today",
         "title": "Today",
+        "when": "today",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -11954,6 +11976,7 @@
         "day": 30,
         "label": "In 30 days",
         "title": "In 30 days",
+        "when": "in 30 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12015,6 +12038,7 @@
         "day": 47,
         "label": "In 47 days",
         "title": "In 47 days",
+        "when": "in 47 days",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -12078,6 +12102,7 @@
         "day": 60,
         "label": "In 60 days",
         "title": "In 60 days",
+        "when": "in 60 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12139,6 +12164,7 @@
         "day": 62,
         "label": "In 62 days",
         "title": "In 62 days",
+        "when": "in 62 days",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -12196,12 +12222,13 @@
         "day": 66,
         "label": "In 66 days",
         "title": "In 66 days",
+        "when": "in 66 days",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "Day 66",
+        "word": "End, in 66 days",
         "text": "No cash moves on any path.",
         "values": [
           {
@@ -12281,7 +12308,19 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "Back to Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   },
   "zh": {
     "offer_id": "OFF-f806f79b6c21",
@@ -20126,7 +20165,24 @@
         "lowest_short": "¥165k",
         "lowest_when": "60 天后",
         "first_breach_when": "47 天后",
-        "band_text": "低于您的最低现金储备 15 天"
+        "band_text": "低于您的最低现金储备 15 天",
+        "ask_breakdown": [
+          {
+            "label": "买方折扣后",
+            "amount_display": "¥414,960",
+            "share_text": "99%"
+          },
+          {
+            "label": "买方要求的折扣",
+            "amount_display": "¥5,040",
+            "share_text": "1%"
+          }
+        ],
+        "ask_facts": {
+          "invoice_value_display": "¥420,000",
+          "requested_discount_display": "¥5,040",
+          "requested_term_text": "60 天"
+        }
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -22133,7 +22189,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
         "first_breach_when": null,
-        "band_text": "下一张发票比按对方要求早 15 天收款"
+        "band_text": "下一张发票比按对方要求早 15 天收款",
+        "ask_breakdown": null,
+        "ask_facts": null
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -24170,7 +24228,9 @@
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
         "first_breach_when": null,
-        "band_text": "下一张发票比按对方要求早 5 天收款"
+        "band_text": "下一张发票比按对方要求早 5 天收款",
+        "ask_breakdown": null,
+        "ask_facts": null
       }
     ],
     "moments": [
@@ -24178,6 +24238,7 @@
         "day": 0,
         "label": "今天",
         "title": "今天",
+        "when": "今天",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -24238,6 +24299,7 @@
         "day": 30,
         "label": "30 天后",
         "title": "30 天后",
+        "when": "30 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24299,6 +24361,7 @@
         "day": 47,
         "label": "47 天后",
         "title": "47 天后",
+        "when": "47 天后",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -24362,6 +24425,7 @@
         "day": 60,
         "label": "60 天后",
         "title": "60 天后",
+        "when": "60 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24423,6 +24487,7 @@
         "day": 62,
         "label": "62 天后",
         "title": "62 天后",
+        "when": "62 天后",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -24480,12 +24545,13 @@
         "day": 66,
         "label": "66 天后",
         "title": "66 天后",
+        "when": "66 天后",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "第 66 天",
+        "word": "终点，66 天后",
         "text": "各路径都没有现金变动。",
         "values": [
           {
@@ -24565,6 +24631,18 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "返回Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   }
 }

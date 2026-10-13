@@ -402,7 +402,7 @@ export function ApprovalCard({
         {quoteFold}
 
         {/* The terms come first at every width, then the one button that names what it does (ticket #128, audit UX03): the receipt on screen is the review, and Approve asks nothing more. */}
-        <CommitmentReceipt receipt={p?.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} className="border-t border-line pt-3" />
+        <CommitmentReceipt receipt={a.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} className="border-t border-line pt-3" />
         {decide}
         {recordLink}
         {auditFold}
