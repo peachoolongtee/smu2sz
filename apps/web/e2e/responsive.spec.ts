@@ -298,7 +298,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const asks = (await topOf(page, "deal-ask-quote"))!;
   expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter ready");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the review button is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the review button is inside the first 915 px").toBeLessThanOrEqual(915);
