@@ -173,10 +173,10 @@ def test_what_is_waiting_lists_only_the_scoped_customers_rows(api: TestClient, l
     api.post("/demo/reset", params={"scenario": "busy"})
     dongguan = _ask(api, f"s-wait-b2-{lang}", text, lang, scope={"customer": "BUYER-2"})
     assert dongguan["scope_used"] == {"kind": "customer", "label": "Dongguan Office Supplies Ltd."}
-    assert "Dongguan" in dongguan["reply"] and "Foshan" not in dongguan["reply"] and "200,000.00" not in dongguan["reply"]  # not the facility application
+    assert "Dongguan" in dongguan["reply"] and "Foshan" not in dongguan["reply"] and "working-capital financing" not in dongguan["reply"] and "营运资金融资" not in dongguan["reply"]  # not the facility application
     assert dongguan["reply"].count("120,000.00") == 1 and dongguan["reply"].count("80,000.00") == 1
     company = _ask(api, f"s-wait-all-{lang}", text, lang)
-    assert company["scope_used"] is None and "200,000.00" in company["reply"]  # the unscoped read still lists the company's items
+    assert company["scope_used"] is None and "¥200,000" in company["reply"]  # the unscoped read still lists the company's items
     foshan = _ask(api, f"s-wait-b1-{lang}", text, lang, scope={"customer": "BUYER-1"})  # Foshan's own replies, and none of Dongguan's
     assert "Foshan" in foshan["reply"] and "Dongguan" not in foshan["reply"]
     if lang == "zh":
@@ -293,7 +293,7 @@ def test_what_we_are_waiting_for_mirrors_the_queue_for_a_customer_and_for_the_co
     for row in queue["needs_you"]:  # every customer's rows that need the owner appear, and the buyer-reply too
         if row["customer_id"]:
             assert row["customer_short"] in company
-    assert foshan["reply"].rstrip("。.") in company and "200,000.00" in company  # Foshan's sentence, the application, and Dongguan's overdue invoices
+    assert foshan["reply"].rstrip("。.") in company and "¥200,000" in company  # Foshan's sentence, the application, and Dongguan's overdue invoices
     assert "Zhuhai" in company and "Dongguan" in company and not _RAW.search(company)
     dongguan = _ask(api, f"w-b2-{lang}", text, lang, scope={"customer": "BUYER-2"})["reply"]
     assert "Foshan" not in dongguan and "Zhuhai" not in dongguan and "Dongguan" in dongguan

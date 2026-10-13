@@ -210,7 +210,7 @@ def test_the_approvals_queue_in_chinese_end_to_end(client):
     _walk(client)
     _act(client)  # the day-34 cure is above the rate ceiling: it waits for the owner
     en, zh = _both(client, "/approvals/queue", QUEUE_RAW)
-    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"].startswith("批准")
+    assert [r["status"] for r in zh["approvals"]] == ["PENDING"] and zh["approvals"][0]["presentation"]["headline"] == "申请 ¥155,013.80 的发票融资"
     p = zh["approvals"][0]["presentation"]
     assert p["reason"].startswith("年化成本") and "您签署的无需批准融资上限" in p["reason"]
     assert p["created_when"] and p["if_decline"] and zh["approvals"][0]["quote"]["after"]
