@@ -562,7 +562,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                             "已入账：这份协议下银行收款实际给出的折扣，即所结清的面额减去收到的现金。预期数字是您达成协议时 FLOW 报出的数字。"),
         "tone": ("bad" if concession_expected is not None and booked_fen > concession_expected
                  else "ok" if ended and not unmeasured and concession_expected is not None else "neutral"),
-        "evidence_href": _entry_href(first_seq),
+        "evidence_href": _entry_href(first_seq), "relation": None, "counted": True,
     }
     lines = [terms_line, *([planned_line] if planned_line is not None else []), *fund]
     actual = sum(x["actual_fen"] for x in lines if x["actual_fen"] is not None)
