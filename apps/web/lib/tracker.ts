@@ -83,6 +83,8 @@ export interface TrackerView {
   buyer_id: string | null;
   buyer_name: string | null;
   agreed_when: string | null;
+  /** The eyebrow's own words ("Agreed 38 days ago"), en and zh. */
+  agreed_text: string | null;
   terms_text: string | null;
   headline_text: string | null;
   state_word: string | null;

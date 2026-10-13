@@ -42,8 +42,7 @@ async function expectRead(page: Page, d: TrackerView): Promise<void> {
   expect((await page.getByTestId("tracker-actual").innerText()).trim().length).toBeGreaterThan(cost.actual.amount_display.length);
   // The agreement's own components (the terms, the funding planned at agreement) are both lines of the table; the eyebrow says when it was agreed.
   expect(cost.lines.filter((l) => !l.relation || l.relation === "none").map((l) => l.key)).toEqual(["terms", "planned_funding"]);
-  await expect(page.getByTestId("tracker-eyebrow")).toContainText(d.agreed_when as string);
-  await expect(page.getByTestId("tracker-eyebrow")).toContainText(d.lang === "zh" ? "达成协议" : "Agreed");
+  await expect(page.getByTestId("tracker-eyebrow")).toContainText(d.agreed_text as string);
   for (const l of cost.lines) {
     // A related line the server does not count is shown apart, outside the deal's cost, with its own figure and why it is not counted.
     if (l.relation && l.relation !== "none" && !l.counted && l.counted_note_text) {

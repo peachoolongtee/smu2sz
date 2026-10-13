@@ -53,7 +53,7 @@ function Body({ d }: { d: TrackerView }) {
 
       <header className="flex flex-col gap-2.5">
         <p className="text-body-lg text-ink-2" data-testid="tracker-eyebrow">
-          {[d.buyer_name, d.agreed_when ? t("tracker.agreed", { when: d.agreed_when }) : null].filter(Boolean).join(" · ")}
+          {[d.buyer_name, d.agreed_text].filter(Boolean).join(" · ")}
         </p>
         <h1 className="type-headline text-balance text-ink" data-testid="tracker-headline">
           {d.headline_text ?? t("tracker.title")}
