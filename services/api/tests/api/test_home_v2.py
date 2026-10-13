@@ -516,7 +516,9 @@ def test_the_approval_words_while_the_plan_waits_for_the_owner_and_once_it_has_r
     assert _approval_words(api) == ("No approval needed", False)
     assert _act(api)["executed"] == 2  # the first plan runs; what is left is an application for a facility, run to ask for approval
     assert _v2(api)["action"]["control"] == "RUN_PLAN" and _v2(api)["action"]["facts"] == []
-    assert _approval_words(api) == (None, False)  # no approval fact to state: nothing is said
+    assert _v2(api)["action"]["text"] == "Your cash reserve becomes unsafe in 12 days. Needs your approval."
+    assert _approval_words(api) == ("Needs your approval before it runs", True)  # the step's own words say it needs the owner: so does the line
+    assert _approval_words(api, "zh") == ("需要您批准后才会执行", True)
     assert _act(api)["pending_approval"] == 1
     action = _v2(api)["action"]
     assert action["control"] == "APPROVE_PLAN" and action["text"] == "Your cash reserve becomes unsafe in 12 days. Needs your approval."
