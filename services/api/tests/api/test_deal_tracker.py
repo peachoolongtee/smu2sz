@@ -70,6 +70,15 @@ def _cure(api: TestClient) -> str:
     return str(row["id"])
 
 
+def _live(d: dict[str, Any]) -> None:
+    """The deal is live: no close-out, no word of closing or completion, and a state text that says what has happened."""
+    assert d["closeout_text"] is None
+    low = d["headline_text"].lower()
+    assert "closed" not in low and "complete" not in low and "ended" not in low
+    assert len(d["state_text"]) > 12 and d["state_text"].rstrip(".") != d["state_word"] and "Fulfilled" not in d["state_text"]
+    assert [x["state"] for x in d["stages"]][-1] != "done"
+
+
 def _lines(d: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {x["key"]: x for x in d["cost"]["lines"]}
 
@@ -148,7 +157,7 @@ def test_after_the_bank_receipt_the_booked_discount_is_in_the_terms_line(api: Te
     assert terms["actual_fen"] == POSTED_DISCOUNT_FEN == promise["discount_fen"] and terms["actual_display"] == "¥2,186.20"
     assert terms["certainty"] == "RECORDED" and terms["evidence_href"].startswith("/trust?view=evidence&entry=")
     assert terms["evidence_href"].endswith("&from=tracker")
-    assert terms["actual_note_text"].startswith("Not measured:") and "¥841.57" in terms["actual_note_text"]  # 302,777 - 218,620 = 84,157 fen
+    assert terms["actual_note_text"].startswith("Not measured yet:") and "¥841.57" in terms["actual_note_text"]  # 302,777 - 218,620 = 84,157 fen
     assert d["cost"]["actual"]["amount_fen"] == POSTED_DISCOUNT_FEN and d["cost"]["difference_fen"] == 0
     assert d["cost"]["unmeasured_fen"] == 84157 == EXPECTED_FEN - POSTED_DISCOUNT_FEN and d["cost"]["unmeasured_display"] == "¥841.57"
     assert d["cost"]["actual"]["note_text"] == "¥841.57 of the expected cost is not measured yet." and d["cost"]["actual"]["tone"] == "neutral"
@@ -158,7 +167,9 @@ def test_after_the_bank_receipt_the_booked_discount_is_in_the_terms_line(api: Te
     states = {(p["party"], p["state"]) for p in d["promises"]}
     assert ("buyer", "kept") in states and ("you", "kept") in states
     assert d["promise_counts"]["buyer_kept"] == 1 and d["promise_counts"]["text"] == "The buyer has kept one of two promises on this deal."
-    assert d["closeout_text"] and "¥2,186.20" in d["closeout_text"]
+    _live(d)  # the early part is paid, the rest of the invoice is not due yet: the commitment is fulfilled but the deal is not over
+    assert d["headline_text"] == "This deal is on the agreed terms so far" and d["state_word"] == "On plan"
+    assert d["state_text"] == "The buyer paid the early part it promised. The rest of the invoice falls due in 30 days."
     _check_sums(d)
 
 
@@ -172,6 +183,10 @@ def test_at_the_late_day_a_promise_is_late_and_the_next_step_is_to_chase(api: Te
     late = next(p for p in d["promises"] if p["state"] == "late")
     assert late["tone"] == "bad" and late["state_word"] == "Late" and late["evidence_href"].startswith("/receivables?invoice=")
     assert d["next"]["label"] == "Chase payment" and d["next"]["href"].startswith("/receivables?invoice=")
+    _live(d)
+    assert d["headline_text"] == "The buyer is late on this deal" and d["state_word"] == "Payment late"
+    assert d["state_text"] == "The buyer paid the early part it promised. The rest of the invoice is 2 days late."
+    assert _tracker(api, did, "zh")["closeout_text"] is None
     assert "¥162,800.00" in d["next"]["text"] and d["state_tone"] == "bad" and d["state_word"] == "Payment late"
     _check_sums(d)
 
@@ -190,6 +205,8 @@ def test_the_cure_queued_then_approved_adds_the_attributed_funding_line(api: Tes
     assert queued["cost"]["actual"]["amount_fen"] == POSTED_DISCOUNT_FEN and queued["cost"]["to_come"]["amount_fen"] == 178219
     assert queued["cost"]["difference_fen"] == 0 and queued["cost"]["unmeasured_fen"] == 84157
     assert "plainly" not in f["certainty_text"] and "do not tie the funding to this deal by itself" in f["certainty_text"]
+    _live(queued)
+    assert queued["state_text"].endswith("is 2 days late, and funding arranged after it is waiting for your approval.")
     assert queued["next"]["label"] == "Review the funding approval" and queued["next"]["href"] == "/approvals"  # cash safety before chasing
     assert queued["cost"]["to_come"]["amount_fen"] is not None and quote["state"] == "AUTHORIZATION_REQUIRED"
     _check_sums(queued)
@@ -204,7 +221,11 @@ def test_the_cure_queued_then_approved_adds_the_attributed_funding_line(api: Tes
     assert d["cost"]["difference_fen"] == 178219 == f["actual_fen"] and d["cost"]["unmeasured_fen"] == 84157
     assert d["cost"]["actual"]["note_text"] == ("Includes ¥1,782.19 of funding on top of the terms you agreed. "
                                                 "¥841.57 of the expected cost is not measured yet.")
-    assert d["cost"]["actual"]["tone"] == "bad" and d["headline_text"] == "This deal closed with extra cost on top of the terms you agreed"
+    assert d["cost"]["actual"]["tone"] == "bad" and d["headline_text"] == "This deal is costing more than you agreed to"
+    _live(d)
+    assert d["state_text"] == "The buyer paid the early part it promised. The rest of the invoice is 2 days late, and you arranged funding after it."
+    assert d["state_word"] == "Payment late"
+    assert not any(_live(z) for z in [_tracker(api, did, "zh")]) and re.search(r"[\u4e00-\u9fff]", _tracker(api, did, "zh")["state_text"])
     assert d["next"]["label"] == "Chase payment"  # the approval is done, the collection action is next
     zh = _tracker(api, did, "zh")["cost"]["actual"]["note_text"]
     assert "¥1,782.19" in zh and "¥841.57" in zh and re.search(r"[\u4e00-\u9fff]", zh)
@@ -222,7 +243,8 @@ def test_without_a_receipt_the_missed_promise_costs_nothing_until_the_cure_runs(
     assert [p["state"] for p in d["promises"] if p["party"] == "buyer"] == ["missed", "late"]
     assert [p["state"] for p in d["promises"] if p["party"] == "you"] == ["ended"]
     assert d["state_word"] == "Promise missed" and d["state_tone"] == "bad" and d["next"]["label"] == "Chase payment"
-    assert d["headline_text"] == "This deal ended with the buyer's promise missed"
+    assert d["headline_text"] == "A promise on this deal was missed"
+    _live(d)
     assert _lines(d)["terms"]["actual_note_text"] == "The early payment did not arrive, so no discount has been given under the agreement."
     approval = _cure(api)
     assert api.post(f"/approvals/{approval}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
@@ -358,3 +380,36 @@ def test_no_note_says_less_than_expected_while_the_deal_is_live(api: TestClient)
         d = _tracker(api, did)
         assert "less than expected" not in d["cost"]["actual"]["note_text"] and d["cost"]["actual"]["tone"] != "ok"
         assert all("less than expected" not in (x["actual_note_text"] or "") for x in d["cost"]["lines"])
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_once_every_invoice_of_the_deal_is_paid_the_deal_has_ended_with_its_close_out(api: TestClient, lang: str) -> None:
+    did = _agree(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    _to_day34(api)
+    approval = _cure(api)
+    assert api.post(f"/approvals/{approval}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    before = _tracker(api, did, lang)
+    assert before["closeout_text"] is None and before["state_word"] in ("Payment late", "付款逾期")
+    rest = next(r for r in get_runtime().store.get_state().receivables if r.id == "RCV-A")
+    bank = {"X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key"}
+    version = api.get("/mandate").json()["mandate"]["version"]
+    paid = api.post("/operations", headers=bank, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "rc-rest", "idempotency_key": "rc-rest", "mandate_version": version, "requested_by": "SYSTEM",
+        "receivable_id": "RCV-A", "amount_fen": rest.face_fen - rest.settled_fen, "bank_reference": "BANK-REST"})
+    assert paid.json()["result"]["status"] == "EXECUTED", paid.text
+    d = _tracker(api, did, lang)
+    assert d["next"] is None and [p["state"] for p in d["promises"] if p["party"] == "buyer"] == ["kept", "kept"]
+    assert d["stages"][-1]["state"] == "done" and d["stages"][-1]["key"] == "fulfilled"
+    assert d["cost"]["actual"]["amount_fen"] == 396839 and d["cost"]["unmeasured_fen"] == 84157 and d["cost"]["difference_fen"] == 178219
+    if lang == "en":
+        assert d["closeout_text"] == ("This deal cost ¥3,968.39 against ¥3,027.77 expected, including ¥1,782.19 of funding on top; "
+                                      "¥841.57 of the expected cost was never measured. The buyer kept 2 of 2 promises.")
+        assert d["headline_text"] == "This deal closed with extra cost on top of the terms you agreed" and d["state_word"] == "Completed"
+        assert d["state_text"] == "The buyer paid the early part it promised. Every invoice on this deal has been paid."
+    else:
+        assert "¥3,968.39" in d["closeout_text"] and "¥1,782.19" in d["closeout_text"] and re.search(r"[\u4e00-\u9fff]", d["closeout_text"])
+        assert d["state_text"].startswith("买方已支付")
+    _no_leaks(d)
+    _check_sums(d)
