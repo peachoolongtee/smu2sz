@@ -110,8 +110,8 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
 }
 
 /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. A 404 means the server does not know the offer. */
-export async function getOffer(offerId: string): Promise<OfferView> {
-  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
+export async function getOffer(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> {
+  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId, lang);
 }
 
 /** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */

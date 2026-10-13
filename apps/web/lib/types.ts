@@ -118,7 +118,10 @@ export interface Obligation {
 
 export interface Abstention {
   field: string;
+  /** The compiler's own reason (an engine sentence): not for the owner's page when `reason_when` is there. */
   reason: string;
+  /** The reason in the owner's words, in the language asked; null when the server has no sentence for it (the page then says nothing of it). Absent from an older server (then `reason`). */
+  reason_when?: string | null;
   spans: SourceSpan[];
 }
 

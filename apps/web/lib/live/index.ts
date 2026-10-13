@@ -126,9 +126,9 @@ export const live = {
     }),
 
   /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. An unknown id is a 404 the page explains. */
-  getOffer: async (offerId: string): Promise<OfferView> => {
+  getOffer: async (offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> => {
     try {
-      return await http<OfferView>("GET", `/offers/${enc(offerId)}`);
+      return await http<OfferView>("GET", `/offers/${enc(offerId)}${lang === "zh" ? "?lang=zh" : ""}`);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) throw new ApiError(404, `Offer ${offerId} was not found. Submit it again from the Inbox.`, e.detail, "offer_missing", { id: offerId });
       throw e;

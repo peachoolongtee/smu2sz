@@ -404,9 +404,7 @@ export function DecisionPane({
             <div data-testid="deal-abstentions">
               <Callout tone="warn" title={t("biz.deals.cannotEvaluate")}>
                 <ul className="list-disc pl-5 text-sm">
-                  {offer.offer.abstentions.map((a) => (
-                    <li key={a.field}>{a.reason}</li>
-                  ))}
+                  {offer.offer.abstentions.map((a) => ((a.reason_when === undefined ? a.reason : a.reason_when) ? <li key={a.field}>{a.reason_when === undefined ? a.reason : a.reason_when}</li> : null))}
                 </ul>
                 <div className="mt-2">
                   <ButtonLink href={`/chat?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}`}>{t("biz.deals.clarify")}</ButtonLink>
