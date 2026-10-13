@@ -165,19 +165,28 @@ def _receipt_days(ctx: Context) -> dict[str, int]:
     return out
 
 
+def _discount_by_receipt(ctx: Context) -> dict[int, int]:
+    """The discount each executed receipt that honoured a promise really gave, from the invoice's own record: what the invoice has settled
+    less the cash its executed receipts brought, never below 0 and never above the promise's posted discount. An invoice paid at face
+    settled exactly its cash, so it gave none; a receipt's `agreed_discount_fen` and a promise's face are reference figures and are not read."""
+    cash: dict[str, int] = {}
+    for x in _receipts(ctx):
+        cash[x.receivable_id] = cash.get(x.receivable_id, 0) + x.received_fen
+    left = {r.id: max(0, r.settled_fen - cash.get(r.id, 0)) for r in ctx.state.receivables}
+    out: dict[int, int] = {}
+    ran = {x.seq for x in _receipts(ctx)}
+    for p in sorted((q for q in ctx.promised if q.status == "RECEIVED" and q.receipt_seq in ran), key=lambda q: q.receipt_seq):
+        given = min(p.discount_fen, left.get(p.receivable_id, 0))
+        out[p.receipt_seq] = given
+        left[p.receivable_id] = left.get(p.receivable_id, 0) - given
+    return out
+
+
 def _booked_discounts(ctx: Context, promised: list[Any]) -> dict[Any, int]:
-    """The discount booked under the agreement, by the receipt that gave it. A discount is booked only when cash shows it: for a promise the
-    reconciliation matched as honoured (RECEIVED), the face it settled less the cash received, never more than the posted discount. An
-    invoice paid at face gave none; a receipt's own `agreed_discount_fen` is a reference figure and is not read."""
-    by_seq = {r.seq: r for r in _receipts(ctx)}
-    booked: dict[Any, int] = {}
-    for p in promised:
-        r = by_seq.get(p.receipt_seq) if p.status == "RECEIVED" and p.receipt_seq is not None else None
-        if r is not None:
-            given = max(0, min(p.discount_fen, p.face_fen - r.received_fen))
-            if given:
-                booked[r.seq] = given
-    return booked
+    """The discount booked under the agreement, by the receipt that gave it: only what the cash shows (see `_discount_by_receipt`)."""
+    given = _discount_by_receipt(ctx)
+    return {p.receipt_seq: given[p.receipt_seq] for p in promised
+            if p.status == "RECEIVED" and p.receipt_seq in given and given[p.receipt_seq] > 0}
 
 
 def _deal_receivables(ctx: Context, c: Any, promised: list[Any]) -> list[Any]:
@@ -293,10 +302,21 @@ def _owner_promises(ctx: Context, ds: DecisionState, promised: list[Any], lang: 
     return out
 
 
-def _late_on(receivables: list[Any], day: int, paid_on: dict[str, int]) -> bool:
-    """Whether one of these invoices was late on `day`: past its due day and unpaid by the executed receipts then (unpaid now, or paid only on
-    or after `day`). A lapsed early promise before the due day is not lateness."""
-    return any(r.due_day < day and (r.face_fen - r.settled_fen > 0 or paid_on.get(r.id, -1) >= day) for r in receivables)
+def _late_at(ctx: Context, receivables: list[Any], day: int, seq: int | None) -> bool:
+    """Whether one of these invoices was late when a cure was quoted: past its due day on `day` and still owed after the executed receipts that
+    came EARLIER IN THE LOG than the quote (`seq`), never by day alone. A lapsed early promise before the due day is not lateness."""
+    ran = _receipts(ctx)
+    given = _discount_by_receipt(ctx)
+    for r in receivables:
+        if seq is None:
+            owed = r.face_fen - r.settled_fen
+        else:
+            # what the earlier executed receipts settled: the cash, and the discount that cash shows for a promise it honoured
+            owed = r.face_fen - sum(x.received_fen + given.get(x.seq, 0)
+                                    for x in ran if x.receivable_id == r.id and x.seq < seq)
+        if r.due_day < day and owed > 0:
+            return True
+    return False
 
 
 def _quoted_day(ctx: Context, fid: str, fds: DecisionState) -> int | None:
@@ -315,12 +335,11 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -
     c = ds.commitment
     assert c is not None
     buyer = c.counterparty_id
-    paid_on = _receipt_days(ctx)
     agreed = next((o.day for o in ds.ops if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and o.day is not None), None)
 
-    def mine(commitment: Any, day: int) -> bool:
+    def mine(commitment: Any, day: int, seq: int | None) -> bool:
         promised = [p for p in ctx.promised if p.commitment_id == commitment.id]
-        return _late_on(_deal_receivables(ctx, commitment, promised), day, paid_on)
+        return _late_at(ctx, _deal_receivables(ctx, commitment, promised), day, seq)
 
     out: list[dict[str, Any]] = []
     for fid, (fds, _inp) in ctx.states().items():
@@ -328,17 +347,18 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -
         if fds.family != "FUNDING" or q is None or fds.state in (FundingState.DECLINED, FundingState.FAILED):
             continue
         qday = _quoted_day(ctx, fid, fds)
+        qseq = min((o.seq for o in fds.ops), default=None)  # where the cure sits in the log
         if agreed is not None and qday is not None and qday < agreed:
             continue
         secured = any(leg.receivable_id in rids for leg in q.legs)
         late_cause = unique = False
         why = ""
         if q.alert_kind == RESERVE_ALERT and qday is not None:
-            late_buyers = {x.counterparty_id for x in ctx.state.receivables if _late_on([x], qday, paid_on)}
-            late_cause = buyer in late_buyers and mine(c, qday)
+            late_buyers = {x.counterparty_id for x in ctx.state.receivables if _late_at(ctx, [x], qday, qseq)}
+            late_cause = buyer in late_buyers and mine(c, qday, qseq)
             if late_cause:
                 others = [x for x in ctx.commitments if x.counterparty_id == buyer and x.id != c.id
-                          and x.status != CommitmentStatus.PROPOSED and mine(x, qday)]
+                          and x.status != CommitmentStatus.PROPOSED and mine(x, qday, qseq)]
                 if late_buyers != {buyer}:
                     why = "buyers"
                 elif others:
@@ -394,7 +414,7 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -
             "tone": "bad" if shown else "neutral", "evidence_href": f"/decisions/{quote(fid, safe=':')}",
             "relation": relation, "counted": shown, "related_fen": cost, "related_display": _money(cost),
             "figure_fen": cost, "figure_display": _money(cost), "counted_note_text": None if eligible else note,
-            "_pending": pending, "_pending_fen": cost if (pending and eligible) else None,
+            "_pending": pending, "_pending_fen": cost if (pending and eligible) else None, "_waits": pending and eligible,
         })
     return out
 
@@ -407,7 +427,7 @@ def _planned_funding(ds: DecisionState, lang: str) -> tuple[dict[str, Any] | Non
     if s is None or gp is None or gp.total_cost_fen is None:
         return None, None
     ran = bool(s.funding_op_ids) and all(any(o.op_id == i and o.status == OperationStatus.EXECUTED for o in ds.ops) for i in s.funding_op_ids)
-    cost = gp.total_cost_fen
+    cost = gp.total_cost_fen  # the cost stored for the plan that actually ran
     line = {
         "key": "planned_funding", "label": t(lang, "Funding planned when you agreed", "达成协议时计划的融资"),
         "expected_fen": cost, "expected_display": fmt_yuan(cost),
@@ -474,7 +494,7 @@ def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]
                             "related_fen": None, "related_display": None, "difference_fen": None, "difference_display": None, "lines": [],
                             "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
-            "agreed_when": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
+            "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
             "stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
             "links": {"record_href": f"/decisions/{quote(decision_id, safe=':')}",
                       "activity_href": f"/activity?decision={quote(decision_id, safe=':')}"},
@@ -520,25 +540,38 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     # later funding, and whether the deal has ended
     fund = _funding_lines(ctx, ds, rids, lang)
     funding_pending = any(x["_pending"] for x in fund)
+    reopens = any(x["_waits"] for x in fund)  # a cure that is not this deal's to count never reopens it
     funding_done = any(not x["_pending"] for x in fund)
     blocked = [r for r in receivables if r.status != "SETTLED" and r.face_fen - r.settled_fen > 0]
     # ENDED, the one flag the headline, the tone, the close-out and the stages read: every invoice of the deal is settled (an invoice that
     # failed is not), no cure waits for the owner, and either the deal has invoices that are all paid (whatever the commitment's status) or
     # its agreement is over with no early payment awaited. Anything else is LIVE.
     over_agreement = c.status in (CommitmentStatus.FULFILLED, CommitmentStatus.REVOKED, CommitmentStatus.EXPIRED)
-    ended = (not blocked and not funding_pending
+    ended = (not blocked and not reopens
              and ((bool(receivables)) or (over_agreement and "awaited" not in early_kinds)))
 
     # the cost expected at agreement, in the two components the accepted reply stores, and the cost so far
     expected = _expected(ds)
     terms = _short_terms(ctx, ds, lang)
-    planned_line, planned_expected = _planned_funding(ds, lang)
-    concession_expected = expected - planned_expected if expected is not None and planned_expected is not None else expected
+    planned_line, planned_run = _planned_funding(ds, lang)
+    discounts = sum(p.discount_fen for p in promised)
+    # Both expected components come from the accepted reply's stored quote-time economics: its supplier cost is the concession (the posted
+    # discount) plus the funding quoted for the rest of the gap, so the quoted funding is the supplier cost less the posted discount. The
+    # plan that ran may have cost something else; that shows on the planned line's actual. When the figures cannot be split, one line.
+    split = (planned_line is not None and expected is not None and bool(promised) and 0 < discounts <= expected
+             and all(ob.type == ObligationType.IMMEDIATE_DISCOUNT for ob in c.obligations))
+    concession_expected = discounts if split else expected
+    planned_expected = (expected - discounts) if split and expected is not None else 0
+    if planned_line is not None:
+        planned_line["expected_fen"], planned_line["expected_display"] = planned_expected, fmt_yuan(planned_expected)
+        if planned_line["actual_fen"] is not None and planned_run != planned_expected and split:
+            planned_line["actual_note_text"] = t(lang, f"The plan that ran cost {fmt_yuan(planned_run or 0)} against {fmt_yuan(planned_expected)} quoted.",
+                                                 f"实际执行的计划成本为 {fmt_yuan(planned_run or 0)}，报价为 {fmt_yuan(planned_expected)}。")
     booked = _booked_discounts(ctx, promised)
     booked_fen = sum(booked.values())
     planned_actual = planned_line["actual_fen"] if planned_line is not None and planned_line["actual_fen"] is not None else 0
     # what no record holds: the part of the expected concession that no promise's posted discount covers
-    unmeasured = (max(0, concession_expected - sum(p.discount_fen for p in promised)) if concession_expected is not None else None)
+    unmeasured = max(0, concession_expected - discounts) if concession_expected is not None else None
     first_seq = min((k for k in booked if isinstance(k, int)), default=None)
     if not booked:
         note = (t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
@@ -553,6 +586,10 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         note = None
     if any(ob.type in (ObligationType.CONTINGENT_REBATE, ObligationType.PRICE_ADJUSTMENT) for ob in c.obligations):
         more = t(lang, "A rebate or price change in the agreement is not measured yet.", "协议中的返利或价格调整尚未衡量。")
+        note = f"{note} {more}" if note else more
+    if planned_line is not None and not split and expected is not None:
+        more = t(lang, "The expected cost could not be split into the concession and the planned funding, so it is shown whole here.",
+                 "预期成本无法拆分为让步和计划融资两部分，因此在此整体显示。")
         note = f"{note} {more}" if note else more
     terms_line = {
         "key": "terms", "label": t(lang, "The terms you gave the buyer", "您给买方的条款"),
@@ -577,6 +614,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     for x in fund:
         x.pop("_pending_fen")
         x.pop("_pending")
+        x.pop("_waits")
     base = booked_fen + planned_actual
     over = expected is not None and base > expected
     parts: list[str] = []
@@ -657,6 +695,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
 
     accept = next((o for o in ds.ops if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and o.day is not None), None)
     agreed_when = when_text(accept.day, today, lang) if accept is not None else None
+    agreed_text = t(lang, f"Agreed {agreed_when}", f"{agreed_when}达成协议") if agreed_when else None
 
     # the state
     nothing = not booked and not fund and all(s == "awaited" for s in states) and not lapsed
@@ -708,7 +747,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         closeout = t(lang, sentence, sentence_zh)
     else:
         closeout = None
-        if nothing:
+        if nothing and planned_actual:
+            headline = t(lang, "The planned funding has run; the buyer's payment is still awaited", "计划的融资已执行；买方的付款仍在等待中")
+        elif nothing:
             headline = t(lang, "Nothing has happened on this deal yet", "这笔交易目前还没有任何进展")
         elif on_top > 0 or over:
             headline = t(lang, "This deal is costing more than you agreed to", "这笔交易的成本超出了您同意的范围")
@@ -741,7 +782,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
 
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
-        "agreed_when": agreed_when, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
+        "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
         "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, early_kinds, ended), "cost": cost, "promises": rows,
         "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,

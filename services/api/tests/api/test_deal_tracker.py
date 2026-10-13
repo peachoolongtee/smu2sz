@@ -136,7 +136,7 @@ def test_just_after_the_agreement_expected_is_set_and_nothing_has_been_paid(api:
     # the gap plan FLOW ran when the deal was agreed (the credit line was drawn) is already a cost, at its stored figure
     assert planned["actual_fen"] == 84157 and planned["certainty"] == "QUOTED" and planned["actual_note_text"] is None
     assert "funding" not in _lines(d)
-    assert d["headline_text"] == "Nothing has happened on this deal yet"
+    assert d["headline_text"] == "The planned funding has run; the buyer's payment is still awaited"
     assert [(p["party"], p["state"]) for p in d["promises"]] == [("buyer", "awaited"), ("buyer", "awaited"), ("you", "in_force")]
     assert d["promise_counts"] == {"buyer_kept": 0, "buyer_total": 2, "buyer_paid_late": 0, "text": "The buyer has kept zero of two promises on this deal."}
     assert d["cost"]["to_come"]["amount_fen"] == POSTED_DISCOUNT_FEN  # the discount posted on the awaited promise
@@ -689,3 +689,65 @@ def test_every_line_has_its_own_figure_and_the_headline_follows_the_counted_tota
     assert off["state_text"] == on["state_text"]
     zh = _tracker(api, did, "zh")["cost"]["lines"][2]
     assert re.search(r"[\u4e00-\u9fff]", zh["counted_note_text"])
+
+
+def _offer_evaluated(api: TestClient) -> tuple[str, str]:
+    offer = api.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
+    v = api.post(f"/offers/{offer}/evaluate", json={"fixture_id": "EX01_PACKAGE"}).json()
+    return str(offer), str(v["decision_id"])
+
+
+def test_an_invoice_paid_before_the_cure_was_quoted_is_not_late_for_that_cure(api: TestClient) -> None:
+    """Paid on the quote day, but earlier in the log than the quote: the cure is not 'after this buyer's late payment', and a cure that is
+    not related to the deal never reopens it."""
+    did = _agree(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    api.post("/clock/advance", json={"to_day": 30})
+    api.post("/clock/advance", json={"to_day": 34})
+    assert _pay(api, "rest", 16_280_000) == "EXECUTED"
+    before = _tracker(api, did)
+    assert before["closeout_text"] is not None
+    action = api.get("/home").json()["next_action"]
+    assert action is not None
+    assert api.post(f"/alerts/{action['alert_id']}/act", json={"state_version": action["state_version"], "suggestions": action["suggestions"]}).status_code == 200
+    queued = _tracker(api, did)
+    assert queued["closeout_text"] is not None and queued["cost"]["actual"]["amount_fen"] == before["cost"]["actual"]["amount_fen"]
+    for a in [x for x in api.get("/approvals/queue").json()["approvals"] if x["status"] == "PENDING"]:
+        api.post(f"/approvals/{a['id']}", json={"decision": "APPROVE"})
+    after = _tracker(api, did)
+    assert after["closeout_text"] == before["closeout_text"] and after["cost"]["difference_fen"] == 0
+    assert all(ln["relation"] != "after_late_payment" for ln in after["cost"]["lines"])
+    assert after["cost"]["actual"]["amount_fen"] == before["cost"]["actual"]["amount_fen"]
+
+
+def test_the_expected_components_come_from_the_quote_and_the_plan_that_ran_shows_on_its_own_line(api: TestClient) -> None:
+    """Evaluated on day 0, agreed on day 1 without the state version: the plan that ran cost 81,527 against 84,157 quoted."""
+    offer, did = _offer_evaluated(api)
+    api.post("/clock/advance", json={"to_day": 1})
+    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
+    d = _tracker(api, did)
+    terms, planned = d["cost"]["lines"]
+    assert terms["expected_fen"] == 218620 and planned["expected_fen"] == 84157 and d["cost"]["expected"]["amount_fen"] == 302777
+    assert planned["actual_fen"] == 81527 and planned["figure_fen"] == 81527 and d["cost"]["unmeasured_fen"] == 0
+    assert planned["actual_note_text"] == "The plan that ran cost ¥815.27 against ¥841.57 quoted."
+    assert d["cost"]["actual"]["amount_fen"] == 81527 and d["agreed_text"] == "Agreed today"
+    _check_sums(d)
+
+
+def test_a_receipt_at_face_before_the_agreement_gives_no_booked_discount(api: TestClient) -> None:
+    offer, did = _offer_evaluated(api)
+    assert _pay(api, "face", 1_000_000) == "EXECUTED"
+    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
+    d = _tracker(api, did)
+    assert _lines(d)["terms"]["actual_fen"] == 0
+    _check_sums(d)
+
+
+def test_the_headline_after_the_agreement_says_the_planned_funding_has_run_and_agreed_text_is_given(api: TestClient) -> None:
+    did = _agree(api)
+    d = _tracker(api, did)
+    assert d["headline_text"] == "The planned funding has run; the buyer's payment is still awaited" and d["agreed_text"] == "Agreed today"
+    api.post("/clock/advance", json={"to_day": 2})
+    assert _tracker(api, did)["agreed_text"] == "Agreed 2 days ago"
+    assert re.search(r"[\u4e00-\u9fff]", _tracker(api, did, "zh")["agreed_text"]) and "天前" in _tracker(api, did, "zh")["agreed_text"]
