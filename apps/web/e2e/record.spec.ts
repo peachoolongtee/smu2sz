@@ -77,7 +77,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
   await expect(page.getByTestId("deal-send")).toHaveCount(1);
   // Its own receipt, the server's block on Option B's priced response (not Option A's, and not words composed from the path): its own funding and its own authority.
-  await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥3,706.46 for the funding");
+  await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥3,706.46 in addition");
   await expect(page.getByTestId("receipt-line-authority")).toContainText("It changes your terms, so you approve it first.");
 });
 
