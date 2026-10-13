@@ -356,6 +356,27 @@ test("busy books: a recommendation card and no alert row, at 1440 and 390, in bo
         expect(Math.round(card!.y + card!.height - (actions!.y + actions!.height))).toBeLessThanOrEqual(20);
         const legs = reads.home[lang].home_v2!.action.legs ?? [];
         await expect(page.getByTestId("hv2-funding-bar")).toHaveCount(legs.length ? 1 : 0);
+        // Round five: the last upcoming row is the overdue figure (the hybrid read's word and the number of customers with a collection row) linking to Receivables; the owed donut is its own card under the movements, and a slice selects.
+        const collections = reads.work[lang].needs_you.filter((r) => r.kind === "COLLECTION").length;
+        const short = reads.home[lang].receivables_card?.overdue_short;
+        const overdueRow = page.getByTestId("hv2-upcoming-overdue-row");
+        if (collections > 0 && short) {
+          await expect(overdueRow).toContainText(short);
+          await expect(overdueRow).toContainText(label(lang, "hv2.upcoming.overdue"));
+          await expect(overdueRow).toContainText(label(lang, collections === 1 ? "hv2.upcoming.overdue.one" : "hv2.upcoming.overdue.many", { n: collections }));
+          await expect(page.getByTestId("hv2-upcoming-overdue")).toHaveAttribute("href", "/receivables?from=home");
+        } else await expect(overdueRow).toHaveCount(0);
+        await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount((reads.home[lang].home_v2!.upcoming ?? []).length);
+        const owed = page.getByTestId("hv2-owed-card");
+        await expect(owed).toBeVisible();
+        const [up, ow] = await Promise.all([page.getByTestId("hv2-upcoming").boundingBox(), owed.boundingBox()]);
+        expect(ow!.y).toBeGreaterThan(up!.y + up!.height - 1);
+        expect(Math.abs(ow!.x - up!.x)).toBeLessThan(2);
+        if (width >= 1024) {
+          await page.getByTestId("hv2-owed-row-0").getByRole("button").click();
+          await expect(page).toHaveURL(/customer=BUYER-/);
+          await expect(page.getByTestId("hv2-owed-card")).toBeVisible();
+        }
       } finally {
         await page.close();
       }

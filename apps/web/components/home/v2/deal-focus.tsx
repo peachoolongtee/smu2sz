@@ -236,7 +236,74 @@ export function DealFocusPanel({
     facts?.requested_term_text ? { key: "term", label: t("hv2.deal.term"), value: facts.requested_term_text } : !facts && askTerm("payment_terms") ? { key: "payment_terms", label: askTerm("payment_terms")!.label, value: askTerm("payment_terms")!.value_text } : null,
   ].filter((k): k is { key: string; label: string; value: string } => k !== null);
 
+  // Round five: the right column of a deal is ONE card, "Cash impact of this deal": the deal's own step chart (as asked grey, FLOW's reply purple, the reserve hairline, the window control), the two lowest
+  // points named in the server's words under it (the recommended in purple) and the quiet line that company cash stays separate. It shares one height with the deal card (the taller decides).
+  const lowestWords = (p: PicturePath | null) => {
+    if (!p) return null;
+    const w = lowestOf(p, wordsOf(p), stressOf(p), late);
+    const said = [p.label, w.value, w.sub].filter(Boolean).join(" ");
+    return said || null;
+  };
+  const askedSaid = lowestWords(asked);
+  const recSaid = lowestWords(recommended);
+  const cashCard = (
+    <div className="f-card f-card-white min-w-0 p-4" data-testid="hv2-deal-chart">
+      {lines.length ? (
+        <CashPreview
+          first
+          cash={dealCash}
+          today={h.day}
+          title={t("hv2.deal.outlook")}
+          subtitle={chartSubtitle}
+          lines={lines}
+          floorLabel={t("biz.picture.reserve", { amount: h.cash.floor_short })}
+          selectable={chartDays}
+          initialDay={askedLow}
+          lowestDay={null}
+          words={chartWords}
+          height={200}
+          inspectOpen={false}
+          onInspect={() => undefined}
+          testId="hv2-chart"
+          legend={
+            <>
+              {asked ? <LegendItem kind="request">{asked.label}</LegendItem> : null}
+              <LegendItem kind="below">{t("hv2.chart.below")}</LegendItem>
+              {recommended ? (
+                <LegendItem kind="option" quiet={recommended.assumption_text}>
+                  {recommended.label}
+                </LegendItem>
+              ) : null}
+              <LegendItem kind="reserve">{t("biz.picture.reserve", { amount: h.cash.floor_short })}</LegendItem>
+            </>
+          }
+          under={
+            askedSaid || recSaid ? (
+              <p className="mt-2 text-sm text-ink" data-testid="hv2-cash-markers">
+                {askedSaid ? <span data-testid="hv2-deal-low-asked">{askedSaid}</span> : null}
+                {askedSaid && recSaid ? <span className="text-ink-3"> · </span> : null}
+                {recSaid ? (
+                  <span className="font-semibold text-f-purple-ink" data-testid="hv2-deal-low-rec">
+                    {recSaid}
+                  </span>
+                ) : null}
+              </p>
+            ) : null
+          }
+        />
+      ) : (
+        <h2 id="home-picture-title" className="font-display text-[16px] font-bold leading-tight tracking-[-0.01em] text-ink">
+          {t("hv2.deal.outlook")}
+        </h2>
+      )}
+      <p className="mt-3 text-supporting text-ink-3" data-testid="hv2-foot-separate">
+        {t("hv2.foot.separate")}
+      </p>
+    </div>
+  );
+
   return (
+    <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
     <div id="home-focus" data-testid="home-deal-focus" data-decision={decision} className="f-card f-card-white min-w-0 p-4">
       <Announce text={title} />
       <div key={decision} className="motion-swap">
@@ -346,7 +413,7 @@ export function DealFocusPanel({
 
             {/* Level 2: the consequence, closed until the Cash impact toggle (or a timing assumption in the address) opens it */}
             {consequenceOpen ? (
-            <OpenSection title={t("hv2.deal.consequence")} subtitle={t("hv2.deal.consequence.note")} testId="hv2-level-consequence" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
+            <OpenSection id={`${uid}-chart`} title={t("hv2.deal.consequence")} subtitle={t("hv2.deal.consequence.note")} testId="hv2-level-consequence" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="hv2-assumption">
                 <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
                 {exposure.data?.stress.paths ? (
@@ -416,38 +483,11 @@ export function DealFocusPanel({
                 </Disclosure>
               </OpenSection>
             ) : null}
-            {view.chart && lines.length ? (
-              <div id={`${uid}-chart`} className="mt-8" data-testid="hv2-deal-chart">
-                <CashPreview
-                  cash={dealCash}
-                  today={h.day}
-                  title={t("hv2.chart.title")}
-                  subtitle={chartSubtitle}
-                  lines={lines}
-                  floorLabel={t("biz.picture.reserve", { amount: h.cash.floor_short })}
-                  selectable={chartDays}
-                  initialDay={askedLow}
-                  lowestDay={null}
-                  words={chartWords}
-                  testId="hv2-chart"
-                  legend={
-                    <>
-                      {asked ? <LegendItem kind="request">{asked.label}</LegendItem> : null}
-                      <LegendItem kind="below">{t("hv2.chart.below")}</LegendItem>
-                      {recommended ? (
-                        <LegendItem kind="option" quiet={recommended.assumption_text}>
-                          {recommended.label}
-                        </LegendItem>
-                      ) : null}
-                      <LegendItem kind="reserve">{t("biz.picture.reserve", { amount: h.cash.floor_short })}</LegendItem>
-                    </>
-                  }
-                />
-              </div>
-            ) : null}
           </>
         )}
       </div>
+    </div>
+    {cashCard}
     </div>
   );
 }
