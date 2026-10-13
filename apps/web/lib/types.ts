@@ -3515,6 +3515,7 @@ export type DecisionState =
   | "MISSED"
   | "FULFILLED"
   | "REVOKED"
+  | "LAPSED"
   | "PARTIALLY_EXECUTED"
   | "SETTLEMENT_PENDING"
   | "SETTLED"
@@ -4039,8 +4040,8 @@ export interface OverviewAction {
 
 /** The one commercial decision waiting for the owner; `primary` opens it on Deals with the recommended path selected. */
 export interface OverviewDecision {
-  /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read). */
-  kind?: "counter" | "request" | "offer_received" | "awaiting_buyer" | "approval";
+  /** counter (a reply is recommended), request (the ask alone), offer_received (an offer not yet read), lapsed (the invoice it was about has been settled under another agreement: nothing to review, send or wait for). */
+  kind?: "counter" | "request" | "offer_received" | "awaiting_buyer" | "approval" | "lapsed";
   eyebrow: string;
   text: string;
   headline_short?: string | null;

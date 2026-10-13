@@ -30,7 +30,7 @@ export interface DealView {
   late: boolean;
 }
 
-const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED"]);
+const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
 
 /** A sentence the server wrote opens with a capital in the place it stands. */
 const upper = "first-letter:uppercase";

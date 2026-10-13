@@ -99,17 +99,19 @@ function Focus({ view }: { view: CustomerOverviewView }) {
   }
   // Nothing is the owner's to do while the buyer's reply is awaited: the way into the negotiation is an outlined button, not the page's filled one.
   const waitsOnBuyer = decision.kind === "awaiting_buyer";
+  // A lapsed negotiation is nobody's turn: nothing to review, send or wait for. It is a closed state (neutral), and its way in is an outlined button.
+  const lapsed = decision.kind === "lapsed";
   return (
     <section aria-labelledby="customer-decision-title" className="mb-4 border-b border-line pb-4" id="customer-decision" data-testid="customer-decision">
       <h3 id="customer-decision-title" className="text-supporting font-bold" data-kind={decision.kind ?? ""}>
         {/* What waits and on whom, as a state: the buyer's turn is not the owner's, an approval is the owner's. */}
-        <StateWord tone={waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
+        <StateWord tone={lapsed ? "neutral" : waitsOnBuyer ? "info" : "warn"}>{decision.eyebrow}</StateWord>
       </h3>
       <p className="mt-1 text-pretty font-display text-base font-extrabold leading-snug text-ink sm:text-lg" data-testid="customer-decision-text">
         {decision.text}
       </p>
       <ActionGroup className="mt-3" label={t("customer.decision")}>
-        <ButtonLink href={decision.primary.href} variant={waitsOnBuyer ? "secondary" : "primary"} data-testid="customer-decision-primary">
+        <ButtonLink href={decision.primary.href} variant={waitsOnBuyer || lapsed ? "secondary" : "primary"} data-testid="customer-decision-primary">
           {decision.primary.label}
         </ButtonLink>
         {links}
