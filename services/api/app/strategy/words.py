@@ -10,7 +10,7 @@ from fractions import Fraction
 from app.api.financing_words import financing_state_words, state_phrase, state_word
 from app.api.presentation import Lang, invoice_due_day, invoice_words, t, when_text
 from app.domain.models import FinancialState
-from app.domain.money import fmt_pct, fmt_yuan, fmt_yuan_about, round_half_up
+from app.domain.money import fmt_pct, fmt_yuan, fmt_yuan_about, fmt_yuan_rounded, round_half_up
 from app.strategy.net import NetAtCollection
 
 BP_FULL = 10_000
@@ -68,6 +68,36 @@ def share_text(x: Fraction, lang: Lang = "en") -> str:
         return t(lang, "under 0.1%", "低于 0.1%")
     return text
 
+
+
+def year_share_sentence(buyer_name: str, share: Fraction | None, contribution_fen: int, gross: bool, lang: Lang) -> str | None:
+    """A cost on a 12-month basis as a share of a year's gross profit from the buyer (brief C.2 and E.3), one sentence for every
+    surface that says it (the envelope's class-3 package, the comparator's rows): "That is about 1.5% of the ¥1,092,000 a year we
+    estimate Foshan's orders bring you in gross profit." The share at 1 dp with its bounds ("under 0.1%"; "more than 10 times");
+    the basis word follows the margin's basis. `share` is the one share (`customer_overview.share_of_year`); None when there is no
+    cost or no positive year. Never "profit", "profitable" or "worth" of either figure."""
+    if share is None or contribution_fen <= 0:
+        return None
+    ratio = share
+    who_en, who_zh = buyer_short(buyer_name), buyer_name
+    big = fmt_yuan_rounded(contribution_fen)
+    basis_en, basis_zh = ("gross profit", "毛利") if gross else ("contribution", "边际贡献")
+    bring_en = f"the {big} a year we estimate {who_en}'s orders bring you in {basis_en}"
+    bring_zh = f"我们估计{who_zh}订单每年为您带来的 {big} {basis_zh}"
+    if ratio > 10:
+        return t(lang, f"That is more than 10 times {bring_en}.", f"超过{bring_zh}的 10 倍。")
+    if ratio > 1:
+        return t(lang, f"That is more than all of {bring_en}.", f"超过{bring_zh}的全部。")
+    said = share_text(ratio, lang)
+    if said.startswith(("under", "低于")):
+        return t(lang, f"That is {said} of {bring_en}.", f"不到{bring_zh}的 0.1%。")
+    return t(lang, f"That is about {said} of {bring_en}.", f"约相当于{bring_zh}的 {said}。")
+
+
+def margin_note(gross: bool, lang: Lang) -> str:
+    """The qualifier while the margin behind a figure is the Demo's assumption, by the margin's basis."""
+    rate_en, rate_zh = ("margin", "毛利率") if gross else ("contribution margin", "边际贡献率")
+    return t(lang, f"the {rate_en} is assumed for the Demo, not confirmed by you", f"{rate_zh}为演示而假设，尚未经您确认")
 
 
 def _earlier(n: int, lang: Lang) -> str:

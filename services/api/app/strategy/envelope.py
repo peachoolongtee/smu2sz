@@ -21,7 +21,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from fractions import Fraction
-from typing import Literal, NamedTuple
+from typing import Any, Literal, NamedTuple
 
 from pydantic import Field
 
@@ -47,6 +47,7 @@ from app.funding import NoPermanentSourceError, marginal_cost, plan
 from app.funding.router import shared_runs
 from app.strategy.no_plan import plan_is_missing
 from app.strategy.types import CandidatePackage
+from app.strategy.words import margin_note, whole_yuan, year_share_sentence
 from app.verifier import bind, evaluate
 from app.verifier.counters import infeasibility, smallest_step_covering
 from app.verifier.evaluate import _evaluate, _Router
@@ -67,6 +68,7 @@ from app.whatif.params import (
 PASSING = (Outcome.ACCEPT, Outcome.NEEDS_OWNER_APPROVAL)
 CAP_CODES = (ViolationCode.AGG_CONCESSION_EXCEEDED, ViolationCode.PER_BUYER_CAP_EXCEEDED)
 MVP_TERMS_STEPS = 3  # the default package grid: the terms in force, +5 and +10 days
+CARD_SIZE = 3  # the packages on the card (owner's decision 15, #89): the verifier's counters and the ask's answer first
 
 # the levers, by the oracle's own labels (fixtures/strategy/envelope_day0.json `maxima[].lever`)
 TERMS_ALONE = "Terms (days), alone"
@@ -124,10 +126,29 @@ class Probe:
     plan_cost_fen: int | None  # FundingPlan.total_cost_fen of the verdict's committed plan
     recheck: str | None  # why the package would fail the counter re-check (None: it would pass)
     unlisted: tuple[Setting, ...] = ()  # the verifier's counters outside the levers' ranges: not read as settings, not probed
+    # the signed caps the package breaks, from the verifier's own violations: (code, the total it counts, the cap), in fen
+    caps: tuple[tuple[str, int, int], ...] = ()
 
     @property
     def approved(self) -> bool:
         return self.passes and self.recheck is None
+
+
+Authority = Literal["flow_may", "needs_owner", "over_your_limits"]
+
+
+def authority_of(p: Probe) -> Authority | None:
+    """Who may act on a package, in the three classes of the customer-economics brief (E.1), read from the verifier's
+    own fields and never computed: `flow_may` (Tier 1, ACCEPT, approved, nothing flagged), `needs_owner` (approved, and
+    Tier 2 or a flagged fix: an approved package FLOW cannot run alone today is the owner's too), `over_your_limits`
+    (financially safe, but over a cap the owner signed: `liquidity_only`, not passing, and a cap among its violations;
+    only a new signed mandate moves it). None: the package fails for some other reason and has no class."""
+    if p.approved:
+        alone = p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value
+        return "flow_may" if alone and not p.cure_needs_owner and not p.cure_cannot_run_today else "needs_owner"
+    if p.liquidity_only and not p.passes and p.caps:
+        return "over_your_limits"
+    return None
 
 
 @dataclass(frozen=True)
@@ -202,13 +223,17 @@ def last_true(values: Sequence[int], ok: Callable[[int], bool], *, hint: int | N
     `gallop` the search first doubles its steps up from the first value (cheap when the boundary is near it, as for
     the terms, where a long extension is also the costliest evaluation). `hint_steps` is how many values past the
     hint must fail for it to stand (a sibling search's boundary, which had both neighbours checked, stands on one).
-    With `top_first` the top of the range is asked once the first value has passed: when it passes too, it is the
-    largest value and nothing lies past it (a lever with no wall inside its range is read in two evaluations instead of
-    a search; a lever that passes at both ends and fails between them is read as passing, which the lever does not do)."""
+    With `top_first` the top of the range is asked once the first value has passed: when it passes too, one probe in the
+    middle and the neighbour below the top are asked as well (the neighbour rule, read downward from a top that has no
+    value past it); when both pass, the top is the largest value, and when either fails the lever is not monotone between
+    its ends and is scanned whole (a lever with no wall inside its range is read in four evaluations instead of a search;
+    the weekly exhaustive scan, `scripts/envelope_monotone_scan.py`, guards what the probes do not cover)."""
     if not values or not ok(values[0]):
         return Found(None, True)
     if top_first and len(values) > 1 and ok(values[-1]):
-        return Found(values[-1], True)
+        if ok(values[len(values) // 2]) and ok(values[-2]):
+            return Found(values[-1], True)
+        return _scan_max(values, ok)
     if hint is not None and hint in values:
         i = values.index(hint)
         if ok(hint) and not any(ok(v) for v in values[i + 1: i + 1 + hint_steps]):
@@ -405,6 +430,8 @@ class _Verifier:
         passes = v.outcome in PASSING and not any(
             x.code == ViolationCode.RESERVE_BREACH and not x.curable for x in v.violations)
         flags = reserve.inputs if reserve is not None else {}
+        caps = tuple((x.code.value, int(x.inputs["total_fen"]), self._cap_of(x.code, x.inputs.get("counterparty_id")))
+                     for x in v.violations if x.code in CAP_CODES and "total_fen" in x.inputs)
         cur = self.cur
         read = [(self.norm(_setting_of(c, cur, face_of(self.ctx))), c.supplier_cost_fen) for c in v.counters]
         listed = [(c, cost) for c, cost in read if self.in_range(c)]
@@ -418,7 +445,14 @@ class _Verifier:
             counters=tuple(c for c, _ in listed), counter_costs_fen=tuple(cost for _, cost in listed),
             plan_cost_fen=v.plan.total_cost_fen if v.plan is not None else None,
             recheck=infeasibility(v, self.state) if v.outcome in PASSING else None,
-            unlisted=tuple(c for c, _ in read if not self.in_range(c)))
+            unlisted=tuple(c for c, _ in read if not self.in_range(c)), caps=caps)
+
+    def _cap_of(self, code: ViolationCode, buyer: str | None) -> int:
+        """The signed cap a cap violation counts against: the mandate's per-buyer cap, else its aggregate budget."""
+        m = self.mandate
+        if code == ViolationCode.PER_BUYER_CAP_EXCEEDED and buyer is not None and buyer in m.per_buyer_caps_fen:
+            return m.per_buyer_caps_fen[buyer]
+        return m.max_aggregate_forward_concession_fen
 
     def ok(self, s: Setting) -> bool:
         return self.quick(s).passes
@@ -548,9 +582,17 @@ def wall_of(p: Probe | None, *, ignore_caps: bool = False) -> str | None:
         return "plan comparison"
     if b & {ViolationCode.IMMEDIATE_DISCOUNT_EXCEEDED.value, ViolationCode.MAX_APR_EXCEEDED.value}:
         return "the mandate's price ceiling"
-    if ignore_caps and b:
-        return "forward budget" if ViolationCode.AGG_CONCESSION_EXCEEDED.value in b else "buyer cap"
+    if b & COVENANT_CODES:
+        return "covenant"
+    if b & FUNDING_CODES:
+        return "funding"
+    # any other code is not named: with the caps ignored a cap is never the wall, and an unknown code is never called one
     return None
+
+
+COVENANT_CODES = frozenset(c.value for c in (ViolationCode.DSCR_BREACH, ViolationCode.LEVERAGE_BREACH,
+                                             ViolationCode.CLEAN_DOWN_BREACH))
+FUNDING_CODES = frozenset(c.value for c in (ViolationCode.UNCOMMITTED_FACILITY, ViolationCode.LEAD_TIME_TOO_LONG))
 
 
 def _maximum(v: _Verifier, lever: str, key: str, unit: Literal["days", "bp"], found: Found, make: Callable[[int], Setting],
@@ -642,7 +684,8 @@ def _levers(v: _Verifier) -> tuple[list[Maximum], list[tuple[Setting, int | None
 
 
 def _price_at(v: _Verifier, terms: int) -> Callable[[int], bool]:
-    return lambda p: v.ok(Setting(terms, price=p))
+    """The zone's test: a price counts only when the package passes its own re-check too (`approved`, not `passes`)."""
+    return lambda p: v.approved(Setting(terms, price=p))
 
 
 def _zone(v: _Verifier) -> list[ZoneRow]:
@@ -660,17 +703,18 @@ def _whole_at(v: _Verifier, terms: int, price: int) -> Callable[[int], bool]:
 
 
 def _cell(v: _Verifier, base: Setting, keep_failures: bool, price_hint: int | None = None) -> Probe | None:
-    """The package of one terms value and early-pay variant: the smallest price that passes, then the largest rebate
-    that still passes at that price (one whole verifier evaluation). A failing cell shows the verifier's answer at the
-    largest price, and only when `keep_failures`."""
+    """The package of one terms value and early-pay variant: the smallest price that is approved (passes and passes its
+    own re-check), then the largest rebate still approved at that price (one whole verifier evaluation). A failing cell
+    shows the verifier's answer at the largest price, and only when `keep_failures` (the full grid)."""
     r = v.ranges
-    fp = first_true(r.price, lambda p: v.ok(base._replace(price=p)), hint=price_hint, hint_steps=1)
+    fp = first_true(r.price, lambda p: v.approved(base._replace(price=p)), hint=price_hint, hint_steps=1)
     if fp.value is None:
         return v.probe(base._replace(price=r.price[-1], rebate=0)) if keep_failures else None
     priced = base._replace(price=fp.value)
-    fr = last_true(r.rebate, lambda x: v.ok(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
+    fr = last_true(r.rebate, lambda x: v.approved(priced._replace(rebate=x)), hint=v.rebate_hint(v.quick(priced)),
                    hint_steps=1 if price_hint is not None else 2)
-    return v.probe(priced._replace(rebate=fr.value or 0))
+    p = v.probe(priced._replace(rebate=fr.value or 0))
+    return p if p.approved or keep_failures else None
 
 
 def _grid(v: _Verifier, early_counter: list[tuple[Setting, int | None]], whole_standalone: int | None,
@@ -699,7 +743,7 @@ def _grid(v: _Verifier, early_counter: list[tuple[Setting, int | None]], whole_s
             p = _cell(v, base, full_grid, hint)
             if p is None:
                 continue
-            if hint is None and p.passes:
+            if hint is None and p.approved:
                 hint = p.setting.price
             if p.setting not in seen:
                 seen.add(p.setting)
@@ -750,6 +794,86 @@ def envelope_zone(books: Books, mandate: Mandate, *, day: int, buyer_id: str, tr
     v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
     rows = tuple(_zone(v))
     return ZoneFacts(rows, v.evaluations, time.perf_counter() - started)
+
+
+@dataclass(frozen=True)
+class AskFacts:
+    """The answer to the buyer's asked terms T (`compensate`, brief E.2 P4), cached apart from the sweep like the zone.
+
+    `price_only` is the smallest approved price at T, probed whole and re-checked (None: no price in range works), with
+    `at_rule` (Option B's rule price at T) beside it. When no price works, `at_top` is T at the top price (the wall and the
+    shortfall day it runs into) and `with_early` is the fallback: the smallest early payment of the open invoice that lets T
+    through, searched at the smallest rate (where the face is monotone: more early cash only helps, and 0.05% is too small to
+    lose the comparison with the plan; at a high rate the face is not monotone, so it is never bisected there), then the
+    smallest price with it, then the largest rate at that face by `descend`; probed whole and re-checked. `refusal` names
+    why there is nothing to search (`NO_RECURRING`, `NO_PLAN`, "out_of_range")."""
+
+    terms_days: int
+    current_terms: int
+    receivable_face_fen: int
+    price_only: Probe | None
+    rule_price_bp: int | None
+    at_rule: Probe | None
+    at_top: Probe | None
+    with_early: Probe | None
+    confirmed: bool
+    evaluations: int
+    seconds: float
+    refusal: str = ""
+
+
+def compensate(v: _Verifier, terms: int) -> AskFacts:
+    """The smallest approved price at `terms`, else the smallest early payment that makes them pass (see `AskFacts`)."""
+    started = time.perf_counter()
+    r, face_now = v.ranges, face_of(v.ctx)
+
+    blank = AskFacts(terms, v.cur, face_now, None, None, None, None, None, True, 0, 0.0)
+
+    def done(**kw: Any) -> AskFacts:
+        return replace(blank, **kw, evaluations=v.evaluations, seconds=time.perf_counter() - started)
+
+    if not r.terms:
+        return done(refusal=v.withheld or NO_RECURRING)
+    if terms not in r.terms:
+        return done(refusal="out_of_range")
+    pmax = r.price[-1]
+    rule = v.compensating_price(terms)[1]
+    rule = rule if rule is not None and rule in r.price else None
+    fp = first_true(r.price, lambda p: v.approved(Setting(terms, price=p)))
+    if fp.value is not None:
+        found = v.probe(Setting(terms, price=fp.value))  # the whole answer, counters included, re-checked
+        if found.approved:
+            at_rule = None
+            if rule is not None and rule != fp.value:
+                q = v.probe(Setting(terms, price=rule))
+                at_rule = q if q.approved else None
+            return done(price_only=found, rule_price_bp=rule, at_rule=at_rule, confirmed=fp.confirmed)
+    top = v.probe(Setting(terms, price=pmax))
+    least = RATE_STEP_BP
+    if least not in r.discount or r.face_max_fen < FACE_STEP_FEN:  # no early payment to fall back on
+        return done(rule_price_bp=rule, at_top=top, confirmed=fp.confirmed)
+    faces = tuple(range(FACE_STEP_FEN, r.face_max_fen + 1, FACE_STEP_FEN))
+    ff = first_true(faces, lambda f: v.approved(Setting(terms, price=pmax, discount=least, face=f)))
+    if ff.value is None:
+        return done(rule_price_bp=rule, at_top=top, confirmed=fp.confirmed and ff.confirmed)
+    face = ff.value
+    fq = first_true(r.price, lambda p: v.approved(Setting(terms, price=p, discount=least, face=face)))
+    price = fq.value if fq.value is not None else pmax
+    fr = descend(r.discount, lambda d: v.approved(Setting(terms, price=price, discount=d, face=face)), r.discount[-1])
+    early = v.probe(Setting(terms, price=price, discount=fr.value or least, face=face))
+    if not early.approved:  # the largest rate fails its whole re-check: the smallest one, which the searches passed
+        early = v.probe(Setting(terms, price=price, discount=least, face=face))
+    confirmed = fp.confirmed and ff.confirmed and fq.confirmed and fr.confirmed
+    return done(rule_price_bp=rule, at_top=top, with_early=early if early.approved else None, confirmed=confirmed)
+
+
+def envelope_ask(books: Books, mandate: Mandate, *, day: int, buyer_id: str, trusted_owner_key_hex: str, terms: int,
+                 commitments: Sequence[Commitment] = ()) -> AskFacts:
+    """`compensate(terms)` for one buyer on a fresh verifier (the answers are pure in the books, as the zone's are)."""
+    ctx = open_context(books.state, day, buyer_id)
+    ranges, _, no_plan = _sweep_ranges(books, mandate, ctx)
+    v = _Verifier(books, mandate, trusted_owner_key_hex, day, commitments, ctx, ranges, NO_PLAN if no_plan else "")
+    return compensate(v, terms)
 
 
 def envelope_facts(books: Books, mandate: Mandate, *, store: LedgerStore | None = None, day: int, buyer_id: str,
@@ -839,6 +963,17 @@ class EnvelopePackage(Contract):
     counter_match: bool  # the verifier's own counters to the largest asks include this package
     plan_cost_fen: int | None
     summary: str  # the package on one line, its terms joined by " · ": "55-day terms · price up 0.25% · rebate 0.60%"
+    # who may act on it (`authority_of`): None for a package that fails for any other reason
+    authority: Authority | None = None
+    authority_words: str | None = None  # the class in words: "FLOW may do this on its own", ...
+    authority_sentence: str | None = None  # classes 2 and 3: what holds, and who decides (brief E.3)
+    cap_fen: int | None = None  # class 3: the signed cap the package breaks
+    cap_used_fen: int | None = None  # class 3: what the verifier counts against that cap
+    over_cap_by_fen: int | None = None  # class 3: by how much
+    # class 3, and only with FEATURE_CUSTOMER_ECONOMICS on and a contribution held: what the package costs as a share of a year's
+    # gross profit from the buyer. Context, a sentence of its own: it never changes the class, the verdict or the cap
+    economics_sentence: str | None = None
+    economics_note: str | None = None  # "the margin is assumed for the Demo, not confirmed by you" while it is
 
 
 class EnvelopeLever(Contract):
@@ -873,15 +1008,39 @@ class ZoneEntry(Contract):
     lowest_price_words: str  # "no price rise needed", the percentage, or "none works"
 
 
+class AskAnswer(Contract):
+    """What makes the buyer's asked terms work (P4): the smallest price, or the early payment that does when no price
+    can; every package probed whole and re-checked. The rule price is beside the smallest; no package is ranked."""
+
+    terms_days: int
+    terms_words: str  # "60 days"
+    sentence: str
+    price_works: bool
+    smallest_price: EnvelopePackage | None = None  # the smallest approved price at the asked terms
+    rule_price: EnvelopePackage | None = None  # Option B's rule price at the asked terms, when it is a different package
+    with_early_payment: EnvelopePackage | None = None  # no price works: the early payment that does
+    early_face_fen: int | None = None  # the part of the open invoice paid now in that package
+    refused: str | None = None
+    neighbours_confirmed: bool
+    evaluations: int
+    computed_in_seconds: float
+
+
 class EnvelopeAnswer(Contract):
     buyer_id: str
     buyer_name: str
     primary: str
     reason: str
     money: str
+    # the card, at most `CARD_SIZE`: the verifier's own counters, then the answer to the buyer's ask; never ranked
     packages: list[EnvelopePackage]
+    more: list[EnvelopePackage] = Field(default_factory=list)  # every other package, behind a disclosure
+    # class 3, in a group of its own: the longest terms that keep your cash floor if the budget is ignored, over a cap you
+    # signed (never an approval: only a new signed mandate moves the cap)
+    over_your_limits: list[EnvelopePackage] = Field(default_factory=list)
     levers: list[EnvelopeLever]
     zone: list[ZoneEntry] = Field(default_factory=list)
+    ask: AskAnswer | None = None  # `?ask=T`: what makes the buyer's asked terms work
     refused: str | None = None
     unlisted_counters: list[str] = Field(default_factory=list)  # one sentence per verifier counter left out as off the grid
     source_state_version: int
@@ -891,12 +1050,14 @@ class EnvelopeAnswer(Contract):
 
 
 _WALL_TEXT = {
-    "forward budget": ("your budget for what you give buyers", "您给买家让步的预算"),
+    "forward budget": ("your budget for what you give buyers", "您给买家让利的预算"),
     "buyer cap": ("your limit for this buyer", "您对该买家的上限"),
     "liquidity": ("your cash floor", "您的现金底线"),
     "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
     "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
     "the mandate's price ceiling": ("your price ceiling", "您的价格上限"),
+    "covenant": ("your loan covenants", "您的贷款契约"),
+    "funding": ("funding that can arrive in time", "能及时到位的资金"),
 }
 _WALL_WORDS = {
     "forward budget": ("your budget for what you give buyers", "您给买家让利的预算"),
@@ -905,6 +1066,8 @@ _WALL_WORDS = {
     "break-even": ("the break-even for paying early", "提前付款的盈亏平衡点"),
     "plan comparison": ("the cheaper funding you already have", "您已有的更便宜的资金安排"),
     "the mandate's price ceiling": ("the price ceiling in your mandate", "您授权中的价格上限"),
+    "covenant": ("your loan covenants", "您的贷款契约"),
+    "funding": ("funding that can arrive in time", "能及时到位的资金"),
 }
 _LEVER_LABEL = {
     "terms_alone": ("Longest payment terms on their own", "仅延长账期时的最长账期"),
@@ -1020,8 +1183,80 @@ def _lowest_price_words(z: ZoneRow, lang: str) -> str:
     return _pct(z.min_price_bp)
 
 
+_AUTHORITY_WORDS: dict[str, tuple[str, str]] = {
+    "flow_may": ("FLOW may do this on its own", "FLOW 可以自行处理"),
+    "needs_owner": ("within your limits; needs your approval", "在您的底线内；需要您批准"),
+    "over_your_limits": ("over a limit you signed", "超出您签署的上限"),
+}
+
+
+def _phrase(facts: EnvelopeFacts, s: Setting, lang: str) -> str:
+    """A package as the owner says it: "55-day terms with a 0.30% price rise", "55-day terms at today's price" (terms
+    alone, no price rise), "45-day terms with early payment of 0.85% on ¥257,200.00"."""
+    extras_en: list[str] = []
+    extras_zh: list[str] = []
+    if s.price > 0:
+        extras_en.append(f"a {_pct(s.price)} price rise")
+        extras_zh.append(f"加价 {_pct(s.price)}")
+    if s.discount > 0:
+        face = fmt_yuan(s.face if s.face is not None else facts.receivable_face_fen)
+        extras_en.append(f"early payment of {_pct(s.discount)} on {face}")
+        extras_zh.append(f"提前付款 {_pct(s.discount)}（金额 {face}）")
+    if s.rebate > 0:
+        extras_en.append(f"a {_pct(s.rebate)} rebate")
+        extras_zh.append(f"返利 {_pct(s.rebate)}")
+    if not extras_en:
+        return t(lang, f"{s.terms}-day terms at today's price", f"按现价给 {s.terms} 天账期")
+    joined = extras_en[0] if len(extras_en) == 1 else f"{', '.join(extras_en[:-1])} and {extras_en[-1]}"
+    return t(lang, f"{s.terms}-day terms with {joined}", f"{s.terms} 天账期并{'、'.join(extras_zh)}")
+
+
+def _what_needs_you(facts: EnvelopeFacts, p: Probe, lang: str) -> str:
+    """What FLOW cannot agree alone in a class-2 package: the longer terms first, as the verifier's tier rule reads it."""
+    s = p.setting
+    if s.terms > facts.current_terms:
+        return t(lang, "longer terms", "延长账期")
+    if s.rebate > 0:
+        return t(lang, "a rebate", "返利")
+    if s.price > 0:
+        return t(lang, "a price change", "调整价格")
+    return t(lang, "this early payment", "这笔提前付款")
+
+
+def _authority_sentence(facts: EnvelopeFacts, p: Probe, authority: Authority | None, lang: str) -> str | None:
+    phrase = _phrase(facts, p.setting, lang)
+    if authority == "needs_owner":
+        if p.tier == "TIER_1" and p.outcome == Outcome.ACCEPT.value:  # FLOW could agree it, but the fix behind it is the owner's
+            if p.cure_cannot_run_today:
+                return t(lang, f"{phrase}: within your limits and your cash floor holds, but its funding cannot run today. "
+                               "It needs your approval.",
+                         f"{phrase}：在您的底线内，现金底线也守得住，但其资金安排今天无法执行，需要您批准。")
+            return t(lang, f"{phrase}: within your limits, but the funding that keeps your cash floor needs your approval.",
+                     f"{phrase}：在您的底线内，但守住现金底线的资金安排需要您批准。")
+        what = _what_needs_you(facts, p, lang)
+        return t(lang, f"{phrase}: within your limits and your cash floor holds, but FLOW cannot agree {what} on its own. "
+                       "It needs your approval.",
+                 f"{phrase}：在您的底线内，现金底线也守得住，但 FLOW 不能自行同意{what}，需要您批准。")
+    if authority == "over_your_limits":
+        code, used, cap = p.caps[0]
+        tail = t(lang, " FLOW will not send it under the limits you signed; only you can decide, and raising the limit means "
+                       "signing a new mandate.",
+                 "在您签署的授权范围内，FLOW 不会发送此方案；只有您能决定，提高上限需要签署新的授权。")
+        if code == ViolationCode.PER_BUYER_CAP_EXCEEDED.value:
+            who = facts.buyer_name
+            return t(lang, f"{phrase}: your cash floor holds, but it uses {fmt_yuan(used)} of your {fmt_yuan(cap)} limit for "
+                           f"{who}.{tail}",
+                     f"{phrase}：现金底线守得住，但会占用您对{who}的上限中的 {fmt_yuan(used)}（上限为 {fmt_yuan(cap)}）。{tail}")
+        return t(lang, f"{phrase}: your cash floor holds, but it uses {fmt_yuan(used)} of your {fmt_yuan(cap)} budget for "
+                       f"what you give buyers.{tail}",
+                 f"{phrase}：现金底线守得住，但会占用您给买家让利预算中的 {fmt_yuan(used)}（预算为 {fmt_yuan(cap)}）。{tail}")
+    return None
+
+
 def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> EnvelopePackage:
     s = p.setting
+    authority = authority_of(p)
+    over = p.caps[0] if authority == "over_your_limits" else None
     breach = None
     if p.reserve_day is not None:
         breach = ReserveBreachView(day=p.reserve_day, when=when_text(p.reserve_day, facts.day, lang),
@@ -1035,7 +1270,48 @@ def _package(facts: EnvelopeFacts, p: Probe, lang: str, match: bool = False) -> 
         outcome=p.outcome, tier=p.tier, passes=p.passes, approved=p.approved, codes=list(p.codes),
         binding_codes=list(p.binding), forward_budget_used_fen=p.forward_total_fen, reserve_breach=breach,
         flags=_flags(p, lang), counter_match=match, plan_cost_fen=None if facts.no_plan else p.plan_cost_fen,
-        summary=_summary(s, lang))
+        summary=_summary(s, lang), authority=authority,
+        authority_words=t(lang, *_AUTHORITY_WORDS[authority]) if authority is not None else None,
+        authority_sentence=_authority_sentence(facts, p, authority, lang),
+        cap_fen=over[2] if over else None, cap_used_fen=over[1] if over else None,
+        over_cap_by_fen=over[1] - over[2] if over else None)
+
+
+@dataclass(frozen=True)
+class Economics:
+    """A year of the buyer's gross profit, as the Customer overview reads it (`customer_overview.year_held`, the one margin and
+    contribution function), and the share of that year a forward concession is (`customer_overview.share_of_year` over
+    `twelve_months_of`): composed by the route, never computed here. Given only while FEATURE_CUSTOMER_ECONOMICS is on and a contribution exists."""
+
+    contribution_fen: int
+    assumed: bool  # the margin is the Demo's default
+    gross: bool  # the basis word: gross profit (default) or contribution
+    share_of: Callable[[int], Fraction | None]  # a forward concession as a share of the year (`customer_overview.share_of_year`)
+
+
+def _economics_words(facts: EnvelopeFacts, p: Probe, eco: Economics, lang: str) -> tuple[str | None, str | None]:
+    """(the sentence, the note): the verdict's own forward concession as a share of a year's gross profit (`share_of`, the
+    overview's `share_of_year`), said by `words.year_share_sentence`, the one sentence every surface says it with. None without a cost
+    or a positive year."""
+    lang_ = "zh" if lang == "zh" else "en"
+    sentence = year_share_sentence(facts.buyer_name, eco.share_of(p.forward_total_fen), eco.contribution_fen, eco.gross, lang_)
+    if sentence is None:
+        return None, None
+    return sentence, margin_note(eco.gross, lang_) if eco.assumed else None
+
+
+def _over_your_limits(facts: EnvelopeFacts, lang: str, economics: Economics | None = None) -> list[EnvelopePackage]:
+    """The class-3 group: the `terms_budget_ignored` maximum as one package, when it is over a cap you signed (when the
+    budget does not bind, the maximum is approved and there is nothing to list here). With `economics` the package carries
+    its share of a year's gross profit, as a sentence of its own after the mandate's."""
+    m = _lever_of(facts, "terms_budget_ignored")
+    if m is None or m.at_max is None or authority_of(m.at_max) != "over_your_limits":
+        return []
+    pkg = _package(facts, m.at_max, lang)
+    if economics is not None:
+        sentence, note = _economics_words(facts, m.at_max, economics, lang)
+        pkg = pkg.model_copy(update={"economics_sentence": sentence, "economics_note": note})
+    return [pkg]
 
 
 def _lever(facts: EnvelopeFacts, m: Maximum, lang: str) -> EnvelopeLever:
@@ -1053,10 +1329,28 @@ def _lever_of(facts: EnvelopeFacts, key: str) -> Maximum | None:
     return next((m for m in facts.maxima if m.key == key), None)
 
 
+_TOP = (" (the most FLOW checks)", "（FLOW 检查的上限）")
+
+
+def _todays_price(facts: EnvelopeFacts, lang: str) -> str:
+    """The terms that pass at today's price, within the limits: "At today's price: up to 45 days within your limits."
+    Empty when the buyer has no terms lever, or no plan prices one."""
+    alone = _lever_of(facts, "terms_alone")
+    if alone is None or alone.value is None or alone.unavailable:
+        return ""
+    top = t(lang, *_TOP) if alone.wall is None and alone.beyond is None else ""
+    return t(lang, f"At today's price: up to {alone.value} days{top} within your limits.",
+             f"按现价：在您的底线内，账期最长 {alone.value} 天{top}。")
+
+
 def _primary(facts: EnvelopeFacts, lang: str) -> str:
+    """The headline: the terms at today's price, then the packages you can live with, each named whole (the terms
+    with the price rise that makes them pass, the early payment with its face), never maxima joined from separate
+    levers. A rebate is named only when its package is the one quoted (a buyer with nothing else to value)."""
     cur = facts.current_terms
     pieces: list[str] = []
     terms = _lever_of(facts, "terms_with_price")
+    alone = _lever_of(facts, "terms_alone")
     longest = terms.value if terms is not None and terms.value is not None else cur
     if terms is not None and terms.value is not None and longest > cur:
         # the counter FLOW would send: Option B's rule price when it passes, else the smallest price that does
@@ -1065,26 +1359,24 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
                 c.probe.setting == Setting(longest, price=terms.rule_price_bp) for c in facts.cells):
             price = terms.rule_price_bp
         # a maximum at the top of the range with no wall is not a ceiling the books set: say so
-        top = terms.wall is None and facts.next_terms is None
-        if price:
-            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''} if the price rises {fmt_pct(bp(price))}",
-                            f"账期最长 {longest} 天（{'FLOW 检查的上限；' if top else ''}价格上调 {fmt_pct(bp(price))}）"))
-        else:  # the longer terms pass on their own: no price rise to name
-            pieces.append(t(lang, f"up to {longest}-day terms{' (the most FLOW checks)' if top else ''}",
-                            f"账期最长 {longest} 天{'（FLOW 检查的上限）' if top else ''}"))
+        top = t(lang, *_TOP) if terms.wall is None and facts.next_terms is None else ""
+        said_at_todays_price = alone is not None and alone.value == longest
+        if price or not said_at_todays_price:
+            pieces.append(_phrase(facts, Setting(longest, price=price), lang) + top)
     early = next((m for m in facts.maxima if m.key == "early_pay_counter" and m.value), None) or \
         next((m for m in facts.maxima if m.key == "early_pay_whole" and m.value), None)
     if early is not None and early.value:
-        pieces.append(t(lang, f"early payment at up to {fmt_pct(bp(early.value))} on {fmt_yuan(early.face_fen or 0)}",
-                        f"提前付款最高 {fmt_pct(bp(early.value))}（金额 {fmt_yuan(early.face_fen or 0)}）"))
+        rate, face = fmt_pct(bp(early.value)), fmt_yuan(early.face_fen or 0)
+        pieces.append(t(lang, f"early payment of {rate} on {face}", f"提前付款 {rate}（金额 {face}）"))
     first = t(lang, ", or ", "，或") .join(pieces)
     parts = [first] if first else []
     rebate = _lever_of(facts, "rebate")
     if facts.rebate_only and rebate is not None and rebate.value:
         parts = [t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))} on the expected order; no terms or early payment to value yet",
                    f"对预期订单的返利最高 {fmt_pct(bp(rebate.value))}；暂无可估值的账期或提前付款")]
-    elif rebate is not None and rebate.value:
-        parts.append(t(lang, f"a rebate up to {fmt_pct(bp(rebate.value))}", f"返利最高 {fmt_pct(bp(rebate.value))}"))
+    elif not parts and rebate is not None and rebate.value and rebate.at_max is not None and rebate.at_max.approved:
+        # the rebate's own package is the one quoted: nothing else is named beside it
+        parts.append(t(lang, f"a {fmt_pct(bp(rebate.value))} rebate", f"返利 {fmt_pct(bp(rebate.value))}"))
     if facts.has_terms_lever and not facts.no_plan:
         if facts.next_terms is not None:
             n = facts.next_terms
@@ -1094,10 +1386,12 @@ def _primary(facts: EnvelopeFacts, lang: str) -> str:
             parts.append(t(lang, "no longer payment terms", "不能延长账期"))
     if not parts and facts.no_plan:
         return t(lang, *(WITHHELD_REBATE_ONLY if facts.rebate_only else WITHHELD_NO_EARLY))
+    lead = _todays_price(facts, lang)
+    gap = t(lang, " ", "") if lead else ""
     if not parts:
-        return t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
+        return lead + gap + t(lang, "Nothing beyond today's terms passes FLOW's checks.", "今天的条件之外，没有任何方案能通过 FLOW 的检查。")
     text = t(lang, "You can live with: ", "您能接受的范围：") + t(lang, "; ", "；").join(parts)
-    return text + t(lang, ".", "。")
+    return lead + gap + text + t(lang, ".", "。")
 
 
 def _past_due_clause(facts: EnvelopeFacts, lang: str) -> str | None:
@@ -1230,7 +1524,115 @@ def _refusal(name: str, lang: str, reason: str = "no_lever") -> str:
              f"FLOW 目前没有可为{name}估值的账期、付款或返利杠杆。")
 
 
-def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
+def _ask_tail(authority: Authority | None, lang: str) -> tuple[str, str]:
+    """Who decides, as the sentence's last clause: (the clause, the same clause as its own sentence)."""
+    if authority == "flow_may":
+        return t(lang, "FLOW may send it on its own", "FLOW 可以自行发送"), t(lang, " FLOW may send it on its own.", "FLOW 可以自行发送。")
+    return t(lang, "that needs your approval", "这需要您批准"), t(lang, " It needs your approval.", "这需要您批准。")
+
+
+def _ask_sentence(facts: EnvelopeFacts, ask: AskFacts, lang: str) -> str:
+    n = ask.terms_days
+    if ask.refusal == "out_of_range":
+        return t(lang, f"{n} days is outside the payment terms FLOW checks.", f"{n} 天不在 FLOW 检查的账期范围内。")
+    if ask.refusal == NO_PLAN:
+        return t(lang, "FLOW cannot offer longer terms while no funding plan covers the shortfall.",
+                 "在没有融资方案能补上缺口时，FLOW 无法提供更长账期。")
+    if ask.refusal:
+        return t(lang, f"FLOW cannot value {n}-day terms for {facts.buyer_name}: there is no recurring invoice to extend.",
+                 f"FLOW 无法为{facts.buyer_name}估值 {n} 天账期：没有可延长的定期发票。")
+    found = ask.price_only
+    if found is not None:
+        lowest = found.setting.price
+        tail = _ask_tail(authority_of(found), lang)[1]
+        if lowest == 0:
+            return t(lang, f"{n} days works at today's price.", f"按现价即可接受 {n} 天账期。") + tail
+        p = _pct(lowest)
+        if ask.at_rule is not None:
+            rule = _pct(ask.at_rule.setting.price)
+            a, b = authority_of(found), authority_of(ask.at_rule)
+            if a == b == "needs_owner":
+                close = t(lang, " Either needs your approval.", "两者都需要您批准。")
+            elif a == b:
+                close = tail
+            else:  # the two differ in who may act: each is named
+                wa = t(lang, *_AUTHORITY_WORDS[a]) if a is not None else ""
+                wb = t(lang, *_AUTHORITY_WORDS[b]) if b is not None else ""
+                close = t(lang, f" At {p}: {wa}; at {rule}: {wb}.", f"加价 {p}：{wa}；加价 {rule}：{wb}。")
+            return (t(lang, f"{n} days works if the price rises at least {p}; at {rule} the price rise pays for the longer terms "
+                            "in full.",
+                      f"价格至少上调 {p}，即可接受 {n} 天账期；上调 {rule} 时，加价可完全抵消延长账期的成本。") + close)
+        if ask.rule_price_bp == lowest:
+            return t(lang, f"{n} days works if the price rises {p}; at that price the price rise pays for the longer terms in full.",
+                     f"价格上调 {p}，即可接受 {n} 天账期；该加价可完全抵消延长账期的成本。") + tail
+        return t(lang, f"{n} days works if the price rises at least {p}.", f"价格至少上调 {p}，即可接受 {n} 天账期。") + tail
+    top = ask.at_top
+    wall = wall_of(top)
+    if top is not None and wall == "liquidity" and top.reserve_day is not None:
+        when = when_text(top.reserve_day, facts.day, lang)
+        lead = t(lang, f"No price rise makes {n} days work: the longer terms leave your cash short {when}.",
+                 f"任何加价都无法让 {n} 天账期可行：账期延长会让您的现金在 {when}不足。")
+    elif wall in _WALL_TEXT:
+        what = t(lang, *_WALL_TEXT[wall])
+        lead = t(lang, f"No price rise makes {n} days work: the longer terms run into {what}.",
+                 f"任何加价都无法让 {n} 天账期可行：账期延长会碰到{what}。")
+    else:
+        lead = t(lang, f"No price rise makes {n} days work.", f"任何加价都无法让 {n} 天账期可行。")
+    gap = t(lang, " ", "")
+    early = ask.with_early
+    if early is None:
+        return lead + gap + t(lang, f"Nothing within the ranges FLOW checks makes {n} days work on today's books.",
+                              f"按今天的账面，在 FLOW 检查的范围内，没有方案能让 {n} 天账期可行。")
+    s = early.setting
+    face, whole = whole_yuan(s.face if s.face is not None else ask.receivable_face_fen), fmt_yuan(ask.receivable_face_fen)
+    clause = _ask_tail(authority_of(early), lang)[0]
+    if s.price:
+        p = _pct(s.price)
+        rest = t(lang, f"{n} days works only if {face} of the open {whole} invoice is paid now and the price rises {p}; {clause}.",
+                 f"只有在 {whole} 的未结发票中先支付 {face}，并加价 {p} 时，{n} 天才可行；{clause}。")
+    else:
+        rest = t(lang, f"{n} days works only if {face} of the open {whole} invoice is paid now; {clause}.",
+                 f"只有在 {whole} 的未结发票中先支付 {face} 时，{n} 天才可行；{clause}。")
+    return lead + gap + rest
+
+
+def ask_answer(facts: EnvelopeFacts, ask: AskFacts, lang: str = "en") -> AskAnswer:
+    """The ask's facts in words, its packages worded as the sweep's are."""
+    def pkg(p: Probe | None) -> EnvelopePackage | None:
+        return _package(facts, p, lang) if p is not None else None
+
+    early = ask.with_early
+    return AskAnswer(
+        terms_days=ask.terms_days, terms_words=_days(ask.terms_days, lang), sentence=_ask_sentence(facts, ask, lang),
+        price_works=ask.price_only is not None, smallest_price=pkg(ask.price_only), rule_price=pkg(ask.at_rule),
+        with_early_payment=pkg(early),
+        early_face_fen=(early.setting.face if early.setting.face is not None else ask.receivable_face_fen) if early else None,
+        refused=_ask_sentence(facts, ask, lang) if ask.refusal else None, neighbours_confirmed=ask.confirmed,
+        evaluations=ask.evaluations, computed_in_seconds=round(ask.seconds, 3))
+
+
+def _card(facts: EnvelopeFacts, ask: AskFacts | None, lang: str) -> tuple[list[EnvelopePackage], list[EnvelopePackage]]:
+    """(the card, the rest). The card holds the verifier's own counters among the approved packages, then the answer to the
+    buyer's ask (its smallest price, or the early payment that makes the terms work), at most `CARD_SIZE`; with neither,
+    the first packages of the grid. Order is the verifier's and the ask's, never a ranking; nothing is called recommended."""
+    cells = [(c.probe, c.counter_match) for c in facts.cells]
+    asked = list(facts.counter_costs_fen)  # the counters in the order the sweep put the asks: early payment, terms, rebate
+    counters = sorted(((p, m) for p, m in cells if m and p.approved), key=lambda c: asked.index(c[0].setting)
+                      if c[0].setting in asked else len(asked))
+    answer: list[tuple[Probe, bool]] = []
+    if ask is not None:
+        for p in (ask.price_only, ask.with_early):
+            if p is not None and p.approved and all(p.setting != q.setting for q, _ in [*counters, *answer]):
+                answer.append((p, any(m for q, m in cells if q.setting == p.setting)))
+    # the ask's answer keeps its place: the counters fill what is left of the card
+    on_card = [*counters[:CARD_SIZE - len(answer[:1])], *answer[:1]] or cells[:CARD_SIZE]
+    shown = {p.setting for p, _ in on_card}
+    rest = [(p, m) for p, m in cells if p.setting not in shown]
+    return [_package(facts, p, lang, m) for p, m in on_card], [_package(facts, p, lang, m) for p, m in rest]
+
+
+def envelope_answer(facts: EnvelopeFacts, lang: str = "en", ask: AskFacts | None = None,
+                    economics: Economics | None = None) -> EnvelopeAnswer:
     """The sweep's facts in words (`en` or `zh`)."""
     meta: dict[str, object] = {"buyer_id": facts.buyer_id, "buyer_name": facts.buyer_name,
                                "source_state_version": facts.source_state_version, "evaluations": facts.evaluations,
@@ -1239,6 +1641,7 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
         return EnvelopeAnswer.model_validate({**meta, "primary": "", "reason": "", "money": "", "packages": [],
                                               "levers": [], "zone": [],
                                               "refused": _refusal(facts.buyer_name, lang, facts.refusal)})
+    card, more = _card(facts, ask, lang)
     zone = [ZoneEntry(terms_days=z.terms_days, terms_words=_days(z.terms_days, lang), min_price_bp=z.min_price_bp, rule_price_bp=z.rule_price_bp,
                       cost_per_invoice_fen=z.cost_per_invoice_fen, passes_within_range=z.min_price_bp is not None,
                       neighbours_confirmed=z.confirmed, at_that_price=_package(facts, z.at_price, lang),
@@ -1246,7 +1649,8 @@ def envelope_answer(facts: EnvelopeFacts, lang: str = "en") -> EnvelopeAnswer:
             for z in facts.zone]
     return EnvelopeAnswer(
         buyer_id=facts.buyer_id, buyer_name=facts.buyer_name, primary=_primary(facts, lang), reason=_reason(facts, lang),
-        money=_money(facts, lang), packages=[_package(facts, c.probe, lang, c.counter_match) for c in facts.cells],
+        money=_money(facts, lang), packages=card, more=more,
+        over_your_limits=_over_your_limits(facts, lang, economics), ask=ask_answer(facts, ask, lang) if ask is not None else None,
         levers=[_lever(facts, m, lang) for m in facts.maxima], zone=zone, refused=None,
         unlisted_counters=[_unlisted_sentence(c, lang) for c in facts.unlisted_counters],
         source_state_version=facts.source_state_version, evaluations=facts.evaluations,
@@ -1275,13 +1679,36 @@ def probe_packages(books: Books, mandate: Mandate, packages: Sequence[CandidateP
 
 def envelope(books: Books, mandate: Mandate, *, store: LedgerStore | None = None, day: int, buyer_id: str,
              trusted_owner_key_hex: str, commitments: Sequence[Commitment] = (), zone: bool = False,
-             full_grid: bool = False, lang: str = "en") -> EnvelopeAnswer:
+             full_grid: bool = False, lang: str = "en", ask: int | None = None) -> EnvelopeAnswer:
     """The Safe Deal Envelope for one buyer: the sweep (`envelope_facts`) worded in `lang`. A buyer with no lever is
     answered with `refused` set and empty lists, not an error."""
-    return envelope_answer(
-        envelope_facts(books, mandate, store=store, day=day, buyer_id=buyer_id, trusted_owner_key_hex=trusted_owner_key_hex,
-                       commitments=commitments, zone=zone, full_grid=full_grid), lang)
+    facts = envelope_facts(books, mandate, store=store, day=day, buyer_id=buyer_id, trusted_owner_key_hex=trusted_owner_key_hex,
+                           commitments=commitments, zone=zone, full_grid=full_grid)
+    asked = None
+    if ask is not None and not facts.refused:
+        asked = envelope_ask(books, mandate, day=day, buyer_id=buyer_id, trusted_owner_key_hex=trusted_owner_key_hex,
+                             terms=ask, commitments=commitments)
+    return envelope_answer(facts, lang, asked)
 
 
-__all__ = ["EnvelopeAnswer", "EnvelopeFacts", "EnvelopeLever", "EnvelopePackage", "ZoneEntry", "ZoneFacts", "envelope",
-           "envelope_answer", "envelope_facts", "envelope_zone", "out_of_range_facts", "probe_packages"]
+__all__ = [
+    "AskAnswer",
+    "AskFacts",
+    "Economics",
+    "EnvelopeAnswer",
+    "EnvelopeFacts",
+    "EnvelopeLever",
+    "EnvelopePackage",
+    "ZoneEntry",
+    "ZoneFacts",
+    "ask_answer",
+    "authority_of",
+    "compensate",
+    "envelope",
+    "envelope_answer",
+    "envelope_ask",
+    "envelope_facts",
+    "envelope_zone",
+    "out_of_range_facts",
+    "probe_packages",
+]

@@ -126,7 +126,7 @@ def test_the_envelope_withholds_terms_and_rebate_and_says_why_and_does_not_price
     body = api.get(f"/buyers/{buyer}/envelope").json()
     assert body["reason"].endswith(WITHHELD_EN)
     assert body["money"] == NOT_PRICED_EN and "¥0.00" not in body["money"]
-    assert body["primary"].startswith("You can live with: early payment at up to ")
+    assert body["primary"].startswith("You can live with: early payment of ")
     assert "terms" not in body["primary"] and "rebate" not in body["primary"]
     assert body["packages"] and all(p["package"]["rebate_bp"] == 0 and p["package"]["price_bp"] == 0 for p in body["packages"])
     assert all(p["plan_cost_fen"] is None for p in body["packages"])
@@ -147,7 +147,7 @@ def test_a_buyer_with_only_early_payment_keeps_its_own_reason_and_still_reads_no
     body = api.get("/buyers/BUYER-E/envelope").json()
     assert body["reason"] == "There is no recurring invoice to extend, so only an early payment can be priced."
     assert body["money"] == NOT_PRICED_EN
-    assert body["primary"] == "You can live with: early payment at up to 0.45% on ¥2,305,982.09."
+    assert body["primary"] == "You can live with: early payment of 0.45% on ¥2,305,982.09."
     assert {lv["key"]: lv["unavailable"] for lv in body["levers"]}["terms_alone"] == "no recurring invoice to extend"
 
 

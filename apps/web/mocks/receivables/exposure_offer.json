@@ -19,7 +19,8 @@
       "lowest_when_text": "below it for 15 days",
       "limit_word": "EXCEEDED",
       "limit_text": "exceeded",
-      "share_after_text": "100%, for 15 days longer"
+      "share_after_text": "100%, for 15 days longer",
+      "scenario_assumption_text": "Assumes the buyer accepts this offer and FLOW takes no new funding."
     },
     {
       "key": "CTR-193394b6ba8b",
@@ -30,7 +31,8 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "100%, paid 2 days after the offer"
+      "share_after_text": "100%, paid 2 days after the offer",
+      "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower."
     },
     {
       "key": "CTR-6b07cbf70441",
@@ -41,7 +43,8 @@
       "lowest_when_text": "at your minimum",
       "limit_word": "WITHIN",
       "limit_text": "within",
-      "share_after_text": "100%, for 10 days longer"
+      "share_after_text": "100%, for 10 days longer",
+      "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥90k credit-line draw today, ¥315k invoice financing in 3 days); without the plan, cash falls lower."
     },
     {
       "key": "do_nothing",
@@ -52,7 +55,8 @@
       "lowest_when_text": "below it for 20 days",
       "limit_word": null,
       "limit_text": null,
-      "share_after_text": "100%, until the due day"
+      "share_after_text": "100%, until the due day",
+      "scenario_assumption_text": "The books as they stand, no new funding."
     }
   ],
   "concentration": {
@@ -746,6 +750,7 @@
       "first_breach_when": "in 12 days",
       "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
       "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+      "breach_days_text": "Below your minimum for 65 days",
       "lowest_display": "−¥250,000.00",
       "need_display": "¥550,000.00"
     },
@@ -1377,6 +1382,7 @@
         "first_breach_when": "in 12 days",
         "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "breach_days_text": "Below your minimum for 80 days",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -2007,6 +2013,7 @@
         "first_breach_when": "in 12 days",
         "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "breach_days_text": "Below your minimum for 65 days",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },
@@ -2637,6 +2644,7 @@
         "first_breach_when": "in 12 days",
         "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "breach_days_text": "Below your minimum for 75 days",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       },

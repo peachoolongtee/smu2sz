@@ -264,10 +264,10 @@ test("a partial read shows the existing notice with Retry, and the rest of the p
 });
 
 test("with an edit place from the server, Edit these facts is a link and every fact row is shown", async ({ page }) => {
-  await patched(page, { edit_href: "/inputs?customer=BUYER-1" });
+  await patched(page, { edit_href: "/customers/BUYER-1/inputs" });
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-edit")).toHaveText("Edit these facts");
-  await expect(page.getByTestId("customer-edit")).toHaveAttribute("href", "/inputs?customer=BUYER-1");
+  await expect(page.getByTestId("customer-edit")).toHaveAttribute("href", "/customers/BUYER-1/inputs");
   await expect(page.getByTestId("customer-economics-rows-classification")).toContainText("not entered yet");
 });
 

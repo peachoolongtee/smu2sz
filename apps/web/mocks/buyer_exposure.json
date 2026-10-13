@@ -697,6 +697,7 @@
       "first_breach_when": "in 12 days",
       "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
       "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+      "breach_days_text": "Below your minimum for 65 days",
       "lowest_display": "−¥250,000.00",
       "need_display": "¥550,000.00",
       "net_later_fen": 42000000,
@@ -1331,6 +1332,7 @@
         "first_breach_when": "in 12 days",
         "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
         "history_text": "FLOW has no completed payments from Foshan in the last 12 months, too few to say how Foshan usually pays. The stress test uses your contractual dates and a 30-day delay.",
+        "breach_days_text": "Below your minimum for 65 days",
         "lowest_display": "−¥250,000.00",
         "need_display": "¥550,000.00"
       }

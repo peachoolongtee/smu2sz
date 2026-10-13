@@ -56,7 +56,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "今天",
+        "display": "¥549,986.20"
       },
       {
         "day": 1,
@@ -65,7 +67,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "明天",
+        "display": "¥549,986.20"
       },
       {
         "day": 2,
@@ -95,7 +99,9 @@
         ],
         "net_fen": 25501380,
         "net_display": "¥255,013.80",
-        "net_short": "¥255k"
+        "net_short": "¥255k",
+        "when": "2 天后",
+        "display": "¥805,000"
       },
       {
         "day": 3,
@@ -104,7 +110,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "3 天后",
+        "display": "¥805,000"
       },
       {
         "day": 4,
@@ -113,7 +121,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "4 天后",
+        "display": "¥805,000"
       },
       {
         "day": 5,
@@ -122,7 +132,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "5 天后",
+        "display": "¥805,000"
       },
       {
         "day": 6,
@@ -131,7 +143,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "6 天后",
+        "display": "¥805,000"
       },
       {
         "day": 7,
@@ -140,7 +154,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "7 天后",
+        "display": "¥805,000"
       },
       {
         "day": 8,
@@ -149,7 +165,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "8 天后",
+        "display": "¥805,000"
       },
       {
         "day": 9,
@@ -158,7 +176,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "9 天后",
+        "display": "¥805,000"
       },
       {
         "day": 10,
@@ -167,7 +187,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "10 天后",
+        "display": "¥805,000"
       },
       {
         "day": 11,
@@ -176,7 +198,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "11 天后",
+        "display": "¥805,000"
       },
       {
         "day": 12,
@@ -194,7 +218,9 @@
         ],
         "net_fen": -34000000,
         "net_display": "−¥340,000.00",
-        "net_short": "−¥340k"
+        "net_short": "−¥340k",
+        "when": "12 天后",
+        "display": "¥465,000"
       },
       {
         "day": 13,
@@ -203,7 +229,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "13 天后",
+        "display": "¥465,000"
       },
       {
         "day": 14,
@@ -212,7 +240,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "14 天后",
+        "display": "¥465,000"
       },
       {
         "day": 15,
@@ -221,7 +251,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "15 天后",
+        "display": "¥465,000"
       },
       {
         "day": 16,
@@ -230,7 +262,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "16 天后",
+        "display": "¥465,000"
       },
       {
         "day": 17,
@@ -239,7 +273,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "17 天后",
+        "display": "¥465,000"
       },
       {
         "day": 18,
@@ -248,7 +284,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "18 天后",
+        "display": "¥465,000"
       },
       {
         "day": 19,
@@ -257,7 +295,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "19 天后",
+        "display": "¥465,000"
       },
       {
         "day": 20,
@@ -275,7 +315,9 @@
         ],
         "net_fen": -12000000,
         "net_display": "−¥120,000.00",
-        "net_short": "−¥120k"
+        "net_short": "−¥120k",
+        "when": "20 天后",
+        "display": "¥345,000"
       },
       {
         "day": 21,
@@ -284,7 +326,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "21 天后",
+        "display": "¥345,000"
       },
       {
         "day": 22,
@@ -293,7 +337,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "22 天后",
+        "display": "¥345,000"
       },
       {
         "day": 23,
@@ -302,7 +348,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "23 天后",
+        "display": "¥345,000"
       },
       {
         "day": 24,
@@ -311,7 +359,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "24 天后",
+        "display": "¥345,000"
       },
       {
         "day": 25,
@@ -320,7 +370,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "25 天后",
+        "display": "¥345,000"
       },
       {
         "day": 26,
@@ -329,7 +381,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "26 天后",
+        "display": "¥345,000"
       },
       {
         "day": 27,
@@ -338,7 +392,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "27 天后",
+        "display": "¥345,000"
       },
       {
         "day": 28,
@@ -347,7 +403,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "28 天后",
+        "display": "¥345,000"
       },
       {
         "day": 29,
@@ -356,7 +414,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "29 天后",
+        "display": "¥345,000"
       },
       {
         "day": 30,
@@ -374,7 +434,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "30 天后",
+        "display": "¥300,000"
       },
       {
         "day": 31,
@@ -383,7 +445,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "31 天后",
+        "display": "¥300,000"
       },
       {
         "day": 32,
@@ -419,7 +483,9 @@
         ],
         "net_fen": 1197223,
         "net_display": "¥11,972.23",
-        "net_short": "¥12k"
+        "net_short": "¥12k",
+        "when": "32 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 33,
@@ -428,7 +494,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "33 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 34,
@@ -437,7 +505,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "34 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 35,
@@ -446,7 +516,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "35 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 36,
@@ -455,7 +527,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "36 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 37,
@@ -464,7 +538,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "37 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 38,
@@ -473,7 +549,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "38 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 39,
@@ -482,7 +560,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "39 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 40,
@@ -491,7 +571,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "40 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 41,
@@ -500,7 +582,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "41 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 42,
@@ -509,7 +593,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "42 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 43,
@@ -518,7 +604,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "43 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 44,
@@ -527,7 +615,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "44 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 45,
@@ -536,7 +626,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "45 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 46,
@@ -545,7 +637,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "46 天后",
+        "display": "¥311,972.23"
       },
       {
         "day": 47,
@@ -573,7 +667,9 @@
         ],
         "net_fen": 32000000,
         "net_display": "¥320,000.00",
-        "net_short": "¥320k"
+        "net_short": "¥320k",
+        "when": "47 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 48,
@@ -582,7 +678,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "48 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 49,
@@ -591,7 +689,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "49 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 50,
@@ -600,7 +700,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "50 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 51,
@@ -609,7 +711,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "51 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 52,
@@ -618,7 +722,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "52 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 53,
@@ -627,7 +733,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "53 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 54,
@@ -636,7 +744,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "54 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 55,
@@ -645,7 +755,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "55 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 56,
@@ -654,7 +766,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "56 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 57,
@@ -663,7 +777,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "57 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 58,
@@ -672,7 +788,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "58 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 59,
@@ -681,7 +799,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "59 天后",
+        "display": "¥631,972.23"
       },
       {
         "day": 60,
@@ -699,7 +819,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "60 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 61,
@@ -708,7 +830,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "61 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 62,
@@ -717,7 +841,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "62 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 63,
@@ -726,7 +852,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "63 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 64,
@@ -735,7 +863,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "64 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 65,
@@ -744,7 +874,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "65 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 66,
@@ -753,7 +885,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "66 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 67,
@@ -762,7 +896,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "67 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 68,
@@ -771,7 +907,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "68 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 69,
@@ -780,7 +918,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "69 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 70,
@@ -789,7 +929,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "70 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 71,
@@ -798,7 +940,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "71 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 72,
@@ -807,7 +951,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "72 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 73,
@@ -816,7 +962,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "73 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 74,
@@ -825,7 +973,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "74 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 75,
@@ -834,7 +984,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "75 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 76,
@@ -843,7 +995,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "76 天后",
+        "display": "¥586,972.23"
       },
       {
         "day": 77,
@@ -863,7 +1017,9 @@
         ],
         "net_fen": 42000000,
         "net_display": "¥420,000.00",
-        "net_short": "¥420k"
+        "net_short": "¥420k",
+        "when": "77 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 78,
@@ -872,7 +1028,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "78 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 79,
@@ -881,7 +1039,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "79 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 80,
@@ -890,7 +1050,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "80 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 81,
@@ -899,7 +1061,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "81 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 82,
@@ -908,7 +1072,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "82 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 83,
@@ -917,7 +1083,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "83 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 84,
@@ -926,7 +1094,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "84 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 85,
@@ -935,7 +1105,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "85 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 86,
@@ -944,7 +1116,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "86 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 87,
@@ -953,7 +1127,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "87 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 88,
@@ -962,7 +1138,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "88 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 89,
@@ -971,7 +1149,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "89 天后",
+        "display": "¥1,006,972.23"
       },
       {
         "day": 90,
@@ -989,7 +1169,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "90 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 91,
@@ -998,7 +1180,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "91 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 92,
@@ -1007,7 +1191,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "92 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 93,
@@ -1016,7 +1202,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "93 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 94,
@@ -1025,7 +1213,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "94 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 95,
@@ -1034,7 +1224,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "95 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 96,
@@ -1043,7 +1235,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "96 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 97,
@@ -1052,7 +1246,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "97 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 98,
@@ -1061,7 +1257,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "98 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 99,
@@ -1070,7 +1268,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "99 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 100,
@@ -1079,7 +1279,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "100 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 101,
@@ -1088,7 +1290,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "101 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 102,
@@ -1097,7 +1301,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "102 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 103,
@@ -1106,7 +1312,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "103 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 104,
@@ -1115,7 +1323,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "104 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 105,
@@ -1124,7 +1334,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "105 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 106,
@@ -1133,7 +1345,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "106 天后",
+        "display": "¥961,972.23"
       },
       {
         "day": 107,
@@ -1153,7 +1367,9 @@
         ],
         "net_fen": 42000000,
         "net_display": "¥420,000.00",
-        "net_short": "¥420k"
+        "net_short": "¥420k",
+        "when": "107 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 108,
@@ -1162,7 +1378,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "108 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 109,
@@ -1171,7 +1389,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "109 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 110,
@@ -1180,7 +1400,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "110 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 111,
@@ -1189,7 +1411,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "111 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 112,
@@ -1198,7 +1422,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "112 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 113,
@@ -1207,7 +1433,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "113 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 114,
@@ -1216,7 +1444,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "114 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 115,
@@ -1225,7 +1455,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "115 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 116,
@@ -1234,7 +1466,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "116 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 117,
@@ -1243,7 +1477,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "117 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 118,
@@ -1252,7 +1488,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "118 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 119,
@@ -1261,7 +1499,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "119 天后",
+        "display": "¥1,381,972.23"
       },
       {
         "day": 120,
@@ -1279,7 +1519,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "120 天后",
+        "display": "¥1,336,972.23"
       }
     ],
     "plan_series": null,
@@ -1770,7 +2012,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "今天",
+        "display": "¥400,000"
       },
       {
         "day": 1,
@@ -1779,7 +2023,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "明天",
+        "display": "¥400,000"
       },
       {
         "day": 2,
@@ -1809,7 +2055,9 @@
         ],
         "net_fen": 25501380,
         "net_display": "¥255,013.80",
-        "net_short": "¥255k"
+        "net_short": "¥255k",
+        "when": "2 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 3,
@@ -1818,7 +2066,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "3 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 4,
@@ -1827,7 +2077,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "4 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 5,
@@ -1836,7 +2088,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "5 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 6,
@@ -1845,7 +2099,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "6 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 7,
@@ -1854,7 +2110,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "7 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 8,
@@ -1863,7 +2121,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "8 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 9,
@@ -1872,7 +2132,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "9 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 10,
@@ -1881,7 +2143,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "10 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 11,
@@ -1890,7 +2154,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "11 天后",
+        "display": "¥655,013.80"
       },
       {
         "day": 12,
@@ -1908,7 +2174,9 @@
         ],
         "net_fen": -34000000,
         "net_display": "−¥340,000.00",
-        "net_short": "−¥340k"
+        "net_short": "−¥340k",
+        "when": "12 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 13,
@@ -1917,7 +2185,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "13 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 14,
@@ -1926,7 +2196,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "14 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 15,
@@ -1935,7 +2207,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "15 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 16,
@@ -1944,7 +2218,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "16 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 17,
@@ -1953,7 +2229,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "17 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 18,
@@ -1962,7 +2240,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "18 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 19,
@@ -1971,7 +2251,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "19 天后",
+        "display": "¥315,013.80"
       },
       {
         "day": 20,
@@ -1989,7 +2271,9 @@
         ],
         "net_fen": -12000000,
         "net_display": "−¥120,000.00",
-        "net_short": "−¥120k"
+        "net_short": "−¥120k",
+        "when": "20 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 21,
@@ -1998,7 +2282,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "21 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 22,
@@ -2007,7 +2293,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "22 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 23,
@@ -2016,7 +2304,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "23 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 24,
@@ -2025,7 +2315,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "24 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 25,
@@ -2034,7 +2326,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "25 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 26,
@@ -2043,7 +2337,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "26 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 27,
@@ -2052,7 +2348,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "27 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 28,
@@ -2061,7 +2359,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "28 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 29,
@@ -2070,7 +2370,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "29 天后",
+        "display": "¥195,013.80"
       },
       {
         "day": 30,
@@ -2088,7 +2390,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "30 天后",
+        "display": "¥150,013.80"
       },
       {
         "day": 31,
@@ -2097,7 +2401,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "31 天后",
+        "display": "¥150,013.80"
       },
       {
         "day": 32,
@@ -2117,7 +2423,9 @@
         ],
         "net_fen": 16280000,
         "net_display": "¥162,800.00",
-        "net_short": "¥163k"
+        "net_short": "¥163k",
+        "when": "32 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 33,
@@ -2126,7 +2434,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "33 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 34,
@@ -2135,7 +2445,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "34 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 35,
@@ -2144,7 +2456,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "35 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 36,
@@ -2153,7 +2467,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "36 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 37,
@@ -2162,7 +2478,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "37 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 38,
@@ -2171,7 +2489,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "38 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 39,
@@ -2180,7 +2500,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "39 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 40,
@@ -2189,7 +2511,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "40 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 41,
@@ -2198,7 +2522,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "41 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 42,
@@ -2207,7 +2533,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "42 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 43,
@@ -2216,7 +2544,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "43 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 44,
@@ -2225,7 +2555,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "44 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 45,
@@ -2234,7 +2566,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "45 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 46,
@@ -2243,7 +2577,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "46 天后",
+        "display": "¥312,813.80"
       },
       {
         "day": 47,
@@ -2271,7 +2607,9 @@
         ],
         "net_fen": 32000000,
         "net_display": "¥320,000.00",
-        "net_short": "¥320k"
+        "net_short": "¥320k",
+        "when": "47 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 48,
@@ -2280,7 +2618,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "48 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 49,
@@ -2289,7 +2629,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "49 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 50,
@@ -2298,7 +2640,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "50 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 51,
@@ -2307,7 +2651,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "51 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 52,
@@ -2316,7 +2662,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "52 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 53,
@@ -2325,7 +2673,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "53 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 54,
@@ -2334,7 +2684,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "54 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 55,
@@ -2343,7 +2695,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "55 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 56,
@@ -2352,7 +2706,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "56 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 57,
@@ -2361,7 +2717,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "57 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 58,
@@ -2370,7 +2728,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "58 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 59,
@@ -2379,7 +2739,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "59 天后",
+        "display": "¥632,813.80"
       },
       {
         "day": 60,
@@ -2397,7 +2759,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "60 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 61,
@@ -2406,7 +2770,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "61 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 62,
@@ -2415,7 +2781,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "62 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 63,
@@ -2424,7 +2792,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "63 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 64,
@@ -2433,7 +2803,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "64 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 65,
@@ -2442,7 +2814,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "65 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 66,
@@ -2451,7 +2825,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "66 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 67,
@@ -2460,7 +2836,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "67 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 68,
@@ -2469,7 +2847,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "68 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 69,
@@ -2478,7 +2858,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "69 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 70,
@@ -2487,7 +2869,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "70 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 71,
@@ -2496,7 +2880,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "71 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 72,
@@ -2505,7 +2891,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "72 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 73,
@@ -2514,7 +2902,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "73 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 74,
@@ -2523,7 +2913,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "74 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 75,
@@ -2532,7 +2924,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "75 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 76,
@@ -2541,7 +2935,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "76 天后",
+        "display": "¥587,813.80"
       },
       {
         "day": 77,
@@ -2561,7 +2957,9 @@
         ],
         "net_fen": 42000000,
         "net_display": "¥420,000.00",
-        "net_short": "¥420k"
+        "net_short": "¥420k",
+        "when": "77 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 78,
@@ -2570,7 +2968,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "78 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 79,
@@ -2579,7 +2979,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "79 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 80,
@@ -2588,7 +2990,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "80 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 81,
@@ -2597,7 +3001,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "81 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 82,
@@ -2606,7 +3012,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "82 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 83,
@@ -2615,7 +3023,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "83 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 84,
@@ -2624,7 +3034,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "84 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 85,
@@ -2633,7 +3045,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "85 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 86,
@@ -2642,7 +3056,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "86 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 87,
@@ -2651,7 +3067,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "87 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 88,
@@ -2660,7 +3078,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "88 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 89,
@@ -2669,7 +3089,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "89 天后",
+        "display": "¥1,007,813.80"
       },
       {
         "day": 90,
@@ -2687,7 +3109,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "90 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 91,
@@ -2696,7 +3120,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "91 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 92,
@@ -2705,7 +3131,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "92 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 93,
@@ -2714,7 +3142,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "93 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 94,
@@ -2723,7 +3153,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "94 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 95,
@@ -2732,7 +3164,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "95 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 96,
@@ -2741,7 +3175,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "96 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 97,
@@ -2750,7 +3186,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "97 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 98,
@@ -2759,7 +3197,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "98 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 99,
@@ -2768,7 +3208,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "99 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 100,
@@ -2777,7 +3219,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "100 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 101,
@@ -2786,7 +3230,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "101 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 102,
@@ -2795,7 +3241,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "102 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 103,
@@ -2804,7 +3252,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "103 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 104,
@@ -2813,7 +3263,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "104 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 105,
@@ -2822,7 +3274,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "105 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 106,
@@ -2831,7 +3285,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "106 天后",
+        "display": "¥962,813.80"
       },
       {
         "day": 107,
@@ -2851,7 +3307,9 @@
         ],
         "net_fen": 42000000,
         "net_display": "¥420,000.00",
-        "net_short": "¥420k"
+        "net_short": "¥420k",
+        "when": "107 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 108,
@@ -2860,7 +3318,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "108 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 109,
@@ -2869,7 +3329,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "109 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 110,
@@ -2878,7 +3340,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "110 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 111,
@@ -2887,7 +3351,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "111 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 112,
@@ -2896,7 +3362,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "112 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 113,
@@ -2905,7 +3373,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "113 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 114,
@@ -2914,7 +3384,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "114 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 115,
@@ -2923,7 +3395,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "115 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 116,
@@ -2932,7 +3406,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "116 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 117,
@@ -2941,7 +3417,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "117 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 118,
@@ -2950,7 +3428,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "118 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 119,
@@ -2959,7 +3439,9 @@
         "events": [],
         "net_fen": 0,
         "net_display": "¥0.00",
-        "net_short": "¥0.00"
+        "net_short": "¥0.00",
+        "when": "119 天后",
+        "display": "¥1,382,813.80"
       },
       {
         "day": 120,
@@ -2977,7 +3459,9 @@
         ],
         "net_fen": -4500000,
         "net_display": "−¥45,000.00",
-        "net_short": "−¥45k"
+        "net_short": "−¥45k",
+        "when": "120 天后",
+        "display": "¥1,337,813.80"
       }
     ],
     "counterfactual_label": "没有 FLOW 融资方案的情形（仅供对比，不是您还能选择的做法）",
