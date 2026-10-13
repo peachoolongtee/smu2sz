@@ -53,19 +53,20 @@ def share_bp(x: Fraction) -> int:
     return min(r, BP_FULL - 1)
 
 
-def share_text(x: Fraction, lang: Lang = "en") -> str:
+def share_text(x: Fraction, lang: Lang = "en", *, whole: bool = False) -> str:
     """An exact share at 1 dp, half-up: "33.3%". "100%" only when the share is exactly 1 and "0%" only at exactly 0; a share the
     rounding would push to 100.0% reads "over 99.9%" and one it would round to 0.0% reads "under 0.1%". Parts are never adjusted
-    to add to 100."""
+    to add to 100. `whole=True` says it at a whole percent ("37%"), with the same edges ("over 99%", "under 1%")."""
     if x >= 1:
         return "100%"
     if x <= 0:
         return "0%"
-    text = fmt_pct(x, 1)
-    if text == "100.0%":
-        return t(lang, "over 99.9%", "高于 99.9%")
-    if text == "0.0%":
-        return t(lang, "under 0.1%", "低于 0.1%")
+    places = 0 if whole else 1
+    text = fmt_pct(x, places)
+    if text == ("100%" if whole else "100.0%"):
+        return t(lang, "over 99%", "高于 99%") if whole else t(lang, "over 99.9%", "高于 99.9%")
+    if text == ("0%" if whole else "0.0%"):
+        return t(lang, "under 1%", "低于 1%") if whole else t(lang, "under 0.1%", "低于 0.1%")
     return text
 
 

@@ -319,7 +319,7 @@ def _action_legs(c: HomeRead, action: dict[str, Any], funding_line: dict[str, An
                             repay_day=leg.cost_end_day, state=state_of(lot, repaid=lot is None), authority=str(funding_line["authority_text"] or "")))
     total = sum(leg["amount_fen"] for leg in out)  # each leg's share of the plan's total, the words layer's own percent word (`share_text`)
     for leg in out:
-        leg["share_text"] = share_text(Fraction(leg["amount_fen"], total), c.lang) if total > 0 else None
+        leg["share_text"] = share_text(Fraction(leg["amount_fen"], total), c.lang, whole=True) if total > 0 else None
     return out, basis
 
 

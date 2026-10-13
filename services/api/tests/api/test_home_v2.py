@@ -564,10 +564,10 @@ def test_the_legs_on_day_zero_are_the_plans_two_planned_legs_and_leave_the_sente
     assert legs == [
         {"label": "Credit-line draw", "amount_display": "¥150,000", "amount_fen": 15_000_000, "lands_when": "today", "lands_day": 0,
          "cost_display": "¥841.64", "repaid_when": "in 32 days",
-         "state": "PLANNED", "state_text": "Planned", "authority_text": authority, "share_text": "37.0%"},
+         "state": "PLANNED", "state_text": "Planned", "authority_text": authority, "share_text": "37%"},
         {"label": "Invoice financing", "amount_display": "¥255,000", "amount_fen": 25_500_000, "lands_when": "in 3 days", "lands_day": 3,
          "cost_display": "¥2,272.29", "repaid_when": None, "state": "PLANNED", "state_text": "Planned", "authority_text": authority,
-         "share_text": "63.0%"}]
+         "share_text": "63%"}]
     assert action["text"] == ("FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
                               " · cost ¥3,113.93 · no approval needed.")
     assert [f["value"] for f in action["facts"]] == ["¥3,113.93", "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned",
@@ -704,11 +704,11 @@ def test_the_consequence_is_null_with_no_breach_or_no_shortfall() -> None:
 
 def test_each_legs_share_of_the_plan_is_the_words_layers_percent_on_day_zero_after_the_plan_and_in_chinese(api: TestClient) -> None:
     _offer(api)
-    assert [leg["share_text"] for leg in _legs(api)] == ["37.0%", "63.0%"]  # 150 / 405 and 255 / 405
-    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37.0%", "63.0%"]
+    assert [leg["share_text"] for leg in _legs(api)] == ["37%", "63%"]  # 150 / 405 and 255 / 405
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37%", "63%"]
     _run_plan(api)
-    assert [leg["share_text"] for leg in _legs(api)] == ["37.0%", "63.0%"]  # the same shares once the plan has run
-    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37.0%", "63.0%"]
+    assert [leg["share_text"] for leg in _legs(api)] == ["37%", "63%"]  # the same shares once the plan has run
+    assert [leg["share_text"] for leg in _legs(api, "zh")] == ["37%", "63%"]
 
 
 def test_a_legs_share_is_null_when_the_plans_total_is_zero(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -718,3 +718,12 @@ def test_a_legs_share_is_null_when_the_plans_total_is_zero(monkeypatch: pytest.M
         "legs": [{"operation_kind": "DRAW_FACILITY", "amount_fen": 1, "lands_when": "today", "lands_day": 0, "cost_fen": None, "cost_due_day": None}]})
     legs, _ = home_v2._action_legs(c, {"variant": "ACTION"}, None)  # type: ignore[arg-type]
     assert legs == [{"amount_fen": 0, "share_text": None}]
+
+
+def test_the_whole_percent_word_rounds_half_up_and_keeps_the_edges_and_the_default_is_unchanged() -> None:
+    from fractions import Fraction
+
+    from app.strategy.words import share_text
+
+    assert [share_text(Fraction(x, 1000), "en", whole=True) for x in (370, 375, 996, 4, 0, 1000)] == ["37%", "38%", "over 99%", "under 1%", "0%", "100%"]
+    assert share_text(Fraction(4, 1000), "zh", whole=True) == "低于 1%" and share_text(Fraction(370, 1000)) == "37.0%"
