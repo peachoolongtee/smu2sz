@@ -878,3 +878,20 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     border-radius: 16px;
   }
 }
+
+/* The donut's slices draw in over 300 ms on first paint (round two); the end value is each circle's own dash array, the circumference is the page's `--f-c`. None under reduced motion. */
+@layer components {
+  @keyframes f-draw {
+    from {
+      stroke-dasharray: 0 var(--f-c);
+    }
+  }
+  .f-slice {
+    animation: f-draw 300ms var(--ease-ui) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .f-slice {
+      animation: none;
+    }
+  }
+}

@@ -113,7 +113,7 @@ test("with the customer economics off: the server's sentence as a quiet notice a
   await page.goto(SHEET);
   await expect(page.getByTestId("inputs-off")).toHaveText(off.en.economics_off_text as string);
   await expect(page.getByTestId("inputs-save")).toHaveCount(0);
-  await expect(page.locator("form")).toHaveCount(0);
+  await expect(page.locator("main form")).toHaveCount(0);
 });
 
 test("in Chinese the sheet reads in Chinese with the same figures", async ({ page }) => {

@@ -2120,6 +2120,22 @@ export interface NlRequest {
   request_id?: string;
   /** What the owner's page was showing: ids only (INVARIANT 13), never an amount or a sentence. Owner turns only; the server checks every id and ignores what it cannot find. */
   context?: NlPageContext;
+  /** What the question is about, from the page's address (the URL contract: `customer`, `decision`, `invoice`, `scenario`); an empty scope is the whole company. When sent, it replaces the offer, decision and invoice of `context`. */
+  scope?: NlScope;
+}
+
+/** The scope of a question, as the Home's address holds it: ids only, checked by the server against its own stores. */
+export interface NlScope {
+  customer?: string | null;
+  invoice?: string | null;
+  decision?: string | null;
+  scenario?: string | null;
+}
+
+/** The scope the server answered in: its kind and its label in the owner's words. */
+export interface NlScopeUsed {
+  kind: "company" | "customer" | "invoice" | "decision";
+  label: string;
 }
 
 /** The page behind a chat turn. `since_day` is the owner's last-visit marker (the same one GET /home takes). */
@@ -2229,6 +2245,8 @@ export interface NlResponse {
   trace_id: string;
   /** The validated page context this turn used; null when none was sent or none was found. */
   context_echo?: NlContextEcho | null;
+  /** The scope this turn was answered in, when the request carried one (owner turns only); its label is the server's words ("The negotiation with Foshan Home Retail Co."). */
+  scope_used?: NlScopeUsed | null;
   /** An owner turn that decided something: the decision's record id, and whether the record was written. Absent on other turns and in older recordings. */
   decision_id?: string | null;
   decision_recorded?: boolean;

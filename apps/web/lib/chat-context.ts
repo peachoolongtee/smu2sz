@@ -7,7 +7,7 @@
  */
 
 import { demoStore } from "./demo-store";
-import type { NlPageContext } from "./types";
+import type { NlPageContext, NlScope } from "./types";
 
 /** Written by the Home page every time it loads ("the simulated day of the owner's previous visit"). */
 const LAST_VISIT_KEY = "tl-last-visit";
@@ -58,6 +58,22 @@ export function nlContext(pathname?: string | null): NlPageContext {
   if (page === "/receivables" && focusedInvoice) context.invoice_id = focusedInvoice;
   if (visitAtOpen !== null) context.since_day = visitAtOpen;
   return context;
+}
+
+/**
+ * The scope of a question asked on the Home: what its address selects (the URL contract: `customer`, `decision`, `invoice`, `scenario`), ids only. An empty scope is the whole company. Only the Home
+ * has this contract (its selection is the address); every other page sends its context as before and no scope.
+ */
+export function nlScope(pathname?: string | null, search?: string): NlScope | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (pageOf(pathname ?? window.location.pathname) !== "/") return undefined;
+  const q = new URLSearchParams(search ?? window.location.search);
+  const scope: NlScope = {};
+  for (const key of ["customer", "decision", "invoice", "scenario"] as const) {
+    const v = q.get(key);
+    if (v) scope[key] = v;
+  }
+  return scope;
 }
 
 /** What the pages hold that decides which questions are worth suggesting: an evaluated deal (and its counters), a recommended plan, an overdue invoice. */

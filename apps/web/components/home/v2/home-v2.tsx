@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PartialRead } from "@/components/business/freshness";
 import { FixResult, type useFixAlert } from "@/components/home/fix-alert";
 import { HomeV2ActionBar } from "@/components/home/v2/action-bar";
@@ -9,12 +9,12 @@ import { CompanyChart } from "@/components/home/v2/company-chart";
 import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
 import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { CashCard, FooterLinks, OutlookCard, UpcomingCard } from "@/components/home/v2/home-cards";
+import { CashCard, DealOutlookCard, FooterLinks, OutlookCard, UpcomingCard } from "@/components/home/v2/home-cards";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { ErrorState } from "@/components/ui";
 import { StatusPill, type PillTone } from "@/components/ui/status-pill";
-import { getCustomers, getWorklist } from "@/lib/api";
-import { type HomeDealView, type HomeSelection, NO_SELECTION, readDealView, readSelection, selectionHref } from "@/lib/home-v2-href";
+import { getCustomers, getDealPicture, getWorklist } from "@/lib/api";
+import { type HomeDealView, type HomeSelection, NO_SELECTION, offerOfDecision, readDealView, readSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
 import type { HomeTone, HomeView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
@@ -86,6 +86,24 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     if (!focusing || !narrow) return;
     document.getElementById("home-focus")?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [panelKey, focusing, narrow]);
+  // The overview and the selected view crossfade (opacity only, 200 ms in all: the old one fades out in 100 ms, the new one in): the stage holds what is shown, the address says what is wanted. The selection
+  // the stage shows is kept while the overview fades back in, so a Dismiss does not blank the card before it fades.
+  const want = focusing ? "sel" : "ov";
+  const selKey = `${selection.customer ?? ""}|${selection.decision ?? ""}`;
+  const [stage, setStage] = useState<{ mode: "ov" | "sel"; selection: HomeSelection }>(() => ({ mode: want, selection }));
+  const fading = want !== stage.mode;
+  useEffect(() => {
+    // The old view fades out for 100 ms, then the stage takes the new one; while the mode holds, a changed selection is kept for the fade-out to come.
+    const id = window.setTimeout(
+      () => setStage((s) => (s.mode === want && (!focusing || `${s.selection.customer ?? ""}|${s.selection.decision ?? ""}` === selKey) ? s : { mode: want, selection: focusing ? selection : s.selection })),
+      want === stage.mode ? 0 : 100,
+    );
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [want, selKey]);
+  const shown = stage.mode === "sel" ? (focusing ? selection : stage.selection) : null;
+  // The deal's own picture, one read for the selected card and the outlook card that draws its paths.
+  const dealPicture = useAsync(() => (shown?.decision ? getDealPicture(offerOfDecision(shown.decision), lang) : Promise.resolve(null)), [shown?.decision, lang]);
   const cash = h.cash;
   const headline = cash.headline_conditional || h.headline;
   const alert = worklist.data?.alert ?? null;
@@ -127,12 +145,20 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       </div>
     );
   const plan = v2.chart.legend.some((l) => l.kind === "planned" || l.kind === "proposed") && cash.plan_series?.length ? cash.plan_series : null;
-  const customerRow = selection.customer ? (worklist.data?.customers.find((c) => c.customer_id === selection.customer) ?? null) : null;
+  const customerRow = shown?.customer ? (worklist.data?.customers.find((c) => c.customer_id === shown.customer) ?? null) : null;
   const buyer = customerRow?.short ?? "";
-  const row = selection.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === selection.decision) ?? null) : null;
+  const row = shown?.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === shown.decision) ?? null) : null;
+  const paths = dealPicture.data?.paths ?? [];
+  const dealDrawn = Boolean(shown?.decision && paths.some((p) => p.kind === "asked" && p.series?.length) && paths.some((p) => p.kind === "reply" && p.recommended && p.series?.length));
   // A worklist the server does not have (null) leaves the page without the table; a failed one says so in the card, with Retry.
   const hasWorklist = worklist.data !== null;
-  const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
+  const outlook =
+    shown?.decision && dealDrawn ? (
+      <DealOutlookCard h={h} picture={dealPicture.data} expanded={dealView.chart} onExpand={(on) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, chart: on }, "replace")} />
+    ) : (
+      <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />
+    );
+  const fade = { opacity: fading ? 0 : 1, transition: "opacity 100ms ease-out" } as const;
   const bar = (
     <HomeV2ActionBar
       action={v2.action}
@@ -144,7 +170,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       fundingTotal={v2.kpis.funding.value_display}
       fundingOpen={fundingOpen}
       onFunding={(on) => setFlag("funding", on)}
-      onBack={focusing ? () => clear("action") : undefined}
+      onBack={shown ? () => clear("action") : undefined}
     />
   );
   return (
@@ -152,36 +178,39 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       {header}
       <PartialRead partial={h.partial} onRetry={onRetry} />
       <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-      {focusing ? (
-        <>
-          <div className="mb-4">{bar}</div>
-          <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-            {selection.decision ? (
-              <DealFocusPanel
-                customerId={selection.customer as string}
-                buyer={buyer}
-                decision={selection.decision}
-                row={row}
-                customer={customerRow}
-                h={h}
-                view={dealView}
-                onView={(patch) => go({ customer: selection.customer, decision: selection.decision }, { ...dealView, ...patch }, "replace")}
-                onAll={() => clear()}
-                onCustomer={() => go({ customer: selection.customer })}
-              />
-            ) : (
-              <CustomerFocusPanel customerId={selection.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
-            )}
+      <div style={fade} data-testid="hv2-stage" data-mode={stage.mode} data-fading={fading}>
+        {shown ? (
+          <>
+            <div className="mb-3">{bar}</div>
+            <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+              {shown.decision ? (
+                <DealFocusPanel
+                  customerId={shown.customer as string}
+                  buyer={buyer}
+                  decision={shown.decision}
+                  row={row}
+                  customer={customerRow}
+                  h={h}
+                  picture={dealPicture}
+                  view={dealView}
+                  onView={(patch) => go({ customer: shown.customer, decision: shown.decision }, { ...dealView, ...patch }, "replace")}
+                  onAll={() => clear()}
+                  onCustomer={() => go({ customer: shown.customer })}
+                />
+              ) : (
+                <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
+              )}
+              {outlook}
+            </div>
+          </>
+        ) : (
+          <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+            <CashCard kpis={v2.kpis} />
+            {bar}
             {outlook}
           </div>
-        </>
-      ) : (
-        <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
-          <CashCard kpis={v2.kpis} />
-          {bar}
-          {outlook}
-        </div>
-      )}
+        )}
+      </div>
       {expanded ? (
         <div className="mt-4">
           <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
@@ -189,9 +218,11 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       ) : null}
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} /> : <span />}
-        {focusing ? <ContextCard customerId={selection.customer as string} decision={selection.decision} row={row} customer={customerRow} /> : <UpcomingCard h={h} />}
+        <div style={fade} className="min-w-0">
+          {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} />}
+        </div>
       </div>
-      <FooterLinks />
+      <FooterLinks separate={Boolean(shown)} />
     </div>
   );
 }

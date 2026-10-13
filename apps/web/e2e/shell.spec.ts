@@ -57,12 +57,12 @@ test("the language switch re-reads the Home in Chinese and back, and the shell f
   await expect(page.getByTestId("home-status-word")).toContainText("需要行动");
   await expect(page.getByTestId("home-headline")).toHaveText(/不再安全/);
   await expect(page.getByRole("navigation").getByRole("link", { name: "现金与融资" })).toBeVisible();
-  await expect(page.getByTestId("chat-open")).toContainText("问 FLOW");
+  await expect(page.getByTestId("chat-open")).toHaveAttribute("aria-label", "问 FLOW");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await openAccountMenu(page);
   await page.getByLabel("English").check();
   await expect(page.getByTestId("home-status-word")).toContainText("Action needed");
-  await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
+  await expect(page.getByTestId("chat-open")).toHaveAttribute("aria-label", "Ask FLOW");
 });
 
 test("the tour is off by default, starts from the account sheet, has two steps on the home and can be closed", async ({ page }) => {

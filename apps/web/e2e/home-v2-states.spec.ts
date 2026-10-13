@@ -169,7 +169,8 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
   // The planned or arranged funding is the recommendation's figure (none while there is no funding and the action is quiet).
   if (v2.kpis.funding.state !== "NONE" || v2.action.variant !== "QUIET") {
     await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(v2.kpis.funding.value_display);
-    if (v2.kpis.funding.hint) await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint);
+    // The funding hint is the first line of the disclosure, not on the card.
+    await expect(page.getByTestId("hv2-funding-hint")).toHaveCount(0);
   } else await expect(page.getByTestId("home-kpi-funding-value")).toHaveCount(0);
   if (v2.kpis.funding.state === "ARRANGED" && v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
   // The line under the headline is the server's summary of what waits (none when nothing does); Upcoming cash movements are the server's three nearest movements.
@@ -198,7 +199,8 @@ async function expectCompany(page: Page, lang: Lang, h: HomeView, filled: number
       await expect(line).toHaveText(v2.action.approval_text);
       await expect(line).toHaveAttribute("data-needs-owner", String(v2.action.approval_needed === true));
     } else await expect(line).toHaveCount(0);
-    if (v2.action.facts?.length === 3) await expect(page.getByTestId("hv2-action-facts")).not.toContainText(v2.action.facts[2].label);
+    // The facts row is the cost and who decides: the approval line shares it (the server's sentence, after the cost).
+    if (v2.action.approval_text && v2.action.facts?.length === 3) await expect(page.getByTestId("hv2-action-facts")).toContainText(v2.action.approval_text);
     if (v2.action.control === "APPROVE_PLAN") expect(v2.action.approval_needed, "a plan that waits for the owner").toBe(true);
   }
   expect(await filledBrand(page), `${lang}: filled primaries`).toBe(filled);

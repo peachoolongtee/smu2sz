@@ -11,7 +11,7 @@ import { nl } from "./api";
 import { onSignedIn, onSignedOut } from "./auth";
 import { getLang } from "./i18n";
 import { getMode, shellFor } from "./mode";
-import { nlContext } from "./chat-context";
+import { nlContext, nlScope } from "./chat-context";
 import { ApiError } from "./errors";
 import { errorMessage } from "./error-text";
 import { createStore } from "./create-store";
@@ -136,6 +136,8 @@ async function run(a: Attempt): Promise<NlResponse | null> {
       request_id: a.requestId,
       // The owner's page, as ids: the deal it evaluated, the invoice row it has open, the last visit. A buyer's turn names none.
       context: a.role === "OWNER" ? nlContext() : undefined,
+      // The Home's selection is its address: the question is asked under it (none elsewhere).
+      scope: a.role === "OWNER" ? nlScope() : undefined,
     }, { business: a.role === "OWNER" && onBusinessShell() });
     delete failed[a.role];
     patchConv(a.role, (c) =>
