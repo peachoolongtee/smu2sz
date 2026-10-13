@@ -207,7 +207,7 @@ test("no funding amount: the figure line is omitted (the title carries the amoun
   for (const url of [DEAL, "/?customer=BUYER-1", "/?expand=1"]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
-    await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
+    await expect(page.getByTestId("hv2-stage")).toBeVisible();
     expect(await page.getByTestId("home-v2").innerText(), url).not.toMatch(/\b(None|null|undefined|NaN)\b/);
   }
 });
@@ -656,7 +656,8 @@ test("a customer row opens the customer in place: the address is the selection, 
   await expect(page.getByTestId("focus-rows").getByTestId("home-worklist-row")).toHaveCount(1);
   await expect(page.getByTestId("focus-open-customer")).toHaveAttribute("href", "/customers/BUYER-1");
   // The company is still on the page: the strip as it was, the alert pinned, the health band with an OUTLINED button, no filled button anywhere, no second chart.
-  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible(); // the customer card sits beside the cash card, as the default's left pair
+  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "held");
   await expect(page.getByTestId("hv2-band")).toBeVisible();
@@ -695,10 +696,11 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   const rec = pic.find((p) => p.recommended)!;
   const asked = pic.find((p) => p.kind === "asked")!;
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  // The selected card replaces the recommendation card and keeps the cash card (with the deal's ticks) and the side card; its header names the deal and carries Dismiss; the stage pill is in the context panel.
-  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  // Round five: the right of the deal card is ONE card, "Cash impact of this deal"; the company's cash card, the outlook and the recommendation leave the deal view.
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
   await expect(page.getByTestId("hv2-action")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
+  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await expect(page.getByTestId("focus-all")).toHaveText("Dismiss");
   await expect(page.getByTestId("hv2-context-stage")).toHaveText(worklistOffer.en.needs_you[0].status_text);
   await expect(page.getByTestId("hv2-context")).toContainText("Deal context");
@@ -761,12 +763,12 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   await expect(table.getByTestId("hv2-consequence-row-limits")).toContainText(/within/i);
   await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(asked.authority_text!);
   await expect(table.getByTestId("hv2-consequence-row-approval")).toContainText(rec.authority_text!);
-  // The full table of responses is still behind its own toggle; Cash impact opened the consequence and the deal's chart together (and Close closes both).
+  // The full table of responses is still behind its own toggle; Cash impact opens the consequence only (the deal's chart is the cash-impact card, always there).
   await expect(page.getByTestId("hv2-compare")).toHaveCount(0);
   await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await expect(page.getByTestId("home-chart")).toHaveCount(1);
   await page.getByTestId("hv2-chart-toggle").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
   await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
 });
 
@@ -817,13 +819,9 @@ test("Compare responses expands the full table and FLOW's reasons in place, and 
   await expect(toggle).toBeFocused();
 });
 
-test("Cash impact expands the deal's chart: the option solid, the request grey with its stretches under the reserve in red, a same-day inspector; and collapses", async ({ page }) => {
+test("the deal's chart is the one card beside the deal card, always open: the option solid, the request grey with its stretches under the reserve in red, a same-day inspector; Cash impact opens only the consequence table", async ({ page }) => {
   await open(page, { offer: true });
   await page.goto(DEAL);
-  const toggle = page.getByTestId("hv2-chart-toggle");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page).toHaveURL(/chart=1/);
   const chart = page.getByTestId("hv2-deal-chart");
   await expect(chart).toBeVisible();
   const pic = pictures.en.paths;
@@ -832,14 +830,22 @@ test("Cash impact expands the deal's chart: the option solid, the request grey w
   await expect(chart.getByTestId("hv2-below-request")).toBeAttached();
   await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.kind === "asked")!.label);
   await expect(chart.getByTestId("home-legend")).toContainText(pic.find((p) => p.recommended)!.label);
-  // The inspector is a same-day comparison and says so; it never says a day number.
-  await expect(chart.getByTestId("hv2-inspector-note")).toContainText("same day");
-  await expect(chart.getByTestId("hv2-inspector-request")).toBeVisible();
-  await expect(chart.getByTestId("hv2-inspector-option")).toBeVisible();
-  const when = await chart.getByTestId("hv2-inspector-when").innerText();
-  expect(when).not.toMatch(/\bday\s+\d/i);
+  // The window control is the company chart's (36 / 60 / 120 when the horizon allows).
+  await expect(chart.getByRole("tablist", { name: "Days shown" })).toBeVisible();
+  // The card is chart and words: the two lowest points are named under it (no same-day strip in a column this narrow).
+  await expect(chart.getByTestId("hv2-inspector")).toHaveCount(0);
+  await expect(chart.getByTestId("hv2-deal-low-asked")).toBeVisible();
+  // Cash impact opens the consequence table and nothing else: the chart is neither added nor removed.
+  const toggle = page.getByTestId("hv2-chart-toggle");
+  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
   await toggle.click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page).toHaveURL(/chart=1/);
+  await expect(page.getByTestId("hv2-consequence-table")).toBeVisible();
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
+  await toggle.click();
+  await expect(page.getByTestId("hv2-consequence-table")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(1);
   await expect(page).not.toHaveURL(/chart=1/);
 });
 
@@ -1070,7 +1076,7 @@ test("phone: the collection state, a customer's row opens its card and its conte
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   const a = (await page.getByTestId("home-customer-focus").boundingBox())!;
-  const b = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
+  const b = (await page.getByTestId("hv2-cash-card").boundingBox())!;
   const c = (await page.getByTestId("hv2-context").boundingBox())!;
   expect(b.y).toBeGreaterThan(a.y + a.height - 1);
   expect(c.y).toBeGreaterThan(b.y);
@@ -1094,7 +1100,8 @@ test("a selected row: Dismiss and Escape restore the overview and clear the addr
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
   await expect(page.getByTestId("hv2-upcoming")).toHaveCount(0);
-  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0); // a deal: the deal card and its one cash-impact card
+  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
   await page.getByTestId("focus-all").click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-context")).toHaveCount(0);
@@ -1263,11 +1270,11 @@ test("hover and focus only highlight a worklist row and reveal Select; a click o
   await expect(page.getByTestId("home-worklist-row").first().getByTestId("hv2-row-select")).toHaveCount(0);
 });
 
-test("selecting a row transforms the cards: the company line, the deal's card, the deal's own paths on the outlook, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
+test("selecting a row transforms the cards: the company line, the deal's card, the one cash-impact card with the deal's own paths, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {
   await open(page, { offer: true });
   await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "sel");
-  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
   await expect(page.getByTestId("hv2-action")).toHaveCount(0);
   // The company line: the cash and the minimum reserve in the server's words, and the way to the plan with its amount.
   const cash = homeOffer.en.home_v2.kpis.cash_available;
@@ -1275,34 +1282,29 @@ test("selecting a row transforms the cards: the company line, the deal's card, t
   await expect(band).toContainText(cash.value_display);
   await expect(band).toContainText(cash.buffer.min_display);
   await expect(page.getByTestId("home-action-back")).toHaveText(`Review ${homeOffer.en.home_v2.kpis.funding.value_display} funding plan`);
-  // The deal's card and the context panel; the cash card gains a labelled tick for the lowest cash as asked and for the recommended reply, and the deal's own cash impact is the context panel's first block.
+  // The deal's card and the context panel; ONE card beside the deal card, "Cash impact of this deal": the chart, the two lowest points named in the server's words (the recommended in purple) and the quiet line.
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   await expect(page.getByTestId("hv2-context")).toBeVisible();
   const asked = pictures.en.paths.find((p) => p.kind === "asked")! as unknown as { label: string; lowest_short: string; lowest_when: string };
   const rec = pictures.en.paths.find((p) => p.recommended)! as unknown as { label: string; lowest_short: string; lowest_when: string };
-  const cashCard = page.getByTestId("hv2-cash-card");
-  await expect(cashCard.getByTestId("hv2-cash-tick-label-asked")).toHaveText(asked.lowest_short);
-  await expect(cashCard.getByTestId("hv2-cash-tick-label-rec")).toHaveText(rec.lowest_short);
-  await expect(cashCard.getByTestId("hv2-cash-markers")).toHaveText(`${asked.label} ${asked.lowest_short} ${asked.lowest_when} · ${rec.label} ${rec.lowest_short} ${rec.lowest_when}`);
-  const dealCash = page.getByTestId("hv2-context").getByTestId("hv2-deal-cash");
-  await expect(dealCash).toBeVisible();
-  await expect(dealCash.getByTestId("home-kpi-lowest-value")).toHaveText(asked.lowest_short);
-  await expect(dealCash.getByTestId("hv2-outlook-asked")).toHaveText(asked.label);
-  await expect(dealCash.getByTestId("hv2-outlook-rec")).toContainText(rec.label);
-  await expect(dealCash.getByTestId("hv2-outlook-rec")).toContainText(rec.lowest_short);
-  await expect(dealCash.getByTestId("hv2-mini-asked")).toBeAttached();
-  await expect(dealCash.getByTestId("hv2-mini-rec")).toBeAttached();
-  // It is the first block under the panel's title.
-  const [titleBox, dealBox, stageBox] = await Promise.all([page.getByTestId("hv2-context").getByRole("heading", { name: "Deal context" }).boundingBox(), dealCash.boundingBox(), page.getByTestId("hv2-context-stage").boundingBox()]);
-  expect(dealBox!.y).toBeGreaterThan(titleBox!.y);
-  expect(dealBox!.y).toBeLessThan(stageBox!.y);
-  await expect(page.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
-  // Expand opens the deal's cash chart under the card (the same as its Cash impact toggle).
-  await dealCash.getByTestId("hv2-outlook-expand").click();
-  await expect(page).toHaveURL(/chart=1/);
-  await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
-  await dealCash.getByTestId("hv2-outlook-expand").click();
-  await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+  const card = page.getByTestId("hv2-deal-chart");
+  await expect(card.getByRole("heading", { name: "Cash impact of this deal" })).toBeVisible();
+  await expect(card.getByTestId("hv2-deal-low-asked")).toHaveText(`${asked.label} ${asked.lowest_short} ${asked.lowest_when}`);
+  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveText(`${rec.label} ${rec.lowest_short} ${rec.lowest_when}`);
+  await expect(card.getByTestId("hv2-deal-low-rec")).toHaveClass(/text-f-purple-ink/);
+  await expect(card.getByTestId("hv2-foot-separate")).toHaveText("Company cash stays separate from selected deals.");
+  await expect(page.getByTestId("hv2-foot-separate")).toHaveCount(1);
+  // The deal card and this card share one height (the taller decides, 600 px at most) and sit side by side.
+  const [dealBox, cardBox] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
+  expect(Math.abs(dealBox!.height - cardBox!.height)).toBeLessThan(2);
+  expect(cardBox!.height).toBeLessThanOrEqual(600);
+  expect(Math.abs(dealBox!.y - cardBox!.y)).toBeLessThan(2);
+  expect(cardBox!.x).toBeGreaterThan(dealBox!.x + dealBox!.width - 1);
+  // The deal's cash impact is no longer in the context panel; the panel keeps the customer line, the stage, Customer profile and the evidence.
+  await expect(page.getByTestId("hv2-context").getByTestId("hv2-deal-cash")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-context-stage")).toBeVisible();
+  await expect(page.getByTestId("hv2-context").getByTestId("focus-open-customer")).toBeVisible();
+  await expect(page.getByTestId("hv2-context-evidence")).toBeVisible();
   // Way back 1: the Dismiss on the card.
   const back = async () => {
     await expect(page).toHaveURL(/\/$/);
@@ -1366,7 +1368,8 @@ test("the deal's invoice, discount and net: one segmented bar from the server's 
   await expect(sentence).toHaveText("");
 });
 
-test("what you are owed, by customer: a donut of the customers' rows on a selection (two or more owed), the selected slice lifted 4 px and named in the centre; another slice or row selects that customer", async ({ page }) => {
+test("what you are owed, by customer: its own card under the upcoming movements on the default page and on every selection (the same place), a ring of the customers' rows with every slice and row a button that selects that customer, the selected slice lifted 4 px", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   const rowsOf = [
     { customer_id: "BUYER-1", name: "Foshan Home Retail Co.", short: "Foshan", outstanding_display: "¥420,000", share_text: "54.5% of what you are owed" },
     { customer_id: "BUYER-2", name: "Dongguan Office Supplies Ltd.", short: "Dongguan", outstanding_display: "¥200,000", share_text: "26.0% of what you are owed" },
@@ -1376,37 +1379,115 @@ test("what you are owed, by customer: a donut of the customers' rows on a select
   const customers = rowsOf.map((r, i) => ({ ...base[Math.min(i, base.length - 1)], ...r }));
   await page.context().addInitScript(([key, patch]) => sessionStorage.setItem(key as string, JSON.stringify(patch)), ["tl-mock-customers-patch", { customers }] as const);
   await open(page, { offer: true });
-  // The overview has no owed donut (the company outlook is its third card); a selection brings it.
-  await expect(page.getByTestId("hv2-owed-card")).toHaveCount(0);
-  await page.goto("/?customer=BUYER-1");
   const card = page.getByTestId("hv2-owed-card");
+  // The default page: below "Upcoming cash movements", in the right column; nothing is lifted and the centre says nothing yet.
   await expect(card).toBeVisible();
   await expect(card.getByTestId("hv2-owed-title")).toHaveText("What you are owed, by customer");
-  await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
+  const place = async (above: string) => {
+    const [c, a] = await Promise.all([card.boundingBox(), page.getByTestId(above).boundingBox()]);
+    return { x: Math.round(c!.x), w: Math.round(c!.width), below: c!.y - (a!.y + a!.height) };
+  };
+  const onDefault = await place("hv2-upcoming");
+  expect(onDefault.below).toBeGreaterThan(0);
+  expect(onDefault.below).toBeLessThan(24);
+  await expect(card.getByTestId("hv2-owed-centre")).toHaveCount(0);
   for (const [i, r] of rowsOf.entries()) {
     await expect(card.getByTestId(`hv2-owed-row-${i}`)).toContainText(r.name);
     await expect(card.getByTestId(`hv2-owed-amount-${i}`)).toHaveText(r.outstanding_display);
     await expect(card.getByTestId(`hv2-owed-share-${i}`)).toHaveText(r.share_text);
+    await expect(card.getByTestId(`hv2-owed-slice-${i}`)).toHaveAttribute("aria-pressed", "false");
   }
-  // The selected customer's slice is lifted 4 px (a larger radius) and named in the centre: short name, amount, percent.
-  const centre = card.getByTestId("hv2-owed-centre");
-  await expect(centre).toContainText("Foshan");
-  await expect(centre).toContainText("¥420,000");
-  await expect(centre).toContainText("54.5%");
-  const radius = (i: number) => card.getByTestId(`hv2-owed-slice-${i}`).getAttribute("r").then(Number);
-  expect(await radius(0)).toBeGreaterThan(await radius(1));
-  expect((await radius(0)) - (await radius(1))).toBeCloseTo(4, 0);
-  // Another slice SELECTS that customer: the address changes and the centre follows.
+  // A slice on the default page SELECTS that customer: the address changes, the customer card and the cash card take the stage, the donut has not moved.
   await card.getByTestId("hv2-owed-slice-1").dispatchEvent("click");
   await expect(page).toHaveURL(/customer=BUYER-2/);
-  await expect(card.getByTestId("hv2-owed-centre")).toContainText("Dongguan");
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  const onCustomer = await place("hv2-context");
+  expect(onCustomer.x).toBe(onDefault.x);
+  expect(onCustomer.w).toBe(onDefault.w);
+  expect(onCustomer.below).toBeLessThan(24);
+  // The selected customer's slice is lifted 4 px (a larger radius) and named in the centre: short name, amount, percent.
+  const centre = card.getByTestId("hv2-owed-centre");
+  await expect(centre).toContainText("Dongguan");
+  await expect(centre).toContainText("¥200,000");
+  await expect(centre).toContainText("26.0%");
+  const radius = (i: number) => card.getByTestId(`hv2-owed-slice-${i}`).getAttribute("r").then(Number);
+  expect((await radius(1)) - (await radius(0))).toBeCloseTo(4, 0);
+  // Another row selects that customer; the keyboard presses a slice.
   await card.getByTestId("hv2-owed-row-2").getByRole("button").click();
   await expect(page).toHaveURL(/customer=BUYER-3/);
   await expect(card.getByTestId("hv2-owed-centre")).toContainText("19.5%");
   await card.getByTestId("hv2-owed-slice-0").focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/customer=BUYER-1/);
+  // A deal: the same place under the context panel, and the centre names the deal's customer.
+  await page.goto(DEAL);
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  const onDeal = await place("hv2-context");
+  expect(onDeal.x).toBe(onDefault.x);
+  expect(onDeal.w).toBe(onDefault.w);
+  expect(onDeal.below).toBeLessThan(24);
+  await expect(card.getByTestId("hv2-owed-centre")).toContainText("Foshan");
+  // Dismiss restores the default, and the card has not moved.
+  await page.getByTestId("focus-all").click();
+  await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
+  await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
+  expect((await place("hv2-upcoming")).x).toBe(onDefault.x);
+  await expect(card.getByTestId("hv2-owed-centre")).toHaveCount(0);
 });
+
+test("what you are owed with fewer than two customers owed is the one figure, no ring, still a button that selects the customer", async ({ page }) => {
+  await open(page, { offer: true }); // the recording has one customer owing
+  const card = page.getByTestId("hv2-owed-card");
+  const only = customersOffer.en.customers[0];
+  await expect(card).toHaveAttribute("data-ring", "false");
+  await expect(card.locator("svg")).toHaveCount(0);
+  await expect(card.getByTestId("hv2-owed-one")).toContainText(only.outstanding_display);
+  await expect(card.getByTestId("hv2-owed-one")).toContainText(only.name);
+  await card.getByTestId("hv2-owed-one").click();
+  await expect(page).toHaveURL(/customer=BUYER-1/);
+});
+
+test("Upcoming cash movements has no overdue row when nothing is overdue (the live matrix holds the busy books' row, its figure, its count and its link)", async ({ page }) => {
+  await open(page, { offer: true });
+  await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
+  await expect(page.getByTestId("hv2-upcoming-overdue-row")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-upcoming-row")).toHaveCount(homeOffer.en.home_v2.upcoming!.length);
+});
+
+// Round five: the deal view at four widths shows exactly one card beside (from lg) or under (below it) the deal card, with its chart and the two named points; the customer view keeps the customer card with the cash card.
+for (const [width, height] of [[1440, 900], [1100, 800], [820, 1100], [390, 844]] as const) {
+  test(`the deal view at ${width}: exactly one card with the deal card, its chart and the two named lowest points; the customer view keeps the cash card`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await open(page, { offer: true });
+    await page.goto(DEAL);
+    await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+    const card = page.getByTestId("hv2-deal-chart");
+    await expect(card).toBeVisible();
+    await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
+    await expect(page.getByTestId("hv2-outlook-card")).toHaveCount(0);
+    await expect(card.getByTestId("home-chart")).toBeVisible();
+    await expect(card.getByTestId("hv2-deal-low-asked")).toBeVisible();
+    await expect(card.getByTestId("hv2-deal-low-rec")).toBeVisible();
+    const [d, c] = await Promise.all([page.getByTestId("home-deal-focus").boundingBox(), card.boundingBox()]);
+    if (width >= 1024) {
+      expect(c!.x).toBeGreaterThan(d!.x + d!.width - 1);
+      expect(Math.abs(c!.height - d!.height)).toBeLessThan(2);
+      expect(c!.height).toBeLessThanOrEqual(600);
+    } else {
+      expect(c!.y).toBeGreaterThan(d!.y + d!.height - 1);
+      expect(Math.abs(c!.width - d!.width)).toBeLessThan(2);
+    }
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
+    // The customer view: the customer card beside the cash card; no cash-impact card, and the owed card stays below the right column's first card.
+    await page.goto("/?customer=BUYER-1");
+    await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+    await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+    await expect(page.getByTestId("hv2-deal-chart")).toHaveCount(0);
+    await expect(page.getByTestId("hv2-owed-card")).toBeVisible();
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  });
+}
 
 test("reduced motion: the bar does not draw in, the stage crossfades by opacity alone", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
