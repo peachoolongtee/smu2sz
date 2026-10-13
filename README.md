@@ -23,6 +23,10 @@ Expect 49 lines starting `VALID`, one per scripted task. Each file is one task's
 ```bash
 cd services/api && uv sync && uv run uvicorn app.main:app --reload      # API on :8000 (demo credentials, cache mode)
 cd apps/web && pnpm install && NEXT_PUBLIC_API_MODE=live pnpm dev        # UI on :3000; omit the variable for offline mock mode
+
+# Or one command for either mode (the API with in-memory books, the Demo scenarios and cached LLM outputs):
+scripts/dev.sh live     # API on :8000 + UI on :3000 against it, the owner sign-in prefilled
+scripts/dev.sh mock     # UI alone on the recorded mocks (the default)
 ```
 
 - **Where the data lives.** Without `DATABASE_URL` the API uses the SQLite file `termsledger.db` in the directory it was started from (`services/api/termsledger.db` with the command above; the `*.db` pattern is git-ignored). The app creates the file and its tables itself the first time it opens the store (the first request, not at start); there is no Alembic step for local use. `DATABASE_URL=memory` keeps everything in the process and writes no file. For another file use the absolute form `DATABASE_URL=sqlite:////absolute/path/to/file.db` (four slashes: the scheme's three plus the leading `/` of the path).

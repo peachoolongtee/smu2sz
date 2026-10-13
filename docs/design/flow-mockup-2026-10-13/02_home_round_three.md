@@ -48,3 +48,12 @@ at the end, and make it the centre."
 
 ## Gates
 Focused: the Home batch under mock, `home-v2-states` live, `ask-header` mock + live, design-system; the full pair at the merge.
+
+## 5. "FLOW action ready" is said once (owner, after seeing round two)
+The same fact appears three times: the pill beside the headline, the worklist's alert row ("FLOW action ready · ¥405k funding
+plan available · no approval needed · waits for your go · Run or compare →") and the recommendation card itself. The card is
+the one place: the headline's pill goes; the worklist's alert row goes whenever the recommendation card is on the page (the
+card IS the alert, with Run and Compare); the subtitle under the headline keeps the count sentence ("Four deal decisions, one
+approval and one collection need you.") and drops "One funding action ready." when the card says it. The worklist's empty
+words stay honest ("Nothing else needs you." while the plan waits). The server's `worklist.alert` is still read: it is shown
+as the row only when the Home carries NO recommendation card (a state the matrix has: funding NONE with an alert).
