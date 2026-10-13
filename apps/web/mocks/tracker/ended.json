@@ -34,14 +34,14 @@
       {
         "key": "collecting",
         "label": "Collecting",
-        "state": "now",
-        "state_text": "Now"
+        "state": "done",
+        "state_text": "Done"
       },
       {
         "key": "fulfilled",
         "label": "Fulfilled",
-        "state": "todo",
-        "state_text": "Still to come"
+        "state": "done",
+        "state_text": "Done"
       }
     ],
     "cost": {
@@ -190,14 +190,14 @@
       {
         "key": "collecting",
         "label": "催收中",
-        "state": "now",
-        "state_text": "进行中"
+        "state": "done",
+        "state_text": "已完成"
       },
       {
         "key": "fulfilled",
         "label": "已履行完毕",
-        "state": "todo",
-        "state_text": "尚未开始"
+        "state": "done",
+        "state_text": "已完成"
       }
     ],
     "cost": {

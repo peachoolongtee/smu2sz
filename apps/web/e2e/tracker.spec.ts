@@ -110,6 +110,9 @@ test.describe("mock", () => {
       const read = recorded(moment).en;
       await page.goto(trackerUrl(read.decision_id));
       await expectRead(page, read);
+      // The track has at most one stage that is "now"; on the late day it is exactly one (collecting), with fulfilled still to come.
+      await expect(page.locator('[data-testid^="tracker-stage-"][data-state="now"]')).toHaveCount(moment === "late" ? 1 : read.stages.filter((s) => s.state === "now").length);
+      if (moment === "late") await expect(page.getByTestId("tracker-stage-fulfilled")).toHaveAttribute("data-state", "todo");
       await page.goto("/demo");
       if (walked < STORY_STEPS) await expect(page.getByTestId("demo-next")).toBeEnabled();
     }
@@ -125,6 +128,10 @@ test.describe("mock", () => {
     expect(read.promises.some((p) => p.state === "paid_late")).toBe(true);
     await page.goto(trackerUrl(read.decision_id));
     await expectRead(page, read);
+    // Ended: all five stages are done and none is "now".
+    expect(read.stages).toHaveLength(5);
+    await expect(page.locator('[data-testid^="tracker-stage-"][data-state="done"]')).toHaveCount(5);
+    await expect(page.locator('[data-testid^="tracker-stage-"][data-state="now"]')).toHaveCount(0);
     const late = read.promises.findIndex((p) => p.state === "paid_late");
     await expect(page.getByTestId(`tracker-promise-${late}`)).toContainText("Paid late");
   });
