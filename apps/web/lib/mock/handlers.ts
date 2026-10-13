@@ -458,6 +458,11 @@ export async function getActivity(lang: "en" | "zh", _ctx: object = {}): Promise
   await delay();
   seedStory();
   const book = storyBook();
+  // A log with no entry at all (a business's first day) has nothing to list: the opening books' read without its rows, tabs and chain words.
+  if (!load().ops.length && currentScenario() !== "busy") {
+    const empty = pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), "fresh", lang);
+    return { ...empty, rows: [], categories: empty.categories.filter((c) => c.key === "all").map((c) => ({ ...c, count: 0 })), chain: { ...empty.chain, chain_length: 0, chain_text: null } };
+  }
   const key = currentScenario() === "busy" ? "busy" : load().securityScene && (book === "settle" || book === "approve") ? "security" : book;
   return pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), key, lang);
 }

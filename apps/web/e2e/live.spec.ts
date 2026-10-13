@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal as readDeal, openCompare, openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -44,6 +44,7 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
 test("the borrower file downloads as HTML and Word, and the owner approves the one pending application", async ({ page }) => {
   // The capex question (an optional scene) evaluates and prepares the read-only borrower file; the application is the owner's click.
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await expect(page).toHaveURL(/\/capex/);
   await page.getByTestId("capex-apply").click();
@@ -282,6 +283,7 @@ test("when the books move after the alert was shown, the act answers 409 and the
 test("an approval is refused when the server does not recognise the owner", async ({ page }) => {
   // A pending approval to decide: the capex application (an optional scene, then the owner's own click on the Capex page).
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await page.getByTestId("capex-apply").click();
   await expect(page.getByTestId("capex-applied")).toBeVisible();

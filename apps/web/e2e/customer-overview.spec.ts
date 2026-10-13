@@ -159,7 +159,7 @@ test("the customer link on Activity carries the context of the URL it is on", as
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/activity?invoice=RCV-A");
   // Activity holds no selection: its links carry the origin and nothing from the address.
-  const link = page.locator("#activity-commitments").getByRole("link", { name: "Foshan Home Retail Co." }).first();
+  const link = page.locator("#activity-timeline").getByRole("link", { name: "Foshan Home Retail Co." }).first();
   await expect(link).toHaveAttribute("href", "/customers/BUYER-1?from=activity");
 });
 

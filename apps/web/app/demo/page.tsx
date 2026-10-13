@@ -55,6 +55,7 @@ function SceneRow({ scene }: { scene: StoryScene }) {
 function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
   const { t, te } = useI18n();
   const router = useRouter();
+  const demo = useDemo();
   const tools = view.operator_tools;
   const act = async (action: string) => {
     if (action.startsWith("advance:")) {
@@ -101,7 +102,7 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
                     <span className="block text-supporting text-ink-3">{te("more.desc", m.id)}</span>
                     {m.replacesBooks ? <span className="block text-supporting font-medium text-warn-fg">{t("more.replaces")}</span> : null}
                   </span>
-                  <Button size="sm" disabled={busy || Boolean(m.needsWalk)} onClick={() => void goToMore(m.id as MoreId, router.push)} aria-label={`${t("story.show")}: ${te("more.title", m.id)}`} data-testid={`more-run-${m.id}`}>
+                  <Button size="sm" disabled={busy || Boolean(m.needsWalk && !demo.rewordedId)} onClick={() => void goToMore(m.id as MoreId, router.push)} aria-label={`${t("story.show")}: ${te("more.title", m.id)}`} data-testid={`more-run-${m.id}`}>
                     {t("story.show")}
                   </Button>
                 </li>

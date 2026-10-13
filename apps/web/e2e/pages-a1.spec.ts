@@ -127,63 +127,65 @@ async function railAt34(page: Page) {
   await expect(page.getByTestId("activity-list")).toBeVisible();
 }
 
-test("Activity: day captions, an icon for who acted, time passing as a thin separator, one Details toggle per entry", async ({ page }) => {
+test("Activity: a when-word per row, who acted and what became of it on one quiet line, time passing as a system row, one evidence fold per row", async ({ page }) => {
   await railAt34(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  const captions = page.getByTestId("activity-day-caption");
-  expect(await captions.count()).toBeGreaterThan(2);
-  await expect(captions.first()).toHaveText("today");
-  expect(new Set(await captions.allTextContents()).size).toBeGreaterThan(1);
-  await expect(page.getByTestId("activity-CONFIRM_DOCUMENT").first().locator('[data-actor="you"]')).toHaveCount(1);
-  await expect(page.getByTestId("activity-DRAW_FACILITY").first().locator('[data-actor="agent"]')).toHaveCount(1);
-  await expect(page.getByTestId("activity-RECEIVE_PAYMENT").first().locator('[data-actor="system"]')).toHaveCount(1);
-  const passed = page.getByTestId("activity-ADVANCE_CLOCK").first();
+  const rows = page.getByTestId("activity-list").getByTestId("activity-row");
+  expect(await rows.count()).toBeGreaterThan(2);
+  const whens = await rows.getByTestId("activity-when").allTextContents();
+  expect(whens.every((w) => w.trim().length > 0)).toBe(true);
+  await expect(rows.first().getByTestId("activity-when")).toHaveText(/today/i);
+  expect(new Set(whens).size).toBeGreaterThan(1);
+  // Every row names who acted, in the server's words, beside its status; the clock's row is the system's.
+  for (const actor of await rows.getByTestId("activity-actor").allTextContents()) expect(actor.trim().length).toBeGreaterThan(0);
+  const passed = page.locator('[data-testid="activity-row"][data-kind="system"]').first();
   await expect(passed.getByTestId("activity-event")).toContainText(/days? passed/);
-  await expect(passed.locator("[data-actor]")).toHaveCount(0);
-  await expect(passed.getByTestId("activity-details-toggle")).toHaveCount(0);
-  const entry = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first();
-  await expect(entry.getByTestId("activity-details-toggle")).toHaveText("Details");
-  await expect(entry.getByText("Audit details")).toHaveCount(0);
-  await entry.getByTestId("activity-details-toggle").click();
-  await expect(entry.getByTestId("activity-raw")).toBeVisible();
+  await expect(passed.getByTestId("activity-actor")).toHaveText("The system");
+  await expect(rows.first().getByTestId("activity-meta")).toContainText(" · ");
+  const entry = rows.first();
+  await expect(entry.getByTestId("activity-evidence").locator("> summary")).toHaveText("Evidence");
+  await entry.getByTestId("activity-evidence").locator("> summary").click();
+  await expect(entry.getByTestId("activity-record-body")).toBeVisible();
 });
 
-test("Activity: the filter chips narrow the rail by kind and never change its order", async ({ page }) => {
+test("Activity: the category tabs narrow the list by kind and never change its order", async ({ page }) => {
   await railAt34(page);
   const filters = page.getByTestId("activity-filters");
   await expect(filters.getByTestId("activity-filter-all")).toHaveAttribute("aria-selected", "true");
-  for (const id of ["money", "decisions", "documents"]) await expect(filters.getByTestId(`activity-filter-${id}`)).toBeVisible();
-  const order = () => page.locator('[data-testid="activity-list"] li').evaluateAll((els) => els.map((el) => el.getAttribute("data-testid") ?? ""));
-  const all = (await order()).filter((x) => x !== "activity-ADVANCE_CLOCK");
+  for (const id of ["cash", "documents"]) await expect(filters.getByTestId(`activity-filter-${id}`)).toBeVisible();
+  const order = () => page.getByTestId("activity-list").getByTestId("activity-event").allTextContents();
+  const all = await order();
   await filters.getByTestId("activity-filter-documents").click();
   await expect(filters.getByTestId("activity-filter-documents")).toHaveAttribute("aria-selected", "true");
   const docs = await order();
   expect(docs.length).toBe(3);
-  expect(docs.every((x) => x === "activity-CONFIRM_DOCUMENT")).toBe(true);
-  await filters.getByTestId("activity-filter-money").click();
+  expect(await page.locator('[data-testid="activity-row"]:not([data-category="documents"])').count()).toBe(0);
+  await filters.getByTestId("activity-filter-cash").click();
   const positions = (await order()).map((k) => all.indexOf(k));
   expect(positions.length).toBeGreaterThan(0);
   expect(positions.every((p) => p >= 0)).toBe(true);
   expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   await filters.getByTestId("activity-filter-all").click();
-  expect((await order()).filter((x) => x !== "activity-ADVANCE_CLOCK")).toEqual(all);
+  expect(await order()).toEqual(all);
 });
 
-test("Activity in Chinese: the filter and the Details toggle", async ({ page }) => {
+test("Activity in Chinese: the tabs, the search and the evidence fold", async ({ page }) => {
   await railAt34(page);
   await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await page.reload();
   await expect(page.getByTestId("activity-filter-all")).toHaveText(/全部/);
-  await expect(page.getByTestId("activity-details-toggle").first()).toHaveText("详情");
+  await expect(page.getByTestId("activity-search")).toHaveAttribute("placeholder", "搜索记录");
+  await expect(page.getByTestId("activity-evidence").first().locator("> summary")).not.toHaveText("Evidence");
 });
 
-test("Activity: an empty log has no filter chips, and the page has no sideways scroll at 390", async ({ page }) => {
+test("Activity: an empty record shows the empty state with no tabs, and the page has no sideways scroll at 390", async ({ page }) => {
   await page.addInitScript(() =>
     sessionStorage.setItem("tl-mock-store-v2", JSON.stringify({ offers: {}, evaluated: [], negotiated: {}, ops: [], commitments: [], approvals: [], securityScene: false })),
   );
   await page.goto("/activity");
   await expect(page.getByTestId("activity-empty")).toBeVisible();
   await expect(page.getByTestId("activity-filters")).toHaveCount(0);
+  await expect(page.getByTestId("chain-status")).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await overflow(page)).toBeLessThanOrEqual(1);
 });

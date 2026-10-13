@@ -74,9 +74,11 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
  */
 export async function walkAway(page: Page): Promise<void> {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-walk").click();
   await expect(page).toHaveURL(/\/verdict/);
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-reworded").click();
   await expect(page).toHaveURL(/\/verdict/);
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Disclosure } from "@/components/business/kit";
+import { CustomerName } from "@/components/customer-link";
 import { Badge, Hash } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -97,13 +98,19 @@ function BusinessRow({ row }: { row: ActivityRow }) {
           {[
             row.status_word ? { id: "activity-status", text: row.status_word } : null,
             { id: "activity-actor", text: row.actor_text },
-            row.customer_name ? { id: "activity-customer", text: row.customer_name } : null,
+            row.customer_name ? { id: "activity-customer", text: row.customer_name, customerId: row.customer_id } : null,
           ]
-            .filter((x): x is { id: string; text: string } => x !== null)
+            .filter((x): x is { id: string; text: string; customerId?: string | null } => x !== null)
             .map((x, i) => (
               <span key={x.id}>
                 {i > 0 ? <span aria-hidden> · </span> : null}
-                <span data-testid={x.id}>{x.text}</span>
+                {x.customerId ? (
+                  <CustomerName id={x.customerId} testId={x.id}>
+                    {x.text}
+                  </CustomerName>
+                ) : (
+                  <span data-testid={x.id}>{x.text}</span>
+                )}
               </span>
             ))}
         </p>
