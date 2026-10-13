@@ -604,8 +604,8 @@ def status_reply(ctx: NlContext, turn: Turn) -> str | None:
         drawn = [_t(ctx, f"{fmt_yuan(fen)} on the {_fac(ctx, fid)}", f"{_fac(ctx, fid)} {fmt_yuan(fen)}") for fid, fen in s["drawn"]]
         lines.append(_t(ctx, "Drawn: " + ", ".join(drawn) + ".", "已提款：" + "、".join(drawn) + "。"))
     if s["pending"]:
-        n, ids = len(s["pending"]), ", ".join(s["pending"])
-        lines.append(_t(ctx, f"{n} {'item waits' if n == 1 else 'items wait'} for your approval ({ids}).", f"{n} 项待您审批（{ids}）。"))
+        n = len(s["pending"])  # an approval's id belongs to the record, not to the owner's sentence
+        lines.append(_t(ctx, f"{n} {'item waits' if n == 1 else 'items wait'} for your approval.", f"{n} 项待您审批。"))
     return "\n".join(lines)
 
 

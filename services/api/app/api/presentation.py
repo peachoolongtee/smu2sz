@@ -362,23 +362,23 @@ def relative_days(text: str, today: int, lang: Lang) -> str:
 
     if lang == "zh":
         text = re.sub(r"第 (\d+) 天", lambda m: when_text(int(m.group(1)), today, "zh"), text)
-    text = re.sub(r"\bfrom day (\d+) to day (\d+)\b", span, text)
-    text = re.sub(r"\(day (\d+) to day (\d+)\)", lambda m: "(" + span(m) + ")", text)
-    text = re.sub(r"\bthrough day (\d+)\b", through, text)
-    text = re.sub(r"\b(?:by|on or before) day (\d+)\b", by, text)
-    text = re.sub(r"\brepaid day (\d+)\b", lambda m: "repaid " + on(m), text)
-    text = re.sub(r"\barrives day (\d+)\b", lambda m: "arrives " + on(m), text)
-    text = re.sub(r"\bdue day (\d+)\b", lambda m: "due " + on(m), text)
-    text = re.sub(r"\b(?:on|for) day (\d+)\b", on, text)
+    text = re.sub(r"\bfrom day (-?\d+) to day (-?\d+)\b", span, text)
+    text = re.sub(r"\(day (-?\d+) to day (-?\d+)\)", lambda m: "(" + span(m) + ")", text)
+    text = re.sub(r"\bthrough day (-?\d+)\b", through, text)
+    text = re.sub(r"\b(?:by|on or before) day (-?\d+)\b", by, text)
+    text = re.sub(r"\brepaid day (-?\d+)\b", lambda m: "repaid " + on(m), text)
+    text = re.sub(r"\barrives day (-?\d+)\b", lambda m: "arrives " + on(m), text)
+    text = re.sub(r"\bdue day (-?\d+)\b", lambda m: "due " + on(m), text)
+    text = re.sub(r"\b(?:on|for) day (-?\d+)\b", on, text)
     def until(m: re.Match[str]) -> str:
         when = on(m)
         return "until " + (when[3:] + " from now" if when.startswith("in ") else when)
 
-    text = re.sub(r"\brequested day (\d+)\b", lambda m: "requested " + on(m), text)
-    text = re.sub(r"\bfrom day (\d+)\b", lambda m: "starting " + on(m), text)
-    text = re.sub(r"\bto day (\d+)\b", until, text)
-    text = re.sub(r"\(day (\d+)\)", lambda m: "(" + on(m) + ")", text)
-    text = re.sub(r", day (\d+)\b", lambda m: ", " + on(m), text)
+    text = re.sub(r"\brequested day (-?\d+)\b", lambda m: "requested " + on(m), text)
+    text = re.sub(r"\bfrom day (-?\d+)\b", lambda m: "starting " + on(m), text)
+    text = re.sub(r"\bto day (-?\d+)\b", until, text)
+    text = re.sub(r"\(day (-?\d+)\)", lambda m: "(" + on(m) + ")", text)
+    text = re.sub(r", day (-?\d+)\b", lambda m: ", " + on(m), text)
     return text
 
 
@@ -528,7 +528,15 @@ def in_language(text: str | None, lang: Lang, state: FinancialState | None = Non
     plurals said right. A sentence no template knows passes through unchanged."""
     if lang == "zh":
         return translate(text, book_names(state))
-    return plural(text) if text is not None else None
+    return plural(_status_words(text)) if text is not None else None
+
+
+# The engine ends an overdue alert "... and is still OPEN": the invoice's status code, said for a person.
+_STATUS_CODE = re.compile(r"(?<=\bis still )(OPEN|FINANCED)\b")
+
+
+def _status_words(text: str) -> str:
+    return _STATUS_CODE.sub(lambda m: "unpaid" if m.group(1) == "OPEN" else "financed", text)
 
 
 def last_read(today: int, lang: Lang) -> dict[str, Any]:
