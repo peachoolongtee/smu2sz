@@ -122,7 +122,8 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
   const termsOf = (id: string | null | undefined) => (id ? (customers?.search_terms.find((s) => s.customer_id === id)?.terms ?? []).join(" ") : "");
   const match = (...text: (string | null | undefined)[]) => !q || text.filter(Boolean).join(" ").toLowerCase().includes(q);
   const needs = read.needs_you.filter((r) => match(r.subject_text, r.status_text, r.customer_short, termsOf(r.customer_id)));
-  const waiting = read.waiting.filter((r) => match(r.subject_text, r.status_text, termsOf(r.customer_id)));
+  // A promise is counted under Agreements (the Deals queue's tab; Home has none), and the read's `counts.waiting` leaves it out: its row is left out here too, so the tab's number is its rows.
+  const waiting = read.waiting.filter((r) => r.kind !== "PROMISE" && match(r.subject_text, r.status_text, termsOf(r.customer_id)));
   const people = read.customers.filter((c) => match(c.name, c.short, c.status_text, termsOf(c.customer_id)));
   const everything = [...needs, ...waiting];
   const shown = tab === "all" ? everything.length : tab === "needs_you" ? needs.length : tab === "waiting" ? waiting.length : people.length;

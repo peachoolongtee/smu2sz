@@ -2989,7 +2989,8 @@ export interface WorklistView {
   day: Day;
   state_version: number;
   alert: WorklistAlert | null;
-  counts: { needs_you: number; waiting: number; customers: number };
+  /** The Deals queue's own counts: Waiting leaves out the promises (they are counted under Agreements, though their rows stay in `waiting`). `agreements` is absent from an older server. */
+  counts: { needs_you: number; waiting: number; agreements?: number; customers: number };
   needs_you: WorklistNeedsRow[];
   waiting: WorklistWaitingRow[];
   customers: WorklistCustomer[];

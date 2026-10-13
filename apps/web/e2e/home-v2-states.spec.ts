@@ -117,7 +117,7 @@ async function drive(api: Api, s: State): Promise<Reads> {
   const w = reads.work.en;
   expect(w.needs_you.map((r) => r.kind), "needs-you kinds").toEqual(s.needs);
   expect(w.waiting.map((r) => r.kind), "waiting kinds").toEqual(s.waiting);
-  expect(w.counts).toEqual({ needs_you: s.needs.length, waiting: s.waiting.length, customers: w.customers.length });
+  expect(w.counts).toEqual({ needs_you: s.needs.length, waiting: s.waiting.length, agreements: 0, customers: w.customers.length });
   expect(Boolean(w.alert), "alert").toBe(s.alert);
   if (s.severities) expect(w.needs_you.map((r) => r.severity)).toEqual(s.severities);
   const v2 = reads.home.en.home_v2!;
