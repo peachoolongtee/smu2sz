@@ -249,3 +249,40 @@ def test_it_needs_the_owner(rt: Runtime) -> None:
     from app.main import app
 
     assert TestClient(app).get("/activity").status_code == 401
+
+
+def _to_the_waiting_cure(api: TestClient) -> None:
+    _walk_to_agreement(api)
+    assert api.post("/clock/advance", json={"to_day": 2}).status_code == 200
+    assert api.post("/demo/bank-receipt").status_code == 200
+    assert api.post("/clock/advance", json={"to_day": 34}).status_code == 200
+    h = api.get("/home").json()
+    n = h["next_action"]
+    assert api.post(f"/alerts/{n['alert_id']}/act", json={"state_version": h["state_version"], "suggestions": n["suggestions"]}).status_code == 200
+
+
+def test_the_actor_is_who_took_the_action_the_title_describes(api: TestClient, rt: Runtime) -> None:
+    _to_the_waiting_cure(api)
+    waiting = api.get("/activity").json()["rows"]
+    request = next(r for r in waiting if r["status_word"] == "Waiting for your approval")
+    assert request["actor"] == "agent" and request["actor_text"] == "Prepared by FLOW · waits for you"
+    zh_request = next(r for r in api.get("/activity", params={"lang": "zh"}).json()["rows"] if r["id"] == request["id"])
+    assert zh_request["actor_text"] == "由 FLOW 准备 · 等待您批准"
+    approval = rt.store.approvals()[0].id
+    assert api.post(f"/approvals/{approval}", json={"decision": "APPROVE"}, headers=OWNER).status_code == 200
+    for lang, approved_text in (("en", "Approved by you · prepared by FLOW"), ("zh", "由您批准 · 由 FLOW 准备")):
+        rows = _check_complete(api, rt, lang)["rows"]
+        approved = [r for r in rows if r["actor_text"] == approved_text]
+        assert len(approved) == 1 and approved[0]["actor"] == "you" and approved[0]["status_word"] in ("Done", "已完成")
+        if lang == "en":
+            assert approved[0]["title_text"].startswith("You approved")
+            assert next(r for r in rows if r["id"] == request["id"])["actor_text"] == "Prepared by FLOW · you have decided"
+            agent_run = next(r for r in rows if r["actor_text"] == "FLOW, within your limits")
+            assert agent_run["actor"] == "agent"
+            assert any(r["actor"] == "system" for r in rows)
+            assert any(r["actor_text"] == "Prepared by FLOW · you have decided" for r in rows)
+        # a title that says "You ..." never carries another actor
+        prefix = "You " if lang == "en" else "您"
+        assert all(r["actor"] == "you" for r in rows if r["title_text"].startswith(prefix))
+    rt.reset_demo("busy")
+    assert all(r["actor"] == "you" for r in api.get("/activity").json()["rows"] if r["title_text"].startswith("You "))

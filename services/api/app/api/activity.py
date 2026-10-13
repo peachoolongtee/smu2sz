@@ -58,6 +58,27 @@ def _actor(requested_by: Any, lang: str) -> tuple[str, str]:
     return key, t(lang, en, zh)
 
 
+def _op_actor(requested_by: Any, status: str, category: str, approval: Any, lang: str) -> tuple[str, str]:
+    """Who took the action the row's title describes, from the log and the approval records (requested_by, the result's status and
+    approval_id, the approval's status and decided_by); never from the sentence. An operation that ran or was declined because the owner
+    answered its approval is the owner's; a request still waiting was prepared by FLOW for the owner."""
+    owner_answered = approval is not None and approval.status != ApprovalStatus.PENDING and str(approval.decided_by or "") == "OWNER"
+    if status == "PENDING_APPROVAL":
+        waiting = approval is None or approval.status == ApprovalStatus.PENDING
+        return "agent", (t(lang, "Prepared by FLOW · waits for you", "由 FLOW 准备 · 等待您批准") if waiting
+                         else t(lang, "Prepared by FLOW · you have decided", "由 FLOW 准备 · 您已决定"))
+    if owner_answered and status == "EXECUTED" and approval.status == ApprovalStatus.APPROVED:
+        return "you", t(lang, "Approved by you · prepared by FLOW", "由您批准 · 由 FLOW 准备")
+    if owner_answered and status == "REFUSED" and approval.status == ApprovalStatus.REJECTED:
+        return "you", t(lang, "Declined by you · prepared by FLOW", "由您拒绝 · 由 FLOW 准备")
+    if category == "system":
+        return "system", t(lang, "The system", "系统")
+    key = str(requested_by or "SYSTEM")
+    if key == "AGENT":
+        return "agent", (t(lang, "FLOW, within your limits", "FLOW，在您的限额内") if status == "EXECUTED" else t(lang, "FLOW", "FLOW"))
+    return _actor(key, lang)
+
+
 def _status(status: str, decided: bool, lang: str) -> tuple[str | None, str]:
     """(the status word, the tone) of an operation's result."""
     if status == "REFUSED":
@@ -86,6 +107,7 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
         ctx = None
     causality = Causality(ctx, _forecast_now(rt, state, mandate, commitments, today) if ops else None, today, lang)
     documents = {r.id: r for r in rt.store.contract_records()} if any(o.kind.endswith("_DOCUMENT") for o in ops) else {}
+    approvals = {a.id: a for a in rt.store.approvals()}
     views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents) for o in ops]
     mark_changed(list(reversed(views)))  # "why" is new when it differs from the row above it: this page reads newest first
     rows: list[dict[str, Any]] = []
@@ -98,7 +120,8 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
         category = _CATEGORY.get(o.kind, "system")
         status = str(json.loads(o.result_json).get("status") or "")
         title = v.get("event_text") or v.get("message_when") or v["kind_text"]
-        actor, actor_text = _actor(v.get("requested_by"), lang)
+        approval_id = json.loads(o.result_json).get("approval_id")
+        actor, actor_text = _op_actor(v.get("requested_by"), status, category, approvals.get(approval_id), lang)
         word, tone = _status(status, json.loads(o.result_json).get("approval_id") in decided, lang)
         buyer = _buyer_of(state, payload, commitments, v)
         link = v.get("decision_link")
