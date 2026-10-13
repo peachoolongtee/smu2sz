@@ -172,7 +172,7 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const owedRows = customers.data?.customers ?? null;
   const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
   const owedCard = <OwedCard customers={owedRows} selected={shown?.customer ?? null} onSelect={(id) => go({ customer: id })} />;
-  // The last upcoming row: what customers owe past due (the hybrid read's own short word) and how many collection rows say so (the server's rows, counted); none when nothing is overdue.
+  // The last upcoming row: what customers owe past due (the hybrid read's own short word) and how many customers have a collection row (the server's rows, one per customer, counted); none when nothing is overdue.
   const overdueCount = (worklist.data?.needs_you ?? []).filter((r) => r.kind === "COLLECTION").length;
   const overdue = overdueCount > 0 && h.receivables_card?.overdue_short ? { short: h.receivables_card.overdue_short, count: overdueCount } : null;
   const fade = { opacity: fading ? 0 : 1, transition: "opacity 100ms ease-out" } as const;

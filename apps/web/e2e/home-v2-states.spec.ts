@@ -356,7 +356,7 @@ test("busy books: a recommendation card and no alert row, at 1440 and 390, in bo
         expect(Math.round(card!.y + card!.height - (actions!.y + actions!.height))).toBeLessThanOrEqual(20);
         const legs = reads.home[lang].home_v2!.action.legs ?? [];
         await expect(page.getByTestId("hv2-funding-bar")).toHaveCount(legs.length ? 1 : 0);
-        // Round five: the last upcoming row is the overdue figure (the hybrid read's word and the collection rows' count) linking to Receivables; the owed donut is its own card under the movements, and a slice selects.
+        // Round five: the last upcoming row is the overdue figure (the hybrid read's word and the number of customers with a collection row) linking to Receivables; the owed donut is its own card under the movements, and a slice selects.
         const collections = reads.work[lang].needs_you.filter((r) => r.kind === "COLLECTION").length;
         const short = reads.home[lang].receivables_card?.overdue_short;
         const overdueRow = page.getByTestId("hv2-upcoming-overdue-row");
