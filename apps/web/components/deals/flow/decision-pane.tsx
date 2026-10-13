@@ -542,7 +542,13 @@ export function DecisionPane({
         {analysis ? (
           <>
             <OpenSection title={t("deals.terms.title")} subtitle={t("deals.terms.note")} testId="deal-terms-section" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
-              <TermsTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.terms.col.asked") : t("deals.terms.col.reply")))} subs={pair.map((p) => (p.kind === "asked" ? null : p.label))} caption={t("deals.terms.title")} />
+              {/* "FLOW recommends" stands only above the recommended reply; a reply the owner picked is "Your pick". */}
+              <TermsTable
+                paths={pair}
+                heads={pair.map((p) => (p.kind === "asked" ? t("deals.terms.col.asked") : p.key === recommended?.key ? t("deals.terms.col.reply") : t("deals.terms.col.pick", { label: p.label })))}
+                subs={pair.map((p) => (p.kind === "asked" || p.key !== recommended?.key ? null : p.label))}
+                caption={t("deals.terms.title")}
+              />
               {timing ? (
                 <div className="mt-6">
                   <TimingDiagram timing={timing} />

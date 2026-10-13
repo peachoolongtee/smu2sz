@@ -486,6 +486,8 @@ export function ApprovalCard({
         </div>
         {stateChip}
       </div>
+      {/* Where the application stands once the owner has authorized it (the server's stages: You authorize done, Lender reviews current, Funding decision next). */}
+      <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
       <div className="space-y-1 text-sm" data-testid={`approval-outcome-${a.id}`} data-execution={execution ?? ""}>
         <p className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.result")}</p>
         {approvedButRefused ? (

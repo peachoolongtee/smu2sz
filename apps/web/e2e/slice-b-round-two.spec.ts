@@ -93,6 +93,18 @@ test.describe("mock", () => {
     await expect(page.getByTestId("customer-exposure-table")).toBeVisible();
   });
 
+  test("a picked reply's column says \"Your pick\", and \"FLOW recommends\" stays above the recommended reply only", async ({ page }) => {
+    await checkedDeal(page);
+    const head = (kind: "asked" | "reply") => page.getByTestId(`deal-terms-table-head-${kind}`);
+    await expect(head("reply")).toContainText("FLOW recommends");
+    await expect(head("reply")).toContainText("Option A");
+    await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&path=CTR-6b07cbf70441&investigate=1`);
+    await expect(head("reply")).toHaveText("Your pick · Option B");
+    await expect(head("reply")).not.toContainText("FLOW recommends");
+    // The full table still marks the recommended path as such, Option A's column alone.
+    await expect(page.getByTestId("deal-compare-table").locator('th[data-recommended="true"]')).toHaveCount(1);
+  });
+
   test("Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act", async ({ page }) => {
     await page.goto("/demo");
     await page.getByTestId("more-run-capex").click();
@@ -105,6 +117,13 @@ test.describe("mock", () => {
     await expect(stages.nth(1)).toHaveAttribute("data-state", "next");
     await expect(stages.nth(2)).toHaveAttribute("data-state", "next");
     await expect(page.getByTestId("approval-approve-APR-000001")).toHaveText("Authorize the application");
+    // Once authorized the decided row keeps the stages: You authorize is done, the lender's is next to happen.
+    await page.getByTestId("approval-approve-APR-000001").click();
+    const decided = page.getByTestId("approvals-decided").getByTestId("approval-stage");
+    await expect(decided).toHaveCount(3);
+    await expect(decided.nth(0)).toHaveAttribute("data-state", "done");
+    await expect(decided.nth(1)).toHaveAttribute("data-state", "current");
+    await expect(decided.nth(2)).toHaveAttribute("data-state", "next");
   });
 });
 
@@ -152,5 +171,31 @@ test.describe("live", () => {
     await expect(page.getByTestId("customer-decision-heading")).toContainText("60-day terms");
     await expect(page.getByTestId("customer-others")).toContainText("Other open negotiations (3)");
     await expect(page.getByTestId("customer-flow-links").getByRole("link").first()).toBeVisible();
+  });
+
+  test("authorizing on the busy books leaves the three stages on the decided row, the first done", async ({ page, request }) => {
+    await busy(request);
+    await page.goto("/approvals");
+    await page.locator('[data-testid^="approval-approve-"]').first().click();
+    const decided = page.getByTestId("approvals-decided").getByTestId("approval-stage");
+    await expect(decided).toHaveCount(3);
+    await expect(decided.nth(0)).toHaveAttribute("data-state", "done");
+    await expect(decided.nth(1)).toHaveAttribute("data-state", "current");
+    await expect(decided.nth(2)).toHaveAttribute("data-state", "next");
+  });
+
+  test("the flow's financing link lands on the facility it names on Cash: the element has the id, opens and takes focus", async ({ page, request }) => {
+    await busy(request);
+    await page.goto("/customers/BUYER-1");
+    const link = page.locator('[data-testid^="customer-flow-step-link-"]').filter({ hasText: /financing/i }).first();
+    const href = await link.getAttribute("href");
+    expect(href).toMatch(/^\/cash#facility-/);
+    await link.click();
+    await expect(page).toHaveURL(/\/cash#facility-/);
+    const id = new URL(page.url()).hash.slice(1);
+    const fold = page.locator(`#${id}`);
+    await expect(fold).toBeVisible();
+    await expect(fold).toHaveAttribute("open", "");
+    await expect(fold.locator("summary")).toBeFocused();
   });
 });

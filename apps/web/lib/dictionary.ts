@@ -2704,6 +2704,7 @@ export const en = {
   "deals.why.authority": "Who decides, and why",
   "deals.why.assumes": "What each option assumes",
   "deals.why.rule": "FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.",
+  "deals.terms.col.pick": "Your pick · {label}",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5406,4 +5407,5 @@ export const zh: Record<DictKey, string> = {
   "deals.why.authority": "由谁决定，以及原因",
   "deals.why.assumes": "各方案的前提假设",
   "deals.why.rule": "FLOW 建议的是在您的授权范围内它可以发送的第一个回复；它不按成本对回复排序。",
+  "deals.terms.col.pick": "您的选择 · {label}",
 };
