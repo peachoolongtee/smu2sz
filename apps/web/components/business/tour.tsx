@@ -177,9 +177,12 @@ function TourCard({ steps }: { steps: Step[] }) {
   if (hole) {
     const right = window.innerWidth - (hole.left + hole.width);
     const below = window.innerHeight - (hole.top + hole.height);
+    // Below or above, the card lines up with the part, kept inside the screen.
+    const width = Math.min(CARD_W, window.innerWidth - 32);
+    const left = Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), window.innerWidth - width - 16);
     if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
-    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left: "50%", translate: "-50% 0" };
-    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left: "50%", translate: "-50% 0" };
+    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left };
+    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };
   }
 
@@ -197,7 +200,7 @@ function TourCard({ steps }: { steps: Step[] }) {
     >
       {/* The dimmed page, with a hole around the part being explained (it jumps between steps: no layout property animates). */}
       {hole ? (
-        <div aria-hidden className="pointer-events-none fixed rounded-card ring-2 ring-surface" style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }} />
+        <div aria-hidden data-testid="tour-hole" className="pointer-events-none fixed rounded-card ring-2 ring-surface" style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }} />
       ) : (
         <div aria-hidden className="fixed inset-0 bg-ink/60" />
       )}
@@ -206,6 +209,7 @@ function TourCard({ steps }: { steps: Step[] }) {
       <div
         ref={cardRef}
         key={step}
+        data-testid="tour-card"
         className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >

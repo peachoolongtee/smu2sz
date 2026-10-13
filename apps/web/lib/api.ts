@@ -13,6 +13,9 @@ import { API_MODE } from "./config";
 import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
 import type {
+  ActivityView,
+  DemoRestoreResult,
+  DemoStoryView,
   ActRequest,
   AlertActResult,
   AlertChangedDetail,
@@ -474,4 +477,35 @@ export async function getBuyerInputs(id: string, lang: "en" | "zh", ctx: Custome
 /** POST /buyers/{id}/inputs (a buyer's fact) or POST /firm/inputs (`id` null: a firm row), one field, as the owner typed it. A 422 says why. */
 export async function saveInput(id: string | null, body: InputSaveRequest, lang: "en" | "zh"): Promise<InputSaveResult> {
   return isMock ? (await mock()).saveInput(id, body, lang) : (await live()).saveInput(id, body, lang);
+}
+
+// ------------------------------------------------------------------ Slice D: Activity and the Demo story (the server writes every word)
+
+/** The page context Activity is opened with (the same keys the other Business pages share in the address). */
+export interface ActivityContext {
+  customer?: string | null;
+  decision?: string | null;
+  invoice?: string | null;
+  path?: string | null;
+  from?: string | null;
+}
+
+/** GET /activity?lang=: the business record, newest first, with the benign sign-in refusals summarised apart from the real alerts. A 404 means an older API. */
+export async function getActivity(lang: "en" | "zh", ctx: ActivityContext = {}): Promise<ActivityView> {
+  return isMock ? (await mock()).getActivity(lang, ctx) : (await live()).getActivity(lang, ctx);
+}
+
+/** True when the API has no /activity (an older server): the page then reads the ledger as before. */
+export function activityMissing(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 404 || e.status === 405);
+}
+
+/** GET /demo/story?lang=&seen=: where the story stands (derived from the books), the one next control, the alternate scenario and the operator tools. */
+export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
+  return isMock ? (await mock()).getDemoStory(lang, seen) : (await live()).getDemoStory(lang, seen);
+}
+
+/** POST /demo/restore?lang= (owner, demo mode): puts the main books back after the alternate scenario was loaded. */
+export async function restoreDemo(lang: "en" | "zh"): Promise<DemoRestoreResult> {
+  return isMock ? (await mock()).restoreDemo(lang) : (await live()).restoreDemo(lang);
 }

@@ -2614,6 +2614,24 @@ export const en = {
   "deals.review.reading": "Reading the terms of this send",
   "receipt.title.agreed": "What this agreement does",
   "deals.only.unknown": "Showing one customer only.",
+  // ---- Slice D (begin)
+  "nav.trust": "Security and evidence",
+  "trust.subtitle": "What FLOW refused and why, and the record chain as a file anyone can check.",
+  "trust.view": "Which record",
+  "trust.view.security": "Security",
+  "trust.view.evidence": "Evidence",
+  "trust.back.activity": "Back to Activity",
+  "trust.back.demo": "Back to the story",
+  "trust.marked": "The record you opened",
+  "trust.entries": "The record entries ({n})",
+  "trust.entries.sub": "Each entry in the ledger's own words, with its hash and the hash before it.",
+  "trust.entry.n": "Entry {n}",
+  "trust.entry.named": "Entry {n}: {kind}",
+  "trust.entry.other": "Record entry",
+  "trust.entry.missing": "That entry is not in this record. Nothing was removed; the full record is below.",
+  "trust.event.missing": "That event is not in this record. Nothing was removed; every event is below.",
+  "trust.raw": "The raw file",
+  // ---- Slice D (end)
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5226,4 +5244,22 @@ export const zh: Record<DictKey, string> = {
   "deals.review.reading": "正在读取这次发送的条款",
   "receipt.title.agreed": "这份协议的作用",
   "deals.only.unknown": "只显示一位客户。",
+  // ---- Slice D (begin)
+  "nav.trust": "安全与证据",
+  "trust.subtitle": "FLOW 拒绝了什么、为什么，以及任何人都能核对的记录链文件。",
+  "trust.view": "查看哪份记录",
+  "trust.view.security": "安全",
+  "trust.view.evidence": "证据",
+  "trust.back.activity": "返回动态",
+  "trust.back.demo": "返回演示故事",
+  "trust.marked": "您打开的这条记录",
+  "trust.entries": "记录条目（{n}）",
+  "trust.entries.sub": "每条记录用账本自己的话说明，并附本条哈希和前一条哈希。",
+  "trust.entry.n": "第 {n} 条",
+  "trust.entry.named": "第 {n} 条：{kind}",
+  "trust.entry.other": "记录条目",
+  "trust.entry.missing": "这条记录不在当前记录中。没有任何内容被删除，完整记录在下方。",
+  "trust.event.missing": "这起事件不在当前记录中。没有任何内容被删除，所有事件都在下方。",
+  "trust.raw": "原始文件",
+  // ---- Slice D (end)
 };

@@ -10,6 +10,9 @@ import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
+  ActivityView,
+  DemoRestoreResult,
+  DemoStoryView,
   ActRequest,
   AlertActResult,
   AlertsView,
@@ -387,6 +390,27 @@ export async function getLedger(): Promise<LedgerView> {
     chain_scope_text: rec.chain_scope_text,
     refusals: s.securityScene ? cast<AuditView>(auditSec).refusal_summary : cast<LedgerView>(ledgerDay34).refusals,
   });
+}
+
+/** Slice D reads: served from recordings once the recorder has saved them; until then the mock answers like an older API (404), so Activity reads the ledger. */
+export async function getActivity(_lang: "en" | "zh", _ctx: object = {}): Promise<ActivityView> {
+  void _lang;
+  void _ctx;
+  await delay();
+  throw new ApiError(404, "Not found");
+}
+
+export async function getDemoStory(_lang: "en" | "zh", _seen?: string | null): Promise<DemoStoryView> {
+  void _lang;
+  void _seen;
+  await delay();
+  throw new ApiError(404, "Not found");
+}
+
+export async function restoreDemo(_lang: "en" | "zh"): Promise<DemoRestoreResult> {
+  void _lang;
+  await delay();
+  throw new ApiError(404, "Not found");
 }
 
 export async function getAudit(): Promise<AuditView> {

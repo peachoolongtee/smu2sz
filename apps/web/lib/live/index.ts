@@ -11,6 +11,9 @@ import { ApiError } from "../errors";
 import { contextQuery, type CustomerContext } from "../customer-href";
 import { serverScenario } from "../selection";
 import type {
+  ActivityView,
+  DemoRestoreResult,
+  DemoStoryView,
   ActRequest,
   AlertActResult,
   AlertsView,
@@ -147,6 +150,14 @@ export const live = {
 
   getLedger: (lang: "en" | "zh" = "en") => http<LedgerView>("GET", `/ledger${lang === "zh" ? "?lang=zh" : ""}`),
   getAudit: () => http<AuditView>("GET", "/audit"),
+
+  getActivity: (lang: "en" | "zh", ctx: { customer?: string | null; decision?: string | null; invoice?: string | null; path?: string | null; from?: string | null } = {}) => {
+    const q = new URLSearchParams({ lang });
+    for (const k of ["customer", "decision", "invoice", "path", "from"] as const) if (ctx[k]) q.set(k, ctx[k] as string);
+    return http<ActivityView>("GET", `/activity?${q}`);
+  },
+  getDemoStory: (lang: "en" | "zh", seen?: string | null) => http<DemoStoryView>("GET", `/demo/story?lang=${lang}${seen ? `&seen=${encodeURIComponent(seen)}` : ""}`),
+  restoreDemo: (lang: "en" | "zh") => http<DemoRestoreResult>("POST", `/demo/restore?lang=${lang}`, { body: {} }),
 
   getDecisions: (q: decisions.DecisionQuery) => decisions.getDecisions(q),
   getDecision: (id: string, lang: "en" | "zh") => decisions.getDecision(id, lang),
