@@ -48,8 +48,8 @@ const STEPS: Record<string, Step[]> = {
     { target: "#recv-open", title: "tour.recv.open.title", body: "tour.recv.open.body" },
   ],
   "/activity": [
-    { target: "#activity-timeline", title: "tour.activity.list.title", body: "tour.activity.list.body" },
-    { target: "#activity-refused", title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+    { target: '#activity-timeline, [data-testid="activity-list"]', title: "tour.activity.list.title", body: "tour.activity.list.body" },
+    { target: '#activity-refused, [data-testid="activity-security"]', title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
   ],
   "/approvals": [{ target: '[id^="approval-APR"]', title: "tour.approvals.title", body: "tour.approvals.body" }],
   "/limits": [{ target: "#limits-rules", title: "tour.limits.title", body: "tour.limits.body" }],

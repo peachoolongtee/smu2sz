@@ -2631,6 +2631,18 @@ export const en = {
   "trust.entry.missing": "That entry is not in this record. Nothing was removed; the full record is below.",
   "trust.event.missing": "That event is not in this record. Nothing was removed; every event is below.",
   "trust.raw": "The raw file",
+  "activity.search": "Search the record",
+  "activity.category": "Category",
+  "activity.changed": "What changed",
+  "activity.security": "Security",
+  "activity.evidence.open": "Open the full record",
+  "activity.benign.show": "Show the attempts",
+  "activity.alert": "Alert",
+  "activity.filter.none": "Nothing in the record matches. No entry was removed: clear the search or choose All to see every one.",
+  "activity.record.kind": "Kind of entry",
+  "activity.record.sentence": "The audit sentence",
+  "activity.record.detail": "What was recorded",
+  "activity.record.action": "What FLOW did",
   // ---- Slice D (end)
 } as const;
 
@@ -5261,5 +5273,17 @@ export const zh: Record<DictKey, string> = {
   "trust.entry.missing": "这条记录不在当前记录中。没有任何内容被删除，完整记录在下方。",
   "trust.event.missing": "这起事件不在当前记录中。没有任何内容被删除，所有事件都在下方。",
   "trust.raw": "原始文件",
+  "activity.search": "搜索记录",
+  "activity.category": "类别",
+  "activity.changed": "发生了什么变化",
+  "activity.security": "安全",
+  "activity.evidence.open": "打开完整记录",
+  "activity.benign.show": "查看这些尝试",
+  "activity.alert": "警示",
+  "activity.filter.none": "记录中没有符合条件的内容。没有任何条目被删除：清除搜索或选择“全部”即可看到每一条。",
+  "activity.record.kind": "条目类型",
+  "activity.record.sentence": "审计语句",
+  "activity.record.detail": "记录的内容",
+  "activity.record.action": "FLOW 的处理",
   // ---- Slice D (end)
 };
