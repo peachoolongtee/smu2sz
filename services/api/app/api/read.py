@@ -247,8 +247,11 @@ DEMO_SCENARIOS = ("golden_sme", "short_facilities", "public_sme", "busy")
 
 
 @router.post("/demo/reset")
-def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
+def demo_reset(scenario: str = "golden_sme", lang: str = "en", from_scenario: str | None = None, confirm_loss: str | None = None) -> dict:
+    """Reset the books to a scenario. `from_scenario` and `confirm_loss` are an optional guard for a page that may be stale
+    (`app.api.demo_story.check_books_unchanged`); without them the call behaves as it always has."""
     from app.api.demo_seed import DemoSeedError
+    from app.api.demo_story import check_books_unchanged, note_scenario_change
     from app.api.runtime import ResetRefused
 
     if scenario not in DEMO_SCENARIOS:
@@ -260,12 +263,12 @@ def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
             "message_when": t(lang, f"There is no demo scenario called {scenario!r}; choose one of {names}. Nothing was reset.",
                               f"没有名为 {scenario!r} 的演示场景；请从 {names} 中选择。未重置任何内容。")})
     rt = get_runtime()
-    before = rt.scenario
     try:
-        rt.reset_demo(scenario)
-        from app.api.demo_story import note_scenario_change
-
-        note_scenario_change(rt, before, scenario)
+        with rt.lock:
+            check_books_unchanged(rt, from_scenario, confirm_loss, "zh" if lang == "zh" else "en")
+            before = rt.scenario
+            rt.reset_demo(scenario)
+            note_scenario_change(rt, before, scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
