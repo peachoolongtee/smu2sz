@@ -13,8 +13,16 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.alerts import Alert, alerts
 from app.api.approval_lines import FUNDING_KINDS, NO_LINES, approval_lines
+from app.api.approval_review import approval_review, deadline_view
 from app.api.auth import is_bank_feed, log_refusal, require_owner, require_owner_or_agent
-from app.api.decisions import approval_decision, execution_view, load_context, quote_for, record_fact
+from app.api.decisions import (
+    approval_decision,
+    execution_view,
+    load_context,
+    quote_for,
+    record_fact,
+    waiting_view,
+)
 from app.api.home import cure_after
 from app.api.presentation import (
     COMMERCIAL_KINDS,
@@ -187,6 +195,18 @@ def approvals_queue(lang: str = "en") -> dict:
         return _approvals_queue(rt, lang)
 
 
+def _approval_deadline(ctx, item: dict) -> int | None:
+    """The day a waiting approval has to be decided by: the day the decision record is waiting on the owner for (the agreement's expiry, the day the
+    cash is needed); None once decided, with no decision record, or when it names none."""
+    if ctx is None or item.get("status") != "PENDING" or not item.get("decision_id"):
+        return None
+    found = ctx.states().get(item["decision_id"])
+    if found is None:
+        return None
+    waiting = waiting_view(ctx, found[0], found[1], "en")
+    return waiting["day"] if waiting["code"] == "OWNER_APPROVAL" else None
+
+
 def _approvals_queue(rt, lang: str) -> dict:
     out = []
     state = rt.store.get_state()
@@ -295,6 +315,8 @@ def _approvals_queue(rt, lang: str) -> dict:
             except Exception:
                 log.exception("approval %s: the decision record could not be read", a.id)
         d["receipt"] = approval_receipt(lang, item=d, pres=d["presentation"]) if d.get("presentation") is not None else None
+        d.update(approval_review(lang, item=d))
+        d.update(deadline_view(a.kind or "", _approval_deadline(ctx, d), rt.day, lang))
         out.append(d)
     return {"approvals": out, "lang": lang, **last_read(rt.day, lang)}
 

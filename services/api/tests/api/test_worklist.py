@@ -71,7 +71,7 @@ def _get(api: TestClient, lang: str = "en", **query: Any) -> dict[str, Any]:
 def _strings(x: Any) -> Iterator[str]:
     if isinstance(x, dict):
         for k, v in x.items():
-            if not k.endswith("href") and k not in ("key", "customer_id"):
+            if not k.endswith("href") and k not in ("key", "customer_id", "subject_demo_text"):
                 yield from _strings(v)
     elif isinstance(x, list):
         for v in x:
@@ -111,7 +111,8 @@ def test_before_the_plan_the_alert_is_there_and_needs_you_holds_the_foshan_decis
     assert [i["key"] for i in w["needs_you"]] == [f"deal:{oid}"]
     item = w["needs_you"][0]
     assert (item["kind"], item["owner"], item["severity"], item["customer_short"]) == ("DECISION", "NEEDS_YOU", "CAUTION", "Foshan")
-    assert (item["subject_text"], item["status_text"]) == ("Foshan · Payment terms", "Counter ready · Reply needed")
+    assert (item["subject_text"], item["status_text"]) == ("Foshan · 60-day terms on future invoices and 2 more terms", "Counter ready")
+    assert (item["lifecycle"], item["subject_demo_text"]) == ("counter_ready", f"Foshan · 60-day terms on future invoices and 2 more terms · {oid}")
     assert item["consequence_text"] == "As asked: below your minimum for 15 days."
     # a safe counter is ready, so the breach is a consequence of the offer as asked and not a cash-safety item: no deadline, a caution
     assert item["deadline_day"] is None and item["is_new"] is False
@@ -383,14 +384,15 @@ def test_the_chinese_read_has_the_same_figures_and_no_english_or_ids(api: TestCl
     en, zh = _get(api), _get(api, "zh")
     assert figures(en) == figures(zh)
     assert not english_leaks(zh, NAMES, raw_fields=[HREFS])
+    # (`subject_demo_text` is the one field that carries an offer's id: it is for the Demo view and the web shows it nowhere else)
     assert not [s for s in _strings(zh) if RAW_ID.search(s)] and not [s for s in _strings(en) if RAW_ID.search(s)]
     assert zh["alert"]["text"] == "现金储备将在 12 天后变得不安全。融资方案已准备好。"
     assert (zh["alert"]["kind_text"], zh["alert"]["pending_text"]) == ("FLOW 已备好行动", "¥405k 融资方案可用 · 无需批准 · 等待您确认")
     item = zh["needs_you"][0]
-    assert (item["subject_text"], item["status_text"]) == ("Foshan · 付款账期", "还价已就绪 · 需要您答复")
+    assert (item["subject_text"], item["status_text"]) == ("Foshan · 60 天账期（今后的发票），另有 2 项条款", "还价已就绪")
     assert item["consequence_text"] == "按对方要求：低于您的最低现金储备 15 天。"
     assert item["why_first_text"].startswith("优先处理的原因")
-    assert "您" in item["status_text"]
+    assert "您" in zh["needs_you"][0]["consequence_text"] or "您" in item["why_first_text"]  # the 您 voice, where a sentence addresses the owner
 
 
 def test_the_chinese_read_after_the_plan_and_for_a_missed_receipt(api: TestClient) -> None:
@@ -491,9 +493,10 @@ def test_an_offer_the_buyer_must_clarify_is_a_buyer_reply_that_waits(api: TestCl
     assert w["needs_you"] == []
     [wait] = w["waiting"]
     assert (wait["kind"], wait["owner"], wait["severity"], wait["customer_id"]) == ("BUYER_REPLY", "WAITING", "NORMAL", "BUYER-1")
-    assert wait["status_text"].startswith("Waiting for the buyer's clarification") and wait["consequence_text"] == "Nothing to resend."
+    assert (wait["status_text"], wait["lifecycle"]) == ("More information needed", "more_information")
+    assert wait["consequence_text"] == "Asked today. Nothing to resend."
     zh = _get(api, "zh")["waiting"][0]
-    assert zh["status_text"].startswith("等待买方澄清") and zh["consequence_text"] == "无需重新发送。"
+    assert (zh["status_text"], zh["lifecycle"]) == ("需要更多信息", "more_information") and zh["consequence_text"].endswith("无需重新发送。")
     assert next(c for c in w["customers"] if c["customer_id"] == "BUYER-1")["status_text"] == "1 open negotiation · 1 waiting"
 
 
@@ -634,11 +637,11 @@ def test_two_rows_of_one_customer_and_subject_say_what_separates_them(api: TestC
     _offer(api, "EX02_EARLY_1_5")
     _offer(api, "EX03_AS_USUAL")
     rows = _get(api)["needs_you"]
-    said = {r["subject_text"]: [] for r in rows}
-    for r in rows:
-        said[r["subject_text"]].append(r["differentiator_text"])
-    assert said["Foshan · Payment terms"] == [None]  # alone in its subject: nothing to separate
-    assert sorted(said["Foshan · Early-payment discount"]) == ["“Early pay at 1.5%”", "“pay this one early at 1.5%”"]
+    subjects = [r["subject_text"] for r in rows]
+    assert len(subjects) == len(set(subjects)) == 3  # the subjects are distinct, the buyer's own words in the two that would read alike...
+    assert sorted(s for s in subjects if "1.5%" in s) == ["Foshan · Early payment, 1.5% off · “Early pay at 1.5%”",
+                                                          "Foshan · Early payment, 1.5% off · “pay this one early at 1.5%”"]
+    assert [r["differentiator_text"] for r in rows] == [None, None, None]  # ...so nothing is left for the differentiator to separate
 
 
 def test_the_differentiator_is_the_buyers_own_words_in_both_languages(api: TestClient) -> None:
@@ -646,10 +649,10 @@ def test_the_differentiator_is_the_buyers_own_words_in_both_languages(api: TestC
     _offer(api, "EX03_AS_USUAL")
     en, zh = _get(api), _get(api, "zh")
     assert figures(en) == figures(zh)
-    assert [r["differentiator_text"] for r in en["needs_you"]] == [r["differentiator_text"] for r in zh["needs_you"]]
-    assert all(r["differentiator_text"] for r in zh["needs_you"])
-    # the quoted phrase is the buyer's message, not FLOW's word: it is the one string of the zh read left in the buyer's language
-    assert not english_leaks(zh, NAMES, raw_fields=[HREFS, r".*differentiator_text"])
+    assert [r["differentiator_text"] for r in en["needs_you"]] == [r["differentiator_text"] for r in zh["needs_you"]] == [None, None]
+    # the buyer's quoted phrase is in the subject now, the one string of the zh read left in the buyer's language
+    assert all("“" in r["subject_text"] for r in zh["needs_you"])
+    assert not english_leaks(zh, NAMES, raw_fields=[HREFS, r".*subject_text", r".*subject_demo_text"])
 
 
 def test_a_lone_row_or_one_with_no_phrase_or_a_phrase_said_twice_has_no_differentiator() -> None:
