@@ -221,7 +221,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
                 })}
               </Callout>
             ) : null}
-            <WhatIfSummaryCard r={result} loading={loading} today={today} />
+            <WhatIfSummaryCard r={result} loading={loading} />
             <WhatIfCashCard r={result} today={today} />
             <Disclosure className="border-t border-line pt-1" summary={t("whatif.details")} testId="whatif-details">
               <div className="space-y-6">

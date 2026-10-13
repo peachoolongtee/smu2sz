@@ -2386,6 +2386,11 @@ export interface WhatIfResult {
     cure_cost_display?: string | null;
     observed: string | null;
     first_unfunded_day: Day | null;
+    /** The cash line against the minimum, whatever the cause (`breach_day` is only a breach the package causes): days of the horizon closing below it, and its negation. Null without a trajectory. */
+    below_days?: number | null;
+    stays_above?: boolean | null;
+    /** The word beside "Lowest cash", in the server's words ("Below it for 35 days" / "Stays above it"); null with no cash line to judge. */
+    cash_text?: string | null;
   };
   trajectory: {
     mode: Mode;

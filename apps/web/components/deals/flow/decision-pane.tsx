@@ -48,20 +48,17 @@ function SendResult({ n }: { n: NegotiationView }) {
   const { t } = useI18n();
   const deal = n.outcome === "DEAL";
   const accepted = n.rounds.find((r) => r.buyer_response === "ACCEPT");
-  const ran = n.operations.filter((o) => o.status === "EXECUTED");
   const summary = n.execution?.summary_text || null;
   return (
     <div role="status" className="mt-4 rounded-tile border border-line bg-subtle px-4 py-3 text-sm" data-testid="deal-sent">
       <p className="font-bold text-ink" data-testid="deal-negotiation">
         {deal ? t("biz.deals.dealDone", { counter: accepted?.counter_label_when ?? accepted?.counter_label ?? "" }) : t("biz.deals.noDeal")}
       </p>
-      {/* What ran, in the server's own words (the negotiation result's execution summary); the dictionary's two sentences are only for a server that sends none. */}
+      {/* What ran, in the server's own words (the negotiation result's execution summary); the web adds no sentence of its own about the funding. */}
       {summary ? (
         <p className="mt-1 text-ink-2" data-testid="deal-sent-ran">
           {summary}
         </p>
-      ) : !deal ? (
-        <p className="mt-1 text-ink-2">{ran.length ? t("biz.deals.gapFunded") : t("biz.deals.nothingChanged")}</p>
       ) : null}
     </div>
   );

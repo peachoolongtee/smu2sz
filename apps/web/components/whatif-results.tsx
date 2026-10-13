@@ -116,11 +116,10 @@ function SummaryFigure({ label, value, sub, tone, testId }: { label: string; val
  * dictionary and every figure a server display string; days are distances from today. The detail cards follow
  * behind "How this was worked out".
  */
-export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; loading: boolean; today: number }) {
+export function WhatIfSummaryCard({ r, loading }: { r: WhatIfResult; loading: boolean }) {
   const { t } = useI18n();
   const result = RESULT[r.outcome] ?? RESULT.NO_VERDICT;
   const f = r.forward;
-  const breach = r.reserve.breach_day;
   const p = r.plan;
   const needsFunding = Boolean(p && p.actions.length);
   const be = r.break_even;
@@ -149,9 +148,9 @@ export function WhatIfSummaryCard({ r, loading, today }: { r: WhatIfResult; load
         <SummaryFigure label={t("whatif.fig.giveaways")} value={f.total_display} sub={t("whatif.fig.limit", { cap: f.cap_display })} tone={f.over_cap ? "bad" : undefined} testId="whatif-forward-total" />
         <SummaryFigure
           label={t("whatif.fig.cash")}
-          value={breach !== null ? t("whatif.fig.below", { when: whenText(breach, today, t) }) : t("whatif.fig.above")}
+          value={r.reserve.cash_text ?? "–"}
           sub={r.trajectory ? t("whatif.fig.lowest", { amount: r.trajectory.min_cash.text }) : null}
-          tone={breach !== null ? (r.reserve.curable ? "warn" : "bad") : "ok"}
+          tone={r.reserve.stays_above == null ? undefined : r.reserve.stays_above ? "ok" : r.reserve.curable ? "warn" : "bad"}
           testId="whatif-cash-fig"
         />
         <SummaryFigure
