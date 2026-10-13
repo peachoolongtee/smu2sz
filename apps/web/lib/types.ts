@@ -2649,6 +2649,8 @@ export interface HomeRailEvent {
   when: string;
   kind: string;
   label: string;
+  label_short?: string;
+  amount_fen?: Fen;
   amount_short: string;
   cash_after_short?: string;
   room_after_short?: string | null;
@@ -2837,6 +2839,8 @@ export interface HomeV2Chart {
 }
 
 export interface HomeV2 {
+  /** The one line under the headline ("One funding action ready. Two deal decisions need you."): the server's sentence about what waits, in words; absent until the server sends it (then there is no line). */
+  summary_text?: string | null;
   kpis: {
     cash_available: HomeV2Kpi & {
       buffer: {

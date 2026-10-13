@@ -48,15 +48,14 @@ export function useFunding(pinned: boolean, onPin: (on: boolean) => void) {
   };
 }
 
-/** "Funding timing": the server's label and sentence as a button that opens the funding composition under the facts row. */
+/** "Funding sources ⌄": a text button (the dictionary's label, the chevron) that opens the funding composition under the card's actions; the server's funding sentence is its accessible name and stays in the page for a reader. Without legs it is the plain sentence. */
 export function FundingFact({ label, value, open, controls, id, toggle, pointer, focus, hasLegs }: { label: string; value: string; open: boolean; controls: string; id: string; toggle: () => void; pointer: object; focus: object; hasLegs: boolean }) {
   const { t } = useI18n();
   if (!hasLegs)
     return (
-      <div data-testid="hv2-funding-text">
-        <p className="text-supporting text-ink-3">{label}</p>
-        <p className="mt-1 text-supporting font-bold text-ink sm:text-sm">{value}</p>
-      </div>
+      <p className="min-w-0 text-supporting text-ink-2" data-testid="hv2-funding-text">
+        {label}: {value}
+      </p>
     );
   return (
     <button
@@ -68,16 +67,14 @@ export function FundingFact({ label, value, open, controls, id, toggle, pointer,
       onClick={toggle}
       {...pointer}
       {...focus}
-      className="group -mx-2 -my-1 block w-[calc(100%+1rem)] rounded-control px-2 py-1 text-left hover:bg-subtle"
+      className="motion-press group inline-flex min-h-10 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-ink hover:bg-subtle touch:min-h-11 max-sm:!flex-none"
       data-testid="hv2-funding-fact"
     >
-      <span className="block text-supporting text-ink-3">{label}</span>
-      <span className="mt-1 flex items-start gap-1.5 text-supporting font-bold text-ink sm:text-sm">
-        <span className="min-w-0 flex-1">{value}</span>
-        <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`mt-0.5 shrink-0 text-ink-3 transition-transform duration-(--dur) ${open ? "rotate-180" : ""}`}>
-          <path d="m4 6 4 4 4-4" />
-        </svg>
-      </span>
+      <span aria-hidden>{t("hv2.funding.sources")}</span>
+      <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`shrink-0 text-ink-3 transition-transform duration-(--dur) ${open ? "rotate-180" : ""}`}>
+        <path d="m4 6 4 4 4-4" />
+      </svg>
+      <span className="sr-only">{value}</span>
     </button>
   );
 }

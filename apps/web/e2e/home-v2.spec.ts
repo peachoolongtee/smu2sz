@@ -47,58 +47,56 @@ async function open(page: Page, { lang = "en", offer = false }: { lang?: Lang; o
   }
   await page.goto("/");
   await expect(page.getByTestId("home-v2")).toBeVisible();
-  await expect(page.getByTestId("home-chart")).toBeVisible();
+  await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
 }
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "mock-mode spec on the recorded story (the phone is measured inside it)");
 });
 
-test("the header and the metric strip: the status sentence, 'Updated today', and the three cells are the read's", async ({ page }) => {
+test("the header and the three cards: the headline, the state pill, the cash card with the reserve bar, the outlook card with its mini chart", async ({ page }) => {
   await open(page, { offer: true });
   const h = homeOffer.en;
   const v2 = h.home_v2;
   await expect(page.locator("h1")).toHaveCount(1);
-  await expect(page.getByTestId("hv2-page-name")).toHaveText("Home");
   await expect(page.getByTestId("home-headline")).toHaveText(h.cash.headline_conditional);
   await expect(page.getByTestId("home-status-word")).toHaveText(h.cash.status_word);
   await expect(page.getByTestId("home-read-when")).toHaveText("Updated today");
   await expect(page.getByTestId("home-read-when")).toHaveAttribute("aria-label", "Read today");
+  // The state pill is the alert's own kind word on the amber fill; the one-line summary is the server's (none until it sends it).
+  const said = worklistOffer.en.alert as { kind_text?: string | null; eyebrow: string };
+  await expect(page.getByTestId("hv2-state-pill")).toHaveText(said.kind_text ?? said.eyebrow);
+  await expect(page.getByTestId("hv2-state-pill")).toHaveAttribute("data-tone", "amber");
+  await expect(page.getByTestId("hv2-summary")).toHaveCount(0);
+  // Cash available today: the figure, the server's note, the reserve bar (a track to the minimum and the buffer above it); not a progress bar.
   const cash = v2.kpis.cash_available;
-  await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("Cash today");
+  await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("Cash available today");
   await expect(page.getByTestId("home-kpi-cash-value")).toHaveText(cash.value_display);
-  // Each level has one job: the cash cell's note is the headroom as the server words it plus the dictionary's word ("+¥100k buffer"), not a sentence the recommendation also says.
-  await expect(page.getByTestId("home-kpi-cash-note")).toHaveText(cash.buffer.headroom_text ? `${cash.buffer.headroom_text} buffer` : cash.note);
-  await expect(page.getByTestId("home-buffer")).toHaveAttribute("aria-label", cash.note);
-  const low = v2.kpis.lowest_ahead;
-  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
-  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveClass(/text-bad-fg/);
-  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.short_note ?? low.note);
-  if (low.with_plan) await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveText(`${low.with_plan.label} ${low.with_plan.value_text}`);
-  const fund = v2.kpis.funding;
-  await expect(page.getByTestId("hv2-metric-funding-label")).toHaveText("Funding plan");
-  await expect(page.getByTestId("home-kpi-funding-value")).toHaveText("¥405,000");
-  await expect(page.getByTestId("home-kpi-funding-value")).toHaveClass(/text-brand-600/);
-  // The funding cell says its status ("Ready to run"), not the sentence the recommendation's facts carry.
-  if (fund.status_text) {
-    await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(fund.status_text);
-    await expect(page.getByTestId("home-kpi-funding-note")).toHaveCount(0);
-  } else await expect(page.getByTestId("home-kpi-funding-note")).toHaveText(fund.note);
-  // The second sentence is behind the cell's info control, not on the page.
-  const pop = page.getByTestId("hv2-metric-funding-pop");
-  await expect(pop).toBeHidden();
-  await page.getByTestId("hv2-metric-funding-info").click();
-  await expect(pop).toBeVisible();
-  await expect(pop).toHaveText(fund.hint);
-  await page.keyboard.press("Escape");
-  await expect(pop).toBeHidden();
-  // A scale, not a progress bar.
-  await expect(page.getByTestId("home-buffer-min")).toBeAttached();
+  await expect(page.getByTestId("home-kpi-cash-note")).toHaveText(cash.note);
+  await expect(page.getByTestId("home-buffer-min-text")).toContainText(cash.buffer.min_display);
+  await expect(page.getByTestId("home-buffer-room-text")).toContainText(cash.buffer.headroom_text);
+  await expect(page.getByTestId("home-buffer-bar")).toHaveAttribute("aria-label", cash.note);
   await expect(page.getByTestId("home-buffer-cash")).toBeAttached();
   await expect(page.getByRole("progressbar")).toHaveCount(0);
+  // Company cash outlook: the lowest figure in the one risk red, "Without new funding", the mini step chart, the plan's cash, Expand.
+  const low = v2.kpis.lowest_ahead;
+  await expect(page.getByTestId("hv2-metric-lowest-label")).toHaveText("Company cash outlook");
+  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveText("−¥105,000");
+  await expect(page.getByTestId("home-kpi-lowest-value")).toHaveClass(/text-bad-fg/);
+  expect(await page.getByTestId("home-kpi-lowest-value").evaluate((n) => getComputedStyle(n).color)).toBe("rgb(168, 50, 34)");
+  await expect(page.getByTestId("hv2-outlook-when")).toHaveText(new RegExp(`^${h.cash.lowest_when}$`, "i"));
+  await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(low.short_note ?? low.note);
+  await expect(page.getByTestId("hv2-mini-current")).toBeAttached();
+  await expect(page.getByTestId("hv2-mini-plan")).toHaveAttribute("stroke-dasharray", /./);
+  if (low.with_plan) await expect(page.getByTestId("home-kpi-lowest-plan")).toHaveText(new RegExp(`^${low.with_plan.label} ${low.with_plan.value_text}$`, "i"));
+  await expect(page.getByTestId("hv2-outlook-expand")).toHaveAttribute("aria-expanded", "false");
+  // The three cards sit in one row on a desktop.
+  const tops = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.y)));
+  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(4);
+  await expect(page.getByTestId("hv2-plan-pill")).toHaveText(/^planned$/i);
 });
 
-test("the recommendation is compact: the title, one line that reconciles with the strip, two facts in a row, the actions, then one approval line in both forms", async ({ page }) => {
+test("the recommendation: the title, the planned amount, one line that reconciles with the outlook, the cost, the actions, then one approval line in both forms", async ({ page }) => {
   await open(page, { offer: true });
   const a = homeOffer.en.home_v2.action as typeof homeOffer.en.home_v2.action & { consequence_text?: string | null; approval_text?: string | null; approval_needed?: boolean };
   await expect(page.getByTestId("home-action-eyebrow")).toHaveText("What we recommend");
@@ -107,15 +105,16 @@ test("the recommendation is compact: the title, one line that reconciles with th
   await expect(page.getByTestId("home-action-text")).toHaveText(a.consequence_text ?? homeOffer.en.cash.headline_note);
   const facts = a.facts ?? [];
   expect(facts.length).toBe(3);
+  // The planned amount is the figure; the cost to the owner is one line under it; the funding sentence is behind "Funding sources".
+  await expect(page.getByTestId("hv2-plan-amount")).toHaveText(homeOffer.en.home_v2.kpis.funding.value_display);
+  await expect(page.getByTestId("hv2-funding-hint")).toHaveText(homeOffer.en.home_v2.kpis.funding.hint);
   await expect(page.getByTestId("hv2-action-facts")).toContainText("Cost to you");
   await expect(page.getByTestId("hv2-hero-value")).toHaveText(facts[0].value);
   await expect(page.getByTestId("hv2-funding-fact")).toContainText(facts[1].value);
-  // The facts row keeps the cost and the funding only; who approves is the one line under the actions, not a fact.
+  await expect(page.getByTestId("hv2-funding-fact")).toContainText("Funding sources");
+  // Who approves is the one line under the actions, not a fact.
   await expect(page.getByTestId("hv2-action-facts")).not.toContainText(facts[2].label);
   await expect(page.getByTestId("hv2-authority")).toHaveCount(0);
-  // The facts are one row; nothing else (no timeline, no composition) is on the card until the funding fact is asked.
-  const row = await Promise.all(["hv2-hero-value", "hv2-funding-fact"].map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.y)));
-  expect(Math.max(...row) - Math.min(...row)).toBeLessThan(40);
   await expect(page.getByTestId("hv2-timeline")).toHaveCount(0);
   await expect(page.getByTestId("hv2-funding-composition")).toHaveCount(0);
   // Approval is said once, as one 13 px line under the actions: with no approval needed the check glyph and the server's sentence in the quiet ink.
@@ -273,8 +272,7 @@ test("running the plan: no alert, the arranged funding, the quiet recommendation
   const v2 = homeAfter.en.home_v2;
   await expect(page.getByTestId("home-kpi-funding-value")).toHaveText(v2.kpis.funding.value_display);
   if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
-  else await expect(page.getByTestId("home-kpi-funding-note")).toHaveText(v2.kpis.funding.note);
-  await expect(page.getByTestId("hv2-metric-funding-pop")).toHaveText(v2.kpis.funding.hint);
+  await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint);
   await expect(page.getByTestId("home-v2-action")).toHaveAttribute("data-variant", "quiet");
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("home-worklist-alert")).toHaveCount(0);
@@ -291,84 +289,84 @@ test("running the plan: no alert, the arranged funding, the quiet recommendation
   await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText("1");
 });
 
-test("the company cash forecast is compact: 200 px, three legend entries, the two lines from the KPIs, one link; the inspector opens on the lowest point or the address and Escape closes it", async ({ page }) => {
+test("Expand opens the full company forecast in place under the cards, with the events as chips and the selected event's sentence; Close and Escape restore the cards", async ({ page }) => {
   await open(page, { offer: true });
   const chart = homeOffer.en.home_v2.chart;
   const cash = homeOffer.en.cash;
-  const low = homeOffer.en.home_v2.kpis.lowest_ahead;
+  const forecast = page.getByTestId("hv2-forecast");
+  const expand = page.getByTestId("hv2-outlook-expand");
+  await expect(forecast).toHaveCount(0);
+  await expect(page.getByTestId("home-chart")).toHaveCount(0);
+  await expand.click();
+  await expect(page).toHaveURL(/expand=1/);
+  await expect(expand).toHaveAttribute("aria-expanded", "true");
+  await expect(expand).toHaveText("Close");
+  await expect(forecast).toBeVisible();
   await expect(page.getByRole("heading", { name: "Company cash forecast" })).toBeVisible();
-  // Three legend entries, no entry for the red stretches (they stay red and unlabelled).
+  // It sits under the three cards, which stay.
+  const cards = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
+  expect((await forecast.boundingBox())!.y).toBeGreaterThanOrEqual(cards.y + cards.height);
+  await expect(page.getByTestId("hv2-action")).toBeVisible();
+  // The chart: three legend entries (the red stretches stay red and unlabelled), the current line, the plan dashed grey, the minimum with its band, the lowest point; 300 px tall.
   const legend = page.getByTestId("home-legend");
   await expect(legend.locator("li")).toHaveCount(3);
   await expect(legend).toContainText("Current forecast");
-  await expect(legend).toContainText("With FLOW's plan");
   await expect(legend).toContainText("conditional on execution");
   await expect(legend).toContainText("Minimum reserve");
-  await expect(legend).not.toContainText("Below minimum");
   await expect(page.getByTestId("hv2-below-base")).toBeAttached();
-  await expect(page.getByTestId("home-line-plan")).toBeAttached();
   await expect(page.getByTestId("home-line-counter")).toHaveClass(/stroke-ink-3/);
+  await expect(page.getByTestId("home-line-plan")).toHaveClass(/stroke-chart-base/);
   await expect(page.getByTestId("hv2-danger")).toBeAttached();
   await expect(page.getByTestId("home-reserve")).toHaveClass(/stroke-chart-reserve/);
-  await expect(page.getByTestId("picture-ytick")).toHaveCount(3);
   await expect(page.getByTestId("home-lowest-mark")).toBeAttached();
-  expect(Math.round((await page.getByTestId("home-chart").boundingBox())!.height)).toBe(200);
-  // Under it, two lines from the KPI words, and the one link.
-  await expect(page.getByTestId("hv2-chart-without")).toHaveText(`Without the plan ${low.value_display} ${cash.lowest_when}`);
-  if (low.with_plan) await expect(page.getByTestId("hv2-chart-with")).toHaveText(`With the plan ${low.with_plan.value_text}`);
-  await expect(page.getByTestId("home-chart-full")).toHaveText("Explore full forecast →");
-  await expect(page.getByTestId("home-chart-full")).toHaveAttribute("href", "/cash");
-  await expect(page.getByTestId("home-rail")).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /Compare cash outcomes/ })).toHaveCount(0);
-  // The window: three words in a compact control (32 px, none with an icon).
+  expect(Math.round((await page.getByTestId("home-chart").boundingBox())!.height)).toBe(300);
+  await expect(page.getByTestId("hv2-inspector")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-forecast-full")).toHaveAttribute("href", "/cash");
+  await expect(page.getByTestId("hv2-forecast-full")).toContainText("Open full analysis");
+  // The window: three words in a compact control.
   const windows = page.getByRole("tablist", { name: "Days shown" }).getByRole("tab");
   await expect(windows).toHaveCount(3);
-  expect((await page.getByRole("tablist", { name: "Days shown" }).boundingBox())!.height).toBeLessThanOrEqual(34);
   await page.getByTestId("home-window-120").click();
-  await expect(page.getByTestId("home-window-120").locator("svg")).toHaveCount(0);
   await page.getByTestId("home-window-36").click();
-  // The inspector is closed: a press on the lowest point opens it in place (and writes it to the address); a second press, or Escape, closes it.
-  const point = page.getByTestId("home-lowest-point");
-  const strip = page.getByTestId("hv2-inspector");
-  await expect(strip).toHaveCount(0);
-  await expect(point).toHaveAttribute("aria-expanded", "false");
-  await point.click();
-  await expect(point).toHaveAttribute("aria-expanded", "true");
-  await expect(page).toHaveURL(/inspect=1/);
-  const insp = chart.lowest_inspector;
-  await expect(strip).toHaveAttribute("data-day", String(cash.lowest_day));
-  await expect(page.getByTestId("hv2-inspector-when")).toContainText(insp.day_text);
-  await expect(page.getByTestId("hv2-inspector-projected")).toContainText(insp.projected_display);
-  await expect(page.getByTestId("hv2-inspector-gap")).toContainText(insp.third_display);
-  await expect(page.getByTestId("hv2-inspector-gap")).toContainText(insp.third_label);
-  await expect(page.getByTestId("hv2-inspector-plan")).toContainText("300,000");
-  if (chart.lowest?.cause) await expect(page.getByTestId("hv2-inspector-events")).toContainText(chart.lowest.cause);
-  await expect(page.getByTestId("hv2-inspector-events")).toContainText("On that day,");
-  await expect(page.getByTestId("hv2-inspector-note")).toHaveText(insp.note);
-  const frame = (await page.getByTestId("home-chart").boundingBox())!;
-  expect((await strip.boundingBox())!.y).toBeGreaterThanOrEqual(frame.y + frame.height - 1);
+  // The events of the Home read are chips, one per day, and the selected one says its sentence (the server's `explain`); it opens on the lowest point.
+  const rail = cash.events_rail.filter((e) => e.day >= 0);
+  const days = [...new Set(rail.map((e) => e.day))];
+  const lowestEvent = rail.find((e) => e.day === cash.lowest_day)!;
+  await expect(page.getByTestId(`hv2-event-${cash.lowest_day}`)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("hv2-event-card")).toHaveAttribute("data-day", String(cash.lowest_day));
+  await expect(page.getByTestId("hv2-event-explain")).toHaveText(lowestEvent.explain);
+  await expect(page.getByTestId("hv2-event-amount")).toHaveText(lowestEvent.amount_short);
+  // Choosing another chip moves the chart's guide and the sentence; a click on the plot moves the chip.
+  const other = rail.find((e) => e.kind === "payroll")!;
+  await page.getByTestId(`hv2-event-${other.day}`).click();
+  await expect(page.getByTestId("hv2-event-explain")).toHaveText(other.explain);
+  await expect(page.getByTestId("home-chart")).toHaveAttribute("data-day", String(other.day));
+  await expect(page.getByTestId(`hv2-event-${other.day}`)).toHaveAttribute("aria-pressed", "true");
+  expect(days.length).toBeGreaterThan(3);
+  await page.getByTestId("home-lowest-point").click();
+  await expect(page.getByTestId(`hv2-event-${cash.lowest_day}`)).toHaveAttribute("aria-pressed", "true");
+  expect(chart.lowest_inspector.day_text).toBeTruthy();
+  // Close restores the cards and the address; Escape does the same.
+  await page.getByTestId("hv2-forecast-close").click();
+  await expect(forecast).toHaveCount(0);
+  await expect(page).not.toHaveURL(/expand=1/);
+  await expect(expand).toHaveText("Expand");
+  await page.goto("/?expand=1");
+  await expect(forecast).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(strip).toHaveCount(0);
-  await expect(page).not.toHaveURL(/inspect=1/);
-  await point.click();
-  await expect(strip).toBeVisible();
-  await point.click();
-  await expect(strip).toHaveCount(0);
-  // The address alone opens it; with it open the arrow keys move the guide between the days the server names.
-  await page.goto("/?inspect=1");
-  await expect(strip).toBeVisible();
-  await page.getByTestId("home-chart").focus();
-  await page.keyboard.press("ArrowLeft");
-  await expect(strip).not.toHaveAttribute("data-day", String(cash.lowest_day));
-  await expect(page.getByTestId("hv2-inspector-minimum")).toContainText(insp.minimum_display);
-  await point.click();
-  await expect(strip).toHaveCount(0);
+  await expect(forecast).toHaveCount(0);
+  await expect(page).not.toHaveURL(/expand=1/);
+  await expand.click();
+  await expect(forecast).toBeVisible();
+  await expand.click();
+  await expect(forecast).toHaveCount(0);
 });
 
-test("the worklist as an inbox: one alert line, tabs with counts, three-line rows with a severity word, the first row's reason is in its focus", async ({ page }) => {
+test("the worklist as the mockup's table: one alert line, tabs with counts, rows with the next step and the status pill, the count, the way to all deals", async ({ page }) => {
   await open(page, { offer: true });
   const w = worklistOffer.en;
   await expect(page.getByTestId("hv2-worklist-title")).toHaveText("Your worklist");
+  await expect(page.getByTestId("hv2-worklist-count")).toHaveText(String(w.counts.needs_you + w.counts.waiting));
   const alert = page.getByTestId("home-worklist-alert");
   // The alert reads as the pending action when the server says so (its kind and pending words), else with its own eyebrow and text.
   const said = w.alert as typeof w.alert & { kind_text?: string | null; pending_text?: string | null };
@@ -376,41 +374,69 @@ test("the worklist as an inbox: one alert line, tabs with counts, three-line row
   await expect(alert).toContainText(said.kind_text ?? said.eyebrow);
   await expect(page.getByTestId("home-worklist-alert-go")).toContainText(w.alert.primary.label);
   await expect(alert).toHaveClass(/border-l-2/);
-  await expect(alert).not.toHaveClass(/bg-bad/);
   const note = page.getByTestId("home-worklist-alert-note");
   await expect(alert).toHaveAttribute("aria-describedby", (await note.getAttribute("id")) ?? "");
   expect(((await note.boundingBox())?.width ?? 0) <= 1).toBe(true);
-  // The alert is one line of the pane: its sentence does not take more than two lines.
   expect((await alert.boundingBox())!.height).toBeLessThan(120);
-  // Tabs: the count beside the label, neutral; a tab's hint is its title, not a line on the page.
+  // Tabs: All is the two lists together; the count beside the label; a tab's hint is its title, not a line on the page. The chosen tab is a white pill.
   expect(w.counts.needs_you).toBe(w.needs_you.length);
-  await expect(page.getByTestId("home-tab-needs_you")).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByTestId("home-tab-needs_you")).toContainText("Needs you");
+  const all = page.getByTestId("home-tab-all");
+  await expect(all).toHaveAttribute("aria-selected", "true");
+  await expect(all).toContainText("All");
+  await expect(page.getByTestId("home-tab-all-badge")).toHaveText(String(w.counts.needs_you + w.counts.waiting));
+  expect(await all.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(page.getByTestId("home-tab-needs_you-badge")).toHaveText(String(w.counts.needs_you));
   await expect(page.getByTestId("home-tab-waiting-badge")).toHaveText(String(w.counts.waiting));
   await expect(page.getByTestId("home-tab-customers-badge")).toHaveText(String(w.counts.customers));
   await expect(page.getByTestId("home-tab-needs_you")).toHaveAttribute("title", /./);
-  await expect(page.getByTestId("home-worklist-hint")).toHaveCount(0);
+  // The table's head and the rows: the subject, the next step (the server's consequence) and the status pill (the server's status words; amber when it is the owner's turn).
+  for (const col of ["Customer / deal", "Next step", "Status"]) await expect(page.getByTestId("home-worklist").getByText(col, { exact: true })).toBeVisible();
   const rows = page.getByTestId("home-worklist-row");
-  await expect(rows).toHaveCount(w.needs_you.length);
+  await expect(rows).toHaveCount(w.needs_you.length + w.waiting.length);
   await expect(rows.first()).toContainText(w.needs_you[0].subject_text);
-  await expect(rows.first()).toContainText(w.needs_you[0].status_text);
   await expect(rows.first()).toContainText(w.needs_you[0].consequence_text);
+  const pill = rows.first().getByTestId("home-row-status");
+  await expect(pill).toHaveText(w.needs_you[0].status_text);
+  await expect(pill).toHaveAttribute("data-tone", "amber");
+  expect(await pill.evaluate((n) => parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThanOrEqual(13);
+  expect(await rows.first().locator("a").evaluate((n) => getComputedStyle(n).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(rows.first().getByTestId("home-row-severity")).toHaveAttribute("data-severity", w.needs_you[0].severity);
   await expect(page.getByTestId("home-why-first")).toHaveCount(0);
   await expect(page.getByTestId("home-worklist-all")).toHaveText(/^All deals/);
-  // Waiting is empty in words; Customers lists one row per buyer.
+  await expect(page.getByTestId("home-worklist-all")).toHaveAttribute("href", "/deals");
+  // Needs you and Waiting filter it; Waiting is empty in words; Customers lists one row per buyer.
+  await page.getByTestId("home-tab-needs_you").click();
+  await expect(rows).toHaveCount(w.needs_you.length);
   await page.getByTestId("home-tab-waiting").click();
   await expect(page.getByTestId("home-worklist-empty")).toContainText("All caught up.");
   await page.getByTestId("home-tab-customers").click();
   await expect(rows).toHaveCount(w.customers.length);
   await expect(rows.first()).toContainText(w.customers[0].name);
   await expect(rows.first()).toContainText(w.customers[0].detail_text);
-  await expect(page.getByTestId("home-worklist-all")).toHaveText(/^All customers/);
+  await expect(rows.first().getByTestId("home-row-status")).toHaveText(w.customers[0].status_text);
   // The arrow keys move between the tabs.
   await page.getByTestId("home-tab-customers").focus();
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByTestId("home-tab-waiting")).toHaveAttribute("aria-selected", "true");
+});
+
+test("the upcoming cash movements are the rail's nearest events, and the way to the forecast; the footer row leads to the four routes", async ({ page }) => {
+  await open(page, { offer: true });
+  const events = homeOffer.en.cash.events_rail.filter((e) => !e.planned && e.amount_fen !== 0 && e.day >= 0).slice(0, 4);
+  const rows = page.getByTestId("hv2-upcoming-row");
+  await expect(rows).toHaveCount(events.length);
+  for (const [i, e] of events.entries()) {
+    await expect(rows.nth(i)).toContainText(e.amount_short);
+    await expect(rows.nth(i)).toContainText(e.when);
+    await expect(rows.nth(i)).toContainText(e.label);
+  }
+  await expect(page.getByTestId("home-chart-full")).toHaveAttribute("href", "/cash");
+  await expect(page.getByTestId("home-chart-full")).toContainText("Explore company forecast");
+  const foot = page.getByTestId("home-v2-links");
+  for (const [route, word] of [["documents", "Documents"], ["whatif", "What-if terms"], ["capex", "Evaluate a purchase"], ["approvals", "Approvals"]]) {
+    await expect(foot.getByTestId(`hv2-foot-${route}`)).toHaveText(word);
+    await expect(foot.getByTestId(`hv2-foot-${route}`)).toHaveAttribute("href", `/${route}`);
+  }
 });
 
 test("search narrows the rows already fetched, by the customers' search terms", async ({ page }) => {
@@ -509,7 +535,7 @@ test("Escape, 'All business' and the band's button clear the selection and the p
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
-  await expect(page.getByTestId("home-chart")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
   await page.goto("/?customer=BUYER-1");
   await page.getByTestId("focus-all").click();
@@ -530,8 +556,20 @@ test("a decision row opens the deal in place: level 1 the decision, level 2 the 
   const rec = pic.find((p) => p.recommended)!;
   const asked = pic.find((p) => p.kind === "asked")!;
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  await expect(page.getByTestId("deal-eyebrow")).toHaveText(worklistOffer.en.needs_you[0].status_text);
+  // The selected card replaces the cash and recommendation cards and keeps the outlook; its header names the deal and carries Dismiss; the stage pill is in the context panel.
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-outlook-card")).toBeVisible();
+  await expect(page.getByTestId("focus-all")).toHaveText("Dismiss");
+  await expect(page.getByTestId("hv2-context-stage")).toHaveText(worklistOffer.en.needs_you[0].status_text);
+  await expect(page.getByTestId("hv2-context")).toContainText("Deal context");
+  await expect(page.getByTestId("hv2-context-sentence")).toHaveText(worklistOffer.en.needs_you[0].consequence_text);
   await expect(page.getByTestId("focus-title")).toHaveText(SUBJECT.en);
+  // Three figures in the server's words: what is outstanding, the early payment asked, the payment terms asked.
+  const kpiAsked = pictures.en.paths.find((p) => p.kind === "asked") as unknown as { terms: { key: string; value_text: string }[] };
+  await expect(page.getByTestId("hv2-deal-kpi-outstanding")).toContainText(view.figures.find((f) => f.key === "outstanding")!.value_display);
+  await expect(page.getByTestId("hv2-deal-kpi-early_payment")).toContainText(kpiAsked.terms.find((t) => t.key === "early_payment")!.value_text);
+  await expect(page.getByTestId("hv2-deal-kpi-payment_terms")).toContainText(kpiAsked.terms.find((t) => t.key === "payment_terms")!.value_text);
+  await expect(page.getByTestId("hv2-deal-next")).toContainText(d.eyebrow);
   await expect(page.getByTestId("focus-announce")).toHaveText(SUBJECT.en);
   await expect(page.getByTestId("hv2-customer-line")).toContainText(view.name);
   await expect(page.getByTestId("focus-open-customer")).toHaveAttribute("href", /\/customers\/BUYER-1\?decision=/);
@@ -692,7 +730,7 @@ test("back and forward restore the selections, a reload keeps them, and a decisi
   expect(query(page).get("decision")).toBeNull();
   await page.goBack();
   await expect(page.getByTestId("home-customer-focus")).toHaveCount(0);
-  await expect(page.getByTestId("home-chart")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   await page.goForward();
   await expect(page.getByTestId("home-customer-focus")).toBeVisible();
   await page.goForward();
@@ -732,30 +770,41 @@ test("nothing in Business mode is an id, a code or a day number; every figure an
   }
 });
 
-test("zh parity: the strip, the recommendation, the worklist and the deal in Chinese, the server's words as recorded", async ({ page }) => {
+test("zh parity: the cards, the recommendation, the worklist, the forecast and the deal in Chinese, the server's words as recorded", async ({ page }) => {
   await open(page, { lang: "zh", offer: true });
   const v2 = homeOffer.zh.home_v2;
-  await expect(page.getByTestId("hv2-page-name")).toHaveText("首页");
   await expect(page.getByTestId("home-read-when")).toHaveText("今天更新");
-  await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("今日现金");
+  await expect(page.getByTestId("hv2-metric-cash-label")).toHaveText("今日可用现金");
+  await expect(page.getByTestId("hv2-metric-lowest-label")).toHaveText("公司现金展望");
+  await expect(page.getByTestId("home-kpi-cash-note")).toHaveText(v2.kpis.cash_available.note);
   await expect(page.getByTestId("home-kpi-lowest-note")).toHaveText(v2.kpis.lowest_ahead.short_note ?? v2.kpis.lowest_ahead.note);
-  if (v2.kpis.funding.status_text) await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
-  else await expect(page.getByTestId("home-kpi-funding-note")).toHaveText(v2.kpis.funding.note);
-  await page.getByTestId("hv2-metric-funding-info").click();
-  await expect(page.getByTestId("hv2-metric-funding-pop")).toHaveText(v2.kpis.funding.hint);
+  if (v2.kpis.funding.status_text && v2.kpis.funding.state === "ARRANGED") await expect(page.getByTestId("home-kpi-funding-status")).toHaveText(v2.kpis.funding.status_text);
+  await expect(page.getByTestId("hv2-funding-hint")).toHaveText(v2.kpis.funding.hint);
+  await expect(page.getByTestId("hv2-plan-pill")).toHaveText("计划中");
   await expect(page.getByTestId("home-action-title")).toHaveText(v2.action.title);
   await expect(page.getByTestId("home-action-eyebrow")).toHaveText("我们的建议");
-  await page.getByTestId("home-lowest-point").click();
-  await expect(page.getByTestId("hv2-inspector-note")).toHaveText(v2.chart.lowest_inspector.note);
+  await expect(page.getByTestId("hv2-approval")).toHaveText(v2.action.approval_text!);
+  await expect(page.getByTestId("hv2-outlook-expand")).toHaveText("展开");
+  await page.getByTestId("hv2-outlook-expand").click();
+  const lowestEvent = homeOffer.zh.cash.events_rail.find((e) => e.day === homeOffer.zh.cash.lowest_day)!;
+  await expect(page.getByTestId("hv2-event-explain")).toHaveText(lowestEvent.explain);
   await expect(page.getByTestId("home-legend")).toContainText("取决于方案执行");
+  await expect(page.getByTestId("hv2-forecast-close")).toHaveText("收起");
+  await page.getByTestId("hv2-forecast-close").click();
   const w = worklistOffer.zh;
   await expect(page.getByTestId("home-worklist-alert")).toContainText((w.alert as { text: string; pending_text?: string | null }).pending_text ?? w.alert.text);
   await expect(page.getByTestId("home-worklist-row").first()).toContainText(w.needs_you[0].subject_text);
+  await expect(page.getByTestId("home-worklist-row").first().getByTestId("home-row-status")).toHaveText(w.needs_you[0].status_text);
   await expect(page.getByTestId("home-worklist-search")).toHaveAttribute("placeholder", "搜索客户或交易");
+  await expect(page.getByTestId("home-tab-all")).toContainText("全部");
   await expect(page.getByTestId("home-tab-waiting")).toContainText("等待中");
+  await expect(page.getByTestId("hv2-upcoming")).toContainText("即将发生的现金变动");
+  await expect(page.getByTestId("hv2-foot-documents")).toHaveText("文件");
   await page.goto(DEAL + "&compare=1");
   const pic = pictures.zh.paths;
   await expect(page.getByTestId("focus-title")).toHaveText(SUBJECT.zh);
+  await expect(page.getByTestId("focus-all")).toHaveText("关闭");
+  await expect(page.getByTestId("hv2-context")).toContainText("交易背景");
   await expect(page.getByTestId("deal-primary")).toHaveText(focusOffer.zh.deals.none.decision!.primary.label);
   await expect(page.getByTestId("hv2-compare-toggle")).toHaveText("比较各个答复");
   await expect(page.getByTestId("deal-recommends")).toHaveText(`FLOW 建议${pic.find((p) => p.recommended)!.label}`);
@@ -766,18 +815,18 @@ test("zh parity: the strip, the recommendation, the worklist and the deal in Chi
   await expect(page.getByTestId("focus-title")).toHaveText(customer.name);
   for (const f of customer.figures) if (f.state && f.state !== "none") await expect(page.getByTestId(`focus-figure-${f.key}-state`)).toHaveText(f.state_text!);
   await expect(page.getByTestId("home-action-back")).toHaveText("查看融资方案");
+  await expect(page.getByTestId("hv2-context")).toContainText("客户背景");
 });
 
-test("phone: the strip with the cash cell across, the recommendation and its primary in the first viewport, the worklist in a sheet that returns focus", async ({ page }) => {
+test("phone: the cards stack with the recommendation's primary in the first viewport; the worklist is a list with the pill under the subject; nothing scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { offer: true });
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
-  // The cash cell is a row of its own, the other two share the next one.
-  const box = async (id: string) => (await page.getByTestId(`hv2-metric-${id}`).boundingBox())!;
-  const [cash, lowest, funding] = [await box("cash"), await box("lowest"), await box("funding")];
-  expect(cash.width).toBeGreaterThan(lowest.width * 1.6);
-  expect(lowest.y).toBeGreaterThan(cash.y);
-  expect(Math.abs(lowest.y - funding.y)).toBeLessThan(4);
+  // The cards are one column, in the mockup's order: cash, recommendation, outlook.
+  const ys = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map(async (id) => (await page.getByTestId(id).boundingBox())!));
+  expect(ys[1].y).toBeGreaterThan(ys[0].y + ys[0].height - 1);
+  expect(ys[2].y).toBeGreaterThan(ys[1].y + ys[1].height - 1);
+  expect(Math.abs(ys[0].width - ys[2].width)).toBeLessThan(2);
   // The primary is in the first viewport, above the bottom tab bar, at a 390 x 844 and a 375 x 812 phone.
   for (const [w, h] of [[390, 844], [375, 812]] as const) {
     await page.setViewportSize({ width: w, height: h });
@@ -790,39 +839,25 @@ test("phone: the strip with the cash cell across, the recommendation and its pri
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect(page.getByTestId("home-v2-worklist")).toHaveCount(0);
-  const opener = page.getByTestId("home-worklist-open");
-  await expect(opener).toHaveText(`Worklist (${worklistOffer.en.counts.needs_you})`);
-  await opener.scrollIntoViewIfNeeded();
-  await opener.click();
-  const sheet = page.getByTestId("home-worklist-sheet");
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByTestId("home-tab-needs_you")).toBeVisible();
-  await expect(sheet.getByTestId("home-worklist-row")).toHaveCount(1);
-  await sheet.getByTestId("home-tab-customers").click();
-  await expect(sheet.getByTestId("home-worklist-row")).toHaveCount(2);
-  for (let i = 0; i < 12; i++) await page.keyboard.press("Tab");
-  expect(await page.evaluate(() => Boolean(document.activeElement?.closest("dialog")))).toBe(true);
-  await page.keyboard.press("Escape");
-  await expect(sheet).toBeHidden();
-  await expect(opener).toBeFocused();
-  await opener.click();
-  await sheet.getByTestId("home-worklist-close").click();
-  await expect(sheet).toBeHidden();
-  await expect(opener).toBeFocused();
-  await opener.click();
-  await sheet.getByTestId("home-worklist-alert-go").click();
-  await expect(sheet).toBeHidden();
+  // No sheet and no opener: the worklist is on the page; a row is the subject, its next step and the status pill under it (the head of the table is hidden).
+  await expect(page.getByTestId("home-worklist-open")).toHaveCount(0);
+  await expect(page.getByTestId("home-worklist-panel")).toBeVisible();
+  const row = page.getByTestId("home-worklist-row").first();
+  await row.scrollIntoViewIfNeeded();
+  const subject = (await row.getByText(worklistOffer.en.needs_you[0].subject_text).boundingBox())!;
+  const pill = (await row.getByTestId("home-row-status").boundingBox())!;
+  expect(pill.y).toBeGreaterThan(subject.y + subject.height - 1);
+  expect(pill.x + pill.width).toBeLessThanOrEqual(390);
+  // The alert's "Run or compare" brings the recommendation into view.
+  await page.getByTestId("home-worklist-alert-go").click();
   await expect(page.getByTestId("home-v2-action")).toBeInViewport();
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
-test("phone: a row in the sheet closes it and the deal opens under the recommendation's band; the table stacks; nothing scrolls sideways", async ({ page }) => {
+test("phone: a row opens the deal at the top, under the one-row band; the table stacks; Dismiss restores the cards; nothing scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, { offer: true });
-  await page.getByTestId("home-worklist-open").click();
-  await page.getByTestId("home-worklist-sheet").getByTestId("home-worklist-row").first().getByRole("link").click();
-  await expect(page.getByTestId("home-worklist-sheet")).toBeHidden();
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
   await expect(page).toHaveURL(/decision=/);
   const band = (await page.getByTestId("home-v2-action").boundingBox())!;
@@ -835,6 +870,23 @@ test("phone: a row in the sheet closes it and the deal opens under the recommend
   await expect(page.getByTestId("hv2-compare-table-scroll")).toBeHidden();
   await page.getByTestId("hv2-chart-toggle").click();
   await expect(page.getByTestId("hv2-deal-chart")).toBeVisible();
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  await page.getByTestId("focus-all").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+});
+
+test("phone: the collection state, a customer's row opens its card and its context under the worklist, in one column", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, { offer: true });
+  await page.getByTestId("home-tab-customers").click();
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("home-customer-focus")).toBeVisible();
+  const a = (await page.getByTestId("home-customer-focus").boundingBox())!;
+  const b = (await page.getByTestId("hv2-outlook-card").boundingBox())!;
+  const c = (await page.getByTestId("hv2-context").boundingBox())!;
+  expect(b.y).toBeGreaterThan(a.y + a.height - 1);
+  expect(c.y).toBeGreaterThan(b.y);
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
@@ -850,7 +902,43 @@ test("1280: the table keeps its columns and scrolls before it crushes; the page 
   expect(await filledBrand(page)).toBe(1);
 });
 
-test("reduced motion: the inspector, a selection and the underline arrive without an animation", async ({ page }) => {
+test("a selected row: Dismiss and Escape restore the overview and clear the address; the context panel replaces the upcoming movements and the cards come back", async ({ page }) => {
+  await open(page, { offer: true });
+  await page.getByTestId("home-worklist-row").first().getByRole("link").click();
+  await expect(page.getByTestId("hv2-context")).toBeVisible();
+  await expect(page.getByTestId("hv2-upcoming")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-cash-card")).toHaveCount(0);
+  await page.getByTestId("focus-all").click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("hv2-context")).toHaveCount(0);
+  await expect(page.getByTestId("hv2-upcoming")).toBeVisible();
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  await expect(page.getByTestId(`fix-open-${ALERT}`)).toBeVisible();
+  await page.goto(DEAL);
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
+  // With the forecast open, Escape closes it first; a second Escape clears a selection.
+  await page.goto(DEAL + "&expand=1");
+  await expect(page.getByTestId("hv2-forecast")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("hv2-forecast")).toHaveCount(0);
+  await expect(page.getByTestId("home-deal-focus")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("home-deal-focus")).toHaveCount(0);
+  // The context panel: the stage as the row's own pill, Customer profile, and the evidence fold that opens on the deal's own sentence.
+  await page.goto(DEAL);
+  const ctx = page.getByTestId("hv2-context");
+  await expect(ctx.getByTestId("focus-open-customer")).toHaveText("Customer profile");
+  const fold = page.getByTestId("hv2-context-evidence");
+  await expect(fold).toContainText("Agreement & supporting evidence");
+  await expect(page.getByTestId("hv2-context-evidence-text")).toBeHidden();
+  await fold.locator("> summary").click();
+  await expect(page.getByTestId("hv2-context-evidence-text")).toContainText("early settlement");
+});
+
+test("reduced motion: a selection arrives without an animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open(page, { offer: true });
   await page.goto("/?customer=BUYER-1");
@@ -861,9 +949,9 @@ test("reduced motion: the inspector, a selection and the underline arrive withou
   expect(name === "none" || ms <= 1).toBe(true);
 });
 
-test("accessibility: no axe violations on the default Home, with the customer and with the deal open (compared, with its chart), at 1440 and at 390", async ({ page }) => {
+test("accessibility: no axe violations on the default Home, expanded, with the customer and with the deal open (compared, with its chart), at 1440 and at 390", async ({ page }) => {
   await open(page, { offer: true });
-  for (const url of ["/", "/?customer=BUYER-1", `${DEAL}&compare=1&chart=1`]) {
+  for (const url of ["/", "/?expand=1&funding=1", "/?customer=BUYER-1", `${DEAL}&compare=1&chart=1`]) {
     await page.goto(url);
     await expect(page.getByTestId("home-v2")).toBeVisible();
     await expect(page.getByTestId("deal-working")).toHaveCount(0);
@@ -875,24 +963,22 @@ test("accessibility: no axe violations on the default Home, with the customer an
     expect(phone.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
     await page.setViewportSize({ width: 1440, height: 900 });
   }
-  await page.goto("/");
-  await page.getByTestId("hv2-metric-funding-info").click();
-  const open_ = await new AxeBuilder({ page }).analyze();
-  expect(open_.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });
 
-test("the page is fluid: with the rail collapsed the cards fill the width to 1680 px, pinned the content reflows narrower; the worklist keeps its minimum", async ({ page }) => {
+test("the page is fluid: with the rail collapsed the cards fill the width to 1680 px, pinned the content reflows narrower; the cards and the worklist share the same edges", async ({ page }) => {
   const widths = async () =>
     page.evaluate(() => {
-      const w = (id: string) => Math.round(document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect().width);
-      return { main: Math.round(document.querySelector("main")!.getBoundingClientRect().width), strip: w("hv2-strip"), card: w("hv2-action"), chart: w("hv2-chart"), pane: w("home-worklist-panel") };
+      const box = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
+      const left = box("hv2-cash-card").left;
+      const right = box("hv2-outlook-card").right;
+      return { main: Math.round(document.querySelector("main")!.getBoundingClientRect().width), row: Math.round(right - left), worklistLeft: Math.round(box("home-worklist-panel").left - left), upcomingRight: Math.round(box("hv2-upcoming").right - right), pane: Math.round(box("hv2-upcoming").width) };
     });
   const seen: Record<number, { collapsed: Awaited<ReturnType<typeof widths>>; pinned: Awaited<ReturnType<typeof widths>> }> = {};
   await open(page, { offer: true });
   for (const width of [1280, 1440, 1680, 1920] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-    await expect(page.getByTestId("home-chart")).toBeVisible();
+    await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
     const collapsed = await widths();
     await page.getByTestId("sidebar-toggle").click();
     await page.mouse.move(width / 2, 400);
@@ -902,18 +988,15 @@ test("the page is fluid: with the rail collapsed the cards fill the width to 168
     const pinned = await widths();
     await page.getByTestId("sidebar-toggle").click();
     seen[width] = { collapsed, pinned };
-    // The worklist keeps its minimum and takes 30%; the main column takes the rest, and nothing scrolls sideways.
-    expect(collapsed.pane, `${width} pane`).toBeGreaterThanOrEqual(340);
-    expect(collapsed.strip).toBe(collapsed.card);
-    expect(collapsed.chart).toBe(collapsed.card);
+    // The cards' row and the worklist row share the left and right edges, and nothing scrolls sideways.
+    expect(collapsed.worklistLeft, `${width} left edge`).toBe(0);
+    expect(collapsed.upcomingRight, `${width} right edge`).toBe(0);
     expect(await overflowX(page)).toBeLessThanOrEqual(0);
-    // The rail's own 56 px, the 32 px gutters: the page fills what is left, to 1680.
+    // The rail's own 56 px: the page fills what is left, to 1680.
     expect(collapsed.main).toBe(Math.min(width - 56, 1680));
     expect(pinned.main).toBe(Math.min(width - 200, 1680));
   }
-  // At 1680 collapsed the cards are wider than pinned; the content is wider at 1680 than at 1440.
-  expect(seen[1680].collapsed.card - seen[1680].pinned.card).toBeGreaterThanOrEqual(95); // 70% of the 144 px the rail gives back; the worklist takes 30%
-  expect(seen[1680].collapsed.card).toBeGreaterThan(seen[1440].collapsed.card);
-  // The page's own width stops at 1680 (a wider window leaves the rest as margin).
+  expect(seen[1680].collapsed.row - seen[1680].pinned.row).toBeGreaterThanOrEqual(130);
+  expect(seen[1680].collapsed.row).toBeGreaterThan(seen[1440].collapsed.row);
   expect(seen[1920].collapsed.main).toBe(1680);
 });

@@ -6,13 +6,13 @@ import { PartialRead } from "@/components/business/freshness";
 import { FixResult, type useFixAlert } from "@/components/home/fix-alert";
 import { HomeV2ActionBar } from "@/components/home/v2/action-bar";
 import { CompanyChart } from "@/components/home/v2/company-chart";
-import { CompanyStrip } from "@/components/home/v2/company-strip";
+import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
 import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { HomeV2Links } from "@/components/home/v2/link-row";
+import { CashCard, FooterLinks, OutlookCard, UpcomingCard } from "@/components/home/v2/home-cards";
 import { WorklistPanel } from "@/components/home/v2/worklist";
-import { WorklistSheet } from "@/components/home/v2/worklist-sheet";
 import { ErrorState } from "@/components/ui";
+import { StatusPill, type PillTone } from "@/components/ui/status-pill";
 import { getCustomers, getWorklist } from "@/lib/api";
 import { type HomeDealView, type HomeSelection, NO_SELECTION, readDealView, readSelection, selectionHref } from "@/lib/home-v2-href";
 import { useI18n } from "@/lib/i18n";
@@ -20,12 +20,14 @@ import type { HomeTone, HomeView } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useNarrow } from "@/lib/use-narrow";
 
-const DOT: Record<HomeTone, string> = { ok: "bg-ok-solid", warn: "bg-warn-solid", bad: "bg-bad-solid", neutral: "bg-ink-3" };
+const STATUS_PILL: Record<HomeTone, PillTone> = { ok: "green", warn: "amber", bad: "amber", neutral: "lavender" };
 
 /**
- * Home V2, the Home: "Home", the status sentence as the headline with its dot, "Updated today", then the company strip, the recommendation, the company
- * cash forecast and the links, with the worklist in a pane on the right (a bottom sheet on a phone). A selected customer or deal replaces the recommendation with the health
- * band and shows its own panel in place. When the server could not read `home_v2` the header stays with Retry and nothing else. Every word and figure is the server's or the dictionary's; the mode switch and the account control stay in the shell's top bar.
+ * Home V2, the Home, in the owner's mockup language (docs/design/flow-mockup-2026-10-13): the headline sentence, the server's one-line summary and the state pill; three cards (cash
+ * available today with the reserve bar, what we recommend, the company cash outlook with Expand); then the worklist as a table beside the upcoming cash movements; the footer row.
+ * A selected row replaces the three cards with the selected item's card (the outlook stays) and the upcoming movements with its context; Dismiss or Escape restores the overview and
+ * clears the address. Expand opens the full forecast in place under the cards. When the server could not read `home_v2` the header stays with Retry and nothing else. Every word and
+ * figure is the server's or the dictionary's.
  */
 export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer: ReturnType<typeof useFixAlert>; loading: boolean; onRetry: () => void }) {
   const { lang, t } = useI18n();
@@ -39,10 +41,10 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
   const selection = readSelection(params);
   const dealView = readDealView(params);
   const focusing = selection.customer !== null;
-  // Two small views of the default Home are in the address too: the funding's composition (`funding=1`) and the chart's inspector (`inspect=1`).
+  // Two small views of the Home are in the address too: the funding's composition (`funding=1`) and the expanded forecast (`expand=1`).
   const fundingOpen = params.get("funding") === "1";
-  const inspectOpen = params.get("inspect") === "1";
-  const setFlag = (key: "funding" | "inspect", on: boolean) => {
+  const expanded = params.get("expand") === "1";
+  const setFlag = (key: "funding" | "expand", on: boolean) => {
     const q = new URLSearchParams(params.toString());
     if (on) q.set(key, "1");
     else q.delete(key);
@@ -60,76 +62,107 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
     },
     [router],
   );
+  // Escape restores the overview: it closes the expanded forecast first, then the selection (not while a dialog is open or a search box holds text).
+  const closeExpand = useCallback(() => {
+    const q = new URLSearchParams(window.location.search);
+    q.delete("expand");
+    router.replace(q.size ? `/?${q.toString()}` : "/", { scroll: false });
+  }, [router]);
   useEffect(() => {
-    if (!focusing) return;
+    if (!focusing && !expanded) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented || document.querySelector("dialog[open]")) return;
       const el = e.target instanceof HTMLInputElement ? e.target : null;
       if (el && el.value) return; // Escape in a search box with text clears that text first
-      clear();
+      if (expanded) closeExpand();
+      else clear();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [focusing, clear]);
-  // On a phone the panel opens under the action bar: bring it into view once the sheet has closed.
+  }, [focusing, expanded, clear, closeExpand]);
+  // On a phone the selected card opens at the top of the page already; bring it into view when the row that opened it was far below.
   const panelKey = `${selection.customer ?? ""}|${selection.decision ?? ""}`;
   useEffect(() => {
     if (!focusing || !narrow) return;
     document.getElementById("home-focus")?.scrollIntoView({ block: "start", behavior: "auto" });
   }, [panelKey, focusing, narrow]);
   const cash = h.cash;
-  const tone = cash.status_tone ?? "neutral";
   const headline = cash.headline_conditional || h.headline;
+  const alert = worklist.data?.alert ?? null;
+  const pill = alert ? { tone: "amber" as PillTone, text: alert.kind_text ?? alert.eyebrow } : cash.status_word ? { tone: STATUS_PILL[cash.status_tone ?? "neutral"], text: cash.status_word } : null;
   const header = (
-    <header className="motion-reveal mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1.5 sm:mb-6" data-testid="home-status" data-status={h.status}>
-      <p className="text-supporting font-bold text-ink-3" data-testid="hv2-page-name">
-        {t("hv2.title")}
-      </p>
-      {cash.last_read_when ? (
-        <p className="text-supporting text-ink-3" aria-label={t("biz.readWhen", { when: cash.last_read_when })} data-testid="home-read-when">
-          {t("hv2.updated")}
-        </p>
-      ) : null}
-      <h1 className="col-span-2 flex items-baseline gap-2.5 font-display text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:gap-3 sm:text-[28px]" data-testid="hv2-headline">
-        <span aria-hidden className={`size-2.5 shrink-0 -translate-y-0.5 rounded-pill ${DOT[tone]}`} data-testid="home-status-dot" />
+    <header className="motion-reveal mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2 sm:mb-7 sm:gap-y-1.5" data-testid="home-status" data-status={h.status}>
+      <h1 className="font-display text-[24px] font-bold leading-[1.12] tracking-[-0.03em] text-ink sm:text-[36px] lg:text-[40px]" data-testid="hv2-headline">
         <span className="sr-only" data-testid="home-status-word">
           {cash.status_word ?? h.status_text}
         </span>
         <span data-testid="home-headline">{headline}</span>
       </h1>
+      {pill ? (
+        <StatusPill tone={pill.tone} testId="hv2-state-pill" className="order-3 col-span-2 justify-self-start sm:order-none sm:col-span-1 sm:mt-3 sm:shrink-0 sm:justify-self-auto">
+          {pill.text}
+        </StatusPill>
+      ) : (
+        <span />
+      )}
+      {v2?.summary_text ? (
+        <p className="col-span-2 text-pretty text-[15px] text-ink-3 sm:text-base" data-testid="hv2-summary">
+          {v2.summary_text}
+        </p>
+      ) : null}
+      {cash.last_read_when ? (
+        <p className="col-span-2 text-supporting text-ink-3" aria-label={t("biz.readWhen", { when: cash.last_read_when })} data-testid="home-read-when">
+          {t("hv2.updated")}
+        </p>
+      ) : null}
     </header>
   );
   // The block the server could not read: the status stays, and the page says so with Retry (never an empty page).
   if (!v2)
     return (
-      <div aria-busy={loading} data-testid="home-v2" className="min-w-0">
+      <div aria-busy={loading} data-testid="home-v2" className="home-f min-w-0">
         {header}
         <PartialRead partial={h.partial} onRetry={onRetry} />
         {h.partial?.missing?.length ? null : <ErrorState error={t("hv2.unread")} onRetry={onRetry} />}
       </div>
     );
-  const buyer = worklist.data?.customers.find((c) => c.customer_id === selection.customer)?.short ?? "";
+  const plan = v2.chart.legend.some((l) => l.kind === "planned" || l.kind === "proposed") && cash.plan_series?.length ? cash.plan_series : null;
+  const customerRow = selection.customer ? (worklist.data?.customers.find((c) => c.customer_id === selection.customer) ?? null) : null;
+  const buyer = customerRow?.short ?? "";
   const row = selection.decision ? ([...(worklist.data?.needs_you ?? []), ...(worklist.data?.waiting ?? [])].find((r) => rowDecision(r) === selection.decision) ?? null) : null;
-  // A worklist the server does not have (null) leaves the page without the pane; a failed one says so in the pane, with Retry.
+  // A worklist the server does not have (null) leaves the page without the table; a failed one says so in the card, with Retry.
   const hasWorklist = worklist.data !== null;
+  const outlook = <OutlookCard h={h} kpis={v2.kpis} plan={plan} expanded={expanded} onExpand={(on) => setFlag("expand", on)} controls="hv2-forecast" />;
+  const bar = (
+    <HomeV2ActionBar
+      action={v2.action}
+      kpis={v2.kpis}
+      nextAction={h.next_action}
+      stateVersion={h.state_version}
+      fixer={fixer}
+      line={cash.headline_note}
+      fundingTotal={v2.kpis.funding.value_display}
+      fundingOpen={fundingOpen}
+      onFunding={(on) => setFlag("funding", on)}
+      onBack={focusing ? () => clear("action") : undefined}
+    />
+  );
   return (
-    <div aria-busy={loading} data-testid="home-v2" className="min-w-0">
+    <div aria-busy={loading} data-testid="home-v2" className="home-f min-w-0">
       {header}
       <PartialRead partial={h.partial} onRetry={onRetry} />
-      <div className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_minmax(340px,30%)] xl:items-start">
-        <div className="min-w-0 space-y-4 sm:space-y-6">
-          <CompanyStrip kpis={v2.kpis} />
-          <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
-          <HomeV2ActionBar action={v2.action} nextAction={h.next_action} stateVersion={h.state_version} fixer={fixer} line={cash.headline_note} fundingTotal={v2.kpis.funding.value_display} fundingOpen={fundingOpen} onFunding={(on) => setFlag("funding", on)} onBack={focusing ? () => clear("action") : undefined} />
-          {narrow && worklist.data ? <WorklistSheet read={worklist.data} customers={customers.data ?? null} selection={selection} /> : null}
-          {focusing ? (
-            selection.decision ? (
+      <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
+      {focusing ? (
+        <>
+          <div className="mb-4">{bar}</div>
+          <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+            {selection.decision ? (
               <DealFocusPanel
                 customerId={selection.customer as string}
                 buyer={buyer}
                 decision={selection.decision}
                 row={row}
-                customer={worklist.data?.customers.find((c) => c.customer_id === selection.customer) ?? null}
+                customer={customerRow}
                 h={h}
                 view={dealView}
                 onView={(patch) => go({ customer: selection.customer, decision: selection.decision }, { ...dealView, ...patch }, "replace")}
@@ -138,18 +171,27 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
               />
             ) : (
               <CustomerFocusPanel customerId={selection.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
-            )
-          ) : (
-            <CompanyChart h={h} chart={v2.chart} kpis={v2.kpis} inspect={inspectOpen} onInspect={(on) => setFlag("inspect", on)} />
-          )}
-          <HomeV2Links links={v2.links} />
-        </div>
-        {!narrow && hasWorklist ? (
-          <div className="min-w-0" data-testid="home-v2-worklist">
-            <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} />
+            )}
+            {outlook}
           </div>
-        ) : null}
+        </>
+      ) : (
+        <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+          <CashCard kpis={v2.kpis} />
+          {bar}
+          {outlook}
+        </div>
+      )}
+      {expanded ? (
+        <div className="mt-4">
+          <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
+        </div>
+      ) : null}
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} /> : <span />}
+        {focusing ? <ContextCard customerId={selection.customer as string} decision={selection.decision} row={row} customer={customerRow} /> : <UpcomingCard h={h} />}
       </div>
+      <FooterLinks />
     </div>
   );
 }
