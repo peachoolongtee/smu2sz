@@ -32,7 +32,7 @@ def declared_for(offer_id: str) -> dict:
 
 @lru_cache
 def _bundle(offer_id: str) -> VerdictBundle:
-    state, _ = load_scenario()
+    state, _ = load_scenario(load_offers()[offer_id].get("scenario", "golden_sme"))  # an example written for another scenario's books names it
     return evaluate(compiled(offer_id), state, load_signed_mandate(),
                     trusted_owner_key_hex=demo_owner_public_key_hex(), owner_declared=declared_for(offer_id))
 

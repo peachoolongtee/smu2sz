@@ -27,11 +27,12 @@ def fixture_id(text: str) -> str | None:
     if not m:
         return None
     raw = m.group(0).upper().replace(" ", "")
-    keys = list(load_offers())
-    if raw in keys:
+    offers = load_offers()
+    if raw in offers:
         return raw
     prefix = m.group(1).upper().replace(" ", "_")
-    hits = [k for k in keys if k.startswith(prefix + "_")]
+    # a short name never reaches an example written for another scenario's books (it has its full id only)
+    hits = [k for k, o in offers.items() if k.startswith(prefix + "_") and "scenario" not in o]
     return hits[0] if len(hits) == 1 else None
 
 

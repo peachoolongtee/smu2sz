@@ -71,6 +71,15 @@ offers:
       - {doc_id: EX08B-msg, channel: chat, sender_id: BUYER-2, received_day: 0,
          text: "We'd like 1% off next quarter on up to ¥250,000 of orders."}
     expect: {concurrent_with: EX08A_JOINT_BUYER1, outcome: COUNTER, codes: [AGG_CONCESSION_EXCEEDED]}
+  # The busy company's third customer (fixtures/scenarios/busy.json): longer terms for a buyer on a 60-day standing order, a
+  # change FLOW may not send alone. Evaluated on the busy books, not the golden ones.
+  - id: EX09_TERMS_BUYER3
+    counterparty_id: BUYER-3
+    scenario: busy
+    documents:
+      - {doc_id: EX09B3-msg, channel: chat, sender_id: BUYER-3, received_day: 0,
+         text: "Could we have 75 days on the next invoice instead of 60? Nothing else changes."}
+    expect: {outcome: NEEDS_OWNER_APPROVAL, obligations: [TERMS_EXTENSION]}
   - id: EX09_TERM_SHEET_PG
     counterparty_id: BANK-1
     kind: term_sheet

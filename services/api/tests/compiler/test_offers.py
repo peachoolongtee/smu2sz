@@ -54,6 +54,9 @@ EXPECTED: dict[str, dict[str, Any]] = {
     "EX08B_JOINT_BUYER2": {"status": "COMPILED", "obligations": [
         (T.CONTINGENT_REBATE, 100, None, 25_000_000, "CONTINGENT", "ONE_OFF", None, []),
     ]},
+    "EX09_TERMS_BUYER3": {"status": "COMPILED", "obligations": [
+        (T.TERMS_EXTENSION, None, 15, None, "FIRM", "RECURRING_BOUNDED", 1, []),
+    ]},
     "EX10_FASTCAPITAL": {
         "status": "COMPILED",
         "authority": {"PRE_APPROVAL", "PRIOR_AGREEMENT", "URGENCY"},
