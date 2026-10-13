@@ -1,4 +1,4 @@
-import { expect, test as signedOut } from "@playwright/test";
+import { expect, test as signedOut, type Locator } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
 import { filledBrand, runPlan } from "./helpers";
 
@@ -7,6 +7,12 @@ import { filledBrand, runPlan } from "./helpers";
  * on a Tier 1 ACCEPT, and the demo stepper resuming after sign-in. The Tier 1 offer is recorded from the live API
  * (mocks/offer_accept.json, verdict_accept.json); the mock matches it by its text.
  */
+
+/** The waiting card keeps its summary, the terms and the one button in view; the why-detail (the cash picture, the decline sentence, the receipt) is the "View application details" fold. */
+async function openDetails(card: Locator): Promise<void> {
+  const summary = card.getByTestId("approval-details-APR-000001").locator("> summary");
+  await summary.click();
+}
 
 const ACCEPT_TEXT = "We will pay the full ¥420,000 invoice early at 0.5%.";
 
@@ -97,7 +103,8 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
-  // The server's sentence, not a static one: the shortfall and the day it peaks, never "Day N".
+  // The server's sentence, not a static one: the shortfall and the day it peaks, never "Day N" (it is in the application details, a fold of its own).
+  await openDetails(card);
   await expect(card.getByTestId("approval-if-decline")).toHaveText(
     "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
   );
@@ -169,6 +176,7 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   await expect(h1).toHaveText("Approvals");
   const card = page.locator("#approval-APR-000001");
   await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await openDetails(card); // the cash picture is in the application details
   // The three facts, then the picture: the decline line is the baseline and the approve line the alternative, each lowest point named in the server's words.
   await expect(card.getByTestId("approval-lands")).toBeVisible();
   const picture = card.getByTestId("approval-picture");
@@ -185,9 +193,7 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   const [pb, cb] = [await picture.boundingBox(), await card.getByTestId("approval-if-decline").boundingBox()];
   expect(cb!.y).toBeGreaterThan(pb!.y + 150);
   await expect(card.getByTestId("approval-after")).toBeVisible();
-  // The quote waits behind one fold; the one filled primary is Approve.
-  await expect(card.getByTestId("approval-quote")).toBeHidden();
-  await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
+  // A real quote's terms are shown on the waiting card itself, not folded; the one filled primary is Approve.
   await expect(card.getByTestId("approval-quote")).toBeVisible();
   expect(await filledBrand(page)).toBe(1);
 });
@@ -199,6 +205,7 @@ test("an agreement approval shows its terms and no picture", async ({ page }) =>
   await expect(card.getByTestId("approval-terms")).toBeVisible();
   await expect(card.getByTestId("approval-picture")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await openDetails(card);
   await expect(card.getByTestId("approval-if-decline")).toBeVisible();
 });
 
