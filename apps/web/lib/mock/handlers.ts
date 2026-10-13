@@ -93,6 +93,9 @@ import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
+import sliceDActivity from "../../mocks/slice_d/activity.json";
+import sliceDRestore from "../../mocks/slice_d/restore.json";
+import sliceDStory from "../../mocks/slice_d/story.json";
 import bankReceiptJson from "../../mocks/bank_receipt.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
@@ -392,25 +395,74 @@ export async function getLedger(): Promise<LedgerView> {
   });
 }
 
-/** Slice D reads: served from recordings once the recorder has saved them; until then the mock answers like an older API (404), so Activity reads the ledger. */
-export async function getActivity(_lang: "en" | "zh", _ctx: object = {}): Promise<ActivityView> {
-  void _lang;
+// ------------------------------------------------------------------ Slice D: GET /activity, GET /demo/story, POST /demo/restore (recordings, mocks/slice_d)
+// Recorded from the real API by `scripts/record-mocks.mjs --slice-d` at the moments the Demo's walk passes through; the mock picks one by its own state and does no
+// arithmetic. The scenario is the one thing the mock keeps beside the books: the busy company is a recording of these two reads only (the other pages keep the main books).
+
+type StoryBook = "fresh" | "ask" | "decide" | "agree" | "bank" | "time" | "queue" | "approve" | "settle";
+const SCENARIO_KEY = "tl-mock-scenario";
+let scenario: string | null = null;
+
+function currentScenario(): string | null {
+  if (scenario) return scenario;
+  if (typeof window === "undefined") return null;
+  try {
+    scenario = window.sessionStorage.getItem(SCENARIO_KEY);
+  } catch {
+    /* the main books */
+  }
+  return scenario;
+}
+
+function setScenario(next: string | null): void {
+  scenario = next;
+  if (typeof window === "undefined") return;
+  try {
+    if (next) window.sessionStorage.setItem(SCENARIO_KEY, next);
+    else window.sessionStorage.removeItem(SCENARIO_KEY);
+  } catch {
+    /* kept in memory */
+  }
+}
+
+/** Where the main books stand, in the server's own order of book-changing steps: an offer received, its verdict, its agreement, the bank receipt, day 34, the cure queued, approved, settled. */
+function storyBook(): StoryBook {
+  const s = load();
+  const day = home.mockClock().day;
+  const stage = home.cureStage();
+  if (stage === "approved") return day >= home.SETTLED_DAY ? "settle" : "approve";
+  if (stage === "pending") return "queue";
+  if (day >= home.NEWS_DAY) return "time";
+  if (home.isReceipted()) return "bank";
+  if (Object.keys(s.negotiated).length) return "agree";
+  if (s.evaluated.length) return "decide";
+  if (Object.keys(s.offers).length) return "ask";
+  return "fresh";
+}
+
+type Pair<T> = { en: T; zh: T };
+const pick = <T>(all: Record<string, Pair<T>>, key: string, lang: "en" | "zh"): T => clone((all[key] ?? all.fresh)[lang === "zh" ? "zh" : "en"]);
+
+export async function getActivity(lang: "en" | "zh", _ctx: object = {}): Promise<ActivityView> {
   void _ctx;
   await delay();
-  throw new ApiError(404, "Not found");
+  seedStory();
+  const book = storyBook();
+  const key = currentScenario() === "busy" ? "busy" : load().securityScene && (book === "settle" || book === "approve") ? "security" : book;
+  return pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), key, lang);
 }
 
-export async function getDemoStory(_lang: "en" | "zh", _seen?: string | null): Promise<DemoStoryView> {
-  void _lang;
-  void _seen;
+export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
   await delay();
-  throw new ApiError(404, "Not found");
+  const book = storyBook();
+  // The view steps change nothing, so the page says which it has shown; the books must support it, as the server checks.
+  const key = currentScenario() === "busy" ? "busy" : book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book;
+  return pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), key, lang);
 }
 
-export async function restoreDemo(_lang: "en" | "zh"): Promise<DemoRestoreResult> {
-  void _lang;
-  await delay();
-  throw new ApiError(404, "Not found");
+export async function restoreDemo(lang: "en" | "zh"): Promise<DemoRestoreResult> {
+  await demoReset();
+  return clone(cast<Pair<DemoRestoreResult>>(sliceDRestore)[lang === "zh" ? "zh" : "en"]);
 }
 
 export async function getAudit(): Promise<AuditView> {
@@ -1104,14 +1156,15 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   } as WhatIfResult);
 }
 
-export async function demoReset(scenario?: string): Promise<void> {
-  void scenario; // the mock holds one recorded scenario
+export async function demoReset(requested?: string): Promise<void> {
   await delay();
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
+  // The mock holds one recorded set of books; the busy company is the two Slice D reads recorded on it.
+  setScenario(requested && requested !== "golden_sme" ? requested : null);
   memory = seededStore();
   save();
   home.resetHome();

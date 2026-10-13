@@ -115,7 +115,8 @@ export default function DemoPage() {
   const router = useRouter();
   const demo = useDemo();
   const reached = reachedOf(demo);
-  const seen = reached >= 0 ? (DEMO_STEPS[reached]?.id ?? null) : null;
+  // `seen` is the last view step (the three that change nothing: cash, outcome, proof) this browser has shown; the server accepts it only when the books support it.
+  const seen = DEMO_STEPS.slice(0, reached + 1).reverse().find((s) => s.id === "cash" || s.id === "outcome" || s.id === "proof")?.id ?? null;
   const story = useAsync(() => getDemoStory(lang, seen), [lang, seen]);
   const [working, setWorking] = useState(false);
   const [restored, setRestored] = useState<string | null>(null);
