@@ -3,6 +3,7 @@
 import "@/app/flow-look.css";
 import Link from "next/link";
 import { CostBlock } from "@/components/tracker/cost-block";
+import { OutsideBlock } from "@/components/tracker/funding-on-top";
 import { Block, EvidenceLink, PILL_TONE, pillClass } from "@/components/tracker/parts";
 import { ButtonLink, EmptyState, ErrorState, LoadingBlock, textLinkClass } from "@/components/ui";
 import { StateWord } from "@/components/ui/state-word";
@@ -51,7 +52,9 @@ function Body({ d }: { d: TrackerView }) {
       <BackLink href={back.href} label={back.label} />
 
       <header className="flex flex-col gap-2.5">
-        <p className="text-body-lg text-ink-2">{[d.buyer_name, d.agreed_when].filter(Boolean).join(" · ")}</p>
+        <p className="text-body-lg text-ink-2" data-testid="tracker-eyebrow">
+          {[d.buyer_name, d.agreed_when ? t("tracker.agreed", { when: d.agreed_when }) : null].filter(Boolean).join(" · ")}
+        </p>
         <h1 className="type-headline text-balance text-ink" data-testid="tracker-headline">
           {d.headline_text ?? t("tracker.title")}
         </h1>
@@ -94,6 +97,7 @@ function Body({ d }: { d: TrackerView }) {
       ) : null}
 
       {d.cost ? <CostBlock cost={d.cost} /> : null}
+      {d.cost ? <OutsideBlock lines={d.cost.lines} /> : null}
 
       {d.promises.length ? (
         <Block id="tracker-promises" title={t("tracker.promised")}>
@@ -119,7 +123,7 @@ function Body({ d }: { d: TrackerView }) {
         {d.buyer ? (
           <Block id="tracker-buyer" title={t("tracker.buyer")} className="flex-[999_1_26rem] space-y-2.5" testId="tracker-buyer">
             {d.promise_counts ? <p className="mt-2.5 text-body-lg text-ink">{d.promise_counts.text}</p> : null}
-            <p className="text-body-lg text-ink">{d.buyer.text}</p>
+            {d.buyer.text ? <p className="text-body-lg text-ink">{d.buyer.text}</p> : null}
             {d.buyer.note_text ? <p className="text-body-lg text-ink-2">{d.buyer.note_text}</p> : null}
             {d.buyer.href ? (
               <p>

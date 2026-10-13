@@ -15,7 +15,7 @@ import { useAsync, type AsyncState } from "./use-async";
 export type TrackerTone = "ok" | "warn" | "bad" | "neutral";
 export type TrackerStageState = "done" | "now" | "todo" | "missed" | "part";
 export type TrackerCertainty = "RECORDED" | "QUOTED" | "ATTRIBUTED";
-export type TrackerPromiseState = "kept" | "part" | "late" | "missed" | "awaited" | "in_force" | "ended" | "paid_late";
+export type TrackerPromiseState = "kept" | "part" | "late" | "missed" | "awaited" | "in_force" | "ended" | "paid_late" | "failed";
 
 export interface TrackerStage {
   key: string;
@@ -36,6 +36,15 @@ export interface TrackerLine {
   certainty_text: string;
   tone: TrackerTone;
   evidence_href: string | null;
+  /** How the line relates to the deal: null (or "none") for the agreement's own components, else funding the records relate to it. */
+  relation: "none" | "after_late_payment" | "secured_on_invoice" | null;
+  /** True when the line's figure is in the total; `actual_fen` is only the part in the total. */
+  counted: boolean;
+  /** The line's own figure, counted or not (null when none). */
+  figure_fen: number | null;
+  figure_display: string | null;
+  /** Why a related line is not counted; null when it is counted, or still to count once approved. */
+  counted_note_text: string | null;
 }
 
 export interface TrackerCost {
@@ -46,6 +55,9 @@ export interface TrackerCost {
   unmeasured_fen: number | null;
   unmeasured_display: string | null;
   /** The cost on top of the agreed terms (the counted funding lines), unsigned. */
+  /** The sum of the related lines' figures, counted or not. */
+  related_fen: number | null;
+  related_display: string | null;
   difference_fen: number;
   difference_display: string;
   lines: TrackerLine[];
@@ -81,7 +93,7 @@ export interface TrackerView {
   cost: TrackerCost | null;
   promises: TrackerPromise[];
   promise_counts: { buyer_kept: number; buyer_total: number; buyer_paid_late?: number; text: string } | null;
-  buyer: { text: string; note_text: string | null; href: string | null } | null;
+  buyer: { text: string | null; note_text: string | null; href: string | null } | null;
   next: { label: string; text: string; href: string } | null;
   closeout_text: string | null;
   links: { record_href: string; activity_href: string | null };

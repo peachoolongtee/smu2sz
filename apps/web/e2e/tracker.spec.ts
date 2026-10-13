@@ -40,7 +40,19 @@ async function expectRead(page: Page, d: TrackerView): Promise<void> {
   await expect(page.getByTestId("tracker-to-come")).toContainText(cost.to_come.note_text);
   // The actual figure's tone always has its note beside it: a tone is never the only channel.
   expect((await page.getByTestId("tracker-actual").innerText()).trim().length).toBeGreaterThan(cost.actual.amount_display.length);
+  // The agreement's own components (the terms, the funding planned at agreement) are both lines of the table; the eyebrow says when it was agreed.
+  expect(cost.lines.filter((l) => !l.relation || l.relation === "none").map((l) => l.key)).toEqual(["terms", "planned_funding"]);
+  await expect(page.getByTestId("tracker-eyebrow")).toContainText(d.agreed_when as string);
+  await expect(page.getByTestId("tracker-eyebrow")).toContainText(d.lang === "zh" ? "达成协议" : "Agreed");
   for (const l of cost.lines) {
+    // A related line the server does not count is shown apart, outside the deal's cost, with its own figure and why it is not counted.
+    if (l.relation && l.relation !== "none" && !l.counted && l.counted_note_text) {
+      const out = page.getByTestId(`tracker-outside-${l.key}`);
+      await expect(out).toContainText(l.figure_display as string);
+      await expect(out).toContainText(l.counted_note_text);
+      await expect(page.getByTestId(`tracker-line-${l.key}`)).toHaveCount(0);
+      continue;
+    }
     const row = page.getByTestId(`tracker-line-${l.key}`);
     await expect(row).toHaveAttribute("data-certainty", l.certainty);
     await expect(row).toContainText(l.certainty_text);
@@ -49,6 +61,7 @@ async function expectRead(page: Page, d: TrackerView): Promise<void> {
     if (l.actual_display) await expect(row).toContainText(l.actual_display);
     else await expect(page.getByTestId(`tracker-line-${l.key}-actual`)).toHaveText(l.actual_note_text as string);
   }
+  if (!cost.lines.some((l) => l.relation && l.relation !== "none" && !l.counted && l.counted_note_text)) await expect(page.getByTestId("tracker-outside")).toHaveCount(0);
   await expect(page.getByTestId("tracker-method")).toHaveText(cost.method_text);
   for (const s of d.stages) {
     const stage = page.getByTestId(`tracker-stage-${s.key}`);
@@ -62,7 +75,8 @@ async function expectRead(page: Page, d: TrackerView): Promise<void> {
     await expect(row).toContainText(p.title_text);
     await expect(row).toContainText(p.state_word);
   }
-  await expect(page.getByTestId("tracker-buyer")).toContainText(d.buyer!.text);
+  if (d.buyer!.text) await expect(page.getByTestId("tracker-buyer")).toContainText(d.buyer!.text);
+  if (d.promise_counts) await expect(page.getByTestId("tracker-buyer")).toContainText(d.promise_counts.text);
   for (const [i, p] of d.promises.entries()) if (p.state === "paid_late") await expect(page.getByTestId(`tracker-promise-${i}`)).toContainText(p.state_word);
   // The back link is the page's first control; the close-out, when there is one, is its own card after the header (never above the back link).
   const back = await page.getByTestId("tracker-back").boundingBox();

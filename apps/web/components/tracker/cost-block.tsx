@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { TrackerCost, TrackerLine } from "@/lib/tracker";
-import { FundingLegend, FundingRows, FundingSegments, isFunding } from "./funding-on-top";
+import { tableLines, inTotal, isAgreementLine } from "@/lib/tracker-lines";
+import { FundingLegend, FundingRows, FundingSegments } from "./funding-on-top";
 import { LineRow } from "./line-row";
 import { Block } from "./parts";
 
@@ -24,8 +25,8 @@ function Figure({ label, testId, children, note }: { label: string; testId: stri
  * sized by its own fen number (a width, never a label), with a legend of the lines' own labels so colour is never alone.
  */
 function CostBar({ lines }: { lines: TrackerLine[] }) {
-  const terms = lines.filter((l) => !isFunding(l) && l.actual_fen !== null && l.actual_fen > 0);
-  const hasFunding = lines.some((l) => isFunding(l) && l.actual_fen !== null && l.actual_fen > 0);
+  const terms = lines.filter((l) => isAgreementLine(l) && inTotal(l));
+  const hasFunding = lines.some((l) => !isAgreementLine(l) && inTotal(l));
   if (!terms.length && !hasFunding) return null;
   return (
     <div data-testid="tracker-bar">
@@ -105,7 +106,7 @@ export function CostBlock({ cost }: { cost: TrackerCost }) {
           </tr>
         </thead>
         <tbody>
-          {cost.lines.filter((l) => !isFunding(l)).map((l) => (
+          {tableLines(cost.lines).filter(isAgreementLine).map((l) => (
             <LineRow key={l.key} l={l} />
           ))}
           <FundingRows lines={cost.lines} />
