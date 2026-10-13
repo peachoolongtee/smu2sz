@@ -114,9 +114,11 @@ def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_a
     assert a["send_scope_lines"][2].endswith("(already inside the ¥3,027.77 above)")
     assert b["receipt"]["in_hand_vs_future_text"].startswith("The funding arrives in 3 days.")
     assert b["receipt"]["authority_text"] == "It changes your terms, so you approve it first."  # its own authority, not A's
-    for r in rs:  # the funding runs on send whether or not the buyer agrees, said in words
-        assert "Runs when you send, whether or not the buyer agrees" in r["receipt"]["assumptions_text"]
+    for r in rs:  # the funding runs on send whether or not the buyer agrees, said in words, with what a refusal runs (the gap as it stands)
+        assert "Runs when you send, whether or not the buyer agrees." in r["receipt"]["assumptions_text"]
         assert r["receipt"]["assumptions_text"].startswith(r["recheck_text"])
+        assert ("If the buyer declines, it is sized to the gap as it stands without the agreement: "
+                "Draws ¥150,000.00 on the Bank credit line today; Requests ¥255,000.00 of invoice financing, arriving in 3 days.") in r["receipt"]["assumptions_text"]
 
 
 def test_the_sends_funding_really_runs_on_a_refusal_which_the_receipt_says(client, rt):
@@ -127,6 +129,9 @@ def test_the_sends_funding_really_runs_on_a_refusal_which_the_receipt_says(clien
     assert sent.status_code == 200, sent.text
     out = sent.json()
     assert out["outcome"] == "NO_DEAL" and out["operations"], out  # refused, and the funding still ran
+    # exactly what the receipt said a refusal runs: the draw and the invoice financing of the gap as it stands
+    assert [(x["kind"], x["amount_fen"]) for x in out["plan"]["actions"]] == [("DRAW", 15_000_000), ("FINANCE_INVOICE", 25_500_000)]
+    assert [(o["kind"], o["status"]) for o in out["operations"]] == [("DRAW_FACILITY", "EXECUTED"), ("SUBMIT_INVOICE_FOR_FINANCING", "EXECUTED")]
     assert "whether or not the buyer agrees" in b["receipt"]["assumptions_text"]
 
 
@@ -141,3 +146,12 @@ def test_the_replies_receipts_in_chinese(client, rt):
 
 def test_an_offer_with_no_counter_has_no_priced_responses(client, rt):
     assert _eval(client, "SEC_DEMO_FASTCAPITAL")["workspace"]["priced_responses"] == []
+
+
+def test_a_reply_that_runs_nothing_on_send_says_nothing_about_funding(client, rt):
+    """On the busy books the gap cannot be funded today whatever the buyer answers, so EX01's Option A runs nothing and its receipt claims nothing."""
+    client.post("/demo/reset", params={"scenario": "busy"}, headers=OWNER)
+    ws = _eval(client)["workspace"]
+    [a] = ws["priced_responses"]
+    assert a["label"] == "Option A" and a["receipt"]["executes_now_text"] is None
+    assert a["receipt"]["assumptions_text"] == a["recheck_text"]

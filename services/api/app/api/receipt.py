@@ -44,10 +44,13 @@ def _join(lang: Lang, parts: Sequence[str | None]) -> str | None:
 
 
 def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: str | None, cost_display: str | None,
-                 funds_when: str | None, funds_today: bool, authority_text: str | None) -> dict[str, str | None]:
+                 funds_when: str | None, funds_today: bool, authority_text: str | None,
+                 if_declined_lines: Sequence[str] = ()) -> dict[str, str | None]:
     """The send-the-counter review. `lines` are `send_scope_lines` (the agreement, then the draws and the funding cost, when the send runs
     funding); `funds_when` is the distance the last draw lands ("in 3 days") and `funds_today` whether it lands today; `authority_text` is the
-    sentence the offer picture gives the reply (who decides), null when the picture cannot say."""
+    sentence the offer picture gives the reply (who decides), null when the picture cannot say. `if_declined_lines` are the funding legs the send
+    runs if the buyer declines (the gap as it stands without the agreement): the engine funds the cash gap when the counter is sent, whatever the
+    buyer answers, and the assumptions say so in words."""
     funding = list(lines[1:])
     if funding and funds_when:
         landing = (t(lang, "The draw is in hand today.", "提款今天到账。") if funds_today
@@ -57,8 +60,16 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
     future = t(lang, f"Nothing from {buyer} counts as cash until it arrives.", f"{buyer}的款项在到账前不计入现金。")
     # The engine funds the cash gap when the counter is sent, on the books as they stand then, whatever the buyer answers: a refusal does not
     # take the funding back (`_negotiate_locked` plans the gap on both outcomes). Said where the owner reads the assumptions.
-    runs_anyway = (t(lang, "Runs when you send, whether or not the buyer agrees; if the buyer declines, it is sized to the gap as it stands without the agreement.",
-                     "发送时即执行，无论买方是否同意；若买方拒绝，融资金额按不含该协议的现有缺口确定。") if funding else None)
+    declined = t(lang, "; ", "；").join(if_declined_lines)
+    runs_anyway: str | None = None
+    if funding:
+        runs_anyway = t(lang, "Runs when you send, whether or not the buyer agrees.", "发送时即执行，无论买方是否同意。")
+        if declined:
+            runs_anyway += t(lang, f" If the buyer declines, it is sized to the gap as it stands without the agreement: {declined}.",
+                             f"若买方拒绝，融资金额按不含该协议的现有缺口确定：{declined}。")
+    elif declined:
+        runs_anyway = t(lang, f"If the buyer declines, the funding for your cash gap still runs when you send: {declined}.",
+                        f"若买方拒绝，发送时仍会为您的资金缺口办理融资：{declined}。")
     return receipt(
         authorizes_text=lines[0] if lines else None,
         executes_now_text=_join(lang, funding),
