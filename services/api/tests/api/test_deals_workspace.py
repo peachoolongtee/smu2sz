@@ -89,3 +89,52 @@ def test_an_offer_with_no_counter_has_no_priced_response(client, rt):
     ws = _eval(client, "SEC_DEMO_FASTCAPITAL")["workspace"]
     assert ws["priced_response"] is None and ws["recommends"]["action"] == "decline"
     assert ws["buyer_asks"]["asks"] == [] or all("text" in a for a in ws["buyer_asks"]["asks"])
+
+
+# ---------------------------------------------------------------- Slice B: a receipt for every sendable reply
+
+
+def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_as_the_priced_response(client, rt):
+    ws = _eval(client)["workspace"]
+    rs = ws["priced_responses"]
+    assert [r["label"] for r in rs] == ["Option A", "Option B"]
+    assert rs[0] == ws["priced_response"]  # compatibility: the single field is the first entry
+    a, b = rs
+    assert a["counter_id"] != b["counter_id"] and a["verdict_id"] == b["verdict_id"] and a["state_version"] == b["state_version"]
+    # Option A is unchanged: one draw, today
+    assert a["send_scope_lines"][1] == "Draws ¥149,986.20 on the Bank credit line today"
+    assert a["receipt"]["executes_now_text"] == "; ".join(a["send_scope_lines"][1:])
+    # Option B runs its own funding: a draw and an invoice-financing request, said with the amounts and when they land
+    assert b["send_scope_lines"][1:3] == ["Draws ¥90,000.00 on the Bank credit line today",
+                                          "Requests ¥315,000.00 of invoice financing, arriving in 3 days"]
+    ex = b["receipt"]["executes_now_text"]
+    assert "¥90,000.00" in ex and "today" in ex and "¥315,000.00" in ex and ex != a["receipt"]["executes_now_text"]
+    assert b["receipt"]["in_hand_vs_future_text"].startswith("The funding arrives in 3 days.")
+    assert b["receipt"]["authority_text"] == "It changes your terms, so you approve it first."  # its own authority, not A's
+    for r in rs:  # the funding runs on send whether or not the buyer agrees, said in words
+        assert "Runs when you send, whether or not the buyer agrees" in r["receipt"]["assumptions_text"]
+        assert r["receipt"]["assumptions_text"].startswith(r["recheck_text"])
+
+
+def test_the_sends_funding_really_runs_on_a_refusal_which_the_receipt_says(client, rt):
+    ws = _eval(client)["workspace"]
+    b = ws["priced_responses"][1]
+    sent = client.post(f"/negotiate/{ws['buyer']['offer_id']}", json={"buyer_profile": "hard_line", "counter_id": b["counter_id"],
+                       "verdict_id": b["verdict_id"], "state_version": b["state_version"]}, headers=OWNER)
+    assert sent.status_code == 200, sent.text
+    out = sent.json()
+    assert out["outcome"] == "NO_DEAL" and out["operations"], out  # refused, and the funding still ran
+    assert "whether or not the buyer agrees" in b["receipt"]["assumptions_text"]
+
+
+def test_the_replies_receipts_in_chinese(client, rt):
+    rs = _eval(client, lang="zh")["workspace"]["priced_responses"]
+    assert len(rs) == 2
+    for r in rs:
+        assert "无论买方是否同意" in r["receipt"]["assumptions_text"]
+    assert "¥90,000.00" in rs[1]["receipt"]["executes_now_text"] and "今天" in rs[1]["receipt"]["executes_now_text"]
+    assert rs[1]["receipt"]["executes_now_text"] != rs[0]["receipt"]["executes_now_text"]
+
+
+def test_an_offer_with_no_counter_has_no_priced_responses(client, rt):
+    assert _eval(client, "SEC_DEMO_FASTCAPITAL")["workspace"]["priced_responses"] == []

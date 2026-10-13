@@ -236,22 +236,27 @@ def evaluate_offer(offer_id: str, body: EvaluateIn | None = None, lang: str = "e
         },
     })
     # The page's order, server-shaped (the Deals workspace): every line is a field of this view or the engine's own posting, in words.
-    send_plan = None
+    send_plans: dict[str, Any] = {}
     if view["counters"] and view["business_action"] == "counter":
-        try:  # the router's plan for the gap that would remain if the buyer accepts the recommended counter (what the send would run)
-            books_s = current_books(state, rt.store.commitments())
-            send_plan = plan(books_s.state, books_s.with_(list(v.counters[0].obligations)), mandate)
-        except Exception:
-            logging.getLogger("termsledger.decisions").exception("the send plan could not be read for %s", offer_id)
-    view["workspace"] = build_workspace(view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer,
-                                        commitments=rt.store.commitments(), send_plan=send_plan,
-                                        authority_text=_who_decides(rt, offer_id, view, lang))
+        books_s = current_books(state, rt.store.commitments())
+        for c in v.counters:  # each reply's own plan: the gap that would remain if the buyer accepts THAT counter (what its send would run)
+            try:
+                send_plans[c.id] = plan(books_s.state, books_s.with_(list(c.obligations)), mandate)
+            except Exception:
+                logging.getLogger("termsledger.decisions").exception("the send plan could not be read for %s, %s", offer_id, c.id)
+    paths = _picture_paths(rt, offer_id, view, lang)
+    view["workspace"] = build_workspace(
+        view, bundle=bundle, state=state, mandate=mandate, today=rt.day, lang=lang, offer=offer, commitments=rt.store.commitments(),
+        send_plans=send_plans,
+        authority_texts={k: (str(p["decides_text"]) if p.get("decides_text") else None) for k, p in (paths or {}).items()},
+        sendable_ids=None if paths is None else {k for k, p in paths.items() if p.get("sendable")})
     return view
 
 
-def _who_decides(rt: Runtime, offer_id: str, view: dict, lang: str) -> str | None:
-    """The sentence the offer picture gives the first reply (who decides it), for the send receipt: the picture's own words, read from the
-    picture the page will read next (it is cached by the verdict just stored). None when there is no reply to send or the picture cannot be read."""
+def _picture_paths(rt: Runtime, offer_id: str, view: dict, lang: str) -> dict[str, dict] | None:
+    """The offer picture's reply paths by counter id, read from the picture the page will read next (it is cached by the verdict just
+    stored): which replies could be sent, and the sentence that says who decides each (for the send receipt). None when there is no reply to
+    send or the picture cannot be read; an unavailable picture (the offer has lapsed) has no paths, so nothing is sendable."""
     if not view["counters"] or view["business_action"] != "counter":
         return None
     # imported here: the picture reads the decision record, which reads this module
@@ -260,8 +265,7 @@ def _who_decides(rt: Runtime, offer_id: str, view: dict, lang: str) -> str | Non
     try:
         with rt.lock:
             pic = cached_picture(rt, offer_id, lang)
-        path = next((p for p in pic.get("paths") or [] if p["key"] == view["counters"][0]["id"]), None)
-        return str(path["decides_text"]) if path is not None and path.get("decides_text") else None
+        return {p["key"]: p for p in pic.get("paths") or [] if p.get("kind") == "reply"}
     except Exception:  # a supporting read: the receipt then carries no authority line rather than a guess
         logging.getLogger("termsledger.decisions").exception("the picture could not be read for the send receipt of %s", offer_id)
         return None
