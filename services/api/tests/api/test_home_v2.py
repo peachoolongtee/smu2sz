@@ -118,7 +118,8 @@ def test_before_the_plan_the_action_the_chart_and_the_links(api: TestClient) -> 
                   {"label": "Funding", "value": "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"},
                   {"label": "Approval", "value": "No approval needed"}],
         "primary": {"label": "Run the funding plan", "href": "/cash#cash-options"},
-        "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN"}
+        "secondary": {"label": "Compare", "href": "/cash#cash-options"}, "control": "RUN_PLAN",
+        "approval_text": "No approval needed", "approval_needed": False}
     chart = v2["chart"]
     assert chart["scope_title"] == "COMPANY CASH FORECAST"
     assert chart["legend"] == [{"label": "Current books · no new funding", "kind": "current"},
@@ -158,7 +159,8 @@ def test_after_the_plan_the_action_is_quiet_and_the_chart_has_the_one_line(api: 
         "variant": "QUIET", "key": None, "tone": "ok", "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
         "title": "Your cash is covered on the plan that ran.",
         "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed). Your worklist still holds 1 item for you.",
-        "facts": [], "primary": None, "secondary": None, "control": None}
+        "facts": [], "primary": None, "secondary": None, "control": None,
+        "approval_text": None, "approval_needed": False}
     assert v2["chart"]["legend"] == [{"label": "Current books · the plan ran", "kind": "current"}]
     assert v2["chart"]["lowest_inspector"] == {
         "day_text": "The lowest point · in 30 days", "projected_display": "¥300,000", "minimum_display": "¥300,000",
@@ -488,6 +490,50 @@ def test_the_approval_fact_says_when_the_owner_must_approve() -> None:
             facts = home_v2._plan_facts(lang, parts)
             assert facts[2]["value"] == expected and facts[0]["value"] == ("Not priced" if lang == "en" else "未计价")
             assert " · 成本" not in home_v2._plan_sentence(lang, parts) and " · cost" not in home_v2._plan_sentence(lang, parts)
+
+
+def _act(api: TestClient) -> dict[str, Any]:
+    a = api.get("/home").json()["next_action"]
+    r: dict[str, Any] = api.post(f"/alerts/{a['alert_id']}/act", json={"state_version": a["state_version"], "suggestions": a["suggestions"]}).json()
+    return r
+
+
+def _approval_words(api: TestClient, lang: str = "en") -> tuple[Any, Any]:
+    action = _v2(api, lang)["action"]
+    return action["approval_text"], action["approval_needed"]
+
+
+def test_the_approval_words_on_day_zero_are_the_approval_facts_own_value(api: TestClient) -> None:
+    _offer(api)
+    action = _v2(api)["action"]
+    assert action["control"] == "RUN_PLAN" and action["facts"][2]["value"] == "No approval needed"
+    assert _approval_words(api) == ("No approval needed", False)
+    assert _approval_words(api, "zh") == ("无需批准", False)
+
+
+def test_the_approval_words_while_the_plan_waits_for_the_owner_and_once_it_has_run(api: TestClient) -> None:
+    assert api.post("/demo/reset", params={"scenario": "short_facilities"}).status_code == 200
+    assert _approval_words(api) == ("No approval needed", False)
+    assert _act(api)["executed"] == 2  # the first plan runs; what is left is an application for a facility, run to ask for approval
+    assert _v2(api)["action"]["control"] == "RUN_PLAN" and _v2(api)["action"]["facts"] == []
+    assert _v2(api)["action"]["text"] == "Your cash reserve becomes unsafe in 12 days. Needs your approval."
+    assert _approval_words(api) == ("Needs your approval before it runs", True)  # the step's own words say it needs the owner: so does the line
+    assert _approval_words(api, "zh") == ("需要您批准后才会执行", True)
+    assert _act(api)["pending_approval"] == 1
+    action = _v2(api)["action"]
+    assert action["control"] == "APPROVE_PLAN" and action["text"] == "Your cash reserve becomes unsafe in 12 days. Needs your approval."
+    assert _approval_words(api) == ("Needs your approval before it runs", True)
+    assert _approval_words(api, "zh") == ("需要您批准后才会执行", True)
+    assert english_leaks(_v2(api, "zh")["action"]["approval_text"]) == []
+
+
+def test_the_approval_words_are_null_when_the_action_has_no_plan(api: TestClient) -> None:
+    _offer(api)
+    _run_plan(api)
+    for lang in ("en", "zh"):
+        action = _v2(api, lang)["action"]
+        assert action["control"] is None and action["facts"] == []
+        assert (action["approval_text"], action["approval_needed"]) == (None, False)
 
 
 # ---------------------------------------------------------------- the chart's scenario title (words batch 3)
