@@ -1780,3 +1780,66 @@ export interface HomeView {
   counts: Record<AlertSeverity, number>;
   note_basis: string;
 }
+
+/** GET /reliability: what the agent learned about how each buyer pays, and the open deals ranked by it (advice only). */
+export type ReliabilityGrade = "RELIABLE" | "WATCH" | "RISKY" | "UNRATED";
+export type ReliabilityTone = "good" | "warn" | "bad" | "info";
+
+export interface ReliabilityHistoryRow {
+  invoice_id: string;
+  face_display: string;
+  terms_days: number;
+  due_day: Day;
+  settled_day: Day | null;
+  days_late: number;
+  words: string;
+  tone: ReliabilityTone;
+  source: "IMPORTED" | "BANK_FEED";
+  parts: number;
+}
+
+export interface BuyerReliability {
+  counterparty_id: string;
+  name: string;
+  rank: number;
+  score: number | null;
+  rank_score: number;
+  grade: ReliabilityGrade;
+  grade_words: string;
+  on_time_rate_display: string | null;
+  avg_delay_days: number;
+  agreed_terms_days: number | null;
+  effective_terms_days: number | null;
+  trend: "WORSENING" | "IMPROVING" | "STEADY";
+  invoices_learned: number;
+  overdue_now: number;
+  incidents: number;
+  promises_kept: number;
+  confidence: "NONE" | "LOW" | "MEDIUM" | "HIGH";
+  sources: string[];
+  advice: string;
+  reasons: { tone: ReliabilityTone; text: string }[];
+  history: ReliabilityHistoryRow[];
+  formula: string;
+}
+
+export interface RankedDeal {
+  offer_id: string;
+  counterparty_id: string;
+  buyer_name: string;
+  business_action: BusinessAction | null;
+  rank: number;
+  grade: ReliabilityGrade;
+  grade_words: string;
+  score: number | null;
+  rank_score: number;
+  advice: string;
+  why: string;
+}
+
+export interface ReliabilityView {
+  as_of_day: Day;
+  buyers: BuyerReliability[];
+  deals: RankedDeal[];
+  method: string;
+}

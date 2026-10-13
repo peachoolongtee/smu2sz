@@ -1,10 +1,12 @@
 "use client";
 
 import { CheckIcon } from "@/components/icons";
+import { GradeBadge } from "@/components/deals/reliability";
 import { Badge, Card, type Tone } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { INBOX, type InboxMessage, type InboxSource } from "@/lib/inbox";
 import type { Mode } from "@/lib/mode";
+import type { BuyerReliability } from "@/lib/types";
 import { whenText } from "@/lib/when";
 
 const sourceTone: Record<InboxSource, Tone> = { wechat: "ok", email: "info", portal: "neutral" };
@@ -42,6 +44,7 @@ export function InboxList({
   mode,
   statusFor,
   onOpen,
+  reliability,
 }: {
   currentDocId: string | null;
   readDocIds: (string | undefined)[];
@@ -53,6 +56,8 @@ export function InboxList({
   /** The recommendation words for a message that was evaluated, else null. */
   statusFor: (docId: string) => string | null;
   onOpen: (m: InboxMessage) => void;
+  /** How each buyer pays (GET /reliability), shown as a badge on the thread's first row; null while it loads. */
+  reliability?: Map<string, BuyerReliability> | null;
 }) {
   const { t, te } = useI18n();
   const business = mode === "business";
@@ -88,7 +93,7 @@ export function InboxList({
             <span className="text-xs text-ink-3">
               {m.contact} · {te("inbox.role", m.role)}
             </span>
-            {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : null}
+            {unknown(m) ? <Badge tone="bad">{t("inbox.unknownSender")}</Badge> : inThread ? null : <GradeBadge buyer={reliability?.get(m.counterparty_id)} />}
           </span>
           {m.subject ? <span className="mt-0.5 block text-sm text-ink">{m.subject}</span> : null}
           {/* The message being read is shown whole; the others keep to one line. */}

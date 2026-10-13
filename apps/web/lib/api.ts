@@ -40,6 +40,7 @@ import type {
   OfferView,
   PlanRequest,
   ReconciliationView,
+  ReliabilityView,
   StateView,
   SubmitOfferRequest,
   TrajectoryView,
@@ -153,6 +154,11 @@ export async function getAlerts(): Promise<AlertsView> {
 /** GET /reconciliation (flag `alerts`): receipts in the log matched to receivables. */
 export async function getReconciliation(): Promise<ReconciliationView> {
   return isMock ? (await mock()).getReconciliation() : (await live()).getReconciliation();
+}
+
+/** GET /reliability (owner only): how each buyer pays, learned from its invoices, and `offerIds` ranked by it. Advice only. */
+export async function getReliability(lang: "en" | "zh", offerIds: string[]): Promise<ReliabilityView> {
+  return isMock ? (await mock()).getReliability(lang, offerIds) : (await live()).getReliability(lang, offerIds);
 }
 
 /** POST /nl: one turn of the conversation. Owner turns need the owner token (401 opens the sign-in dialog). */

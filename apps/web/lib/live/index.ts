@@ -33,6 +33,7 @@ import type {
   OperationView,
   PlanRequest,
   ReconciliationView,
+  ReliabilityView,
   StateView,
   SubmitOfferRequest,
   TrajectoryView,
@@ -100,6 +101,8 @@ export const live = {
   /** The owner's home read: written by the server in the language asked for; the owner token is required. */
   getHome: (lang: "en" | "zh", sinceDay: number | null = null) =>
     http<HomeView>("GET", `/home?lang=${lang}${sinceDay !== null ? `&since_day=${sinceDay}` : ""}`),
+  getReliability: (lang: "en" | "zh", offerIds: string[]) =>
+    http<ReliabilityView>("GET", `/reliability?lang=${lang}${offerIds.map((id) => `&offer_id=${enc(id)}`).join("")}`),
   getReconciliation: async (): Promise<ReconciliationView> =>
     (await http<{ reconciliation: ReconciliationView }>("GET", "/reconciliation")).reconciliation,
 

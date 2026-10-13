@@ -12,6 +12,7 @@ import { ActiveCommitments } from "@/components/deals/commitments";
 import { DealSteps } from "@/components/deals/deal-steps";
 import { ACTION_KEY, DealDecision, businessAction } from "@/components/deals/decision";
 import { InboxList } from "@/components/deals/inbox-list";
+import { ReliabilityCard, useReliability } from "@/components/deals/reliability";
 import { RecommendedResponse } from "@/components/deals/response";
 import { NextStep, nextLinkCls } from "@/components/next-step";
 import { PlanCard } from "@/components/plan-card";
@@ -51,6 +52,9 @@ export default function DealsPage() {
   // The simulated clock: every day on this page is said as a distance from it.
   const today = clock.data?.day ?? books.data?.day ?? 0;
   const known = books.data ? new Set(books.data.state.counterparties.map((c) => c.id)) : null;
+  // How each buyer pays, and the deals opened in this session ranked by it (advice only; the check decides).
+  const reliability = useReliability(Object.keys(demo.offers));
+  const byBuyer = reliability.data ? new Map(reliability.data.buyers.map((b) => [b.counterparty_id, b])) : null;
   const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? id;
 
   async function evaluate() {
@@ -115,7 +119,13 @@ export default function DealsPage() {
     next = { text: t("next.counter"), action: <a href="#counters" className={nextLinkCls}>{t("next.toCounters")}</a> };
   }
 
-  const commitments = <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />;
+  // Below the deal being read (its decision comes first), above the closed disclosures.
+  const commitments = (
+    <>
+      <ActiveCommitments today={today} buyerName={buyerName} hideEmpty />
+      <ReliabilityCard data={reliability} mode={mode} />
+    </>
+  );
 
   return (
     <>
@@ -142,6 +152,7 @@ export default function DealsPage() {
           mode={mode}
           statusFor={statusFor}
           onOpen={(m) => void openMessage(m)}
+          reliability={byBuyer}
         />
         {error ? <ErrorState error={error} /> : null}
 

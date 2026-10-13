@@ -36,6 +36,7 @@ import type {
   OperationView,
   PlanRequest,
   ReconciliationView,
+  ReliabilityView,
   StateView,
   SubmitOfferRequest,
   TrajectoryView,
@@ -64,15 +65,19 @@ import negNoDeal from "../../mocks/negotiation_nodeal.json";
 import offerAccept from "../../mocks/offer_accept.json";
 import offerEx01 from "../../mocks/offer_ex01.json";
 import offerEx01b from "../../mocks/offer_ex01b.json";
+import offerEx08b from "../../mocks/offer_ex08b.json";
 import offerSec from "../../mocks/offer_sec.json";
 import opsJson from "../../mocks/ops.json";
 import reconciliationJson from "../../mocks/reconciliation.json";
+import reliabilityEn from "../../mocks/reliability_en.json";
+import reliabilityZh from "../../mocks/reliability_zh.json";
 import stateJson from "../../mocks/state.json";
 import trajCons from "../../mocks/trajectory_conservative.json";
 import trajExp from "../../mocks/trajectory_expected.json";
 import verdictAccept from "../../mocks/verdict_accept.json";
 import verdictEx01 from "../../mocks/verdict_ex01.json";
 import verdictEx01b from "../../mocks/verdict_ex01b.json";
+import verdictEx08b from "../../mocks/verdict_ex08b.json";
 import verdictSec from "../../mocks/verdict_sec.json";
 import whatifJson from "../../mocks/whatif_presets.json";
 
@@ -93,6 +98,7 @@ const OPS = cast<Record<string, OpTemplate>>(opsJson);
 const FIXTURE_OFFERS: { fixture_id: string; view: OfferView; verdict: VerdictView }[] = [
   { fixture_id: "EX01_PACKAGE", view: cast(offerEx01), verdict: cast(verdictEx01) },
   { fixture_id: "EX01B_REWORDED", view: cast(offerEx01b), verdict: cast(verdictEx01b) },
+  { fixture_id: "EX08B_JOINT_BUYER2", view: cast(offerEx08b), verdict: cast(verdictEx08b) },
   { fixture_id: "SEC_DEMO_FASTCAPITAL", view: cast(offerSec), verdict: cast(verdictSec) },
   // Recorded from the live API for typed text (no server fixture): a whole-invoice early payment inside every limit, an ACCEPT at Tier 1.
   { fixture_id: "TYPED_EARLY_0_5", view: cast(offerAccept), verdict: cast(verdictAccept) },
@@ -498,6 +504,22 @@ export async function actOnAlert(id: string, bound: ActRequest): Promise<AlertAc
 export async function getReconciliation(): Promise<ReconciliationView> {
   await delay();
   return clone(cast<ReconciliationView>(home.mockReconciliation() ?? reconciliationJson));
+}
+
+/**
+ * The day-0 recording. The server ranked every set of the inbox's deals (`deals_by_set`, keyed by the sorted offer ids),
+ * so the mock picks the server's own ranking for the deals asked for and never ranks anything itself. Owner only, as live.
+ */
+export async function getReliability(lang: "en" | "zh", offerIds: string[]): Promise<ReliabilityView> {
+  await delay();
+  if (!getOwnerToken()) {
+    requestSignIn("required");
+    throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.");
+  }
+  const { deals_by_set: bySet, ...r } = clone(cast<ReliabilityView & { deals_by_set: Record<string, ReliabilityView["deals"]> }>(lang === "zh" ? reliabilityZh : reliabilityEn));
+  const known = new Set(Object.values(bySet).flatMap((ds) => ds.map((d) => d.offer_id)));
+  const key = [...new Set(offerIds.filter((id) => known.has(id)))].sort().join(",");
+  return { ...r, deals: bySet[key] ?? [] };
 }
 
 /** Owner action; the mock has no circuit breaker state, so it only acknowledges. */

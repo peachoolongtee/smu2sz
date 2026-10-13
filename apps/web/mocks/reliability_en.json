@@ -1,0 +1,695 @@
+{
+  "as_of_day": 0,
+  "buyers": [
+    {
+      "counterparty_id": "BUYER-1",
+      "name": "Foshan Home Retail Co.",
+      "score": 90,
+      "grade": "RELIABLE",
+      "grade_words": "Reliable payer",
+      "rank_score": 90,
+      "on_time_rate_display": "84%",
+      "avg_delay_days": 1,
+      "agreed_terms_days": 45,
+      "effective_terms_days": 46,
+      "trend": "STEADY",
+      "invoices_learned": 10,
+      "overdue_now": 0,
+      "incidents": 0,
+      "promises_kept": 0,
+      "confidence": "HIGH",
+      "sources": [
+        "IMPORTED"
+      ],
+      "advice": "Pays reliably. Safe to prioritise.",
+      "reasons": [
+        {
+          "tone": "good",
+          "text": "Paid 9 of 10 invoices on time (within 3 days of the due day)."
+        },
+        {
+          "tone": "good",
+          "text": "Paid early under an agreed discount once."
+        }
+      ],
+      "history": [
+        {
+          "invoice_id": "HIST-B1-10",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -58,
+          "settled_day": -58,
+          "days_late": 0,
+          "words": "on time",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-09",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -88,
+          "settled_day": -90,
+          "days_late": -2,
+          "words": "2 days early",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-08",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -118,
+          "settled_day": -112,
+          "days_late": 6,
+          "words": "6 days late",
+          "tone": "warn",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-07",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -148,
+          "settled_day": -148,
+          "days_late": 0,
+          "words": "on time",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-06",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -178,
+          "settled_day": -177,
+          "days_late": 1,
+          "words": "on time (1 days' grace)",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-05",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -208,
+          "settled_day": -223,
+          "days_late": -15,
+          "words": "15 days early",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-04",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -238,
+          "settled_day": -238,
+          "days_late": 0,
+          "words": "on time",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-03",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -268,
+          "settled_day": -266,
+          "days_late": 2,
+          "words": "on time (2 days' grace)",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-02",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -298,
+          "settled_day": -299,
+          "days_late": -1,
+          "words": "1 days early",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B1-01",
+          "face_display": "¥420,000.00",
+          "terms_days": 45,
+          "due_day": -328,
+          "settled_day": -328,
+          "days_late": 0,
+          "words": "on time",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        }
+      ],
+      "formula": "p = (6.21 + 0.5) / (7.01 + 1) = 83.7%; L = 6.77 / (7.01 + 1) = 0.8 days; k = 0.00; score = 50 × 0.837 + 50 × (1 − 0.8/30) − 8 × 0.00 = 90",
+      "rank": 1
+    },
+    {
+      "counterparty_id": "BUYER-2",
+      "name": "Dongguan Office Supplies Ltd.",
+      "score": 39,
+      "grade": "RISKY",
+      "grade_words": "Often pays late",
+      "rank_score": 39,
+      "on_time_rate_display": "24%",
+      "avg_delay_days": 10,
+      "agreed_terms_days": 30,
+      "effective_terms_days": 40,
+      "trend": "WORSENING",
+      "invoices_learned": 8,
+      "overdue_now": 0,
+      "incidents": 1,
+      "promises_kept": 0,
+      "confidence": "HIGH",
+      "sources": [
+        "IMPORTED"
+      ],
+      "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+      "reasons": [
+        {
+          "tone": "bad",
+          "text": "Paid 2 of 8 invoices on time (within 3 days of the due day)."
+        },
+        {
+          "tone": "bad",
+          "text": "Pays on average 10 days late: agreed 30-day terms, in practice about 40 days."
+        },
+        {
+          "tone": "info",
+          "text": "That delay costs you about ¥297.03 per ¥100,000 invoiced, at your cheapest committed funding (10.84% a year)."
+        },
+        {
+          "tone": "bad",
+          "text": "Payment timing is getting worse: the last 3 invoices averaged 17 days late."
+        },
+        {
+          "tone": "bad",
+          "text": "85 days ago: paid an invoice in parts, the last part late."
+        }
+      ],
+      "history": [
+        {
+          "invoice_id": "HIST-B2-08",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -20,
+          "settled_day": -2,
+          "days_late": 18,
+          "words": "18 days late",
+          "tone": "bad",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-07",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -60,
+          "settled_day": -42,
+          "days_late": 18,
+          "words": "18 days late",
+          "tone": "bad",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-06",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -100,
+          "settled_day": -85,
+          "days_late": 15,
+          "words": "15 days late",
+          "tone": "bad",
+          "source": "IMPORTED",
+          "parts": 2
+        },
+        {
+          "invoice_id": "HIST-B2-05",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -140,
+          "settled_day": -132,
+          "days_late": 8,
+          "words": "8 days late",
+          "tone": "warn",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-04",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -180,
+          "settled_day": -168,
+          "days_late": 12,
+          "words": "12 days late",
+          "tone": "bad",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-03",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -220,
+          "settled_day": -211,
+          "days_late": 9,
+          "words": "9 days late",
+          "tone": "warn",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-02",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -260,
+          "settled_day": -260,
+          "days_late": 0,
+          "words": "on time",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        },
+        {
+          "invoice_id": "HIST-B2-01",
+          "face_display": "¥250,000.00",
+          "terms_days": 30,
+          "due_day": -300,
+          "settled_day": -297,
+          "days_late": 3,
+          "words": "on time (3 days' grace)",
+          "tone": "good",
+          "source": "IMPORTED",
+          "parts": 1
+        }
+      ],
+      "formula": "p = (1.18 + 0.5) / (6.12 + 1) = 23.6%; L = 70.00 / (6.12 + 1) = 9.8 days; k = 0.85; score = 50 × 0.236 + 50 × (1 − 9.8/30) − 8 × 0.85 = 39",
+      "rank": 2
+    }
+  ],
+  "deals": [],
+  "method": "Learned from each buyer's invoices: imported history before the books started and every receipt from the bank feed since. Recent payments count more (a year-old payment counts half). Advisory only: the deal check itself never uses this score.",
+  "deals_by_set": {
+    "OFF-1559c5b525ed,OFF-8e944bff0cc9": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-ea1ac57ae2a0": [
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 2,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      }
+    ],
+    "OFF-8e944bff0cc9,OFF-ea1ac57ae2a0": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 2,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-8e944bff0cc9,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      }
+    ],
+    "OFF-ea1ac57ae2a0,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 2,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-8e944bff0cc9,OFF-ea1ac57ae2a0": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 3,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-8e944bff0cc9,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 3,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-ea1ac57ae2a0,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 3,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-8e944bff0cc9,OFF-ea1ac57ae2a0,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 3,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ],
+    "OFF-1559c5b525ed,OFF-8e944bff0cc9,OFF-ea1ac57ae2a0,OFF-f806f79b6c21": [
+      {
+        "offer_id": "OFF-8e944bff0cc9",
+        "counterparty_id": "BUYER-1",
+        "business_action": "accept",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 1,
+        "why": "Ranked first: Foshan Home Retail Co. is the most reliable payer among these deals."
+      },
+      {
+        "offer_id": "OFF-1559c5b525ed",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 2,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-f806f79b6c21",
+        "counterparty_id": "BUYER-1",
+        "business_action": "counter",
+        "buyer_name": "Foshan Home Retail Co.",
+        "grade": "RELIABLE",
+        "grade_words": "Reliable payer",
+        "score": 90,
+        "rank_score": 90,
+        "advice": "Pays reliably. Safe to prioritise.",
+        "rank": 3,
+        "why": "Same buyer as a deal above; ranked by what the check recommends."
+      },
+      {
+        "offer_id": "OFF-ea1ac57ae2a0",
+        "counterparty_id": "BUYER-2",
+        "business_action": "needs_owner",
+        "buyer_name": "Dongguan Office Supplies Ltd.",
+        "grade": "RISKY",
+        "grade_words": "Often pays late",
+        "score": 39,
+        "rank_score": 39,
+        "advice": "Often pays late. Before agreeing longer terms, ask for a deposit or shorter terms, or plan to finance the invoice.",
+        "rank": 4,
+        "why": "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse, 1 payment problem (score 39)."
+      }
+    ]
+  }
+}

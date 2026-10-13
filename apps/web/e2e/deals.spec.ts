@@ -69,9 +69,11 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   await expect(page.getByTestId("deal-ask-IMMEDIATE_DISCOUNT")).toContainText("1.20% discount for paying the ¥420,000.00 invoice early");
   await expect(page.getByTestId("deal-ask-TERMS_EXTENSION")).toContainText("60");
   await expect(page.getByTestId("deal-ask-CONTINGENT_REBATE")).toContainText("1.00% rebate");
-  // The buyer's earlier messages sit inside the thread; there is no other thread in Business mode, so nothing else folds.
+  // The buyer's earlier messages sit inside the thread; the other buyer's thread (Dongguan) folds under "other messages".
   await expect(page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first()).toContainText("earlier message");
-  await expect(page.getByTestId("inbox-others")).toHaveCount(0);
+  await expect(page.getByTestId("inbox-others")).toHaveCount(1);
+  // Each thread names how reliably its buyer pays (GET /reliability).
+  await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Reliable payer · 90/100");
   await expect(page.getByTestId("inbox-blocked")).toBeVisible();
   const next = page.getByTestId("next-step");
   await next.getByRole("button", { name: "Check against my limits" }).click();
@@ -129,4 +131,33 @@ test("opening a message reads it, and the evaluated deal reads in the owner's or
   // Reading the same message again costs nothing: it is shown, not read twice.
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
+});
+
+test("the deals opened are ranked by how reliably each buyer pays, with the why one click away", async ({ page }) => {
+  await page.goto("/deals");
+  const inbox = page.getByTestId("inbox-list");
+  await inbox.getByTestId("inbox-msg-EX01").click();
+  await expect(inbox.getByTestId("inbox-msg-EX01")).toHaveAttribute("aria-current", "true");
+  await page.getByTestId("inbox-others").locator("> summary").click();
+  await inbox.getByTestId("inbox-msg-EX08B").click();
+  await expect(inbox.getByTestId("inbox-msg-EX08B")).toHaveAttribute("aria-current", "true");
+  await expect(inbox.getByTestId("inbox-msg-EX08B")).toContainText("Often pays late · 39/100");
+
+  const card = page.locator("#reliability");
+  const deals = card.getByTestId("reliability-deals");
+  await expect(deals.locator("li")).toHaveCount(2);
+  await expect(deals.locator("li").first()).toContainText("Foshan Home Retail Co.");
+  await expect(deals.locator("li").first()).toContainText("Ranked first");
+  await expect(deals.locator("li").nth(1)).toContainText(
+    "Ranked below Foshan Home Retail Co.: often pays late, agreed 30-day terms but pays in about 40, getting worse",
+  );
+
+  const dongguan = card.getByTestId("reliability-buyer-BUYER-2");
+  await expect(dongguan).toContainText("Getting worse");
+  await dongguan.locator("details > summary").click();
+  await expect(dongguan).toContainText("Agreed 30 days · pays in about 40");
+  await expect(dongguan).toContainText("Paid 2 of 8 invoices on time");
+  await expect(dongguan).toContainText("That delay costs you about ¥297.03 per ¥100,000 invoiced");
+  await expect(dongguan.getByRole("region", { name: "Payment history" })).toContainText("18 days late");
+  await expect(page.locator("body")).not.toContainText(/\bDay \d/);
 });

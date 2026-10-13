@@ -71,6 +71,18 @@ export const INBOX: InboxMessage[] = [
     },
   },
   {
+    // A second buyer, so the owner can compare how reliably each pays (GET /reliability).
+    id: "EX08B",
+    source: "wechat",
+    counterparty_id: "BUYER-2",
+    company: "Dongguan Office Supplies Ltd.",
+    contact: "Chen Jing",
+    role: "purchasing",
+    time: "08:40",
+    fixtureId: SAMPLES.EX08B.fixtureId,
+    document: SAMPLES.EX08B.documents[0],
+  },
+  {
     id: "SEC",
     source: "email",
     counterparty_id: "FASTCAPITAL",

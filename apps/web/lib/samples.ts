@@ -1,7 +1,7 @@
 import type { SourceDocument } from "./types";
 
-/** Demo messages, verbatim from fixtures/offers.yaml (EX01_PACKAGE, EX01B_REWORDED, SEC_DEMO_FASTCAPITAL). */
-export type SampleId = "EX01" | "EX01B" | "SEC";
+/** Demo messages, verbatim from fixtures/offers.yaml (EX01_PACKAGE, EX01B_REWORDED, EX08B_JOINT_BUYER2, SEC_DEMO_FASTCAPITAL). */
+export type SampleId = "EX01" | "EX01B" | "EX08B" | "SEC";
 
 export interface Sample {
   offerId: string;
@@ -37,6 +37,20 @@ export const SAMPLES: Record<SampleId, Sample> = {
         sender_id: "BUYER-1",
         received_day: 0,
         text: "1.2% for early settlement. Standard terms going forward: 60 days. And 1% on next quarter as a goodwill gesture.",
+      },
+    ],
+  },
+  EX08B: {
+    offerId: "OFF-EX08B",
+    fixtureId: "EX08B_JOINT_BUYER2",
+    counterparty_id: "BUYER-2",
+    documents: [
+      {
+        doc_id: "EX08B-msg",
+        channel: "chat",
+        sender_id: "BUYER-2",
+        received_day: 0,
+        text: "We'd like 1% off next quarter on up to ¥250,000 of orders.",
       },
     ],
   },
