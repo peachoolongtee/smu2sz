@@ -1,0 +1,2720 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>FLOW interactive mockup</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+
+</head>
+<body>
+<iframe id="codex-visualization" sandbox="allow-scripts" referrerpolicy="no-referrer" title="FLOW interactive mockup" data-srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;FLOW interactive mockup&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 16px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans:
+    -apple-system-body, ui-sans-serif, -apple-system, system-ui, &quot;Segoe UI&quot;,
+    Helvetica, &quot;Apple Color Emoji&quot;, Arial, sans-serif, &quot;Segoe UI Emoji&quot;,
+    &quot;Segoe UI Symbol&quot;;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 8px);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-weight: var(--font-weight-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+  text-underline-offset: 2px;
+  font-weight: inherit;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+.table {
+  font-family: var(--font-sans);
+}
+
+h1 {
+  font-size: calc(var(--font-size-base) * 1.5);
+  line-height: 1.3333333333;
+}
+
+h2 {
+  font-size: calc(var(--font-size-base) * 1.25);
+  line-height: 1.4;
+}
+h3 {
+  font-size: calc(var(--font-size-base) * 1.125);
+  line-height: 1.5555555556;
+}
+h4 {
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+h5,
+h6 {
+  font-size: var(--font-size-base);
+  line-height: calc(var(--font-size-base) * 1.625);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b,
+strong,
+th {
+  font-weight: 600;
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+pre,
+pre code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: calc(var(--font-size-base) * 0.875);
+  line-height: calc(var(--font-size-base) * 1.625);
+  font-family: var(--font-sans);
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.table :is(th, td):not(:last-child) {
+  padding-inline-end: calc(var(--font-size-base) * 1.5);
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead :is(th, td) {
+  border-bottom-color: var(--border-strong, var(--input));
+  padding-block: calc(var(--font-size-base) / 2);
+  line-height: var(--font-size-base);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+.table tbody :is(th, td) {
+  padding-block: calc(var(--font-size-base) * 0.625);
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 8px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+.widget {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 0 0 0.5px var(--border-strong, var(--border));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#widget &gt; :not(.card, .widget, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  border: 1px solid var(--border);
+  corner-shape: var(--corner-shape);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-sans);
+  padding: 5px 12px;
+  border-color: color-mix(
+    in oklab,
+    light-dark(var(--primary-foreground), var(--foreground)) 5%,
+    transparent
+  );
+  border-radius: var(--radius-2xl);
+  color: light-dark(var(--primary-foreground), var(--foreground));
+  background: light-dark(var(--foreground), var(--popover));
+  box-shadow: 0 8px 18px rgb(15 23 42 / 20%);
+  letter-spacing: -0.15px;
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: color-mix(in srgb, var(--foreground) 40%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-family: var(--font-sans);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1;
+}
+
+small,
+.text-small {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+/* Match inline alignment without overriding a containing flex or grid layout. */
+.btn,
+.nav-link,
+.form-control,
+.form-select,
+.form-range,
+.form-check {
+  vertical-align: middle;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: inherit;
+  font-family: var(--font-sans);
+  height: fit-content;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding-inline: var(--control-spacing, 12px);
+  border-color: transparent;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.btn {
+  border-color: var(--border);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.btn-primary {
+  border-color: var(--border);
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: border-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: border-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--muted-foreground);
+  background: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+/* Shared preview chrome; product styles stay inside each variant. */
+.viz-dotted-background {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 14%, transparent) 0.8px,
+    transparent 0.8px
+  );
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.viz-carousel {
+  position: relative;
+  min-width: 0;
+}
+
+.viz-carousel:has(&gt; .viz-carousel-controls) {
+  min-height: calc(60px + var(--viz-carousel-picker-height, 0px));
+  padding-bottom: 60px;
+}
+
+.viz-carousel &gt; [data-variant][hidden] {
+  display: none !important;
+}
+
+.viz-carousel &gt; [data-variant] {
+  isolation: isolate;
+}
+
+.viz-carousel-controls {
+  --viz-carousel-hover: light-dark(
+    color-mix(in srgb, var(--foreground) 5.4%, transparent),
+    color-mix(in srgb, var(--foreground) 7.8%, transparent)
+  );
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  /* Leave room for the host&#x27;s design-controls launcher at the trailing edge. */
+  max-width: calc(100% - 96px);
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  /* Match the settings dropdown chrome independently of the content font size. */
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* Keep authored mockup button styles out of the shared carousel chrome. */
+.viz-carousel-controls button,
+.viz-carousel-picker &gt; summary {
+  display: flex !important;
+  height: auto !important;
+  min-height: 30px;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  padding: 0 6px !important;
+  -webkit-app-region: no-drag;
+  border: 0 !important;
+  border-radius: 14px !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: inherit !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-picker &gt; summary {
+  position: relative;
+  isolation: isolate;
+}
+
+.viz-carousel-controls &gt; button {
+  --icon-size: 16px;
+  width: 30px !important;
+  padding: 0 !important;
+}
+
+.viz-carousel-picker &gt; summary {
+  padding-inline: 12px !important;
+}
+
+.viz-carousel-controls .viz-carousel-caret {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 0;
+  color: inherit;
+  transform: rotate(180deg);
+}
+
+.viz-carousel-controls &gt; button &gt; svg,
+.viz-carousel-controls .viz-carousel-caret,
+.viz-carousel-count {
+  opacity: 0.5;
+}
+
+.viz-carousel-controls &gt; button::before,
+.viz-carousel-picker &gt; summary::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border-radius: 12px;
+  content: &quot;&quot;;
+  pointer-events: none;
+}
+
+.viz-carousel-controls &gt; button:hover::before,
+.viz-carousel-picker &gt; summary:hover::before {
+  background: var(--viz-carousel-hover);
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-controls [data-lucide],
+.viz-carousel-controls .lucide {
+  flex-shrink: 0;
+}
+
+.viz-carousel-picker {
+  min-width: 0;
+}
+
+.viz-carousel-picker &gt; summary {
+  min-width: 0;
+  list-style: none;
+}
+
+.viz-carousel-picker &gt; summary::-webkit-details-marker {
+  display: none;
+}
+
+.viz-carousel-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.viz-carousel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viz-carousel-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  max-height: 240px;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow: 0 4px 12px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 25%));
+}
+
+.viz-carousel-options &gt; button {
+  border-radius: max(0px, calc(var(--radius-lg) - 5px)) !important;
+  width: 100% !important;
+  min-height: 28px;
+  justify-content: flex-start !important;
+  padding: 4px 8px !important;
+  font-size: var(--font-size-small) !important;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.viz-carousel-options &gt; [aria-current=&quot;true&quot;],
+.viz-carousel-options &gt; button:hover {
+  background: var(--viz-carousel-hover) !important;
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding-inline: calc(4px + var(--control-spacing, 12px) / 2);
+  border-color: var(--input);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4285714286;
+}
+.form-control:is(
+  [type=&quot;file&quot;],
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;],
+  [type=&quot;color&quot;]
+) {
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  line-height: 18px;
+}
+.form-control:is(
+  [type=&quot;date&quot;],
+  [type=&quot;datetime-local&quot;],
+  [type=&quot;month&quot;],
+  [type=&quot;week&quot;]
+) {
+  padding-inline: var(--control-spacing, 12px);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+  padding: 0;
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+  min-height: calc(10px + 2 * var(--control-spacing, 12px));
+  padding-inline: var(--control-spacing, 12px);
+  margin-inline-end: var(--control-spacing, 12px);
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  resize: vertical;
+  min-height: 96px;
+  padding: 8px 10px;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: none;
+}
+.form-control:disabled {
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  opacity: 1;
+}
+.form-control[aria-invalid=&quot;true&quot;] {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 20%, transparent);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: fit-content;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  margin: 0;
+  /* The secondary icon role is 14px at compact density and 16px at web density. */
+  --icon-size: calc(10px + var(--control-spacing, 12px) / 2);
+  /* Settings dropdowns retain a 12px inset and a 4px text-to-chevron gap. */
+  padding: 0 calc(16px + var(--icon-size)) 0 12px;
+  outline: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    ),
+    linear-gradient(
+      135deg,
+      transparent calc(50% - 0.6px),
+      var(--muted-foreground) calc(50% - 0.6px) calc(50% + 0.6px),
+      transparent calc(50% + 0.6px)
+    );
+  background-position:
+    calc(100% - 12px - var(--icon-size) / 2) 50%,
+    calc(100% - 12px - var(--icon-size) * 0.18) 50%;
+  background-repeat: no-repeat;
+  background-size: calc(var(--icon-size) * 0.32) calc(var(--icon-size) * 0.32);
+  cursor: var(--cursor-interaction, default);
+  font-size: calc(var(--font-size-base) * 14 / 16);
+  font-size: round(nearest, calc(var(--font-size-base) * 14 / 16), 1px);
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+}
+
+.form-select option {
+  color: var(--popover-foreground);
+  background-color: var(--popover);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: light-dark(
+    color-mix(in srgb, var(--foreground) 5.5%, transparent),
+    color-mix(in srgb, var(--foreground) 8%, transparent)
+  );
+}
+
+.form-select:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+.form-select:disabled {
+  opacity: 0.4;
+}
+
+.form-check {
+  display: flex;
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  corner-shape: round;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  width: calc(10px + var(--control-spacing, 12px) / 2);
+  height: calc(10px + var(--control-spacing, 12px) / 2);
+  border-color: var(--border-strong, var(--input));
+  border-radius: calc(var(--radius-sm) / 2);
+  background-color: transparent;
+  color: var(--foreground);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:is(:checked, :indeterminate) {
+  border-color: var(--border-strong, var(--input));
+  background-color: color-mix(in srgb, var(--popover) 96%, transparent);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+  background-color: var(--foreground);
+}
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:indeterminate::before {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 65%;
+  height: 6.65%;
+  margin: auto;
+  border-radius: var(--radius-full);
+  background: var(--foreground);
+  mask: none;
+  content: &quot;&quot;;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  border-radius: var(--radius-full);
+  width: 16px;
+  height: 16px;
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--input);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 0;
+  background: radial-gradient(
+    circle,
+    var(--primary-foreground) 0 3px,
+    var(--foreground) 3px
+  );
+  box-shadow: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:focus-visible {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+.form-check:not(.form-switch) .form-check-input[type=&quot;radio&quot;]:disabled,
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;radio&quot;]:disabled
+  + .form-check-label {
+  opacity: 0.5;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+  border-color: #fff;
+  background: #fff;
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--blue);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+  outline: none;
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+  height: calc(12px + 2 * var(--control-spacing, 12px));
+  min-height: calc(12px + 2 * var(--control-spacing, 12px));
+  outline: none;
+  border-radius: var(--radius-full);
+  color: var(--foreground);
+  background: transparent;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  margin-top: -9px;
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Outline the native track and thumb, preserving the larger input hit area. */
+.form-range:focus-visible::-webkit-slider-runnable-track {
+  outline: 2px auto Highlight;
+  outline-color: -webkit-focus-ring-color;
+}
+
+.form-range::-moz-range-track {
+  background: var(--form-range-track, var(--border));
+  height: 2px;
+  border-radius: var(--radius-full);
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  border-color: transparent;
+  background: currentColor;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+.form-range:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--blue);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.viz-carousel-controls :is(button, summary):focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* Web recipes are the default, including on renderers without inline style queries. */
+@supports (border-radius: if(style(--corner-shape: round): 1px; else: 2px)) {
+  /* Match the host&#x27;s proportional text-sm scale at every text preference. */
+  .tooltip,
+  .viz-badge,
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    font-size: if(
+      style(--corner-shape: round): round(
+          nearest,
+          calc(var(--font-size-base) * 14 / 16),
+          1px
+        );
+        else: round(nearest, calc(var(--font-size-base) * 13 / 14), 1px)
+    );
+  }
+
+  .btn,
+  .nav-link,
+  .form-select {
+    border-radius: if(
+      style(--corner-shape: round): var(--radius-full); else: var(--radius-lg)
+    );
+  }
+
+  .form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+    border-radius: if(
+      style(--corner-shape: round): calc(var(--radius-sm) / 2);
+        else: calc(var(--radius-lg) * 0.4)
+    );
+  }
+
+  .tooltip {
+    font-weight: if(
+      style(--corner-shape: round): 600; else: var(--font-weight-normal)
+    );
+  }
+}
+
+@media (pointer: coarse) {
+  .viz-carousel:has(&gt; .viz-carousel-controls) {
+    min-height: calc(76px + var(--viz-carousel-picker-height, 0px));
+    padding-bottom: 76px;
+  }
+
+  .btn,
+  .nav-link,
+  .viz-carousel-controls button,
+  .viz-carousel-picker &gt; summary,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+  .form-control:is(
+    [type=&quot;file&quot;],
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;week&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;color&quot;]
+  ) {
+    height: 44px;
+    min-height: 44px;
+    font-size: max(16px, calc(var(--font-size-base) * 14 / 16));
+    font-size: max(
+      16px,
+      round(nearest, calc(var(--font-size-base) * 14 / 16), 1px)
+    );
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;codex-visualization-widget-state&quot;&gt;__CODEX_VISUALIZATION_WIDGET_STATE__&lt;/script&gt;
+&lt;script&gt;(() =&gt; {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia(&quot;(prefers-color-scheme: dark)&quot;);
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    &quot;codex-visualization-widget-state&quot;,
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? &quot;{}&quot;);
+  initialStateElement?.remove();
+  /** @type {Record&lt;string, unknown&gt; | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? &quot;none&quot;;
+  let nextStateRequestId = 0;
+  /** @type {Map&lt;number, { resolve: () =&gt; void; reject: (error: Error) =&gt; void; timeout: ReturnType&lt;typeof globalThis.setTimeout&gt;; serializedState: string }&gt;} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =&gt;
+    Object.assign(
+      new Error(&quot;The host could not persist the widget state update&quot;),
+      {
+        code: -32000,
+        data: { code: &quot;widget_state_persistence_failed&quot;, retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) =&gt; {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, &quot;data&quot;);
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, &quot;ports&quot;);
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, &quot;source&quot;);
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) =&gt; {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;open-external&quot;, { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;follow-up&quot;, { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record&lt;string, unknown&gt; | ((previous: Record&lt;string, unknown&gt; | null) =&gt; Record&lt;string, unknown&gt;)} next
+   * @returns {Promise&lt;void&gt;}
+   */
+  const setWidgetState = async (next) =&gt; {
+    const nextState = typeof next === &quot;function&quot; ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== &quot;object&quot; ||
+      isArray(nextState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) =&gt; {
+        if (
+          typeof value === &quot;undefined&quot; ||
+          typeof value === &quot;function&quot; ||
+          typeof value === &quot;symbol&quot; ||
+          (typeof value === &quot;number&quot; &amp;&amp; !Number.isFinite(value))
+        ) {
+          throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== &quot;object&quot; ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length &gt; 16 * 1024) {
+      throw new TypeError(
+        &quot;Widget state must be a JSON object of at most 16 KiB&quot;,
+      );
+    }
+    if (
+      hasOwn(storedState, &quot;imageIds&quot;) &amp;&amp;
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) =&gt; typeof id !== &quot;string&quot;,
+        ))
+    ) {
+      throw new TypeError(&quot;Widget state imageIds must be an array of strings&quot;);
+    }
+    if (storedState.imageIds?.length &gt; 0) {
+      throw Object.assign(
+        new TypeError(&quot;Visualization state does not support image attachments&quot;),
+        { code: -32602, data: { code: &quot;images_unsupported&quot; } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === &quot;none&quot;) {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) =&gt; {
+      const timeout = globalThis.setTimeout(() =&gt; {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+    });
+  };
+  const syncTheme = () =&gt; {
+    const theme = mediaQuery.matches ? &quot;dark&quot; : &quot;light&quot;;
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: &quot;none&quot;,
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () =&gt; {
+    postToHost(&quot;height&quot;, {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    &quot;message&quot;,
+    (event) =&gt; {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== &quot;object&quot; ||
+        data?.type !== &quot;codex-visualization-initialize&quot; ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          &quot;message&quot;,
+          (event) =&gt; {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === &quot;object&quot; &amp;&amp; data?.type === &quot;measure&quot;) {
+              sendHeight();
+            } else if (
+              typeof data === &quot;object&quot; &amp;&amp;
+              data?.type === &quot;widget-state-result&quot;
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== &quot;number&quot;) {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener(&quot;change&quot;, syncTheme);
+  globalThis.addEventListener(&quot;click&quot;, (event) =&gt; {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest(&quot;a[href]&quot;);
+    const href = link?.getAttribute(&quot;href&quot;);
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith(&quot;#&quot;)) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost(&quot;scroll-to&quot;, {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+&lt;/script&gt;
+&lt;style&gt;
+#flow-contextual{--f-bg:light-dark(#e5e8e8,#1c2226);--f-panel:light-dark(#f8f9f9,#293137);--f-white:light-dark(#fff,#333e46);--f-text:light-dark(#151b1c,#f1f4f3);--f-muted:light-dark(#586468,#b1bfc1);--f-line:light-dark(#d8dddd,#465157);--f-purple:light-dark(#9252dc,#c49af6);--f-purple-soft:light-dark(#ebdefa,#42334e);--f-green:light-dark(#c7e9b3,#334a2b);--f-green-text:light-dark(#234220,#d4edc5);--f-amber:light-dark(#f9d491,#50412b);--f-amber-text:light-dark(#60410e,#ffe0a5);--f-risk:light-dark(#a83222,#ffab9e);--f-ink-button:light-dark(#171d1e,#eef3f0);--f-ink-button-text:light-dark(#fff,#17201c);font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:var(--f-text);background:var(--f-bg);border-radius:18px;padding:22px;min-width:0;position:relative}
+#flow-contextual *{box-sizing:border-box}#flow-contextual [hidden]{display:none!important}#flow-contextual h1,#flow-contextual h2,#flow-contextual h3,#flow-contextual p{margin:0}#flow-contextual h1{font-size:27px;font-weight:500;letter-spacing:-.03em;line-height:1.2}#flow-contextual h2{font-size:20px;font-weight:500;letter-spacing:-.02em}#flow-contextual h3{font-size:16px;font-weight:500}#flow-contextual button,#flow-contextual input,#flow-contextual select{font:inherit;color:inherit}#flow-contextual button{border:0;background:none}#flow-contextual button,#flow-contextual summary{cursor:inherit}#flow-contextual button:focus-visible,#flow-contextual input:focus-visible,#flow-contextual select:focus-visible,#flow-contextual summary:focus-visible{outline:3px solid var(--f-purple);outline-offset:3px}#flow-contextual button:disabled{opacity:.55;cursor:default}#flow-contextual .f-muted{color:var(--f-muted)}#flow-contextual .f-small{font-size:12px}#flow-contextual .f-num{font-variant-numeric:tabular-nums}#flow-contextual .f-risk{color:var(--f-risk)}#flow-contextual .f-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 0 24px}#flow-contextual .f-brand{display:flex;align-items:center;gap:10px;font-size:22px;letter-spacing:-.04em;flex-shrink:0}#flow-contextual .f-logo{width:33px;height:33px;background:var(--f-text);color:var(--f-panel);border-radius:9px;display:grid;place-items:center}#flow-contextual i[data-lucide]{display:inline-block;width:18px;height:18px}#flow-contextual .f-nav{display:flex;gap:5px;align-items:center;background:color-mix(in srgb,var(--f-panel) 45%,transparent);padding:4px;border-radius:12px;flex-wrap:wrap}#flow-contextual .f-nav button{display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:9px;color:var(--f-muted);min-height:38px;font-size:12px}#flow-contextual .f-nav button[aria-current=page]{background:var(--f-white);color:var(--f-text)}#flow-contextual .f-account{display:flex;gap:9px;align-items:center;font-size:12px;margin-right:78px;flex-shrink:0}#flow-contextual .f-avatar{width:31px;height:31px;display:grid;place-items:center;background:var(--f-panel);border-radius:9px}#flow-contextual .f-page-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;margin:0 2px 20px}#flow-contextual .f-page-head .f-small{margin-top:8px}#flow-contextual .f-chip{display:inline-flex;gap:5px;align-items:center;padding:5px 9px;border-radius:7px;font-size:11px;color:var(--f-text);background:var(--f-purple-soft);white-space:nowrap}#flow-contextual .f-chip.amber{background:var(--f-amber);color:var(--f-amber-text)}#flow-contextual .f-chip.green{background:var(--f-green);color:var(--f-green-text)}#flow-contextual .f-top-grid{display:grid;grid-template-columns:1fr 1.36fr 1.03fr;gap:10px;align-items:start}#flow-contextual .f-surface{background:var(--f-panel);border-radius:12px;padding:20px;min-width:0}#flow-contextual .f-pair{display:flex;justify-content:space-between;align-items:center;gap:10px}#flow-contextual .f-value{font-size:35px;line-height:1.1;font-weight:500;letter-spacing:-.04em;margin:15px 0 8px;font-variant-numeric:tabular-nums}#flow-contextual .f-cash{min-height:249px;display:flex;flex-direction:column}#flow-contextual .f-reserve-track{margin-top:auto;padding-top:24px}#flow-contextual .f-track{display:flex;height:8px;gap:3px;border-radius:3px;overflow:hidden;margin:8px 0}#flow-contextual .f-reserve{width:75%;background:var(--f-line)}#flow-contextual .f-buffer{width:25%;background:var(--f-green)}#flow-contextual .f-plan{min-height:249px;background:var(--f-white)}#flow-contextual .f-plan-title{margin-top:13px;font-size:17px}#flow-contextual .f-plan .f-value{margin:5px 0 10px}#flow-contextual .f-plan-meta{display:flex;gap:18px;padding:11px 0 13px;border-top:1px solid var(--f-line);font-size:12px}#flow-contextual .f-primary{background:var(--f-ink-button)!important;color:var(--f-ink-button-text)!important;border-radius:8px;padding:10px 14px;font-size:12px;min-height:40px;display:inline-flex;justify-content:center;align-items:center;gap:8px}#flow-contextual .f-secondary{background:var(--f-panel)!important;border:1px solid var(--f-line)!important;border-radius:8px;padding:9px 12px;min-height:38px;font-size:12px}#flow-contextual .f-link{padding:5px 0;text-align:left;font-size:12px;display:inline-flex;align-items:center;gap:6px;min-height:32px}#flow-contextual .f-link:hover{text-decoration:underline;text-underline-offset:4px}#flow-contextual .f-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}#flow-contextual .f-outlook{min-height:249px;background:var(--f-panel)}#flow-contextual .f-mini{width:100%;height:62px;display:block;margin:9px 0 8px}#flow-contextual .f-outlook .f-value{font-size:30px;margin:9px 0 5px}#flow-contextual .f-outlook-bottom{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--f-line);padding-top:8px;margin-top:8px}#flow-contextual .f-source-details{margin-top:14px;border-top:1px solid var(--f-line);padding-top:12px}#flow-contextual .f-source-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:9px 0}#flow-contextual .f-source-row+.f-source-row{border-top:1px solid var(--f-line)}#flow-contextual .f-source-row .f-small{grid-column:1/-1}#flow-contextual .f-bottom-grid{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr);gap:10px;margin-top:10px;align-items:start}#flow-contextual .f-worklist{padding:18px 14px 12px}#flow-contextual .f-work-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 6px 12px}#flow-contextual .f-count{font-size:12px;padding:2px 7px;border:1px solid var(--f-line);border-radius:6px;margin-left:5px}#flow-contextual .f-work-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:0 6px 10px;flex-wrap:wrap}#flow-contextual .f-tabs{display:flex;gap:2px;flex-wrap:wrap}#flow-contextual .f-tabs button{padding:7px 9px;font-size:12px;border-radius:8px;min-height:32px;color:var(--f-muted)}#flow-contextual .f-tabs button[aria-pressed=true]{background:var(--f-white);color:var(--f-text)}#flow-contextual .f-search{max-width:135px;width:100%;border:0;background:transparent;border-bottom:1px solid var(--f-line);padding:7px 0;font-size:12px!important;outline-offset:1px!important}#flow-contextual .f-search::placeholder{color:var(--f-muted)}#flow-contextual .f-col-labels{display:grid;grid-template-columns:minmax(0,1fr) 98px 96px;padding:5px 12px 8px;font-size:11px;color:var(--f-muted);gap:8px}#flow-contextual .f-deal-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 98px 96px;gap:8px;text-align:left;padding:12px;border-radius:8px;align-items:center;background:var(--f-white);margin-top:5px;min-height:67px}#flow-contextual .f-deal-row[aria-pressed=true]{background:var(--f-purple-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--f-purple) 35%,transparent)}#flow-contextual .f-deal-row strong{display:block;font-size:12px;font-weight:500}#flow-contextual .f-deal-row .f-small{font-size:11px;margin-top:3px}#flow-contextual .f-deal-row .f-chip{justify-self:start;white-space:normal;padding:4px 6px;font-size:11px}#flow-contextual .f-detail-preview{min-height:310px;padding:20px;display:flex;flex-direction:column}#flow-contextual .f-detail-name{margin:14px 0 5px;font-size:20px;letter-spacing:-.02em}#flow-contextual .f-detail-next{border-top:1px solid var(--f-line);padding:15px 0;margin-top:15px}#flow-contextual .f-detail-next p{margin-top:4px}#flow-contextual .f-quick-tools{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:6px 4px;border-top:1px solid var(--f-line)}#flow-contextual .f-footer{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;color:var(--f-muted);font-size:11px;margin-top:15px;padding:0 4px}#flow-contextual .f-expand{margin-top:10px;background:var(--f-white);border-radius:12px;padding:20px;animation:f-reveal 200ms ease-out}#flow-contextual .f-chart{width:100%;height:260px;display:block;margin:14px 0 10px;overflow:visible}#flow-contextual .f-chart-legend{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 0}#flow-contextual .f-chart-legend button{font-size:12px;display:flex;align-items:center;gap:7px;padding:4px 0;min-height:32px}#flow-contextual .f-chart-legend button[aria-pressed=false]{opacity:.5}#flow-contextual .f-swatch{width:20px;border-top:2px solid var(--f-purple);display:inline-block}#flow-contextual .f-swatch.planned{border-color:var(--f-muted);border-top-style:dashed}#flow-contextual .f-swatch.reserve{border-color:var(--f-amber-text);border-top-style:dashed}#flow-contextual .f-event-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px}#flow-contextual .f-event-strip button{padding:8px 10px;background:var(--f-panel);border-radius:7px;font-size:11px;min-height:36px}#flow-contextual .f-event-strip button[aria-pressed=true]{background:var(--f-purple-soft)}#flow-contextual .f-event-inspector{margin-top:10px;padding:14px;background:var(--f-panel);border-radius:8px;display:flex;justify-content:space-between;gap:20px;align-items:flex-start}#flow-contextual .f-event-inspector p{max-width:65ch}#flow-contextual .f-back{margin-bottom:12px}#flow-contextual .f-wide-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;margin:20px 0;padding:16px 0;border-top:1px solid var(--f-line);border-bottom:1px solid var(--f-line)}#flow-contextual .f-wide-metrics strong{display:block;font-size:24px;font-weight:500;margin-top:5px;font-variant-numeric:tabular-nums}#flow-contextual .f-table{width:100%;border-collapse:collapse;font-size:12px}#flow-contextual .f-table th{font-weight:400;color:var(--f-muted);text-align:left;padding:10px;border-bottom:1px solid var(--f-line)}#flow-contextual .f-table td{padding:13px 10px;border-bottom:1px solid var(--f-line);vertical-align:top}#flow-contextual .f-table td:last-child{text-align:right;font-variant-numeric:tabular-nums}#flow-contextual .f-table-wrap{overflow-x:auto}#flow-contextual .f-section-gap{margin-top:20px}#flow-contextual details{border-top:1px solid var(--f-line);padding:12px 0}#flow-contextual summary{font-size:12px;min-height:25px}#flow-contextual details p,#flow-contextual details ul{color:var(--f-muted);font-size:12px;margin-top:10px;max-width:70ch}#flow-contextual .f-funding-sources{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}#flow-contextual .f-capacity{height:7px;background:var(--f-line);border-radius:2px;margin:12px 0 8px;overflow:hidden}#flow-contextual .f-capacity span{display:block;height:100%;background:var(--f-purple)}#flow-contextual .f-funding-option{margin-top:10px;padding:14px 0;border-top:1px solid var(--f-line)}#flow-contextual .f-notice{background:var(--f-purple-soft);padding:13px 15px;border-radius:8px;font-size:12px;margin:16px 0}#flow-contextual .f-notice.green{background:var(--f-green);color:var(--f-green-text)}#flow-contextual .f-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}#flow-contextual label{display:block;font-size:12px}#flow-contextual label input,#flow-contextual label select{display:block;width:100%;margin-top:7px;background:var(--f-white);border:1px solid var(--f-line);padding:9px 10px;border-radius:7px;min-height:40px}#flow-contextual .f-inline-status{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--f-line)}#flow-contextual .f-timeline{display:grid;grid-template-columns:95px minmax(0,1fr) 100px;gap:12px;padding:16px 0;border-bottom:1px solid var(--f-line);font-size:12px}#flow-contextual .f-empty{padding:32px 12px;text-align:center;color:var(--f-muted);font-size:12px}#flow-contextual .f-activity-tools{margin:12px 0;display:flex;gap:12px;flex-wrap:wrap}#flow-contextual .f-dot{width:7px;height:7px;border-radius:50%;background:var(--f-purple);display:inline-block;margin-right:5px}#flow-contextual .f-text-area{max-width:70ch}#flow-contextual .f-text-area p{margin:9px 0;color:var(--f-muted)}#flow-contextual .f-assumption{border-bottom:1px solid var(--f-line);padding:13px 0;font-size:12px;display:flex;justify-content:space-between;gap:20px}#flow-contextual .f-nav button:hover,#flow-contextual .f-secondary:hover{background:var(--f-white)!important}#flow-contextual ::selection{background:var(--f-purple-soft);color:var(--f-text)}@keyframes f-reveal{from{clip-path:inset(0 0 8% 0);opacity:.6}to{clip-path:inset(0);opacity:1}}@media(prefers-reduced-motion:reduce){#flow-contextual .f-expand{animation:none}}@media(max-width:850px){#flow-contextual .f-account{display:none}#flow-contextual .f-nav{margin-right:70px}#flow-contextual .f-header{align-items:flex-start}#flow-contextual .f-nav button{padding:8px;font-size:11px}#flow-contextual .f-top-grid{grid-template-columns:1fr 1.25fr}#flow-contextual .f-outlook{grid-column:1/-1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:5px 20px}#flow-contextual .f-outlook .f-pair{grid-column:1/-1}#flow-contextual .f-outlook .f-mini{grid-column:2;grid-row:2/5;height:75px;margin:0}#flow-contextual .f-outlook .f-outlook-bottom{grid-column:1/-1}#flow-contextual .f-bottom-grid{grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr)}}@media(max-width:650px){#flow-contextual{padding:16px;border-radius:12px}#flow-contextual .f-header{flex-wrap:wrap;gap:15px;padding-bottom:20px}#flow-contextual .f-brand{font-size:20px}#flow-contextual .f-nav{order:2;width:100%;margin:0;justify-content:space-between}#flow-contextual .f-nav button{font-size:11px;padding:9px 7px}#flow-contextual .f-nav i[data-lucide],#flow-contextual .f-nav svg{display:none}#flow-contextual h1{font-size:24px}#flow-contextual .f-page-head{align-items:flex-start}#flow-contextual .f-top-grid,#flow-contextual .f-bottom-grid{grid-template-columns:1fr}#flow-contextual .f-cash,#flow-contextual .f-plan{min-height:0}#flow-contextual .f-cash .f-value{margin:12px 0 6px}#flow-contextual .f-reserve-track{padding-top:10px}#flow-contextual .f-outlook{grid-column:auto}#flow-contextual .f-detail-preview{min-height:0}#flow-contextual .f-col-labels,#flow-contextual .f-deal-row{grid-template-columns:minmax(0,1fr) 82px}#flow-contextual .f-col-labels span:last-child{display:none}#flow-contextual .f-deal-row .f-chip{grid-column:2;grid-row:1}#flow-contextual .f-deal-row&gt;.f-small{grid-column:1;grid-row:2;margin-top:-4px}#flow-contextual .f-wide-metrics{gap:12px}#flow-contextual .f-wide-metrics strong{font-size:20px}#flow-contextual .f-funding-sources,#flow-contextual .f-form-grid{grid-template-columns:1fr}#flow-contextual .f-event-inspector{flex-direction:column;gap:8px}#flow-contextual .f-timeline{grid-template-columns:1fr auto;gap:6px}#flow-contextual .f-timeline&gt;span:first-child{grid-column:1/-1}#flow-contextual .f-search{max-width:none}#flow-contextual .f-chart{height:230px}#flow-contextual .f-expand{padding:16px}#flow-contextual .f-surface{padding:17px}#flow-contextual .f-table td,#flow-contextual .f-table th{padding:10px 6px}#flow-contextual .f-chip{white-space:normal}}
+#flow-contextual .f-top-grid.context-grid{grid-template-columns:minmax(0,2.15fr) minmax(240px,1fr);align-items:stretch}
+#flow-contextual .f-position-panel,#flow-contextual .f-context-panel{min-height:265px;background:var(--f-white)}
+#flow-contextual .f-position-layout{display:grid;grid-template-columns:170px minmax(0,1fr);gap:26px;align-items:center;margin-top:12px}
+#flow-contextual .f-donut{display:block;width:156px;height:156px;margin:0 auto;overflow:visible}
+#flow-contextual .f-donut path{transition:opacity 140ms ease}
+#flow-contextual .f-allocation-list{width:100%;min-width:0}
+#flow-contextual .f-allocation-row{display:grid;grid-template-columns:9px minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;text-align:left;padding:10px 0;min-height:42px;border-bottom:1px solid var(--f-line)}
+#flow-contextual .f-allocation-row[aria-pressed=true]{color:var(--f-text);font-weight:500}
+#flow-contextual .f-allocation-row .f-small{display:block;color:var(--f-muted);font-weight:400;margin-top:2px;font-size:11px}
+#flow-contextual .f-list-dot{width:8px;height:8px;border-radius:50%;background:var(--slice)}
+#flow-contextual .f-allocation-amount{text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+#flow-contextual .f-allocation-insight{font-size:11px;color:var(--f-muted);min-height:32px;margin-top:8px}
+#flow-contextual .f-position-funding{display:flex;justify-content:space-between;gap:15px;align-items:center;border-top:1px solid var(--f-line);padding-top:12px;margin-top:12px}
+#flow-contextual .f-position-funding .f-primary{flex-shrink:0}
+#flow-contextual .f-context-header{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+#flow-contextual .f-context-header h2{font-size:18px}
+#flow-contextual .f-context-header .f-link{flex-shrink:0;padding-top:0}
+#flow-contextual .f-global-strip{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px;padding:11px 15px;background:var(--f-panel);border-radius:9px;font-size:12px}
+#flow-contextual .f-global-strip span{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#flow-contextual .f-global-strip strong{font-weight:500;font-variant-numeric:tabular-nums}
+#flow-contextual .f-context-facts{display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--f-line);padding-top:12px;margin-top:12px;font-size:12px}
+#flow-contextual .f-context-facts strong{font-weight:500}
+#flow-contextual .f-context-caption{font-size:11px;color:var(--f-muted);margin-top:9px}
+#flow-contextual .f-context-body{animation:f-context-enter 170ms ease-out}
+#flow-contextual .f-upcoming-row{display:flex;gap:12px;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--f-line);font-size:12px}
+#flow-contextual .f-upcoming-row span{color:var(--f-muted);display:block;font-size:11px;margin-top:3px}
+#flow-contextual .f-upcoming-row strong{font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+#flow-contextual .f-agreement-flow{display:flex;gap:0;align-items:start;margin:28px 0 25px}
+#flow-contextual .f-agreement-stage{flex:1;min-width:0;position:relative;padding-right:10px;font-size:11px;color:var(--f-muted)}
+#flow-contextual .f-agreement-stage::before{content:&#x27;&#x27;;display:block;width:11px;height:11px;border-radius:50%;background:var(--f-line);margin-bottom:9px;position:relative;z-index:1}
+#flow-contextual .f-agreement-stage::after{content:&#x27;&#x27;;position:absolute;top:5px;left:12px;right:0;height:1px;background:var(--f-line)}
+#flow-contextual .f-agreement-stage:last-child::after{display:none}
+#flow-contextual .f-agreement-stage.active{color:var(--f-text)}
+#flow-contextual .f-agreement-stage.active::before{background:var(--f-purple)}
+#flow-contextual .f-timing-plot{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin:30px 0 20px;font-size:12px}
+#flow-contextual .f-timing-plot .f-timing-line{height:6px;background:var(--f-amber);border-radius:2px;position:relative}
+#flow-contextual .f-timing-plot .f-timing-line::before,#flow-contextual .f-timing-plot .f-timing-line::after{content:&#x27;&#x27;;position:absolute;top:-3px;width:12px;height:12px;background:var(--f-amber-text);border-radius:50%}
+#flow-contextual .f-timing-plot .f-timing-line::before{left:0}#flow-contextual .f-timing-plot .f-timing-line::after{right:0}
+@keyframes f-context-enter{from{opacity:.65}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){#flow-contextual .f-context-body{animation:none}#flow-contextual .f-donut path{transition:none}}
+@media(max-width:850px){#flow-contextual .f-top-grid.context-grid{grid-template-columns:1fr}#flow-contextual .f-top-grid.context-grid .f-outlook{grid-column:auto}#flow-contextual .f-position-layout{grid-template-columns:156px minmax(0,1fr);gap:20px}}
+@media(max-width:650px){#flow-contextual .f-position-panel,#flow-contextual .f-context-panel{min-height:0}#flow-contextual .f-position-layout{grid-template-columns:112px minmax(0,1fr);gap:13px}#flow-contextual .f-donut{width:112px;height:112px}#flow-contextual .f-allocation-row{grid-template-columns:7px minmax(0,1fr);gap:6px;padding:9px 0}#flow-contextual .f-allocation-amount{grid-column:2;text-align:left;font-size:12px}#flow-contextual .f-position-funding{align-items:start;flex-direction:column;gap:11px}#flow-contextual .f-context-header{gap:10px}#flow-contextual .f-context-header h2{font-size:16px}#flow-contextual .f-context-header .f-link{font-size:11px}#flow-contextual .f-context-facts{gap:12px}#flow-contextual .f-global-strip{padding:10px 12px}#flow-contextual .f-agreement-flow{flex-wrap:wrap;gap:20px}#flow-contextual .f-agreement-stage{min-width:65px}#flow-contextual .f-allocation-insight{min-height:0}}
+
+#flow-contextual .f-context-panel .f-position-layout{grid-template-columns:116px minmax(0,1fr);gap:22px;margin-top:8px}
+#flow-contextual .f-context-panel .f-donut{width:106px;height:106px}
+#flow-contextual .f-context-panel .f-allocation-row{padding:7px 0;min-height:36px}
+#flow-contextual .f-context-panel .f-allocation-insight{min-height:18px}
+#flow-contextual .f-focus-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:14px 0;margin-top:12px;border-top:1px solid var(--f-line);border-bottom:1px solid var(--f-line)}
+#flow-contextual .f-focus-metrics strong{font-size:21px;font-weight:500;display:block;margin-top:4px;letter-spacing:-.02em;overflow-wrap:anywhere}
+#flow-contextual .f-focused-action{display:flex;justify-content:space-between;align-items:center;gap:18px;border-top:1px solid var(--f-line);padding-top:12px;margin-top:12px}
+#flow-contextual .f-focused-action .f-primary{flex-shrink:0}
+#flow-contextual .f-context-panel .f-agreement-flow{margin:20px 0 16px}
+#flow-contextual .f-context-panel .f-timing-plot{margin:24px 0 16px}
+@media(max-width:650px){#flow-contextual .f-context-panel .f-position-layout{grid-template-columns:98px minmax(0,1fr);gap:11px}#flow-contextual .f-context-panel .f-donut{width:96px;height:96px}#flow-contextual .f-focus-metrics{gap:9px}#flow-contextual .f-focus-metrics strong{font-size:18px}#flow-contextual .f-focus-metrics .f-small{font-size:11px}#flow-contextual .f-focused-action{align-items:start;flex-direction:column;gap:10px}}
+
+&lt;/style&gt;
+&lt;div id=&quot;flow-contextual&quot; aria-label=&quot;FLOW command center concept in a soft neutral design language&quot;&gt;
+&lt;header class=&quot;f-header&quot;&gt;&lt;div class=&quot;f-brand&quot;&gt;&lt;span class=&quot;f-logo&quot;&gt;&lt;i data-lucide=&quot;shield&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/span&gt;FLOW&lt;span class=&quot;f-muted&quot;&gt;流&lt;/span&gt;&lt;/div&gt;&lt;nav class=&quot;f-nav&quot; aria-label=&quot;Main navigation&quot;&gt;&lt;button type=&quot;button&quot; data-page=&quot;home&quot; aria-current=&quot;page&quot; class=&quot;cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;layout-dashboard&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Home&lt;/button&gt;&lt;button type=&quot;button&quot; data-page=&quot;deals&quot; class=&quot;cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;messages-square&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Deals&lt;/button&gt;&lt;button type=&quot;button&quot; data-page=&quot;cash&quot; class=&quot;cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;wallet&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Cash&lt;/button&gt;&lt;button type=&quot;button&quot; data-page=&quot;receivables&quot; class=&quot;cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;receipt&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Receivables&lt;/button&gt;&lt;button type=&quot;button&quot; data-page=&quot;activity&quot; class=&quot;cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chart-no-axes-combined&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Activity&lt;/button&gt;&lt;/nav&gt;&lt;div class=&quot;f-account&quot;&gt;&lt;span class=&quot;f-avatar&quot;&gt;IP&lt;/span&gt;&lt;span&gt;Owner&lt;br&gt;&lt;span class=&quot;f-muted&quot;&gt;Demo books&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/header&gt;
+&lt;main id=&quot;flow-contextual-main&quot; aria-live=&quot;polite&quot;&gt;&lt;/main&gt;
+&lt;footer class=&quot;f-footer&quot;&gt;&lt;span&gt;Design concept · extra deal rows illustrative&lt;/span&gt;&lt;span&gt;Company cash stays separate from selected deals&lt;/span&gt;&lt;/footer&gt;
+&lt;/div&gt;
+&lt;script&gt;
+(()=&gt;{
+const root=document.getElementById(&#x27;flow-contextual&#x27;),main=root.querySelector(&#x27;#flow-contextual-main&#x27;);
+const fixtures=[
+{id:&#x27;FHR-01&#x27;,customer:&#x27;Foshan Home Retail&#x27;,title:&#x27;Payment-term extension&#x27;,amount:&#x27;¥420k&#x27;,status:&#x27;Counter ready&#x27;,bucket:&#x27;needs&#x27;,when:&#x27;Reply today&#x27;,next:&#x27;Review FLOW’s counter before replying.&#x27;,action:&#x27;Review counter&#x27;,kind:&#x27;terms&#x27;},
+{id:&#x27;FHR-02&#x27;,customer:&#x27;Foshan Home Retail&#x27;,title:&#x27;New volume agreement&#x27;,amount:&#x27;¥420k&#x27;,status:&#x27;Buyer reviewing&#x27;,bucket:&#x27;waiting&#x27;,when:&#x27;Buyer’s turn&#x27;,next:&#x27;Waiting for the buyer to respond to the proposed terms.&#x27;,action:&#x27;View proposed terms&#x27;,kind:&#x27;agreement&#x27;},
+{id:&#x27;SZ-01&#x27;,customer:&#x27;Shenzhen Fixtures&#x27;,title:&#x27;Overdue invoice&#x27;,amount:&#x27;¥180k&#x27;,status:&#x27;Collection action&#x27;,bucket:&#x27;needs&#x27;,when:&#x27;5 days overdue&#x27;,next:&#x27;Review the invoice and prepare a payment reminder.&#x27;,action:&#x27;Review invoice&#x27;,kind:&#x27;invoice&#x27;},
+{id:&#x27;FHR-03&#x27;,customer:&#x27;Foshan Home Retail&#x27;,title:&#x27;Supply agreement&#x27;,amount:&#x27;¥420k&#x27;,status:&#x27;Waiting for payment&#x27;,bucket:&#x27;waiting&#x27;,when:&#x27;Due in 32 days&#x27;,next:&#x27;Payment is not due yet. Monitor the receipt and financing.&#x27;,action:&#x27;View invoice&#x27;,kind:&#x27;invoice&#x27;}
+];
+const state={focused:false,slice:null,overviewSnapshot:null,page:&#x27;home&#x27;,filter:&#x27;all&#x27;,search:&#x27;&#x27;,selected:&#x27;FHR-01&#x27;,forecast:false,sources:false,stage:&#x27;Proposed&#x27;,event:12,currentLine:true,planLine:true,activityFilter:&#x27;all&#x27;,previous:&#x27;home&#x27;,sandboxDays:60,approval:false,approved:false};
+const ink=()=&gt;getComputedStyle(root).getPropertyValue(&#x27;--f-text&#x27;).trim();
+const icon=name=&gt;`&lt;i data-lucide=&quot;${name}&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;`;
+const button=(text,action,klass=&#x27;f-link&#x27;,extra=&#x27;&#x27;)=&gt;`&lt;button type=&quot;button&quot; class=&quot;${klass} cursor-interaction&quot; data-action=&quot;${action}&quot; ${extra}&gt;${text}&lt;/button&gt;`;
+const chip=(text,kind=&#x27;&#x27;)=&gt;`&lt;span class=&quot;f-chip ${kind}&quot;&gt;${text}&lt;/span&gt;`;
+const selected=()=&gt;fixtures.find(d=&gt;d.id===state.selected)||fixtures[0];
+const arrived=()=&gt;state.stage===&#x27;Bank received&#x27;;
+const submitted=()=&gt;state.stage===&#x27;Requests submitted&#x27;;
+const cashNow=()=&gt;arrived()?550:400;
+const lowNow=()=&gt;arrived()?300:-105;
+const planBadge=()=&gt;chip(state.stage===&#x27;Proposed&#x27;?&#x27;Proposed&#x27;:arrived()?&#x27;Partly received&#x27;:&#x27;Requests submitted&#x27;,arrived()?&#x27;green&#x27;:&#x27;&#x27;);
+const sourceRows=()=&gt;`&lt;div class=&quot;f-source-row&quot;&gt;&lt;span&gt;Bank credit line&lt;/span&gt;&lt;span class=&quot;f-num&quot;&gt;¥150,000&lt;/span&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;${arrived()?&#x27;Received today&#x27;:submitted()?&#x27;Requested · awaiting confirmation&#x27;:&#x27;Proposed · today after execution&#x27;}&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;f-source-row&quot;&gt;&lt;span&gt;Invoice financing&lt;/span&gt;&lt;span class=&quot;f-num&quot;&gt;¥255,000&lt;/span&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;${arrived()?&#x27;Committed · expected in 3 days&#x27;:submitted()?&#x27;Requested · awaiting confirmation&#x27;:&#x27;Proposed · expected in 3 days after execution&#x27;}&lt;/span&gt;&lt;/div&gt;`;
+function heading(title,desc=&#x27;&#x27;,right=&#x27;&#x27;){return `&lt;div class=&quot;f-page-head&quot;&gt;&lt;div&gt;&lt;h1&gt;${title}&lt;/h1&gt;${desc?`&lt;p class=&quot;f-muted f-small&quot;&gt;${desc}&lt;/p&gt;`:&#x27;&#x27;}&lt;/div&gt;${right}&lt;/div&gt;`;}
+function worklist(){let rows=fixtures.filter(d=&gt;(state.filter===&#x27;all&#x27;||state.filter===&#x27;customers&#x27;||d.bucket===state.filter)&amp;&amp;(`${d.customer} ${d.title} ${d.id}`.toLowerCase().includes(state.search.toLowerCase())));const tabs=[[&#x27;all&#x27;,&#x27;All 4&#x27;],[&#x27;needs&#x27;,&#x27;Needs you 2&#x27;],[&#x27;waiting&#x27;,&#x27;Waiting 2&#x27;],[&#x27;customers&#x27;,&#x27;Customers 2&#x27;]];let list=rows.map(d=&gt;`&lt;button type=&quot;button&quot; class=&quot;f-deal-row cursor-interaction&quot; data-deal=&quot;${d.id}&quot; aria-pressed=&quot;${state.focused&amp;&amp;state.selected===d.id}&quot;&gt;&lt;span&gt;&lt;strong&gt;${d.customer}&lt;/strong&gt;&lt;span class=&quot;f-small f-muted&quot;&gt;${d.title} · ${d.id}&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;f-small f-muted&quot;&gt;${d.when}&lt;/span&gt;${chip(d.status,d.bucket===&#x27;needs&#x27;?&#x27;amber&#x27;:&#x27;&#x27;)}&lt;/button&gt;`).join(&#x27;&#x27;);if(state.filter===&#x27;customers&#x27;){list=[&#x27;Foshan Home Retail&#x27;,&#x27;Shenzhen Fixtures&#x27;].map(customer=&gt;{const group=rows.filter(d=&gt;d.customer===customer);return group.length?`&lt;div class=&quot;f-small f-muted&quot; style=&quot;padding:14px 12px 4px&quot;&gt;${customer} · ${group.length} ${group.length===1?&#x27;item&#x27;:&#x27;items&#x27;}&lt;/div&gt;${group.map(d=&gt;`&lt;button type=&quot;button&quot; class=&quot;f-deal-row cursor-interaction&quot; data-deal=&quot;${d.id}&quot; aria-pressed=&quot;${state.focused&amp;&amp;state.selected===d.id}&quot;&gt;&lt;span&gt;&lt;strong&gt;${d.title}&lt;/strong&gt;&lt;span class=&quot;f-small f-muted&quot;&gt;${d.id} · ${d.amount}&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;f-small f-muted&quot;&gt;${d.when}&lt;/span&gt;${chip(d.status,d.bucket===&#x27;needs&#x27;?&#x27;amber&#x27;:&#x27;&#x27;)}&lt;/button&gt;`).join(&#x27;&#x27;)}`:&#x27;&#x27;}).join(&#x27;&#x27;);}return `&lt;section class=&quot;f-surface f-worklist&quot;&gt;&lt;div class=&quot;f-work-head&quot;&gt;&lt;h2&gt;Your worklist &lt;span class=&quot;f-count&quot;&gt;4&lt;/span&gt;&lt;/h2&gt;${button(&#x27;All deals &#x27;+icon(&#x27;arrow-up-right&#x27;),&#x27;deals&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-work-toolbar&quot;&gt;&lt;div class=&quot;f-tabs&quot; aria-label=&quot;Worklist filters&quot;&gt;${tabs.map(([value,label])=&gt;`&lt;button type=&quot;button&quot; class=&quot;cursor-interaction&quot; data-filter=&quot;${value}&quot; aria-pressed=&quot;${state.filter===value}&quot;&gt;${label}&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;input type=&quot;search&quot; class=&quot;f-search&quot; aria-label=&quot;Search deals or customers&quot; placeholder=&quot;Search deals&quot; value=&quot;${state.search.replaceAll(&#x27;&amp;&#x27;,&#x27;&amp;amp;&#x27;).replaceAll(&#x27;&quot;&#x27;,&#x27;&amp;quot;&#x27;).replaceAll(&#x27;&lt;&#x27;,&#x27;&amp;lt;&#x27;)}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;f-col-labels&quot;&gt;&lt;span&gt;Customer / deal&lt;/span&gt;&lt;span&gt;Next step&lt;/span&gt;&lt;span&gt;Status&lt;/span&gt;&lt;/div&gt;&lt;div id=&quot;f-work-rows&quot;&gt;${list||`&lt;div class=&quot;f-empty&quot;&gt;No matching deals.${button(&#x27;Clear search&#x27;,&#x27;clear-search&#x27;)}&lt;/div&gt;`}&lt;/div&gt;&lt;/section&gt;`;}
+function mini(){return `&lt;svg class=&quot;f-mini&quot; viewBox=&quot;0 0 240 62&quot; role=&quot;img&quot; aria-label=&quot;Schematic forecast: current cash drops below reserve; proposed plan stays at reserve&quot;&gt;&lt;path d=&quot;M4 33H236&quot; stroke=&quot;var(--f-line)&quot; fill=&quot;none&quot;/&gt;&lt;path d=&quot;${arrived()?&#x27;M4 9H23V3H60V20H143V26H205V33H236&#x27;:&#x27;M4 15H60V39H143V49H205V57H236&#x27;}&quot; stroke=&quot;var(--f-purple)&quot; stroke-width=&quot;2&quot; fill=&quot;none&quot;/&gt;${!arrived()?&#x27;&lt;path d=&quot;M4 9H23V3H60V20H143V26H205V33H236&quot; stroke=&quot;var(--f-muted)&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 3&quot; fill=&quot;none&quot;/&gt;&#x27;:&#x27;&#x27;}&lt;circle cx=&quot;205&quot; cy=&quot;${arrived()?33:57}&quot; r=&quot;3&quot; fill=&quot;var(--f-purple)&quot;/&gt;&lt;/svg&gt;`;}
+function forecastPanel(full=false){return `&lt;section class=&quot;${full?&#x27;f-surface&#x27;:&#x27;f-expand&#x27;}&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;Company cash forecast&lt;/h2&gt;${full?chip(&#x27;36 days&#x27;):button(icon(&#x27;x&#x27;)+&#x27; Close&#x27;,&#x27;forecast&#x27;,&#x27;f-link&#x27;,&#x27;aria-label=&quot;Close forecast preview&quot;&#x27;)}&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:5px&quot;&gt;${arrived()?&#x27;Current forecast includes received cash and committed future funding.&#x27;:&#x27;The proposed funding is a separate comparison.&#x27;}&lt;/p&gt;&lt;div class=&quot;f-chart-legend&quot;&gt;${button(&#x27;&lt;span class=&quot;f-swatch&quot;&gt;&lt;/span&gt;Current forecast&#x27;,&#x27;toggle-current&#x27;,&#x27;&#x27;,`aria-pressed=&quot;${state.currentLine}&quot;`)}${!arrived()?button(&#x27;&lt;span class=&quot;f-swatch planned&quot;&gt;&lt;/span&gt;With proposed plan&#x27;,&#x27;toggle-plan&#x27;,&#x27;&#x27;,`aria-pressed=&quot;${state.planLine}&quot;`):&#x27;&#x27;}&lt;span class=&quot;f-small f-muted&quot; style=&quot;display:flex;align-items:center;gap:7px&quot;&gt;&lt;span class=&quot;f-swatch reserve&quot;&gt;&lt;/span&gt;¥300k minimum&lt;/span&gt;&lt;/div&gt;&lt;svg class=&quot;f-chart&quot; data-f-chart role=&quot;img&quot; aria-label=&quot;36-day illustrative cash forecast, minimum reserve 300 thousand yuan; without funding lowest balance minus 105 thousand, with plan 300 thousand&quot;&gt;&lt;/svg&gt;&lt;div class=&quot;f-event-strip&quot; aria-label=&quot;Inspect cash events&quot;&gt;${[[3,&#x27;Funding arrival&#x27;],[12,&#x27;Payroll&#x27;],[20,&#x27;Supplier payment&#x27;],[30,&#x27;Lowest point&#x27;],[32,&#x27;Foshan collection&#x27;]].map(([day,label])=&gt;button(`Day ${day} · ${label}`,`event-${day}`,&#x27;&#x27;,`aria-pressed=&quot;${state.event===day}&quot;`)).join(&#x27;&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-event-inspector&quot; data-event-inspector&gt;${eventContent()}&lt;/div&gt;${full?`&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Forecast assumptions &amp; receipt basis&lt;/summary&gt;&lt;p&gt;Expected invoice receipts use contractual dates. Proposed funding remains conditional on execution. The example has a ¥300k reserve, payroll of ¥340k on day 12, supplier payment of ¥120k on day 20, and debt service of ¥45k on day 30.&lt;/p&gt;&lt;p&gt;Forecast paths are illustrative reconstructions for this mockup.&lt;/p&gt;&lt;/details&gt;&lt;details&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Show daily movements as a table&lt;/summary&gt;${movementTable()}&lt;/details&gt;`:`&lt;div class=&quot;f-pair f-section-gap&quot;&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Illustrative event paths&lt;/span&gt;${button(&#x27;Open full analysis &#x27;+icon(&#x27;arrow-up-right&#x27;),&#x27;cash&#x27;)}&lt;/div&gt;`}&lt;/section&gt;`;}
+function eventContent(){const map={3:[&#x27;Invoice financing arrives&#x27;,&#x27;The proposed ¥255k financing is expected three days after execution. Until committed it belongs in the comparison, not cash available today.&#x27;,&#x27;+¥255k&#x27;],12:[&#x27;Payroll&#x27;,&#x27;Payroll reduces cash by ¥340k. Without new funding, cash falls to ¥60k—below the ¥300k reserve.&#x27;,&#x27;−¥340k&#x27;],20:[&#x27;Supplier payment&#x27;,&#x27;The ¥120k supplier payment is another scheduled outflow. Keep its source and due date available in the full analysis.&#x27;,&#x27;−¥120k&#x27;],30:[&#x27;Lowest reserve buffer&#x27;,&#x27;Without new funding: −¥105k. With the proposed plan: ¥300k, exactly at the minimum, with no spare reserve buffer.&#x27;,&#x27;¥0 buffer&#x27;],32:[&#x27;Foshan collection&#x27;,&#x27;¥420k receipt → approximately ¥163k after invoice financing → approximately ¥12k after bank repayment. The remaining company cash is approximately ¥312k.&#x27;,&#x27;≈ +¥12k&#x27;]};if(arrived()){map[3]=[&#x27;Committed financing arrival&#x27;,&#x27;The committed ¥255k advance is expected in three days. It belongs in the future forecast; only received funds belong in available cash.&#x27;,&#x27;+¥255k&#x27;];map[12]=[&#x27;Payroll&#x27;,&#x27;Payroll reduces cash by ¥340k. Under the current funded plan, projected cash after payroll is ¥465k.&#x27;,&#x27;−¥340k&#x27;];map[30]=[&#x27;Lowest reserve buffer&#x27;,&#x27;The current funded plan reaches ¥300k, exactly your minimum. No spare reserve buffer remains at this point.&#x27;,&#x27;¥0 buffer&#x27;];}const [title,desc,value]=map[state.event]||map[12];return `&lt;div&gt;&lt;h3&gt;${title}&lt;/h3&gt;&lt;p class=&quot;f-small f-muted&quot; style=&quot;margin-top:5px&quot;&gt;${desc}&lt;/p&gt;&lt;/div&gt;&lt;strong class=&quot;f-num&quot; style=&quot;white-space:nowrap;font-weight:500&quot;&gt;${value}&lt;/strong&gt;`;}
+function movementTable(){return `&lt;div class=&quot;f-table-wrap&quot;&gt;&lt;table class=&quot;f-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Timing&lt;/th&gt;&lt;th&gt;Movement&lt;/th&gt;&lt;th&gt;Amount&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;Today&lt;/td&gt;&lt;td&gt;Proposed bank draw&lt;/td&gt;&lt;td&gt;+¥150k&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Day 3&lt;/td&gt;&lt;td&gt;Proposed invoice financing&lt;/td&gt;&lt;td&gt;+¥255k&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Day 12&lt;/td&gt;&lt;td&gt;Payroll&lt;/td&gt;&lt;td&gt;−¥340k&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Day 20&lt;/td&gt;&lt;td&gt;Supplier payment&lt;/td&gt;&lt;td&gt;−¥120k&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Day 30&lt;/td&gt;&lt;td&gt;Debt service&lt;/td&gt;&lt;td&gt;−¥45k&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Day 32&lt;/td&gt;&lt;td&gt;Receipt less related financing repayments&lt;/td&gt;&lt;td&gt;≈ +¥12k&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;`;}
+function cashAllocation(){return {scope:&#x27;Cash position today&#x27;,total:cashNow()*1000,center:`¥${cashNow()}k`,centerLabel:&#x27;cash available&#x27;,slices:[{label:&#x27;Minimum reserve&#x27;,amount:300000,color:&#x27;var(--f-purple)&#x27;,note:&#x27;A reserve target, not money locked by the bank.&#x27;},{label:&#x27;Above the reserve&#x27;,amount:(cashNow()-300)*1000,color:&#x27;var(--f-green-text)&#x27;,note:&#x27;Cash above the minimum today. Future scheduled payments still count.&#x27;}]};}
+function dealAllocation(){const d=selected();if(d.id===&#x27;FHR-01&#x27;)return {scope:&#x27;Buyer’s requested discount&#x27;,total:420000,center:&#x27;¥420k&#x27;,centerLabel:&#x27;invoice value&#x27;,slices:[{label:&#x27;After buyer discount&#x27;,amount:414960,color:&#x27;var(--f-purple)&#x27;,note:&#x27;Invoice proceeds before financing charges or other repayments.&#x27;},{label:&#x27;Requested discount&#x27;,amount:5040,color:&#x27;var(--f-amber-text)&#x27;,note:&#x27;1.20% of ¥420,000. This is a proposed concession, not an executed payment.&#x27;}]};if(d.id===&#x27;FHR-03&#x27;)return {scope:&#x27;Expected collection allocation&#x27;,total:420000,center:&#x27;¥420k&#x27;,centerLabel:&#x27;invoice collection&#x27;,slices:[{label:&#x27;Invoice financing repayment&#x27;,amount:257272.29,color:&#x27;var(--f-purple)&#x27;,note:&#x27;¥255,000 principal plus ¥2,272.29 of invoice-financing charges.&#x27;},{label:&#x27;Bank repayment&#x27;,amount:150841.64,color:&#x27;var(--f-amber-text)&#x27;,note:&#x27;¥150,000 principal plus ¥841.64 of bank charges.&#x27;},{label:&#x27;Cash remaining&#x27;,amount:11886.07,color:&#x27;var(--f-green-text)&#x27;,note:&#x27;Net increase in company cash after both financing repayments.&#x27;}]};return null;}
+const formatAmount=n=&gt;&#x27;¥&#x27;+n.toLocaleString(&#x27;en-US&#x27;,{maximumFractionDigits:0});
+function allocationList(data){return `&lt;div class=&quot;f-allocation-list&quot;&gt;${data.slices.map((slice,i)=&gt;`&lt;button type=&quot;button&quot; class=&quot;f-allocation-row cursor-interaction&quot; data-slice=&quot;${i}&quot; aria-pressed=&quot;${state.slice===i}&quot;&gt;&lt;span class=&quot;f-list-dot&quot; style=&quot;--slice:${slice.color}&quot;&gt;&lt;/span&gt;&lt;span&gt;${slice.label}&lt;span class=&quot;f-small&quot;&gt;${(slice.amount/data.total*100).toFixed(slice.amount/data.total&lt;.1?1:0)}% of ${data.center}&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;f-allocation-amount&quot;&gt;${formatAmount(slice.amount)}&lt;/span&gt;&lt;/button&gt;`).join(&#x27;&#x27;)}&lt;div class=&quot;f-allocation-insight&quot;&gt;${state.slice!==null&amp;&amp;data.slices[state.slice]?data.slices[state.slice].note:&#x27;Select a slice or line item to inspect the breakdown.&#x27;}&lt;/div&gt;&lt;/div&gt;`;}
+function cashPosition(){const data=cashAllocation();return `&lt;section class=&quot;f-surface f-position-panel&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;Cash position&lt;/h2&gt;${chip(&#x27;Company · today&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-position-layout f-context-body&quot;&gt;&lt;svg class=&quot;f-donut&quot; data-f-donut=&quot;company&quot; role=&quot;img&quot; aria-label=&quot;${data.center} available cash: ${formatAmount(data.slices[0].amount)} minimum reserve and ${formatAmount(data.slices[1].amount)} above reserve&quot;&gt;&lt;/svg&gt;${allocationList(data)}&lt;/div&gt;${arrived()?&#x27;&lt;p class=&quot;f-context-caption&quot;&gt;Available cash includes ¥150k of bank borrowing. Future financing is shown separately.&lt;/p&gt;&#x27;:&#x27;&#x27;}&lt;div class=&quot;f-position-funding&quot;&gt;&lt;div&gt;&lt;p&gt;${state.stage===&#x27;Proposed&#x27;?&#x27;Funding plan ready · ¥405k&#x27;:submitted()?&#x27;¥405k requested · awaiting confirmation&#x27;:&#x27;¥255k committed · arrives in 3 days&#x27;}&lt;/p&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;${state.stage===&#x27;Proposed&#x27;?&#x27;Est. cost ¥3,114 · within your authority&#x27;:submitted()?&#x27;Requests do not increase cash available today.&#x27;:&#x27;Received cash and future inflows remain separate.&#x27;}&lt;/p&gt;&lt;/div&gt;${button(state.stage===&#x27;Proposed&#x27;?&#x27;Review &amp; run&#x27;:&#x27;View status&#x27;,&#x27;funding&#x27;,&#x27;f-primary&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-actions&quot; style=&quot;margin-top:5px&quot;&gt;${button(state.sources?&#x27;Hide funding sources&#x27;:&#x27;Funding sources &#x27;+icon(&#x27;chevron-down&#x27;),&#x27;sources&#x27;,&#x27;f-link&#x27;,`aria-expanded=&quot;${state.sources}&quot;`)}&lt;/div&gt;${state.sources?`&lt;div class=&quot;f-source-details&quot;&gt;${sourceRows()}&lt;/div&gt;`:&#x27;&#x27;}&lt;/section&gt;`;}
+function defaultCards(){return `&lt;div class=&quot;f-top-grid&quot;&gt;&lt;section class=&quot;f-surface f-cash&quot;&gt;&lt;h3&gt;Cash available today&lt;/h3&gt;&lt;div class=&quot;f-value&quot;&gt;¥${cashNow()}k&lt;/div&gt;&lt;p class=&quot;f-small f-muted&quot;&gt;¥${cashNow()-300}k above your reserve${arrived()?&#x27;&lt;br&gt;Includes ¥150k of bank borrowing&#x27;:&#x27;&#x27;}&lt;/p&gt;&lt;div class=&quot;f-reserve-track&quot;&gt;&lt;div class=&quot;f-pair f-small f-muted&quot;&gt;&lt;span&gt;Reserve ¥300k&lt;/span&gt;&lt;span&gt;Buffer ¥${cashNow()-300}k&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;f-track&quot;&gt;&lt;span class=&quot;f-reserve&quot; style=&quot;width:${300/cashNow()*100}%&quot;&gt;&lt;/span&gt;&lt;span class=&quot;f-buffer&quot; style=&quot;width:${(cashNow()-300)/cashNow()*100}%&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;f-surface f-plan&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h3&gt;${arrived()?&#x27;Funding in progress&#x27;:submitted()?&#x27;Waiting for funding confirmation&#x27;:&#x27;FLOW recommends&#x27;}&lt;/h3&gt;${planBadge()}&lt;/div&gt;&lt;div class=&quot;f-plan-title&quot;&gt;${arrived()?&#x27;¥255k arriving in 3 days&#x27;:submitted()?&#x27;¥405k requested&#x27;:&#x27;Secure funding before payroll&#x27;}&lt;/div&gt;${state.stage===&#x27;Proposed&#x27;?&#x27;&lt;div class=&quot;f-value&quot;&gt;¥405k&lt;/div&gt;&#x27;:&#x27;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin:10px 0 14px&quot;&gt;&#x27;+(arrived()?&#x27;Bank draw received. Invoice financing is committed.&#x27;:&#x27;Requests submitted. No new cash received yet.&#x27;)+&#x27;&lt;/p&gt;&#x27;}&lt;div class=&quot;f-plan-meta&quot;&gt;&lt;span&gt;Est. cost &lt;span class=&quot;f-num&quot;&gt;¥3,114&lt;/span&gt;&lt;/span&gt;&lt;span&gt;Within your limits&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;f-actions&quot;&gt;${button(state.stage===&#x27;Proposed&#x27;?&#x27;Review &amp; run plan&#x27;:&#x27;View funding status&#x27;,&#x27;funding&#x27;,&#x27;f-primary&#x27;)}${button(state.sources?&#x27;Hide sources&#x27;:&#x27;Funding sources &#x27;+icon(&#x27;chevron-down&#x27;),&#x27;sources&#x27;,&#x27;f-link&#x27;,`aria-expanded=&quot;${state.sources}&quot;`)}&lt;/div&gt;${state.sources?`&lt;div class=&quot;f-source-details&quot;&gt;${sourceRows()}&lt;/div&gt;`:&#x27;&#x27;}&lt;/section&gt;${outlookCard()}&lt;/div&gt;`;}
+function focusedMetrics(d){const items=d.id===&#x27;FHR-01&#x27;?[[&#x27;Invoice value&#x27;,&#x27;¥420k&#x27;],[&#x27;Requested discount&#x27;,&#x27;¥5,040&#x27;],[&#x27;Requested term&#x27;,&#x27;60 days&#x27;]]:d.id===&#x27;FHR-03&#x27;?[[&#x27;Net cash after repayment&#x27;,&#x27;≈ ¥11,886&#x27;],[&#x27;Invoice value&#x27;,&#x27;¥420k&#x27;],[&#x27;Collection due&#x27;,&#x27;In 32 days&#x27;]]:d.id===&#x27;FHR-02&#x27;?[[&#x27;Agreement value&#x27;,&#x27;¥420k&#x27;],[&#x27;Booked cash&#x27;,&#x27;¥0&#x27;],[&#x27;Next actor&#x27;,&#x27;Buyer&#x27;]]:[[&#x27;Still outstanding&#x27;,&#x27;¥180k&#x27;],[&#x27;Overdue&#x27;,&#x27;5 days&#x27;],[&#x27;Cash received&#x27;,&#x27;¥0&#x27;]];return `&lt;div class=&quot;f-focus-metrics&quot;&gt;${items.map(([label,value])=&gt;`&lt;div&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;${label}&lt;/p&gt;&lt;strong class=&quot;f-num&quot;&gt;${value}&lt;/strong&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;`;}
+function contextualPicture(){const d=selected(),data=dealAllocation();let body=&#x27;&#x27;;if(data){body=`&lt;div class=&quot;f-position-layout f-context-body&quot;&gt;&lt;svg class=&quot;f-donut&quot; data-f-donut=&quot;deal&quot; data-compact=&quot;true&quot; role=&quot;img&quot; aria-label=&quot;${data.scope}, ${data.slices.map(s=&gt;s.label+&#x27; &#x27;+formatAmount(s.amount)).join(&#x27;, &#x27;)}&quot;&gt;&lt;/svg&gt;${allocationList(data)}&lt;/div&gt;&lt;p class=&quot;f-context-caption&quot;&gt;${d.id===&#x27;FHR-01&#x27;?&#x27;Proposed discount only; financing costs and reserve consequences need review.&#x27;:&#x27;Expected net proceeds under the shown funding plan, not cash received today.&#x27;}&lt;/p&gt;`;}else if(d.id===&#x27;FHR-02&#x27;){body=`&lt;div class=&quot;f-context-body&quot;&gt;&lt;div class=&quot;f-agreement-flow&quot; aria-label=&quot;Agreement progress&quot;&gt;&lt;div class=&quot;f-agreement-stage active&quot;&gt;Proposed&lt;/div&gt;&lt;div class=&quot;f-agreement-stage active&quot;&gt;Buyer review&lt;/div&gt;&lt;div class=&quot;f-agreement-stage&quot;&gt;Agreed&lt;/div&gt;&lt;div class=&quot;f-agreement-stage&quot;&gt;Invoiced&lt;/div&gt;&lt;div class=&quot;f-agreement-stage&quot;&gt;Collected&lt;/div&gt;&lt;/div&gt;&lt;p class=&quot;f-context-caption&quot;&gt;Buyer response pending. This agreement has not created an invoice or available cash.&lt;/p&gt;&lt;/div&gt;`;}else{body=`&lt;div class=&quot;f-context-body&quot;&gt;&lt;div class=&quot;f-timing-plot&quot;&gt;&lt;span&gt;Due date&lt;/span&gt;&lt;span class=&quot;f-timing-line&quot;&gt;&lt;/span&gt;&lt;span&gt;5 days overdue&lt;/span&gt;&lt;/div&gt;&lt;p class=&quot;f-context-caption&quot;&gt;No payment date confirmed. Review this overdue invoice before preparing a reminder.&lt;/p&gt;&lt;/div&gt;`;}return `&lt;section class=&quot;f-surface f-context-panel&quot;&gt;&lt;div class=&quot;f-context-header&quot;&gt;&lt;div&gt;&lt;h2&gt;${d.customer}&lt;/h2&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:5px&quot;&gt;${d.title} · ${d.id}&lt;/p&gt;&lt;/div&gt;${button(icon(&#x27;x&#x27;)+&#x27; Dismiss&#x27;,&#x27;dismiss-selection&#x27;,&#x27;f-link&#x27;,&#x27;aria-label=&quot;Dismiss selected deal and restore default cash and recommendation cards&quot;&#x27;)}&lt;/div&gt;${focusedMetrics(d)}${body}&lt;div class=&quot;f-focused-action&quot;&gt;&lt;div&gt;&lt;p class=&quot;f-small&quot;&gt;${d.next}&lt;/p&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;${d.bucket===&#x27;needs&#x27;?&#x27;Your next action&#x27;:d.when}&lt;/p&gt;&lt;/div&gt;${button(d.id===&#x27;SZ-01&#x27;?&#x27;Prepare reminder&#x27;:d.action,d.id===&#x27;SZ-01&#x27;?&#x27;selected-reminder&#x27;:&#x27;deal&#x27;,&#x27;f-primary&#x27;)}&lt;/div&gt;&lt;/section&gt;`;}
+function focusedCards(){return globalStrip()+`&lt;div class=&quot;f-top-grid context-grid&quot;&gt;${contextualPicture()}${outlookCard()}&lt;/div&gt;`;}
+
+function outlookCard(){return `&lt;section class=&quot;f-surface f-outlook&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h3&gt;Company cash outlook&lt;/h3&gt;${chip(&#x27;Day 30&#x27;,&#x27;amber&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-value ${arrived()?&#x27;&#x27;:&#x27;f-risk&#x27;}&quot;&gt;${arrived()?&#x27;¥300k&#x27;:&#x27;−¥105k&#x27;}&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;${arrived()?&#x27;¥0 above your minimum&#x27;:&#x27;Without new funding&#x27;}&lt;/p&gt;${mini()}&lt;div class=&quot;f-outlook-bottom&quot;&gt;&lt;span class=&quot;f-small&quot;&gt;${arrived()?&#x27;Reserve ¥300k&#x27;:&#x27;With plan &lt;strong style=&quot;font-weight:500&quot;&gt;¥300k&lt;/strong&gt;&#x27;}&lt;/span&gt;${button((state.forecast?&#x27;Close&#x27;:&#x27;Expand&#x27;)+&#x27; &#x27;+icon(state.forecast?&#x27;chevron-up&#x27;:&#x27;maximize-2&#x27;),&#x27;forecast&#x27;,&#x27;f-link&#x27;,`aria-expanded=&quot;${state.forecast}&quot;`)}&lt;/div&gt;&lt;/section&gt;`;}
+function preview(){if(!state.focused)return `&lt;aside class=&quot;f-surface f-detail-preview&quot;&gt;&lt;h2&gt;Upcoming cash movements&lt;/h2&gt;&lt;div class=&quot;f-upcoming-row&quot;&gt;&lt;div&gt;Payroll&lt;span&gt;In 12 days&lt;/span&gt;&lt;/div&gt;&lt;strong&gt;−¥340k&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;f-upcoming-row&quot;&gt;&lt;div&gt;Supplier payment&lt;span&gt;In 20 days&lt;/span&gt;&lt;/div&gt;&lt;strong&gt;−¥120k&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;f-upcoming-row&quot;&gt;&lt;div&gt;Debt service&lt;span&gt;In 30 days&lt;/span&gt;&lt;/div&gt;&lt;strong&gt;−¥45k&lt;/strong&gt;&lt;/div&gt;&lt;div style=&quot;margin-top:12px&quot;&gt;${button(&#x27;Explore company forecast &#x27;+icon(&#x27;arrow-up-right&#x27;),&#x27;cash&#x27;)}&lt;/div&gt;&lt;/aside&gt;`;const d=selected();return `&lt;aside class=&quot;f-surface f-detail-preview&quot;&gt;&lt;h2&gt;Deal context&lt;/h2&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:8px&quot;&gt;${d.id} · ${d.customer}&lt;/p&gt;&lt;div class=&quot;f-detail-next&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;span class=&quot;f-small&quot;&gt;Current stage&lt;/span&gt;${chip(d.status,d.bucket===&#x27;needs&#x27;?&#x27;amber&#x27;:&#x27;&#x27;)}&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:12px&quot;&gt;${d.id===&#x27;FHR-03&#x27;?&#x27;Invoice due in 32 days. Repayment allocation assumes the proposed funding plan.&#x27;:d.id===&#x27;FHR-01&#x27;?&#x27;A proposed change to payment terms. Existing books stay unchanged until an agreement is recorded.&#x27;:d.id===&#x27;FHR-02&#x27;?&#x27;The buyer is reviewing this proposed agreement. No receivable is booked yet.&#x27;:&#x27;Illustrative overdue invoice; no payment date has been confirmed.&#x27;}&lt;/p&gt;&lt;/div&gt;${button(&#x27;Customer profile&#x27;,&#x27;customer&#x27;,&#x27;f-secondary&#x27;)}&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Agreement &amp; supporting evidence&lt;/summary&gt;&lt;p&gt;Terms, buyer messages, and financing evidence are attached to this identified deal.&lt;/p&gt;${button(&#x27;View documents&#x27;,&#x27;documents&#x27;)}&lt;/details&gt;&lt;/aside&gt;`;}
+function globalStrip(){return `&lt;div class=&quot;f-global-strip&quot;&gt;&lt;span&gt;&lt;strong&gt;Company cash ¥${cashNow()}k&lt;/strong&gt;&lt;span class=&quot;f-muted&quot;&gt;Minimum reserve ¥300k&lt;/span&gt;&lt;/span&gt;${button(state.stage===&#x27;Proposed&#x27;?&#x27;Review ¥405k funding plan&#x27;:submitted()?&#x27;Funding requests pending&#x27;:&#x27;View funding in transit&#x27;,&#x27;funding&#x27;,&#x27;f-link&#x27;)}&lt;/div&gt;`;}
+function home(){return heading(arrived()?&#x27;Covered, with no spare buffer at the low point.&#x27;:&#x27;Cash falls below your reserve in 12 days.&#x27;,arrived()?&#x27;¥150k received · ¥255k committed, expected in 3 days&#x27;:submitted()?&#x27;Funding requests await confirmation. Two deal decisions need you.&#x27;:&#x27;One funding action ready. Two deal decisions need you.&#x27;,chip(arrived()?&#x27;Covered, but tight&#x27;:submitted()?&#x27;Funding requested&#x27;:&#x27;Action ready&#x27;,&#x27;amber&#x27;))+`${state.focused?focusedCards():defaultCards()}${state.forecast?forecastPanel():&#x27;&#x27;}&lt;div class=&quot;f-bottom-grid&quot;&gt;${worklist()}${preview()}&lt;/div&gt;&lt;div class=&quot;f-quick-tools&quot;&gt;${button(icon(&#x27;file-text&#x27;)+&#x27; Documents&#x27;,&#x27;documents&#x27;)}${button(icon(&#x27;sliders-horizontal&#x27;)+&#x27; What-if terms&#x27;,&#x27;sandbox&#x27;)}${button(icon(&#x27;package&#x27;)+&#x27; Evaluate a purchase&#x27;,&#x27;purchase&#x27;)}${button(icon(&#x27;shield-check&#x27;)+` Approvals${state.approval?&#x27; · 1&#x27;:&#x27;&#x27;}`,&#x27;approvals&#x27;)}&lt;/div&gt;`;}
+function drawDonuts(){const ns=&#x27;http://www.w3.org/2000/svg&#x27;;main.querySelectorAll(&#x27;[data-f-donut]&#x27;).forEach(svg=&gt;{const data=svg.dataset.fDonut===&#x27;company&#x27;?cashAllocation():dealAllocation();if(!data)return;svg.setAttribute(&#x27;viewBox&#x27;,&#x27;0 0 156 156&#x27;);svg.replaceChildren();const center=78,outer=65,inner=48;function add(tag,a,text){const el=document.createElementNS(ns,tag);Object.entries(a).forEach(([k,v])=&gt;el.setAttribute(k,v));if(text)el.textContent=text;svg.appendChild(el);return el;}function point(r,degrees){const a=degrees*Math.PI/180;return [center+r*Math.cos(a),center+r*Math.sin(a)];}let angle=-90;data.slices.forEach((slice,i)=&gt;{const end=angle+slice.amount/data.total*360;const start=angle+.6,stop=end-.6,[x1,y1]=point(outer,start),[x2,y2]=point(outer,stop),[x3,y3]=point(inner,stop),[x4,y4]=point(inner,start),large=stop-start&gt;180?1:0;const path=add(&#x27;path&#x27;,{d:`M${x1} ${y1}A${outer} ${outer} 0 ${large} 1 ${x2} ${y2}L${x3} ${y3}A${inner} ${inner} 0 ${large} 0 ${x4} ${y4}Z`,fill:slice.color,opacity:state.slice===null||state.slice===i?1:.25,&#x27;aria-hidden&#x27;:&#x27;true&#x27;});path.addEventListener(&#x27;click&#x27;,()=&gt;{state.slice=state.slice===i?null:i;render();save();});angle=end;});const slice=state.slice!==null?data.slices[state.slice]:null;const value=slice?formatAmount(slice.amount):data.center;add(&#x27;text&#x27;,{x:center,y:svg.dataset.compact===&#x27;true&#x27;?85:76,&#x27;text-anchor&#x27;:&#x27;middle&#x27;,fill:&#x27;var(--f-text)&#x27;,&#x27;font-family&#x27;:&#x27;Arial, sans-serif&#x27;,&#x27;font-size&#x27;:value.length&gt;8?17:23},value);if(svg.dataset.compact!==&#x27;true&#x27;)add(&#x27;text&#x27;,{x:center,y:94,&#x27;text-anchor&#x27;:&#x27;middle&#x27;,fill:&#x27;var(--f-muted)&#x27;,&#x27;font-family&#x27;:&#x27;Arial, sans-serif&#x27;,&#x27;font-size&#x27;:11},slice?&#x27;selected portion&#x27;:data.centerLabel);});}
+function dismissSelection(){state.focused=false;state.slice=state.overviewSnapshot?.slice??null;if(state.overviewSnapshot){state.forecast=state.overviewSnapshot.forecast;state.sources=state.overviewSnapshot.sources;}state.overviewSnapshot=null;render();save();if(root.getBoundingClientRect().width&lt;650)main.querySelector(&#x27;[data-deal=&quot;&#x27;+state.selected+&#x27;&quot;]&#x27;)?.scrollIntoView({block:&#x27;center&#x27;,behavior:window.matchMedia(&#x27;(prefers-reduced-motion: reduce)&#x27;).matches?&#x27;instant&#x27;:&#x27;smooth&#x27;});}
+function focusDeal(id){if(state.focused&amp;&amp;state.selected===id){dismissSelection();return;}if(!state.focused)state.overviewSnapshot={forecast:state.forecast,sources:state.sources,slice:state.slice};state.selected=id;state.focused=true;state.slice=null;state.forecast=false;state.sources=false;render();save();if(root.getBoundingClientRect().width&lt;650)main.querySelector(&#x27;.f-context-panel&#x27;)?.scrollIntoView({block:&#x27;start&#x27;,behavior:window.matchMedia(&#x27;(prefers-reduced-motion: reduce)&#x27;).matches?&#x27;instant&#x27;:&#x27;smooth&#x27;});}
+function selectedReminder(){const d=selected();return back()+heading(&#x27;Prepare a payment reminder&#x27;,`${d.customer} · ${d.id} · draft only`)+`&lt;section class=&quot;f-surface f-text-area&quot;&gt;&lt;h3&gt;${d.title} · ${d.amount}&lt;/h3&gt;&lt;p&gt;The invoice is five days overdue. Please confirm when payment will be made.&lt;/p&gt;&lt;p&gt;This is an illustrative draft. Nothing is sent from this mockup.&lt;/p&gt;${button(&#x27;Back to worklist&#x27;,&#x27;home&#x27;,&#x27;f-secondary&#x27;)}&lt;/section&gt;`;}
+
+function back(){const names={home:&#x27;Home&#x27;,deals:&#x27;Deals&#x27;,cash:&#x27;Cash&#x27;,funding:&#x27;funding review&#x27;,compare:&#x27;comparison&#x27;,deal:&#x27;selected deal&#x27;,customer:&#x27;customer&#x27;,receivables:&#x27;Receivables&#x27;,purchase:&#x27;purchase analysis&#x27;,approvals:&#x27;Approvals&#x27;,documents:&#x27;Documents&#x27;,sandbox:&#x27;what-if terms&#x27;};return button(icon(&#x27;arrow-left&#x27;)+&#x27; Back to &#x27;+(names[state.previous]||&#x27;previous view&#x27;),&#x27;back&#x27;,&#x27;f-link f-back&#x27;);}
+function funding(){return back()+heading(&#x27;Review your funding plan&#x27;,&#x27;Protect the ¥300k reserve before payroll in 12 days.&#x27;,planBadge())+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Total funding&lt;/span&gt;&lt;strong&gt;¥405,000&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Estimated charges&lt;/span&gt;&lt;strong&gt;¥3,113.93&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Lowest cash with plan&lt;/span&gt;&lt;strong&gt;¥300,000&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;${sourceRows()}&lt;div class=&quot;f-notice&quot;&gt;${arrived()?&#x27;¥150k is included in available cash. ¥255k is committed and appears as a future forecast inflow.&#x27;:submitted()?&#x27;Requests have been submitted. No new cash is available until receipt; the plan still awaits confirmation.&#x27;:&#x27;Both sources are proposed. Running this plan requests funding under your existing authority.&#x27;}&lt;/div&gt;&lt;div class=&quot;f-actions&quot;&gt;${state.stage===&#x27;Proposed&#x27;?button(&#x27;Run funding plan&#x27;,&#x27;run-plan&#x27;,&#x27;f-primary&#x27;):chip(arrived()?&#x27;Received + committed&#x27;:&#x27;Awaiting confirmation&#x27;)}${button(&#x27;Compare funding choices&#x27;,&#x27;compare&#x27;,&#x27;f-secondary&#x27;)}${button(&#x27;View cash impact&#x27;,&#x27;cash&#x27;)}&lt;/div&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Repayments, cost &amp; authority&lt;/summary&gt;&lt;p&gt;The invoice-financing advance is repaid from the Foshan invoice receipt. The bank draw is also repaid from cash at collection. The estimated ¥3,113.93 combines charges in the shown plan. Both draws are within the existing authority; this plan still waits for your instruction to run.&lt;/p&gt;&lt;/details&gt;&lt;/section&gt;`;}
+function compare(){return back()+heading(&#x27;Compare funding choices&#x27;,&#x27;Source capacity is visible before you choose a plan.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-table-wrap&quot;&gt;&lt;table class=&quot;f-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Choice&lt;/th&gt;&lt;th&gt;Funding&lt;/th&gt;&lt;th&gt;Coverage&lt;/th&gt;&lt;th&gt;Est. cost&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr style=&quot;background:var(--f-purple-soft)&quot;&gt;&lt;td&gt;FLOW’s combined plan&lt;/td&gt;&lt;td&gt;¥405k&lt;/td&gt;&lt;td&gt;Covers the reserve shortfall&lt;/td&gt;&lt;td&gt;¥3,113.93&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Bank credit alone&lt;/td&gt;&lt;td&gt;¥150k capacity&lt;/td&gt;&lt;td&gt;Insufficient for ¥405k need&lt;/td&gt;&lt;td&gt;Not selected&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Invoice financing alone&lt;/td&gt;&lt;td&gt;¥350k capacity&lt;/td&gt;&lt;td&gt;Insufficient for ¥405k need&lt;/td&gt;&lt;td&gt;Not selected&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin:16px 0&quot;&gt;Example facility limits come from the recorded funding-source view.&lt;/p&gt;${button(&#x27;Review combined plan&#x27;,&#x27;funding&#x27;,&#x27;f-primary&#x27;)}&lt;/section&gt;`;}
+function cash(){return heading(&#x27;Cash &amp; funding&#x27;,&#x27;Company-wide forecast. Selecting a deal does not replace this balance.&#x27;)+`&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Available today&lt;/span&gt;&lt;strong&gt;¥${cashNow()}k&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Lowest ahead&lt;/span&gt;&lt;strong class=&quot;${arrived()?&#x27;&#x27;:&#x27;f-risk&#x27;}&quot;&gt;${arrived()?&#x27;¥300k&#x27;:&#x27;−¥105k&#x27;}&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;${arrived()?&#x27;Committed inflow&#x27;:&#x27;Proposed funding&#x27;}&lt;/span&gt;&lt;strong&gt;${arrived()?&#x27;¥255k&#x27;:&#x27;¥405k&#x27;}&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;${forecastPanel(true)}&lt;div class=&quot;f-funding-sources&quot;&gt;&lt;section class=&quot;f-surface&quot;&gt;&lt;h3&gt;Bank credit line&lt;/h3&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;¥150k facility limit&lt;/p&gt;&lt;div class=&quot;f-capacity&quot;&gt;&lt;span style=&quot;width:${arrived()?&#x27;100&#x27;:&#x27;0&#x27;}%&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;f-pair f-small&quot;&gt;&lt;span&gt;Received ${arrived()?&#x27;¥150k&#x27;:&#x27;¥0&#x27;}&lt;/span&gt;&lt;span&gt;Undrawn ${arrived()?&#x27;¥0&#x27;:&#x27;¥150k&#x27;}&lt;/span&gt;&lt;/div&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Timing &amp; agreement&lt;/summary&gt;&lt;p&gt;Funds land on draw settlement. Facility MB-CL-2026-031. Undrawn capacity is borrowing capacity, not cash in the bank.&lt;/p&gt;${button(&#x27;View agreement&#x27;,&#x27;documents&#x27;)}&lt;/details&gt;&lt;/section&gt;&lt;section class=&quot;f-surface&quot;&gt;&lt;h3&gt;Invoice financing&lt;/h3&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;¥350k facility limit&lt;/p&gt;&lt;div class=&quot;f-capacity&quot;&gt;&lt;span style=&quot;width:${arrived()?&#x27;72.9&#x27;:&#x27;0&#x27;}%&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;f-pair f-small&quot;&gt;&lt;span&gt;${arrived()?&#x27;Committed ¥255k&#x27;:&#x27;Proposed ¥255k&#x27;}&lt;/span&gt;&lt;span&gt;${arrived()?&#x27;Headroom ¥95k&#x27;:&#x27;Undrawn ¥350k&#x27;}&lt;/span&gt;&lt;/div&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Arrival &amp; repayment&lt;/summary&gt;&lt;p&gt;Expected three days after execution. The advance and charges are repaid from Foshan’s invoice. GBR-IF-2026-118 is the recorded example agreement.&lt;/p&gt;${button(&#x27;View agreement&#x27;,&#x27;documents&#x27;)}&lt;/details&gt;&lt;/section&gt;&lt;/div&gt;&lt;div class=&quot;f-quick-tools&quot;&gt;${button(&#x27;Review funding plan&#x27;,&#x27;funding&#x27;)}${button(&#x27;What-if terms&#x27;,&#x27;sandbox&#x27;)}${button(&#x27;Evaluate a purchase&#x27;,&#x27;purchase&#x27;)}&lt;/div&gt;`;}
+function deals(){return heading(&#x27;Deals&#x27;,&#x27;Select a deal to see its next action. Customer names can have multiple deals.&#x27;)+`&lt;div class=&quot;f-bottom-grid&quot;&gt;${worklist()}${preview()}&lt;/div&gt;&lt;div class=&quot;f-quick-tools&quot;&gt;${button(&#x27;Documents&#x27;,&#x27;documents&#x27;)}${button(&#x27;What-if terms&#x27;,&#x27;sandbox&#x27;)}${button(&#x27;Evaluate a purchase&#x27;,&#x27;purchase&#x27;)}${button(`Approvals${state.approval?&#x27; · 1&#x27;:&#x27;&#x27;}`,&#x27;approvals&#x27;)}&lt;/div&gt;`;}
+function deal(){const d=selected();return back()+heading(d.customer,`${d.title} · ${d.id}`,chip(d.status,d.bucket===&#x27;needs&#x27;?&#x27;amber&#x27;:&#x27;&#x27;))+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Deal amount&lt;/span&gt;&lt;strong&gt;${d.amount}&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Next step&lt;/span&gt;&lt;strong style=&quot;font-size:20px&quot;&gt;${d.when}&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Next actor&lt;/span&gt;&lt;strong style=&quot;font-size:20px&quot;&gt;${d.bucket===&#x27;needs&#x27;?&#x27;You&#x27;:&#x27;Buyer&#x27;}&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;h3&gt;${d.next}&lt;/h3&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:9px&quot;&gt;Illustrative deal state. Company-wide cash and funding remain separate.&lt;/p&gt;&lt;div class=&quot;f-actions f-section-gap&quot;&gt;${button(d.kind===&#x27;terms&#x27;?&#x27;Explore proposed terms&#x27;:&#x27;View invoice details&#x27;,d.kind===&#x27;terms&#x27;?&#x27;sandbox&#x27;:&#x27;receivables&#x27;,&#x27;f-primary&#x27;)}${button(&#x27;Customer profile&#x27;,&#x27;customer&#x27;)}${button(&#x27;Agreement &amp; evidence&#x27;,&#x27;documents&#x27;)}&lt;/div&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Original request &amp; agreement history&lt;/summary&gt;&lt;p&gt;Keep the original proposal, negotiated terms, buyer’s answer, and signed agreement together here. Each record belongs to this deal, not every deal with the same customer.&lt;/p&gt;&lt;/details&gt;&lt;details&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Cash impact of this deal&lt;/summary&gt;&lt;p&gt;Show the incremental consequence against the company forecast. Hypothetical terms are separate from booked agreements.&lt;/p&gt;${button(&#x27;Open company forecast&#x27;,&#x27;cash&#x27;)}&lt;/details&gt;&lt;/section&gt;`;}
+function customer(){const d=selected();return back()+heading(d.customer,&#x27;Customer focus · all related deals and invoices&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;h3&gt;Related work&lt;/h3&gt;${fixtures.filter(x=&gt;x.customer===d.customer).map(x=&gt;`&lt;div class=&quot;f-inline-status&quot;&gt;&lt;div&gt;&lt;p&gt;${x.title}&lt;/p&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;${x.id} · ${x.when}&lt;/p&gt;&lt;/div&gt;${button(&#x27;Open&#x27;,&#x27;deal&#x27;,&#x27;f-secondary&#x27;,`data-select=&quot;${x.id}&quot;`)}&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Payment history &amp; concentration&lt;/summary&gt;&lt;p&gt;The recorded Foshan invoice has no completed payment history in the preceding 12 months. A late-payment scenario is a stress test, not a prediction.&lt;/p&gt;&lt;/details&gt;&lt;/section&gt;`;}
+function receivables(){return heading(&#x27;Receivables&#x27;,&#x27;Amounts owed, collection timing, and the cash left after repayment.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;Foshan Home Retail · ¥420k invoice&lt;/h2&gt;${chip(&#x27;Not due yet&#x27;,&#x27;green&#x27;)}&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:7px&quot;&gt;Due in 32 days · FHR-2026-07&lt;/p&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Invoice amount&lt;/span&gt;&lt;strong&gt;¥420k&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Net after invoice financing&lt;/span&gt;&lt;strong&gt;≈ ¥163k&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;After bank repayment too&lt;/span&gt;&lt;strong&gt;≈ ¥12k&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;The last two figures describe the proposed plan’s collection waterfall.&lt;/p&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Show the collection waterfall&lt;/summary&gt;&lt;table class=&quot;f-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;Invoice collected&lt;/td&gt;&lt;td&gt;¥420,000.00&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Invoice financing principal&lt;/td&gt;&lt;td&gt;−¥255,000.00&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Invoice financing charges&lt;/td&gt;&lt;td&gt;−¥2,272.29&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Net invoice proceeds&lt;/td&gt;&lt;td&gt;¥162,727.71&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Bank principal &amp; charges&lt;/td&gt;&lt;td&gt;−¥150,841.64&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Net company cash increase&lt;/td&gt;&lt;td&gt;¥11,886.07&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/details&gt;&lt;details&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;What if Foshan pays 30 days late?&lt;/summary&gt;&lt;p&gt;A stress test, not a forecast: the recorded scenario shows cash falling to −¥250k in 60 days and a ¥550k gap to the reserve. No early payment is assumed.&lt;/p&gt;${button(&#x27;Explore company cash&#x27;,&#x27;cash&#x27;)}&lt;/details&gt;&lt;div class=&quot;f-actions f-section-gap&quot;&gt;${button(&#x27;View payment terms&#x27;,&#x27;documents&#x27;,&#x27;f-primary&#x27;)}${button(&#x27;Prepare a reminder&#x27;,&#x27;reminder&#x27;,&#x27;f-secondary&#x27;)}${button(&#x27;View financing&#x27;,&#x27;funding&#x27;)}&lt;/div&gt;&lt;/section&gt;`;}
+function reminder(){return back()+heading(&#x27;Prepare a payment reminder&#x27;,&#x27;Draft preview · nothing is sent from this mockup.&#x27;)+`&lt;section class=&quot;f-surface f-text-area&quot;&gt;&lt;h3&gt;Foshan Home Retail · invoice due in 32 days&lt;/h3&gt;&lt;p&gt;Please confirm the scheduled payment date for the ¥420,000 invoice under FHR-2026-07.&lt;/p&gt;&lt;p&gt;This invoice is not overdue. A reminder should reflect its actual status.&lt;/p&gt;${button(&#x27;Back to invoice&#x27;,&#x27;receivables&#x27;,&#x27;f-secondary&#x27;)}&lt;/section&gt;`;}
+function documents(){return back()+heading(&#x27;Documents &amp; agreements&#x27;,&#x27;Confirm extracted terms before they become evidence.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;Recorded documents&lt;/h2&gt;${chip(&#x27;3 confirmed&#x27;,&#x27;green&#x27;)}&lt;/div&gt;${[[&#x27;FHR-2026-07&#x27;,&#x27;Supply agreement&#x27;,&#x27;Foshan Home Retail&#x27;],[&#x27;MB-CL-2026-031&#x27;,&#x27;Credit-line agreement&#x27;,&#x27;Main bank&#x27;],[&#x27;GBR-IF-2026-118&#x27;,&#x27;Invoice-financing agreement&#x27;,&#x27;Financing platform&#x27;]].map(([id,title,withWhom])=&gt;`&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;${title} · ${id}&lt;/summary&gt;&lt;p&gt;${withWhom} · confirmed terms. The document, source clauses, and extracted terms belong together in this review.&lt;/p&gt;&lt;p&gt;Original files and clause text are not attached to this design concept.&lt;/p&gt;&lt;/details&gt;`).join(&#x27;&#x27;)}&lt;div class=&quot;f-notice&quot;&gt;Upload, extraction, and confirmation are distinct steps. Confirming terms does not itself move money.&lt;/div&gt;${button(icon(&#x27;upload&#x27;)+&#x27; Upload a document&#x27;,&#x27;upload&#x27;,&#x27;f-primary&#x27;)}&lt;/section&gt;`;}
+function upload(){return back()+heading(&#x27;Add a document&#x27;,&#x27;A contract or lender agreement, linked to its customer or facility.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-form-grid&quot;&gt;&lt;label&gt;Document type&lt;select&gt;&lt;option&gt;Buyer agreement&lt;/option&gt;&lt;option&gt;Lender agreement&lt;/option&gt;&lt;option&gt;Invoice&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;Customer / facility&lt;select&gt;&lt;option&gt;Foshan Home Retail&lt;/option&gt;&lt;option&gt;Shenzhen Fixtures&lt;/option&gt;&lt;option&gt;Bank credit line&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;label&gt;Choose a document&lt;input type=&quot;file&quot; accept=&quot;.pdf,.docx,.txt&quot; data-file&gt;&lt;/label&gt;&lt;p class=&quot;f-muted f-small&quot; data-file-status style=&quot;margin-top:12px&quot;&gt;Preview only. Selected files remain local; no upload occurs.&lt;/p&gt;&lt;/section&gt;`;}
+function activity(){const logs=[[&#x27;Funding&#x27;,&#x27;Bank credit-line draw&#x27;,arrived()?&#x27;¥150k received&#x27;:submitted()?&#x27;Request submitted&#x27;:&#x27;Not run&#x27;,&#x27;money&#x27;],[&#x27;Funding&#x27;,&#x27;Invoice financing&#x27;,arrived()?&#x27;Committed · arrives in 3 days&#x27;:submitted()?&#x27;Awaiting confirmation&#x27;:&#x27;Proposed&#x27;,&#x27;money&#x27;],[&#x27;Agreement&#x27;,&#x27;Foshan supply agreement&#x27;,&#x27;Agreed&#x27;,&#x27;decisions&#x27;],[&#x27;Document&#x27;,&#x27;Supply agreement FHR-2026-07&#x27;,&#x27;Terms confirmed&#x27;,&#x27;documents&#x27;],[&#x27;Document&#x27;,&#x27;Credit line MB-CL-2026-031&#x27;,&#x27;Terms confirmed&#x27;,&#x27;documents&#x27;],[&#x27;Document&#x27;,&#x27;Invoice financing GBR-IF-2026-118&#x27;,&#x27;Terms confirmed&#x27;,&#x27;documents&#x27;]];return heading(&#x27;Activity&#x27;,&#x27;Track decisions, money movements, and supporting documents.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-activity-tools f-tabs&quot;&gt;${[[&#x27;all&#x27;,&#x27;All&#x27;],[&#x27;money&#x27;,&#x27;Money&#x27;],[&#x27;decisions&#x27;,&#x27;Decisions&#x27;],[&#x27;documents&#x27;,&#x27;Documents&#x27;],[&#x27;reconciliation&#x27;,&#x27;Reconciliation&#x27;]].map(([value,label])=&gt;button(label,&#x27;activity-&#x27;+value,&#x27;&#x27;,`aria-pressed=&quot;${state.activityFilter===value}&quot;`)).join(&#x27;&#x27;)}&lt;/div&gt;${state.activityFilter===&#x27;reconciliation&#x27;?`&lt;div class=&quot;f-notice&quot;&gt;Customer invoice receipts · no recorded receipts yet.&lt;/div&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Matched&lt;/span&gt;&lt;strong&gt;0&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Flagged&lt;/span&gt;&lt;strong&gt;0&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Customer receipts&lt;/span&gt;&lt;strong&gt;¥0&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;Bank borrowing is not a customer invoice receipt.&lt;/p&gt;${button(&#x27;View outstanding invoices&#x27;,&#x27;receivables&#x27;)}`:logs.filter(l=&gt;state.activityFilter===&#x27;all&#x27;||l[3]===state.activityFilter).map(l=&gt;`&lt;div class=&quot;f-timeline&quot;&gt;&lt;span class=&quot;f-muted&quot;&gt;${l[0]}&lt;/span&gt;&lt;span&gt;${l[1]}&lt;/span&gt;&lt;span class=&quot;f-small&quot;&gt;${l[2]}&lt;/span&gt;&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/section&gt;`;}
+function sandbox(){return back()+heading(&#x27;What-if terms&#x27;,&#x27;Hypothetical: moving a control changes no booked agreement.&#x27;,chip(&#x27;Hypothetical&#x27;))+`&lt;section class=&quot;f-surface&quot;&gt;&lt;h2&gt;Foshan · payment-term extension&lt;/h2&gt;&lt;div class=&quot;f-form-grid&quot;&gt;&lt;label&gt;Payment term &lt;span data-sandbox-days&gt;${state.sandboxDays}&lt;/span&gt; days&lt;input type=&quot;range&quot; min=&quot;30&quot; max=&quot;90&quot; step=&quot;15&quot; value=&quot;${state.sandboxDays}&quot; data-sandbox-range&gt;&lt;/label&gt;&lt;label&gt;Early-payment discount&lt;select&gt;&lt;option&gt;1.20% · buyer’s request&lt;/option&gt;&lt;option&gt;No discount&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;div class=&quot;f-notice&quot; data-sandbox-verdict&gt;${state.sandboxDays&gt;=60?&#x27;This illustrative extension exceeds the recorded reserve limit. Review cash exposure and discount cost before offering terms.&#x27;:&#x27;Shorter terms selected. A real evaluation is required before stating whether they pass.&#x27;}&lt;/div&gt;&lt;details&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Limits &amp; supporting evidence&lt;/summary&gt;&lt;p&gt;The recorded buyer request’s worst cash point is below reserve. Keep cash, cost, earnings, and authorization checks visible here, with the detailed calculation behind each result.&lt;/p&gt;&lt;/details&gt;${button(&#x27;Open company forecast&#x27;,&#x27;cash&#x27;)}&lt;/section&gt;`;}
+function purchase(){return back()+heading(&#x27;Evaluate a purchase&#x27;,&#x27;Equipment example · recommendation, then owner authorization.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;¥600k machine&lt;/h2&gt;${chip(&#x27;Owner estimate&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Net present value&lt;/span&gt;&lt;strong&gt;¥380,886&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Payback&lt;/span&gt;&lt;strong&gt;Month 31&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Leverage after funding&lt;/span&gt;&lt;strong&gt;2.28×&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;h3&gt;Recommended: 36-month equipment loan&lt;/h3&gt;&lt;p class=&quot;f-muted f-small&quot; style=&quot;margin-top:8px&quot;&gt;5.60% · ¥18,144.62 per month · ¥53,206.14 total charges&lt;/p&gt;&lt;div class=&quot;f-notice&quot;&gt;Recommendation based on the owner’s estimated ¥22k monthly operating cash from month 4. A new facility requires owner approval.&lt;/div&gt;&lt;div class=&quot;f-actions&quot;&gt;${button(state.approval?&#x27;Review waiting approval&#x27;:state.approved?&#x27;View application status&#x27;:&#x27;Create application for review&#x27;,state.approval||state.approved?&#x27;approvals&#x27;:&#x27;queue-application&#x27;,&#x27;f-primary&#x27;)}${button(&#x27;Compare repayment structures&#x27;,&#x27;purchase-details&#x27;,&#x27;f-secondary&#x27;)}&lt;/div&gt;&lt;details class=&quot;f-section-gap&quot;&gt;&lt;summary class=&quot;cursor-interaction&quot;&gt;Assumptions &amp; purchase evidence&lt;/summary&gt;&lt;p&gt;The owner estimate is not observed cash. NPV uses 10%; the screenshot’s loan quote is indicative. The lender decision and money receipt are separate from your approval.&lt;/p&gt;&lt;/details&gt;&lt;/section&gt;`;}
+function purchaseDetails(){return back()+heading(&#x27;Equipment financing comparison&#x27;,&#x27;Keep the recommendation and its decision terms together.&#x27;)+`&lt;section class=&quot;f-surface&quot;&gt;&lt;div class=&quot;f-table-wrap&quot;&gt;&lt;table class=&quot;f-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Structure&lt;/th&gt;&lt;th&gt;Monthly payment&lt;/th&gt;&lt;th&gt;Result&lt;/th&gt;&lt;th&gt;Total charges&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;Cash + credit line&lt;/td&gt;&lt;td&gt;—&lt;/td&gt;&lt;td&gt;Below reserve&lt;/td&gt;&lt;td&gt;—&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;18 months · 5.60%&lt;/td&gt;&lt;td&gt;¥34,830.60&lt;/td&gt;&lt;td&gt;Fails coverage in months 1–3&lt;/td&gt;&lt;td&gt;¥26,950.84&lt;/td&gt;&lt;/tr&gt;&lt;tr style=&quot;background:var(--f-green)&quot;&gt;&lt;td&gt;36 months · 5.60%&lt;/td&gt;&lt;td&gt;¥18,144.62&lt;/td&gt;&lt;td&gt;Passes recorded checks&lt;/td&gt;&lt;td&gt;¥53,206.14&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;${button(&#x27;Review the recommendation&#x27;,&#x27;purchase&#x27;,&#x27;f-primary&#x27;,&#x27;style=&quot;margin-top:18px&quot;&#x27;)}&lt;/section&gt;`;}
+function approvals(){return back()+heading(&#x27;Approvals&#x27;,&#x27;Owner authorization and lender decisions are separate.&#x27;,chip(state.approval?&#x27;1 needs you&#x27;:&#x27;No owner decisions&#x27;,state.approval?&#x27;amber&#x27;:&#x27;green&#x27;))+`&lt;section class=&quot;f-surface&quot;&gt;${state.approval||state.approved?`&lt;div class=&quot;f-pair&quot;&gt;&lt;h2&gt;¥600k equipment application&lt;/h2&gt;${chip(state.approved?&#x27;Awaiting lender&#x27;:&#x27;Needs your approval&#x27;,state.approved?&#x27;&#x27;:&#x27;amber&#x27;)}&lt;/div&gt;&lt;div class=&quot;f-wide-metrics&quot;&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Loan term &amp; rate&lt;/span&gt;&lt;strong style=&quot;font-size:20px&quot;&gt;36 months · 5.60%&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Monthly repayment&lt;/span&gt;&lt;strong&gt;¥18,144.62&lt;/strong&gt;&lt;/div&gt;&lt;div&gt;&lt;span class=&quot;f-muted f-small&quot;&gt;Total charges&lt;/span&gt;&lt;strong&gt;¥53,206.14&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;p class=&quot;f-muted f-small&quot;&gt;Funds the ¥600k machine. This is approval to submit an application; the lender still decides.&lt;/p&gt;${state.approved?`&lt;div class=&quot;f-notice green&quot;&gt;Owner approved · application submitted · lender decision pending. ¥0 is included in available cash from this application.&lt;/div&gt;${button(&#x27;View funding overview&#x27;,&#x27;cash&#x27;)}`:`&lt;div class=&quot;f-actions f-section-gap&quot;&gt;${button(&#x27;Approve &amp; submit application&#x27;,&#x27;approve&#x27;,&#x27;f-primary&#x27;)}${button(&#x27;Decline&#x27;,&#x27;decline&#x27;,&#x27;f-secondary&#x27;)}${button(&#x27;Review purchase analysis&#x27;,&#x27;purchase&#x27;)}&lt;/div&gt;`}`:`&lt;div class=&quot;f-empty&quot;&gt;No decisions require your approval.${button(&#x27;Evaluate a purchase&#x27;,&#x27;purchase&#x27;)}&lt;/div&gt;`}&lt;/section&gt;`;}
+function render(){const pages={home,deals,cash,funding,compare,deal,customer,receivables,reminder,documents,upload,activity,sandbox,purchase,&#x27;purchase-details&#x27;:purchaseDetails,approvals,&#x27;selected-reminder&#x27;:selectedReminder};main.innerHTML=(pages[state.page]||home)();root.querySelectorAll(&#x27;[data-page]&#x27;).forEach(b=&gt;{const scope={funding:&#x27;cash&#x27;,compare:&#x27;cash&#x27;,deal:&#x27;deals&#x27;,customer:&#x27;deals&#x27;,documents:&#x27;deals&#x27;,upload:&#x27;deals&#x27;,reminder:&#x27;receivables&#x27;,purchase:&#x27;cash&#x27;,&#x27;purchase-details&#x27;:&#x27;cash&#x27;,sandbox:&#x27;deals&#x27;,approvals:&#x27;deals&#x27;};if(b.dataset.page===(scope[state.page]||state.page))b.setAttribute(&#x27;aria-current&#x27;,&#x27;page&#x27;);else b.removeAttribute(&#x27;aria-current&#x27;);});const approvalLink=root.querySelector(&#x27;[data-page=&quot;deals&quot;]&#x27;);if(approvalLink)approvalLink.setAttribute(&#x27;aria-label&#x27;,state.approval?&#x27;Deals, one approval waiting&#x27;:&#x27;Deals&#x27;);drawChart();drawDonuts();if(globalThis.lucide)lucide.createIcons({attrs:{width:17,height:17}});}
+function drawChart(){const svg=main.querySelector(&#x27;[data-f-chart]&#x27;);if(!svg)return;const ns=&#x27;http://www.w3.org/2000/svg&#x27;,w=Math.max(260,svg.getBoundingClientRect().width),h=w&lt;500?230:260;svg.setAttribute(&#x27;viewBox&#x27;,`0 0 ${w} ${h}`);svg.replaceChildren();const left=57,right=w-18,top=20,bottom=h-42;const x=d=&gt;left+d/36*(right-left),y=v=&gt;top+(900-v)/1100*(bottom-top);function add(t,a,txt){const e=document.createElementNS(ns,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);if(txt)e.textContent=txt;svg.appendChild(e);return e;}
+add(&#x27;rect&#x27;,{x:left,y:y(300),width:right-left,height:bottom-y(300),fill:&#x27;var(--f-amber)&#x27;,opacity:.16});for(const v of [-200,0,300,800]){add(&#x27;line&#x27;,{x1:left,x2:right,y1:y(v),y2:y(v),stroke:&#x27;var(--f-line)&#x27;,&#x27;stroke-width&#x27;:1});add(&#x27;text&#x27;,{x:left-8,y:y(v)+4,&#x27;text-anchor&#x27;:&#x27;end&#x27;,fill:&#x27;var(--f-muted)&#x27;,&#x27;font-size&#x27;:11},`${v&lt;0?&#x27;−&#x27;:&#x27;&#x27;}¥${Math.abs(v)}k`);}for(const d of (w&lt;500?[0,12,30,36]:[0,6,12,20,30,36]))add(&#x27;text&#x27;,{x:x(d),y:bottom+21,&#x27;text-anchor&#x27;:d===0?&#x27;start&#x27;:d===36?&#x27;end&#x27;:&#x27;middle&#x27;,fill:&#x27;var(--f-muted)&#x27;,&#x27;font-size&#x27;:11},d===0?&#x27;Today&#x27;:`${d}d`);add(&#x27;text&#x27;,{x:left,y:11,fill:&#x27;var(--f-muted)&#x27;,&#x27;font-size&#x27;:11},&#x27;Cash · CNY&#x27;);add(&#x27;text&#x27;,{x:right,y:h-2,&#x27;text-anchor&#x27;:&#x27;end&#x27;,fill:&#x27;var(--f-muted)&#x27;,&#x27;font-size&#x27;:11},&#x27;Days from today&#x27;);add(&#x27;line&#x27;,{x1:left,x2:right,y1:y(300),y2:y(300),stroke:&#x27;var(--f-amber-text)&#x27;,&#x27;stroke-width&#x27;:1.4,&#x27;stroke-dasharray&#x27;:&#x27;5 4&#x27;});
+const base=[[0,400],[3,400],[12,60],[20,-60],[30,-105],[32,315],[36,315]],plan=[[0,550],[3,805],[12,465],[20,345],[30,300],[32,311.886],[36,311.886]];function path(points){let s=`M${x(points[0][0])} ${y(points[0][1])}`;for(let i=1;i&lt;points.length;i++)s+=`H${x(points[i][0])}V${y(points[i][1])}`;return s;}if(state.currentLine)add(&#x27;path&#x27;,{d:path(arrived()?plan:base),fill:&#x27;none&#x27;,stroke:&#x27;var(--f-purple)&#x27;,&#x27;stroke-width&#x27;:2.5});if(state.planLine&amp;&amp;!arrived())add(&#x27;path&#x27;,{d:path(plan),fill:&#x27;none&#x27;,stroke:&#x27;var(--f-muted)&#x27;,&#x27;stroke-width&#x27;:2,&#x27;stroke-dasharray&#x27;:&#x27;6 4&#x27;});add(&#x27;line&#x27;,{x1:x(state.event),x2:x(state.event),y1:top,y2:bottom,stroke:&#x27;var(--f-muted)&#x27;,&#x27;stroke-width&#x27;:1,opacity:.55});const current=arrived()?plan:base;const point=current.filter(p=&gt;p[0]&lt;=state.event).at(-1);if(state.currentLine)add(&#x27;circle&#x27;,{cx:x(state.event),cy:y(point[1]),r:4.5,fill:&#x27;var(--f-purple)&#x27;,stroke:&#x27;var(--f-white)&#x27;,&#x27;stroke-width&#x27;:2});if(!arrived()&amp;&amp;state.planLine){const pp=plan.filter(p=&gt;p[0]&lt;=state.event).at(-1);add(&#x27;circle&#x27;,{cx:x(state.event),cy:y(pp[1]),r:4.5,fill:&#x27;var(--f-muted)&#x27;,stroke:&#x27;var(--f-white)&#x27;,&#x27;stroke-width&#x27;:2});}const hit=add(&#x27;rect&#x27;,{x:left,y:top,width:right-left,height:bottom-top,fill:&#x27;transparent&#x27;});hit.addEventListener(&#x27;click&#x27;,e=&gt;{const bb=svg.getBoundingClientRect(),day=(e.clientX-bb.left-left)/(right-left)*36;state.event=[3,12,20,30,32].reduce((a,b)=&gt;Math.abs(b-day)&lt;Math.abs(a-day)?b:a);updateEvent();save();});}
+function updateEvent(){const inspector=main.querySelector(&#x27;[data-event-inspector]&#x27;);if(inspector)inspector.innerHTML=eventContent();main.querySelectorAll(&#x27;[data-action^=&quot;event-&quot;]&#x27;).forEach(b=&gt;b.setAttribute(&#x27;aria-pressed&#x27;,Number(b.dataset.action.slice(6))===state.event));drawChart();}
+function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{concept:&#x27;FLOW contextual cash overview&#x27;,view:state.page,fundingStage:state.stage,selectedDeal:state.focused?state.selected:null},privateContent:{...state}}).catch(()=&gt;{});}
+function go(page){if(page!==state.page){state.previous=state.page;state.page=page;}render();save();}
+root.addEventListener(&#x27;click&#x27;,e=&gt;{const b=e.target.closest(&#x27;button&#x27;);if(!b||b.disabled)return;if(b.dataset.select)state.selected=b.dataset.select;if(b.dataset.page){go(b.dataset.page);return;}if(b.dataset.deal){focusDeal(b.dataset.deal);return;}if(b.dataset.filter){state.filter=b.dataset.filter;render();save();return;}if(b.dataset.slice!==undefined){const slice=Number(b.dataset.slice);state.slice=state.slice===slice?null:slice;render();save();return;}const a=b.dataset.action;if(!a)return;if(a===&#x27;dismiss-selection&#x27;){dismissSelection();return;}else if(a===&#x27;sources&#x27;){state.sources=!state.sources;render();}else if(a===&#x27;forecast&#x27;){state.forecast=!state.forecast;render();}else if(a===&#x27;back&#x27;){const target=state.previous;state.previous=state.page;state.page=target;render();}else if(a===&#x27;toggle-current&#x27;){state.currentLine=!state.currentLine;render();}else if(a===&#x27;toggle-plan&#x27;){state.planLine=!state.planLine;render();}else if(a.startsWith(&#x27;event-&#x27;)){state.event=Number(a.slice(6));updateEvent();}else if(a===&#x27;clear-search&#x27;){state.search=&#x27;&#x27;;render();}else if(a===&#x27;run-plan&#x27;){state.stage=&#x27;Requests submitted&#x27;;render();}else if(a.startsWith(&#x27;activity-&#x27;)){state.activityFilter=a.slice(9);render();}else if(a===&#x27;queue-application&#x27;){state.approval=true;go(&#x27;approvals&#x27;);}else if(a===&#x27;approve&#x27;){state.approval=false;state.approved=true;render();}else if(a===&#x27;decline&#x27;){state.approval=false;state.approved=false;render();}else go(a);save();});
+root.addEventListener(&#x27;input&#x27;,e=&gt;{if(e.target.matches(&#x27;.f-search&#x27;)){const start=e.target.selectionStart;state.search=e.target.value;const p=main.querySelector(&#x27;.f-worklist&#x27;);if(p)p.outerHTML=worklist();const input=main.querySelector(&#x27;.f-search&#x27;);if(input){input.focus();if(input.type!==&#x27;search&#x27;)input.setSelectionRange(start,start);}save();}if(e.target.hasAttribute(&#x27;data-sandbox-range&#x27;)){state.sandboxDays=Number(e.target.value);main.querySelector(&#x27;[data-sandbox-days]&#x27;).textContent=state.sandboxDays;main.querySelector(&#x27;[data-sandbox-verdict]&#x27;).textContent=state.sandboxDays&gt;=60?&#x27;This illustrative extension exceeds the recorded reserve limit. Review cash exposure and discount cost before offering terms.&#x27;:&#x27;Shorter terms selected. A real evaluation is required before stating whether they pass.&#x27;;save();}});
+root.addEventListener(&#x27;change&#x27;,e=&gt;{if(e.target.hasAttribute(&#x27;data-file&#x27;)){const file=e.target.files?.[0];main.querySelector(&#x27;[data-file-status]&#x27;).textContent=file?`${file.name} selected. This preview does not upload or read files.`:&#x27;No file selected.&#x27;;}});
+const allowedPages=[&#x27;home&#x27;,&#x27;deals&#x27;,&#x27;cash&#x27;,&#x27;funding&#x27;,&#x27;compare&#x27;,&#x27;deal&#x27;,&#x27;customer&#x27;,&#x27;receivables&#x27;,&#x27;reminder&#x27;,&#x27;documents&#x27;,&#x27;upload&#x27;,&#x27;activity&#x27;,&#x27;sandbox&#x27;,&#x27;purchase&#x27;,&#x27;purchase-details&#x27;,&#x27;approvals&#x27;,&#x27;selected-reminder&#x27;];function restore(s){const v=s?.privateContent;if(!v)return;if(allowedPages.includes(v.page))state.page=v.page;if([&#x27;Proposed&#x27;,&#x27;Requests submitted&#x27;,&#x27;Bank received&#x27;].includes(v.stage))state.stage=v.stage;if(fixtures.some(d=&gt;d.id===v.selected))state.selected=v.selected;for(const key of [&#x27;focused&#x27;,&#x27;forecast&#x27;,&#x27;sources&#x27;,&#x27;currentLine&#x27;,&#x27;planLine&#x27;,&#x27;approval&#x27;,&#x27;approved&#x27;])if(typeof v[key]===&#x27;boolean&#x27;)state[key]=v[key];if([&#x27;all&#x27;,&#x27;needs&#x27;,&#x27;waiting&#x27;,&#x27;customers&#x27;].includes(v.filter))state.filter=v.filter;if([3,12,20,30,32].includes(v.event))state.event=v.event;if(allowedPages.includes(v.previous))state.previous=v.previous;if(v.slice===null||[0,1,2].includes(v.slice))state.slice=v.slice;if(v.overviewSnapshot&amp;&amp;typeof v.overviewSnapshot===&#x27;object&#x27;)state.overviewSnapshot={forecast:!!v.overviewSnapshot.forecast,sources:!!v.overviewSnapshot.sources,slice:v.overviewSnapshot.slice??null};render();}
+root.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(e.key===&#x27;Escape&#x27;&amp;&amp;state.focused&amp;&amp;[&#x27;home&#x27;,&#x27;deals&#x27;].includes(state.page)){e.preventDefault();dismissSelection();}});render();restore(window.openai?.widgetState);window.addEventListener(&#x27;openai:set_globals&#x27;,e=&gt;restore(e.detail?.globals?.widgetState));new ResizeObserver(()=&gt;{drawChart();}).observe(main);
+if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:()=&gt;{render();save();}});tweak.addSelect(state,&#x27;stage&#x27;,{label:&#x27;Funding state&#x27;,options:[&#x27;Proposed&#x27;,&#x27;Requests submitted&#x27;,&#x27;Bank received&#x27;]});tweak.addToggle(state,&#x27;forecast&#x27;,{label:&#x27;Expand forecast on Home&#x27;});}
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (event) =&gt; {
+    for (const target of event.composedPath()) {
+      if (target?.nodeType === Node.ELEMENT_NODE) {
+        const trigger = target.closest(&quot;[data-tooltip]&quot;);
+        if (trigger) return trigger;
+      }
+    }
+    return null;
+  };
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handlers = {
+    pointerover: handlePointerOpen,
+    pointerdown: handlePointer,
+    pointercancel: handlePointer,
+    click: handleTouchClick,
+    pointerout: handleLeave,
+    focusin: handleFocusIn,
+    focusout: handleLeave,
+    keydown: handleKeyDown,
+    contextmenu: handleContextMenu,
+  };
+  const roots = new Map();
+  const handledEvents = new WeakSet();
+  const handleEvent = (event) =&gt; {
+    if (handledEvents.has(event)) return;
+    handledEvents.add(event);
+    handlers[event.type](event);
+  };
+  const discoverRoots = (node) =&gt; {
+    if (node.shadowRoot) listen(node.shadowRoot);
+    for (const element of node.querySelectorAll(&quot;*&quot;)) {
+      if (element.shadowRoot) listen(element.shadowRoot);
+    }
+  };
+  const listen = (root) =&gt; {
+    if (roots.has(root)) return;
+    for (const type of Object.keys(handlers)) root.addEventListener(type, handleEvent);
+    const observer = new window.MutationObserver((records) =&gt; {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) discoverRoots(node);
+        }
+      }
+      for (const [root, cleanup] of roots) {
+        if (root.host &amp;&amp; !root.host.isConnected) {
+          cleanup();
+          roots.delete(root);
+        }
+      }
+      if (activeTrigger &amp;&amp; !activeTrigger.isConnected) closeTooltip(false);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    roots.set(root, () =&gt; {
+      observer.disconnect();
+      for (const type of Object.keys(handlers)) root.removeEventListener(type, handleEvent);
+    });
+    discoverRoots(root);
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    for (const cleanup of roots.values()) cleanup();
+    roots.clear();
+    tooltip = null;
+  };
+
+  // Events between children of one shadow root never reach the document.
+  listen(document);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-carousel&quot;&gt;
+  (() =&gt; {
+    for (const root of document.querySelectorAll(&quot;.viz-carousel&quot;)) {
+      const panels = Array.from(
+        root.querySelectorAll(&quot;:scope &gt; [data-variant]&quot;),
+      );
+      if (panels.length === 0) {
+        continue;
+      }
+      root.setAttribute(&quot;role&quot;, &quot;group&quot;);
+      panels.forEach((panel, index) =&gt; {
+        panel.hidden = index !== 0;
+        panel.setAttribute(&quot;role&quot;, &quot;group&quot;);
+        if (!panel.hasAttribute(&quot;aria-label&quot;)) {
+          panel.setAttribute(&quot;aria-label&quot;, panel.dataset.variant);
+        }
+      });
+      root.dataset.activeVariant = panels[0].dataset.variant;
+      if (panels.length === 1) {
+        continue;
+      }
+
+      const controls = document.createElement(&quot;div&quot;);
+      controls.className = &quot;viz-carousel-controls&quot;;
+      // Portable copy of the settings dropdown&#x27;s legacy glyph; no 14px icon-package preset matches it.
+      // https://github.com/openai/openai/blob/master/codex/codex-apps/webview/src/icons/chevron.svg
+      controls.innerHTML = `
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-previous cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-left&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+      &lt;details class=&quot;viz-carousel-picker&quot;&gt;
+        &lt;summary class=&quot;cursor-interaction&quot;&gt;
+          &lt;span class=&quot;viz-carousel-count tabular-nums&quot;&gt;&lt;/span&gt;
+          &lt;span class=&quot;viz-carousel-name&quot;&gt;&lt;/span&gt;
+          &lt;svg class=&quot;viz-carousel-caret&quot; width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 20 21&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+            &lt;path d=&quot;M15.2793 7.71101C15.539 7.45131 15.961 7.45131 16.2207 7.71101C16.4804 7.97071 16.4804 8.39272 16.2207 8.65242L10.4707 14.4024C10.211 14.6621 9.78902 14.6621 9.52932 14.4024L3.77932 8.65242L3.69436 8.54792C3.52385 8.28979 3.55205 7.93828 3.77932 7.71101C4.00659 7.48374 4.3581 7.45554 4.61623 7.62605L4.72073 7.71101L10 12.9903L15.2793 7.71101Z&quot; fill=&quot;currentColor&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;0.6&quot; /&gt;
+          &lt;/svg&gt;
+        &lt;/summary&gt;
+        &lt;div class=&quot;viz-carousel-options&quot;&gt;&lt;/div&gt;
+      &lt;/details&gt;
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-next cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;`;
+      const previous = controls.querySelector(&quot;.viz-carousel-previous&quot;);
+      const next = controls.querySelector(&quot;.viz-carousel-next&quot;);
+      const picker = controls.querySelector(&quot;.viz-carousel-picker&quot;);
+      const summary = picker.querySelector(&quot;summary&quot;);
+      const count = controls.querySelector(&quot;.viz-carousel-count&quot;);
+      const name = controls.querySelector(&quot;.viz-carousel-name&quot;);
+      const options = controls.querySelector(&quot;.viz-carousel-options&quot;);
+      const status = document.createElement(&quot;span&quot;);
+      status.className = &quot;sr-only&quot;;
+      status.setAttribute(&quot;role&quot;, &quot;status&quot;);
+      status.setAttribute(&quot;aria-live&quot;, &quot;polite&quot;);
+      status.setAttribute(&quot;aria-atomic&quot;, &quot;true&quot;);
+      previous.setAttribute(
+        &quot;aria-label&quot;,
+        root.dataset.previousLabel ?? &quot;Previous variant&quot;,
+      );
+      next.setAttribute(&quot;aria-label&quot;, root.dataset.nextLabel ?? &quot;Next variant&quot;);
+
+      let active = 0;
+      let mousePointerId = null;
+      let summaryPointerHandled = false;
+      summary.addEventListener(&quot;pointerdown&quot;, (event) =&gt; {
+        summaryPointerHandled =
+          event.pointerType === &quot;mouse&quot; &amp;&amp; event.button === 0 &amp;&amp; !event.ctrlKey;
+        if (!summaryPointerHandled) {
+          return;
+        }
+        event.preventDefault();
+        summary.focus({ preventScroll: true });
+        picker.open = !picker.open;
+        mousePointerId = picker.open ? event.pointerId : null;
+      });
+      summary.addEventListener(&quot;click&quot;, (event) =&gt; {
+        if (summaryPointerHandled &amp;&amp; event.detail &gt; 0) {
+          event.preventDefault();
+        }
+      });
+      const choices = panels.map((panel, index) =&gt; {
+        const choice = document.createElement(&quot;button&quot;);
+        choice.type = &quot;button&quot;;
+        choice.className = &quot;cursor-interaction&quot;;
+        choice.textContent = panel.dataset.variant;
+        choice.addEventListener(&quot;click&quot;, () =&gt; {
+          select(index);
+          summary.focus();
+        });
+        choice.addEventListener(&quot;pointerup&quot;, (event) =&gt; {
+          if (
+            picker.open &amp;&amp;
+            event.pointerType === &quot;mouse&quot; &amp;&amp;
+            event.button === 0 &amp;&amp;
+            event.pointerId === mousePointerId
+          ) {
+            choice.click();
+          }
+        });
+        options.appendChild(choice);
+        return choice;
+      });
+      const select = (index) =&gt; {
+        const changed = active !== index;
+        active = index;
+        panels.forEach((panel, position) =&gt; {
+          panel.hidden = position !== active;
+          choices[position].setAttribute(
+            &quot;aria-current&quot;,
+            String(position === active),
+          );
+        });
+        root.dataset.activeVariant = panels[active].dataset.variant;
+        count.textContent = `${active + 1} / ${panels.length}`;
+        name.textContent = panels[active].dataset.variant;
+        picker.open = false;
+        mousePointerId = null;
+        if (changed) {
+          status.textContent = `${count.textContent}: ${name.textContent}`;
+        }
+      };
+      previous.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + panels.length - 1) % panels.length),
+      );
+      next.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + 1) % panels.length),
+      );
+      picker.addEventListener(&quot;keydown&quot;, (event) =&gt; {
+        if (event.key === &quot;Escape&quot; &amp;&amp; picker.open) {
+          event.preventDefault();
+          picker.open = false;
+          mousePointerId = null;
+          summary.focus();
+          return;
+        }
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
+        const index = choices.indexOf(document.activeElement);
+        let nextIndex;
+        if (event.key === &quot;ArrowDown&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + 1) % choices.length;
+        } else if (event.key === &quot;ArrowUp&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + choices.length - 1) % choices.length;
+        } else if (picker.open &amp;&amp; event.key === &quot;Home&quot;) {
+          nextIndex = 0;
+        } else if (picker.open &amp;&amp; event.key === &quot;End&quot;) {
+          nextIndex = choices.length - 1;
+        } else {
+          return;
+        }
+        event.preventDefault();
+        picker.open = true;
+        choices[nextIndex].focus();
+      });
+      picker.addEventListener(&quot;focusout&quot;, (event) =&gt; {
+        if (!picker.contains(event.relatedTarget)) {
+          picker.open = false;
+          mousePointerId = null;
+        }
+      });
+      const dismiss = (event) =&gt; {
+        if (!summary.contains(event.target)) {
+          mousePointerId = null;
+        }
+        if (!picker.contains(event.target)) {
+          picker.open = false;
+        }
+      };
+      const endPointerSelection = () =&gt; {
+        mousePointerId = null;
+      };
+      const sizePicker = () =&gt; {
+        root.style.setProperty(
+          &quot;--viz-carousel-picker-height&quot;,
+          `${picker.open ? options.offsetHeight : 0}px`,
+        );
+      };
+      picker.addEventListener(&quot;toggle&quot;, sizePicker);
+      window.addEventListener(&quot;resize&quot;, sizePicker);
+      document.addEventListener(&quot;pointerdown&quot;, dismiss);
+      document.addEventListener(&quot;pointerup&quot;, endPointerSelection);
+      document.addEventListener(&quot;pointercancel&quot;, endPointerSelection);
+      window.addEventListener(&quot;blur&quot;, endPointerSelection);
+      window.addEventListener(
+        &quot;pagehide&quot;,
+        () =&gt; {
+          document.removeEventListener(&quot;pointerdown&quot;, dismiss);
+          document.removeEventListener(&quot;pointerup&quot;, endPointerSelection);
+          document.removeEventListener(&quot;pointercancel&quot;, endPointerSelection);
+          window.removeEventListener(&quot;blur&quot;, endPointerSelection);
+          window.removeEventListener(&quot;resize&quot;, sizePicker);
+        },
+        { once: true },
+      );
+      root.append(controls, status);
+      select(0);
+    }
+  })();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+
+<script>(() => {
+  const frame = document.getElementById("codex-visualization");
+  if (!(frame instanceof HTMLIFrameElement)) {
+    return;
+  }
+  let viewportHeight = globalThis.innerHeight;
+  const storageKey = `codex:visualization-widget-state-v2:${JSON.stringify([
+    globalThis.location.pathname,
+    globalThis.location.search,
+  ])}`;
+  const parseState = (serializedState) => {
+    if (
+      typeof serializedState !== "string" ||
+      new TextEncoder().encode(serializedState).length > 16 * 1024
+    ) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    /** @type {unknown} */
+    const state = JSON.parse(serializedState);
+    if (
+      state == null ||
+      typeof state !== "object" ||
+      Array.isArray(state) ||
+      ("imageIds" in state &&
+        (!Array.isArray(state.imageIds) || state.imageIds.length > 0))
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = { modelContent: null, privateContent: null, ...state };
+    const canonicalState = JSON.stringify(
+      storedState,
+      (_key, /** @type {unknown} */ value) => {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw new TypeError("Widget state must contain finite numbers");
+        }
+        return value;
+      },
+    );
+    if (new TextEncoder().encode(canonicalState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    return storedState;
+  };
+  let storage = null;
+  let state = null;
+  try {
+    const localStorage = globalThis.localStorage;
+    const probeKey = `${storageKey}:probe`;
+    localStorage.setItem(probeKey, "1");
+    localStorage.removeItem(probeKey);
+    storage = localStorage;
+    const savedState = storage.getItem(storageKey);
+    if (savedState != null) {
+      try {
+        state = parseState(savedState);
+      } catch {
+        // Invalid saved state does not disable future writes.
+      }
+    }
+  } catch {
+    storage = null;
+  }
+  const initialGlobals = {
+    widgetState: state,
+    statePersistence: storage == null ? "none" : "local",
+  };
+
+  const channel = new MessageChannel();
+  channel.port1.addEventListener("message", (event) => {
+    const data = event.data;
+    if (typeof data !== "object" || data == null) {
+      return;
+    }
+    if (data.type === "widget-state-write") {
+      if (!Number.isSafeInteger(data.id) || data.id <= 0) {
+        return;
+      }
+      let ok = false;
+      try {
+        if (storage != null) {
+          const state = parseState(data.state);
+          storage.setItem(storageKey, JSON.stringify(state));
+          ok = true;
+        }
+      } catch {
+        // Storage denial, quota limits, and invalid state return a failed receipt.
+      }
+      channel.port1.postMessage({
+        type: "widget-state-result",
+        id: data.id,
+        ok,
+      });
+      return;
+    }
+    if (data.type === "height") {
+      const height = data.height;
+      if (
+        typeof height === "number" &&
+        Number.isFinite(height) &&
+        height >= 0 &&
+        height <= 10_000
+      ) {
+        frame.style.height = Math.ceil(height) + "px";
+      }
+      return;
+    }
+    if (data.type === "scroll-to") {
+      const top = data.top;
+      if (
+        typeof top === "number" &&
+        Number.isFinite(top) &&
+        top >= 0 &&
+        globalThis.navigator.userActivation?.isActive === true
+      ) {
+        globalThis.scrollTo({
+          top: Math.ceil(
+            globalThis.scrollY + frame.getBoundingClientRect().top + top,
+          ),
+        });
+      }
+      return;
+    }
+    if (data.type === "open-external") {
+      const rawHref = data.href;
+      if (typeof rawHref !== "string") {
+        return;
+      }
+      let href;
+      try {
+        const url = new URL(rawHref, document.baseURI);
+        if (url.protocol !== "https:") {
+          return;
+        }
+        href = url.href;
+      } catch {
+        return;
+      }
+      if (globalThis.navigator.userActivation?.isActive === true) {
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.rel = "noopener noreferrer";
+        anchor.target = "_blank";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      return;
+    }
+    if (data.type === "follow-up") {
+      const prompt = data.prompt;
+      if (
+        typeof prompt !== "string" ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      const title = data.title;
+      globalThis.prompt(typeof title === "string" ? title : prompt, prompt);
+    }
+  });
+  channel.port1.start();
+  const srcdoc = frame.dataset.srcdoc;
+  if (srcdoc == null) {
+    return;
+  }
+  globalThis.addEventListener("resize", () => {
+    const height = Number.parseFloat(frame.style.height);
+    if (!Number.isFinite(height) || height <= viewportHeight) {
+      frame.style.removeProperty("height");
+    }
+    viewportHeight = globalThis.innerHeight;
+    channel.port1.postMessage({ type: "measure" });
+  });
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage(
+        { type: "codex-visualization-initialize" },
+        "*",
+        [channel.port2],
+      );
+    },
+    { once: true },
+  );
+  // Match the trusted bootstrap element, not the same text in an authored title.
+  frame.srcdoc = srcdoc.replace(
+    '<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__<\/script>',
+    () =>
+      '<script type="application/json" id="codex-visualization-widget-state">' +
+      JSON.stringify(initialGlobals).replaceAll("<", "\\u003c") +
+      "<\/script>",
+  );
+  delete frame.dataset.srcdoc;
+})();
+</script>
+</body>
+</html>
