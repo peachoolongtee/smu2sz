@@ -171,8 +171,13 @@ test("the funding as a timeline when the server sends the legs: one marker per l
     await expect(page.getByTestId(`hv2-leg-${i}`)).toHaveAttribute("data-state", "planned");
   }
   // Sized by amount, the larger leg's marker is the larger.
-  const sizes = await Promise.all([0, 1].map(async (i) => (await page.getByTestId(`hv2-leg-marker-${i}`).boundingBox())!.width));
+  const sizes = await Promise.all([0, 1].map(async (i) => (await page.getByTestId(`hv2-leg-dot-${i}`).boundingBox())!.width));
   expect(sizes[1]).toBeGreaterThan(sizes[0]);
+  expect(sizes[1]).toBeLessThanOrEqual(18);
+  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(10);
+  // Placed by the day the leg lands: the later leg is to the right of the earlier one.
+  const xs = await Promise.all([0, 1].map(async (i) => (await page.getByTestId(`hv2-leg-marker-${i}`).boundingBox())!.x));
+  expect(xs[1]).toBeGreaterThan(xs[0]);
   await expect(page.getByTestId("hv2-timeline-total")).toHaveText(v2.kpis.funding.value_display);
   // Hovering a marker opens its card (the leg's own words), leaving closes it; focus does the same; Escape closes it.
   const card = page.getByTestId("hv2-leg-card-1");

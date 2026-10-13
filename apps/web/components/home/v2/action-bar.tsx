@@ -27,7 +27,7 @@ function shape(a: HomeV2Action, total: string, needsOwner: boolean) {
   const [cost, funding, approval] = f;
   const legs = a.legs?.length ? a.legs : null;
   return {
-    hero: { label: "", value: cost.value, key: cost.label },
+    hero: { label: "", value: cost.value, key: cost.label, basis: a.cost_basis_text ?? null },
     middle: legs ? <FundingTimeline legs={legs} total={total} /> : (
       <div data-testid="hv2-funding-text">
         <p className="text-supporting text-ink-3">{funding.label}</p>
@@ -113,7 +113,7 @@ export function HomeV2ActionBar({
   return (
     <div id="home-v2-action" tabIndex={-1} data-testid="home-v2-action" data-variant="action" className="outline-none">
       <div data-testid={run ? "home-next-action" : "home-attention-card"} data-alert={run?.alert_id}>
-        <DecisionHighlight eyebrow={run ? t("hv2.action.eyebrow") : action.eyebrow} title={action.title} line={facts ? line : action.text} facts={shaped.facts} hero={shaped.hero ? { label: t("hv2.action.cost"), value: shaped.hero.value } : undefined} middle={shaped.middle} stackMiddle={Boolean(action.legs?.length)} note={shaped.note} testId="hv2-action" labelId="hv2-action-title">
+        <DecisionHighlight eyebrow={run ? t("hv2.action.eyebrow") : action.eyebrow} title={action.title} line={facts ? line : action.text} facts={shaped.facts} hero={shaped.hero ? { label: t("hv2.action.cost"), value: shaped.hero.value, basis: shaped.hero.basis } : undefined} middle={shaped.middle} stackMiddle={Boolean(action.legs?.length)} note={shaped.note} testId="hv2-action" labelId="hv2-action-title">
           {run ? (
             <PlanControls a={action} run={run} stateVersion={stateVersion} fixer={fixer} />
           ) : action.primary || action.secondary ? (

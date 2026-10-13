@@ -226,16 +226,36 @@ test("rail: a 56 px icon rail by default from a laptop up, an overlay on hover a
     await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
   }
 
-  // The rail never covers the page's primary button where it is open at the content's own edge (1440).
+  // The rail never covers the page's primary button: collapsed it is 56 px at 1280 and 1440; opened by the pointer it is a layer over the page that may overlap at 1280 (it is open
+  // only while the pointer or focus is on it, and closes after they leave) and does not at 1440; pinned, the page is laid out beside it (no overlap at 1280).
+  for (const width of [1280, 1440] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
+    const primary = page.locator('[data-testid^="fix-open-"]').first();
+    await expect(primary).toBeVisible();
+    expect((await primary.boundingBox())!.x, `${width} collapsed`).toBeGreaterThan(56);
+    await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
+    await expect.poll(() => panelWidth(page)).toBe(200);
+    // The open rail reads as a layer: a soft shadow, and only while it is open.
+    expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe("none");
+    if (width === 1440) expect((await primary.boundingBox())!.x, "1440 open").toBeGreaterThan(200);
+    await page.mouse.move(width - 100, 600);
+    await expect.poll(() => panelWidth(page)).toBe(56);
+    expect(await page.getByTestId("nav-rail-panel").evaluate((el) => getComputedStyle(el).boxShadow)).toBe("none");
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await page.getByTestId("sidebar-toggle").click();
+  await expect(page.getByTestId("sidebar-toggle")).toHaveAttribute("aria-pressed", "true");
+  await page.mouse.move(900, 600);
+  const pinnedPrimary = page.locator('[data-testid^="fix-open-"]').first();
+  await expect(pinnedPrimary).toBeVisible();
+  expect((await pinnedPrimary.boundingBox())!.x, "1280 pinned").toBeGreaterThan(200);
+  await page.getByTestId("sidebar-toggle").click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(page.getByTestId("home-headline")).toBeVisible({ timeout: 15_000 });
-  const primary = page.locator('[data-testid^="fix-open-"]').first();
-  await expect(primary).toBeVisible();
-  await page.getByTestId("nav-pills").getByRole("link", { name: "Deals" }).hover();
-  await expect.poll(() => panelWidth(page)).toBe(200);
-  expect((await primary.boundingBox())!.x).toBeGreaterThan(200);
-  await page.mouse.move(900, 600);
 
   // "Keep open" pins it: the old open layout (the page laid out beside it), the choice kept and restored before the first paint.
   const pin = page.getByTestId("sidebar-toggle");

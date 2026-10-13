@@ -47,13 +47,15 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
   const { t } = useI18n();
   const uid = useId();
   const [shown, setShown] = useState<number | null>(null);
-  const days = legs.map((l) => l.lands_day).filter((d): d is number => typeof d === "number");
-  const placed = days.length === legs.length && new Set(days).size > 1;
-  const lo = Math.min(...days);
-  const hi = Math.max(...days);
+  // The line runs from today (0) to the plan's last repayment day (else its last landing day); a marker sits at the day its leg lands. The days only place a mark.
+  const lands = legs.map((l) => l.lands_day).filter((d): d is number => typeof d === "number");
+  const repaid = legs.map((l) => l.repaid_day).filter((d): d is number => typeof d === "number");
+  const placed = lands.length === legs.length && Math.max(...lands, ...repaid) > 0;
+  const end = Math.max(...repaid, ...(repaid.length ? [] : lands), 1);
   const big = Math.max(...legs.map((l) => l.amount_fen ?? 0), 0);
-  const left = (l: HomeV2Leg, i: number) => (placed ? 6 + (((l.lands_day ?? lo) - lo) / (hi - lo)) * 78 : 6 + (legs.length === 1 ? 0 : (i / (legs.length - 1)) * 78));
-  const size = (l: HomeV2Leg) => (big > 0 && l.amount_fen ? 14 + Math.round((l.amount_fen / big) * 10) : 18);
+  const left = (l: HomeV2Leg, i: number) => (placed ? Math.min(Math.max(((l.lands_day ?? 0) / end) * 100, 0), 100) : legs.length === 1 ? 0 : (i / (legs.length - 1)) * 100);
+  // Sized by the leg's amount in a 10 to 18 px range (the largest is 18); alike when the server sends no amounts.
+  const size = (l: HomeV2Leg) => (big > 0 && l.amount_fen ? 10 + Math.round((l.amount_fen / big) * 8) : 14);
   return (
     <div className="min-w-0" data-testid="hv2-timeline" data-legs={legs.length}>
       <p className="text-supporting text-ink-3">{t("hv2.timeline.title")}</p>
@@ -64,7 +66,7 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
           const px = size(l);
           const open = shown === i;
           return (
-            <div key={`${l.label}-${i}`} role="listitem" className="absolute top-0 -translate-x-1/2" style={{ left: `calc((100% - 8.5rem) * ${left(l, i) / 100})` }} data-testid={`hv2-leg-${i}`} data-state={l.state}>
+            <div key={`${l.label}-${i}`} role="listitem" className="absolute top-0 -translate-x-1/2" style={{ left: `calc(0.75rem + (100% - 8.5rem - 1.5rem) * ${left(l, i) / 100})` }} data-testid={`hv2-leg-${i}`} data-state={l.state}>
               <button
                 type="button"
                 aria-describedby={open ? `${uid}-${i}` : undefined}
@@ -75,11 +77,12 @@ export function FundingTimeline({ legs, total }: { legs: HomeV2Leg[]; total: str
                 onFocus={() => setShown(i)}
                 onBlur={() => setShown((s) => (s === i ? null : s))}
                 onClick={() => setShown(open ? null : i)}
-                className="relative mx-auto grid place-items-center rounded-pill bg-brand-50 ring-2 ring-surface"
-                style={{ width: px, height: px, marginTop: 14 - px / 2 }}
+                className="relative mx-auto mt-0.5 grid size-6 place-items-center rounded-pill"
                 data-testid={`hv2-leg-marker-${i}`}
               >
-                <Glyph state={l.state} className="size-full p-0.5" />
+                <span className="grid place-items-center rounded-pill bg-brand-50 ring-2 ring-surface" style={{ width: px, height: px }} data-testid={`hv2-leg-dot-${i}`}>
+                  <Glyph state={l.state} className="size-full" />
+                </span>
               </button>
               <p className="mt-2 max-w-32 text-center text-supporting leading-tight text-ink-2">{l.label}</p>
               <p className="text-center text-sm font-bold tabular-nums text-ink">{l.amount_display}</p>

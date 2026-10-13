@@ -2791,6 +2791,8 @@ export interface HomeV2Leg {
 }
 
 export interface HomeV2Action {
+  /** The word that says what the cost figure is ("one-off", "estimated all-in"), beside it; absent until the server sends it. */
+  cost_basis_text?: string | null;
   /** The funding plan's legs, for the timeline; absent until the server sends them (the funding fact is then the text). */
   legs?: HomeV2Leg[] | null;
   /** The action's facts as label and value (Estimated cost, Funding, Approval); absent from an older server, then `text` is the one sentence. */
