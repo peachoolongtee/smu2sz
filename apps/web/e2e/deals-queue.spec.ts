@@ -53,7 +53,7 @@ test("a message read becomes a negotiation: the address is the selection, the ro
   await expect(page).toHaveURL(new RegExp(`/deals\\?customer=BUYER-1&decision=${encodeURIComponent(DECISION).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
   const row = page.getByTestId("queue-row").first();
   await expect(row).toContainText("Foshan");
-  await expect(row).toContainText("Payment terms");
+  await expect(row).toContainText("60-day terms on future invoices");
   await expect(row.getByTestId("queue-status")).toHaveText("Counter ready");
   await expect(row).toHaveAttribute("data-selected", "true");
   await expect(row).toHaveAttribute("data-tier", "needs_you");
@@ -61,7 +61,7 @@ test("a message read becomes a negotiation: the address is the selection, the ro
   await expect(page.getByText("1 task needs you.")).toBeVisible();
   await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", DECISION);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter ready");
   // The negotiation is hydrated from the server: the session's own cache plays no part (a reload with it emptied reads the same).
   await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3"));
   await page.reload();
@@ -82,7 +82,7 @@ test("the tabs filter by who acts next, the search filters the words already rea
   await expect(page.getByTestId("queue-row")).toHaveCount(1);
   await page.getByTestId("queue-search").fill("zzz");
   await expect(page.getByTestId("queue-empty")).toContainText("Nothing matches “zzz”.");
-  await page.getByTestId("queue-search").fill("payment terms");
+  await page.getByTestId("queue-search").fill("60-day terms");
   await expect(page.getByTestId("queue-row")).toHaveCount(1);
   // Arrow keys move between the tabs and the choice follows the focus.
   await page.getByTestId("queue-search").fill("");
@@ -101,6 +101,9 @@ test("Decide: the ask in the buyer's words, what we recommend and why, who decid
   await expect(page.getByTestId("queue-authority")).toContainText("FLOW can send it");
   await expect(page.getByTestId("deal-authority-reason")).toContainText("within the 1.50% limit you signed");
   // The terms side by side (what the buyer requests, what FLOW recommends), the changed values marked, and the cost table's totals each with the words that say what they cover.
+  // The recommendation reason is about cash (the request breaches the reserve), so the cash card is open; the cost card opens in its place.
+  await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "true");
+  await page.getByTestId("deal-card-cost-toggle").click();
   const terms = page.getByTestId("deal-terms-table-table");
   await expect(terms.locator("thead th")).toHaveText(["Buyer requests", /^FLOW recommends/]);
   await expect(page.getByTestId("deal-terms-table-row-payment_terms")).toContainText("60 days");
@@ -117,23 +120,24 @@ test("Decide: the ask in the buyer's words, what we recommend and why, who decid
 
 test("Consequence: the request against the recommended reply, the payment-timing tabs bound to ?scenario=, and the sentence under each column that says what it assumes", async ({ page }) => {
   await checkedDeal(page);
-  // Two cards: the cost one is open by default (the server names no other reason); the cash card opens in its place and the address says which.
-  await expect(page.getByTestId("deal-card-cost")).toHaveAttribute("data-open", "true");
+  // Two cards: the cash one is open by default (the server's reason is about cash); the cost card opens in its place and the address says which.
+  await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "true");
+  await expect(page.getByTestId("deal-card-cost")).toHaveAttribute("data-open", "false");
+  await page.getByTestId("deal-card-cost-toggle").click();
+  await expect(page).toHaveURL(/show=cost/);
   await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "false");
   await page.getByTestId("deal-card-cash-toggle").click();
   await expect(page).toHaveURL(/show=cash/);
-  await expect(page.getByTestId("deal-card-cost")).toHaveAttribute("data-open", "false");
   const table = page.getByTestId("deal-consequence");
   await expect(table.locator("thead th")).toHaveText(["Financial consequence", "As they askedOver your limit", "Option AFLOW recommends"]);
   await expect(page.getByTestId("deal-consequence-row-lowest")).toContainText("¥165k");
   await expect(page.getByTestId("deal-consequence-row-lowest")).toContainText("in 60 days");
   await expect(page.getByTestId("deal-consequence-row-reserve")).toContainText(/below it for 15 days/i);
   await expect(page.getByTestId("deal-consequence-row-approval")).toContainText("FLOW can send it");
-  // Each path states its own footing: the request carries no funding plan, the reply carries its own.
-  const assumptions = page.getByTestId("deal-assumption");
-  await expect(assumptions).toHaveCount(2);
-  await expect(assumptions.first()).toContainText("FLOW takes no new funding");
-  await expect(assumptions.last()).toContainText("funding plan runs");
+  // Each path states its own footing in a row of the table (the server's short words): the request carries no funding plan, the reply carries its own. The longer sentence is not repeated under it.
+  await expect(page.getByTestId("deal-consequence-row-funding")).toContainText("No new funding");
+  await expect(page.getByTestId("deal-consequence-row-funding")).toContainText("Funding plan required: ¥150k");
+  await expect(page.getByTestId("deal-assumption")).toHaveCount(0);
   // The timing assumption is the address: back and forward restore it.
   const tabs = page.getByRole("tablist", { name: "Payment timing assumption" });
   await expect(tabs.getByRole("tab", { name: "Expected payments" })).toHaveAttribute("aria-selected", "true");
@@ -285,6 +289,7 @@ test("the page in Chinese: the same negotiation in the owner's voice with the sa
   await expect(page.getByTestId("queue-tab-needs_you")).toContainText("需要您");
   await expect(page.getByTestId("deal-recommends-title")).toContainText("我们的建议");
   await expect(page.getByTestId("queue-review-open")).toHaveText("查看并发送还价");
+  await page.getByTestId("deal-card-cost-toggle").click();
   await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
   await scan(page, "/deals zh");
 });

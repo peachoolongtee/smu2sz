@@ -76,7 +76,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   expect(keys).toEqual(["authorizes", "executes_now", "remaining"]);
   await expect(page.getByTestId("send-terms-table-table")).toBeVisible();
   await expect(page.getByTestId("send-cost-table")).toBeVisible();
-  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement with Foshan Home Retail Co.");
+  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
   await expect(page.getByTestId("receipt-line-executes_now")).toContainText("Draws ¥149,986.20 on the Bank credit line today");
   await page.getByTestId("send-fold").locator("> summary").click();
   const rest = await page.getByTestId("send-fold-lines").locator("[data-testid^=receipt-line-]").evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")!.replace("receipt-line-", "")));
@@ -122,7 +122,7 @@ test("a deep link in a fresh session hydrates the evaluated negotiation: nothing
   await expect(page.getByTestId("deal-recommended-reason")).toBeVisible();
   // The review reads the terms of this send from the server (the same check as "Check again", on the owner's own press) and sends what it showed.
   await page.getByTestId("queue-review-open").click();
-  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement");
+  await expect(page.getByTestId("receipt-line-authorizes")).toContainText("proposed agreement");
   await sendCounter(page);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
 });

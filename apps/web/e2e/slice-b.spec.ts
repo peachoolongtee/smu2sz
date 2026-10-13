@@ -172,7 +172,7 @@ test.describe("mock", () => {
     await expect(await scope(page)).toHaveAttribute("data-kind", "customer");
   });
 
-  test("no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount, Funding source and If you decline", async ({ page }) => {
+  test("no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount requested, Facility and What if you decline", async ({ page }) => {
     const small = (el: Element) => parseFloat(getComputedStyle(el).fontSize) < 13;
     await checkedDeal(page);
     await page.getByTestId("deal-whatif").click();
@@ -195,8 +195,8 @@ test.describe("mock", () => {
     await expect(page.getByTestId("capex-applied")).toBeVisible();
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
-    await card.getByTestId("approval-details-APR-000001").locator("> summary").click();
-    for (const label of ["Amount", "Funding source", "If you decline"]) {
+    // Round two: the summary's rows (Amount requested, Facility, What if you decline) are the card's own, 13 px at the least.
+    for (const label of ["Amount requested", "Facility", "What if you decline"]) {
       const el = card.getByText(label, { exact: true }).first();
       await expect(el, label).toBeVisible();
       expect(await el.evaluate(small), label).toBe(false);

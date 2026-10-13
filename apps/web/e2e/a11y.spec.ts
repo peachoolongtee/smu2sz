@@ -137,7 +137,7 @@ test("the approval question, its decided card with the execution summary, the re
   const card = page.locator("#approval-APR-000001");
   await expect(card).toBeVisible();
   await scan(page, "/approvals pending");
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   await expect(card.getByTestId("approval-decided-APR-000001")).toBeVisible();
   await scan(page, "/approvals decided");
   await card.getByTestId("approval-record-APR-000001").click();

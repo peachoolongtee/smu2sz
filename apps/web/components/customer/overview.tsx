@@ -62,8 +62,10 @@ function Figure({ figure, provenance }: { figure: OverviewFigure; provenance: st
         {figure.note}
       </dd>
       {typeof figure.proportion === "number" && figure.proportion >= 0 ? (
-        <dd className="mt-1.5 h-1.5 overflow-hidden rounded-pill bg-track" role="img" aria-label={t("customer.share.bar", { label: figure.label })} data-testid={`customer-figure-${figure.key}-bar`}>
-          <span className="block h-full rounded-pill bg-f-purple" style={{ width: `${Math.min(figure.proportion, 1) * 100}%` }} />
+        <dd className="mt-1.5">
+          <div className="h-1.5 overflow-hidden rounded-pill bg-track" role="img" aria-label={t("customer.share.bar", { label: figure.label })} data-testid={`customer-figure-${figure.key}-bar`}>
+            <span className="block h-full rounded-pill bg-f-purple" style={{ width: `${Math.min(figure.proportion, 1) * 100}%` }} />
+          </div>
         </dd>
       ) : null}
       {contribution && provenance ? (
@@ -251,7 +253,20 @@ function Exposure({ view }: { view: CustomerOverviewView }) {
   return (
     <OpenSection first id="customer-exposure" title={t("customer.exposure")} testId="customer-exposure">
       {comparison ? (
-        <ExposureTable comparison={comparison} explore={explore} />
+        <>
+          <ExposureTable comparison={comparison} explore={explore} />
+          {/* What the comparison does not say (how the customer pays, the financing, the room left) stays as rows beneath it; the late-payment row is the comparison's own. */}
+          {exposure && exposure.rows.some((r) => r.key !== "stress") ? (
+            <div className="mt-5 border-t border-line pt-2">
+              <Rows rows={exposure.rows.filter((r) => r.key !== "stress")} testId="customer-exposure-rows" />
+              {exposure.same_figures_note ? (
+                <p className="mt-3 text-pretty text-sm leading-relaxed text-ink-2" data-testid="customer-exposure-note">
+                  {exposure.same_figures_note}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       ) : exposure ? (
         <>
           <Rows rows={exposure.rows} testId="customer-exposure-rows" />

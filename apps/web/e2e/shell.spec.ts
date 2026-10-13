@@ -153,7 +153,7 @@ test("day 34: the cure queued from Cash & funding waits on Approvals, where the 
   await expect(card.getByTestId("approval-lands")).toHaveText("If you approve today, the cash lands in 3 days.");
   await expect(card.getByTestId("approval-after")).toContainText("for the next 120 days");
   expect(await proseOf(page, ['[data-testid^="approval-detail-"]'])).not.toMatch(/\bday \d/i);
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   await expect(card.getByTestId("approval-result-APR-000001")).toContainText("the cash lands in 3 days");
   await expect(card.getByTestId("approval-decided-APR-000001")).toHaveText("Decided today.");
 });

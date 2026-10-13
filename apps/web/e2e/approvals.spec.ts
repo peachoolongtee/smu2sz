@@ -88,7 +88,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   // The buttons say what they do: the amount to approve, and "Decline"; an approval no alert asked for is simply closed by declining.
   await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toBeVisible();
-  await card.getByRole("button", { name: "Approve ¥600,000.00", exact: true }).click();
+  await card.getByRole("button", { name: "Authorize the application", exact: true }).click();
   await expect(card.getByTestId("approval-outcome-APR-000001")).toContainText("Result");
   await expect(card).toContainText("Approved");
 });
@@ -118,7 +118,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");
   await expect(card.getByTestId("approval-result-APR-000001")).toHaveCount(0);
   expect(await proseOf(page, ["[data-testid^=\"approval-detail-\"]"])).not.toMatch(/\bday \d/i);
-  await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Authorize the financing request", exact: true })).toBeVisible();
   // The tier is an audit detail, closed by default; so are the working behind the rate and the facility's lead time.
   // What the owner sees (a closed Audit details fold is not rendered) carries neither the tier nor the working.
   const visible = await card.innerText();
@@ -218,18 +218,18 @@ test("the terms come before the one approve button at every width, and approving
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
     const terms = await card.getByTestId("approval-terms").boundingBox();
-    const approve = card.getByRole("button", { name: /^Approve/ });
+    const approve = card.getByRole("button", { name: /^Authorize/ });
     const button = await approve.boundingBox();
     expect(terms!.y + terms!.height, `${width}: the terms end before the button begins`).toBeLessThanOrEqual(button!.y);
     // DOM order says the same (reading and focus order).
     expect(await card.evaluate((el) => {
       const t = el.querySelector('[data-testid="approval-terms"]')!;
-      const b = Array.from(el.querySelectorAll("button")).find((x) => /^Approve/.test(x.textContent ?? ""))!;
+      const b = Array.from(el.querySelectorAll("button")).find((x) => /^Authorize/.test(x.textContent ?? ""))!;
       return Boolean(t.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
     })).toBe(true);
   }
   // One press approves: the button is the whole commit.
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.getByTestId("approval-decided-APR-000001")).toBeVisible();
 });
 
@@ -238,7 +238,7 @@ test("a decided approval is a row on a hairline under the plain title, and the p
   await page.setViewportSize({ width: 390, height: 844 });
   const card = page.locator("#approval-APR-000001");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   await expect(card.getByTestId("approval-decided-APR-000001")).toBeVisible();
   await expect(page.getByTestId("approvals-decided")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Approvals");

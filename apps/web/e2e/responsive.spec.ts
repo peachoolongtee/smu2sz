@@ -381,7 +381,7 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash)
   await page.getByTestId(`fix-${alert34}`).click();
   await expect(page.getByTestId(`alert-waiting-${alert34}`)).toBeVisible();
   await page.goto("/approvals");
-  const approve = page.getByRole("button", { name: /^Approve/ }).first();
+  const approve = page.getByRole("button", { name: /^Authorize/ }).first();
   await expect(approve).toBeVisible();
   // The approval's terms come before its one button at every width (ticket #128, audit UX03), so on a phone the button is no longer in the first screen: it is after the terms,
   // and still reachable (not hidden, not behind the tab bar once scrolled to).

@@ -44,7 +44,7 @@ test("the steps follow the record: Response ready names the recommendation, a se
   // The track's own assertions, the five stages and their `aria-current`, have no counterpart here.)
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(steps).toHaveAttribute("data-state", "RESPONSE_READY");
-  await expect(steps).toContainText("Counter recommended");
+  await expect(steps).toContainText("Counter ready");
   await expect(steps).not.toContainText("Agreed");
   // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
   await page.getByTestId("inbox-back").click();
@@ -64,7 +64,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   const response = page.locator("#counters");
   const send = response.getByTestId("deal-send");
   await expect(send).toHaveText("Send Option A to Foshan");
-  await expect(response.getByTestId("receipt-line-authorizes")).toContainText("Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)");
+  await expect(response.getByTestId("receipt-line-authorizes")).toContainText("FLOW records it as a proposed agreement that stands only if Foshan accepts.");
   await expect(response.getByTestId("receipt-line-executes_now")).toContainText("Funding cost ¥841.57 for the draw");
   await expect(response.getByTestId("deal-send-confirm-box")).toContainText("The buyer's reply is simulated");
   await page.getByTestId("queue-review-close").click();
@@ -177,7 +177,7 @@ test("the approval card shows what was quoted, and once decided what happened an
   await expect(card.getByTestId("approval-if-decline")).toContainText("below your minimum cash reserve");
   await expect(card.getByTestId("approval-quote-actual")).toHaveCount(0);
 
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   // Decided: what was quoted is history, behind its own fold.
   await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   const decided = card.getByTestId("approval-quote");
@@ -199,7 +199,7 @@ test("a refused approval ends in the record's words: it could not run, no money 
   await hook(page, "tl-mock-approval-story", "refused");
   await page.goto("/approvals");
   const card = page.locator("#approval-APR-000001");
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   // One state word and the server's tone: never green on a refusal.
   await expect(card.getByTestId("approval-state-APR-000001")).toContainText("Approved, did not run. No money moved.");
   await expect(card.getByTestId("approval-state-APR-000001")).toHaveAttribute("data-tone", "bad");
@@ -215,7 +215,7 @@ test("after the cure is approved, Home's strip says the funding is on its way; t
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator("#approval-APR-000001").getByTestId("approval-decided-APR-000001")).toBeVisible();
   await page.getByRole("navigation").getByRole("link", { name: "Home", exact: true }).first().click();
   // The strip's funding cell says what is on its way (from the server's recording of the approved cure).

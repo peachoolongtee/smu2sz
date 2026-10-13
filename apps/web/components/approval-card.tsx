@@ -354,9 +354,7 @@ export function ApprovalCard({
           </div>
         ))}
       </dl>
-    ) : (
-      factsBlock
-    );
+    ) : null;
     const decide = (
       <div className="flex flex-wrap gap-2">
         <Button
@@ -415,9 +413,11 @@ export function ApprovalCard({
         </dl>
 
         <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
+        {/* A priced request keeps its three facts (what you get, what it costs, when it lands); the summary's six rows follow. */}
+        {priced || !summary ? factsBlock : null}
         {summary}
         {/* A real quote's terms are shown while the request waits, not folded (the server's `terms_rows`); a stored quote with no terms of its own stays in the application details. */}
-        {words.terms.length ? (
+        {words.terms.length && !priced ? (
           <dl className="divide-y divide-line border-y border-line" aria-label={t("appr.quoted.title")} data-testid={`approval-terms-rows-${a.id}`}>
             {words.terms.map((r, i) => (
               <div key={i} className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
@@ -454,7 +454,7 @@ export function ApprovalCard({
                 </div>
               </dl>
             )}
-            {words.terms.length ? null : quoteFold}
+            {quoteFold}
             <CommitmentReceipt receipt={a.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} omit={["authority"]} className="pt-1" />
           </div>
         </Disclosure>

@@ -58,7 +58,7 @@ test("the borrower file downloads as HTML and Word, and the owner approves the o
 
   await page.goto("/approvals");
   await expect(page.getByText("1 pending")).toBeVisible();
-  const approve = page.getByRole("button", { name: /^Approve/ });
+  const approve = page.getByRole("button", { name: /^Authorize/ });
   await approve.first().click();
   await expect(page.getByText("0 pending")).toBeVisible();
   // The decided card says it in its title (past tense) and in its one state word.
@@ -223,7 +223,7 @@ test("on day 34 the cure needs the owner: the alert says so, the click queues it
   // The price the owner is quoted is the one stored when the request was made (F13).
   await expect(approvalCard.locator('[data-testid^="approval-quoted-"] > summary')).toContainText("Quoted when requested (today)");
   await expect(approvalCard.getByTestId("approval-cost")).toContainText("¥1,782.19");
-  await approvalCard.getByRole("button", { name: /^Approve/ }).click();
+  await approvalCard.getByRole("button", { name: /^Authorize/ }).click();
   await expect(approvalCard.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
   await expect(approvalCard.locator('[data-testid^="approval-state-"]')).toContainText("Approved, cash arrives in 3 days");
   // Decided: the quote is still there (it does not vanish with the pending alert), behind its own fold, with what actually happened beside it.
@@ -292,7 +292,7 @@ test("an approval is refused when the server does not recognise the owner", asyn
     return route.continue({ headers });
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Approve/ }).first().click();
+  await page.getByRole("button", { name: /^Authorize/ }).first().click();
   await expect(page.getByText(/only the owner may decide|rejected the owner token/i)).toBeVisible();
   await expect(page.getByText("1 pending")).toBeVisible();
 });
@@ -333,7 +333,7 @@ test("a write that lost a race is sent once more after the hint, and succeeds", 
     return posts === 1 ? route.fulfill(CONFLICT) : route.continue();
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Approve/ }).first().click();
+  await page.getByRole("button", { name: /^Authorize/ }).first().click();
   await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
   expect(posts).toBe(2);
 });
@@ -347,7 +347,7 @@ test("a second conflict is not retried again: the error says the books were busy
     return route.fulfill(CONFLICT);
   });
   await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Approve/ }).first().click();
+  await page.getByRole("button", { name: /^Authorize/ }).first().click();
   await expect(page.getByText(/books were busy/i)).toBeVisible();
   await expect(page.getByText("1 pending")).toBeVisible();
   expect(posts).toBe(2);
@@ -456,7 +456,7 @@ test("approving after the mandate has expired is refused: the card ends as 'coul
   await page.getByTestId(`alert-approval-link-${alertId}`).click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
   const card = page.locator('[id^="approval-APR-"]').first();
-  const approve = card.getByRole("button", { name: /^Approve/ });
+  const approve = card.getByRole("button", { name: /^Authorize/ });
   await expect(approve).toBeEnabled();
   // The mandate's last day is 90: the owner is slow, and the executor refuses to run what they approve.
   await post("/clock/advance", { to_day: 91 });
@@ -466,7 +466,7 @@ test("approving after the mandate has expired is refused: the card ends as 'coul
   await expect(refused).toContainText("No money moved.");
   await expect(refused).not.toContainText(/declined/i);
   await expect(card).toContainText("Approved");
-  await expect(card.getByRole("button", { name: /^Approve/ })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: /^Authorize/ })).toHaveCount(0);
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toHaveCount(0);
   // The queue is the truth: after a reload the card is still terminal, and no cash was moved.
   await page.reload();
@@ -495,14 +495,14 @@ test("a buyer's agreement that expired before the owner looked cannot be approve
   const card = page.locator('[id^="approval-APR-"]').first();
   // While it waits, the terms are on the card above the buttons.
   await expect(card.getByTestId("approval-terms")).toContainText("The buyer may pay early and take 0.50%");
-  await expect(card.getByRole("button", { name: /^Approve/ })).toBeEnabled();
+  await expect(card.getByRole("button", { name: /^Authorize/ })).toBeEnabled();
   // The agreement expires while the page is open; "Try again" reads the queue and the gate closes.
   await request.post(`${API}/clock/advance`, { headers: owner, data: { to_day: 60 } });
   await page.reload();
   const gap = page.locator('[id^="approval-APR-"]').first().getByTestId("approval-terms-unavailable");
   await expect(gap).toContainText("I can't safely present the full terms for review.");
   await expect(gap).toContainText("has expired");
-  await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ })).toBeDisabled();
+  await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ })).toBeDisabled();
   await expect(page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: "Decline", exact: true })).toBeEnabled();
   await request.post(`${API}/demo/reset`, { headers: owner, data: {} });
 });
@@ -625,7 +625,7 @@ test("Cash & funding: a cure that cannot restore the reserve leaves a remaining 
   const alertId = ((await open.getAttribute("data-testid")) ?? "").replace("fix-open-", "");
   await runPlan(page.getByTestId("home-next-action"), alertId);
   await page.getByTestId(`alert-approval-link-${alertId}`).click();
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator('[id^="approval-APR-"]').first().locator('[data-testid^="approval-decided-"]')).toBeVisible();
   // While the cash is on its way the record waits for the lender; once it has landed the reserve is still short and the owner is asked.
   await post("/clock/advance", { to_day: 38 });
@@ -691,7 +691,7 @@ test("Activity: each row says what changed, why it matters (Now) and what remain
   await page.goto("/");
   await runPlan(page.getByTestId("home-next-action"), "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
   await page.goto("/activity");
   const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
