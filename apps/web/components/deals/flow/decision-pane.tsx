@@ -8,10 +8,6 @@ import { ChasePayment } from "@/components/business/chase-payment";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { Button, ButtonLink, Callout, ErrorState, LoadingBlock } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
-import { ComparisonTable, type CompareColumn, type CompareRow } from "@/components/ui/comparison-table";
-import { OpenSection } from "@/components/ui/open-section";
-import { SegmentedTabs } from "@/components/ui/segmented-tabs";
-import { StateWord } from "@/components/ui/state-word";
 import { StatusPill } from "@/components/ui/status-pill";
 import type { DictKey } from "@/lib/dictionary";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
@@ -20,14 +16,11 @@ import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
-import { AnalysisCards, type ShowKey } from "./analysis-cards";
-import { CostTable } from "./cost-table";
-import { costHeadline, paneStatus, tabsOf, timingOf, viewIn, type DealViewKey } from "./deal-model";
-import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
-import { Investigate, lowestOf } from "./investigate";
+import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
+import { quietLink } from "./flow-parts";
+import { Investigate } from "./investigate";
 import { DealTabs } from "./deal-tabs";
-import { TermsTable } from "./terms-table";
-import { TimingDiagram } from "./timing-diagram";
+import { ScopeTerms } from "./scope-terms";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
 
@@ -217,8 +210,6 @@ export function DecisionPane({
   // The deal header's review button: each press opens the review (the send or the accept block, mounted under the header on every tab); the blocks say whether it is open.
   const [reviewing, setReviewing] = useState(false);
   const [signal, setSignal] = useState(0);
-  // Which of the Overview's two cards is open (a view choice, held by the page).
-  const [card, setCard] = useState<ShowKey | null>(null);
   const offer = n.offer;
   const buyerId = offer?.offer.counterparty_id ?? null;
   // Another customer's negotiation than the address names is a selection that names nothing: ask, never substitute.
@@ -261,13 +252,11 @@ export function DecisionPane({
   const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
   const picked = pickedKey ? (paths.find((p) => p.kind === "reply" && p.key === pickedKey) ?? null) : null;
   const focus: PicturePath | null = picked ?? recommended;
+  const firstReply = paths.find((p) => p.kind === "reply") ?? null;
   const showsRecommended = focus !== null && focus.key === recommended?.key;
   // The share clause of the economics read (what this concession is, against what the customer brings in a year): drawn only when the server carries it.
   const shareClause = exposure?.economics?.context_text ?? exposure?.economics?.sentence ?? null;
   const late = view.late && Boolean(exposure?.stress.paths);
-  const delay = exposure?.stress.delay_days ?? 0;
-  const wordsOf = (p: PicturePath) => exposure?.paths.find((x) => x.key === p.key);
-  const stressOf = (p: PicturePath) => exposure?.stress.paths[p.key] ?? null;
   const canSend = Boolean(focus && focus.kind === "reply" && focus.sendable && (stateCode === "RESPONSE_READY" || stateCode === "RECEIVED") && picture && picture.available !== false && !sent);
 
   async function check() {
@@ -288,57 +277,7 @@ export function DecisionPane({
 
   // ---- level 2: the request against the recommended (or the picked) reply
   const pair = [asked, focus].filter((p, i, a): p is PicturePath => p !== null && a.indexOf(p) === i);
-  const pairColumns: CompareColumn[] = pair.map((p) => ({ key: p.key, head: p.label, tag: <StateWord tone={toneOfDeal(p.tag_tone)}>{p.tag_text}</StateWord>, recommended: p.key === recommended?.key }));
-  const lowest = (p: PicturePath) => lowestOf(p, wordsOf(p), stressOf(p), late);
-  // The funding each path's cash rests on, in the server's short words: its own row. A server that does not send it keeps the longer assumption sentence under the table.
-  const fundingOf = (p: PicturePath) => wordsOf(p)?.funding_assumption_text ?? p.funding_assumption_text ?? null;
-  const hasFunding = pair.some((p) => fundingOf(p));
-  const pairRows: CompareRow[] = [
-    {
-      key: "lowest",
-      label: t("hv2.deal.lowest"),
-      cells: pair.map((p) => {
-        const l = lowest(p);
-        return <Cell key={p.key} value={l.value} sub={l.sub} bad={l.bad} />;
-      }),
-    },
-    {
-      key: "reserve",
-      label: t("hv2.deal.reserve"),
-      cells: pair.map((p) => {
-        const l = lowest(p);
-        return <Cell key={p.key} note={l.note} bad={l.bad} />;
-      }),
-    },
-    {
-      key: "approval",
-      label: t("deals.row.authority"),
-      cells: pair.map((p) => (
-        <StateWord key={p.key} tone={AUTH_TONE[p.authority ?? ""] ?? "neutral"}>
-          {p.authority_text ?? p.decides_text}
-        </StateWord>
-      )),
-    },
-    ...(hasFunding
-      ? [
-          {
-            key: "funding",
-            label: t("deals.row.funding"),
-            cells: pair.map((p) => {
-              const f = fundingOf(p);
-              return f ? <Cell key={p.key} note={f} /> : <span key={p.key}>{NONE}</span>;
-            }),
-          },
-        ]
-      : []),
-  ];
-  // What each path assumes, said under the table (the asked path carries no funding plan, a reply carries its own): one sentence per column, never merged into one.
-  const assumptions = hasFunding ? [] : pair.map((p) => ({ p, text: late ? null : (wordsOf(p)?.scenario_assumption_text ?? p.scenario_assumption_text) })).filter((x) => x.text);
-  const timingTabs = Boolean(exposure?.stress.paths);
 
-  const timing = picture ? timingOf(picture, asked, focus) : null;
-  // The open card: the address's, else the one the recommendation reason names (cash when the request breaches the reserve or exceeds the mandate, whose authority row is in the cash table), cost when the server does not say.
-  const shown: ShowKey = card ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
@@ -469,7 +408,7 @@ export function DecisionPane({
         {current === "overview" ? (
         <div id={`${uid}-panel-overview`} role="tabpanel" aria-labelledby={`${uid}-tab-overview`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-overview">
         {/* Level 1: decide */}
-        <div className="mt-5 space-y-5" data-testid="deal-level-decide">
+        <div className="space-y-4" data-testid="deal-level-decide">
           {/* What the buyer asked: open while it is the question; once the deal has an outcome it is history, folded and said not to be the agreement. */}
           {done ? (
             <Disclosure testId="deal-original" className="border-t border-line pt-1" summary={t("biz.deals.original.ask")}>
@@ -494,13 +433,13 @@ export function DecisionPane({
           ) : (
           <div>
             <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
-            {doc?.text ? (
+            {doc?.text && !open?.asks_text ? (
               <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
                 <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
                 <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
               </figure>
             ) : null}
-            {open?.asks_text && !doc?.text ? (
+            {open?.asks_text ? (
               <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
                 {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
               </p>
@@ -508,13 +447,6 @@ export function DecisionPane({
           </div>
 
           )}
-
-          {/* A request FLOW has a reply for that the owner still cannot accept as asked: the server's reason, said once under the ask ("only a new mandate changes that"); no button. */}
-          {!done && !waitsOnApproval && focus && picture?.accept && !picture.accept.available && picture.accept.reason_text ? (
-            <p className="max-w-[68ch] text-supporting text-ink-2" data-testid="accept-reason-asked">
-              {picture.accept.reason_text}
-            </p>
-          ) : null}
 
           {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
           {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
@@ -580,28 +512,15 @@ export function DecisionPane({
           ) : (
             <>
               {focus ? (
-                <div className="space-y-2.5 border-t border-line pt-5" data-testid="queue-recommends" data-path={focus.key === recommended?.key ? "recommended" : "other"}>
+                <div className="space-y-2" data-testid="queue-recommends" data-path={focus.key === recommended?.key ? "recommended" : "other"}>
                   <h3 className="text-supporting font-bold text-ink-3" data-testid="deal-recommends-title">
-                    {showsRecommended ? t("deals.recommend", { label: focus.label }) : t("deals.selected", { label: focus.label })}
+                    {showsRecommended ? t("deals.ov.reply", { label: focus.label }) : t("deals.selected", { label: focus.label })}
                   </h3>
                   {focus.reply_text ? (
                     <p className="max-w-[68ch] font-display text-lg font-bold leading-snug text-ink" data-testid="queue-option">
                       {focus.reply_text}
                     </p>
                   ) : null}
-                  {showsRecommended && focus.recommended_reason_text ? (
-                    <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-recommended-reason">
-                      {focus.recommended_reason_text}
-                    </p>
-                  ) : null}
-                  <div data-testid="queue-authority" data-authority={focus.authority ?? ""} data-tone={AUTH_TONE[focus.authority ?? ""] ?? "neutral"}>
-                    <StateWord tone={AUTH_TONE[focus.authority ?? ""] ?? "neutral"}>{focus.authority_text ?? focus.decides_text}</StateWord>
-                    {focus.authority_reason_text ? (
-                      <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
-                        {focus.authority_reason_text}
-                      </p>
-                    ) : null}
-                  </div>
                   {!showsRecommended && recommended ? (
                     <div>
                       <Button size="sm" onClick={() => onPick(null)} disabled={busy} data-testid="path-reply-back">
@@ -611,23 +530,37 @@ export function DecisionPane({
                   ) : null}
                 </div>
               ) : (
-                <div className="space-y-2.5 border-t border-line pt-5" data-testid="deal-no-reply">
-                  <h3 className="text-supporting font-bold text-ink-3">{t("dq.rec.plain")}</h3>
+                <div className="space-y-2" data-testid="deal-no-reply">
+                  <h3 className="text-supporting font-bold text-ink-3">{t("deals.ov.noReply")}</h3>
                   <p className="max-w-[68ch] text-[15px] leading-snug text-ink">{asked?.decides_text ?? t("glance.offer.none")}</p>
-                  {/* No reply FLOW can send: the ask itself is what the owner can accept or decline, so its authority, the server's words for what the owner can do, and its cost with the basis are
-                      said first; then the commit area below ("Review the request", the accept review) when the server offers it. Nothing is invented. */}
-                  {asked ? (
-                    <div data-testid="queue-authority" data-authority={asked.authority ?? ""} data-tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>
-                      {asked.authority_text && asked.authority_text !== asked.decides_text ? <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_text}</StateWord> : null}
-                      {asked.authority_reason_text ? (
-                        <p className="mt-1 max-w-[68ch] text-supporting text-ink-2" data-testid="deal-authority-reason">
-                          {asked.authority_reason_text}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </div>
               )}
+
+              {/* The recommendation says what it is (round three, section 3): the reply FLOW can send within the mandate, and, when another needs the owner, that one and its stated cost. Never "best". */}
+              {picture.recommendation ? (
+                <div className="space-y-1.5" data-testid="deal-recommendation">
+                  <p className="max-w-[68ch] font-display text-base font-extrabold leading-snug text-ink" data-testid="deal-mandate">
+                    {picture.recommendation.mandate_text}
+                  </p>
+                  {picture.recommendation.alternative_text ? (
+                    <p className="max-w-[68ch] text-[15px] leading-snug text-ink-2" data-testid="deal-alternative">
+                      {picture.recommendation.alternative_text}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <section aria-label={t("deals.terms.title")} data-testid="deal-terms-section">
+                <p className="mb-1 text-supporting font-bold text-ink-3">
+                  {t("deals.terms.title")} <span className="font-normal">· {t("deals.terms.note")}</span>
+                </p>
+                <ScopeTerms
+                  picture={picture}
+                  paths={paths}
+                  heads={paths.map((p) => (p.kind === "asked" ? t("deals.ov.col.asked") : p.key === firstReply?.key ? t("deals.ov.col.reply") : p.label))}
+                  subs={paths.map((p) => (p.kind === "reply" && p.key === firstReply?.key ? p.label : null))}
+                />
+              </section>
 
               <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
                 {paths.length > 1 ? (
@@ -643,79 +576,10 @@ export function DecisionPane({
                 ) : null}
               </ActionGroup>
               {sent ? <SendResult n={sent} /> : null}
+              {outcome ? <AcceptResult outcome={outcome} /> : null}
             </>
           )}
         </div>
-
-        {/* The analysis (round two): open sections on dividers, not nested cards. Terms with the timing diagram, what it costs, then the cash comparison. */}
-        {analysis ? (
-          <>
-            <OpenSection title={t("deals.terms.title")} subtitle={t("deals.terms.note")} testId="deal-terms-section" className="mt-6 sm:mt-6 pt-6 sm:pt-6">
-              {/* "FLOW recommends" stands only above the recommended reply; a reply the owner picked is "Your pick". */}
-              <TermsTable
-                paths={pair}
-                heads={pair.map((p) => (p.kind === "asked" ? t("deals.terms.col.asked") : p.key === recommended?.key ? t("deals.terms.col.reply") : t("deals.terms.col.pick", { label: p.label })))}
-                subs={pair.map((p) => (p.kind === "asked" || p.key !== recommended?.key ? null : p.label))}
-                caption={t("deals.terms.title")}
-              />
-              {timing ? (
-                <div className="mt-6">
-                  <TimingDiagram timing={timing} />
-                </div>
-              ) : null}
-            </OpenSection>
-            {/* Cost and cash: two cards under the diagram, one open to its full table (the address), the other folded to its headline; then the quiet way to the full analysis. */}
-            <div className="mt-6 border-t border-line pt-6" data-testid="deal-level-consequence" role="region" aria-label={t("deals.cards.region")}>
-              <AnalysisCards
-                open={shown}
-                onShow={(k) => setCard(k)}
-                costTitle={t("deals.card.cost")}
-                cashTitle={t("deals.card.cash")}
-                cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display, note: costHeadline(p).basis }))}
-                cash={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: lowest(p).value, note: lowest(p).sub }))}
-                costBody={
-                  <div data-testid="deal-cost-section">
-                    <p className="mb-2 text-supporting text-ink-3">{t("deals.cost.note")}</p>
-                    <CostTable paths={pair} heads={pair.map((p) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label))} caption={t("deals.cost.title")} />
-                  </div>
-                }
-                cashBody={
-                  <div data-testid="deal-cash-section">
-                    <p className="text-supporting text-ink-3">{t("hv2.deal.consequence.note")}</p>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2" data-testid="deal-assumption-row">
-                      <p className="text-sm font-bold text-ink-2">{t("hv2.deal.timing")}</p>
-                      {timingTabs ? (
-                        <SegmentedTabs
-                          compact
-                          label={t("hv2.deal.timing")}
-                          value={late ? "late" : "expected"}
-                          onChange={(x) => onGo({ scenario: x === "late" ? "late" : null }, "replace")}
-                          tabs={[
-                            { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
-                            { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
-                          ]}
-                        />
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-supporting text-ink-3">{t("hv2.deal.timing.note")}</p>
-                    <div className="mt-3" data-testid="deal-scenario-panel" data-scenario={late ? "late" : "current"}>
-                      <ComparisonTable container testId="deal-consequence" caption={t("hv2.deal.consequence")} columns={pairColumns} rows={pairRows} />
-                      {assumptions.length ? (
-                        <ul className="mt-3 space-y-1" data-testid="scenario-assumption-text">
-                          {assumptions.map(({ p, text }) => (
-                            <li key={p.key} className="text-supporting text-ink-2" data-testid="deal-assumption">
-                              <b className="font-bold text-ink">{p.label}.</b> {text}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  </div>
-                }
-              />
-            </div>
-          </>
-        ) : null}
 
         </div>
         ) : null}

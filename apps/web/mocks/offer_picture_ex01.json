@@ -1935,6 +1935,7 @@
       "lowest_fen": 16496000,
       "lowest_short": "¥165k",
       "lowest_when": "in 60 days",
+      "lowest_day": 60,
       "first_breach_day": 47,
       "first_breach_when": "in 47 days"
     },
@@ -3902,6 +3903,7 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
+        "lowest_day": 30,
         "note": "If the buyer accepts, with the funding FLOW would run within your limits."
       },
       {
@@ -5884,6 +5886,7 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
+        "lowest_day": 30,
         "note": "If the buyer accepts, with the funding FLOW would run within your limits."
       }
     ],
@@ -5909,19 +5912,28 @@
             "key": "payment_terms",
             "label": "Payment terms",
             "value_text": "60 days",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "future_invoices",
+            "scope_label": "Future invoices",
+            "cell_text": "60 days"
           },
           {
             "key": "early_payment",
             "label": "Early payment",
             "value_text": "1.20% off ¥420,000.00",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "existing_invoice",
+            "scope_label": "Existing invoice",
+            "cell_text": "1.20% off ¥420,000.00"
           },
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
             "value_text": "1.00% rebate",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "next_quarter",
+            "scope_label": "Next quarter",
+            "cell_text": "1.00% rebate"
           }
         ],
         "decides_text": "Cannot be accepted within your signed limits.",
@@ -7891,6 +7903,7 @@
         "lowest_fen": 16496000,
         "lowest_short": "¥165k",
         "lowest_when": "in 60 days",
+        "lowest_day": 60,
         "first_breach_when": "in 47 days",
         "band_text": "Below your minimum for 15 days",
         "ask_breakdown": [
@@ -7909,7 +7922,15 @@
           "invoice_value_display": "¥420,000",
           "requested_discount_display": "¥5,040",
           "requested_term_text": "60 days"
-        }
+        },
+        "authority_short_text": "Outside mandate",
+        "reserve_state_text": "Breached by ¥135k for 15 days",
+        "headroom_short": "−¥135k",
+        "financing_needed_text": "None in this scenario",
+        "economic_headline_text": "¥5,040.00 once, ¥28,326.92 over 12 months",
+        "economic_basis_text": "Two parts, not added together",
+        "economic_sentence_text": "Its cost is stated as ¥5,040.00 once and ¥28,326.92 over 12 months under the model's assumptions.",
+        "buyer_status_text": "Asked by Foshan"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -7932,19 +7953,28 @@
             "key": "payment_terms",
             "label": "Payment terms",
             "value_text": "45 days",
-            "instead_of_text": "instead of 60"
+            "instead_of_text": "instead of 60",
+            "scope": "future_invoices",
+            "scope_label": "Future invoices",
+            "cell_text": "45 days"
           },
           {
             "key": "early_payment",
             "label": "Early payment",
             "value_text": "0.85% off ¥257,200.00",
-            "instead_of_text": "instead of 1.20% off ¥420,000.00"
+            "instead_of_text": "instead of 1.20% off ¥420,000.00",
+            "scope": "existing_invoice",
+            "scope_label": "Existing invoice",
+            "cell_text": "0.85% off ¥257,200.00"
           },
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
             "value_text": null,
-            "instead_of_text": "instead of a 1.00% rebate"
+            "instead_of_text": "instead of a 1.00% rebate",
+            "scope": "next_quarter",
+            "scope_label": "Next quarter",
+            "cell_text": "Not offered"
           }
         ],
         "decides_text": "FLOW can send it. Your approval is not needed.",
@@ -9956,10 +9986,19 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
+        "lowest_day": 30,
         "first_breach_when": null,
         "band_text": "The next invoice is paid 15 days sooner than as asked",
         "ask_breakdown": null,
-        "ask_facts": null
+        "ask_facts": null,
+        "authority_short_text": "FLOW can send",
+        "reserve_state_text": "Held, no buffer at the lowest point",
+        "headroom_short": "¥0",
+        "financing_needed_text": "¥150k credit-line draw today",
+        "economic_headline_text": "¥3,027.77",
+        "economic_basis_text": "One-off cost, nothing ongoing",
+        "economic_sentence_text": "Its one-off cost is stated as ¥3,027.77 under the model's assumptions.",
+        "buyer_status_text": "Not yet sent"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -9995,19 +10034,28 @@
             "key": "payment_terms",
             "label": "Payment terms",
             "value_text": "55 days",
-            "instead_of_text": "instead of 60"
+            "instead_of_text": "instead of 60",
+            "scope": "future_invoices",
+            "scope_label": "Future invoices",
+            "cell_text": "55 days"
           },
           {
             "key": "early_payment",
             "label": "Early payment",
             "value_text": null,
-            "instead_of_text": "instead of 1.20% off ¥420,000.00"
+            "instead_of_text": "instead of 1.20% off ¥420,000.00",
+            "scope": "existing_invoice",
+            "scope_label": "Existing invoice",
+            "cell_text": "Not offered"
           },
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
             "value_text": "0.30% price rise",
-            "instead_of_text": "instead of a 1.00% rebate"
+            "instead_of_text": "instead of a 1.00% rebate",
+            "scope": "next_quarter",
+            "scope_label": "Next quarter",
+            "cell_text": "0.30% price rise"
           }
         ],
         "decides_text": "It changes your terms, so you approve it first.",
@@ -12043,12 +12091,26 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "in 30 days",
+        "lowest_day": 30,
         "first_breach_when": null,
         "band_text": "The next invoice is paid 5 days sooner than as asked",
         "ask_breakdown": null,
-        "ask_facts": null
+        "ask_facts": null,
+        "authority_short_text": "Needs your approval",
+        "reserve_state_text": "Held, no buffer at the lowest point",
+        "headroom_short": "¥0",
+        "financing_needed_text": "¥90k credit-line draw today, ¥315k invoice financing in 3 days",
+        "economic_headline_text": "About ¥0",
+        "economic_basis_text": "Net economic cost over 12 months",
+        "economic_sentence_text": "Its net economic cost over 12 months is stated as about ¥0 under the model's assumptions.",
+        "buyer_status_text": "Not yet sent"
       }
     ],
+    "recommendation": {
+      "mandate_text": "Option A is the reply FLOW can send within your mandate.",
+      "alternative_text": "Option B needs your approval for 55-day terms. Its net economic cost over 12 months is stated as about ¥0 under the model's assumptions.",
+      "rule_text": "FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost."
+    },
     "moments": [
       {
         "day": 0,
@@ -14399,6 +14461,7 @@
       "lowest_fen": 16496000,
       "lowest_short": "¥165k",
       "lowest_when": "60 天后",
+      "lowest_day": 60,
       "first_breach_day": 47,
       "first_breach_when": "47 天后"
     },
@@ -16366,6 +16429,7 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
+        "lowest_day": 30,
         "note": "若买方接受，并含 FLOW 在您的授权内会办理的融资。"
       },
       {
@@ -18348,6 +18412,7 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
+        "lowest_day": 30,
         "note": "若买方接受，并含 FLOW 在您的授权内会办理的融资。"
       }
     ],
@@ -18373,19 +18438,28 @@
             "key": "payment_terms",
             "label": "账期",
             "value_text": "60 天",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "future_invoices",
+            "scope_label": "今后的发票",
+            "cell_text": "60 天"
           },
           {
             "key": "early_payment",
             "label": "提前付款",
             "value_text": "¥420,000.00 减免 1.20%",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "existing_invoice",
+            "scope_label": "现有发票",
+            "cell_text": "¥420,000.00 减免 1.20%"
           },
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
             "value_text": "1.00% 返利",
-            "instead_of_text": null
+            "instead_of_text": null,
+            "scope": "next_quarter",
+            "scope_label": "下季度",
+            "cell_text": "1.00% 返利"
           }
         ],
         "decides_text": "在您已签署的授权内无法接受。",
@@ -20355,6 +20429,7 @@
         "lowest_fen": 16496000,
         "lowest_short": "¥165k",
         "lowest_when": "60 天后",
+        "lowest_day": 60,
         "first_breach_when": "47 天后",
         "band_text": "低于您的最低现金储备 15 天",
         "ask_breakdown": [
@@ -20373,7 +20448,15 @@
           "invoice_value_display": "¥420,000",
           "requested_discount_display": "¥5,040",
           "requested_term_text": "60 天"
-        }
+        },
+        "authority_short_text": "超出授权",
+        "reserve_state_text": "低于储备 ¥135k，持续 15 天",
+        "headroom_short": "−¥135k",
+        "financing_needed_text": "此情形下无需融资",
+        "economic_headline_text": "一次性 ¥5,040.00，12 个月内 ¥28,326.92",
+        "economic_basis_text": "两部分，不相加",
+        "economic_sentence_text": "其成本为一次性 ¥5,040.00，另加 12 个月内 ¥28,326.92（在模型假设下）。",
+        "buyer_status_text": "Foshan 提出"
       },
       {
         "key": "CTR-193394b6ba8b",
@@ -20396,19 +20479,28 @@
             "key": "payment_terms",
             "label": "账期",
             "value_text": "45 天",
-            "instead_of_text": "而非 60 天"
+            "instead_of_text": "而非 60 天",
+            "scope": "future_invoices",
+            "scope_label": "今后的发票",
+            "cell_text": "45 天"
           },
           {
             "key": "early_payment",
             "label": "提前付款",
             "value_text": "¥257,200.00 减免 0.85%",
-            "instead_of_text": "而非 ¥420,000.00 减免 1.20%"
+            "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
+            "scope": "existing_invoice",
+            "scope_label": "现有发票",
+            "cell_text": "¥257,200.00 减免 0.85%"
           },
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
             "value_text": null,
-            "instead_of_text": "而非 1.00% 返利"
+            "instead_of_text": "而非 1.00% 返利",
+            "scope": "next_quarter",
+            "scope_label": "下季度",
+            "cell_text": "不提供"
           }
         ],
         "decides_text": "FLOW 可以发送。无需您批准。",
@@ -22420,10 +22512,19 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
+        "lowest_day": 30,
         "first_breach_when": null,
         "band_text": "下一张发票比按对方要求早 15 天收款",
         "ask_breakdown": null,
-        "ask_facts": null
+        "ask_facts": null,
+        "authority_short_text": "FLOW 可以发送",
+        "reserve_state_text": "储备守住了，最低点没有余量",
+        "headroom_short": "¥0",
+        "financing_needed_text": "信用额度提款 ¥150k（今天）",
+        "economic_headline_text": "¥3,027.77",
+        "economic_basis_text": "一次性成本，之后无持续成本",
+        "economic_sentence_text": "其一次性成本在模型假设下为 ¥3,027.77。",
+        "buyer_status_text": "尚未发送"
       },
       {
         "key": "CTR-6b07cbf70441",
@@ -22459,19 +22560,28 @@
             "key": "payment_terms",
             "label": "账期",
             "value_text": "55 天",
-            "instead_of_text": "而非 60 天"
+            "instead_of_text": "而非 60 天",
+            "scope": "future_invoices",
+            "scope_label": "今后的发票",
+            "cell_text": "55 天"
           },
           {
             "key": "early_payment",
             "label": "提前付款",
             "value_text": null,
-            "instead_of_text": "而非 ¥420,000.00 减免 1.20%"
+            "instead_of_text": "而非 ¥420,000.00 减免 1.20%",
+            "scope": "existing_invoice",
+            "scope_label": "现有发票",
+            "cell_text": "不提供"
           },
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
             "value_text": "提价 0.30%",
-            "instead_of_text": "而非 1.00% 返利"
+            "instead_of_text": "而非 1.00% 返利",
+            "scope": "next_quarter",
+            "scope_label": "下季度",
+            "cell_text": "提价 0.30%"
           }
         ],
         "decides_text": "它会改变您的条款，需要您先批准。",
@@ -24507,12 +24617,26 @@
         "lowest_fen": 30000000,
         "lowest_short": "¥300k",
         "lowest_when": "30 天后",
+        "lowest_day": 30,
         "first_breach_when": null,
         "band_text": "下一张发票比按对方要求早 5 天收款",
         "ask_breakdown": null,
-        "ask_facts": null
+        "ask_facts": null,
+        "authority_short_text": "需要您批准",
+        "reserve_state_text": "储备守住了，最低点没有余量",
+        "headroom_short": "¥0",
+        "financing_needed_text": "信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后）",
+        "economic_headline_text": "约 ¥0",
+        "economic_basis_text": "12 个月内的净经济成本",
+        "economic_sentence_text": "其 12 个月内的净经济成本在模型假设下约为 ¥0。",
+        "buyer_status_text": "尚未发送"
       }
     ],
+    "recommendation": {
+      "mandate_text": "方案 A 是 FLOW 可以在您的授权范围内发送的回复。",
+      "alternative_text": "方案 B 需要您批准 55 天账期。其 12 个月内的净经济成本在模型假设下约为 ¥0。",
+      "rule_text": "FLOW 建议的是在您的授权范围内它可以发送的第一个回复；它不按成本对回复排序。"
+    },
     "moments": [
       {
         "day": 0,

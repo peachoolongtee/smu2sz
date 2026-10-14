@@ -140,6 +140,58 @@ test.describe("tabs, address, header, one scroll and the rail (slice a)", () => 
   });
 });
 
+test.describe("the Overview and the terms by scope (slice b)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("the Overview is the ask, FLOW's reply, the recommendation's two sentences, the compact terms and nothing else: no cost card, no cash card, no chart, no Authority row", async ({ page }) => {
+    await checkedDeal(page);
+    const overview = page.getByTestId("deal-panel-overview");
+    await expect(overview.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%, payment terms to 60 days and a 1.00% rebate");
+    await expect(overview.getByTestId("queue-option")).toContainText("Terms stay at 45 days, no rebate");
+    await expect(overview.getByTestId("deal-mandate")).toHaveText("Option A is the reply FLOW can send within your mandate.");
+    await expect(overview.getByTestId("deal-alternative")).toContainText("Option B needs your approval for 55-day terms. Its net economic cost over 12 months is stated as about ¥0 under the model's assumptions.");
+    for (const gone of ["deal-card-cost", "deal-card-cash", "deal-chart", "deal-compare-table", "deal-cost-table", "deal-timing", "deal-consequence"]) await expect(overview.getByTestId(gone)).toHaveCount(0);
+    await expect(overview.getByTestId("deal-scope-terms-table").getByRole("row", { name: /^Authority/ })).toHaveCount(0);
+    // The recommendation never says "best", and "Safe" is not a word of this page.
+    const text = (await overview.innerText()).replace(/\s+/g, " ");
+    expect(text).not.toMatch(/best/i);
+    expect(text).not.toMatch(/Safe/);
+    // Two ways on: the header's review and the Compare responses button (outlined).
+    await expect(overview.getByTestId("deal-to-compare")).toHaveText("Compare responses");
+    await overview.getByTestId("deal-to-compare").click();
+    await expect(page).toHaveURL(/view=compare/);
+  });
+
+  test("terms by scope: three rows, a column for the ask, Option A and Option B, each cell the server's word; changed cells tinted and never underlined; the period bars inside Future invoices; at most 180 px high", async ({ page }) => {
+    await checkedDeal(page);
+    const terms = page.getByTestId("deal-scope-terms");
+    await expect(terms.getByRole("columnheader")).toHaveText(["Buyer asks", "FLOW counters · Option A", "Option B"]);
+    await expect(terms.locator("tbody tr")).toHaveCount(3);
+    await expect(terms.locator("tbody tr").nth(0)).toContainText("Existing invoice");
+    await expect(terms.locator("tbody tr").nth(1)).toContainText("Future invoices");
+    await expect(terms.locator("tbody tr").nth(2)).toContainText("Next quarter");
+    const cell = (scope: string, col: string) => terms.getByTestId(`deal-scope-terms-cell-${scope}-${col}`);
+    await expect(cell("existing", "asked")).toContainText("1.20% off ¥420,000.00");
+    // Option A leaves the rebate out, said as the server's "Not offered" with what it stands instead of.
+    await expect(terms.locator('[data-scope="quarter"] td').nth(1)).toContainText("Not offered");
+    await expect(terms.locator('[data-scope="quarter"] td').nth(1)).toContainText("instead of a 1.00% rebate");
+    await expect(terms.locator('[data-scope="quarter"] td').nth(1)).toHaveAttribute("data-changed", "true");
+    // Tinted, not underlined: nothing inside the terms block carries an underline.
+    const underlined = await terms.evaluate((el) => Array.from(el.querySelectorAll("*")).filter((n) => getComputedStyle(n).textDecorationLine.includes("underline")).length);
+    expect(underlined).toBe(0);
+    const tint = await terms.locator('[data-scope="quarter"] td').nth(1).evaluate((n) => getComputedStyle(n).backgroundColor);
+    expect(tint).not.toBe("rgba(0, 0, 0, 0)");
+    // The payment-period bars, one in each Future invoices cell and the current terms in the row head; the timing diagram section is gone.
+    await expect(terms.getByTestId("deal-scope-terms-bar-current")).toHaveAttribute("data-days", "45");
+    await expect(terms.getByTestId("deal-scope-terms-bar-asked")).toHaveAttribute("data-days", "60");
+    await expect(terms.getByTestId("deal-scope-terms-delta-asked")).toHaveText("+15 days requested by buyer");
+    await expect(page.getByTestId("deal-timing")).toHaveCount(0);
+    expect((await terms.boundingBox())?.height ?? 999).toBeLessThanOrEqual(180);
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

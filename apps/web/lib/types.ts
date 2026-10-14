@@ -3896,6 +3896,8 @@ export interface OfferPictureView {
   unavailable_text?: string | null;
   /** Accept as asked (a request that needs the owner's review and has no counter): whether the owner may accept it, the server's reason when not, the labels and the receipt. Absent from an older server. */
   accept?: AcceptBlock | null;
+  /** Round three: the recommendation in words. Absent from an older server. */
+  recommendation?: PictureRecommendation | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
@@ -3905,6 +3907,21 @@ export interface PathTerm {
   /** Null when the reply or the ask has nothing to say for this term: the line is omitted (never the word "None"). */
   value_text: string | null;
   instead_of_text: string | null;
+  /** Round three: the scope the term belongs to and the server's word for it ("Existing invoice", "Future invoices", "Next quarter"). Absent from an older server. */
+  scope?: TermScopeKey | null;
+  scope_label?: string | null;
+  /** Round three: the cell's one word, always present: the value, "Not offered" or "Unchanged" (`value_text` stays null for an untouched row, so the cell reads this). */
+  cell_text?: string | null;
+}
+
+/** The three scopes of a deal's terms (round three). */
+export type TermScopeKey = "existing_invoice" | "future_invoices" | "next_quarter";
+
+/** The recommendation in two sentences and the rule (round three): the first reply FLOW may send within the mandate, another that needs the owner (null when there is none), and the rule said once. */
+export interface PictureRecommendation {
+  mandate_text: string;
+  alternative_text: string | null;
+  rule_text: string;
 }
 
 /** One path on the offer's picture. `key` is "asked" or a counter's id (never shown); every word is the server's. */
@@ -3963,6 +3980,16 @@ export interface PicturePath {
   recommended_reason_kind?: string | null;
   /** Whether the company plan is assumed to run in this path's cash and that the offer is assumed accepted, in one sentence. */
   scenario_assumption_text?: string | null;
+  /** Round three, the comparison's cells in the server's short words. `authority_short_text` is null when the response cannot be sent at all. `lowest_day` is for plotting only and is never shown. */
+  authority_short_text?: string | null;
+  reserve_state_text?: string | null;
+  headroom_short?: string | null;
+  lowest_day?: Day | null;
+  financing_needed_text?: string | null;
+  buyer_status_text?: string | null;
+  economic_headline_text?: string | null;
+  economic_basis_text?: string | null;
+  economic_sentence_text?: string | null;
   /** The asked path only: what the invoice becomes under the ask (after the buyer's discount, the requested discount), each with its share of the face in the server's words; null or empty without an immediate discount. */
   ask_breakdown?: { label: string; amount_display: string; share_text: string }[] | null;
   /** The asked path only: the deal card's three facts in the server's words; any may be null. */

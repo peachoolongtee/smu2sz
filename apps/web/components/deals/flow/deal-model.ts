@@ -147,13 +147,15 @@ const SCOPE_OF: Record<string, TermScope> = {
   rebate: "quarter",
 };
 const SCOPE_ORDER: TermScope[] = ["existing", "future", "quarter", "other"];
+/** The server's scope keys (round three) as the scopes the table files by. */
+const SCOPE_OF_KEY: Record<string, TermScope> = { existing_invoice: "existing", future_invoices: "future", next_quarter: "quarter" };
 
 export interface TermCell {
   /** The server's value for this path; null when the path says nothing for the term. */
   text: string | null;
   /** The server's "instead of ..." words (a reply only). */
   sub: string | null;
-  /** The value changes what holds today (a request) or departs from the request (a reply that says what it is instead of): drawn bold with the 2 px lavender underline. */
+  /** The value changes what holds today (a request) or departs from the request (a reply that says what it is instead of): drawn bold on a lavender tint (never underlined: an underline reads as a link). */
   changed: boolean;
   /** The path does not touch the term. */
   unchanged: boolean;
@@ -167,6 +169,8 @@ export interface TermRow {
 }
 export interface TermGroup {
   scope: TermScope;
+  /** The server's word for the scope ("Future invoices"); null from an older server (the dictionary names it). */
+  label: string | null;
   rows: TermRow[];
 }
 
@@ -174,23 +178,25 @@ function cellOf(term: PathTerm | undefined, kind: PicturePath["kind"]): TermCell
   if (!term) return { text: null, sub: null, changed: false, unchanged: false, absent: true };
   const text = term.value_text?.trim() ? term.value_text : null;
   const sub = term.instead_of_text?.trim() ? term.instead_of_text : null;
-  if (!text && !sub) return { text: null, sub: null, changed: false, unchanged: true, absent: false };
+  // The server's `cell_text` is the cell's one word (the value, "Not offered" or "Unchanged"); an untouched row has no value and nothing it stands instead of.
+  if (!text && !sub) return { text: term.cell_text?.trim() ? term.cell_text : null, sub: null, changed: false, unchanged: true, absent: false };
+  if (term.cell_text?.trim()) return { text: term.cell_text, sub, changed: kind === "asked" ? Boolean(text) : Boolean(sub), unchanged: false, absent: false };
   // The ask's values are what it changes; a reply's are changed where it says what they stand instead of.
   return { text, sub, changed: kind === "asked" ? Boolean(text) : Boolean(sub), unchanged: false, absent: false };
 }
 
 /** The terms of the paths side by side, grouped by scope, one row per term the server names (in the first path that has it; the label is the server's). Paths are the table's columns in the order given. */
 export function termsGroups(paths: PicturePath[]): TermGroup[] {
-  const order: { key: string; label: string }[] = [];
-  for (const p of paths) for (const t of p.terms ?? []) if (!order.some((o) => o.key === t.key)) order.push({ key: t.key, label: t.label });
+  const order: { key: string; label: string; scope: TermScope; scopeLabel: string | null }[] = [];
+  for (const p of paths) for (const t of p.terms ?? []) if (!order.some((o) => o.key === t.key)) order.push({ key: t.key, label: t.label, scope: (t.scope ? SCOPE_OF_KEY[t.scope] : undefined) ?? SCOPE_OF[t.key] ?? "other", scopeLabel: t.scope_label ?? null });
   const groups: TermGroup[] = [];
   for (const scope of SCOPE_ORDER) {
     const rows = order
-      .filter((o) => (SCOPE_OF[o.key] ?? "other") === scope)
+      .filter((o) => o.scope === scope)
       .map((o) => ({ key: o.key, label: o.label, cells: paths.map((p) => cellOf(p.terms?.find((t) => t.key === o.key), p.kind)) }))
       // A term no path says anything for, and none says it leaves alone, is nothing to show.
       .filter((r) => r.cells.some((c) => c.text || c.sub || c.unchanged));
-    if (rows.length) groups.push({ scope, rows });
+    if (rows.length) groups.push({ scope, label: order.find((o) => o.scope === scope && o.scopeLabel)?.scopeLabel ?? null, rows });
   }
   return groups;
 }
