@@ -235,6 +235,10 @@ test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-only: the busy company on a real API");
   });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
+  });
 
   async function busy(request: import("@playwright/test").APIRequestContext) {
     const port = process.env.E2E_API_PORT ?? 8000;

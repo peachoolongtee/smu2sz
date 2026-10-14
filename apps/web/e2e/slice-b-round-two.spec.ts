@@ -1,5 +1,5 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, openOperatorTools } from "./helpers";
+import { checkedDeal, openOperatorTools, resetBooks } from "./helpers";
 
 /**
  * Slice B round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md): the Deals queue's controls, the workspace's timing diagram and its two switchable cards, the Customer page's flow,
@@ -123,6 +123,10 @@ test.describe("mock", () => {
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API and the busy books");
+  });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
   });
 
   async function busy(request: import("@playwright/test").APIRequestContext) {

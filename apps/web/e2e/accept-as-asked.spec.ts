@@ -65,6 +65,10 @@ test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-only: the busy company on a real API");
   });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
+  });
 
   test("the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered", async ({ page, request }) => {
     await resetBooks(request);

@@ -1,7 +1,7 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkedDeal, filledBrand, walkStory } from "./helpers";
+import { checkedDeal, filledBrand, walkStory, resetBooks } from "./helpers";
 import type { TrackerView } from "../lib/tracker";
 
 /**
@@ -858,6 +858,10 @@ test.describe("the owner's preview defects (round three review)", () => {
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");
+  });
+  // The busy books are loaded by these specs: the golden books go back through the API when each one is done, so a later spec (the Demo story, which starts on the golden books) never finds them.
+  test.afterEach(async ({ request }) => {
+    await resetBooks(request);
   });
 
   test("busy books, Zhuhai: tabs follow the deal, the accept review opens from the header", async ({ page, request }) => {
