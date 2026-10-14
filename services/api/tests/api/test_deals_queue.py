@@ -27,7 +27,8 @@ NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "D
          "Bank credit line", "Invoice financing (onboarded platform)", "Buyer early-payment offer",
          "Government-guaranteed working-capital loan"]
 ROW = {"key", "kind", "tier", "customer_id", "customer_short", "subject_text", "subject_demo_text", "lifecycle", "topic_text", "last_activity_day", "last_activity_text", "status_text", "consequence_text",
-       "severity", "deadline_day", "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href"}
+       "severity", "deadline_day", "expected_day", "differentiator_text", "decision_id", "invoice_id", "approval_id", "href",
+       "after_group", "after_group_label"}
 
 
 @pytest.fixture

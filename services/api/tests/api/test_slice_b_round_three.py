@@ -326,6 +326,13 @@ def _agree(api: TestClient) -> tuple[str, str]:
     return str(offer), str(v["decision_id"])
 
 
+def _group_row(api: TestClient, did: str, lang: str = "en") -> dict[str, Any]:
+    q = api.get("/deals", params={"lang": lang}).json()["queue"]
+    [row] = [r for r in q["agreements"] if r["kind"] == "AGREEMENT" and r["decision_id"] == did]
+    assert row["after_group_label"] and not BAD.search(row["after_group_label"])
+    return row
+
+
 def _stages_everywhere(api: TestClient, offer: str, did: str, lang: str = "en") -> list[dict[str, Any]]:
     """The strip from the tracker read, the decision read and the picture read: the same function, so the same stages."""
     tracker = api.get(f"/decisions/{did}/tracker", params={"lang": lang}).json()
@@ -348,6 +355,9 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
     assert [s["state"] for s in before] == ["done", "done", "now", "todo", "todo"] and before[0]["when_text"] == "today"
     assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
     agreed = _stages_everywhere(api, offer, did)  # after it: the contract stages of this deal
+    first = _group_row(api, did)  # nothing is overdue yet: money is still to come
+    assert (first["after_group"], first["after_group_label"], first["lifecycle"]) == ("awaiting_payment", "Awaiting payment", "agreed")
+    assert _group_row(api, did, "zh")["after_group_label"] == "等待付款"
     assert [s["key"] for s in agreed][-1] == "fulfilled" and agreed[0]["state"] == "done" and agreed[0]["when_text"]
     api.post("/clock/advance", json={"to_day": 2})
     api.post("/demo/bank-receipt")
@@ -356,15 +366,17 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
         api.post("/clock/advance", json={"to_day": day})
     late = _stages_everywhere(api, offer, did)  # the late day
     assert any(s["state"] == "now" for s in late)
+    assert _group_row(api, did)["after_group"] == "payment_late"
     action = api.get("/home").json()["next_action"]
     assert api.post(f"/alerts/{action['alert_id']}/act", json={"state_version": action["state_version"], "suggestions": action["suggestions"]}).status_code == 200
     [row] = [a for a in api.get("/approvals/queue").json()["approvals"] if a["status"] == "PENDING"]
     assert api.post(f"/approvals/{row['id']}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
     _stages_everywhere(api, offer, did)  # the cure
-    # the record states the deal MISSED once the promise is missed, so the queue holds it in the Closed group with the tracker's own word
+    # after the cure the rest is still unpaid: the record says MISSED but money is owed, so the deal is payment late, not closed
     q = api.get("/deals").json()["queue"]
-    assert q["deals"]["closed"] == 1 and q["deals"]["agreements"] == 0
-    assert [r["status_text"] for r in q["agreements"] if r.get("lifecycle") == "closed"] == [api.get(f"/decisions/{did}/tracker").json()["state_word"]]
+    row = _group_row(api, did)
+    assert row["after_group"] == "payment_late" and row["after_group_label"] == "Payment late" and row["lifecycle"] == "agreed"
+    assert row["status_text"] == "Payment late" and q["deals"]["closed"] == 0 and q["deals"]["payment_late"] == 1 and q["deals"]["agreements"] == 1
     rest = next(r for r in rt.store.get_state().receivables if r.id == "RCV-A")
     version = api.get("/mandate").json()["mandate"]["version"]
     paid = api.post("/operations", headers=BANK, json={
@@ -379,7 +391,9 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
         q = api.get("/deals", params={"lang": lang}).json()["queue"]
         tracker = api.get(f"/decisions/{did}/tracker", params={"lang": lang}).json()
         closed = [r for r in q["agreements"] if r.get("lifecycle") == "closed"]
-        assert len(closed) == 1 and q["deals"]["closed"] == 1 and q["deals"]["agreements"] == 0
+        assert len(closed) == 1 and q["deals"]["closed"] == 1 and q["deals"]["agreements"] == 0 and q["deals"]["payment_late"] == 0
+        assert closed[0]["after_group"] == "closed" and closed[0]["after_group_label"] == ("Closed" if lang == "en" else "已结束")
+        assert not BAD.search(closed[0]["after_group_label"])
         assert closed[0]["status_text"] == tracker["state_word"] and closed[0]["consequence_text"] == tracker["closeout_text"]
         assert closed[0]["decision_id"] == did
         words = {k: closed[0][k] for k in ("status_text", "consequence_text", "subject_text")}
@@ -453,3 +467,10 @@ def test_a_deal_with_no_early_payment_promise_has_no_early_payment_stage(api: Te
     keys = [s["key"] for s in stages]
     assert "early_payment" not in keys and keys[-1] == "fulfilled" and "collecting" in keys
     assert [s["key"] for s in _stages_everywhere(api, offer, did, "zh")] == keys
+
+
+def test_the_late_payment_label_is_in_chinese_and_the_groups_are_ordered(api: TestClient) -> None:
+    from app.api.lifecycle import GROUP_ORDER, after_group_label
+
+    assert [after_group_label(g, "zh") for g in GROUP_ORDER] == ["付款逾期", "等待付款", "已结束"]
+    assert [after_group_label(g, "en") for g in GROUP_ORDER] == ["Payment late", "Awaiting payment", "Closed"]

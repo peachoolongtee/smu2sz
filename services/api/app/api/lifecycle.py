@@ -193,7 +193,7 @@ def deals_history(ctx: Any, buyer: str, lang: str, origin: str = "customer") -> 
         if built is None or ds.offer is None:
             continue
         subject, _ = subject_for(ctx, ds.offer, lang)
-        closed = ds.state in CLOSED
+        closed = after_group(ds, built) == CLOSED_GROUP  # closed only when nothing is left owed (the tracker's own `ended`)
         out.append({"decision_id": ds.decision_id, "subject_text": subject, "lifecycle": "closed" if closed else "agreed",
                     "state_word": built["state_word"], "state_tone": built["state_tone"],
                     "summary_text": (built.get("closeout_text") if closed else None) or built.get("agreed_text") or built.get("headline_text"),
@@ -228,3 +228,26 @@ def workspace_words(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     except Exception:  # noqa: BLE001  a words read
         log.exception("the lifecycle of %s could not be read", offer_id)
         return empty
+
+
+# ---------------------------------------------------------------- what remains after an agreement (the Agreements tier's groups)
+
+PAYMENT_LATE, AWAITING_PAYMENT, CLOSED_GROUP = "payment_late", "awaiting_payment", "closed"
+GROUP_ORDER = (PAYMENT_LATE, AWAITING_PAYMENT, CLOSED_GROUP)
+_GROUP_WORDS = {PAYMENT_LATE: ("Payment late", "付款逾期"), AWAITING_PAYMENT: ("Awaiting payment", "等待付款"), CLOSED_GROUP: ("Closed", "已结束")}
+_OVERDUE_KEYS = ("late", "missed", "failed")  # the tracker's own states for an amount that is overdue and unpaid
+
+
+def after_group_label(group: str, lang: str) -> str:
+    return say(lang, *_GROUP_WORDS[group])
+
+
+def after_group(ds: Any, built: dict[str, Any] | None) -> str:
+    """Where an agreed deal stands in the Agreements tier, from the tracker's own read: `payment_late` when an amount is overdue and unpaid (its
+    late, missed or failed states), `closed` when nothing is left owed (the tracker's `ended`) or the agreement was revoked or ran out, else
+    `awaiting_payment`. Without a tracker read (it could not be drawn) the record's own state decides: a deal over is closed, one in force awaits."""
+    if built is None:
+        return CLOSED_GROUP if ds.state in CLOSED else AWAITING_PAYMENT
+    if built.get("ended") or ds.state in (DealState.REVOKED, DealState.EXPIRED):
+        return CLOSED_GROUP
+    return PAYMENT_LATE if built.get("state_key") in _OVERDUE_KEYS else AWAITING_PAYMENT
