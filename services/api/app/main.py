@@ -14,6 +14,7 @@ from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
 from app.api.collections import router as collections_router
 from app.api.customer_overview import router as customer_overview_router
+from app.api.deal_tracker import router as deal_tracker_router
 from app.api.deals import router as deals_router
 from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
@@ -53,6 +54,7 @@ app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)
 app.include_router(decisions_router)
+app.include_router(deal_tracker_router)
 app.include_router(capex_router)
 app.include_router(whatif_router)
 app.include_router(borrower_file_router)
