@@ -281,7 +281,7 @@ def test_each_point_carries_the_pair_words_for_every_reply_and_every_reply_pair(
         cmp = _point(asked, day)["comparison"]
         for reply in (a, b):
             got = cmp[reply["key"]]
-            assert set(got) == {"asked_display", "reply_display", "difference_display", "cause_text"}
+            assert set(got) == {"asked_display", "reply_display", "difference_display", "cause_text", "cause_lines"}
             assert got["asked_display"] == _point(asked, day)["closing_display"] and got["reply_display"] == _point(reply, day)["closing_display"]
             diff = _point(reply, day)["closing_fen"] - _point(asked, day)["closing_fen"]
             assert got["difference_display"].lstrip("+−-¥").replace(",", "").startswith(str(abs(diff) // 100)) or diff == 0
@@ -519,3 +519,31 @@ def test_the_way_back_from_the_demo_says_the_demo(api: TestClient) -> None:
         assert r.json()["context"]["back"] == {"label": label, "href": "/demo"}
     activity = api.get(f"/offers/{offer}/picture", params={"from": "activity", "customer": "BUYER-1"}).json()["context"]["back"]
     assert activity == {"label": "Back to Activity", "href": "/activity"}
+
+
+def test_the_cause_lines_list_the_same_events_as_the_cause_text(api: TestClient) -> None:
+    for lang in ("en", "zh"):
+        if lang == "zh":
+            _, pic = _golden_zh(api)
+        else:
+            _, pic = _golden(api)
+        by = _by_label(pic)
+        a, b = by["asked"], next(p for p in pic["paths"] if p["kind"] == "reply")
+        sep, end = ("; ", ".") if lang == "en" else ("；", "。")
+        seen = 0
+        for pt in a["series"]:
+            for got in (*pt["comparison"].values(), *pt["comparison_pairs"].values()):
+                if not isinstance(got, dict) or "cause_text" not in got:
+                    continue
+                joined = " ".join(f"{ln['label']}{': ' if lang == 'en' else '：'}{sep.join(ln['items'])}{end}" for ln in got["cause_lines"])
+                assert joined == got["cause_text"] or (not got["cause_lines"] and got["cause_text"])
+                assert all(ln["items"] and set(ln) == {"label", "items"} for ln in got["cause_lines"])
+                seen += bool(got["cause_lines"])
+                for ln in got["cause_lines"]:
+                    for item in ln["items"]:
+                        assert not BAD.search(item), item
+        assert seen > 0 and b
+        two = _point(a, 2)["comparison"][b["key"]]["cause_lines"]
+        assert [ln["label"] for ln in two][0] == ("As asked" if lang == "en" else "按对方要求")
+        if lang == "zh":
+            assert english_leaks([ln for got in two for ln in [got["label"], *got["items"]]], NAMES) == []
