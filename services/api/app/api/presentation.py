@@ -1963,6 +1963,61 @@ def lapsed_offer_text(lang: Lang, by_agreement: bool = True) -> str:
              "该报价已失效：它所针对的发票或日期此后已有变动，无需再答复。")
 
 
+def _calendar(state: FinancialState, day: int, lang: Lang) -> str:
+    from datetime import date, timedelta
+
+    d = date.fromisoformat(state.as_of) + timedelta(days=day)
+    return t(lang, f"{d.day} {d.strftime('%b')} {d.year}", f"{d.year}年{d.month}月{d.day}日")
+
+
+def clarification_words(state: FinancialState, offer: Any, verdict: Any, lang: Lang) -> dict[str, Any] | None:
+    """Why an offer cannot be decided yet, in the owner's words, and the question to put to the buyer. Read from the verdict's
+    UNRESOLVED_SCOPE gaps (`"<obligation id>:<field>"`): an invoice the message names only by amount, when the books hold several
+    open invoices of that amount, lists them by date. Any other gap is said in general terms. None when nothing is unresolved."""
+    from app.verifier.bind import open_receivables
+
+    gaps = [k for v in getattr(verdict, "violations", []) if v.code.value == "UNRESOLVED_SCOPE" for k in v.inputs]
+    if not gaps:
+        return None
+    party = party_name(state, getattr(offer, "counterparty_id", None)) or t(lang, "the buyer", "买方")
+    obligations = {o.id: o for o in getattr(offer, "obligations", [])}
+    for key in gaps:
+        ob_id, _, fieldname = key.partition(":")
+        ob = obligations.get(ob_id)
+        if ob is None or fieldname != "base.receivable_id":
+            continue
+        pool = open_receivables(state, ob.counterparty_id)
+        if ob.base.amount_fen is not None:
+            pool = [r for r in pool if r.face_fen == ob.base.amount_fen]
+        amount = fmt_yuan(ob.base.amount_fen) if ob.base.amount_fen is not None else ""
+        options = [{"receivable_id": r.id, "sent_text": _calendar(state, r.issue_day, lang), "due_text": _calendar(state, r.due_day, lang),
+                    "face_display": fmt_yuan(r.face_fen)} for r in sorted(pool, key=lambda r: (r.issue_day, r.id))]
+        if len(options) > 1:
+            listed_en = " and ".join(f"sent {o['sent_text']} (due {o['due_text']})" for o in options)
+            listed_zh = "和".join(f"{o['sent_text']}开出（{o['due_text']}到期）" for o in options)
+            sent_en = " or ".join(f"the one dated {o['sent_text']}" for o in options)
+            sent_zh = "还是".join(f"{o['sent_text']}的那张" for o in options)
+            return {
+                "kind": "WHICH_INVOICE", "options": options,
+                "text": t(lang, f"Which {amount} invoice does {party} mean? You have {len(options)} open: {listed_en}. FLOW will not guess, "
+                                "because the discount would land on the wrong invoice.",
+                          f"{party}指的是哪一张 {amount} 发票？您有 {len(options)} 张未收：{listed_zh}。FLOW 不会猜测，否则折扣可能用错发票。"),
+                "ask_buyer_text": t(lang, f"Thanks for the offer. Which {amount} invoice would you like to settle early: {sent_en}?",
+                                    f"感谢您的报价。请问您希望提前结清哪一张 {amount} 发票：{sent_zh}？"),
+            }
+        if not options:
+            return {"kind": "NO_SUCH_INVOICE", "options": [],
+                    "text": t(lang, f"{party} refers to {amount or 'an'} invoice that is not open in your books. Check whether it was paid, or ask "
+                                    f"{party} which invoice they mean.",
+                              f"{party}提到的 {amount} 发票在您的账簿中不是未收状态。请确认是否已付款，或询问{party}指的是哪一张。"),
+                    "ask_buyer_text": t(lang, "Thanks for the offer. Which invoice do you mean? We can't find it among the open ones.",
+                                        "感谢您的报价。请问您指的是哪一张发票？我们在未收发票中没有找到它。")}
+    return {"kind": "OTHER", "options": [],
+            "text": t(lang, f"Part of {party}'s offer cannot be pinned down from the message and your books, so FLOW books nothing until "
+                            f"{party} clarifies.", f"{party}报价中的部分内容无法根据消息和账簿确定，因此在{party}澄清之前 FLOW 不会记录任何内容。"),
+            "ask_buyer_text": None}
+
+
 def business_action_text(code: str, lang: Lang) -> str:
     """The owner's words for `business_action` (accept, counter, decline, needs_owner, cannot)."""
     en, zh = _RESPONSE_WORDS.get(code, _RESPONSE_WORDS["cannot"])

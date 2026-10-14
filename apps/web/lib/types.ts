@@ -3802,6 +3802,8 @@ export interface DecisionView extends DecisionSummary {
     outcome: Outcome;
     business_action: BusinessAction;
     business_action_text: string;
+    /** Why the offer cannot be decided yet and the question to put to the buyer (an invoice named only by amount when several match). Absent from an older server. */
+    clarification?: { kind: string; text: string; ask_buyer_text: string | null; options: { receivable_id: string; sent_text: string; due_text: string; face_display: string }[] } | null;
     evaluated_day: Day | null;
     evaluated_when: string;
   } | null;
@@ -4676,7 +4678,7 @@ export interface SetupDocument {
   from_setup: boolean;
   row: (Partial<SetupCustomer> & Partial<SetupBorrow>) | null;
   facts: string[];
-  progress?: { sent: number; total: number; next_date: string | null; slots: ("sent" | "future")[]; text: string; earlier_paid_text: string | null } | null;
+  progress?: { sent: number; total: number; next_date: string | null; slots: ("sent" | "future")[]; text: string; assumed_text?: string | null; earlier_paid_text: string | null } | null;
 }
 
 /** POST /setup/open */

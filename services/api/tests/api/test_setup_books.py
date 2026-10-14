@@ -222,3 +222,37 @@ def test_blank_scenario_is_a_new_business(client) -> None:
     assert client.get("/setup/status").json()["books"] == "blank"
     for path in ("/home", "/worklist", "/activity", "/receivables", "/deals"):
         assert client.get(path).status_code == 200, path
+
+
+# ---------------------------------------------------------------- two open invoices of one amount (found by hand, 14 Oct)
+
+
+def _two_invoice_books(client) -> None:
+    d = draft()
+    d["customers"] = [{"name": "Foshan Home Retail Co.", "contract": {"amount": "420,000", "every_days": 30, "terms_days": 45,
+                                                                        "next_invoice_date": "2026-11-02"},
+                       "invoices": [{"sent_on": "2026-09-18", "amount": "420,000"}, {"sent_on": "2026-10-03", "amount": "420,000"}]}]
+    assert client.post("/setup/open", json={"draft": d, "password": "demo-owner-token"}).status_code == 200
+
+
+def test_the_contract_prefill_says_its_invoices_are_assumed_unpaid(client) -> None:
+    client.post("/demo/reset")
+    docs = client.get("/setup/documents?start_date=2026-10-14").json()["documents"]
+    supply = next(d for d in docs if d["kind"] == "BUYER_CONTRACT")
+    assert len(supply["row"]["invoices"]) == 2
+    assert "assumed they are unpaid" in supply["progress"]["assumed_text"]
+    assert "18 Sep 2026" in supply["progress"]["assumed_text"] and "3 Oct 2026" in supply["progress"]["assumed_text"]
+
+
+def test_an_offer_naming_an_invoice_only_by_amount_says_which_invoices_it_could_be(client) -> None:
+    _two_invoice_books(client)
+    offer_id = client.post("/offers", json={"fixture_id": "EX01_PACKAGE"}).json()["offer"]["offer_id"]
+    client.post(f"/offers/{offer_id}/evaluate", json={"fixture_id": "EX01_PACKAGE"})
+    record = client.get(f"/decisions/deal:{offer_id}").json()
+    c = record["evaluation"]["clarification"]
+    assert record["evaluation"]["business_action"] == "cannot" and c["kind"] == "WHICH_INVOICE"
+    assert [o["sent_text"] for o in c["options"]] == ["18 Sep 2026", "3 Oct 2026"]
+    assert "Which ¥420,000.00 invoice does Foshan Home Retail Co. mean?" in c["text"]
+    assert "the one dated 18 Sep 2026 or the one dated 3 Oct 2026" in c["ask_buyer_text"]
+    zh = client.get(f"/decisions/deal:{offer_id}?lang=zh").json()["evaluation"]["clarification"]
+    assert "哪一张" in zh["text"] and "2026年9月18日" in zh["text"]

@@ -2988,6 +2988,9 @@ export const en = {
   "setup.menu.start": "Set up your books",
   "setup.menu.own": "Your books",
   "setup.nav.locked": "Set up your books first",
+  "rec.clarify.ask": "To ask the buyer (copy it into your chat; nothing is sent from here)",
+  "rec.clarify.copy": "Copy",
+  "rec.clarify.copied": "Copied",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5974,4 +5977,7 @@ export const zh: Record<DictKey, string> = {
   "setup.menu.start": "设置您的账簿",
   "setup.menu.own": "您的账簿",
   "setup.nav.locked": "请先设置账簿",
+  "rec.clarify.ask": "询问买方（复制到您的聊天中；此处不会发送任何内容）",
+  "rec.clarify.copy": "复制",
+  "rec.clarify.copied": "已复制",
 };

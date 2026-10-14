@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
+import { Badge, Callout, TableWrap, tableCls, tdCls, thCls } from "@/components/ui";
 import { getSetupDocuments } from "@/lib/api";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -162,6 +162,11 @@ function CustomerEditor({ index, cu, draft, issues, docs, onChange, onRemove }: 
       </section>
 
       <section className="space-y-3">
+        {progress?.assumed_text && cu.invoices.length ? (
+          <div data-testid="setup-assumed">
+            <Callout tone="warn">{progress.assumed_text}</Callout>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-sm font-bold text-ink">{t("setup.s3.invoices")}</h3>
           <span className="grow" />

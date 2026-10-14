@@ -198,6 +198,12 @@ def _buyer_prefill(rec: ContractRecord, start: date | None, lg: Lang) -> dict:
             "slots": [("sent" if d < start else "future") for d in schedule][:24],
             "text": (t(lg, f"Invoice {len(sent)} of {len(schedule)} sent", f"已开出第 {len(sent)} 张，共 {len(schedule)} 张")
                      + (t(lg, f" · next on {_date_words(later[0], lg)}", f" · 下一张：{_date_words(later[0], lg)}") if later else "")),
+            # The suggested rows are an assumption from the contract's schedule, not a record: say so, so the owner removes the paid ones.
+            "assumed_text": (t(lg, f"FLOW filled {_n(len(recent), 'invoice', 'invoices')} the contract says were sent before your start date "
+                                   f"({', '.join(_date_words(d, lg) for d in recent)}) and assumed {'it is' if len(recent) == 1 else 'they are'} "
+                                   "unpaid. Remove any that are paid, or enter what has been paid.",
+                               f"FLOW 根据合同填写了开始日期之前已开出的 {len(recent)} 张发票（{'、'.join(_date_words(d, lg) for d in recent)}），"
+                               "并假定尚未收款。请删除已收款的发票，或填写已收金额。") if recent else None),
             "earlier_paid_text": (t(lg, f"{len(sent) - len(recent)} earlier invoices are left out as paid; add any that aren't.",
                                     f"更早的 {len(sent) - len(recent)} 张发票视为已收款；如未收款请添加。")
                                   if len(sent) > len(recent) else None),
