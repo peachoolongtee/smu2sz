@@ -1271,11 +1271,13 @@ PROBE_RATES_BP = tuple(range(70, 82))
 
 
 def _without_display(x: Any) -> Any:
-    """The typed payload under an owner view: the server adds `*_display` strings next to money and rates."""
+    """The typed payload under an owner view: the server adds `*_display` strings next to money and rates, and `*_when` sentences in
+    the owner's words (e.g. an abstention's `reason_when`). Only those presentation keys are dropped; any other unknown key still fails
+    the strict model, so a typed field the server invents is caught."""
     if isinstance(x, list):
         return [_without_display(v) for v in x]
     if isinstance(x, dict):
-        return {k: _without_display(v) for k, v in x.items() if not k.endswith("_display")}
+        return {k: _without_display(v) for k, v in x.items() if not k.endswith(("_display", "_when"))}
     return x
 
 
