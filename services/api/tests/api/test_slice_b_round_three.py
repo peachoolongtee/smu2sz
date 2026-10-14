@@ -382,12 +382,22 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
         assert len(closed) == 1 and q["deals"]["closed"] == 1 and q["deals"]["agreements"] == 0
         assert closed[0]["status_text"] == tracker["state_word"] and closed[0]["consequence_text"] == tracker["closeout_text"]
         assert closed[0]["decision_id"] == did
+        words = {k: closed[0][k] for k in ("status_text", "consequence_text", "subject_text")}
+        assert not [t for t in words.values() if BAD.search(t)], words
+        if lang == "zh":
+            assert english_leaks(words, NAMES) == []
     # the customer's deals history and the entry points into Deals
     overview = api.get("/customers/BUYER-1/overview").json()
     [hist] = overview["deals_history"]
     assert hist["decision_id"] == did and hist["lifecycle"] == "closed" and hist["state_word"] == "Paid late"
     assert hist["summary_text"].startswith("This deal cost ¥4,809.96 against ¥3,027.77 expected")
     assert hist["href"] == f"/deals?customer=BUYER-1&decision={did}&from=customer"
+    zh_hist = api.get("/customers/BUYER-1/overview", params={"lang": "zh"}).json()["deals_history"]
+    for item, lang in ((hist, "en"), (zh_hist[0], "zh")):
+        words = {k: item[k] for k in ("subject_text", "state_word", "summary_text")}
+        assert not [t for t in words.values() if BAD.search(t)], words
+        if lang == "zh":
+            assert english_leaks(words, NAMES) == [] and zh_hist[0]["href"] == hist["href"]
     rows = [r for r in api.get("/activity").json()["rows"] if r.get("decision_id") == did]
     assert rows and all(r["href"] == f"/deals?customer=BUYER-1&decision={did}&from=activity" and r["record_href"] == f"/decisions/{did}" for r in rows)
 
@@ -397,13 +407,14 @@ def test_the_strip_is_one_function_at_every_moment_of_the_golden_story(api: Test
     pic = _picture(api, new)
     assert pic["buyer_history_text"].startswith("Last time Foshan agreed ") and "This deal cost ¥4,809.96 against ¥3,027.77 expected" in pic["buyer_history_text"]
     assert pic["buyer_history_title"] == "Context only: it changes no verdict, counter, plan or authority."
-    assert not BAD.search(pic["buyer_history_text"])
+    assert not BAD.search(pic["buyer_history_text"]) and not BAD.search(pic["buyer_history_title"])
     with rt.lock:
         bare = offer_picture.cached_picture(rt, new, "en")
     assert "buyer_history_text" not in bare and bare["recommendation"] == pic["recommendation"]
     assert [p["authority"] for p in bare["paths"]] == [p["authority"] for p in pic["paths"]]
     zh = _picture(api, new, "zh")
-    assert zh["buyer_history_text"].startswith("上一次，Foshan同意了") and english_leaks(zh["buyer_history_text"], NAMES) == []
+    assert zh["buyer_history_text"].startswith("上一次，Foshan同意了") and english_leaks({"text": zh["buyer_history_text"], "title": zh["buyer_history_title"]}, NAMES) == []
+    assert not BAD.search(zh["buyer_history_text"]) and not BAD.search(zh["buyer_history_title"])
 
 
 def test_day_zero_has_no_history_and_the_busy_books_stage_strips_never_fail(api: TestClient) -> None:
@@ -429,3 +440,16 @@ def test_the_demo_story_links_the_agreed_deal_to_deals(api: TestClient) -> None:
         scene = next(sc for sc in story["scenes"] if sc["id"] == "agreement")
         tracked = [lk for lk in scene["proof"] if "/deals?" in lk["href"]]
         assert [lk["href"] for lk in tracked] == [f"/deals?customer=BUYER-1&decision={v['decision_id']}&from=demo"] and tracked[0]["label"] == label
+
+
+def test_a_deal_with_no_early_payment_promise_has_no_early_payment_stage(api: TestClient) -> None:
+    assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
+    offer = api.post("/offers", json={"fixture_id": ZHUHAI}).json()["offer"]["offer_id"]
+    v = api.post(f"/offers/{offer}/evaluate", json={"fixture_id": ZHUHAI}).json()
+    r = api.post(f"/offers/{offer}/accept", json={"verdict_id": v["id"], "state_version": v["state_version"]})
+    assert r.status_code == 200, r.text
+    did = str(v["decision_id"])
+    stages = _stages_everywhere(api, offer, did)
+    keys = [s["key"] for s in stages]
+    assert "early_payment" not in keys and keys[-1] == "fulfilled" and "collecting" in keys
+    assert [s["key"] for s in _stages_everywhere(api, offer, did, "zh")] == keys

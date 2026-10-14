@@ -43,7 +43,7 @@ def contract_stages(rt: Any, ctx: Any, buyer: str, lang: str, early_kinds: list[
     """The contract stages the deal row builds when a confirmed contract is on the books (its keys and words); else the same stages, in the
     same words (the first, contract read, is the contract's and does not apply). Whichever the source, the STATES follow the tracker's one
     flag: ENDED means every stage is done (missed or part where a promise was missed or part kept), LIVE means collecting is the one stage
-    that is now. `when_text` is the day of the agreement, on the stage that is the agreement."""
+    that is now. A deal with no early-payment promise has no early-payment stage. `when_text` is the day of the agreement, on the stage that is the agreement."""
     rows: list[dict[str, Any]] = []
     try:
         from app.deals import deal_summary
@@ -64,6 +64,8 @@ def contract_stages(rt: Any, ctx: Any, buyer: str, lang: str, early_kinds: list[
         early = "done" if early_kinds or ended else "todo"
     out = []
     for k, label in keys:
+        if k == "early_payment" and not early_kinds:
+            continue  # a stage the deal does not have (no early payment was promised) is absent, not greyed
         if k == "early_payment":
             st = early
         elif k == "collecting":
