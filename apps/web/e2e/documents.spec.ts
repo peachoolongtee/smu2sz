@@ -131,6 +131,30 @@ test("the documents: the three demo documents confirmed, each term of the supply
   await expect(mark).toHaveClass(/ring-2/);
 });
 
+test("focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it)", async ({ page }) => {
+  await page.goto("/documents?id=DOC-000001");
+  const terms = page.getByTestId("doc-terms");
+  const price = terms.locator("li", { hasText: "¥420,000.00 per delivery batch" });
+  await expect(price).toBeVisible();
+  const id = (await price.getAttribute("data-testid"))!.replace("doc-item-", "");
+  // The books confirmation dialog is part of every Business page, closed: it takes no focus and shows nothing.
+  await expect(page.getByTestId("books-dialog")).toBeAttached();
+  await expect(page.getByTestId("books-dialog")).toBeHidden();
+  const mark = page.getByRole("group", { name: "Document text with the clauses the agent read highlighted" }).locator(`mark[data-annotation~="${id}"]`).first();
+  await expect(mark).not.toHaveClass(/ring-2/);
+  // A pointer parked over the terms: focusing a term scrolls it into view, so the pointer leaves one element and enters another; neither may switch off what focus lit.
+  await page.mouse.move(1100, 300);
+  await price.focus();
+  await expect(price).toBeFocused();
+  await expect(mark).toHaveClass(/ring-2/);
+  // Past the settling of the scroll (the browser reports the pointer's new element a moment later) the clause is still lit.
+  await page.waitForTimeout(600);
+  await expect(mark).toHaveClass(/ring-2/);
+  // Leaving the term puts the clause out again.
+  await price.blur();
+  await expect(mark).not.toHaveClass(/ring-2/);
+});
+
 test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it", async ({ page }) => {
   const review = await readAgain(page, SUPPLY);
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
