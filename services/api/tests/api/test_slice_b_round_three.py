@@ -547,3 +547,59 @@ def test_the_cause_lines_list_the_same_events_as_the_cause_text(api: TestClient)
         assert [ln["label"] for ln in two][0] == ("As asked" if lang == "en" else "按对方要求")
         if lang == "zh":
             assert english_leaks([ln for got in two for ln in [got["label"], *got["items"]]], NAMES) == []
+
+
+# ================================================================ the web owner's three findings
+
+
+def test_a_deal_whose_early_part_was_paid_still_owes_the_rest_so_it_is_an_open_agreement(api: TestClient) -> None:
+    """The record calls the deal FULFILLED once the early payment is kept, but the rest of the invoice is still owed: it is awaiting payment and the
+    worklist counts it as an open agreement (on dev it dropped out of the queue; under the owner's rule it stays until nothing is owed)."""
+    offer, did = _agree(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    counts = api.get("/worklist").json()["counts"]
+    assert counts["agreements"] == 1
+    row = _group_row(api, did)
+    assert row["after_group"] == "awaiting_payment" and row["lifecycle"] == "agreed"
+    q = api.get("/deals").json()["queue"]
+    assert q["deals"]["awaiting_payment"] == 1 and q["deals"]["closed"] == 0
+    for day in (30, 34):
+        api.post("/clock/advance", json={"to_day": day})
+    assert _group_row(api, did)["after_group"] == "payment_late" and api.get("/worklist").json()["counts"]["agreements"] == 1
+
+
+def test_the_trackers_cost_tone_is_what_it_was_on_the_golden_walk(api: TestClient) -> None:
+    offer, did = _agree(api)
+
+    def tracker() -> dict[str, Any]:
+        return api.get(f"/decisions/{did}/tracker").json()  # type: ignore[no-any-return]
+
+    assert (tracker()["state_word"], tracker()["cost"]["actual"]["tone"]) == ("Waiting for the buyer", "neutral")
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    for day in (30, 34):
+        api.post("/clock/advance", json={"to_day": day})
+    assert (tracker()["state_key"], tracker()["cost"]["actual"]["tone"]) == ("late", "neutral")
+    action = api.get("/home").json()["next_action"]
+    api.post(f"/alerts/{action['alert_id']}/act", json={"state_version": action["state_version"], "suggestions": action["suggestions"]})
+    [row] = [a for a in api.get("/approvals/queue").json()["approvals"] if a["status"] == "PENDING"]
+    assert api.post(f"/approvals/{row['id']}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    t = tracker()
+    assert t["cost"]["actual"]["tone"] == "bad" and t["cost"]["difference_fen"] == 178219 and t["state_tone"] == "bad"
+
+
+def test_a_cold_picture_read_builds_the_exposure_block_once(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    offer = _evaluate(api, EX01)
+    calls: list[int] = []
+    real = assembly._compute_base
+
+    def counting(*args: Any, **kwargs: Any) -> Any:
+        calls.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(assembly, "_compute_base", counting)
+    assembly.clear_cache()
+    offer_picture._cache.clear()
+    pic = _picture(api, offer)
+    assert pic["scenarios"] and len(calls) == 1  # the compare read builds it and the late-payment card reuses it
