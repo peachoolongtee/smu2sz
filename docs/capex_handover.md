@@ -313,6 +313,31 @@ Newest last. One entry per change: date, phase, what changed, files, tests, resu
 - Commit state: the web half is `9789a6f3 capex` (committed by the owner); the API, fixtures, ADR, this file, AGENTS.md
   and the tier test followed in the next commit on `feat/capex-buy-side`, at the owner's request (14 Oct 2026).
 
+- 14 Oct 2026, after review by the owner (two defects in phase 9):
+  - **Buying switched the app to the Demo shell.** `lib/mode.ts` decides the shell from the path: anything not in
+    `BUSINESS_ROUTES` is an engine view and gets the Demo shell. `/buy`, `/buy/contract`, `/finance` and `/plans` were
+    never registered. They are now owner detail routes (`OWNER_DETAIL_ROUTES`: `/buy` opens from `/deals`; the other
+    three from `/buy`), mirrored in `lib/pre-hydration.ts`; the shell draws "Back to Deals" / "Back to Buying"
+    (`BACK_LABEL` in `components/app-shell.tsx`, new key `nav.backToBuying`), so the pages' own back links were removed.
+  - **The Deals "Buying" button sat in the page header with no meaning.** Replaced by the product's existing pattern for
+    a door to another page (Cash's "quiet doors"): after the page's own work, a link with a chevron and one sentence of
+    what is behind it, here built from the server's purchases ("One vendor contract. Next: <the server's next
+    action>"). The Buying page's header buttons to Financial health and Long-term plans became the same doors.
+  - Specs: `e2e/buyside.spec.ts` (the door and its sentence, not in the header; every buying page in the Business
+    shell with its back link), `e2e/responsive.spec.ts` (the three pages added to its Business routes). Mock e2e for
+    buyside, deals, deals-queue, documents, responsive: 89 passed, 15 skipped (live-only); `pnpm test:unit` 145.
+- 14 Oct 2026, the owner: the door was too small to notice; Deals should show both buying and selling, selling the
+  bulk. `components/deals/buying-card.tsx` (`BuyingCard`) replaces the door: a card in the inbox's own style under the
+  selling queue (left column), heading "Buying" with the open count and "All purchases", one `Row` per open purchase
+  (vendor initials, title, the server's next action, price, stage; each links to where that step is done: the
+  reading to review, the approval, or the contract screen), at most three with "and N more", then links to Financial
+  health and Long-term plans; with nothing bought, one line and "Read a vendor contract". It shows on the Deals
+  overview and steps aside while a selling negotiation is open: the pane is sticky beside the queue at `xl`, and a
+  taller queue column scrolled it out of line (caught by `responsive.spec.ts` "side by side", 23.75 px off).
+  Specs: the card's test in `e2e/buyside.spec.ts` (under the queue and before the inbox in reading order, the row,
+  the links, hidden while a negotiation is open). Mock e2e for buyside, deals, deals-queue, responsive, a11y: all
+  pass (one phone deals-queue test failed once and passed on two re-runs: a flake).
+
 ## 7. How to run and check
 
 - Switch the feature on locally: `FEATURE_CAPEX_CONTRACTS=1` in the root `.env` (read by `app/config.py`).
