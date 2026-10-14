@@ -612,52 +612,38 @@ def _qs(**pairs: str | None) -> str:
 
 
 def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
-    """AGREEMENT: one row per deal in force (the decision record's AGREED), newest first, with the terms agreed in the row's consequence."""
-    found = [ds for ds, _inp in ctx.states().values() if ds.family == "DEAL" and ds.state == DealState.AGREED and ds.offer is not None]
-    out = []
-    for ds in sorted(found, key=lambda d: (-d.updated_seq, d.decision_id)):
-        offer = ds.offer
-        if offer is None:
-            continue
-        cid = offer.counterparty_id
-        who = buyer_short(party_name(ctx.state, cid))
-        c = ds.commitment
-        subject, subject_demo = subject_for(ctx, offer, lang)
-        out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
-                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo, "lifecycle": "agreed", "topic_text": _topic(offer, lang),
-                    "last_activity_day": _activity(_latest(ds, offer), ctx.today, lang)[0],
-                    "last_activity_text": _activity(_latest(ds, offer), ctx.today, lang)[1],
-                    "status_text": lifecycle_text("agreed", lang),
-                    "consequence_text": t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else "",
-                    "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
-                    "differentiator_text": None, "decision_id": ds.decision_id})
-    return out
+    """AGREEMENT: one row per agreed deal (the decision record's AGREED, and the deals over once agreed), grouped by what remains after the agreement
+    from the tracker's own read: payment late, then awaiting payment, then closed, newest first within each group (#154). A deal is `closed` only
+    when nothing is left owed (or the agreement was revoked or ran out); its row carries the tracker's state word and close-out sentence."""
+    from app.api.lifecycle import AGREED_STATES, GROUP_ORDER, PAYMENT_LATE, after_group, after_group_label, tracker_of
 
-
-def _closed_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
-    """The closed group of the Agreements tier: one row per agreed deal that is over (FULFILLED, MISSED, REVOKED, EXPIRED), newest first. The row's
-    status is the tracker's own state word and its consequence the tracker's close-out sentence, read from the same tracker read the deal opens to."""
-    from app.api.lifecycle import CLOSED, tracker_of
-
-    found = [(ds, inp) for ds, inp in ctx.states().values() if ds.family == "DEAL" and ds.state in CLOSED and ds.offer is not None]
+    found = [(ds, inp) for ds, inp in ctx.states().values() if ds.family == "DEAL" and ds.state in AGREED_STATES and ds.offer is not None]
     out = []
     for ds, inp in sorted(found, key=lambda p: (-p[0].updated_seq, p[0].decision_id)):
         offer = ds.offer
         if offer is None:
             continue
         built = tracker_of(ctx, ds, inp, lang)
+        group = after_group(ds, built)
         cid = offer.counterparty_id
         who = buyer_short(party_name(ctx.state, cid))
+        c = ds.commitment
         subject, subject_demo = subject_for(ctx, offer, lang)
         activity = _activity(_latest(ds, offer), ctx.today, lang)
+        status, consequence = lifecycle_text("agreed", lang), t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else ""
+        if group == "closed":
+            status = (built or {}).get("state_word") or lifecycle_text("closed", lang)
+            consequence = (built or {}).get("closeout_text") or (built or {}).get("headline_text") or ""
+        elif group == PAYMENT_LATE and built is not None:
+            status, consequence = built["state_word"], built.get("headline_text") or consequence
         out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
-                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo, "lifecycle": "closed",
-                    "topic_text": _topic(offer, lang), "last_activity_day": activity[0], "last_activity_text": activity[1],
-                    "status_text": (built or {}).get("state_word") or lifecycle_text("closed", lang),
-                    "consequence_text": (built or {}).get("closeout_text") or (built or {}).get("headline_text") or "",
+                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo,
+                    "lifecycle": "closed" if group == "closed" else "agreed", "topic_text": _topic(offer, lang),
+                    "last_activity_day": activity[0], "last_activity_text": activity[1], "status_text": status, "consequence_text": consequence,
                     "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
-                    "differentiator_text": None, "decision_id": ds.decision_id})
-    return out
+                    "differentiator_text": None, "decision_id": ds.decision_id, "after_group": group,
+                    "after_group_label": after_group_label(group, lang)})
+    return sorted(out, key=lambda r: GROUP_ORDER.index(r["after_group"]))  # stable: newest first within a group
 
 
 def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, Any]], alert: dict[str, Any] | None,
@@ -719,18 +705,29 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
                 "status_text": status, "consequence_text": row["consequence_text"],
                 "severity": row["severity"], "deadline_day": row.get("deadline_day"), "expected_day": row.get("expected_day"),
                 "differentiator_text": row.get("differentiator_text"), "decision_id": decision, "invoice_id": invoice, "approval_id": approval,
+                "after_group": row.get("after_group"), "after_group_label": row.get("after_group_label"),
                 "href": href(row["kind"], cid, decision, invoice, approval, row.get("href") or "/deals")}
 
     needs_rows = [item(_needs_item(r, False, None, lang), NEEDS_YOU_TIER) for r in needs]
     waits = [w for w in waiting if w["kind"] != "PROMISE"]
     promises = [w for w in waiting if w["kind"] == "PROMISE"]
     waiting_rows = [item(w, WAITING_TIER) for w in waits]
-    closed_rows = [item(r, AGREEMENTS_TIER) for r in _closed_rows(ctx, lang)]  # after the agreements in force: the Closed group (#154)
-    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]] + closed_rows
+    from app.api.lifecycle import GROUP_ORDER, after_group_label
+
+    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]]
+    groups = {r["decision_id"]: r["after_group"] for r in agreement_rows if r["kind"] == "AGREEMENT"}
+    for r in agreement_rows:  # a promised payment sits in the group of the deal it belongs to
+        if r["after_group"] is None:
+            r["after_group"] = groups.get(r["decision_id"], "awaiting_payment")
+            r["after_group_label"] = after_group_label(r["after_group"], lang)
+    agreement_rows.sort(key=lambda r: GROUP_ORDER.index(r["after_group"]))  # payment late, awaiting payment, closed (stable: newest first within)
+    closed_rows = [r for r in agreement_rows if r["lifecycle"] == "closed"]
     negotiations = {"needs_you": sum(1 for r in needs_rows if r["kind"] == "DECISION"),
                     "waiting": sum(1 for r in waiting_rows if r["kind"] == "BUYER_REPLY"),
                     "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE") and r["lifecycle"] != "closed"),
-                    "closed": len(closed_rows)}
+                    "closed": len(closed_rows),
+                    "awaiting_payment": sum(1 for r in agreement_rows if r["kind"] == "AGREEMENT" and r["after_group"] == "awaiting_payment"),
+                    "payment_late": sum(1 for r in agreement_rows if r["kind"] == "AGREEMENT" and r["after_group"] == "payment_late")}
     return {
         "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows) - len(closed_rows), "customers": customers},
         "deals": negotiations,

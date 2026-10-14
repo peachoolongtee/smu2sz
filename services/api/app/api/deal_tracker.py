@@ -459,7 +459,7 @@ def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]
                             "related_fen": None, "related_display": None, "difference_fen": None, "difference_display": None, "lines": [],
                             "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
-            "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
+            "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_key": None, "ended": False, "state_tone": "neutral", "state_text": None,
             "stages": [], "lifecycle_stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
             "links": {"record_href": f"/decisions/{quote(decision_id, safe=':')}",
                       "activity_href": f"/activity?decision={quote(decision_id, safe=':')}"},
@@ -685,23 +685,23 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     # the state
     nothing = not booked and not fund and all(s == "awaited" for s in states) and not lapsed
     if "missed" in states:
-        word, wtone = t(lang, "Promise missed", "承诺未兑现"), "bad"
+        word, wtone, key = t(lang, "Promise missed", "承诺未兑现"), "bad", "missed"
     elif "failed" in states:
-        word, wtone = t(lang, "Payment failed", "付款失败"), "bad"
+        word, wtone, key = t(lang, "Payment failed", "付款失败"), "bad", "failed"
     elif "late" in states:
-        word, wtone = t(lang, "Payment late", "付款逾期"), "bad"
+        word, wtone, key = t(lang, "Payment late", "付款逾期"), "bad", "late"
     elif "part" in states:
-        word, wtone = t(lang, "Part kept", "部分兑现"), "warn"
+        word, wtone, key = t(lang, "Part kept", "部分兑现"), "warn", "part"
     elif "paid_late" in states:
-        word, wtone = t(lang, "Paid late", "逾期支付"), "warn"
+        word, wtone, key = t(lang, "Paid late", "逾期支付"), "warn", "paid_late"
     elif ended and ds.state == DealState.FULFILLED:
-        word, wtone = t(lang, "Completed", "已完成"), "ok"
+        word, wtone, key = t(lang, "Completed", "已完成"), "ok", "completed"
     elif ended:
-        word, wtone = t(lang, "Ended", "已结束"), "neutral"
+        word, wtone, key = t(lang, "Ended", "已结束"), "neutral", "ended"
     elif nothing:
-        word, wtone = t(lang, "Waiting for the buyer", "等待买方"), "neutral"
+        word, wtone, key = t(lang, "Waiting for the buyer", "等待买方"), "neutral", "waiting"
     else:
-        word, wtone = t(lang, "On plan", "按计划进行"), "ok"
+        word, wtone, key = t(lang, "On plan", "按计划进行"), "ok", "on_plan"
     state_text = _state_text(ctx, kinds, receivables, funding_done, funding_pending, lang)
     if ended:
         if expected is None:
@@ -771,7 +771,7 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     stages = lifecycle_stages(rt, ctx, ds, inp, lang, early_kinds=early_kinds, ended=ended, agreed_when=agreed_when)  # the one function the workspace read calls too
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
-        "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
+        "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_key": key, "ended": ended, "state_tone": wtone,
         "state_text": state_text, "stages": stages, "lifecycle_stages": stages, "cost": cost, "promises": rows,
         "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
