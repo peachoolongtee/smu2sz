@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { CustomerSentence } from "@/components/customer-link";
+import { ChevronRightIcon } from "@/components/icons";
 import { DealSummary } from "@/components/deals/deal-summary";
 import { Badge, Card, ErrorState, LoadingBlock, textLinkClass, type Tone } from "@/components/ui";
 import { dealRecordId, getLedger } from "@/lib/api";
@@ -88,19 +90,43 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
   }
 }
 
-function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
+/**
+ * One agreement, folded to a row (who it is with, its status, how many terms and the give-aways booked); opening it shows the terms, the dates and the deal summary.
+ * The list reads at a glance and only the agreement the owner picks takes the room.
+ */
+function AgreementRow({ testId, status, head, line, badge, children }: { testId?: string; status?: string; head: ReactNode; line?: ReactNode; badge?: ReactNode; children: ReactNode }) {
+  return (
+    <li className="border-t border-line first:border-t-0" data-testid={testId} data-status={status}>
+      <details className="group">
+        <summary className="motion-press flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-tile px-2 py-3 hover:bg-subtle [&::-webkit-details-marker]:hidden" data-testid="commitment-toggle">
+          <ChevronRightIcon aria-hidden width={14} height={14} className="shrink-0 text-ink-3 transition-transform duration-(--dur-fast) group-open:rotate-90" />
+          <span className="min-w-0 flex-1">
+            <span className="block break-words text-sm font-semibold text-ink">{head}</span>
+            {line ? <span className="block text-supporting text-ink-3">{line}</span> : null}
+          </span>
+          {badge}
+        </summary>
+        <div className="pb-4 pl-8 pr-2">{children}</div>
+      </details>
+    </li>
+  );
+}
+
+function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; summary?: ReactNode }) {
   const { t, te } = useI18n();
   return (
-    <li className="border-t border-line py-4 first:border-t-0 first:pt-1" data-testid={`commitment-${c.id}`} data-status={c.status}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 break-words text-sm font-semibold text-ink">
-          <CustomerSentence id={buyerId} name={buyer} sentence={(b) => t("deal.with", { buyer: b })} />
-        </p>
+    <AgreementRow
+      testId={`commitment-${c.id}`}
+      status={c.status}
+      head={<CustomerSentence id={buyerId} name={buyer} sentence={(b) => t("deal.with", { buyer: b })} />}
+      line={t("deals.agreement.line", { n: c.obligations.length, amount: c.forward_value_display })}
+      badge={
         <Badge tone={statusTone[c.status]}>
           <span data-testid="commitment-state">{recordState ?? te("deal.status", c.status)}</span>
         </Badge>
-      </div>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink" data-testid="commitment-terms">
+      }
+    >
+      <ul className="list-disc space-y-1 pl-5 text-sm text-ink" data-testid="commitment-terms">
         {c.obligations.map((o) => {
           const dur = durationPhrase(o, t, today);
           return (
@@ -122,7 +148,7 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c:
         </div>
       </dl>
       {summary}
-    </li>
+    </AgreementRow>
   );
 }
 
@@ -194,12 +220,9 @@ export function ActiveCommitments({
         <ul data-testid="commitments-live">
           {items}
           {loose.map((d) => (
-            <li key={d.counterparty_id} className="border-t border-line py-4 first:border-t-0 first:pt-1">
-              <p className="min-w-0 break-words text-sm font-semibold text-ink">
-                <CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />
-              </p>
+            <AgreementRow key={d.counterparty_id} head={<CustomerSentence id={d.counterparty_id} name={d.counterparty_name} sentence={(b) => t("deal.with", { buyer: b })} />}>
               <DealSummary deal={d} today={dealsDay ?? today} />
-            </li>
+            </AgreementRow>
           ))}
         </ul>
       ) : dealsError ? null : (

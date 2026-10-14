@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 import { CustomerName } from "@/components/customer-link";
-import { ErrorState, LoadingBlock, toggleClass } from "@/components/ui";
+import { ErrorState, LoadingBlock } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StatusPill } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
@@ -11,7 +11,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
-import { canSortLatest, dealTabCounts, DEAL_TABS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
+import { canSortLatest, dealTabCounts, DEAL_TABS, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
 
 export type QueueLayout = "compact" | "table";
@@ -60,7 +60,7 @@ function SeverityDot({ severity }: { severity: QueueRowView["severity"] }) {
  * the task); the customer's name inside it is its own link, carrying THIS row's customer, decision and invoice and the origin. The selected row is the lavender fill with a purple edge and
  * `aria-current`; a row is held (disabled) while a send is in flight.
  */
-function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean }) {
+function CompactRow({ tier, row, selected, locked, onSelect, activity, next = false }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean; next?: boolean }) {
   const { t } = useI18n();
   const target = rowTarget(row);
   const pill = rowPill(tier, row);
@@ -69,7 +69,9 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier:
   const cls = "absolute inset-0 z-0 rounded-[16px] outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:cursor-wait";
   return (
     <li className="relative" data-testid="queue-row" data-tier={tier} data-kind={row.kind} data-key={row.key} data-lifecycle={pill.lifecycle ?? undefined} data-selected={selected ? "true" : "false"}>
-      <div className="flow-row relative px-4 py-3" aria-current={selected ? "true" : undefined}>
+      <div className={`flow-row relative px-4 py-3 ${next && !selected ? "next-cue" : ""}`} aria-current={selected ? "true" : undefined} data-next={next && !selected ? "true" : undefined}>
+        {/* The owner's next click, while nothing is selected: outlined, with the words on it. */}
+        {next && !selected ? <NextTag /> : null}
         {target.kind === "select" ? (
           <button type="button" className={cls} aria-label={label} aria-current={selected ? "true" : undefined} disabled={locked} onClick={() => onSelect(target.customer, target.decision, target.invoice)} data-testid="queue-select" />
         ) : (
@@ -159,7 +161,7 @@ export function QueuePanel({
   onLayout,
   alertGo,
   onlyCustomer,
-  onShowAll,
+  nextKey = null,
 }: {
   queue: Queue | null | undefined;
   customers: CustomersView | null | undefined;
@@ -176,15 +178,15 @@ export function QueuePanel({
   layout: QueueLayout;
   onLayout: (l: QueueLayout) => void;
   alertGo?: () => void;
-  /** A customer's page sent the owner for all of its tasks: only that customer's rows are listed, and the chip says so with the way to show everyone. */
+  /** A customer's page sent the owner for all of its tasks: only that customer's rows are listed, and a line says so. */
   onlyCustomer?: string | null;
-  onShowAll?: () => void;
+  /** The row that is the owner's next click (outlined), while nothing is selected. */
+  nextKey?: string | null;
 }) {
   const { t } = useI18n();
   const uid = useId();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortKey>("urgency");
-  const [group, setGroup] = useState(false);
   const termsOf = (id: string | null | undefined) => (id ? (customers?.search_terms.find((s) => s.customer_id === id)?.terms ?? []).join(" ") : "");
   if (error && !queue)
     return (
@@ -207,8 +209,6 @@ export function QueuePanel({
   const sorted = sortRows(inTab, sort === "latest" && latestOk ? "latest" : "urgency");
   const tableOffered = all.length >= TABLE_FROM;
   const asTable = tableOffered && layout === "table";
-  const nameOf = (id: string | null, row: QueueRowView) => (id ? (queue.customers.find((c) => c.customer_id === id)?.name ?? row.customer_short ?? row.subject_text) : row.subject_text);
-  const groups = group ? groupByCustomer(sorted, nameOf) : null;
   const alert = queue.alert;
   const tabId = (v: DealTab) => `${uid}-tab-${v}`;
   const panelId = `${uid}-panel`;
@@ -233,7 +233,7 @@ export function QueuePanel({
   const rowsOf = (list: DealRow[]) =>
     list.map(({ tier, row }) => {
       const selected = Boolean(selectedDecision) && rowDecision(row) === selectedDecision;
-      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} />;
+      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} next={row.key === nextKey} />;
     });
   const listClass = asTable ? "space-y-2" : "space-y-2";
   return (
@@ -263,13 +263,10 @@ export function QueuePanel({
       {onlyCustomer ? (
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="queue-only-customer">
           <span>{only ? t("deals.only", { name: only }) : t("deals.only.unknown")}</span>
-          <button type="button" onClick={onShowAll} className="inline-flex min-h-8 items-center font-bold text-brand-700 underline underline-offset-2 touch:min-h-11" data-testid="queue-show-all">
-            {t("deals.showAll")}
-          </button>
         </p>
       ) : null}
       <WorklistSearch value={q} onChange={setQ} label={t("deals.search")} testId="queue-search" found={t("hv2.work.found", { n: sorted.length })} foundTestId="queue-found" />
-      {/* Order the list: sort, group and (from 20 negotiations) the table. They change what is shown and in what order, never what a row says. */}
+      {/* Order the list: sort and (from 20 negotiations) the table. They change what is shown and in what order, never what a row says. */}
       <div role="group" aria-label={t("deals.controls")} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="queue-controls">
         <SegmentedTabs
           compact
@@ -281,9 +278,6 @@ export function QueuePanel({
             { value: "latest" as SortKey, label: t("deals.sort.latest"), disabled: !latestOk, testId: "queue-sort-latest" },
           ]}
         />
-        <button type="button" aria-pressed={group} onClick={() => setGroup((g) => !g)} className={toggleClass(group, "sm")} data-testid="queue-group">
-          {t("deals.group")}
-        </button>
         {tableOffered ? (
           <SegmentedTabs
             compact
@@ -312,27 +306,22 @@ export function QueuePanel({
                 <span />
               </div>
             ) : null}
-            {groups ? (
-              <div className="space-y-3" data-testid="queue-groups">
-                {groups.map((g) => (
-                  <section key={g.customerId ?? g.name} aria-label={g.name} data-testid="queue-group-section">
-                    <h3 className="px-1 pb-1.5 text-supporting font-bold text-ink-2" data-testid="queue-group-heading">
-                      {g.name} <span className="font-semibold tabular-nums text-ink-3">({g.rows.length})</span>
-                    </h3>
-                    <ul className={listClass} aria-label={g.name} data-testid="queue-list">
-                      {rowsOf(g.rows)}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            ) : (
-              <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
-                {rowsOf(sorted)}
-              </ul>
-            )}
+            <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
+              {rowsOf(sorted)}
+            </ul>
           </>
         )}
       </div>
     </section>
+  );
+}
+
+/** The "Start here" tag on the owner's next click (a queue row, an inbox message). */
+export function NextTag() {
+  const { t } = useI18n();
+  return (
+    <span className="pointer-events-none absolute -top-2.5 right-3 z-[2] rounded-pill bg-f-purple px-2 py-0.5 text-[11px] font-bold leading-tight text-white shadow-(--shadow-f)" data-testid="next-tag">
+      {t("deals.guide.startHere")}
+    </span>
   );
 }

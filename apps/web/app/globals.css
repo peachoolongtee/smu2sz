@@ -836,6 +836,25 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
    palette for Home alone (ink and muted, the hairline, the panel, the lavender selection, the ink primary button, the purple current line, the one risk red,
    24 px cards), so the kit (DecisionHighlight, WorklistRows, MetricStrip, CashPreview, SegmentedTabs, Button) changes look without new primitives and no other page moves.
    --------------------------------------------------------------------------------------------------------------------------------------------------- */
+/* The hand over everything that can be clicked: Tailwind 4's preflight leaves buttons, summaries and tabs on the default arrow. A disabled control keeps "not allowed". */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  summary,
+  label[for],
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  [data-clickable] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
 @layer components {
   .home-f {
     --color-ink: var(--color-f-ink);
@@ -848,7 +867,8 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     --color-subtle: color-mix(in srgb, var(--color-f-line) 45%, var(--color-panel));
     --color-track: color-mix(in srgb, var(--color-f-line) 55%, var(--color-panel));
     --color-brand-600: var(--color-f-btn);
-    --color-brand-700: var(--color-f-ink);
+    /* Links and quiet actions read in Home's purple, so a link never looks like plain text; the filled button stays ink. */
+    --color-brand-700: var(--color-f-purple-ink);
     --color-brand-50: var(--color-f-purple-soft);
     --color-brand-100: var(--color-f-purple-soft);
     --color-chart-base: var(--color-f-purple);
@@ -876,6 +896,112 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
   .f-row {
     background: var(--color-card);
     border-radius: 16px;
+  }
+  /* A Business page's section as a raised card in Home's look (the panel, 24 px, the one soft shadow) with room around its words. */
+  .card-flat {
+    background: var(--color-panel);
+    border-radius: var(--radius-f-card);
+    box-shadow: var(--shadow-f);
+    padding: 1.25rem;
+  }
+  @media (min-width: 40rem) {
+    .card-flat {
+      padding: 1.5rem;
+    }
+  }
+  /* In Home's look the standard card is a panel like Home's own: no hairline, the one soft shadow (a tone's border, a utility, still shows). */
+  .home-f .card-standard {
+    border-color: transparent;
+    box-shadow: var(--shadow-f);
+  }
+  /* A card inside a card never stacks a second box: the inner one keeps its words and drops its chrome. */
+  :is(.card-flat, .f-card, .flow-card, .card-standard, .card-decision) .card-flat {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  /* Which part of the product a section belongs to: a short bar in the page's section hue (`--sec`, set by the shell) before every card title. */
+  .sec-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 0.9em;
+    margin-right: 0.5rem;
+    border-radius: 9999px;
+    vertical-align: -0.08em;
+    background: var(--sec, var(--color-f-purple));
+  }
+  /* The "You're covered!" medallion: one soft pop when the card arrives. */
+  .covered-medal {
+    animation: covered-pop 520ms var(--ease-ui) both;
+  }
+  @keyframes covered-pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  /* The recommendation when the cash would go negative: the risk red edge and a slow red glow, so it is the first thing the eye lands on. Reduced motion keeps the edge, not the glow. */
+  .alarm-card {
+    outline: 2px solid var(--color-f-risk);
+    outline-offset: -2px;
+    background: color-mix(in srgb, var(--color-f-risk) 4%, var(--color-panel));
+    animation: alarm-glow 2.6s var(--ease-ui) infinite;
+  }
+  @keyframes alarm-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-f-risk) 30%, transparent), var(--shadow-lift);
+    }
+    50% {
+      box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-f-risk) 0%, transparent), var(--shadow-lift);
+    }
+  }
+  /* A panel that opens in place (the expanded forecast): it unfolds from its top edge and fades in, once. Reduced motion shows it at once. */
+  .expand-in {
+    transform-origin: top;
+    animation: expand-in 420ms var(--ease-ui) both;
+  }
+  @keyframes expand-in {
+    from {
+      opacity: 0;
+      clip-path: inset(0 0 100% 0 round var(--radius-f-card));
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0 round var(--radius-f-card));
+      transform: none;
+    }
+  }
+  /* The owner's next click (a queue row, an inbox message): a purple outline and a slow halo that says "here", nothing else on the page pulses. */
+  .next-cue {
+    outline: 2px solid var(--color-f-purple);
+    outline-offset: 2px;
+    animation: next-halo 2.4s var(--ease-ui) infinite;
+  }
+  @keyframes next-halo {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-f-purple) 28%, transparent); }
+    50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-f-purple) 0%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .next-cue {
+      animation: none;
+    }
+  }
+  /* The ink hero card's texture: a field of faint dots that fades out towards the figure. Decoration only. */
+  .dash-dots {
+    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1.2px, transparent 1.6px);
+    background-size: 11px 11px;
+    mask-image: radial-gradient(ellipse 80% 90% at 85% 40%, #000 30%, transparent 75%);
   }
 }
 

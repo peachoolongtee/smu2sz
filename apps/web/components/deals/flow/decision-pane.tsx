@@ -28,6 +28,7 @@ import { TermsTable } from "./terms-table";
 import { TimingDiagram } from "./timing-diagram";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
+import { StepReport } from "./next-step-guide";
 
 /** The deal's own view of the page, in the address: which investigation is open (`compare=1`, `chart=1`) and the payment-timing assumption (`scenario=late`). */
 export interface DealView {
@@ -164,6 +165,7 @@ export function DecisionPane({
   onClose,
   onBusy,
   irrelevantText,
+  onStep,
 }: {
   decision: string;
   /** The customer in the address, when it names one: a negotiation that is another customer's is asked about, not shown. */
@@ -181,6 +183,8 @@ export function DecisionPane({
   onBusy: (busy: boolean) => void;
   /** The server's sentence when it could not honour the selection (`context.irrelevant_text`). */
   irrelevantText: string | null;
+  /** Says where this request is (1: check it against the limits, 2: send or approve the reply, 3: done) to the page's progress strip. */
+  onStep?: (step: number) => void;
 }) {
   const { t, te } = useI18n();
   const uid = useId();
@@ -350,6 +354,8 @@ export function DecisionPane({
             <span aria-hidden>×</span> {t("deals.dismiss")}
           </Button>
         </header>
+        {/* Where this request is (opened, then checked against the limits, then FLOW's reply sent or approved), said to the page's progress strip. */}
+        <StepReport step={done || sent ? 3 : !evaluated ? 1 : 2} onStep={onStep} />
 
         {/* Level 1: decide */}
         <div className="mt-5 space-y-5" data-testid="deal-level-decide">

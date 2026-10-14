@@ -28,9 +28,6 @@ export function setMode(mode: Mode): void {
  * the section.
  */
 export const OWNER_DETAIL_ROUTES: Record<string, string> = {
-  "/whatif": "/cash",
-  "/capex": "/cash",
-  "/documents": "/deals",
   // The buy side (ADR-0013): Buying opens from Deals; a contract, financial health and long-term plans open from Buying.
   "/buy": "/deals",
   "/buy/contract": "/buy",
@@ -38,8 +35,8 @@ export const OWNER_DETAIL_ROUTES: Record<string, string> = {
   "/plans": "/buy",
 };
 
-/** Business routes: the owner's six sections, the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
-export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
+/** Business routes: the owner's six sections (Documents among them), the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
+export const BUSINESS_ROUTES = ["/", "/deals", "/documents", "/cash", "/whatif", "/capex", "/receivables", "/approvals", "/activity", "/limits", "/trust", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
 
 /** A decision's record (`/decisions/{id}`) is an owner page opened from Home, Activity or an approval; it has no section of its own. */
 export const DECISION_ROUTE_PREFIX = "/decisions/";

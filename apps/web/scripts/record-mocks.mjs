@@ -101,10 +101,11 @@
 //   node scripts/record-mocks.mjs --api http://localhost:8197 --inputs
 // and, against an API started WITHOUT FEATURE_CUSTOMER_ECONOMICS, `--inputs --economics-off` records buyer_inputs_off.json ({ en, zh }: the sheet
 // with the economics fields refused and the server's sentence for it), which the mock serves while the spec's hook key is set.
-// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of six
+// --home-v2 records ONLY apps/web/mocks/home_v2/*.json and exits (Home V2 wave 2; the existing Home recordings stay for the flag-off page): for each of seven
 // moments the mock chooses among (lib/mock/home-v2.ts), { en, zh } of GET /home (the full read, with its `home_v2` block), GET /worklist and GET /customers:
 //   day0        the opening books, nothing read, the plan ready and not run (worklist: the alert, no rows, two customers)
 //   offer       the opening books with the package offer received and read by FLOW (Needs you holds the Foshan decision; the plan still ready)
+//   deal        the deal made on day 0 (FLOW's counter sent and Foshan accepted it), nothing else moved yet: the books the Home shows once Foshan has agreed
 //   after_fund  the day-0 plan has run (FUNDING ARRANGED; Waiting holds the invoice financing not yet landed)
 //   day34       the deal made, the day-2 receipt, the clock at day 34 (the late invoice; the reserve alert open with its cure)
 //   pending     the day-34 cure queued for the owner's approval
@@ -711,6 +712,9 @@ if (HOME_V2) {
   await step("inbox").run();
   await step("trajectory").run();
   keep("offer", await reads());
+  // The deal made on day 0: the counter sent and accepted (the same step the day-34 walk takes), read before the clock moves.
+  await step("negotiate").run();
+  keep("deal", await reads());
   // The day-0 plan, as the home's "Go ahead" runs it on the opening books.
   await reset();
   {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { getApprovals, getNavCounts } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { useWide } from "@/lib/use-narrow";
@@ -16,6 +16,7 @@ import { ArrowLeftIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { BooksDialog } from "./demo/books-dialog";
+import { PageBackdrop } from "./business/surface";
 import { OwnerSessionControl, OwnerSignInDialog } from "./owner-auth";
 import { SECTIONS, type Section } from "./section";
 import { toggleSidebarPin, useSidebarPinned } from "@/lib/use-sidebar";
@@ -25,7 +26,10 @@ import { Badge, Button, Segmented, textLinkClass } from "./ui";
 const BUSINESS_NAV: { href: string; key: DictKey }[] = [
   { href: "/", key: "nav.home" },
   { href: "/deals", key: "nav.deals" },
+  { href: "/documents", key: "nav.attach" },
   { href: "/cash", key: "nav.cash" },
+  { href: "/whatif", key: "nav.sandbox" },
+  { href: "/capex", key: "nav.loans" },
   { href: "/receivables", key: "nav.receivables" },
   { href: "/activity", key: "nav.activity" },
 ];
@@ -210,7 +214,7 @@ function AccountSheet({ signedIn, children }: { signedIn: boolean; children: Rea
           t("account.menu")
         )}
       </summary>
-      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 space-y-3 rounded-card border border-line bg-surface p-3 shadow-pop">{typeof children === "function" ? children(open) : children}</div>
+      <div className="motion-sheet absolute right-0 z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] space-y-3 whitespace-normal break-words rounded-card border border-line bg-surface p-3 shadow-pop">{typeof children === "function" ? children(open) : children}</div>
     </details>
   );
 }
@@ -268,6 +272,10 @@ function AccountMenu() {
       <Link href="/limits" onClick={closeMenu} className={sheetRow} data-testid="account-limits">
         <ShieldCheckIcon className="text-brand-600" />
         {t("nav.limits.menu")}
+      </Link>
+      <Link href="/trust" onClick={closeMenu} className={sheetRow} data-testid="account-trust">
+        <ShieldIcon className="text-brand-600" />
+        {t("nav.trust")}
       </Link>
       <TourRow />
       <LangSwitch />
@@ -374,9 +382,29 @@ function useRail() {
   };
 }
 
-const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/cash": "cash", "/receivables": "recv", "/activity": "activity" };
+const TAB_SECTION: Record<string, Section> = { "/": "home", "/deals": "deals", "/documents": "docs", "/cash": "cash", "/whatif": "sandbox", "/capex": "capex", "/receivables": "recv", "/activity": "activity" };
+/** The phone's tab bar keeps the six sections (a bar holds no more): the sandbox and loans are reached from Cash there. */
+const PHONE_NAV = BUSINESS_NAV.filter((n) => n.href !== "/whatif" && n.href !== "/capex");
 /** A tab is a fifth of a phone's width: two sections have a shorter word there (the link keeps its full name for assistive tools). */
-const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" };
+/** The page's section hue (`--sec`: the backdrop's glow and the bar before each card title). Home and the pages under it keep Home's purple; the detail pages take the section they open from. */
+const SEC_COLOR: Record<Section, string> = {
+  home: "var(--color-f-purple)",
+  deals: "var(--color-sec-deals-solid)",
+  docs: "var(--color-sec-deals-solid)",
+  cash: "var(--color-sec-cash-solid)",
+  sandbox: "var(--color-sec-cash-solid)",
+  capex: "var(--color-sec-cash-solid)",
+  recv: "var(--color-sec-recv-solid)",
+  activity: "var(--color-sec-activity-solid)",
+};
+function sectionOf(pathname: string): Section {
+  if (TAB_SECTION[pathname]) return TAB_SECTION[pathname];
+  if (pathname.startsWith("/decisions/")) return "deals";
+  if (pathname.startsWith("/customers/")) return "recv";
+  if (OWNER_DETAIL_ROUTES[pathname] === "/cash") return "cash";
+  return "home";
+}
+const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/documents": "nav.short.attach" };
 /** The way back from a detail page, by the section it opens from. */
 const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals", "/buy": "nav.backToBuying" };
 
@@ -388,8 +416,8 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
   const { t } = useI18n();
   const stored = useMode();
   const pathname = usePathname();
-  const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
-  const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
+  const activeIdx = PHONE_NAV.findIndex((n) => n.href === pathname);
+  const activeSection = activeIdx < 0 ? null : TAB_SECTION[PHONE_NAV[activeIdx].href];
   // A detail page the owner opened from a section (what-if and equipment from Cash, documents from Deals) says how to get back to it.
   const backTo = OWNER_DETAIL_ROUTES[pathname];
   const counts = useNavCounts();
@@ -399,10 +427,14 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
   // From `lg` Ask FLOW is an input in the header (the floating pill is gone); a phone and a tablet keep the pill and the bottom bar's "Ask".
   const wide = useWide() && pathname !== "/chat";
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh" style={{ "--sec": SEC_COLOR[sectionOf(pathname)] } as CSSProperties} data-section={sectionOf(pathname)}>
+      <PageBackdrop sectionKey={sectionOf(pathname)} />
       <SkipLink />
       <OwnerSignInDialog />
-      <Tour />
+      {/* The tour reads the address (a customer's view is a first visit of its own): its own boundary, so no page waits for it. */}
+      <Suspense fallback={null}>
+        <Tour />
+      </Suspense>
       <BooksDialog />
       {demo ? (
         // The Demo is visibly not the product: a deep strip across the top says so.
@@ -412,7 +444,7 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
           <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
         </div>
       ) : null}
-      <header className="sticky top-0 z-30 bg-canvas">
+      <header className="sticky top-0 z-30 bg-canvas/80 backdrop-blur-md">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
           <Brand href={demo ? "/demo" : "/"} />
           {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
@@ -446,14 +478,14 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
           ) : null}
         </>
       ) : null}
-      {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
+      {/* Desktop, as in Endowus: a quiet white sidebar of the six sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
       <div className="shell-grid lg:grid lg:grid-cols-[3.5rem_minmax(0,1fr)]">
         {/* The rail: a 56 px column of icons; its panel opens over the page to 200 px (no reflow) on hover or focus, or stays open once pinned. */}
         <aside className="rail relative hidden lg:block" data-rail={rail.open ? "open" : "closed"} {...rail.handlers} data-testid="nav-rail">
           {/* A sticky box is a stacking context of its own at z-index auto, which any positioned element later in the page (a z-10 tab bar, a link's focus ring, a tooltip) paints over: the box itself takes the header's layer so the open panel is above the page whole. */}
           <div className="sticky top-16 z-30 h-[calc(100dvh-4rem)]">
-            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
+            <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas/80 px-2 pb-20 pt-5 backdrop-blur-md" data-testid="nav-rail-panel">
               <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
                 <ul className="space-y-1">
                   {BUSINESS_NAV.map((n) => {
@@ -470,7 +502,8 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
                             active ? "bg-card font-bold text-ink shadow-f" : "font-medium text-ink-2 hover:bg-panel hover:text-ink"
                           }`}
                         >
-                          <Icon width={20} height={20} className={`shrink-0 ${active ? "text-ink" : "text-ink-3"}`} />
+                          {/* The active section's icon takes its hue, so the rail says where you are in colour as well as in the white tile. */}
+                          <Icon width={20} height={20} className={`shrink-0 ${active ? (section === "home" ? "text-f-purple" : SECTIONS[section].solidText) : "text-ink-3"}`} />
                           <span className="side-label">{t(n.key)}</span>
                           <NavCount href={n.href} n={counts[n.href as NavKey]} className="side-count ml-auto" />
                         </Link>
@@ -486,7 +519,8 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
             </div>
           </div>
         </aside>
-      <main id="main" tabIndex={-1} className={`dock-pad isolate mx-auto w-full px-4 pt-5 lg:px-10 lg:pt-8 ${demo ? "max-w-[1280px]" : "max-w-[1120px]"}`}>
+      {/* Every page takes Home's palette (`.home-f`: the ink, the panel cards, the ink primary button), so the sections read as one product. */}
+      <main id="main" tabIndex={-1} className={`home-f dock-pad isolate mx-auto w-full px-4 pt-5 lg:px-10 lg:pt-8 ${demo ? "max-w-[1280px]" : "max-w-[1120px]"}`}>
         {backTo ? (
           <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid={`back-to-${backTo.slice(1)}`}>
             <ArrowLeftIcon width={14} height={14} />
@@ -496,20 +530,20 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
         {children}
       </main>
       </div>
-      {/* Phones: a tab bar with the same five sections, as in a banking app. */}
+      {/* Phones: a tab bar with the same six sections, as in a banking app. */}
       <nav ref={bar} aria-label={t("nav.label")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden" data-testid="tab-bar">
-        {/* Below sm the bar's last cell (3rem) is Ask FLOW, which ChatPanel fixes in place; from sm the bar is the five tabs. */}
+        {/* Below sm the bar's last cell (3rem) is Ask FLOW, which ChatPanel fixes in place; from sm the bar is the six tabs. */}
         <div className="mx-auto flex max-w-xl">
           <div className="relative min-w-0 flex-1">
             <span
               aria-hidden
-              className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/5 ${activeIdx < 0 ? "opacity-0" : ""}`}
+              className={`motion-slide pointer-events-none absolute left-0 top-0 h-0.5 w-1/6 ${activeIdx < 0 ? "opacity-0" : ""}`}
               style={{ transform: `translateX(${Math.max(activeIdx, 0) * 100}%)` }}
             >
               <span className={`mx-auto block h-full w-10 rounded-pill transition-colors duration-(--dur) ${activeSection ? SECTIONS[activeSection].solid : ""}`} />
             </span>
-            <ul className="grid grid-cols-5">
-              {BUSINESS_NAV.map((n) => {
+            <ul className="grid grid-cols-6">
+              {PHONE_NAV.map((n) => {
                 const active = pathname === n.href;
                 const section = TAB_SECTION[n.href];
                 const Icon = SECTIONS[section].icon;
@@ -545,6 +579,7 @@ const TITLE_KEY: Record<string, DictKey> = {
   ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
   "/approvals": "nav.approvals",
   "/limits": "nav.limits",
+  "/trust": "nav.trust",
 };
 
 /**

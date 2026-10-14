@@ -175,7 +175,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
       ) : null}
 
       {business.length ? (
-        <section aria-label={t("activity.changed")} data-testid="activity-list">
+        <section aria-label={t("activity.changed")} className="card-flat !py-2 sm:!py-2" data-testid="activity-list">
           <ul className="divide-y divide-line">
             {business.map((r) => (
               <BusinessRow key={r.id} row={r} />
@@ -185,7 +185,7 @@ export function ActivityRead({ view }: { view: ActivityView }) {
       ) : null}
 
       {showSecurity ? (
-        <section id="activity-refused" aria-labelledby="activity-security-title" data-testid="activity-security" className="border-t border-line pt-4">
+        <section id="activity-refused" aria-labelledby="activity-security-title" data-testid="activity-security" className="card-flat">
           <h2 id="activity-security-title" className="type-section text-ink">
             {t("activity.security")}
           </h2>
