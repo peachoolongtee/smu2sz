@@ -8,6 +8,9 @@ Round three is therefore the single-deal comparison, not the multi-deal comparis
 pencilled for it (the review §14: "finish the single-deal comparison UX before building a multi-deal interface"). Those two
 move to **round four**, unchanged in substance.
 
+§11 folds the deal tracker (map #148: #152 entry points, #153 one measure, #154 close-out and carry-over) into Deals, at the
+owner's request of 14 Oct.
+
 Sequencing: the accept-as-asked batch (feat/accept-as-asked-api / -web, in flight 14 Oct) lands first; round three starts on
 top of it because both touch decision-pane, analysis-cards, investigate and the queue. The lead's decisions follow the review
 except where marked **FLAG** (for the owner to overrule). Every figure, day and share is the server's (INVARIANT 13).
@@ -107,10 +110,11 @@ At the top of the Cash impact tab and under the comparison table:
   has its words; a reply-vs-reply pair uses `comparison_pairs[<a>:<b>]` on the same point. Both en and zh.
 
 ## 7. No nested scrolling; the queue steps aside (review §7, §12)
-- The selected deal has tabs, on one line, under a sticky deal header (customer · subject · lifecycle pill · the mandate
-  sentence of §3): **Overview · Compare responses · Cash impact · Messages**. Selecting a tab replaces the workspace content;
-  nothing is appended under the page. The address is `?view=overview|compare|cash|messages`; `investigate`, `compare`,
-  `chart` and `show` are removed (old links with them land on `view=compare`).
+- The selected deal has tabs, on one line, under a sticky deal header (customer · subject · lifecycle pill · the lifecycle
+  strip of §11 · the mandate sentence of §3). Before agreement: **Overview · Compare responses · Cash impact · Messages**.
+  From agreement on: **Overview · Terms · Messages** (§11: the Overview is the tracker). Selecting a tab replaces the
+  workspace content; nothing is appended under the page. The address is `?view=overview|compare|cash|terms|messages`;
+  `investigate`, `compare`, `chart` and `show` are removed (old links with them land on `view=compare`).
 - **One scroll.** The workspace's own `max-h`/`overflow-y-auto` goes; the page scrolls; the queue is sticky beside it. The
   deal header is sticky under the app's sticky box so the primary action never leaves the screen: [Review the counter] sits
   in the header's right end on every tab.
@@ -145,6 +149,49 @@ the signed mandate says so in its badge; funding does not cure it.
   edge to the workspace (the expand cue the owner chose on 14 Oct) stays, 1 px. **FLAG:** this amends yesterday's choice by
   weight only, not by colour.
 
+## 11. The whole life of a deal lives in Deals (owner, 14 Oct: "fold the tracker into Deals"; map #148, tickets #152–#154)
+The deal tracker (`GET /decisions/{id}/tracker`, merged 14 Oct at 86e8a9bb, its own page under the decision record) is the
+after-agreement half of the same deal. Deals shows the whole life, so the owner never leaves the page to learn what a deal
+cost, what each side promised and what remains.
+- **One lifecycle strip per deal**, in the sticky header, from the server's `lifecycle_stages[]`: before agreement the offer
+  stages (Received · Analysed · Reply ready or Owner review · Sent · Agreed), after it the contract stages keyed to this
+  deal (Agreed · Early payment · Collecting · Fulfilled); states done / now / still to come / missed / under way with the
+  server's words; `when_text` under a done stage. The same component Approvals uses for its three stages. Never more than
+  seven steps; a stage the deal does not have (no early payment promised) is absent, not greyed. The three vocabularies on the
+  server today (contract stages per buyer, offer stages, the lifecycle key) are not changed; `lifecycle_stages[]` is composed
+  from them per decision in one function the tracker read and the deal workspace read both call.
+- **An agreed deal's Overview is the tracker**, rendered by the same component the `/decisions/{id}/tracker` route keeps (one
+  body, two addresses; the record's link stays): the headline sentence and state pill; "What it cost" as three figures in
+  one row, Expected (quoted when agreed) · So far · Still to come, each with its certainty word; the cost lines under
+  "More"; the promises of each side as rows with their state pill and evidence link; the buyer block (this deal's kept
+  promises, then the payment-behaviour sentence); the one next step as the header's primary button (Chase payment / Review
+  the funding approval); the close-out sentence first when the deal has ended. Nothing is computed in the browser: every
+  figure is the tracker's.
+- **The cost figure and the owner's switch (#155, open).** The headline "So far" shows the tracker's `actual` with its note,
+  so funding after a late payment is always visible as its own line labelled "attributed", whether the switch counts it in
+  the total (Option A, today) or shows it beside the total (Option B, the lead's recommendation). The switch is not a web
+  concern; the page renders either from the data, as the tracker page does now.
+- **Terms tab after agreement:** the terms-by-scope table of §2 for the agreed response only (the column "Agreed"), with the
+  cost rows quoted at agreement; no comparison, no chart (the deal's cash is history now, and Cash owns the company view).
+- **Closed deals stay in the queue (#154).** The Agreed tab lists AGREED rows first and then a "Closed" group (FULFILLED ·
+  MISSED · REVOKED · EXPIRED) whose rows carry the tracker's `state_word` as the pill and the close-out sentence as the
+  consequence text; the tab's count is agreed + closed ("Agreed 1 · 1 closed" from `queue.deals`). Amends round two §1
+  (FULFILLED and MISSED no longer drop out). The lifecycle vocabulary gains `closed` (server `lifecycle` key; `status_text`
+  the tracker's state word).
+- **Carry-over (#154).** When a buyer with an ended or agreed deal sends a new request, that request's Overview shows one
+  quiet line under the buyer's ask, labelled "Last time": the server's `buyer_history_text` ("Last time Foshan agreed 45-day
+  terms and paid in 52 days; the deal cost ¥4,809.96 against ¥3,027.77 expected."). Context only: it changes no verdict,
+  counter, plan or authority, and says so in its `title`. Absent when the buyer has no prior deal (every book on day 0).
+- **Entry points (#152), each with `from` under the selection contract:** the Deals queue row itself (selecting an agreed or
+  closed row opens the tracker Overview; no separate link); the Customer page gains "Deals with Foshan" under the open
+  negotiations: the buyer's agreed and closed deals as rows (subject, state word, close-out or agreed sentence) linking to
+  `/deals?customer=&decision=&from=customer`; Activity's "Open this decision" on an agreed or ended deal links to Deals
+  (`from=activity`) with the record as its evidence link; the Demo's agreement and "Outcome and proof" scenes gain "Track the
+  deal" to Deals (`from=demo`). The tracker route keeps "Back to the record".
+- **One measure of how a buyer pays (#153) comes after round three**, on an integration branch: the buyer block's
+  payment-behaviour sentence is the one place the grade will read; whether the grade is a word or only its evidence is the
+  owner's (#155). Round three leaves a slot, not a grade.
+
 ## 10. What is later
 - Round four: multi-deal comparison ("Compare selected deals" from the queue, a separate portfolio view; the combined effect
   "Not yet evaluated" until the engine evaluates a combined scenario), the proposing sandbox (round two §6).
@@ -154,14 +201,19 @@ the signed mandate says so in its badge; funding does not cure it.
 Per path: `authority_short_text`, `reserve_state_text`, `headroom_short`, `lowest_day`, `financing_needed_text`,
 `buyer_status_text` ("Asked by Foshan" / "Not yet sent" / "Sent, awaiting reply"), `economic_headline_text` with
 `economic_basis_text`, `terms[].scope` + `scope_label`. `recommendation {mandate_text, alternative_text|null, rule_text}`.
-`scenarios[]` (§4). The per-point `comparison` map and `comparison_pairs` with `cause_text` (§6). Every word en and zh;
+`scenarios[]` (§4). The per-point `comparison` map and `comparison_pairs` with `cause_text` (§6). For §11: `lifecycle_stages[]`
+on the deal workspace read and the tracker read (one function); the queue's closed rows (`lifecycle: closed`, `status_text`,
+`consequence_text` = close-out) and the `queue.deals` closed count; `buyer_history_text` on the workspace read; the Customer
+overview's `deals_history[]`; Activity's and the Demo story's hrefs to Deals for agreed and ended deals. Every word en and zh;
 tests in test_slice_b_round_three.py (golden day 0 with Option B; the busy books' Zhuhai deal with one reply; a state with no
 recommendation; zh). The `deal-why-rule` sentence moves server-side.
 
 ## Web (feat/slice-b-r3-web; apps/web only)
 The tabs and address (§7), the Overview (§1, §3), the terms-by-scope block (§2), the Compare workspace (§1, §4, §5, §7), the
 Cash impact tab (§5, §6, §4's Business consequences), the Messages tab (§9), the rail collapse and one-scroll layout (§7),
-the queue's progressive controls and the alert row (§9), the selection weight (§9); `deal-model.ts` as the one model;
+the queue's progressive controls and the alert row (§9), the selection weight (§9); the lifecycle strip, the tracker body
+shared with its route, the Terms tab, the Closed group, the "Last time" line, the Customer history rows and the entry
+points (§11); `deal-model.ts` as the one model;
 dictionary keys for every label (no composed money words). Specs: slice-b-round-three.spec.ts (each tab and its address,
 the rail collapse and return, the chips and the three-line cap, the inspector's two blocks, the headroom plot labels, the
 scenario cards, no "Safe", no "best", no underline on changed cells, the alert row outside the queue); the round-two specs
@@ -172,7 +224,10 @@ Journeys: (1) golden books, Foshan: Overview → Compare → choose B → the re
 approval", no send without the owner; (2) the chart: chips, the pair's on-this-day words equal the server's, the lowest
 points never subtracted; (3) busy books, Zhuhai (one reply, owner review): the Overview's alternative sentence absent, the
 Compare has two columns; (4) scenarios: customer loss shows the four sentences and the invoice-remains sentence; (5) every
-money word on the page appears verbatim in a server response (grep the recorded reads). Words: no "best", no "Safe", no
+money word on the page appears verbatim in a server response (grep the recorded reads); (6) the golden story walked to its
+end: the agreed deal's Overview in Deals equals the tracker route figure for figure at agreement, the part receipt, the late
+day, the cure and settlement; the closed row and its sentence; a new Foshan request shows the "Last time" line and its
+verdict is unchanged with and without it. Words: no "best", no "Safe", no
 "None", no id in Business.
 
 ## Gates
