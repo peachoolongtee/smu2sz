@@ -20,7 +20,6 @@ OWNER = {"X-Owner-Token": "demo-owner-token"}
 
 # an id, an upper-case enum / code, "day <n>", or the word None: none of these may reach a sentence
 ID_PATTERN = re.compile(r"\b(?:APR|DOC|RCV|COM|FAC|BUYER|OFF|CTR|VER|SEC|ALERT|DEMO)-[\w-]+|\bdeal:|\b[A-Z]{2,}_[A-Z_]+\b|\b[a-z]+:[A-Z0-9]{3,}")
-BANK_REFERENCE = re.compile(r"DEMO-RCPT-\d+")
 DAY_N = re.compile(r"\bday\s*\d+", re.IGNORECASE)
 TEXT_FIELDS = ("title_text", "detail_text", "why_text", "remaining_text", "actor_text", "status_word", "category_label", "when",
                "customer_name", "href_label", "evidence_label")
@@ -101,7 +100,7 @@ def _check_words(body: dict[str, Any], lang: str) -> None:
         texts += [r[f] for f in TEXT_FIELDS if r.get(f)]
     names = {r["customer_name"] for r in body["rows"] if r["customer_name"]}
     for s in texts:
-        assert not ID_PATTERN.search(BANK_REFERENCE.sub("", s)), s  # a bank's own payment reference is a fact the ledger states, not a record id
+        assert not ID_PATTERN.search(s), s  # the bank's reference (DEMO-RCPT-n) is evidence: it never reaches a Business sentence
         assert not DAY_N.search(s), s
         assert "None" not in s, s
         if lang == "zh" and s not in names:  # a buyer's own name stays original
@@ -143,11 +142,17 @@ def test_a_receipt_row_opens_its_invoice_and_time_passing_is_a_system_row(api: T
     assert receipt["kind"] == "business" and receipt["href"] and receipt["href_label"] in ("Open this decision", "Open in Receivables")
     if receipt["href_label"] == "Open in Receivables":
         assert receipt["href"].startswith("/receivables?invoice=")
+    # The Business sentence says the amount and the payer; the bank's reference sits in the evidence record.
+    assert receipt["title_text"].startswith("Received ¥") and " from " in receipt["title_text"]
+    assert "DEMO-" not in " ".join(str(receipt[f]) for f in TEXT_FIELDS) and "Synthetic" not in (receipt["detail_text"] or "")
+    assert "reference DEMO-RCPT-1" in receipt["record"]["reference_text"]
     clock = [r for r in body["rows"] if r["kind"] == "system"]
     assert clock and all(r["category"] == "system" and r["href"] is None for r in clock)
     assert body["summary"]["system_count"] == len(clock)
     _check_words(body, "en")
-    _check_words(_check_complete(api, rt, "zh"), "zh")
+    zh = _check_complete(api, rt, "zh")
+    _check_words(zh, "zh")
+    assert "DEMO-RCPT-1" in next(r for r in zh["rows"] if r["category"] == "receivables")["record"]["reference_text"]
 
 
 def test_the_busy_books(api: TestClient, rt: Runtime) -> None:

@@ -1376,11 +1376,16 @@ def event_words(state: FinancialState, *, kind: str, status: str, payload: dict[
         detail = _sentence(business_text(state, m.group(1), today, lang, agreements, window_live) or "") if m else None
         ref = payload.get("bank_reference")
         if isinstance(ref, str) and ref.startswith("DEMO-"):  # the guided Demo's one receipt says it is synthetic, wherever it is read
-            note = t(lang, f"Synthetic bank event, reference {ref}; no real funds moved.", f"模拟银行事件，银行参考号 {ref}；没有真实资金流动。")
+            note = bank_note(lang, ref)
             detail = f"{detail} {note}" if detail else note
         return {"event_text": _stop(t(lang, f"Received {fmt_yuan(amount)} from {buyer}", f"已收到{buyer}的 {fmt_yuan(amount)}"), lang),
                 "event_detail": detail or None}
     return none
+
+
+def bank_note(lang: str, ref: str) -> str:
+    """The sentence that says the guided Demo's receipt is synthetic and names the bank's reference (evidence, not Business prose)."""
+    return t(lang, f"Synthetic bank event, reference {ref}; no real funds moved.", f"模拟银行事件，银行参考号 {ref}；没有真实资金流动。")
 
 
 # ---------------------------------------------------------------- truth fields (wayfinder #30)

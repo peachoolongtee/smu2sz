@@ -23,7 +23,7 @@ from app.alerts import reconcile
 from app.api.auth import require_owner
 from app.api.causality import Causality, chain_fields, mark_changed
 from app.api.decisions import Reconciled, load_context
-from app.api.presentation import last_read, live_windows, party_name, t, when_text
+from app.api.presentation import bank_note, last_read, live_windows, party_name, t, when_text
 from app.api.read import _forecast_now, _op_view
 from app.api.runtime import get_runtime
 from app.api.security_words import is_benign_auth, known_sender, security_words
@@ -127,10 +127,16 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
         link = v.get("decision_link")
         href, href_label = (link["href"], t(lang, "Open this decision", "查看这项决定")) if link else _own_link(payload, buyer, category, lang)
         why = v.get("why_it_matters")
+        # The guided Demo's receipt names its bank reference (DEMO-RCPT-n): the Business sentence says the amount and the payer, the reference stays in the evidence fold.
+        ref = payload.get("bank_reference")
+        ref = ref if isinstance(ref, str) and ref.startswith("DEMO-") else None
+        detail = v.get("event_detail") or None
+        if ref and detail:
+            detail = detail.replace(bank_note(lang, ref), "").strip() or None
         rows.append({
             "id": f"op:{o.seq}", "kind": "system" if category == "system" else "business", "category": category,
             "category_label": _label(category, lang), "day": day, "order": (day, 1, o.seq),
-            "when": when_text(day, today, lang), "title_text": title, "detail_text": v.get("event_detail") or None,
+            "when": when_text(day, today, lang), "title_text": title, "detail_text": detail,
             "why_text": why, "why_as_of_text": v.get("why_it_matters_as_of") if why else None,
             "why_changed": bool(v.get("why_it_matters_changed")), "remaining_text": v.get("what_remains"),
             "actor": actor, "actor_text": actor_text, "status_word": word, "tone": "neutral" if category == "system" and tone == "ok" else tone,
@@ -138,7 +144,7 @@ def _op_rows(rt: Any, lang: str, today: int) -> list[dict[str, Any]]:
             "decision_id": v.get("decision_id") if link else None, "href": href, "href_label": href_label,
             "evidence_href": f"/trust?view=evidence&entry={o.seq}&from=activity", "evidence_label": t(lang, "Evidence", "证据"),
             "record": {"seq": o.seq, "entry_hash": o.entry_hash, "prev_hash": o.prev_hash, "kind_text": v["kind_text"],
-                       "message": v["summary"]},
+                       "message": v["summary"], **({"reference_text": bank_note(lang, ref)} if ref else {})},
         })
     return rows
 

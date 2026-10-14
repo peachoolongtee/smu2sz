@@ -129,6 +129,10 @@ def test_fresh_golden_books(api: TestClient) -> None:
     assert alt["loss_items"] == ["Nothing has been done yet, so nothing is lost."]
     assert [g["key"] for g in body["operator_tools"]["groups"]] == ["clock", "books", "engine"]
     assert body["proof"]["chain"]["chain_text"] and body["proof"]["links"][2]["href"] == "/ledger"
+    # The badge's tone is read from `chain_valid`, never inferred from the words: the story's block carries it like Activity's.
+    chain = body["proof"]["chain"]
+    assert chain["chain_valid"] is True and chain["chain_length"] > 0 and chain["head_hash"]
+    assert chain["chain_text"] == "Record chain checks passed" and chain["chain_scope_text"]
     _words(body, "en")
     _words(_story(api, lang="zh"), "zh")
 

@@ -514,7 +514,10 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
         else:
             loss_text = t(lang, "Restoring replaces these books with the main books at the start of the story. What you did here is not kept.",
                           "恢复会用故事起点的主账目替换这些账目。您在这里做过的事不会保留。")
-        chain = chain_fields(rt.store.verify_chain(), len(books.ops), lang)
+        valid = rt.store.verify_chain()
+        # The same block as GET /activity: the page reads `chain_valid` for the badge's tone, never infers it from the words.
+        chain = {"chain_valid": valid, "chain_length": len(books.ops), "head_hash": books.ops[-1][0].entry_hash if books.ops else None,
+                 **chain_fields(valid, len(books.ops), lang)}
         scope = _scope(rt, lang) if not main else t(lang, "A company with several customers, open negotiations, an approval waiting for you and overdue invoices.",
                                                     "一家有多位客户、多项进行中的谈判、待您批准的事项和逾期发票的公司。")
         current_scene = STEPS[cur][1] if cur is not None else None
@@ -563,7 +566,7 @@ def build_story(rt: Runtime, lang: str, seen: str | None = None) -> dict[str, An
             "label": t(lang, "Operator tools", "操作工具"), "hint_text": t(lang, "Clock, reset, engine views", "时钟、重置、引擎页面"),
             "groups": [
                 {"key": "clock", "label": t(lang, "The clock", "时钟"),
-                 "items": [{"label": t(lang, "Advance 1 day", "推进 1 天"), "action": "advance:1"}, {"label": t(lang, "Advance 7 days", "推进 7 天"), "action": "advance:7"}]},
+                 "items": []},
                 {"key": "books", "label": t(lang, "The books", "账目"), "items": [{"label": t(lang, "Reset the books", "重置账目"), "action": "reset", "replaces_books": True}],
                  "note_text": t(lang, "Clears every deal, operation and approval of this session.", "清除本次会话的所有交易、操作和批准事项。")},
                 {"key": "engine", "label": t(lang, "Engine views", "引擎页面"), "items": [{"label": t(lang, en, zh), "href": href} for en, zh, href in _ENGINE]}]},
