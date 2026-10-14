@@ -124,15 +124,26 @@ def _cost_lines(cost: Mapping[str, Any], months: int, lang: str) -> tuple[str | 
     return None, None
 
 
+def _cash_text(cost: Mapping[str, Any], lang: str) -> str | None:
+    """What the asked terms do to cash, in the asked path's own words (its band and the day it first goes below the minimum), and that accepting
+    runs no funding for it. Null when the asked path keeps the reserve (the picture has no band for it) or carries no such word."""
+    band, when = cost.get("band_text"), cost.get("first_breach_when")
+    if not band:
+        return None
+    start = (f", starting {when}" if when else "") if lang != "zh" else (f"（最早{' ' if str(when)[:1].isdigit() else ''}{when}）" if when else "")
+    return t(lang, f"As asked: {str(band)[:1].lower() + str(band)[1:]}{start}. Accepting runs no funding, so that gap stays open.",
+             f"按对方要求：{band}{start}。接受不会办理融资，缺口仍然存在。")
+
+
 def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, authority: str, cost: Mapping[str, Any] | None, months: int) -> dict[str, str | None]:
-    """The eleven-field receipt of accepting the asked terms: what is authorized, that it records the agreement and moves no money, that nobody
+    """The receipt of accepting the asked terms (the eleven fields, then `cash_text`): what is authorized, that it records the agreement and moves no money, that nobody
     else has to agree (these are the buyer's own terms), and who decides. `cost` is the asked path's cost words (None: the picture could not be
     read, and the lines that need them are null)."""
     sep = t(lang, "; ", "；")
     asks = sep.join(_asks(state, verdict, lang))
     asked = request_of(buyer, lang)
     fees, future = _cost_lines(cost or {}, months, lang)
-    return receipt(
+    return {**receipt(
         authorizes_text=(t(lang, f"Accept {asked} as asked: {asks}; FLOW records the agreement under your authority.",
                            f"按对方要求接受{asked}：{asks}；FLOW 将在您的授权下记录这份协议。") if asks else None),
         executes_now_text=t(lang, "Records the agreement now; no payment and no funding moves.", "立即记录协议；不会有付款，也不会办理融资。"),
@@ -144,7 +155,7 @@ def accept_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str, autho
                            "按今天的账目定价，不新增融资。如果在您确认之前账目有变动，将不会记录任何内容，并请您重新查看。"),
         authority_text=(t(lang, "Above what FLOW may agree alone; your click is the approval.", "超出 FLOW 可自行同意的范围；您的点击即是批准。")
                         if authority == NEEDS_OWNER else t(lang, "Within what FLOW may agree.", "在 FLOW 可同意的范围内。")),
-        remaining_text=t(lang, "Nothing remains open once recorded.", "记录之后没有未决事项。"))
+        remaining_text=t(lang, "Nothing remains open once recorded.", "记录之后没有未决事项。")), "cash_text": _cash_text(cost or {}, lang)}
 
 
 def decline_receipt(lang: str, state: Any, verdict: Verdict, *, buyer: str) -> dict[str, str | None]:

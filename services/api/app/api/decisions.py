@@ -566,6 +566,12 @@ def _authorization(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any]
             "decided_when": when_text(a.decided_day, ctx.today, lang) if a.decided_day is not None else None}
 
 
+def _in_force(c: Any) -> bool:
+    """An agreement the owner or the buyer has accepted is in force: its `expires_day` is the window a proposal had to be accepted in, which
+    has closed, so it is not an expiry to show."""
+    return bool(c.status in (CommitmentStatus.ACTIVE, CommitmentStatus.ACCEPTED))
+
+
 def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[dict[str, Any]], lang: str) -> dict[str, str | None]:
     """The receipt of the agreement on the record, from the words the record already writes for it (`app.api.receipt`)."""
     a = ds.approval if ds.approval is not None else (ds.approvals[-1] if ds.approvals else None)
@@ -579,7 +585,8 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
     return agreement_receipt(lang, buyer=party_name(ctx.state, c.counterparty_id), terms=_agreed_terms(ctx, c, lang),
                              status_text=execution_view(ctx, ds, lang)["summary_text"], forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
                              economic_effect_text=economic_effect_text(c, ctx.mandate.forward_concession_horizon_days, lang),
-                             expires_when=when_text(c.expires_day, ctx.today, lang), authority_text=authority, awaited=awaited)
+                             expires_when=when_text(c.expires_day, ctx.today, lang), authority_text=authority, awaited=awaited,
+                             in_force=_in_force(c))
 
 
 def _operations(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str, Any]]:
@@ -674,7 +681,8 @@ def decision_detail(ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: 
         "quote": quote_for(ctx, ds, lang, decided=decided) if ds.family == "FUNDING" else None,
         "authorization": _authorization(ctx, ds, lang),
         "agreement": ({"commitment_id": c.id, "status": c.status.value, "status_text": _status_text(c, ds, lang),
-                       "expires_day": c.expires_day, "expires_when": when_text(c.expires_day, ctx.today, lang),
+                       "expires_day": None if _in_force(c) else c.expires_day,
+                       "expires_when": None if _in_force(c) else when_text(c.expires_day, ctx.today, lang),
                        "terms": _agreed_terms(ctx, c, lang),
                        "receipt": _agreement_receipt(ctx, ds, c, promises, lang)}
                       if c is not None else None),

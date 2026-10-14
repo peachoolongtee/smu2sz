@@ -206,9 +206,10 @@ def collection_receipt(lang: Lang, *, buyer: str, outstanding: str, due_clause: 
 
 def agreement_receipt(lang: Lang, *, buyer: str | None, terms: Sequence[str], status_text: str, forward_value_display: str | None,
                       economic_effect_text: str | None, expires_when: str | None, authority_text: str | None,
-                      awaited: str | None) -> dict[str, str | None]:
+                      awaited: str | None, in_force: bool = False) -> dict[str, str | None]:
     """The record-commitment receipt: the terms agreed, what ran (`status_text` is the decision's execution summary: the agreement recorded, the
-    funding requested or not funded, never just the agreement's state word), what it books against the budget, when it expires and who approved it."""
+    funding requested or not funded, never just the agreement's state word), what it books against the budget, when it expires and who approved it. An agreement in force (`in_force`) has no expiry to say: the
+    expiry belongs to a proposal waiting for its acceptance, so the when word says it is in force."""
     sep = t(lang, "; ", "；")
     return receipt(
         authorizes_text=(sep.join(terms) + t(lang, ".", "。")) if terms else None,
@@ -216,6 +217,7 @@ def agreement_receipt(lang: Lang, *, buyer: str | None, terms: Sequence[str], st
         others_must_agree_text=None,
         in_hand_vs_future_text=economic_effect_text,
         fees_display=forward_value_display,
-        when_text=t(lang, f"Expires {expires_when}.", f"{expires_when}到期。") if expires_when else None,
+        when_text=(t(lang, "In force.", "已生效。") if in_force
+                   else t(lang, f"Expires {expires_when}.", f"{expires_when}到期。") if expires_when else None),
         authority_text=authority_text,
         remaining_text=awaited)
