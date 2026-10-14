@@ -50,8 +50,11 @@ test.describe("mock", () => {
     await expect(page.getByTestId("accept-reason-asked")).toContainText(/mandate/i);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
-    // The one filled button is still the send's.
+    // The one filled button is still the send's, and its review has no fourth statement: "What it does to your cash" belongs to accepting as asked, and only when the server writes it.
     await expect(page.getByTestId("queue-review-open")).toBeVisible();
+    await page.getByTestId("queue-review-open").click();
+    await expect(page.getByTestId("send-statements")).toBeVisible();
+    await expect(page.getByTestId("receipt-line-cash")).toHaveCount(0);
   });
 });
 
@@ -81,7 +84,9 @@ test.describe("live", () => {
     const review = page.getByTestId("accept-review");
     await expect(review).toBeVisible();
     const statements = review.getByTestId("send-statements");
-    await expect(statements.locator("dt")).toHaveText(["What you are authorizing", "What happens immediately", "What does not happen yet"]);
+    // Three statements, then a fourth when accepting moves the cash against the reserve (the server's `cash_text`; Zhuhai's does).
+    await expect(statements.locator("dt")).toHaveText(["What you are authorizing", "What happens immediately", "What does not happen yet", "What it does to your cash"]);
+    await expect(review.getByTestId("receipt-line-cash")).not.toBeEmpty();
     await expect(review.getByTestId("accept-terms-table")).toContainText("75 days");
     await expect(review.getByTestId("accept-cost-table")).toContainText("over 12 months");
     await receiptBeforeButton(page);

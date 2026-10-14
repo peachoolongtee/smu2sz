@@ -251,17 +251,20 @@ export function SendBlock({
 }
 
 /** The three statements above the send button: what it authorizes, what happens immediately, what does not happen yet. The server's words, in this order; a statement it did not write is not drawn. */
-export function Statements({ receipt }: { receipt: CommitmentReceiptView }) {
+export function Statements({ receipt, cash }: { receipt: CommitmentReceiptView; /** A fourth statement under the three (accepting as asked: what it does to cash; null when the reserve holds): omitted when the server wrote none. */ cash?: string | null }) {
   const { t } = useI18n();
   const wanted = new Set(["authorizes", "executes_now", "remaining"]);
   const label = { authorizes: "deals.review.authorizing", executes_now: "deals.review.now", remaining: "deals.review.later" } as const;
-  const lines = receiptLines(receipt).filter((l) => wanted.has(l.key));
+  const lines: { key: string; value: string; label: string }[] = receiptLines(receipt)
+    .filter((l) => wanted.has(l.key))
+    .map((l) => ({ key: l.key, value: l.value, label: t(label[l.key as keyof typeof label]) }));
+  if (cash && cash.trim()) lines.push({ key: "cash", value: cash, label: t("deals.review.cash") });
   if (!lines.length) return null;
   return (
     <dl className="divide-y divide-line border-y border-line" data-testid="send-statements">
       {lines.map((l, i) => (
         <div key={l.key} className="py-3" data-testid={`receipt-line-${l.key}`} data-line={i}>
-          <dt className="text-supporting font-bold text-ink-3">{t(label[l.key as keyof typeof label])}</dt>
+          <dt className="text-supporting font-bold text-ink-3">{l.label}</dt>
           <dd className="m-0 mt-0.5 min-w-0 whitespace-pre-line break-words text-[15px] leading-snug text-ink">{l.value}</dd>
         </div>
       ))}

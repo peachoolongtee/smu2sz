@@ -185,7 +185,7 @@ export function AcceptBlock({
                   <h3 id={`${uid}-title`} ref={titleRef} tabIndex={-1} className="font-display text-base font-extrabold leading-snug text-ink outline-none">
                     {t("receipt.title.accept", { buyer })}
                   </h3>
-                  <Statements receipt={accept.receipt!} />
+                  <Statements receipt={accept.receipt!} cash={accept.receipt?.cash_text} />
                   {asked ? (
                     <>
                       <div data-testid="accept-terms">
@@ -245,7 +245,7 @@ export function AcceptBlock({
               </button>
             ) : null}
             <button type="button" onClick={close} disabled={inFlight} className={`${quietLink} whitespace-nowrap disabled:opacity-50`} data-testid="accept-review-close">
-              {t("dq.review.close")}
+              {t("accept.review.close")}
             </button>
           </ActionGroup>
           {confirming && canDecline ? (
@@ -269,7 +269,7 @@ export function AcceptBlock({
                   {accept.decline_label}
                 </Button>
                 <button type="button" onClick={() => setConfirming(false)} disabled={inFlight} className={`${quietLink} disabled:opacity-50`} data-testid="accept-decline-cancel">
-                  {t("dq.review.close")}
+                  {t("accept.review.close")}
                 </button>
               </ActionGroup>
             </div>

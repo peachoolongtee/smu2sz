@@ -77,11 +77,14 @@ export function DealsPage() {
   const [sending, setSending] = useState(false);
   const paneRef = useRef<HTMLDivElement>(null);
   const twoPanes = useTwoPanes();
-  // First visit with nothing selected: the top row's chevron pulses twice (remembered in this browser; the stylesheet draws none under reduced motion).
+  // First visit with nothing selected: the top row's chevron pulses twice (remembered in this browser once it has been shown; none is drawn, and nothing remembered, under reduced motion).
   const [hint, setHint] = useState(false);
+  // Under reduced motion there is no cue to give, so the one-time flag is not spent: the owner who later allows motion still gets it.
   const hintable = !decision && rows.length > 0;
   useEffect(() => {
     if (!hintable) return;
+    // Asked of the browser here, not of a hook: a hook reads "no preference" during hydration, before the reader's setting is known.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     try {
       if (window.localStorage.getItem(HINT_KEY)) return;
       window.localStorage.setItem(HINT_KEY, "1");

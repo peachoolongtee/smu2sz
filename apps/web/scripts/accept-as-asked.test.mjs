@@ -28,11 +28,13 @@ test("a link to a request that needs review opens the review on arrival; another
 });
 
 test("the words the web adds are in both languages; the decline's one line and the empty workspace say what the owner asked", () => {
-  for (const k of ["accept.review", "accept.review.region", "accept.reading", "accept.terms", "accept.decline.confirm", "receipt.title.accept", "deals.select.body", "deals.select.body.above"]) {
+  for (const k of ["accept.review", "accept.review.close", "deals.review.cash", "accept.review.region", "accept.reading", "accept.terms", "accept.decline.confirm", "receipt.title.accept", "deals.select.body", "deals.select.body.above"]) {
     assert.ok(en[k], `en ${k}`);
     assert.ok(zh[k], `zh ${k}`);
   }
   assert.equal(en["accept.decline.confirm"], "Nothing moves; the request closes.");
   assert.equal(en["deals.select.body"], "Choose a request on the left to review it here");
   assert.equal(en["accept.review"], "Review the request");
+  assert.equal(zh["accept.review.close"], "暂不决定");
+  assert.equal(en["deals.review.cash"], "What it does to your cash");
 });

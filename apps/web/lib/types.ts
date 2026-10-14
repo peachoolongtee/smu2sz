@@ -3605,6 +3605,8 @@ export interface CommitmentReceiptView {
   assumptions_text?: string | null;
   authority_text?: string | null;
   remaining_text?: string | null;
+  /** Accepting as asked only: what it does to cash (null when the reserve holds); a fourth statement under the three, not one of the eleven lines. */
+  cash_text?: string | null;
 }
 
 /** The scope Ask FLOW sends (ticket #130): the keys of the address that name something; the server validates each and echoes what it used as `scope_used`. */

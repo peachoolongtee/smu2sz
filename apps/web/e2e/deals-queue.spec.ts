@@ -445,11 +445,15 @@ test("the first visit's cue: with nothing selected the top row's chevron pulses 
   await expect(page.getByTestId("queue-row").first()).toBeVisible();
   await page.waitForTimeout(300);
   await expect(page.getByTestId("queue-row").first().getByTestId("row-chevron")).not.toHaveAttribute("data-hint", "true");
-  // Under reduced motion the stylesheet draws no pulse even where the cue is due.
+  // Under reduced motion there is no cue and the one-time flag is not spent: allowing motion later still shows it once.
   await page.evaluate(() => localStorage.removeItem("tl-deals-hint"));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
-  const again = page.getByTestId("queue-row").first().getByTestId("row-chevron");
-  await expect(again).toHaveAttribute("data-hint", "true");
-  expect(await again.evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+  await expect(page.getByTestId("queue-row").first()).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.getByTestId("queue-row").first().getByTestId("row-chevron")).not.toHaveAttribute("data-hint", "true");
+  expect(await page.evaluate(() => localStorage.getItem("tl-deals-hint"))).toBeNull();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.reload();
+  await expect(page.getByTestId("queue-row").first().getByTestId("row-chevron")).toHaveAttribute("data-hint", "true");
 });
