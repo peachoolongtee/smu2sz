@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.auth import require_owner
 from app.api.decisions import Context, load_context
+from app.api.lifecycle import lifecycle_stages
 from app.api.presentation import (
     invoice_words,
     obligation_sentence,
@@ -105,45 +106,6 @@ def _owner_title(ob: Any, lang: str) -> str:
     if kind == ObligationType.CONTINGENT_REBATE:
         return t(lang, f"Give a rebate of {_pct(ob.rate_bp)}", f"给予 {_pct(ob.rate_bp)} 的返利")
     return t(lang, "A further promise to the buyer", "对买方的另一项承诺")
-
-
-def _stages(rt: Any, ctx: Context, buyer: str, lang: str, early_kinds: list[str], ended: bool) -> list[dict[str, Any]]:
-    """The contract stages the deal row builds when a confirmed contract is on the books (its keys and words); else the same stages, in the
-    same words (the first, contract read, is the contract's and does not apply). Whichever the source, the STATES follow the tracker's one
-    flag: ENDED means every stage is done (missed or part where a promise was missed or part kept), LIVE means collecting is the one stage
-    that is now."""
-    words = {"done": ("Done", "已完成"), "now": ("Now", "进行中"), "todo": ("Still to come", "尚未开始"),
-             "missed": ("Missed", "已错过"), "part": ("Under way", "等待中")}
-    rows: list[dict[str, Any]] = []
-    try:
-        from app.deals import deal_summary
-
-        rows = deal_summary(rt.store, buyer, ctx.today, lang).get("stages") or []
-    except Exception:  # the stages are drawn from the record instead
-        log.exception("stages of the deal could not be read")
-    if rows:
-        keys = [(s["key"], s["label"]) for s in rows]
-    else:
-        keys = [("negotiated", t(lang, "Terms negotiated", "条款已谈判")), ("early_payment", t(lang, "Early payment in", "提前付款到账")),
-                ("collecting", t(lang, "Collecting", "催收中")), ("fulfilled", t(lang, "Fulfilled", "已履行完毕"))]
-    if "missed" in early_kinds:
-        early = "missed"
-    elif "part" in early_kinds or "awaited" in early_kinds:
-        early = "part"
-    else:
-        early = "done" if early_kinds or ended else "todo"
-    out = []
-    for k, label in keys:
-        if k == "early_payment":
-            st = early
-        elif k == "collecting":
-            st = "done" if ended else "now"
-        elif k == "fulfilled":
-            st = "done" if ended else "todo"
-        else:
-            st = "done"
-        out.append({"key": k, "label": label, "state": st, "state_text": t(lang, *words[st])})
-    return out
 
 
 def _executed_seqs(ctx: Context) -> set[int]:
@@ -498,7 +460,7 @@ def _unavailable(decision_id: str, lang: str, text: str, context: dict[str, Any]
                             "method_text": None}
     return {"decision_id": decision_id, "lang": lang, "available": False, "unavailable_text": text, "buyer_id": None, "buyer_name": None,
             "agreed_when": None, "agreed_text": None, "terms_text": None, "headline_text": None, "state_word": None, "state_tone": "neutral", "state_text": None,
-            "stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
+            "stages": [], "lifecycle_stages": [], "cost": cost, "promises": [], "promise_counts": None, "buyer": None, "next": None, "closeout_text": None,
             "links": {"record_href": f"/decisions/{quote(decision_id, safe=':')}",
                       "activity_href": f"/activity?decision={quote(decision_id, safe=':')}"},
             "context": context}
@@ -533,7 +495,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
         return _unavailable(ds.decision_id, lang, t(lang, "This is a funding decision, not an agreed deal, so there is nothing to track.",
                                                     "这是一项融资决定，不是已达成的交易，因此没有可跟踪的内容。"), context)
     if c is None or c.status in (CommitmentStatus.PROPOSED,):
-        return _unavailable(ds.decision_id, lang, _not_agreed_text(ds.state.value, lang), context)
+        # nothing to track yet, but the strip of the deal's life so far is the same function's (the offer's stages)
+        return {**_unavailable(ds.decision_id, lang, _not_agreed_text(ds.state.value, lang), context),
+                "lifecycle_stages": lifecycle_stages(rt, ctx, ds, inp, lang)}
     today, buyer = ctx.today, c.counterparty_id
     name = party_name(ctx.state, buyer)
     promised = [p for p in ctx.promised if getattr(p, "commitment_id", None) == c.id]
@@ -804,10 +768,11 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
                        "href": f"/receivables?invoice={quote(r.id, safe='')}&customer={quote(buyer, safe='')}"}
                 break
 
+    stages = lifecycle_stages(rt, ctx, ds, inp, lang, early_kinds=early_kinds, ended=ended, agreed_when=agreed_when)  # the one function the workspace read calls too
     return {
         "decision_id": ds.decision_id, "lang": lang, "available": True, "unavailable_text": None, "buyer_id": buyer, "buyer_name": name,
         "agreed_when": agreed_when, "agreed_text": agreed_text, "terms_text": terms, "headline_text": headline, "state_word": word, "state_tone": wtone,
-        "state_text": state_text, "stages": _stages(rt, ctx, buyer, lang, early_kinds, ended), "cost": cost, "promises": rows,
+        "state_text": state_text, "stages": stages, "lifecycle_stages": stages, "cost": cost, "promises": rows,
         "promise_counts": {"buyer_kept": kept, "buyer_total": total, "buyer_paid_late": paid_late, "text": counts_text}, "buyer": buyer_view, "next": nxt,
         "closeout_text": closeout,
         "links": {"record_href": f"/decisions/{quote(ds.decision_id, safe=':')}",

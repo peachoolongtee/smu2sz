@@ -634,6 +634,32 @@ def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
     return out
 
 
+def _closed_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
+    """The closed group of the Agreements tier: one row per agreed deal that is over (FULFILLED, MISSED, REVOKED, EXPIRED), newest first. The row's
+    status is the tracker's own state word and its consequence the tracker's close-out sentence, read from the same tracker read the deal opens to."""
+    from app.api.lifecycle import CLOSED, tracker_of
+
+    found = [(ds, inp) for ds, inp in ctx.states().values() if ds.family == "DEAL" and ds.state in CLOSED and ds.offer is not None]
+    out = []
+    for ds, inp in sorted(found, key=lambda p: (-p[0].updated_seq, p[0].decision_id)):
+        offer = ds.offer
+        if offer is None:
+            continue
+        built = tracker_of(ctx, ds, inp, lang)
+        cid = offer.counterparty_id
+        who = buyer_short(party_name(ctx.state, cid))
+        subject, subject_demo = subject_for(ctx, offer, lang)
+        activity = _activity(_latest(ds, offer), ctx.today, lang)
+        out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
+                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo, "lifecycle": "closed",
+                    "topic_text": _topic(offer, lang), "last_activity_day": activity[0], "last_activity_text": activity[1],
+                    "status_text": (built or {}).get("state_word") or lifecycle_text("closed", lang),
+                    "consequence_text": (built or {}).get("closeout_text") or (built or {}).get("headline_text") or "",
+                    "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
+                    "differentiator_text": None, "decision_id": ds.decision_id})
+    return out
+
+
 def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, Any]], alert: dict[str, Any] | None,
            late: list[dict[str, Any]], customers: int) -> dict[str, Any]:
     """The Deals queue from the rows `_build` already made: one row per task in three tiers by who owes the next step. A negotiation is a
@@ -699,12 +725,14 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
     waits = [w for w in waiting if w["kind"] != "PROMISE"]
     promises = [w for w in waiting if w["kind"] == "PROMISE"]
     waiting_rows = [item(w, WAITING_TIER) for w in waits]
-    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]]
+    closed_rows = [item(r, AGREEMENTS_TIER) for r in _closed_rows(ctx, lang)]  # after the agreements in force: the Closed group (#154)
+    agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]] + closed_rows
     negotiations = {"needs_you": sum(1 for r in needs_rows if r["kind"] == "DECISION"),
                     "waiting": sum(1 for r in waiting_rows if r["kind"] == "BUYER_REPLY"),
-                    "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE"))}
+                    "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE") and r["lifecycle"] != "closed"),
+                    "closed": len(closed_rows)}
     return {
-        "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows), "customers": customers},
+        "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows) - len(closed_rows), "customers": customers},
         "deals": negotiations,
         "alert": alert, "needs_you": needs_rows, "waiting": waiting_rows, "agreements": agreement_rows,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None

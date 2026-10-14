@@ -124,7 +124,9 @@ def test_the_golden_story_walked_to_the_agreement(api: TestClient, rt: Runtime) 
     assert "Agreement recorded" in kinds
     agreement = next(r for r in body["rows"] if r["record"]["kind_text"] == "Agreement recorded")
     assert agreement["kind"] == "business" and agreement["category"] == "deals" and agreement["decision_id"]
-    assert agreement["href"] == f"/decisions/{agreement['decision_id']}" and agreement["href_label"] == "Open this decision"
+    assert agreement["record_href"] == f"/decisions/{agreement['decision_id']}" and agreement["href_label"] == "Open this decision"
+    # round three: an agreed deal is followed in Deals, the record stays as the evidence link
+    assert agreement["href"] == f"/deals?customer=BUYER-1&decision={agreement['decision_id']}&from=activity"
     assert agreement["why_text"] and agreement["actor"] in ("you", "agent", "system", "buyer")
     # newest first
     seqs = [r["record"]["seq"] for r in body["rows"] if "seq" in r["record"]]

@@ -86,7 +86,7 @@ def test_deals_counts_are_the_negotiations_only_and_the_other_counts_stay(api: T
     _busy(api)
     q = _queue(api)
     # five decisions (Zhuhai, Dongguan, Foshan x3) and the Foshan clarification; the collection and the approval are Home's, in `counts` only
-    assert q["deals"] == {"needs_you": 5, "waiting": 1, "agreements": 0}
+    assert q["deals"] == {"needs_you": 5, "waiting": 1, "agreements": 0, "closed": 0}
     assert q["counts"] == {"needs_you": 7, "waiting": 1, "agreements": 0, "customers": 3}
     assert q["deals"]["needs_you"] == sum(1 for r in q["needs_you"] if r["kind"] == "DECISION")
     assert {r["kind"] for r in q["needs_you"]} == {"DECISION", "COLLECTION", "APPROVAL"}  # the tiers still hold them for Home
@@ -105,7 +105,7 @@ def test_an_agreement_and_its_promise_are_counted_under_agreements(api: TestClie
 
 def test_the_golden_story_has_one_decision(api: TestClient) -> None:
     _golden(api)
-    assert _queue(api)["deals"] == {"needs_you": 1, "waiting": 0, "agreements": 0}
+    assert _queue(api)["deals"] == {"needs_you": 1, "waiting": 0, "agreements": 0, "closed": 0}
 
 
 # ---------------------------------------------------------------- 2. subjects
@@ -198,11 +198,11 @@ def test_a_negotiation_row_keeps_its_coarse_topic_for_a_sentence_that_names_it(a
 # ---------------------------------------------------------------- 3. lifecycle
 
 
-def test_the_lifecycle_vocabulary_is_seven_keys_in_both_languages() -> None:
-    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed")
+def test_the_lifecycle_vocabulary_is_eight_keys_in_both_languages() -> None:
+    assert LIFECYCLE == ("counter_ready", "owner_review", "awaiting_buyer", "more_information", "agreed", "declined", "lapsed", "closed")  # round three adds "closed" (an agreed deal that is over)
     assert [lifecycle_text(k, "en") for k in LIFECYCLE] == ["Counter ready", "Owner review needed", "Awaiting buyer", "More information needed",
-                                                          "Agreed", "Declined", "Lapsed"]
-    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效"]
+                                                          "Agreed", "Declined", "Lapsed", "Closed"]
+    assert [lifecycle_text(k, "zh") for k in LIFECYCLE] == ["还价已就绪", "需要您审核", "等待买方回复", "需要更多信息", "已达成", "已拒绝", "已失效", "已结束"]
 
 
 @pytest.mark.parametrize("lang", ["en", "zh"])

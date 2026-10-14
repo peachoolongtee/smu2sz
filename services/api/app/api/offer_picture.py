@@ -33,6 +33,7 @@ from app.api.presentation import (
     when_text,
     whole,
 )
+from app.api.lifecycle import workspace_words
 from app.api.picture_words import (
     add_pairs,
     add_path_words,
@@ -1134,6 +1135,7 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
         picture = cached_picture(rt, offer_id, lang)
         picture = with_buyer_status(rt, offer_id, picture, lang)
         body = {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
+        body.update(workspace_words(rt, offer_id, lang))
     from app.api.picture_scenarios import scenarios  # after the lock: the compare and exposure reads take it themselves, and are cached
 
     return {**body, "scenarios": scenarios(rt, offer_id, picture, lang)}
