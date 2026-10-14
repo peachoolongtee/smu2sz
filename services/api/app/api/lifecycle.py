@@ -244,10 +244,13 @@ def after_group_label(group: str, lang: str) -> str:
 
 def after_group(ds: Any, built: dict[str, Any] | None) -> str:
     """Where an agreed deal stands in the Agreements tier, from the tracker's own read: `payment_late` when an amount is overdue and unpaid (its
-    late, missed or failed states), `closed` when nothing is left owed (the tracker's `ended`) or the agreement was revoked or ran out, else
+    late, missed or failed states), `closed` when nothing is left owed (the tracker's `ended`) or the agreement was revoked or ran out with nothing overdue, else
     `awaiting_payment`. Without a tracker read (it could not be drawn) the record's own state decides: a deal over is closed, one in force awaits."""
     if built is None:
         return CLOSED_GROUP if ds.state in CLOSED else AWAITING_PAYMENT
-    if built.get("ended") or ds.state in (DealState.REVOKED, DealState.EXPIRED):
+    ended = bool(built.get("ended"))
+    if built.get("state_key") in _OVERDUE_KEYS and not ended:  # money first: an overdue, unpaid amount is payment late whatever the record says
+        return PAYMENT_LATE
+    if ended or ds.state in (DealState.REVOKED, DealState.EXPIRED):
         return CLOSED_GROUP
-    return PAYMENT_LATE if built.get("state_key") in _OVERDUE_KEYS else AWAITING_PAYMENT
+    return AWAITING_PAYMENT

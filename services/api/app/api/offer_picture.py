@@ -40,7 +40,6 @@ from app.api.picture_words import (
     add_term_scopes,
     buyer_status,
     financing_needed,
-    no_picture_recommendation,
     recommendation,
 )
 from app.api.presentation import t as say
@@ -992,9 +991,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                 "unavailable_text": gone,
                 "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
                                        lapsed_text=gone),
-                "asked": None, "replies": [], "paths": [], "recommendation": no_picture_recommendation(lang, say(
-                    lang, "FLOW has no reply to recommend: this offer can no longer be drawn on today's books.",
-                    "FLOW 没有可推荐的回复：此报价已无法按今天的账目绘制。")), "moments": [], "axis": None, "picture_days": None,
+                "asked": None, "replies": [], "paths": [], "recommendation": None, "moments": [], "axis": None, "picture_days": None,
                 "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
                 "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
                 "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
@@ -1106,7 +1103,8 @@ def _sent_counters(rt: Any, offer_id: str) -> dict[str, str]:
         if not isinstance(fact, SentFact):
             continue
         for cid in fact.counter_ids_sent:
-            out[cid] = "agreed" if fact.outcome == "DEAL" and cid == fact.accepted_counter_id else "no_deal" if fact.outcome == "NO_DEAL" else "awaiting"
+            out[cid] = ("agreed" if fact.outcome == "DEAL" and cid == fact.accepted_counter_id else "not_chosen" if fact.outcome == "DEAL"
+                        else "no_deal" if fact.outcome == "NO_DEAL" else "awaiting")
     return out
 
 
@@ -1119,7 +1117,10 @@ def with_buyer_status(rt: Any, offer_id: str, picture: dict[str, Any], lang: str
         return picture
     sent = _sent_counters(rt, offer_id)
     who = buyer_short(party_name(rt.store.get_state(), offer.counterparty_id))
-    return {**picture, "paths": [{**p, "buyer_status_text": buyer_status(lang, p["kind"], who, sent.get(p["key"]) if p["kind"] != "asked" else None)}
+    from app.api.accept import _answered
+
+    over = _answered(rt, offer_id) is not None or any(v in ("agreed", "no_deal") for v in sent.values())  # the negotiation has been answered: nothing to recommend
+    return {**picture, **({"recommendation": None} if over else {}), "paths": [{**p, "buyer_status_text": buyer_status(lang, p["kind"], who, sent.get(p["key"]) if p["kind"] != "asked" else None)}
                                  for p in picture["paths"]]}
 
 
