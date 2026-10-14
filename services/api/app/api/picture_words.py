@@ -203,18 +203,22 @@ def _event_words(p: dict[str, Any], pt_day: int, e: dict[str, Any], today: int, 
     return f"{label} {e['amount_short']} {when_text(pt_day, today, lang)}"
 
 
-def _cause(a: dict[str, Any], b: dict[str, Any], day: int, seen: dict[str, dict[int, Any]], names: dict[str, str], lang: str) -> str:
+def _cause(a: dict[str, Any], b: dict[str, Any], day: int, seen: dict[str, dict[int, Any]], names: dict[str, str], lang: str
+           ) -> tuple[str, list[dict[str, Any]]]:
     """In words, the events up to `day` that one line has and the other does not (the same event, same amount and same day, on both lines is
     not a cause): "Option A: Credit-line draw ¥150k today. As asked: Early payment from Foshan ¥414,960 in 2 days."."""
     only_a = list((seen[a["key"]][day] - seen[b["key"]][day]).elements())
     only_b = list((seen[b["key"]][day] - seen[a["key"]][day]).elements())
     sep = say(lang, "; ", "；")
     parts = []
+    lines: list[dict[str, Any]] = []  # the same events, one entry per line, one item per event (for a page that lists them)
     for p, only in ((a, only_a), (b, only_b)):
         if only:
-            words = sep.join(text for _, text in sorted(only))
+            items = [text for _, text in sorted(only)]
+            words = sep.join(items)
             parts.append(say(lang, f"{names[p['key']]}: {words}.", f"{names[p['key']]}：{words}。"))
-    return " ".join(parts) if parts else say(lang, "No event separates the two lines yet.", "目前没有事件使两条线分开。")
+            lines.append({"label": names[p["key"]], "items": items})
+    return (" ".join(parts) if parts else say(lang, "No event separates the two lines yet.", "目前没有事件使两条线分开。")), lines
 
 
 def add_pairs(paths: list[dict[str, Any]], today: int, lang: str) -> None:
@@ -255,13 +259,13 @@ def add_pairs(paths: list[dict[str, Any]], today: int, lang: str) -> None:
             if asked is not None:
                 cmp_map[r["key"]] = {"asked_display": by_day[asked["key"]][d]["closing_display"], "reply_display": by_day[r["key"]][d]["closing_display"],
                                      "difference_display": _signed_whole(by_day[r["key"]][d]["closing_fen"] - by_day[asked["key"]][d]["closing_fen"], whole),
-                                     "cause_text": _cause(asked, r, d, seen, names, lang)}
+                                     **dict(zip(("cause_text", "cause_lines"), _cause(asked, r, d, seen, names, lang), strict=True))}
         for i, a in enumerate(replies):
             for b in replies[i + 1:]:
                 pairs[f"{a['key']}:{b['key']}"] = {
                     "asked_display": by_day[a["key"]][d]["closing_display"], "reply_display": by_day[b["key"]][d]["closing_display"],
                     "difference_display": _signed_whole(by_day[b["key"]][d]["closing_fen"] - by_day[a["key"]][d]["closing_fen"], whole),
-                    "cause_text": _cause(a, b, d, seen, names, lang)}
+                    **dict(zip(("cause_text", "cause_lines"), _cause(a, b, d, seen, names, lang), strict=True))}
         if recommended is not None and asked is not None:  # the strip of round two, kept for the page that reads it
             mine = cmp_map[recommended["key"]]
             cmp_map = {"label": say(lang, "Same day", "同一天"), "asked_display": mine["asked_display"], "recommended_display": mine["reply_display"],
