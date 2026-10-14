@@ -1201,7 +1201,7 @@ def _history(r: _Read) -> list[dict[str, Any]]:
     decided = {a.id for a in ctx.approvals if str(getattr(a.status, "value", a.status)) != "PENDING"}
     known = ctx.states()
     offers = offer_buyers(ctx.rt.store, state, (e.payload or {} for e in ctx.entries))
-    mine_offers = {oid for oid, _ in offers.items() if (o := ctx.offer(oid)) is not None and o.counterparty_id == r.buyer_id}
+    mine_offers = {oid for oid, _ in offers.items() if (held := ctx.offer(oid)) is not None and held.counterparty_id == r.buyer_id}
     entries = sorted((e for e in ctx.entries if e.day is not None and e.result.status not in _SKIP_STATUS and "CLOCK" not in e.kind.upper()
                       and not (e.result.status == OperationStatus.PENDING_APPROVAL and e.result.approval_id in decided)
                       and _mine(e, rids, r.buyer_id, agreements, mine_offers)), key=lambda e: (-(e.day or 0), -e.seq))

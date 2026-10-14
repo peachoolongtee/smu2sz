@@ -614,7 +614,7 @@ def test_home_and_the_customer_overview_name_the_buyer_of_an_answered_request(bu
     home = " ".join(str(x.get("event_text")) for x in _home_changes(busy, lang))
     assert declined in home and "买方的请求" not in home and "the buyer's request" not in home
 
-    buyer_history = lambda cid: " ".join(h["text"] for h in busy.get(f"/customers/{cid}/overview", params={"lang": lang}).json()["history"])  # noqa: E731
+    buyer_history = lambda cid: " ".join(h["text"] for h in busy.get(f"/customers/{cid}/overview", params={"lang": lang}).json()["history"])
     assert declined in buyer_history("BUYER-2")
     zhuhai_text = buyer_history("BUYER-3")
     assert ("Zhuhai Kitchenware Wholesale Co." in zhuhai_text) and "the buyer's request" not in zhuhai_text and "买方的请求" not in zhuhai_text
