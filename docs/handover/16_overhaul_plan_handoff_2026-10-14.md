@@ -151,3 +151,21 @@ plan); ranking sendable replies by net impact over one horizon; a combined multi
   owns a slice before starting.
 - Handoffs 14 and 15 (`docs/handover/`) hold the earlier state and the Slice D brief; the map is GitHub issue #121 with
   the decision tickets #126–#138 closed with their resolution comments.
+
+## 10. The second machine's work (read `16_session_handoff_2026-10-14_slice_d_and_tracker.md` for its detail)
+
+The owner runs a second session on a Windows machine. It built Slice D (integrated here, §4) and, on its own map #148, the
+**deal tracker** (`GET /decisions/{id}/tracker`, the page `/decisions/[id]/tracker`): for an agreed deal, the cost expected at
+agreement against the cost so far, stage by stage, every figure a stored value or an integer sum, verified twice to the fen.
+It is on `dev` (86e8a9bb). Open with the owner from that session, unchanged here:
+1. The tracker's funding figure: Option A (funding after a late payment counted in the deal's total, the switch today) or
+   Option B (shown beside, not counted; recommended there on the verifier's evidence).
+2. The buyer reliability grade (`int/agent-optimiser`, #153): one measure reading payment behaviour's rule and history,
+   held out of `dev` until the owner decides how it is shown (#155: the grade as a word or only its evidence).
+3. Whether the Demo's restore should be in the hash chain (a small engine change).
+4. The pitch deck outline (`docs/deliverables/deck_outline.md`): update now or after the merges.
+
+Coordination between the two machines: each slice has one owner machine, announced before it starts; branch names are not
+reused across machines; `dev` is merged, never rebased; every merge into `dev` is `--no-ff` after the whole mock suite, the
+whole live project and `tests/api` pass on the merged branch, plus a verifier pass for anything touching money, authority or
+the books. Both sessions' handoffs live in `docs/handover/` and are the first read on either machine.
