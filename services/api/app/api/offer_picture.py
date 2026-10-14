@@ -13,6 +13,7 @@ from collections import Counter, OrderedDict
 from fractions import Fraction
 from functools import reduce
 from typing import Annotated, Any
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -1137,6 +1138,19 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
         picture = with_buyer_status(rt, offer_id, picture, lang)
         body = {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
         body.update(workspace_words(rt, offer_id, lang))
-    from app.api.picture_scenarios import scenarios  # after the lock: the compare and exposure reads take it themselves, and are cached
+    # The scenarios are the Cash impact tab's, and the compare and exposure reads behind them cost seconds on a cold read: they come from their own
+    # route, so the first read of the picture (which holds the runtime lock) stays small.
+    return {**body, "scenarios": [], "scenarios_href": f"/offers/{quote(offer_id, safe='')}/scenarios?lang={lang}"}
 
-    return {**body, "scenarios": scenarios(rt, offer_id, picture, lang)}
+
+@router.get("/offers/{offer_id}/scenarios")
+def get_scenarios(offer_id: str, lang: str = "en") -> dict[str, Any]:
+    """The picture's `scenarios[]` (continue current position, the buyer pays 30 days late, the buyer stops buying), composed from the compare and
+    exposure reads, which are cached. Owner only. Empty when the exposure feature is off or either read cannot be made."""
+    from app.api.picture_scenarios import scenarios
+
+    rt = get_runtime()
+    lang = "zh" if lang == "zh" else "en"
+    with rt.lock:
+        picture = cached_picture(rt, offer_id, lang)  # 404 for an unknown offer or one with no verdict yet, as the picture says
+    return {"scenarios": scenarios(rt, offer_id, picture, lang)}

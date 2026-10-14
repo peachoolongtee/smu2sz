@@ -213,15 +213,27 @@ def test_the_new_words_are_in_chinese_with_no_english_left(api: TestClient) -> N
 # ================================================================ task 3: the scenarios
 
 
-def _scenarios(pic: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    return {s["key"]: s for s in pic["scenarios"]}
+def _scenario_list(api: TestClient, offer_id: str, lang: str = "en") -> list[dict[str, Any]]:
+    r = api.get(f"/offers/{offer_id}/scenarios", params={"lang": lang})
+    assert r.status_code == 200, r.text
+    found: list[dict[str, Any]] = r.json()["scenarios"]
+    return found
+
+
+def _scenarios(pic: dict[str, Any], api: TestClient | None = None) -> dict[str, dict[str, Any]]:
+    """The scenario cards: the route's, found from the picture's own `scenarios_href`."""
+    assert pic["scenarios"] == [] and pic["scenarios_href"].startswith("/offers/")
+    assert api is not None
+    r = api.get(pic["scenarios_href"])
+    assert r.status_code == 200
+    return {s["key"]: s for s in r.json()["scenarios"]}
 
 
 def test_golden_scenarios_are_composed_from_the_compare_and_exposure_reads(api: TestClient) -> None:
     offer_id, pic = _golden(api)
-    sc = _scenarios(pic)
+    sc = _scenarios(pic, api)
     assert list(sc) == ["no_new_agreement", "late_30", "customer_loss"]
-    assert [s["label"] for s in pic["scenarios"]] == ["Continue current position", "Buyer pays 30 days late", "Buyer stops placing new orders"]
+    assert [s["label"] for s in sc.values()] == ["Continue current position", "Buyer pays 30 days late", "Buyer stops placing new orders"]
     compare = api.get(f"/offers/{offer_id}/compare").json()["rows"]
     current = next(r for r in compare if r["key"] == "current")
     assert sc["no_new_agreement"]["assumption_text"] == current["assumption_text"]
@@ -248,19 +260,23 @@ def test_scenarios_leave_the_picture_and_the_books_as_they_were(api: TestClient,
 
 
 def test_zhuhai_has_scenarios_and_the_scenario_words_are_clean_in_both_languages(api: TestClient) -> None:
-    _, zhuhai = _busy_zhuhai(api)
-    assert {s["key"] for s in zhuhai["scenarios"]} <= {"no_new_agreement", "late_30", "customer_loss"} and zhuhai["scenarios"]
-    for pic in (_golden(api)[1], zhuhai):
-        for key, text in _texts(pic["scenarios"]):
+    z_offer, zhuhai = _busy_zhuhai(api)
+    z_cards = _scenario_list(api, z_offer)
+    assert {s["key"] for s in z_cards} <= {"no_new_agreement", "late_30", "customer_loss"} and z_cards
+    g_offer, _ = (lambda: (_evaluate(api, EX01), None))()
+    for cards in (_scenario_list(api, g_offer), z_cards):
+        for key, text in _texts(cards):
             assert not BAD.search(text), (key, text)
-    _, zh = _golden_zh(api)
-    assert english_leaks(_scenarios_words(zh), NAMES + ["Foshan Home Retail Co."]) == []
-    assert _scenarios(zh)["customer_loss"]["lost_billings_text"] == "每年约 ¥5,460,000 的开票额（根据您的账目推算）"
+    api.post("/demo/reset")
+    zg_offer = _evaluate(api, EX01, "zh")
+    zh_cards = _scenario_list(api, zg_offer, "zh")
+    assert english_leaks(_scenarios_words(zh_cards), NAMES + ["Foshan Home Retail Co."]) == []
+    assert {s["key"]: s for s in zh_cards}["customer_loss"]["lost_billings_text"] == "每年约 ¥5,460,000 的开票额（根据您的账目推算）"
 
 
-def _scenarios_words(pic: dict[str, Any]) -> list[dict[str, Any]]:
+def _scenarios_words(cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
     drop = {"assumption_text", "text"}  # the engine's long assumption sentences are checked by the compare and exposure tests
-    return [{k: v for k, v in s.items() if k not in drop and k != "rows"} for s in pic["scenarios"]]
+    return [{k: v for k, v in s.items() if k not in drop and k != "rows"} for s in cards]
 
 
 # ================================================================ task 4: the chart's pairs
@@ -602,4 +618,40 @@ def test_a_cold_picture_read_builds_the_exposure_block_once(api: TestClient, mon
     assembly.clear_cache()
     offer_picture._cache.clear()
     pic = _picture(api, offer)
-    assert pic["scenarios"] and len(calls) == 1  # the compare read builds it and the late-payment card reuses it
+    assert pic["scenarios"] == [] and calls == []  # the first read of the picture builds no exposure block at all
+    assert _scenario_list(api, offer) and len(calls) == 1  # the scenarios route builds it once: the compare read builds it and the late-payment card reuses it
+
+
+def test_the_scenarios_route_gives_what_the_picture_carried_before(api: TestClient, rt: Runtime) -> None:
+    from app.api import picture_scenarios
+
+    for lang in ("en", "zh"):
+        for offer, _pic in (_golden(api, lang), _busy_zhuhai(api, lang)):
+            with rt.lock:
+                before = offer_picture.cached_picture(rt, offer, lang)
+            assert _scenario_list(api, offer, lang) == picture_scenarios.scenarios(rt, offer, before, lang)
+            pic = _picture(api, offer, lang)
+            assert pic["scenarios"] == [] and pic["scenarios_href"] == f"/offers/{offer}/scenarios?lang={lang}"
+        api.post("/demo/reset")
+
+
+def test_the_scenarios_route_is_owner_only_and_an_unknown_offer_is_404(api: TestClient) -> None:
+    offer, _ = _golden(api)
+    from app.main import app
+
+    anonymous = TestClient(app)
+    assert anonymous.get(f"/offers/{offer}/scenarios").status_code == 401
+    assert api.get("/offers/OFF-nope/scenarios").status_code == 404
+
+
+def test_a_cold_picture_read_on_the_golden_books_is_small(api: TestClient) -> None:
+    import time
+
+    offer = _evaluate(api, EX01)
+    offer_picture._cache.clear()
+    assembly.clear_cache()
+    started = time.perf_counter()
+    pic = _picture(api, offer)
+    elapsed = time.perf_counter() - started
+    print(f"cold picture read: {elapsed:.2f}s")
+    assert pic["paths"] and elapsed < 1.5
