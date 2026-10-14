@@ -10,6 +10,9 @@ import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
+  ActivityView,
+  DemoRestoreResult,
+  DemoStoryView,
   ActRequest,
   AlertActResult,
   AlertsView,
@@ -90,6 +93,11 @@ import offerPictureJson from "../../mocks/offer_picture_ex01.json";
 import approvalStories from "../../mocks/w1_approval_stories.json";
 import counterChangedJson from "../../mocks/w2_counter_changed.json";
 import auditSec from "../../mocks/audit_sec.json";
+import sliceDActivity from "../../mocks/slice_d/activity.json";
+import sliceDGuard from "../../mocks/slice_d/guard.json";
+import sliceDAudit from "../../mocks/slice_d/audit.json";
+import sliceDRestore from "../../mocks/slice_d/restore.json";
+import sliceDStory from "../../mocks/slice_d/story.json";
 import bankReceiptJson from "../../mocks/bank_receipt.json";
 import borrowerFileJson from "../../mocks/borrower_file.json";
 import capexApplyJson from "../../mocks/capex_apply.json";
@@ -369,10 +377,19 @@ export async function planFunding(_req: PlanRequest): Promise<FundingView> {
   return clone(cast<FundingView>(home.mockClock().day >= home.NEWS_DAY ? fundingDay34Json : fundingJson));
 }
 
+/** The owner-words kind of each operation kind, read from the recorded ledgers: a row the mock seeds (the document confirmations) carries the server's own `kind_text`. */
+function recordedKindTexts(): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const rec of [cast<LedgerView>(ledgerApproved), cast<LedgerView>(ledgerDay34)]) for (const o of rec.operations) if (o.kind_text && !out.has(o.kind)) out.set(o.kind, o.kind_text);
+  return out;
+}
+
 export async function getLedger(): Promise<LedgerView> {
   await delay();
   seedStory();
   const s = load();
+  const kinds = recordedKindTexts();
+  for (const o of s.ops) if (!o.kind_text && kinds.has(o.kind)) o.kind_text = kinds.get(o.kind);
   const head = s.ops.length ? s.ops[s.ops.length - 1].entry_hash : null;
   const valid = chainValid(s.ops);
   // The chain words and the refusal block are the API's own, recorded: the set-aside count is the recorded Audit's once the security scene has run.
@@ -389,11 +406,123 @@ export async function getLedger(): Promise<LedgerView> {
   });
 }
 
+// ------------------------------------------------------------------ Slice D: GET /activity, GET /demo/story, POST /demo/restore (recordings, mocks/slice_d)
+// Recorded from the real API by `scripts/record-mocks.mjs --slice-d` at the moments the Demo's walk passes through; the mock picks one by its own state and does no
+// arithmetic. The scenario is the one thing the mock keeps beside the books: the busy company is a recording of these two reads only (the other pages keep the main books).
+
+type StoryBook = "fresh" | "ask" | "decide" | "agree" | "bank" | "time" | "queue" | "approve" | "settle";
+const SCENARIO_KEY = "tl-mock-scenario";
+let scenario: string | null = null;
+
+/** The recorded read of the loaded books when they are not the main books' (the recordings are named `busy` and `short`), else null. */
+function otherBooks(): "busy" | "short" | null {
+  const now = currentScenario();
+  return now === "busy" ? "busy" : now === "short_facilities" ? "short" : null;
+}
+
+function currentScenario(): string | null {
+  if (scenario) return scenario;
+  if (typeof window === "undefined") return null;
+  try {
+    scenario = window.sessionStorage.getItem(SCENARIO_KEY);
+  } catch {
+    /* the main books */
+  }
+  return scenario;
+}
+
+function setScenario(next: string | null): void {
+  scenario = next;
+  if (typeof window === "undefined") return;
+  try {
+    if (next) window.sessionStorage.setItem(SCENARIO_KEY, next);
+    else window.sessionStorage.removeItem(SCENARIO_KEY);
+  } catch {
+    /* kept in memory */
+  }
+}
+
+/** Where the main books stand, in the server's own order of book-changing steps: an offer received, its verdict, its agreement, the bank receipt, day 34, the cure queued, approved, settled. */
+function storyBook(): StoryBook {
+  const s = load();
+  const day = home.mockClock().day;
+  const stage = home.cureStage();
+  if (stage === "approved") return day >= home.SETTLED_DAY ? "settle" : "approve";
+  if (stage === "pending") return "queue";
+  if (day >= home.NEWS_DAY) return "time";
+  if (home.isReceipted()) return "bank";
+  if (Object.keys(s.negotiated).length) return "agree";
+  if (s.evaluated.length) return "decide";
+  if (Object.keys(s.offers).length) return "ask";
+  return "fresh";
+}
+
+type Pair<T> = { en: T; zh: T };
+const pick = <T>(all: Record<string, Pair<T>>, key: string, lang: "en" | "zh"): T => clone((all[key] ?? all.fresh)[lang === "zh" ? "zh" : "en"]);
+
+export async function getActivity(lang: "en" | "zh", _ctx: object = {}): Promise<ActivityView> {
+  void _ctx;
+  await delay();
+  seedStory();
+  const book = storyBook();
+  // A log with no entry at all (a business's first day) has nothing to list: the opening books' read without its rows, tabs and chain words.
+  if (!load().ops.length && !otherBooks()) {
+    const empty = pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), "fresh", lang);
+    return { ...empty, rows: [], categories: empty.categories.filter((c) => c.key === "all").map((c) => ({ ...c, count: 0 })), chain: { ...empty.chain, chain_length: 0, chain_text: null } };
+  }
+  const key = otherBooks() ?? (load().securityScene && (book === "settle" || book === "approve") ? "security" : book);
+  return pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), key, lang);
+}
+
+function storyKey(seen?: string | null): string {
+  const book = storyBook();
+  // The view steps change nothing, so the page says which it has shown; the books must support it, as the server checks.
+  return otherBooks() ?? (book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book);
+}
+
+export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {
+  await delay();
+  return pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), storyKey(seen), lang);
+}
+
+/**
+ * The server's stale-page guard on a reset or a restore, answered from the mock's own state: another scenario than the page named is 409 BOOKS_CHANGED; work on the books without
+ * `confirm_loss` is 409 LOSS_NOT_CONFIRMED with the list the story read carries. The sentences are the API's own, recorded (mocks/slice_d/guard.json).
+ */
+function checkGuard(guard?: { from: string; confirm?: string }): void {
+  if (!guard) return;
+  const lang = getLang() === "zh" ? "zh" : "en";
+  type Rec = { en: { message: string; message_when: string }; zh: { message: string; message_when: string } };
+  const rec = cast<{ books_changed: Rec; loss_not_confirmed: Rec; loss_changed: Rec }>(sliceDGuard);
+  const now = currentScenario() ?? "golden_sme";
+  if (guard.from !== now) {
+    const d = rec.books_changed[lang];
+    throw new ApiError(409, d.message, { code: "BOOKS_CHANGED", message: d.message, message_when: d.message_when, scenario: now });
+  }
+  const books = pick(cast<Record<string, Pair<DemoStoryView>>>(sliceDStory), storyKey(), lang).books;
+  if (books.nothing_to_lose) return;
+  // Something to lose: the confirmation is the token of the list shown; none is "not confirmed", another is "the list changed".
+  if (!guard.confirm) {
+    const d = rec.loss_not_confirmed[lang];
+    throw new ApiError(409, d.message, { code: "LOSS_NOT_CONFIRMED", message: d.message, message_when: d.message_when, loss_items: books.loss_items, loss_token: books.loss_token });
+  }
+  if (guard.confirm !== books.loss_token) {
+    const d = rec.loss_changed[lang];
+    throw new ApiError(409, d.message, { code: "LOSS_CHANGED", message: d.message, message_when: d.message_when, loss_items: books.loss_items, loss_token: books.loss_token });
+  }
+}
+
+export async function restoreDemo(lang: "en" | "zh", guard?: { from: string; confirm?: string }): Promise<DemoRestoreResult> {
+  await demoReset(undefined, guard);
+  return clone(cast<Pair<DemoRestoreResult>>(sliceDRestore)[lang === "zh" ? "zh" : "en"]);
+}
+
 export async function getAudit(): Promise<AuditView> {
   await delay();
   seedStory();
   const s = load();
-  const scene = cast<AuditView>(auditSec);
+  // The security view reads the recorded moment the Activity rows were recorded at, so each row's evidence link names an event this view has.
+  const scene = cast<AuditView>(sliceDAudit);
   const refusals = s.ops.filter((o) => o.status === "REFUSED");
   if (!s.securityScene) {
     return clone({
@@ -1093,14 +1222,16 @@ export async function whatIf(params: WhatIfParams): Promise<WhatIfResult> {
   } as WhatIfResult);
 }
 
-export async function demoReset(scenario?: string): Promise<void> {
-  void scenario; // the mock holds one recorded scenario
+export async function demoReset(requested?: string, guard?: { from: string; confirm?: string }): Promise<void> {
   await delay();
   // Like the live API, the reset is an owner action: without a token the sign-in dialog opens and the caller retries after sign-in.
   if (!getOwnerToken()) {
     requestSignIn("required");
     throw new ApiError(401, "Owner sign-in required (401). Sign in with the owner token to use this.", undefined, "owner_required");
   }
+  checkGuard(guard);
+  // The mock holds one recorded set of books; the busy company is the two Slice D reads recorded on it.
+  setScenario(requested && requested !== "golden_sme" ? requested : null);
   memory = seededStore();
   save();
   home.resetHome();

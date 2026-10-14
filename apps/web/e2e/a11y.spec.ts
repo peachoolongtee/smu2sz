@@ -1,8 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter } from "./helpers";
-import { openStoryFold, STORY_STEPS } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
+import { openStoryFold } from "./helpers";
 
 /**
  * The accessibility re-check (wayfinder #65 Wave 7, section 29): axe on every Business page and on the blocks added since the last
@@ -25,6 +25,7 @@ async function scan(page: Page, label: string) {
 async function advanceTo(page: Page, day: number) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill(String(day));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText(`Day ${day}`);
@@ -122,7 +123,7 @@ test("the chat panel and the Demo story", async ({ page }) => {
   await page.goto("/mandate");
   for (let i = 0; i < 4; i++) {
     await page.getByTestId("demo-next").click();
-    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(`step ${i + 1} of ${STORY_STEPS}`);
+    await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(/Scene \d of 6|All 6 scenes/);
   }
   await scan(page, "Demo story, step 4");
 });

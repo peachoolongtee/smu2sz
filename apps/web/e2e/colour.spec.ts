@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, filledBrand, openReview } from "./helpers";
+import { checkedDeal, filledBrand, openReview, openOperatorTools } from "./helpers";
 
 /**
  * The colour direction (docs/research/colour-direction-2026-10-08.md), as computed styles in mock mode: the Home headline on the
@@ -98,6 +98,7 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
 
 test("the day-34 pending home has one primary: the decision, and the owner's disc is brand, not green", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

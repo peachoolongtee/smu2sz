@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
+import { openCompare, openStoryFold, STORY_STEPS, verdictHeading, walkStory, openOperatorTools } from "./helpers";
 
 /** Runs on a phone viewport (and desktop): no page may scroll sideways, the story bar stays reachable in Demo mode, and the Business home puts the answer first. */
 
@@ -180,18 +180,15 @@ test("the document review fits the viewport", async ({ page }) => {
   expect(await overflowX(page), "the confirmed review overflows horizontally").toBeLessThanOrEqual(1);
 });
 
-test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {
+test("the story's strip and the app's navigation are reachable on an engine view; the engine views open from the Demo's Operator tools", async ({ page }) => {
   await page.goto("/mandate");
   await expect(page.getByTestId("demo-next")).toBeInViewport();
-  const menu = page.getByRole("button", { name: "Open navigation" });
-  if (await menu.isVisible()) {
-    await menu.click();
-    await page.getByRole("link", { name: "Funding" }).click();
-    await expect(page).toHaveURL(/\/funding/);
-  } else {
-    await page.getByRole("link", { name: "Funding" }).click();
-    await expect(page).toHaveURL(/\/funding/);
-  }
+  await expect(page.getByTestId(page.viewportSize()!.width >= 1024 ? "nav-pills" : "tab-bar")).toBeVisible();
+  await page.goto("/demo");
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-engine").getByRole("link", { name: "Debt Desk" }).click();
+  await expect(page).toHaveURL(/\/funding/);
+  await expect(page.getByTestId("demo-next")).toBeInViewport();
 });
 
 test("the slide-over chat fits the viewport with a long reply", async ({ page }) => {
@@ -353,6 +350,7 @@ test("on a desktop the queue is the left pane and the negotiation the right one,
 async function toDay34(page: Page) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
@@ -417,28 +415,28 @@ test("at tablet width (820) the open invoices are one card each, so no column is
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 
-test("phone: the Demo story keeps 'More to show', 'Today' and 'The books' under one closed fold each, so the page is short", async ({ page }, testInfo) => {
+test("phone: the Demo story keeps 'Operator tools' under one closed fold and the three books cards in the first screen, so the page is short", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "phone", "the folds are the phone's");
   await page.goto("/demo");
-  for (const card of ["story-more", "story-today", "story-reset"]) {
-    const fold = page.getByTestId(`story-fold-${card}`);
+  await expect(page.getByTestId("demo-scenario-load-busy")).toBeInViewport();
+  await expect(page.getByTestId("demo-alternate-fold")).toHaveCount(0);
+  for (const id of ["demo-operator-tools"]) {
+    const fold = page.getByTestId(id);
     await expect(fold).toBeAttached();
     await expect(fold).not.toHaveAttribute("open", "");
   }
   // The controls stay one tap away: a fold opens with the keyboard's Enter and shows what was behind it.
   await expect(page.getByTestId("more-run-capex")).toBeHidden();
-  const books = page.getByTestId("story-fold-story-reset");
-  await books.locator("> summary").focus();
+  const tools = page.getByTestId("demo-operator-tools");
+  await tools.locator("> summary").focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByTestId("story-reset")).toBeVisible();
-  await books.locator("> summary").click();
-  await expect(page.getByTestId("story-reset")).toBeHidden();
+  await expect(page.getByTestId("more-run-capex")).toBeVisible();
+  await tools.locator("> summary").click();
+  await expect(page.getByTestId("more-run-capex")).toBeHidden();
   await expect(page.getByTestId("home-day")).toBeAttached();
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   const view = page.viewportSize()?.height ?? 915;
-  // Measured 2.7 screens at 412 x 915 with the folds and the compact step rows; the eleven steps are the page. Under two is open.
-  // The limit is three screens plus 16 px for the reskin's type: the page title is a 24 px / 32 px serif (was 20 / 28) and a card's padding is 20 px
-  // (was 16), which together add about 8 px to this page. The bound moved by that, not by the page's length.
+  // Three one-line books, one current scene, six one-line scenes and one closed fold: the page is short.
   expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3 + 16);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

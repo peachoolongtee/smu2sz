@@ -97,7 +97,9 @@ function problemOf(e: unknown): Problem {
 export function DocumentReview({ id, today = null, focus }: { id: string; today?: number | null; focus?: { at: string | null; clause: string | null } }) {
   const { t, te, lang } = useI18n();
   const doc = useAsync(() => getDocument(id, lang), [id, lang]);
-  const [active, setActive] = useState<string | null>(null);
+  // What is lit comes from the pointer or from keyboard focus, kept apart. The pointer lights a term only when it moves over it (mousemove), not when the page scrolls under a parked pointer (focusing a term scrolls it into view, and the browser then reports a leave and an enter that no one made): that must not switch off, or replace, what focus lit.
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   // Linking a lender agreement to a facility on the books starts off: the owner chooses it.
   const [link, setLink] = useState(false);
   const [busy, setBusy] = useState<"confirm" | "reject" | null>(null);
@@ -125,7 +127,7 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
     window.setTimeout(() => go("smooth"), 150);
     window.setTimeout(() => go("auto"), 1200);
   }, [pinned, loaded]);
-  const lit = active ?? pinned;
+  const lit = hovered ?? focused ?? pinned;
 
   if (doc.error) return <ErrorState error={doc.error} onRetry={doc.reload} />;
   if (!doc.data) return <LoadingBlock rows={3} />;
@@ -172,13 +174,13 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
       key={it.id}
       tabIndex={0}
       data-testid={`doc-item-${it.id}`}
-      onMouseEnter={() => setActive(it.id)}
-      onMouseLeave={() => setActive(null)}
+      onMouseMove={() => setHovered(it.id)}
+      onMouseLeave={() => setHovered(null)}
       onFocus={() => {
-        setActive(it.id);
+        setFocused(it.id);
         reveal(it.id);
       }}
-      onBlur={() => setActive(null)}
+      onBlur={() => setFocused(null)}
       className={`rounded-tile border px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${lit === it.id ? "border-brand-600 bg-brand-50" : "border-line"}`}
     >
       <div className="flex flex-wrap items-baseline gap-2">
@@ -376,7 +378,8 @@ export function DocumentReview({ id, today = null, focus }: { id: string; today?
                 text={d.document.text}
                 annotations={all.map((it) => ({ id: it.id, kind: it.kind, start: it.span.start, end: it.span.end, n: it.n, label: it.label }))}
                 activeId={lit}
-                onActivate={setActive}
+                onActivate={setHovered}
+                onFocusChange={setFocused}
               />
             </div>
             <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t("docs.legend")}>

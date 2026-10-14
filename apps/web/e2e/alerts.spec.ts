@@ -39,10 +39,12 @@ test("reconciliation: no receipts yet, one outstanding receivable, chain valid",
   await expect(page.getByText("Lapsed promises: 0")).toBeVisible();
 });
 
-test("alerts and reconciliation are reachable from the navigation", async ({ page }) => {
-  await page.goto("/mandate");
-  await page.getByRole("link", { name: "Alerts" }).click();
+test("alerts and reconciliation open by their address, in the app's own shell (the Demo has no sidebar of engine views)", async ({ page }) => {
+  await page.goto("/alerts");
   await expect(page).toHaveURL(/\/alerts/);
-  await page.getByRole("link", { name: "Reconciliation" }).click();
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+  await expect(page.getByTestId("nav-pills")).toBeAttached();
+  await page.goto("/reconciliation");
   await expect(page).toHaveURL(/\/reconciliation/);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
 });

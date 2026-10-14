@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal as readDeal, openCompare, openReview, runPlan, sendCounter, walkStory } from "./helpers";
+import { checkedDeal as readDeal, openCompare, openOperatorTools, openReview, runPlan, sendCounter, walkStory } from "./helpers";
 
 /** Live-mode only: owner-token handling, the 401 state, borrower-file downloads and owner approval. */
 
@@ -44,6 +44,7 @@ test("a 401 from the API opens the owner sign-in dialog instead of leaving a bla
 test("the borrower file downloads as HTML and Word, and the owner approves the one pending application", async ({ page }) => {
   // The capex question (an optional scene) evaluates and prepares the read-only borrower file; the application is the owner's click.
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await expect(page).toHaveURL(/\/capex/);
   await page.getByTestId("capex-apply").click();
@@ -282,6 +283,7 @@ test("when the books move after the alert was shown, the act answers 409 and the
 test("an approval is refused when the server does not recognise the owner", async ({ page }) => {
   // A pending approval to decide: the capex application (an optional scene, then the owner's own click on the Capex page).
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await page.getByTestId("capex-apply").click();
   await expect(page.getByTestId("capex-applied")).toBeVisible();
@@ -686,7 +688,7 @@ test("Cash: the comparison arrives grouped and ordered by the API, and the forec
   await expect(page.getByTestId("cash-picture").getByTestId("picture-table")).toContainText("Operating bill");
 });
 
-test("Activity: each row says what changed, why it matters (Now) and what remains; the approval request is history with a link; the chain words are the API's", async ({ page, request }) => {
+test("Activity: each row says what changed, why it matters and what remains; the approval request is history with a link; the chain words are the API's", async ({ page, request }) => {
   const { post } = await toDay34(request);
   await page.goto("/");
   await runPlan(page.getByTestId("home-next-action"), "ALERT-RESERVE-42");
@@ -694,17 +696,18 @@ test("Activity: each row says what changed, why it matters (Now) and what remain
   await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.locator('[id^="approval-APR-"]').first()).toContainText("Approved");
   await page.goto("/activity");
-  const approved = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "You approved" });
+  await expect(page.getByTestId("activity-read")).toBeVisible();
+  const rows = page.getByTestId("activity-list").getByTestId("activity-row");
+  // The approved row's sentence is the API's, with why it matters and what remains in its words.
+  const approved = rows.filter({ hasText: "You approved" }).first();
   await expect(approved.getByTestId("activity-event")).toHaveText("You approved ¥200,000.00 of invoice financing. Funds arrive in 3 days.");
-  // Today's forecast is said once, as the page's one h1 (the server's "now" sentence); the row does not repeat it.
-  await expect(page.getByTestId("activity-now")).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(await page.getByTestId("activity-now").innerText());
-  await expect(approved.getByTestId("activity-why")).toHaveCount(0);
+  await expect(approved.getByTestId("activity-why")).toContainText("Why it matters");
   await expect(approved.getByTestId("activity-remains")).toContainText("Waiting for");
-  const requested = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").filter({ hasText: "Approval requested:" });
-  await expect(requested.getByTestId("activity-approval")).toContainText("Approval requested");
-  await expect(requested.getByTestId("activity-approval-state")).not.toContainText("Waiting for your approval");
-  await requested.getByTestId("activity-record").click();
+  await expect(approved.getByTestId("activity-meta")).toContainText(/Approved by you/);
+  // The approval request is history: it says it was requested, and its link opens the decision's record.
+  const requested = rows.filter({ hasText: "Approval requested:" }).first();
+  await expect(requested.getByTestId("activity-open-decision")).toHaveAttribute("href", /^\/decisions\/alert/);
+  await requested.getByTestId("activity-open-decision").click();
   await expect(page).toHaveURL(/\/decisions\/alert/);
   await expect(page.getByTestId("record-state")).toBeVisible();
   await page.goto("/activity");

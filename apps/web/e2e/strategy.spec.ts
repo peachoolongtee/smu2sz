@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, proseOf, test } from "./fixtures";
-import { checkedDeal, filledBrand, openCompare, openStoryFold, resetBooks, runPlan } from "./helpers";
+import { checkedDeal, filledBrand, openCompare, openStoryFold, resetBooks, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * The strategy MVP surfaces (wayfinder map #47, Wave 5): the cash price sentence on Cash & funding, the collections worth on
@@ -36,6 +36,7 @@ test.beforeEach(async ({ request }) => {
 async function advanceMockTo34(page: Page) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

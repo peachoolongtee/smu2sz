@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, openInbox, runPlan } from "./helpers";
+import { checkedDeal, openInbox, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * The customer overview, /customers/{id} (map #88, ticket #108), in mock mode on the recorded API answers (scripts/record-mocks.mjs --overview):
@@ -158,12 +158,13 @@ test("a customer link carries that row's own customer, decision and invoice and 
 
 test("the customer link on Activity carries the context of the URL it is on", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");
   await page.goto("/activity?invoice=RCV-A");
   // Activity holds no selection: its links carry the origin and nothing from the address.
-  const link = page.locator("#activity-commitments").getByRole("link", { name: "Foshan Home Retail Co." }).first();
+  const link = page.locator("#activity-timeline").getByRole("link", { name: "Foshan Home Retail Co." }).first();
   await expect(link).toHaveAttribute("href", "/customers/BUYER-1?from=activity");
 });
 

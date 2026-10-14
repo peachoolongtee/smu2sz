@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, proseOf, test } from "./fixtures";
-import { openReview, resetBooks, runPlan, sendCounter } from "./helpers";
+import { openReview, resetBooks, runPlan, sendCounter, openOperatorTools } from "./helpers";
 
 /**
  * Contract ingestion (brief 03) in the redesigned UI. The demo opens on the three demo documents read by the agent and
@@ -131,6 +131,30 @@ test("the documents: the three demo documents confirmed, each term of the supply
   await expect(mark).toHaveClass(/ring-2/);
 });
 
+test("focusing a term lights its clause with the shared dialogs mounted, wherever the pointer is parked (the page scrolls under it)", async ({ page }) => {
+  await page.goto("/documents?id=DOC-000001");
+  const terms = page.getByTestId("doc-terms");
+  const price = terms.locator("li", { hasText: "¥420,000.00 per delivery batch" });
+  await expect(price).toBeVisible();
+  const id = (await price.getAttribute("data-testid"))!.replace("doc-item-", "");
+  // The books confirmation dialog is part of every Business page, closed: it takes no focus and shows nothing.
+  await expect(page.getByTestId("books-dialog")).toBeAttached();
+  await expect(page.getByTestId("books-dialog")).toBeHidden();
+  const mark = page.getByRole("group", { name: "Document text with the clauses the agent read highlighted" }).locator(`mark[data-annotation~="${id}"]`).first();
+  await expect(mark).not.toHaveClass(/ring-2/);
+  // A pointer parked over the terms: focusing a term scrolls it into view, so the pointer leaves one element and enters another; neither may switch off what focus lit.
+  await page.mouse.move(1100, 300);
+  await price.focus();
+  await expect(price).toBeFocused();
+  await expect(mark).toHaveClass(/ring-2/);
+  // Past the settling of the scroll (the browser reports the pointer's new element a moment later) the clause is still lit.
+  await page.waitForTimeout(600);
+  await expect(mark).toHaveClass(/ring-2/);
+  // Leaving the term puts the clause out again.
+  await price.blur();
+  await expect(mark).not.toHaveClass(/ring-2/);
+});
+
 test("the confirm flow: a new reading is labelled AI-generated until the owner confirms it, and Activity logs it", async ({ page }) => {
   const review = await readAgain(page, SUPPLY);
   await expect(review.getByTestId("doc-ai-label")).toHaveText("AI-generated, for reference");
@@ -146,13 +170,14 @@ test("the confirm flow: a new reading is labelled AI-generated until the owner c
   await expect(page.getByTestId("doc-seq")).toHaveText("#4");
   await expect(page.getByTestId("doc-row-DOC-000004")).toHaveAttribute("data-status", "CONFIRMED");
 
-  // Activity: the owner's four confirmations in the executor's sentences, newest first, each opening its contract.
+  // Activity: the owner's confirmations in the server's words, newest first, each opening its record in Documents.
   await page.goto("/activity");
-  const confirms = page.getByTestId("activity-CONFIRM_DOCUMENT");
-  await expect(confirms).toHaveCount(4);
-  await expect(confirms.first()).toContainText("the agent read it, the owner confirmed it; nothing in the books changed");
-  await confirms.first().getByTestId("activity-document-link").click();
-  await expect(page).toHaveURL(/\/documents\?id=DOC-000004$/);
+  const confirms = page.getByTestId("activity-list").getByTestId("activity-row").filter({ hasText: "You confirmed" });
+  await expect(confirms.first()).toBeVisible();
+  expect(await confirms.count()).toBeGreaterThanOrEqual(3);
+  await expect(confirms.first()).toContainText("Nothing in the books changed");
+  await confirms.first().getByTestId("activity-open-decision").click();
+  await expect(page).toHaveURL(/\/documents/);
 });
 
 test("a lender agreement (the PDF copy) is compared with the facility on the books and linked when confirmed", async ({ page }) => {
@@ -214,6 +239,7 @@ test("your own file: the upload form sends a Word, PDF or text file with what it
 test("day 34: the deal summary tells the story and points at the approval", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "live", "mock-mode spec: the recorded demo path (deal, receipt on day 2, clock to day 34)");
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

@@ -16,6 +16,7 @@ import {
   negotiate,
   planFunding,
   submitOffer,
+  type BooksGuard,
 } from "./api";
 import {
   bump,
@@ -46,6 +47,20 @@ import type { AlertItem, ApprovalView } from "./types";
  * Every step is convergent: it brings the books to at least the state its scene describes, and when they are already there it only
  * reads them again. That is what lets Replay and a second Run be safe on a story that moves time.
  */
+/**
+ * The stale-page guard of the resets a step or an optional scene performs itself (the story's first step, "the buyer walks away"): the caller (lib/demo-control.ts) sets it for
+ * the length of the run, so the reset names the scenario of the story read the page is showing. Never set, no guard is sent (the scripts and unit tests call the steps bare).
+ */
+let booksGuard: BooksGuard | undefined;
+export async function withBooksGuard<T>(guard: BooksGuard | undefined, run: () => Promise<T>): Promise<T> {
+  booksGuard = guard;
+  try {
+    return await run();
+  } finally {
+    booksGuard = undefined;
+  }
+}
+
 export type SceneId = "buyer" | "decision" | "agreement" | "reality" | "owner" | "proof";
 
 export type StepId = "ask" | "decide" | "agree" | "cash" | "bank" | "time" | "queue" | "approve" | "settle" | "outcome" | "proof";
@@ -139,7 +154,7 @@ export const DEMO_STEPS: DemoStep[] = [
     scene: "buyer",
     route: dealsRoute(),
     run: async () => {
-      await demoReset();
+      await demoReset(undefined, booksGuard);
       clearDemo();
       const id = await submitSample("EX01");
       demoStore.set((s) => ({ ...s, storyOfferId: id }));
@@ -366,7 +381,7 @@ export async function runSecurityScene(): Promise<void> {
  * evaluated on the same books as EX01 before anything executes. It replaces the books, so the story starts over afterwards.
  */
 export async function runWalkAway(): Promise<void> {
-  await demoReset();
+  await demoReset(undefined, booksGuard);
   clearDemo();
   const id = await submitSample("EX01");
   await evaluate(id);

@@ -1,6 +1,6 @@
 import { expect, test as signedOut, type Locator } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
-import { filledBrand, runPlan } from "./helpers";
+import { filledBrand, runPlan, openOperatorTools } from "./helpers";
 
 /**
  * Mock-mode specs for the owner's decision surfaces: no tier badge on a REJECT, the approval card, the autonomy proof
@@ -31,7 +31,7 @@ test("a REJECT verdict shows the outcome only, no tier badge, and says evaluatio
 
 test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's three tests", async ({ page }) => {
   await page.goto("/inbox");
-  await page.getByRole("textbox").fill(ACCEPT_TEXT);
+  await page.getByRole("textbox", { name: "Message text" }).fill(ACCEPT_TEXT);
   await page.getByRole("button", { name: "Compile" }).click();
   await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
   await expect(page).toHaveURL(/\/verdict/);
@@ -49,6 +49,7 @@ test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's
 
 test("the approval card and the page header share one left edge", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click();
   await expect(page).toHaveURL(/\/capex/);
   await page.getByTestId("capex-apply").click();
@@ -63,6 +64,7 @@ test("the approval card and the page header share one left edge", async ({ page 
 
 test("an approval card expands in place to the operation, the reason, the amount and who asked", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("more-run-capex").click(); // runs the capex evaluation, which writes nothing
   await expect(page).toHaveURL(/\/capex/);
   await page.goto("/approvals");
@@ -95,6 +97,7 @@ test("an approval card expands in place to the operation, the reason, the amount
 
 test("an approval born of the reserve alert says what declining leaves, in days from today", async ({ page }) => {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");
@@ -138,7 +141,7 @@ signedOut("the stepper's Start resumes by itself after the owner signs in from t
   await dialog.getByLabel("Owner token").fill("mock-owner");
   await dialog.getByRole("button", { name: "Sign in" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText("step 1 of 11");
+  await expect(page.getByRole("region", { name: "Guided demo" }).locator("[aria-live=polite]")).toContainText(/Scene 2 of 6/);
 });
 
 signedOut("signed out, an owner page asks for the sign-in in words, not an error code, and opens the dialog", async ({ page }) => {
@@ -160,6 +163,7 @@ signedOut("signed out, an owner page asks for the sign-in in words, not an error
 
 async function toPendingCure(page: import("@playwright/test").Page) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText("34");

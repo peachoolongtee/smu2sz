@@ -121,7 +121,7 @@ test("the envelope recordings are BUYER-1's, carry the server's sentences and th
   assert.deepEqual(day0.levers.map((l) => l.maximum_display), ["45 days", "55 days", "55 days, price up 0.30%", "0.70% on ¥420,000.00", "0.85% on ¥257,200.00", "1.25%"]);
   assert.equal(day0.levers[0].next_step_sentence, "50 days: over your limits; its funding cannot run today");
   assert.equal(day0.levers[0].wall_words, "your budget for what you give buyers");
-  assert.ok(day0.packages.some((p) => p.summary === "55-day terms · price up 0.25% · rebate 0.60%"));
+  assert.deepEqual(day0.packages.map((p) => p.summary), ["45-day terms · early payment 0.85% on ¥257,200.00", "55-day terms · price up 0.30%", "45-day terms · rebate 1.25%"]);
   assert.deepEqual(day0.zone.slice(0, 5).map((z) => z.lowest_price_words), ["no price rise needed", "no price rise needed", "no price rise needed", "no price rise needed", "0.10%"]);
   assert.equal(day0.zone.at(-1).lowest_price_words, "none works");
   assert.equal(day0.zone.at(-1).min_price_bp, null);

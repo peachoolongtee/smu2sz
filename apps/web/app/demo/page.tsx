@@ -1,274 +1,317 @@
 "use client";
 
+import "@/app/flow-look.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import { BOOKS, BooksCards, type BooksId } from "@/components/demo/books-cards";
 import { TodayCard } from "@/components/home/today-card";
-import { ArrowRightIcon, ResetIcon } from "@/components/icons";
 import { Disclosure } from "@/components/business/kit";
-import { Badge, Button, Callout, Card, PageHeader, inputClass } from "@/components/ui";
-import { goToMore, goToStep, nextStep, resetDemo } from "@/lib/demo-control";
-import { reachedOf, useDemo } from "@/lib/demo-store";
-import { DEMO_STEPS, ENGINE_PAGES, MORE, SCENES, stepRoute, type SceneId } from "@/lib/demo";
-import { stepNarration } from "@/lib/demo-text";
+import { startTour } from "@/components/business/tour";
+import { ArrowRightIcon } from "@/components/icons";
+import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
+import { StatusPill } from "@/components/ui/status-pill";
+import { getDemoStory, restoreDemo } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { changeBooks, resetTo } from "@/lib/books-guard";
+import { goToMore, requestStart, runStoryAction, seenOf } from "@/lib/demo-control";
+import { MORE, type MoreId } from "@/lib/demo";
+import { reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import { useCureWaiting } from "@/lib/use-cure-waiting";
-import { useNarrow } from "@/lib/use-narrow";
+import { useAsync } from "@/lib/use-async";
+import type { DemoStoryView, StoryScene } from "@/lib/types";
 
-/**
- * One of the page's three side cards. On a desktop it is a card; on a phone it is one closed fold with the card's title (the story is the
- * page, these are tools for after it), so the page stays short. Its parts keep their ids and test ids; a fold only hides them until it is opened.
- */
-function SideCard({ id, title, subtitle, narrow, children }: { id: string; title: string; subtitle: string; narrow: boolean; children: ReactNode }) {
-  if (!narrow) {
-    return (
-      <Card id={id} title={title} subtitle={subtitle}>
-        {children}
-      </Card>
-    );
-  }
+const linkCls = "motion-press hit inline-flex min-h-8 items-center rounded-pill px-1 text-sm font-medium text-brand-700 underline underline-offset-2 hover:bg-brand-50 touch:min-h-11";
+
+function SceneRow({ scene }: { scene: StoryScene }) {
   return (
-    <div id={id} className="scroll-mt-20">
-      <Disclosure card testId={`story-fold-${id}`} summary={title}>
-        {subtitle ? <p className="mb-3 text-meta text-ink-3">{subtitle}</p> : null}
-        {children}
-      </Disclosure>
-    </div>
+    <li className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-x-3 py-3" data-testid={`demo-scene-${scene.id}`} data-state={scene.state}>
+      <span className={`grid size-8 place-items-center rounded-pill text-sm font-bold ${scene.state === "done" ? "bg-f-green text-f-green-ink" : scene.state === "current" ? "bg-f-purple-soft text-f-purple-ink" : "bg-subtle text-ink-3"}`} aria-hidden>
+        {scene.n}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-base font-bold text-ink">{scene.label}</h3>
+        {scene.state === "done" && scene.result_text ? (
+          <p className="mt-0.5 break-words text-sm text-ink-2" data-testid={`demo-result-${scene.id}`}>
+            {scene.result_text}
+          </p>
+        ) : null}
+        {scene.state === "done" && scene.proof.length ? (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-ink-3" data-testid={`demo-proof-${scene.id}`}>
+            {scene.proof.map((p) => (
+              <Link key={p.href} href={p.href} className={linkCls}>
+                {p.label}
+              </Link>
+            ))}
+          </p>
+        ) : null}
+      </div>
+      <span className="pt-1 text-supporting font-medium text-ink-3" data-testid={`demo-scene-state-${scene.id}`}>
+        {scene.state_text}
+      </span>
+    </li>
   );
 }
 
-/** The books the server can reset to (`POST /demo/reset?scenario=`); `public_sme` is not offered on this page. */
-type DemoScenario = "golden_sme" | "short_facilities" | "busy";
-
-/**
- * The judge's page: the late-payment loop in six scenes, each step one click, with the clock, the scenario switch, the optional scenes
- * and the side doors. The one brand fill on the page is the strip's Start demo / Next; every button here is a secondary pill.
- */
-export default function DemoPage() {
-  const i18n = useI18n();
-  const { t, te } = i18n;
+/** The operator tools, as the server lists them (the clock, the books, the engine views) plus the optional scenes the page can still run. */
+function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
+  const { t, te } = useI18n();
   const router = useRouter();
   const demo = useDemo();
-  const [scenario, setScenario] = useState<DemoScenario>("golden_sme");
-  const current = demo.step;
-  // On a phone the clock, the optional scenes and the books are one closed fold each: the page is the story.
-  const narrow = useNarrow();
-  // The highest finished step: Back lowers the pointer, not this. Steps up to here are done (Show, Replay); the one after it is the next to run.
-  const reached = reachedOf(demo);
-  // The owner's own step: while the cure waits, the decision is the approval card's one filled Approve. The strip's button only opens it, and the
-  // step here shows where the decision stands instead of a second button.
-  const cureWaiting = useCureWaiting();
-  const upcomingOwner = Boolean(DEMO_STEPS[current + 1]?.owner);
-  const opensApproval = upcomingOwner && cureWaiting;
-  const runLabel = () => t("story.run");
-  const upcoming = DEMO_STEPS[current + 1] ?? null;
-
+  const tools = view.operator_tools;
+  const act = async (action: string) => {
+    if (action === "reset") await changeBooks(view.books, resetTo(view.main ? undefined : view.books.scenario, router.push));
+  };
   return (
-    <>
-      <PageHeader
-        title={t("story.title")}
-        subtitle={t("story.subtitle")}
-        actions={
-          <Button variant="secondary" loading={demo.busy} disabled={current >= DEMO_STEPS.length - 1} onClick={() => (opensApproval && upcoming ? router.push(stepRoute(upcoming, demo)) : void nextStep(router.push))} data-testid="story-next">
-            {current < 0 ? t("demo.start") : opensApproval ? t("demo.openApproval") : t("demo.next")}
-            <ArrowRightIcon />
-          </Button>
-        }
-      />
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-6">
-          <Card id="story" title={t("story.steps")} subtitle={t("story.steps.sub")}>
-            <ol className="space-y-4">
-              {SCENES.map((scene) => (
-                <li key={scene.id}>
-                  <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{te("scene", scene.id)}</p>
-                  <ol className="space-y-1">
-                    {DEMO_STEPS.map((s, i) => ({ s, i }))
-                      .filter(({ s }) => s.scene === (scene.id as SceneId))
-                      .map(({ s, i }) => {
-                        const done = i <= reached;
-                        const active = i === current;
-                        return (
-                          <li key={s.id} className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 rounded-tile border px-3 py-2 sm:flex sm:flex-wrap sm:gap-y-2 ${active ? "border-brand-600 bg-brand-50" : "border-line"}`} data-testid={`story-step-${i + 1}`} data-done={done}>
-                            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-pill text-meta font-bold ${done ? "bg-brand-600 text-white" : "bg-subtle text-ink-3"}`} aria-hidden>
-                              {i + 1}
-                            </span>
-                            {/* On a phone the button sits beside the title and the sentence (three lines; the whole sentence is the tooltip). */}
-                            <span className="contents sm:block sm:min-w-0 sm:flex-1 sm:basis-48">
-                              <span className="block min-w-0 text-sm font-medium text-ink">{te("demo.step", s.id)}</span>
-                              <span className="block text-meta text-ink-2 max-sm:col-start-2 max-sm:row-start-2 max-sm:line-clamp-3 sm:mt-0" title={stepNarration(i18n, s.id, demo)}>
-                                {stepNarration(i18n, s.id, demo)}
-                              </span>
-                            </span>
-                            <span className="flex shrink-0 gap-1.5 max-sm:col-start-3 max-sm:row-span-2 max-sm:row-start-1">
-                              {done ? (
-                                <>
-                                  {/* A finished step is shown, never re-run by accident: Show only opens its screen; Replay is the deliberate re-run. */}
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={demo.busy}
-                                    onClick={() => void goToStep(i, router.push, { mode: "show" })}
-                                    title={t("story.show.hint")}
-                                    aria-label={`${t("story.show")}, ${t("story.stepN", { n: i + 1 })}`}
-                                    data-testid={`story-show-${i + 1}`}
-                                  >
-                                    {t("story.show")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    disabled={demo.busy}
-                                    onClick={() => void goToStep(i, router.push, { mode: "run" })}
-                                    title={t(i === 0 ? "story.replay.setup" : "story.replay.hint")}
-                                    aria-label={`${t("story.replay")}, ${t("story.stepN", { n: i + 1 })}. ${t(i === 0 ? "story.replay.setup" : "story.replay.hint")}`}
-                                    data-testid={`story-replay-${i + 1}`}
-                                  >
-                                    <ResetIcon className="sm:hidden" />
-                                    <span className="max-sm:sr-only">{t("story.replay")}</span>
-                                  </Button>
-                                </>
-                              ) : s.owner && cureWaiting && i === reached + 1 ? (
-                                <span className="text-meta font-medium text-warn-fg" data-testid={`story-waiting-${i + 1}`}>
-                                  {t("story.waitingOwner")}
-                                </span>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  // The story moves time: a step waits for the one before it.
-                                  disabled={demo.busy || i > reached + 1}
-                                  onClick={() => void goToStep(i, router.push, { mode: "run" })}
-                                  title={i > reached + 1 ? t("story.run.wait") : undefined}
-                                  aria-label={`${runLabel()}, ${t("story.stepN", { n: i + 1 })}`}
-                                  data-testid={`story-run-${i + 1}`}
-                                >
-                                  {runLabel()}
-                                </Button>
-                              )}
-                            </span>
-                          </li>
-                        );
-                      })}
-                  </ol>
-                </li>
-              ))}
-            </ol>
-            {!demo.busy && demo.running !== null ? (
-              <p role="status" className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-2.5 py-1.5 text-meta text-warn-fg" data-testid="story-interrupted">
-                {t("demo.interrupted", { n: demo.running + 1 })}
-              </p>
+    <Disclosure card testId="demo-operator-tools" summary={<span>{tools.label} <span className="text-supporting font-normal text-ink-3">{tools.hint_text}</span></span>}>
+      <div className="space-y-4">
+        {tools.groups.map((g) => (
+          <div key={g.key} data-testid={`demo-tools-${g.key}`}>
+            <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{g.label}</p>
+            <div className="flex flex-wrap gap-2">
+              {g.items.map((item) =>
+                item.href ? (
+                  <Link key={item.label} href={item.href} className={linkCls}>
+                    {item.label}
+                  </Link>
+                ) : (
+                  <Button key={item.label} size="sm" disabled={busy} onClick={() => void act(item.action ?? "")}>
+                    {item.label}
+                  </Button>
+                ),
+              )}
+            </div>
+            {g.note_text ? <p className="mt-1 text-supporting text-ink-3">{g.note_text}</p> : null}
+            {/* The day, and any number of days to move it by: the clock group's own control (its fields keep their ids). */}
+            {g.key === "clock" ? (
+              <fieldset disabled={busy} className="mt-3 min-w-0">
+                <TodayCard onAdvanced={() => undefined} folded />
+              </fieldset>
             ) : null}
-            {demo.error ? (
-              <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-meta text-bad-fg">
-                {demo.error}
-              </p>
-            ) : null}
-          </Card>
-
-          <SideCard id="story-more" title={t("story.more")} subtitle={t("story.more.sub")} narrow={narrow}>
-            <ul className="space-y-3">
+          </div>
+        ))}
+        {view.main ? (
+          <div data-testid="demo-tools-more">
+            <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("demo.tools.more")}</p>
+            <ul className="space-y-2">
               {MORE.map((m) => (
-                <li key={m.id} className="flex flex-wrap items-start gap-x-3 gap-y-2" data-testid={`more-${m.id}`}>
+                <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`more-${m.id}`}>
                   <span className="min-w-0 flex-1 basis-48">
                     <span className="block text-sm font-medium text-ink">{te("more.title", m.id)}</span>
-                    <span className="block text-meta text-ink-2">{te("more.desc", m.id)}</span>
-                    {m.replacesBooks ? <span className="block text-meta font-medium text-warn-fg">{t("more.replaces")}</span> : null}
-                    {m.needsWalk && !demo.rewordedId ? <span className="block text-meta text-ink-3">{t("more.needsWalk")}</span> : null}
+                    <span className="block text-supporting text-ink-3">{te("more.desc", m.id)}</span>
+                    {m.replacesBooks ? <span className="block text-supporting font-medium text-warn-fg">{t("more.replaces")}</span> : null}
                   </span>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={demo.busy || Boolean(m.needsWalk && !demo.rewordedId)}
-                    onClick={() => void goToMore(m.id, router.push)}
-                    aria-label={`${t("story.show")}: ${te("more.title", m.id)}`}
-                    data-testid={`more-run-${m.id}`}
-                  >
+                  <Button size="sm" disabled={busy || Boolean(m.needsWalk && !demo.rewordedId)} onClick={() => void goToMore(m.id as MoreId, router.push, view.books)} aria-label={`${t("story.show")}: ${te("more.title", m.id)}`} data-testid={`more-run-${m.id}`}>
                     {t("story.show")}
                   </Button>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-line pt-3">
-              <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("more.engine")}</p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                {ENGINE_PAGES.map((p) => (
-                  <li key={p.route}>
-                    <Link href={p.route} className="font-medium text-brand-700 underline underline-offset-2">
-                      {t(p.label)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </SideCard>
-        </div>
-
-        <div className="min-w-0 space-y-6">
-          {/* The clock moves the books under a running step: a disabled fieldset locks the card's controls while a step runs. */}
-          <fieldset disabled={demo.busy} className="min-w-0">
-            {narrow ? (
-              <SideCard id="story-today" title={t("home.today")} subtitle="" narrow>
-                <TodayCard onAdvanced={() => undefined} folded />
-              </SideCard>
-            ) : (
-              <TodayCard onAdvanced={() => undefined} />
-            )}
-          </fieldset>
-
-          <SideCard id="story-reset" title={t("story.books")} subtitle={t("story.books.sub")} narrow={narrow}>
-            <div className="space-y-3">
-              <label className="block text-sm">
-                <span className="mb-1 block text-meta font-medium text-ink-3">{t("story.scenario")}</span>
-                <select
-                  value={scenario}
-                  disabled={demo.busy}
-                  onChange={(e) => setScenario(e.target.value as DemoScenario)}
-                  className={`w-full ${inputClass}`}
-                  data-testid="story-scenario"
-                >
-                  <option value="golden_sme">{t("story.scenario.golden")}</option>
-                  <option value="short_facilities">{t("story.scenario.short")}</option>
-                  <option value="busy">{t("story.scenario.busy")}</option>
-                </select>
-                {scenario === "busy" ? <span className="mt-1 block text-meta text-ink-3">{t("story.scenario.busy.help")}</span> : null}
-              </label>
-              <Button variant="secondary" disabled={demo.busy} onClick={() => void resetDemo(router.push, scenario === "golden_sme" ? undefined : scenario)} data-testid="story-reset">
-                <ResetIcon />
-                {t("story.reset")}
-              </Button>
-              <p className="text-meta text-ink-3">{t("story.reset.hint")}</p>
-            </div>
-          </SideCard>
-
-          <Card id="story-doors" title={t("story.doors")} subtitle={t("story.doors.sub")}>
-            <ul className="space-y-2 text-sm">
-              {(
-                [
-                  ["/chat", "story.door.buyer"],
-                  ["/whatif", "story.door.whatif"],
-                  ["/evidence", "story.door.evidence"],
-                  ["/", "story.door.business"],
-                ] as const
-              ).map(([href, key]) => (
-                <li key={href}>
-                  <Link href={href} className="font-medium text-brand-700 underline underline-offset-2">
-                    {t(key)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Callout tone="info">
-            <Badge tone="info" className="mb-1">
-              {t("story.simulation")}
-            </Badge>
-            <p>{t("common.synthetic")}</p>
-          </Callout>
-        </div>
+          </div>
+        ) : null}
       </div>
-    </>
+    </Disclosure>
+  );
+}
+
+/**
+ * The story, read from GET /demo/story: "Which books?" first (three cards, each loaded through the guard), one current scene with the page's only filled button, the six scenes as
+ * a list, the one-click restore of the main books while others are loaded, the operator tools folded away and the proof appendix. Every sentence is the server's. The owner's step only opens the approval: nothing here
+ * presses it, and the stepper never runs it.
+ */
+export default function DemoPage() {
+  const { t, lang } = useI18n();
+  const router = useRouter();
+  const demo = useDemo();
+  const reached = reachedOf(demo);
+  const seen = seenOf(reached);
+  // No page asks for the owner's sign-in by itself: the story is read only for a signed-in owner (a visitor sees "Start demo", whose click asks).
+  const signedIn = useAuth().token !== null;
+  const story = useAsync(() => (signedIn ? getDemoStory(lang, seen) : Promise.resolve(null)), [lang, seen, signedIn]);
+  const [working, setWorking] = useState(false);
+  const [restored, setRestored] = useState<string | null>(null);
+  const busy = demo.busy || working;
+  const view = signedIn ? (story.data ?? null) : null;
+
+  // Every card's Load goes through the guard (lib/books-guard.ts): a straight reset on fresh books, else the books dialog (the one every reset uses) lists what the current books lose from
+  // a fresh read, and its confirm button is the one thing that replaces them. The server writes the busy company's words while the main books are the ones replaced.
+  async function load(id: BooksId) {
+    if (!view) return;
+    setRestored(null);
+    const card = BOOKS.find((b) => b.id === id)!;
+    const alt = view.alternate;
+    const name = t(card.name);
+    const server = id === "busy" && view.main;
+    await changeBooks(view.books, resetTo(id === "golden" ? undefined : card.scenario, router.push), {
+      alternate: server,
+      prefix: "demo-alternate",
+      labels: server
+        ? { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text }
+        : { title: t("demo.load.title", { name }), confirm: t("demo.load.confirm", { name }), cancel: t("demo.load.cancel"), keeps: view.books.reset_keeps_text },
+      gives: { heading: t("demo.alt.get"), text: id === "busy" ? alt.scope_text : t(card.help) },
+    });
+  }
+
+  async function restore() {
+    if (!view) return;
+    const alt = view.alternate;
+    setWorking(true);
+    try {
+      await changeBooks(
+        view.books,
+        async (guard) => {
+          const r = await restoreDemo(lang, guard);
+          resetSession();
+          setRestored(r.restored_text);
+        },
+        { labels: { title: alt.restore_label, confirm: alt.restore_label, cancel: alt.cancel_label, keeps: alt.restore_text } },
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <div className="flow-f min-w-0" data-testid="demo-page">
+      {view?.alternate.loaded ? (
+        <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-card border border-warn-line bg-warn-bg px-4 py-3 text-warn-fg" data-testid="demo-loaded-banner">
+          <p className="min-w-0 flex-1 basis-64 text-sm font-medium">{view.alternate.loaded_text}</p>
+          <Button loading={working} onClick={() => void restore()} data-testid="demo-restore">
+            {view.alternate.restore_label}
+          </Button>
+        </div>
+      ) : restored ? (
+        <p role="status" className="mb-4 text-sm font-medium text-ok-fg" data-testid="demo-restored">
+          {restored}
+        </p>
+      ) : null}
+
+      <PageHeader
+        title={view?.title_text ?? t("story.title")}
+        subtitle={view ? <span className="max-sm:sr-only">{view.subtitle_text}</span> : undefined}
+        actions={
+          <Button variant="ghost" size="sm" onClick={startTour} data-testid="demo-tour">
+            {t("tour.replay")}
+          </Button>
+        }
+      />
+
+      {!signedIn ? (
+        <section aria-label={t("demo.scene.aria")} className="card-standard p-5" data-testid="demo-current">
+          <p className="text-body-lg text-ink-2">{t("demo.idle")}</p>
+          <div className="mt-4">
+            <Button variant="primary" onClick={requestStart} data-testid="demo-next">
+              {t("demo.start")}
+              <ArrowRightIcon />
+            </Button>
+          </div>
+        </section>
+      ) : story.error ? (
+        <ErrorState error={story.error} onRetry={story.reload} />
+      ) : !view ? (
+        <LoadingBlock rows={4} />
+      ) : (
+        <>
+        <BooksCards view={view} busy={busy} onLoad={(id) => void load(id)} />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="min-w-0 space-y-6">
+            <section aria-label={t("demo.scene.aria")} className="card-standard p-5" data-testid="demo-current">
+              {view.current ? (
+                <>
+                  <StatusPill tone="lavender" testId="demo-progress">
+                    {view.progress_text}
+                  </StatusPill>
+                  <h2 className="type-section mt-2 text-balance text-ink">{view.current.title_text}</h2>
+                  <p className="mt-1 text-body-lg text-ink-2">{view.current.text}</p>
+                  {view.current.owner_text ? (
+                    <p className="mt-2 text-sm font-medium text-ink" data-testid="demo-owner-text">
+                      {view.current.owner_text}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <StatusPill tone="lavender" testId="demo-progress">
+                    {view.progress_text}
+                  </StatusPill>
+                  {/* All six scenes done: the story says so (never the other books' name). On the other books there is no story: the card names the books loaded. */}
+                  <h2 className="type-section mt-2 text-balance text-ink" data-testid="demo-current-title">
+                    {view.complete ? t("demo.complete.title") : t((BOOKS.find((b) => b.scenario === view.books.scenario) ?? BOOKS[1]).name)}
+                  </h2>
+                </>
+              )}
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+                {view.next.href ? (
+                  <ButtonLink href={view.next.href} variant="primary" data-testid="demo-next" data-owner={view.next.owner ? "true" : undefined}>
+                    {view.next.label}
+                    <ArrowRightIcon />
+                  </ButtonLink>
+                ) : (
+                  <Button variant="primary" loading={busy} onClick={() => void runStoryAction(view.next.action ?? "", router.push, view.books)} data-testid="demo-next">
+                    {view.complete && view.next.action === "restart" ? t("demo.startAgain") : view.next.label}
+                    <ArrowRightIcon />
+                  </Button>
+                )}
+                <p className="min-w-0 flex-1 basis-48 text-sm text-ink-3" data-testid="demo-next-hint">
+                  {view.next.hint_text}
+                </p>
+              </div>
+              {demo.error ? (
+                <p role="alert" className="mt-3 rounded-tile border border-bad-line bg-bad-bg px-2.5 py-1.5 text-sm text-bad-fg">
+                  {demo.error}
+                </p>
+              ) : null}
+              {!demo.busy && demo.running !== null ? (
+                <p role="status" className="mt-3 rounded-tile border border-warn-line bg-warn-bg px-2.5 py-1.5 text-sm text-warn-fg" data-testid="story-interrupted">
+                  {t("demo.interrupted", { n: demo.running + 1 })}
+                </p>
+              ) : null}
+            </section>
+
+            {view.story_available ? (
+              <section aria-label={t("demo.scenes.aria")} data-testid="story">
+                <ol className="divide-y divide-line">
+                  {view.scenes.map((s) => (
+                    <SceneRow key={s.id} scene={s} />
+                  ))}
+                </ol>
+              </section>
+            ) : null}
+
+            <section aria-labelledby="demo-proof-title" className="border-t border-line pt-4" data-testid="demo-proof">
+              <h2 id="demo-proof-title" className="type-card-title text-ink">
+                {view.proof.title_text}
+              </h2>
+              <p className="mt-1 text-sm text-ink-2">{view.proof.text}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                {view.proof.links.map((l) => (
+                  <Link key={l.href} href={l.href} className={linkCls}>
+                    {l.label}
+                  </Link>
+                ))}
+              </p>
+              {view.proof.chain.chain_text ? (
+                <div className="mt-1">
+                  <span data-testid="demo-chain" data-valid={view.proof.chain.chain_valid ? "true" : "false"}>
+                    <Badge tone={view.proof.chain.chain_valid ? "ok" : "bad"}>{view.proof.chain.chain_text}</Badge>
+                  </span>
+                  <p className="mt-1 text-sm text-ink-3" data-testid="demo-chain-scope">
+                    {view.proof.chain.chain_scope_text}
+                  </p>
+                </div>
+              ) : null}
+            </section>
+          </div>
+
+          <div className="min-w-0 space-y-6">
+            <OperatorTools view={view} busy={busy} />
+            <Callout tone="info">
+              <p>{view.simulation_text}</p>
+            </Callout>
+          </div>
+        </div>
+        </>
+      )}
+    </div>
   );
 }

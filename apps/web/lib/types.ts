@@ -685,6 +685,11 @@ export interface SecurityEvent {
   detail: string;
   spans: SourceSpan[];
   trace_id: string | null;
+  /** Slice D (additive on GET /audit): the event in the owner's words. Absent from an older server; the page then falls back to its dictionary. */
+  kind_text?: string;
+  day_when?: string | null;
+  title_text?: string;
+  action_text?: string;
 }
 
 // ================================================================== read views (not in models.py yet)
@@ -4330,4 +4335,167 @@ export interface InputSaveResult {
   input: { field: string; field_label: string; value_display: string; provenance_text: string };
   state_version: number;
   day: Day;
+}
+
+// ================================================================== Slice D: GET /activity, GET /demo/story, POST /demo/restore
+// The contract is the server's (REF_SPEC_slice_d_api.md); every sentence, label and count arrives written, in the requested language.
+
+export type ActivityKind = "business" | "security" | "benign_auth" | "system";
+export type ActivityTone = "ok" | "warn" | "bad";
+
+/** The record behind an Activity row: an operation's entry, or a security event. Shown only under the evidence fold. */
+export type ActivityRecord =
+  | { seq: number; entry_hash: string; prev_hash: string; kind_text: string; message: string; /** The guided Demo's receipt: the sentence naming the bank's reference, which stays out of the row's Business words. */ reference_text?: string }
+  | { event_id: string; kind_text: string; action_text: string; detail: string };
+
+export interface ActivityRow {
+  /** A key for the page, never shown. */
+  id: string;
+  kind: ActivityKind;
+  category: string;
+  category_label: string;
+  when: string;
+  title_text: string;
+  detail_text: string | null;
+  why_text: string | null;
+  remaining_text: string | null;
+  actor: "you" | "agent" | "system" | "buyer";
+  actor_text: string;
+  status_word: string | null;
+  tone: ActivityTone | "neutral";
+  customer_id: string | null;
+  customer_name: string | null;
+  decision_id: string | null;
+  href: string | null;
+  href_label: string | null;
+  evidence_href: string;
+  evidence_label: string;
+  /** Lower-cased words of the row, for the page's search box. */
+  search_text: string;
+  record: ActivityRecord;
+}
+
+export interface ActivityCategory {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface ActivityView {
+  lang: "en" | "zh";
+  title_text: string;
+  state_word: string;
+  state_tone: ActivityTone;
+  state_text: string;
+  summary: {
+    business_count: number;
+    security_alert_count: number;
+    benign_auth_count: number;
+    system_count: number;
+    benign_auth_text: string | null;
+    benign_auth_word: string | null;
+    security_alerts_text: string | null;
+    kept_text: string;
+  };
+  categories: ActivityCategory[];
+  rows: ActivityRow[];
+  /** The same chain words GET /ledger returns. */
+  chain: {
+    chain_valid: boolean;
+    chain_length: number;
+    head_hash: string | null;
+    chain_text?: string | null;
+    chain_scope_text?: string;
+  } & Record<string, unknown>;
+  /** What the read honoured of the customer / decision in the address, and the way back to where the owner came from. */
+  context?: { back?: { label: string; href: string } | null } | null;
+}
+
+export type StoryState = "done" | "current" | "next" | "locked";
+
+export interface StoryStep {
+  id: string;
+  label: string;
+  state: StoryState;
+  owner: boolean;
+}
+
+export interface StoryScene {
+  id: string;
+  n: number;
+  label: string;
+  state: StoryState;
+  state_text: string;
+  result_text: string | null;
+  steps: StoryStep[];
+  proof: { label: string; href: string }[];
+}
+
+export interface DemoStoryView {
+  lang: "en" | "zh";
+  scenario: string;
+  main: boolean;
+  title_text: string;
+  subtitle_text: string;
+  story_available: boolean;
+  complete: boolean;
+  progress_text: string;
+  /** The books as they stand: the scenario this read describes (what `from_scenario` names) and what a reset of them would lose. */
+  books: {
+    scenario: string;
+    main: boolean;
+    nothing_to_lose: boolean;
+    /** The token of the list of what would be lost: the confirmation of a reset must equal it. */
+    loss_token: string;
+    loss_title_text: string;
+    loss_items: string[];
+    reset_confirm_title_text: string;
+    reset_confirm_label: string;
+    reset_cancel_label: string;
+    reset_keeps_text: string;
+  };
+  scenes: StoryScene[];
+  current: { scene_id: string; step_id: string; title_text: string; text: string; owner: boolean; owner_text: string | null } | null;
+  next: { label: string; action: string | null; href: string | null; hint_text: string; owner: boolean };
+  alternate: {
+    label: string;
+    scenario: string;
+    title_text: string;
+    scope_text: string;
+    loss_title_text: string;
+    loss_items: string[];
+    loss_preview_text: string;
+    keeps_text: string;
+    confirm_title_text: string;
+    confirm_label: string;
+    cancel_label: string;
+    loaded: boolean;
+    nothing_to_lose?: boolean;
+    loss_token: string;
+    loaded_text: string | null;
+    restore_label: string;
+    restore_text: string;
+    history?: { when: string; text: string }[];
+  };
+  operator_tools: {
+    label: string;
+    hint_text: string;
+    groups: { key: string; label: string; items: { label: string; action?: string; href?: string; replaces_books?: boolean }[]; note_text?: string }[];
+  };
+  proof: {
+    title_text: string;
+    text: string;
+    links: { label: string; href: string }[];
+    chain: ActivityView["chain"];
+  };
+  simulation_text: string;
+}
+
+/** POST /demo/restore */
+export interface DemoRestoreResult {
+  ok: boolean;
+  scenario: string;
+  day: number;
+  restored_text: string;
+  story: DemoStoryView;
 }

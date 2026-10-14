@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openStoryFold, runPlan, STORY_STEPS, verdictHeading, walkStory } from "./helpers";
+import { openStoryFold, runPlan, STORY_STEPS, verdictHeading, walkStory, openOperatorTools } from "./helpers";
 
 /**
  * The screenshot walk of the brief's section 44: every Business page in every state the recorded demo path reaches, and the
@@ -35,6 +35,7 @@ async function shoot(page: Page, name: string, project: string) {
 async function advanceTo34(page: Page) {
   await page.goto("/demo");
   await openStoryFold(page, "story-today");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill("34");
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toHaveText("Day 34");

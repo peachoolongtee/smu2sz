@@ -227,7 +227,9 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await signin.getByRole("button", { name: "Sign in" }).click();
   await expect(signin).toBeHidden();
 
-  await page.getByTestId("chat-open").click();
+  // The header's Ask FLOW button keeps a mouse click from taking focus (the input keeps it), so the keyboard opens it: the focus then comes back to it.
+  await page.getByTestId("chat-open").focus();
+  await page.keyboard.press("Enter");
   const panel = page.getByRole("dialog", { name: "Ask FLOW" });
   await expect(panel).toBeVisible();
   await panel.getByRole("textbox", { name: "Message" }).fill("status");
@@ -238,8 +240,8 @@ test("the slide-over chat opens from another page, keeps the conversation, and c
   await expect(panel).toBeHidden();
   await expect(page.getByTestId("chat-open")).toBeFocused();
 
-  // Same conversation on the full page.
-  await page.getByRole("link", { name: "Chat", exact: true }).click();
+  // Same conversation on the full page (it survives the load: the session is kept in this tab).
+  await page.goto("/chat");
   await expect(page).toHaveURL(/\/chat/);
   await expect(turns(page)).toHaveCount(1);
   await expect(page.getByTestId("chat-open")).toHaveCount(0);

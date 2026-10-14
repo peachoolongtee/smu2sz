@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, proseOf, test } from "./fixtures";
-import { checkedDeal, openCompare, openReview, runPlan, sendCounter } from "./helpers";
+import { checkedDeal, openCompare, openReview, runPlan, sendCounter, openOperatorTools } from "./helpers";
 
 /**
  * Wave 2 (map #65), mock mode: the pages read the durable decision record (ADR-0011). Each state is a recording of GET /decisions/{id} from the
@@ -27,6 +27,7 @@ async function checked(page: Page): Promise<string> {
 
 async function advanceTo(page: Page, day: number) {
   await page.goto("/demo");
+  await openOperatorTools(page);
   await page.getByTestId("home-days").fill(String(day));
   await page.getByTestId("home-advance").click();
   await expect(page.getByTestId("home-day")).toContainText(String(day));
@@ -228,9 +229,7 @@ test("after the cure is approved, Home's strip says the funding is on its way; t
   await expect(page.getByTestId("record-settlement")).toContainText("¥200,000.00");
   // Activity: each row that belongs to a record opens it.
   await page.goto("/activity");
-  const row = page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first();
-  await row.locator("> details > summary").click();
-  await row.getByTestId("activity-record").click();
+  await page.getByTestId("activity-list").getByTestId("activity-open-decision").first().click();
   await expect(page.getByTestId("record-state")).toBeVisible();
   // A record that is not on the books says so in words.
   await page.goto("/decisions/deal%3AOFF-nothing");

@@ -27,6 +27,8 @@
 //     own seq, id, kind, status and the previous hash) so the chain stays internally consistent and repeatable. Hashes in
 //     every other file (the chat script, for one) are deterministic and are kept exactly as recorded.
 //   - offer_exposure_ex01.json (only with --exposure): `computed_in_seconds` and each `capacity[*].spare.seconds` -> 0 (timings).
+//   - slice_d/*.json (only with --slice-d): every `loss_token` (a fingerprint of the books, which includes the restore history the API accumulates) becomes a fixed token by order of first appearance; the books' state version at the end of a funding decision's id (alert:ALERT-RESERVE-42:v<n>) becomes v7, the id the
+//     mock's decision recordings use for the same record; `alternate.history` is trimmed (see trimRestoreHistory).
 //   - strategy/*.json (only with --strategy): `computed_in_seconds` -> 0 (the time the call took; a cache hit differs from a miss).
 //
 // The decision record (Wave 2, ADR-0011) is recorded as snapshots in decisions.json, { name: { en, zh } }, each one GET /decisions/{id} read at
@@ -47,6 +49,20 @@
 // set of books takes several seconds:
 //   cd services/api && FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8016
 //   node scripts/record-mocks.mjs --api http://localhost:8016 --strategy
+//
+// --slice-d records ONLY apps/web/mocks/slice_d/{activity,story,restore,audit}.json and exits (Slice D, ticket #145): GET /activity and GET /demo/story in both
+// languages, and POST /demo/restore, at the moments the mock walks through. The walk is the Demo's own: lib/demo.ts DEMO_STEPS run in order through the
+// live adapters (the stepper section above records the same walk for the pages), the owner's approval pressed by this recorder between `queue` and
+// `approve` exactly as the section above does (the product never presses it). The story is read with `seen` = the last view step shown (cash, outcome or proof), as the Demo page sends it.
+//   story.json    { fresh, ask, decide, agree, cash, bank, time, queue, approve, settle, outcome, proof, busy, short }: each { en, zh } of GET /demo/story
+//   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy, short }: each { en, zh } of GET /activity; `security` is the
+//                 settled books after two refused sign-ins and the FastCapital scene (benign sign-ins beside a real alert); `busy` is the busy company
+//   restore.json  { en, zh } of POST /demo/restore, made on the busy books
+//   guard.json    { loss_not_confirmed, loss_changed, books_changed }: { en, zh } of the message words of the 409s of POST /demo/reset?from_scenario= (work on the books not confirmed; books that are another)
+//   audit.json    GET /audit at the `security` moment (the same events the Activity rows link to), served by the mock for the security view
+// lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` (or `short`) once those books are loaded.
+//   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8221
+//   node scripts/record-mocks.mjs --api http://localhost:8221 --slice-d
 //
 // home_summary_day0_counter[_zh].json is GET /home on the opening books with the package offer read and no reply sent (cash.pending and its legend; ticket #116).
 //
@@ -115,7 +131,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 if (process.argv.includes("--help")) {
-  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2]\n(start the API first, see the header of this file; never use port 8000)");
+  console.log("usage: node scripts/record-mocks.mjs [--api http://localhost:8011] [--out apps/web/mocks] [--strategy | --overview | --buyer-exposure | --exposure | --home-v2 | --slice-d]\n(start the API first, see the header of this file; never use port 8000)");
   process.exit(0);
 }
 const API = arg("--api", "http://localhost:8011").replace(/\/+$/, "");
@@ -127,6 +143,7 @@ const BUYER_EXPOSURE = process.argv.includes("--buyer-exposure");
 const HOME_V2 = process.argv.includes("--home-v2");
 const NO_EXPOSURE = process.argv.includes("--no-exposure");
 const INPUTS = process.argv.includes("--inputs");
+const SLICE_D = process.argv.includes("--slice-d");
 const OWNER_TOKEN = "demo-owner-token";
 const BANK = { "X-Agent-Key": "demo-agent-key", "X-Bank-Feed-Key": "demo-bank-feed-key" };
 
@@ -160,7 +177,8 @@ async function inLang(lang, read) {
   }
 }
 
-const RECHAIN_BY_APPEARANCE = new Set(["nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
+const RECHAIN_BY_APPEARANCE = new Set(["slice_d/activity.json", "slice_d/story.json", "slice_d/restore.json", "nl_script.json", "home_reconciliation_day2.json", "bank_receipt.json", "home_reconciliation_day34.json", "home_reconciliation_day34_half.json", "home_ledger_day34.json", "home_ledger_approved.json", "decisions.json"]);
+const lossTokens = new Map(); // slice_d file -> its loss tokens, by order of first appearance
 const nlIds = new Map(); // NL-<16 hex> operation / lot ids, which the API derives from a random session nonce -> a fixed id by first appearance
 
 function rechainByAppearance(name, root) {
@@ -190,8 +208,35 @@ function rechainByAppearance(name, root) {
   apply(root);
 }
 
+/**
+ * The restore history (`alternate.history`) is a list the API keeps in memory for as long as it runs, so it grows with every recording made against the same process:
+ * its entries also carry relative times ("21 minutes ago"), so the recording keeps none (the mock shows no history) and a second run on the same API changes nothing.
+ */
+function trimRestoreHistory(name, root) {
+  const visit = (node) => {
+    if (Array.isArray(node)) node.forEach(visit);
+    else if (node && typeof node === "object") {
+      if (Array.isArray(node.history) && node.history.every((h) => h && typeof h.text === "string")) node.history = [];
+      Object.values(node).forEach(visit);
+    }
+  };
+  visit(root);
+}
+
 function normalise(name, value) {
   const text = JSON.stringify(value)
+    // slice_d/*: a funding decision's id ends in the books' state version (alert:ALERT-RESERVE-42:v6), which depends on how many reads came before it; the mock's decision
+    // recordings (decisions.json) name the same record as v7, so the walk's id is made the same one.
+    .replace(/alert:(ALERT-[A-Z]+-\d+):v\d+/g, (m, id) => (name.startsWith("slice_d/") ? `alert:${id}:v7` : m))
+    // slice_d/*: a loss token is a fingerprint of the books the API holds, including the restore history it accumulates for as long as it runs; it is made a fixed token by
+    // order of first appearance (the mock compares a confirmation with the token of the same recording, so only which books share a token matters).
+    .replace(/"loss_token":"([0-9a-f]+)"/g, (m, tok) => {
+      if (!name.startsWith("slice_d/")) return m;
+      if (!lossTokens.has(name)) lossTokens.set(name, new Map());
+      const seen = lossTokens.get(name);
+      if (!seen.has(tok)) seen.set(tok, sha(`recorded loss token ${seen.size}`).slice(0, 16));
+      return `"loss_token":"${seen.get(tok)}"`;
+    })
     .replace(/CMT-[0-9a-f]{16}/g, FIXED_CMT)
     .replace(/ALERT-EARLYPAY-[0-9a-f]{12}/g, `ALERT-EARLYPAY-${sha("recorded early-pay alert").slice(0, 12)}`)
     .replace(/NL-[0-9a-f]{16}/g, (id) => {
@@ -214,6 +259,7 @@ function normalise(name, value) {
   if (name.startsWith("strategy/") || name.startsWith("receivables/") || name.startsWith("buyer_exposure")) out.computed_in_seconds = 0;
   if (RECHAIN.has(name)) rechain(out);
   if (RECHAIN_BY_APPEARANCE.has(name)) rechainByAppearance(name, out);
+  if (name.startsWith("slice_d/")) trimRestoreHistory(name, out);
   return out;
 }
 
@@ -489,6 +535,74 @@ if (OVERVIEW) {
   await live.demoReset();
   write("customer_overview.json", moments);
   console.log(`recorded customer_overview.json into ${OUT} from ${API}`);
+  process.exit(0);
+}
+
+// --slice-d: GET /activity, GET /demo/story and POST /demo/restore at the moments the mock walks through, and nothing else (see the header).
+if (SLICE_D) {
+  mkdirSync(join(OUT, "slice_d"), { recursive: true });
+  const both = async (read) => ({ en: await read("en"), zh: await read("zh") });
+  const story = {};
+  const activity = {};
+  const takeActivity = async (key) => void (activity[key] = await both((lang) => live.getActivity(lang)));
+  const takeStory = async (key, seen) => void (story[key] = await both((lang) => live.getDemoStory(lang, seen)));
+  await reset();
+  await takeStory("fresh");
+  await takeActivity("fresh");
+  const refuse = async () => {
+    const res = await fetch(`${API}/ledger`, { headers: { "X-Owner-Token": "not-the-owner-key" } });
+    if (res.status !== 401 && res.status !== 403) throw new Error(`a wrong owner key was not refused (${res.status})`);
+  };
+  let seenView;
+  for (const [i, st] of demoModule.DEMO_STEPS.entries()) {
+    if (st.owner) {
+      // The owner's own click, pressed here by the recorder (authoring tooling), exactly as the stepper section above does.
+      const row = (await live.getApprovals()).find((a) => a.status === "PENDING");
+      if (!row) throw new Error("the cure is not waiting for the owner: the demo path has changed");
+      await live.decideApproval(row.id, "APPROVE");
+    } else {
+      const values = await st.run();
+      void values;
+    }
+    // `seen` is the last view step (cash, outcome, proof) the browser has shown, which is all the Demo page sends.
+    if (["cash", "outcome", "proof"].includes(st.id)) seenView = st.id;
+    await takeStory(st.id, seenView);
+    if (["ask", "decide", "agree", "bank", "time", "queue", "approve", "settle"].includes(st.id)) await takeActivity(st.id);
+    void i;
+  }
+  // Settled books plus two refused sign-ins and the FastCapital scene: the benign summary beside a real alert.
+  await refuse();
+  await refuse();
+  await runSecurityScene();
+  await takeActivity("security");
+  const audit = await live.getAudit(); // the security view of the same moment: its event ids are the ones the Activity rows link to
+  // The stale-page guard's two refusals, as the API words them (the mock answers the same two from its own state): work on the books not confirmed, and books that are another.
+  const refusal = async (query, lang) => {
+    const res = await fetch(`${API}/demo/reset?${query}&lang=${lang}`, { method: "POST", headers: { "X-Owner-Token": OWNER_TOKEN, "Content-Type": "application/json" }, body: "{}" });
+    if (res.status !== 409) throw new Error(`the guard did not refuse (${res.status}): ${query}`);
+    const { detail } = await res.json();
+    return { message: detail.message, message_when: detail.message_when };
+  };
+  const guard = { loss_not_confirmed: await both((lang) => refusal("from_scenario=golden_sme", lang)), loss_changed: await both((lang) => refusal("from_scenario=golden_sme&confirm_loss=1", lang)) };
+  // The busy company, and the one-click restore made on it.
+  await live.demoReset("busy");
+  clearDemo();
+  await takeStory("busy");
+  await takeActivity("busy");
+  const restore = await both((lang) => live.restoreDemo(lang));
+  // The short-facilities books (the third card of "Which books?"): the story and Activity reads on them, like the busy company's.
+  await live.demoReset("short_facilities");
+  clearDemo();
+  await takeStory("short");
+  await takeActivity("short");
+  await live.demoReset();
+  guard.books_changed = await both((lang) => refusal("from_scenario=busy", lang));
+  write("slice_d/story.json", story);
+  write("slice_d/activity.json", activity);
+  write("slice_d/restore.json", restore);
+  write("slice_d/audit.json", audit);
+  write("slice_d/guard.json", guard);
+  console.log(`recorded ${written.length} files into ${join(OUT, "slice_d")} from ${API}`);
   process.exit(0);
 }
 

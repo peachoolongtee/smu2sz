@@ -1,0 +1,562 @@
+{
+  "en": {
+    "ok": true,
+    "scenario": "golden_sme",
+    "day": 0,
+    "restored_text": "The main books are back at the start of the story.",
+    "story": {
+      "lang": "en",
+      "scenario": "golden_sme",
+      "main": true,
+      "title_text": "The story",
+      "subtitle_text": "A buyer asks for better terms. FLOW prices the offer and the agreement changes the books. The bank then pays only part of what was promised, and the owner stays in control of the cure. Six scenes, about five minutes.",
+      "story_available": true,
+      "complete": false,
+      "progress_text": "Scene 1 of 6",
+      "scenes": [
+        {
+          "id": "buyer",
+          "n": 1,
+          "label": "The buyer asks",
+          "state": "current",
+          "state_text": "Now",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "ask",
+              "label": "The buyer's message arrives",
+              "state": "current",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "decision",
+          "n": 2,
+          "label": "FLOW decides",
+          "state": "next",
+          "state_text": "Next",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "decide",
+              "label": "FLOW checks the offer",
+              "state": "next",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "agreement",
+          "n": 3,
+          "label": "The agreement acts on the books",
+          "state": "locked",
+          "state_text": "Later",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "agree",
+              "label": "The recommended counter is sent and agreed",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "cash",
+              "label": "Cash now, and what is still arriving",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "reality",
+          "n": 4,
+          "label": "Reality diverges",
+          "state": "locked",
+          "state_text": "Later",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "bank",
+              "label": "Bank: the agreed early payment arrives (synthetic)",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "time",
+              "label": "Time passes",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "owner",
+          "n": 5,
+          "label": "The owner stays in control",
+          "state": "locked",
+          "state_text": "Later",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "queue",
+              "label": "The cure is queued for the owner",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "approve",
+              "label": "The owner approves",
+              "state": "locked",
+              "owner": true
+            },
+            {
+              "id": "settle",
+              "label": "Time passes: the funding settles",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "proof",
+          "n": 6,
+          "label": "Outcome and proof",
+          "state": "locked",
+          "state_text": "Later",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "outcome",
+              "label": "Where the books stand",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "proof",
+              "label": "The record and the proof",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        }
+      ],
+      "current": {
+        "scene_id": "buyer",
+        "step_id": "ask",
+        "title_text": "The buyer asks",
+        "text": "The books are reset and the buyer's message is read. Deals shows it beside the terms FLOW found in it.",
+        "owner": false,
+        "owner_text": null
+      },
+      "next": {
+        "label": "Receive the buyer's message",
+        "action": "ask",
+        "href": null,
+        "hint_text": "Opens Deals on the buyer's message.",
+        "owner": false
+      },
+      "alternate": {
+        "label": "Load alternate scenario",
+        "scenario": "busy",
+        "title_text": "Busy company",
+        "scope_text": "A company with several customers, open negotiations, an approval waiting for you and overdue invoices.",
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Nothing has been done yet, so nothing is lost."
+        ],
+        "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
+        "loss_preview_text": "Nothing has been done on the main books yet, so loading the alternate scenario loses nothing.",
+        "keeps_text": "Restoring puts the main books back at the start: the starting day, the sample documents confirmed, and no offers, agreements or approvals.",
+        "confirm_title_text": "Load the busy company?",
+        "confirm_label": "Load the busy company",
+        "cancel_label": "Keep the main books",
+        "loaded": false,
+        "loaded_text": null,
+        "restore_label": "Restore the main books",
+        "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
+        "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
+        "loss_title_text": "What the main books lose",
+        "loss_items": [
+          "Nothing has been done yet, so nothing is lost."
+        ],
+        "reset_confirm_title_text": "Reset the books?",
+        "reset_confirm_label": "Reset the books",
+        "reset_cancel_label": "Keep the books",
+        "reset_keeps_text": "A reset puts the books back at their start; it does not bring back what is listed above."
+      },
+      "operator_tools": {
+        "label": "Operator tools",
+        "hint_text": "Clock, reset, engine views",
+        "groups": [
+          {
+            "key": "clock",
+            "label": "The clock",
+            "items": []
+          },
+          {
+            "key": "books",
+            "label": "The books",
+            "items": [
+              {
+                "label": "Reset the books",
+                "action": "reset",
+                "replaces_books": true
+              }
+            ],
+            "note_text": "Clears every deal, operation and approval of this session."
+          },
+          {
+            "key": "engine",
+            "label": "Engine views",
+            "items": [
+              {
+                "label": "Signed mandate",
+                "href": "/mandate"
+              },
+              {
+                "label": "Cash line",
+                "href": "/trajectory"
+              },
+              {
+                "label": "Debt Desk",
+                "href": "/funding"
+              },
+              {
+                "label": "Verdict",
+                "href": "/verdict"
+              },
+              {
+                "label": "Ledger",
+                "href": "/ledger"
+              },
+              {
+                "label": "Evidence export",
+                "href": "/evidence"
+              }
+            ]
+          }
+        ]
+      },
+      "proof": {
+        "title_text": "Proof",
+        "text": "The engine under the story, opened as it is: the full record, the security view and the ledger each read the books as they stand.",
+        "links": [
+          {
+            "label": "The full record",
+            "href": "/trust?view=evidence&from=demo"
+          },
+          {
+            "label": "Security",
+            "href": "/trust?view=security&from=demo"
+          },
+          {
+            "label": "The ledger",
+            "href": "/ledger"
+          }
+        ],
+        "chain": {
+          "chain_valid": true,
+          "chain_length": 3,
+          "head_hash": "53c84f3f768debd62db8636ce48daa1fe85ee6994f36b05239a5faff9a187cc9",
+          "chain_text": "Record chain checks passed",
+          "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
+        }
+      },
+      "simulation_text": "Simulation. Every company, bank and figure here is synthetic."
+    }
+  },
+  "zh": {
+    "ok": true,
+    "scenario": "golden_sme",
+    "day": 0,
+    "restored_text": "主账目已回到故事的起点。",
+    "story": {
+      "lang": "zh",
+      "scenario": "golden_sme",
+      "main": true,
+      "title_text": "故事线",
+      "subtitle_text": "买方要求更好的条件。FLOW 为报价定价，协议随之改变账目。随后银行只付了承诺的一部分，而老板始终掌控解决方案。六个场景，约五分钟。",
+      "story_available": true,
+      "complete": false,
+      "progress_text": "第 1 / 6 个场景",
+      "scenes": [
+        {
+          "id": "buyer",
+          "n": 1,
+          "label": "买方提出请求",
+          "state": "current",
+          "state_text": "进行中",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "ask",
+              "label": "买方的消息送达",
+              "state": "current",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "decision",
+          "n": 2,
+          "label": "FLOW 作出决定",
+          "state": "next",
+          "state_text": "下一步",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "decide",
+              "label": "FLOW 检查报价",
+              "state": "next",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "agreement",
+          "n": 3,
+          "label": "协议改变账目",
+          "state": "locked",
+          "state_text": "稍后",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "agree",
+              "label": "发送并达成推荐的反报价",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "cash",
+              "label": "现在的现金，以及仍在途中的资金",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "reality",
+          "n": 4,
+          "label": "现实与承诺出现偏差",
+          "state": "locked",
+          "state_text": "稍后",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "bank",
+              "label": "银行：约定的提前付款到账（模拟）",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "time",
+              "label": "时间流逝",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "owner",
+          "n": 5,
+          "label": "老板掌控全局",
+          "state": "locked",
+          "state_text": "稍后",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "queue",
+              "label": "解决方案排队等待老板批准",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "approve",
+              "label": "老板批准",
+              "state": "locked",
+              "owner": true
+            },
+            {
+              "id": "settle",
+              "label": "时间流逝：资金到账",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        },
+        {
+          "id": "proof",
+          "n": 6,
+          "label": "结果与证明",
+          "state": "locked",
+          "state_text": "稍后",
+          "result_text": null,
+          "steps": [
+            {
+              "id": "outcome",
+              "label": "账目现在的状况",
+              "state": "locked",
+              "owner": false
+            },
+            {
+              "id": "proof",
+              "label": "记录与证明",
+              "state": "locked",
+              "owner": false
+            }
+          ],
+          "proof": []
+        }
+      ],
+      "current": {
+        "scene_id": "buyer",
+        "step_id": "ask",
+        "title_text": "买方提出请求",
+        "text": "账目已重置，买方的消息已被读取。交易页面把它与 FLOW 读出的条款并排展示。",
+        "owner": false,
+        "owner_text": null
+      },
+      "next": {
+        "label": "接收买方的消息",
+        "action": "ask",
+        "href": null,
+        "hint_text": "在交易页面打开买方的消息。",
+        "owner": false
+      },
+      "alternate": {
+        "label": "加载备用场景",
+        "scenario": "busy",
+        "title_text": "繁忙的公司",
+        "scope_text": "一家有多位客户、多项进行中的谈判、待您批准的事项和逾期发票的公司。",
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "目前还没有做任何事，所以不会损失任何内容。"
+        ],
+        "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
+        "loss_preview_text": "主账目上还没有做任何事，所以加载备用场景不会损失任何内容。",
+        "keeps_text": "恢复会让主账目回到起点：起始日期、已确认的示例文件，没有报价、协议或批准事项。",
+        "confirm_title_text": "加载“繁忙的公司”？",
+        "confirm_label": "加载“繁忙的公司”",
+        "cancel_label": "保留主账目",
+        "loaded": false,
+        "loaded_text": null,
+        "restore_label": "恢复主账目",
+        "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
+        "history": []
+      },
+      "books": {
+        "scenario": "golden_sme",
+        "main": true,
+        "nothing_to_lose": true,
+        "loss_token": "d6cb04105891a7c6",
+        "loss_title_text": "主账目会失去什么",
+        "loss_items": [
+          "目前还没有做任何事，所以不会损失任何内容。"
+        ],
+        "reset_confirm_title_text": "重置账目？",
+        "reset_confirm_label": "重置账目",
+        "reset_cancel_label": "保留账目",
+        "reset_keeps_text": "重置会让账目回到起点，上面列出的内容不会恢复。"
+      },
+      "operator_tools": {
+        "label": "操作工具",
+        "hint_text": "时钟、重置、引擎页面",
+        "groups": [
+          {
+            "key": "clock",
+            "label": "时钟",
+            "items": []
+          },
+          {
+            "key": "books",
+            "label": "账目",
+            "items": [
+              {
+                "label": "重置账目",
+                "action": "reset",
+                "replaces_books": true
+              }
+            ],
+            "note_text": "清除本次会话的所有交易、操作和批准事项。"
+          },
+          {
+            "key": "engine",
+            "label": "引擎页面",
+            "items": [
+              {
+                "label": "已签名授权书",
+                "href": "/mandate"
+              },
+              {
+                "label": "现金线",
+                "href": "/trajectory"
+              },
+              {
+                "label": "融资台",
+                "href": "/funding"
+              },
+              {
+                "label": "裁决",
+                "href": "/verdict"
+              },
+              {
+                "label": "账本",
+                "href": "/ledger"
+              },
+              {
+                "label": "证据导出",
+                "href": "/evidence"
+              }
+            ]
+          }
+        ]
+      },
+      "proof": {
+        "title_text": "证明",
+        "text": "故事之下的引擎页面，按其现状打开：完整记录、安全视图和账本都按账目当前的样子读取。",
+        "links": [
+          {
+            "label": "完整记录",
+            "href": "/trust?view=evidence&from=demo"
+          },
+          {
+            "label": "安全",
+            "href": "/trust?view=security&from=demo"
+          },
+          {
+            "label": "账本",
+            "href": "/ledger"
+          }
+        ],
+        "chain": {
+          "chain_valid": true,
+          "chain_length": 3,
+          "head_hash": "53c84f3f768debd62db8636ce48daa1fe85ee6994f36b05239a5faff9a187cc9",
+          "chain_text": "记录链检查通过",
+          "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
+        }
+      },
+      "simulation_text": "模拟。这里的每家公司、银行和数字都是合成的。"
+    }
+  }
+}

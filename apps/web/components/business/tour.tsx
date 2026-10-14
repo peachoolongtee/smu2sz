@@ -32,7 +32,9 @@ interface Step {
 
 const NAV: Step = { target: '[data-testid="nav-pills"], [data-testid="tab-bar"]', title: "tour.nav.title", body: "tour.nav.body", extra: "sections" };
 
-/** At most two steps per page. */
+const tid = (id: string) => `[data-testid="${id}"]`;
+
+/** The steps of each page, in reading order. */
 const STEPS: Record<string, Step[]> = {
   "/": [{ target: '[data-testid="home-status"]', title: "tour.home.status.title", body: "tour.home.status.body" }, NAV],
   "/deals": [
@@ -48,8 +50,13 @@ const STEPS: Record<string, Step[]> = {
     { target: "#recv-open", title: "tour.recv.open.title", body: "tour.recv.open.body" },
   ],
   "/activity": [
-    { target: "#activity-timeline", title: "tour.activity.list.title", body: "tour.activity.list.body" },
-    { target: "#activity-refused", title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+    { target: '#activity-timeline, [data-testid="activity-list"]', title: "tour.activity.list.title", body: "tour.activity.list.body" },
+    { target: '#activity-refused, [data-testid="activity-security"]', title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+  ],
+  "/demo": [
+    { target: tid("demo-current"), title: "tour.demo.current.title", body: "tour.demo.current.body" },
+    { target: tid("demo-books"), title: "tour.demo.alt.title", body: "tour.demo.alt.body" },
+    { target: tid("demo-operator-tools"), title: "tour.demo.tools.title", body: "tour.demo.tools.body" },
   ],
   "/approvals": [{ target: '[id^="approval-APR"]', title: "tour.approvals.title", body: "tour.approvals.body" }],
   "/limits": [{ target: "#limits-rules", title: "tour.limits.title", body: "tour.limits.body" }],
@@ -177,9 +184,12 @@ function TourCard({ steps }: { steps: Step[] }) {
   if (hole) {
     const right = window.innerWidth - (hole.left + hole.width);
     const below = window.innerHeight - (hole.top + hole.height);
+    // Below or above, the card lines up with the part, kept inside the screen.
+    const width = Math.min(CARD_W, window.innerWidth - 32);
+    const left = Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), window.innerWidth - width - 16);
     if (right > CARD_W + 32) place = { left: hole.left + hole.width + 16, top: Math.min(Math.max(16, hole.top), window.innerHeight - cardH - 16) };
-    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left: "50%", translate: "-50% 0" };
-    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left: "50%", translate: "-50% 0" };
+    else if (below > cardH + 16) place = { top: hole.top + hole.height + 16, left };
+    else if (hole.top > cardH + 16) place = { top: hole.top - cardH - 16, left };
     else place = { bottom: 88, left: "50%", translate: "-50% 0" };
   }
 
@@ -197,7 +207,7 @@ function TourCard({ steps }: { steps: Step[] }) {
     >
       {/* The dimmed page, with a hole around the part being explained (it jumps between steps: no layout property animates). */}
       {hole ? (
-        <div aria-hidden className="pointer-events-none fixed rounded-card ring-2 ring-surface" style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }} />
+        <div aria-hidden data-testid="tour-hole" className="pointer-events-none fixed rounded-card ring-2 ring-surface" style={{ ...hole, boxShadow: "0 0 0 9999px color-mix(in srgb, var(--color-ink) 60%, transparent)" }} />
       ) : (
         <div aria-hidden className="fixed inset-0 bg-ink/60" />
       )}
@@ -206,7 +216,8 @@ function TourCard({ steps }: { steps: Step[] }) {
       <div
         ref={cardRef}
         key={step}
-        className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
+        data-testid="tour-card"
+        className="flow-f motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
         <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>

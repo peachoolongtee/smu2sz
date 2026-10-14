@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, openCompare, openInbox, openReview, resetBooks } from "./helpers";
+import { checkedDeal, openCompare, openInbox, openOperatorTools, openReview, resetBooks } from "./helpers";
 
 /**
  * Slice B of the overhaul map #121 (tickets #126 to #132, #134, #143), the contract end to end: a row's link and the origin, a deep link that hydrates a fresh session,
@@ -187,6 +187,7 @@ test.describe("mock", () => {
     for (const el of await qualifiers.all()) expect(await el.evaluate(small)).toBe(false);
     // The approval card.
     await page.goto("/demo");
+    await openOperatorTools(page); // the optional scenes sit in the Demo's operator tools fold
     await page.getByTestId("more-run-capex").click();
     await expect(page).toHaveURL(/\/capex/);
     await page.goto("/approvals");

@@ -56,6 +56,12 @@ class Runtime:
     documents: dict[str, Any] = field(default_factory=dict)  # doc_id -> SourceDocument (inbound, untrusted)
     intake_day: int = 0  # the simulated day `intake_count` belongs to (R04, R05; in memory, like the caches above)
     intake_count: int = 0  # offers and buyer turns admitted without a channel key on `intake_day`
+    # The Demo's swaps to another scenario and restores of the main one (`app.api.demo_story`); in memory, and kept across `reset`
+    # because a reset wipes the operations log, which therefore cannot hold the entry that says the books were replaced.
+    demo_history: list[dict[str, Any]] = field(default_factory=list)
+    # What a fresh reset of the loaded scenario holds (a fingerprint of the whole resettable state and its counts, taken right after
+    # the reset; `app.api.demo_story`). None when the books were not made by `reset_demo` in this process (then nothing counts as fresh).
+    fresh: dict[str, Any] | None = None
 
     def clock(self) -> int:
         return self.day
@@ -141,6 +147,7 @@ class Runtime:
             raise ResetRefused("reset is a demo-only operation; refused because DEMO_MODE is off and the store is persistent")
         with self.lock:
             self.store.reset()
+            self.fresh = None
             _seed(self.store, scenario)
             self.day = 0
             self.scenario = scenario
@@ -161,6 +168,17 @@ class Runtime:
             self.reset(scenario)
             _confirm_demo_documents(self, scenario)
             self._replay_seed(scenario)
+            self.mark_fresh()
+
+    def mark_fresh(self) -> None:
+        """Remember what the books hold right after a reset, so the Demo can tell whether anything would be lost by the next one."""
+        try:
+            from app.api.demo_story import snapshot_fresh
+
+            self.fresh = snapshot_fresh(self)
+        except Exception:
+            log.warning("the fresh state of the demo books could not be recorded", exc_info=True)
+            self.fresh = None
 
     def _replay_seed(self, scenario: str) -> None:
         """The scenario's seed file, when it has one (offers, negotiations, operations; `app.api.demo_seed`). A step that fails
@@ -254,6 +272,7 @@ def get_runtime() -> Runtime:
             rt.hydrate()
             if not has_state:  # books seeded just now: start where the demo reset starts
                 _confirm_demo_documents(rt, rt.scenario)
+                rt.mark_fresh()
         except Exception:
             if isinstance(store, SqlLedgerStore):
                 store.dispose()

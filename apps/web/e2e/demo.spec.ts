@@ -1,559 +1,566 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { STORY_STEPS, stripOf, verdictHeading, walkStory } from "./helpers";
-
-/** Since Wave 3 the Inbox folds to one row once a deal is selected: open it before reading which message is current. */
-async function expectSelectedMessage(page: Page, id: string): Promise<void> {
-  // (the page waits for the deal's exposure read before it shows the queue; the inbox is folded or open once it has)
-  await expect(page.getByTestId("inbox-collapsed").or(page.getByTestId(`inbox-msg-${id}`))).toBeVisible();
-  if (await page.getByTestId("inbox-collapsed").isVisible().catch(() => false)) await page.getByTestId("inbox-back").click();
-  await expect(page.getByTestId(`inbox-msg-${id}`)).toHaveAttribute("aria-current", "true");
-}
-
+import { filledBrand, openOperatorTools } from "./helpers";
 
 /**
- * Walks the guided Demo, the late-payment loop of docs/DEMO_FLOW.md in six scenes and eleven steps, and asserts the numbers the server formats.
- * The same spec runs in both Playwright projects: `desktop` (mock data, recorded from the API) and `live` (the real FastAPI service). Only the
- * identifiers the server generates differ (approval ids, commitment ids), so those are matched by pattern or read from the session.
+ * The Demo story (Slice D, ticket #145), read from GET /demo/story. The same spec runs in both Playwright projects: `desktop` (the recorded reads, picked by the mock's own state)
+ * and `live` (the real FastAPI service). One current scene with the page's only filled button, the owner's step that only opens the approval, three cards for "Which books?" (each Load through the guarded dialog) with a one-click restore, the operator tools folded away and the proof appendix. Every sentence on the page is the server's.
  */
 
-const API = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
-const STORY_KEY = "tl-demo-v3";
+const next = (page: Page) => page.getByTestId("demo-next");
 
-/** The Demo's session as the browser keeps it: the story's offer, the cure it queued and the pointer. */
-async function session(page: Page): Promise<{ step: number; storyOfferId: string | null; cure: { approvalId: string; decisionId: string | null; amount: string; landsDay: number | null } | null }> {
-  return page.evaluate((key) => JSON.parse(sessionStorage.getItem(key) ?? "{}"), STORY_KEY);
+async function openDemo(page: Page): Promise<void> {
+  await page.goto("/demo");
+  await expect(page.getByTestId("demo-current")).toBeVisible();
 }
 
-/** The ledger's entry count on the ledger page (0 when the books hold no operation). */
-async function ledgerEntries(page: Page): Promise<number> {
-  await page.goto("/ledger");
-  const status = page.getByTestId("chain-status");
-  const empty = page.getByText("No operations yet");
-  await expect(status.or(empty)).toBeVisible();
-  if (await empty.isVisible()) return 0;
-  return Number(/(\d+) entries/.exec((await status.textContent()) ?? "")?.[1]);
-}
-
-/** How many times the ledger holds an operation of this kind (the Activity page lists one row per entry). */
-async function activityRows(page: Page, kind: string): Promise<number> {
-  await page.goto("/activity");
-  await expect(page.getByTestId("activity-list")).toBeVisible();
-  return page.getByTestId(`activity-${kind}`).count();
-}
-
-test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement acts, reality diverges, the owner stays in control, the proof", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  const narration = page.getByTestId("demo-step-narration");
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await expect(page.getByTestId("demo-next")).toHaveText(/Start demo/);
-
-  // Scene 1, the buyer asks: the books are reset and the message is read; Deals shows the original request beside the interpreted terms.
-  await page.getByTestId("demo-next").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expect(stripOf(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await expect(narration).toContainText("Offer from Foshan Home Retail Co.");
-  await expectSelectedMessage(page, "EX01");
-  // (the queue says the ask once, in the server's words for the three terms)
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("60 days going forward");
-
-  // Scene 2, the decision: the forward cost, the cash impact, the recommended counter and its scope.
-  await walkStory(page, 1, 1);
-  await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
-  await page.getByTestId("deal-card-cost-toggle").click();
-  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
-  await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("deal-cost-table-total-reply")).toContainText("¥3,027.77");
-
-  // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
-  await walkStory(page, 1, 2);
-  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
-  await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
-  await expect(page.getByTestId("commitments-live")).toBeVisible();
-  await expect(narration).toContainText("Agreed.");
-  await walkStory(page, 1, 3);
-  await expect(page).toHaveURL(/\/cash/);
-  await expect(narration).toContainText("Funding of ¥149,986.20 was requested and has landed.");
-  await expect(narration).toContainText("Cash in hand is ¥550k.");
-  await expect(page.getByTestId("cash-headline")).toBeVisible();
-
-  // Scene 4, reality diverges: the one synthetic bank event, labelled as such, then time passes with nothing received.
-  await walkStory(page, 1, 4);
-  await expect(page).toHaveURL(/\/receivables/);
-  await expect(page.getByTestId("demo-step-title")).toContainText("(synthetic)");
-  await expect(narration).toContainText("Synthetic bank event DEMO-RCPT-1: the agreed early payment arrived.");
-  await expect(narration).toContainText("The deal now reads: Fulfilled.");
-  await expect(page.getByTestId("promised-RCV-A")).toHaveAttribute("data-status", "RECEIVED");
-  await walkStory(page, 1, 5);
-  await expect(page).toHaveURL(/\/$/);
-  await expect(narration).toContainText("32 days passed and the clock recorded no receipt.");
-  // Home detects the missed later receipt: the reserve breach and the cure priced above the autonomous ceiling, queued with the owner's click.
-  const risk = page.getByTestId("home-next-action");
-  await expect(risk).toContainText("¥1,782.19");
-  // Who decides: the line under the actions carries the server's `approval_text` in its warn form, because this cure is queued for the owner.
-  await expect(risk.getByTestId("hv2-approval")).toHaveText("Needs your approval before it runs");
-  await expect(risk.getByTestId("hv2-approval")).toHaveAttribute("data-needs-owner", "true");
-  await expect(risk.getByTestId("fix-open-ALERT-RESERVE-42")).toHaveText("Queue it for my approval");
-
-  // Scene 5, the owner stays in control: the cure is queued, not run.
-  await walkStory(page, 1, 6);
-  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  await expect(narration).toContainText("Queued, not run: Request ¥200,000 of invoice financing");
-  await expect(page.getByText("1 pending")).toBeVisible();
-  // The owner approves ON THE CARD (its one filled Approve); the strip's button only opens the approval, and then moves the story on.
-  const card = page.locator('[id^="approval-APR-"]').first();
-  await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Authorize/ })).toHaveCount(1);
-  await card.getByRole("button", { name: /^Authorize/ }).click();
-  await expect(card.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByTestId("demo-next")).toHaveText("Next");
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  await expect(narration).toContainText("Approved by the owner.");
-  // Then the funding settles: landed, not in transit.
-  await walkStory(page, 1, 8);
-  await expect(page).toHaveURL(/\/cash/);
-  await expect(narration).toContainText("the funding has landed");
-
-  // Scene 6, outcome and proof: Home, then Activity with the evidence export beside it.
-  await walkStory(page, 1, 9);
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
-  await expect(narration).toContainText("The deal: Fulfilled.");
-  await expect(narration).toContainText("The funding: ");
-  await walkStory(page, 1, 10);
-  await expect(page).toHaveURL(/\/activity/);
-  await expect(page.getByTestId("chain-status")).toContainText("Record chain checks passed");
-  await expect(narration).toContainText("The record check says: Record chain checks passed.");
-  await expect(page.getByTestId("demo-step-link")).toHaveAttribute("href", "/evidence");
-  await expect(page.getByTestId("demo-next")).toBeDisabled();
-
-  // The receipt is labelled synthetic where the owner reads the books, and it is the only receipt.
-  const receipt = page.getByTestId("activity-RECEIVE_PAYMENT");
-  await expect(receipt).toHaveCount(1);
-  await expect(receipt).toContainText("Synthetic bank event, reference DEMO-RCPT-1");
-  await expect(page.getByTestId("activity-SUBMIT_INVOICE_FOR_FINANCING").first()).toBeVisible();
-
-  // Both records end where the story says: the deal fulfilled by the receipt, the cure settled by its landing.
-  const s = await session(page);
-  expect(s.storyOfferId).toBeTruthy();
-  await page.goto(`/decisions/${encodeURIComponent(`deal:${s.storyOfferId}`)}`);
-  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "FULFILLED");
-  await page.goto(`/decisions/${encodeURIComponent(s.cure?.decisionId ?? "")}`);
-  await expect(page.getByTestId("record-state")).toHaveAttribute("data-state", "SETTLED");
-
-  // The engine pages keep the story's books: the ledger holds the receipt and the executed advance.
-  await page.goto("/ledger");
-  await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
-  await expect(page.getByText("Get cash early on an invoice").first()).toBeVisible();
-  await page.goto("/evidence");
-  const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("download-evidence").click()]);
-  expect(download.suggestedFilename()).toBe("termsledger-evidence.jsonl");
-});
-
-test("the approve step needs the owner's click: nothing approves while the story waits, the strip only opens the card, and a second Run is a Show", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/demo");
-  await walkStory(page, 7);
-  await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  const waiting = page.getByText("1 pending");
-  await expect(waiting).toBeVisible();
-  // Time passes in the browser and the cure is still waiting: neither the stepper nor the page decides for the owner.
-  await page.waitForTimeout(1500);
-  await page.goto("/approvals");
-  await expect(page.getByText("1 pending")).toBeVisible();
-  // One decision, one filled Approve: the card's. The strip says where it is ("Scene 5 of 6, step 7 of 11") and only opens the approval.
-  await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Authorize/ })).toHaveCount(1);
-  await expect(page.getByTestId("demo-step-title")).toContainText("Scene 5 of 6, step 7 of 11");
-  await expect(stripOf(page)).toContainText(`step 7 of ${STORY_STEPS}`);
-  // The story page shows the step's state, not a second button for the same decision.
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-waiting-8")).toContainText("Waiting for your approval");
-  await expect(page.getByTestId("story-run-8")).toHaveCount(0);
-  await expect(page.getByTestId("story-next")).toHaveText("Open the approval");
-  await expect(page.getByTestId("story-run-9")).toBeDisabled();
-  // The owner's click is the card's.
-  await page.goto("/approvals");
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await expect(page.getByTestId("demo-next")).toHaveText("Next");
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-  const advances = await activityRows(page, "SUBMIT_INVOICE_FOR_FINANCING");
-  // A second Run of the finished step approves nothing again (and Replay of it is the same Run): the books are as they were.
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-8").click();
-  await expect(stripOf(page)).toContainText(`step 8 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-  expect(await activityRows(page, "SUBMIT_INVOICE_FOR_FINANCING")).toBe(advances);
-});
-
-test("Back then Next only shows the steps already finished: the ledger, the clock and the receipt do not move", async ({ page }) => {
-  test.setTimeout(120_000);
-  await page.goto("/demo");
-  await walkStory(page, 5); // the buyer asks, FLOW decides, the agreement acts, cash, the synthetic bank event
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText(/^Day \d+$/);
-  const day = await page.getByTestId("home-day").textContent();
-
-  const back = page.getByRole("button", { name: "Back" });
-  await back.click();
-  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
-  await back.click();
-  await expect(stripOf(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  // Next is a Show up to the highest finished step: the pointer moves, the screen opens, nothing runs.
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 4 of ${STORY_STEPS}`);
-  await expect(page).toHaveURL(/\/cash/);
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 5 of ${STORY_STEPS}`);
-  await expect(page).toHaveURL(/\/receivables/);
-  expect(await ledgerEntries(page)).toBe(entries);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText(day ?? "");
-  // The story page agrees: every step up to the fifth is still done, and the next one runs (Run) rather than shows.
-  await expect(page.getByTestId("story-show-5")).toBeVisible();
-  await expect(page.getByTestId("story-run-6")).toBeEnabled();
-  // Beyond the highest finished step Next runs: the sixth step lets time pass.
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 6 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-step-narration")).toContainText("days passed");
-});
-
-test("a step waits for the one before it: scenes and Run buttons ahead are disabled, the next one is not", async ({ page }) => {
-  await page.goto("/demo");
-  const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");
-  expect(await jumps.count()).toBe(6);
-  await expect(jumps.nth(0)).toBeEnabled(); // the first scene starts the story, like Start demo
-  for (let i = 1; i < 6; i++) await expect(jumps.nth(i)).toBeDisabled();
-  await expect(page.getByTestId("story-run-1")).toBeEnabled();
-  await expect(page.getByTestId("story-run-2")).toBeDisabled();
-  await walkStory(page, 2);
-  await expect(jumps.nth(0)).toBeEnabled();
-  await expect(jumps.nth(1)).toBeEnabled();
-  await expect(jumps.nth(2)).toBeEnabled(); // the next scene starts with Next
-  await expect(jumps.nth(3)).toBeDisabled();
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-run-3")).toBeEnabled();
-  await expect(page.getByTestId("story-run-4")).toBeDisabled();
-});
-
-test("the optional scenes run from More to show and never move the story's pointer", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  await walkStory(page, STORY_STEPS);
-  await page.goto("/demo");
-  await expect(page.getByTestId("more-reworded")).toContainText("Open \"The buyer walks away\" first.");
-  await expect(page.getByTestId("more-run-reworded")).toBeDisabled();
-
-  // The capex question: evaluated on the books the story left, applying stays the owner's click on the Capex page.
-  await page.getByTestId("more-run-capex").click();
-  await expect(page).toHaveURL(/\/capex/);
-  await expect(page.getByTestId("capex-as-of")).toContainText("Computed today");
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-  await expect(page.getByTestId("capex-apply")).toBeEnabled();
-
-  // The attack message is read on its own offer; the story's message is the current one again when the story is shown.
-  await page.goto("/demo");
-  await page.getByTestId("more-run-security").click();
-  await expect(page).toHaveURL(/\/security/);
-  await expect(page.locator('[data-testid^="event-"]').first()).toBeVisible();
-  await expect(page.locator('[data-testid^="event-"]').filter({ hasText: "UNKNOWN_COUNTERPARTY" }).first()).toBeVisible();
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await page.getByTestId("story-show-2").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expectSelectedMessage(page, "EX01");
-  await expect(stripOf(page)).toContainText(`step ${STORY_STEPS} of ${STORY_STEPS}`);
-
-  // The engine's own pages open as they are.
-  await page.goto("/demo");
-  await page.getByRole("link", { name: "Debt Desk" }).click();
-  await expect(page).toHaveURL(/\/funding/);
-
-  // The buyer who walks away replaces the books, so it is the one scene after which the story starts over, and it says so beforehand.
-  await page.goto("/demo");
-  await expect(page.getByTestId("more-walk")).toContainText("Replaces the books: the story starts over afterwards.");
-  await page.getByTestId("more-run-walk").click();
-  await expect(page).toHaveURL(/\/verdict/);
-  await expect(page.getByTestId("negotiation-result")).toContainText("NO DEAL");
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await page.goto("/demo");
-  await page.getByTestId("more-run-reworded").click();
-  await expect(page).toHaveURL(/\/verdict/);
-  await expect(page.getByTestId("outcome-badge")).toContainText("REJECT");
-  await expect(page.getByTestId("violation-AGG_CONCESSION_EXCEEDED")).toContainText("¥28,326.92");
-});
-
-test("the capex application stays the owner's click and its approval is logged", async ({ page }) => {
-  await page.goto("/demo");
-  await page.getByTestId("more-run-capex").click();
-  await expect(page).toHaveURL(/\/capex/);
-  await expect(page.getByText("¥380,885.77").first()).toBeVisible();
-  await page.goto("/approvals");
-  await expect(page.getByText("0 pending")).toBeVisible();
-  await page.goto("/capex");
-  await page.getByTestId("capex-apply").click();
-  await expect(page.getByTestId("capex-applied")).toBeVisible();
-  await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Authorize/ }).first().click();
-  await expect(page.getByText("Approved").first()).toBeVisible();
-  await page.goto("/ledger");
-  await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
-});
-
-test("the label toggle switches the UI to Chinese and back", async ({ page }) => {
-  await page.goto("/mandate");
-  await page.getByLabel("中文").check();
-  await expect(page.getByRole("heading", { name: "授权书", level: 1 })).toBeVisible();
-  await page.getByLabel("English").check();
-  await expect(page.getByRole("heading", { name: "Mandate", level: 1 })).toBeVisible();
-});
-
-test("reset clears the session back to the demo's starting point", async ({ page }) => {
-  await page.goto("/demo");
-  await page.getByTestId("demo-next").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await page.getByTestId("demo-next").click();
-  await expect(stripOf(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  await page.getByTestId("demo-reset").click();
-  await expect(page).toHaveURL(/\/demo/);
-  await expect(stripOf(page)).toContainText("Walk the story");
-  await page.goto("/ledger");
-  // The demo opens on the three demo documents read by the agent and confirmed by the owner; nothing else is logged.
-  const ops = page.locator("#operations tbody tr");
-  await expect(ops).toHaveCount(3);
-  await expect(ops.filter({ hasText: "Confirm document" })).toHaveCount(3);
-  await expect(page.getByTestId("chain-status")).toContainText("3 entries");
-});
-
-// ---------------------------------------------------------------- Show, Replay, Reset and the in-flight lock (Wave 6, ticket #75)
-
-const strip = stripOf;
-
-/** The strip's "step n of 11" as a number, or null while it shows the idle text. */
-async function progressOf(page: Page): Promise<number | null> {
-  const m = new RegExp(`step (\\d+) of ${STORY_STEPS}`).exec((await strip(page).textContent()) ?? "");
-  return m ? Number(m[1]) : null;
-}
-
-test("rapid clicks on Start and Next end at the last step, in order, with the books of one walk", async ({ page }, testInfo) => {
-  test.setTimeout(240_000);
-  await page.goto("/demo");
-  const next = page.getByTestId("demo-next");
-  await expect(next).toHaveText(/Start demo/);
-
-  // Raw clicks every 50 ms with no waiting: a disabled button swallows a click as it does for a hand. The eighth step is the owner's approval:
-  // the strip's button only opens the card, so the story waits at step 7 until the owner presses the card's Approve, and then the clicks go on.
-  const seen: (number | null)[] = [];
-  const started = Date.now();
-  let clicks = 0;
-  while (Date.now() - started < 150_000) {
-    await next.evaluate((el) => (el as HTMLButtonElement).click());
-    clicks++;
-    await page.waitForTimeout(50);
-    const n = await progressOf(page);
-    seen.push(n);
-    if (n === 7 && (await next.textContent())?.includes("Open the approval") && page.url().includes("/approvals")) {
-      await page.getByRole("button", { name: /^Authorize/ }).click();
-      await expect(page.getByText("0 pending")).toBeVisible();
-    }
-    if (n === STORY_STEPS && clicks >= 30) break; // at least thirty presses, the last ones past the end of the story
+/** The story page as the owner would read it, reset first: the opening books (live shares one API between specs). */
+async function freshDemo(page: Page): Promise<void> {
+  await openDemo(page);
+  // Other books than the main ones may be loaded (a spec before this one): the restore puts the main books back first.
+  if (await page.getByTestId("demo-loaded-banner").isVisible()) {
+    await page.getByTestId("demo-restore").click();
+    const asked = page.getByTestId("books-dialog");
+    await asked.waitFor({ state: "visible", timeout: 2000 }).catch(() => undefined);
+    if (await asked.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+    await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0, { timeout: 60_000 });
   }
-  const rapidMs = Date.now() - started;
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  // Work on the books (a spec before this one) is listed in the dialog first: this is the owner's confirmation.
+  const dialog = page.getByTestId("books-dialog");
+  // The dialog opens once a fresh read of the books has come back.
+  await dialog.waitFor({ state: "visible", timeout: 2000 }).catch(() => undefined);
+  if (await dialog.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+}
 
-  // Never the idle text once started, never a step back, and the last step is reached.
-  const firstStep = seen.findIndex((n) => n !== null);
-  expect(firstStep).toBeGreaterThanOrEqual(0);
-  const afterStart = seen.slice(firstStep);
-  expect(afterStart.every((n) => n !== null)).toBe(true);
-  for (let i = 1; i < afterStart.length; i++) expect(afterStart[i]!, `progress went back at sample ${i}: ${afterStart.join(",")}`).toBeGreaterThanOrEqual(afterStart[i - 1]!);
-  expect(afterStart.at(-1)).toBe(STORY_STEPS);
-  await expect(next).toBeDisabled();
+/** One press of the page's next control; the step opens its screen, so the story page is opened again afterwards. */
+async function pressNext(page: Page): Promise<void> {
+  await expect(next(page)).toBeEnabled();
+  await next(page).click();
+  // The step runs its server work and then opens its screen: wait for that before the story page is opened again.
+  await expect(page).not.toHaveURL(/\/demo$/);
+  await page.waitForLoadState("domcontentloaded");
+}
 
-  // The books of one walk: the same ledger as a guarded walk (no scene ran twice, no second negotiation, one receipt).
-  const rapidEntries = await ledgerEntries(page);
-  await page.goto("/demo");
-  await page.getByTestId("story-reset").click();
-  await expect(strip(page)).toContainText("Walk the story");
-  const guardedStarted = Date.now();
-  await walkStory(page, STORY_STEPS);
-  const guardedMs = Date.now() - guardedStarted;
-  const guardedEntries = await ledgerEntries(page);
-  expect(rapidEntries).toBeGreaterThan(0);
-  expect(rapidEntries).toBe(guardedEntries);
-  expect(await activityRows(page, "RECEIVE_PAYMENT")).toBe(1);
-
-  const timing = { project: testInfo.project.name, steps: STORY_STEPS, rapid: { clicks, ms: rapidMs, ledgerEntries: rapidEntries, progress: afterStart.filter((n, i) => i === 0 || n !== afterStart[i - 1]) }, guarded: { ms: guardedMs, ledgerEntries: guardedEntries } };
-  console.log(`DEMO_TIMING ${JSON.stringify(timing)}`);
-  await testInfo.attach("demo-timing", { body: JSON.stringify(timing, null, 1), contentType: "application/json" });
+test("one filled next control at every step of the walk; the owner's step only opens the approval", async ({ page }) => {
+  test.setTimeout(240_000);
+  await freshDemo(page);
+  let sawOwner = false;
+  for (let i = 0; i < 16; i++) {
+    await openDemo(page);
+    // Exactly one filled button on the page, and it is the next control.
+    expect(await filledBrand(page), `filled buttons at press ${i}`).toBe(1);
+    await expect(next(page)).toBeVisible();
+    if ((await page.getByTestId("demo-progress").textContent())?.startsWith("All")) break;
+    if ((await next(page).getAttribute("data-owner")) === "true") {
+      sawOwner = true;
+      // The owner's step is a link to the approval, with the sentence that says the approval is the owner's own click; nothing has been approved yet.
+      await expect(next(page)).toHaveAttribute("href", /\/approvals/);
+      await expect(page.getByTestId("demo-owner-text")).toBeVisible();
+      await expect(page.getByTestId("demo-scene-owner")).toHaveAttribute("data-state", "current");
+      await next(page).click();
+      const approve = page.getByRole("button", { name: /^(Approve|Authorize)/ });
+      await expect(approve).toBeVisible();
+      // The test is the owner here: the one click on the approval card.
+      await approve.click();
+      await expect(page.getByText("0 pending")).toBeVisible();
+      continue;
+    }
+    await pressNext(page);
+  }
+  expect(sawOwner).toBe(true);
+  await openDemo(page);
+  await expect(page.getByTestId("demo-progress")).toContainText(/^All/);
+  for (const id of ["buyer", "decision", "agreement", "reality", "owner", "proof"]) await expect(page.getByTestId(`demo-scene-${id}`)).toHaveAttribute("data-state", "done");
+  // Complete: the card says so (never another books' name) and the next control, "Start again", starts the story from scene one after the dialog has listed what the books lose.
+  // Activity's row for the bank's receipt says the amount and the payer; the bank's reference is evidence, in the row's fold.
+  await page.goto("/activity");
+  const receipt = page.getByTestId("activity-list").getByTestId("activity-row").filter({ hasText: /Received ¥/ }).first();
+  await expect(receipt).toBeVisible();
+  await expect(receipt.getByTestId("activity-event")).toContainText(/Received ¥[\d,.]+ from /);
+  expect(await receipt.innerText()).not.toMatch(/DEMO-RCPT/);
+  await receipt.getByTestId("activity-evidence").locator("> summary").click();
+  await expect(receipt.getByTestId("activity-record-bank")).toContainText("DEMO-RCPT-1");
+  await openDemo(page);
+  await expect(page.getByTestId("demo-current-title")).toHaveText("The story is complete");
+  await expect(next(page)).toHaveText("Start again");
+  await next(page).click();
+  await expect(page.getByTestId("books-dialog")).toBeVisible();
+  await expect(page.getByTestId("books-dialog-loss").locator("li").first()).toBeVisible();
+  await expect(page.getByTestId("books-dialog-cancel")).toBeFocused();
+  await page.getByTestId("books-dialog-cancel").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/^All/);
+  await next(page).click();
+  await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
 });
 
-test("Show opens a finished step and changes nothing; Replay runs it again and is safe on a story that moves time; Reset resets", async ({ page }) => {
-  test.setTimeout(150_000);
-  await page.goto("/demo");
-  await walkStory(page, 3); // the buyer asks, FLOW decides, the agreement acts
-
-  // Move the clock to day 7 from the story page.
-  await page.goto("/demo");
-  await page.getByTestId("home-plus-7").click();
-  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
-  const entries = await ledgerEntries(page);
-  expect(entries).toBeGreaterThan(0);
-
-  // Finished steps offer Show and Replay; the next one offers Run, and the ones after it wait.
-  await page.goto("/demo");
-  await expect(page.getByTestId("story-show-1")).toBeVisible();
-  await expect(page.getByTestId("story-replay-1")).toHaveAttribute("aria-label", /erases the books/);
-  await expect(page.getByTestId("story-replay-3")).toHaveAttribute("aria-label", /runs this step again and changes the books/);
-  await expect(page.getByTestId("story-show-4")).toHaveCount(0);
-  await expect(page.getByTestId("story-run-4")).toBeEnabled();
-
-  // Show on the first step and on a later one: the screen opens, the day and the ledger stay.
-  await page.getByTestId("story-show-1").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await page.goto("/demo");
-  await page.getByTestId("story-show-3").click();
-  await expect(page).toHaveURL(/\/deals\?customer=BUYER-1&decision=deal%3AOFF-.*#commitments$/);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText("Day 7");
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-
-  // Replay of the agreement runs it again: the deal was agreed once and is not agreed twice.
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-3").click();
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  expect(await ledgerEntries(page)).toBe(entries);
-
-  // Replay of the first step is the deliberate reset: day 0, the story at step 1, and nothing logged but the owner's confirmation of
-  // the three demo documents the demo opens on (brief 03).
-  await page.goto("/demo");
-  await page.getByTestId("story-replay-1").click();
-  await expect(page).toHaveURL(/\/deals/);
-  await expect(strip(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await expect(page.getByTestId("home-day")).toHaveText("Day 0");
-  expect(await ledgerEntries(page)).toBe(3);
-
-  // Reset starts the story over.
-  await page.goto("/demo");
-  await page.getByTestId("story-next").click();
-  await expect(strip(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  await page.goto("/demo");
-  await page.getByTestId("story-reset").click();
-  await expect(strip(page)).toContainText("Walk the story");
-  await expect(page.getByTestId("story-show-1")).toHaveCount(0);
-  await expect(page.getByTestId("story-run-1")).toBeVisible();
+test("each done scene shows what happened and its proof, and every proof link opens a record that exists", async ({ page }) => {
+  test.setTimeout(240_000);
+  await freshDemo(page);
+  for (let i = 0; i < 3; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const done = page.locator('[data-testid^="demo-scene-"][data-state="done"]');
+  expect(await done.count()).toBeGreaterThan(0);
+  await expect(page.getByTestId("demo-result-buyer")).not.toBeEmpty();
+  const links = await page.locator('[data-testid^="demo-proof-"] a').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href") ?? ""));
+  expect(links.length).toBeGreaterThan(0);
+  for (const href of links) {
+    await page.goto(href);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    const entry = /[?&]entry=(\d+)/.exec(href)?.[1];
+    if (entry) await expect(page.getByTestId(`trust-entry-${entry}`)).toHaveAttribute("aria-current", "true");
+    await expect(page.getByText(/not found|404/i)).toHaveCount(0);
+  }
 });
 
-test("while a step runs every control that conflicts with it is disabled", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "live", "The mock answers in milliseconds; the live API is held back to make the window long enough to see.");
-  await page.route(`${API}/demo/reset`, async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    await route.continue();
-  });
-  await page.goto("/demo");
-  await page.getByTestId("story-next").click();
-  // The first step is running: nothing else can start.
-  for (const id of ["demo-next", "story-next", "demo-reset", "story-reset", "story-run-2", "home-advance", "home-plus-1", "more-run-capex", "more-run-walk"]) await expect(page.getByTestId(id), id).toBeDisabled();
-  const jumps = page.getByRole("list", { name: "Demo scenes" }).getByRole("button");
-  expect(await jumps.count()).toBe(6);
-  for (let i = 0; i < 6; i++) await expect(jumps.nth(i)).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Back" })).toBeDisabled();
-  await expect(strip(page)).toContainText(`step 1 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-next")).toBeEnabled();
+test("Which books: Load on the busy card, with work on the books, shows the loss in a dialog; cancel changes nothing, confirm loads the busy books and restore brings the story back at scene one", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  const open = page.getByTestId("demo-scenario-load-busy");
+  await expect(page.getByTestId("demo-alternate-dialog")).toBeHidden();
+  await open.click();
+  const dialog = page.getByTestId("demo-alternate-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(dialog).toHaveAccessibleName(/./);
+  // The loss preview, in words, from the books as they stand; the dialog's one filled button is the confirmation.
+  await expect(page.getByTestId("demo-alternate-loss").locator("li").first()).toBeVisible();
+  await expect(dialog.getByRole("button")).toHaveCount(2);
+  // Focus starts on the safe choice: Enter on open keeps the main books.
+  await expect(page.getByTestId("demo-alternate-cancel")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  await open.click();
+  await expect(dialog).toBeVisible(); // it opens once a fresh read of the books has come back
+  // Escape closes it and focus returns to the button that opened it; nothing changed.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Cancel does the same.
+  await open.click();
+  await page.getByTestId("demo-alternate-cancel").click();
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Confirm loads the busy books: the banner offers the restore, the story is put aside and the next control opens Home.
+  await open.click();
+  await page.getByTestId("demo-alternate-confirm").click();
+  const banner = page.getByTestId("demo-loaded-banner");
+  // Loading a whole company takes the real API a few seconds.
+  await expect(banner).toBeVisible({ timeout: 60_000 });
+  await expect(banner).toHaveAttribute("role", "status");
+  await expect(page.getByTestId("story")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(1);
+  await expect(next(page)).toHaveAttribute("href", "/");
+  // One click puts the main books back, at the first scene.
+  await page.getByTestId("demo-restore").click();
+  await expect(banner).toHaveCount(0, { timeout: 60_000 });
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+  await expect(page.getByTestId("demo-restored")).toBeVisible();
 });
 
-test("a reload in the middle of a step is said, not silently unlocked", async ({ page }) => {
-  await page.goto("/demo");
-  await walkStory(page, 2);
-  // What the browser holds when the tab is closed while step 3 runs: running is saved, busy never is.
-  await page.evaluate((key) => {
-    const s = JSON.parse(sessionStorage.getItem(key) ?? "{}");
-    sessionStorage.setItem(key, JSON.stringify({ ...s, busy: false, running: 2 }));
-  }, STORY_KEY);
-  await page.reload();
-  await expect(page.getByTestId("demo-interrupted")).toContainText("Step 3 was interrupted by a reload");
-  await expect(page.getByTestId("demo-next")).toBeEnabled();
-  await expect(strip(page)).toContainText(`step 2 of ${STORY_STEPS}`);
-  // Running the next step clears the notice.
-  await page.getByTestId("demo-next").click();
-  await expect(strip(page)).toContainText(`step 3 of ${STORY_STEPS}`);
-  await expect(page.getByTestId("demo-interrupted")).toHaveCount(0);
+test("operator tools are closed by default and hold the clock, the books and the engine views", async ({ page }) => {
+  await openDemo(page);
+  const tools = page.getByTestId("demo-operator-tools");
+  await expect(tools).toBeVisible();
+  expect(await tools.evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
+  await expect(page.getByTestId("home-days")).toBeHidden();
+  await openOperatorTools(page);
+  await expect(page.getByTestId("demo-tools-clock")).toBeVisible();
+  await expect(page.getByTestId("demo-tools-books")).toBeVisible();
+  await expect(page.getByTestId("demo-tools-engine")).toBeVisible();
+  await expect(page.getByTestId("home-days")).toBeVisible();
+  // The old cards and the scenario select are gone; the optional scenes are inside the tools.
+  await expect(page.getByTestId("story-scenario")).toHaveCount(0);
+  await expect(page.getByTestId("more-run-capex")).toBeVisible();
 });
 
-test("the narration is the server's: a step that was told nothing shows its plain sentence, and a language change drops the old sentences", async ({ page }) => {
-  await page.goto("/demo");
-  await walkStory(page, 2);
-  const narration = page.getByTestId("demo-step-narration");
-  await expect(narration).toContainText("¥28,326.92");
-  // The plain sentences carry no figure: the dictionary never holds one.
-  await page.getByLabel("中文").check();
-  await expect(narration).not.toContainText("¥28,326.92");
-  await expect(narration).toHaveText(/FLOW|检查|报价/);
-  // The sentences were written in English: in English they are told again, nothing was lost.
-  await page.getByLabel("English").check();
-  await expect(narration).toContainText("¥28,326.92");
+test("the optional scenes run from the operator tools and never move the story's pointer", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  await openDemo(page);
+  await pressNext(page);
+  await openDemo(page);
+  const progress = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  await page.getByTestId("more-run-capex").click();
+  await expect(page).toHaveURL(/\/capex/);
+  await openDemo(page);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(progress);
 });
 
-test("an engine view with Business stored shows the Demo shell and the Demo radio, with a way back", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
-  await page.goto("/demo");
+test("in Chinese the page reads in Chinese with one filled next control", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await openDemo(page);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByTestId("demo-progress")).toContainText(/\d/);
+  expect(await filledBrand(page)).toBe(1);
+  await expect(page.getByTestId("demo-operator-tools")).toContainText("操作");
+  await expect(page.getByTestId("demo-books").getByRole("heading", { level: 2 })).toHaveText("用哪套账目？");
+  await expect(page.getByTestId("demo-scenario-load-busy")).toHaveText("加载");
+  await expect(page.getByTestId("demo-scenario-help-busy")).toHaveText("三位客户、六项谈判、一项待批准事项和逾期发票");
+  await expect(page.getByTestId("demo-busy-home")).toHaveText("从首页查看 →");
+});
+
+test("on a phone the three books cards are in the first screen before the scene card, and the operator tools are a closed fold", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openDemo(page);
+  await expect(page.getByTestId("demo-scenario-load-busy")).toBeInViewport();
+  const [cards, scene] = [(await page.getByTestId("demo-books").boundingBox())!, (await page.getByTestId("demo-current").boundingBox())!];
+  expect(cards.y + cards.height).toBeLessThanOrEqual(scene.y + 1);
+  for (const id of ["golden", "busy", "short"]) {
+    const card = (await page.getByTestId(`demo-scenario-${id}`).boundingBox())!;
+    expect(card.y + card.height, `the ${id} card is inside the first screen`).toBeLessThanOrEqual(844);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await expect(page.getByTestId("demo-alternate")).toHaveCount(0);
+  await expect(page.getByTestId("demo-operator-tools")).toBeVisible();
+  expect(await page.getByTestId("demo-operator-tools").evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+});
+
+test("the tour points at the current scene on the Demo and its card does not cover it", async ({ page }) => {
+  await openDemo(page);
+  await page.getByTestId("demo-tour").click();
+  const tour = page.getByTestId("tour");
+  await expect(tour).toContainText(/current scene/i);
+  await page.waitForTimeout(450);
+  const [h, c] = [(await page.getByTestId("tour-hole").boundingBox())!, (await page.getByTestId("tour-card").boundingBox())!];
+  const overlap = h.x < c.x + c.width && c.x < h.x + h.width && h.y < c.y + c.height && c.y < h.y + h.height;
+  expect(overlap).toBe(false);
+});
+
+test("the strip on the other pages follows the server's story: its progress, its chips and its one next control are the page's", async ({ page }) => {
+  test.setTimeout(120_000);
+  await freshDemo(page);
+  await openDemo(page);
+  const label = (await next(page).textContent())?.trim();
+  await pressNext(page);
+  // The page is now Deals, in the Demo shell, with the strip.
+  const strip = page.getByRole("region", { name: "Guided demo" });
+  await expect(strip.getByTestId("demo-progress")).toHaveText(/Scene 2 of 6/);
+  await expect(strip).not.toContainText(/step \d+ of 11/);
+  await expect(strip.getByTestId("demo-chip-buyer")).toHaveAttribute("data-state", "done");
+  await expect(strip.getByTestId("demo-chip-decision")).toHaveAttribute("data-state", "current");
+  await expect(strip.getByTestId("demo-story-link")).toHaveAttribute("href", "/demo");
+  // One forward control; it is the server's next, so the page agrees.
+  await expect(strip.getByRole("button", { name: /^Back$/ })).toHaveCount(0);
+  const stripLabel = (await strip.getByTestId("demo-next").textContent())?.trim();
+  expect(stripLabel).not.toBe(label);
+  await openDemo(page);
+  expect((await next(page).textContent())?.trim()).toBe(stripLabel);
+});
+
+test("the filled buttons are the design language's ink, on a direct load of the Demo page, of its dialog, of the story's strip and of the tour", async ({ page }) => {
+  test.setTimeout(180_000);
+  const INK = "rgb(23, 29, 30)";
+  await freshDemo(page);
+  await openDemo(page);
+  await expect(next(page)).toHaveCSS("background-color", INK);
+  // The tour's last button ("Done") is the ink primary too, not the engine's blue.
+  await page.getByTestId("demo-tour").click();
+  await expect(page.getByTestId("tour")).toBeVisible();
+  for (let i = 0; i < 4 && !(await page.getByTestId("tour-skip").count() === 0); i++) await page.getByTestId("tour-next").click();
+  await expect(page.getByTestId("tour-next")).toHaveText("Done");
+  await expect(page.getByTestId("tour-next")).toHaveCSS("background-color", INK);
+  await page.getByTestId("tour-next").click();
+  // With work on the books the dialog opens, and its one filled button is ink.
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  await page.getByTestId("demo-scenario-load-busy").click();
+  await expect(page.getByTestId("demo-alternate-confirm")).toHaveCSS("background-color", INK);
+  await page.getByTestId("demo-alternate-cancel").click();
+  // The story's strip on another page: its one forward control is ink as well (the owner's step is "Review the approval", a link).
+  await pressNext(page);
+  await expect(page.getByRole("region", { name: "Guided demo" }).getByTestId("demo-next")).toHaveCSS("background-color", INK);
+});
+
+test("a reset with work on the books asks first and resets nothing on cancel; on fresh books there is no dialog", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  // Fresh books: nothing to lose, so the reset happens at once.
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  await expect(page.getByTestId("books-dialog")).toBeHidden();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  const reset = page.getByTestId("demo-tools-books").getByRole("button").first();
+  await reset.click();
+  const dialog = page.getByTestId("books-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId("books-dialog-loss").locator("li").first()).toBeVisible();
+  // The safe choice has the focus: Enter on open changes nothing.
+  await expect(page.getByTestId("books-dialog-cancel")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeHidden();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Escape does the same.
+  await reset.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // Only the confirmation resets.
+  await reset.click();
+  await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+});
+
+test("the optional scene that replaces the books asks first when work would be lost, and replaces nothing on cancel", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  await page.getByTestId("more-run-walk").click();
+  const dialog = page.getByTestId("books-dialog");
+  await expect(dialog).toBeVisible();
+  await page.getByTestId("books-dialog-cancel").click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/demo$/);
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  await page.getByTestId("more-run-walk").click();
+  await page.getByTestId("books-dialog-confirm").click();
+  await expect(page).toHaveURL(/\/verdict/);
+});
+
+test("a stale page cannot reset books it did not read: the server's sentence is shown and the main books are untouched", async ({ page, request }, info) => {
+  test.skip(info.project.name !== "live", "the stale page is a second writer: the live API");
+  test.setTimeout(180_000);
+  const api = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+  const owner = { "X-Owner-Token": "demo-owner-token" };
+  await freshDemo(page);
+  // Page A loads the busy books from its card (fresh books: nothing to lose, so no dialog).
+  await page.getByTestId("demo-scenario-load-busy").click();
+  await expect(page.getByTestId("demo-loaded-banner")).toBeVisible({ timeout: 60_000 });
+  // Meanwhile another writer restores the main books and does work on them, through the API.
+  expect((await request.post(`${api}/demo/restore`, { headers: owner, data: {} })).ok()).toBeTruthy();
+  expect((await request.post(`${api}/offers`, { headers: owner, data: { fixture_id: "EX01_PACKAGE" } })).ok()).toBeTruthy();
+  const entries = async () => ((await (await request.get(`${api}/ledger`, { headers: owner })).json()) as { operations: unknown[] }).operations.length;
+  const before = await entries();
+  // Page A is stale: its "Reset these books" names the busy books, which are no longer loaded.
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-books").getByRole("button").first().click();
+  await expect(page.getByTestId("books-notice")).toContainText("changed");
+  expect(await entries()).toBe(before);
+  // The page reads the story again: it now shows the main books.
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+});
+
+test("a double click on a book-replacing control never confirms, at 390 px", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await freshDemo(page);
+  for (let i = 0; i < 2; i++) {
+    await openDemo(page);
+    await pressNext(page);
+  }
+  await openDemo(page);
+  const before = await page.getByTestId("demo-progress").textContent();
+  await openOperatorTools(page);
+  const controls = [
+    { open: page.getByTestId("demo-scenario-load-busy"), dialog: page.getByTestId("demo-alternate-dialog"), confirm: page.getByTestId("demo-alternate-confirm"), cancel: page.getByTestId("demo-alternate-cancel") },
+    { open: page.getByTestId("demo-tools-books").getByRole("button").first(), dialog: page.getByTestId("books-dialog"), confirm: page.getByTestId("books-dialog-confirm"), cancel: page.getByTestId("books-dialog-cancel") },
+    { open: page.getByTestId("more-run-walk"), dialog: page.getByTestId("books-dialog"), confirm: page.getByTestId("books-dialog-confirm"), cancel: page.getByTestId("books-dialog-cancel") },
+  ];
+  for (const c of controls) {
+    await c.open.scrollIntoViewIfNeeded();
+    // The realistic double click: the second click lands wherever the first one put the dialog's confirm, a moment after it opened.
+    await c.open.click();
+    await expect(c.dialog).toBeVisible();
+    const box = (await c.confirm.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await expect(c.confirm).toHaveAttribute("aria-disabled", "true");
+    await page.mouse.click(x, y, { clickCount: 2 });
+    await page.mouse.click(x, y); // even a single click is ignored until the dialog has been open for a moment
+    await expect(c.dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+    await c.cancel.click();
+    await expect(c.dialog).toBeHidden();
+    expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  }
+  // Playwright's own double click on the opener does the same.
+  await controls[0].open.dblclick();
+  await page.waitForTimeout(200);
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  expect(await page.getByTestId("demo-progress").textContent()).toBe(before);
+  // A deliberate click, once the dialog is ready, still confirms (and so does the keyboard).
+  await controls[1].open.click();
+  await expect(controls[1].confirm).not.toHaveAttribute("aria-disabled", "true");
+  await controls[1].confirm.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("demo-progress")).toContainText(/Scene 1 of 6/);
+});
+
+test("the confirmation is bound to the list shown: books that gained work under an open page are listed by the server's refusal, and nothing is reset until a second, informed click", async ({ page, request }, info) => {
+  test.skip(info.project.name !== "live", "a second writer: the live API");
+  test.setTimeout(180_000);
+  const api = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+  const owner = { "X-Owner-Token": "demo-owner-token" };
+  await freshDemo(page);
+  const entries = async () => ((await (await request.get(`${api}/ledger`, { headers: owner })).json()) as { operations: unknown[] }).operations.length;
+  // The page is open on fresh main books: it believes a load loses nothing, so Load would go straight through.
+  const dialog = page.getByTestId("demo-alternate-dialog");
+  await expect(dialog).toBeHidden();
+  // Meanwhile another writer walks the story to the agreement through the API.
+  const post = async (path: string, data: object) => {
+    const res = await request.post(`${api}${path}`, { headers: owner, data });
+    expect(res.ok(), path).toBeTruthy();
+    return res.json();
+  };
+  const { offer } = await post("/offers", { fixture_id: "EX01_PACKAGE" });
+  await post(`/offers/${offer.offer_id}/evaluate`, { fixture_id: "EX01_PACKAGE" });
+  await post(`/negotiate/${offer.offer_id}`, { buyer_profile: "cooperative" });
+  const before = await entries();
+  // The first click replaces nothing: the server refuses, and the dialog opens with the true list and the server's sentence.
+  await page.getByTestId("demo-scenario-load-busy").click();
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId("demo-alternate-note")).toBeVisible();
+  await expect(page.getByTestId("demo-alternate-loss").locator("li").first()).toBeVisible();
+  expect(await entries()).toBe(before);
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+  // The second, informed click loads the busy books.
+  const confirm = page.getByTestId("demo-alternate-confirm");
+  await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+  await confirm.click();
+  await expect(page.getByTestId("demo-loaded-banner")).toBeVisible({ timeout: 60_000 });
+  // Leave the shared API on the main books for the specs after this one.
+  await page.getByTestId("demo-restore").click();
+  const asked = page.getByTestId("books-dialog");
+  await asked.waitFor({ state: "visible", timeout: 2000 }).catch(() => undefined);
+  if (await asked.isVisible()) await page.getByTestId("books-dialog-confirm").click();
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0, { timeout: 60_000 });
+});
+
+test("Which books comes first: three cards with their help, the loaded one marked and without a button, the busy one linking to Home; the old fold and the engine sidebar are gone", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  await openDemo(page);
+  const books = page.getByTestId("demo-books");
+  await expect(books.getByRole("heading", { level: 2 })).toHaveText("Which books?");
+  expect(await books.evaluate((el, ref) => !!(el.compareDocumentPosition(document.querySelector(`[data-testid="${ref}"]`)!) & Node.DOCUMENT_POSITION_FOLLOWING), "demo-current")).toBe(true);
+  await expect(page.getByTestId("demo-scenario-golden").locator("h3")).toHaveText("Golden story");
+  await expect(page.getByTestId("demo-scenario-busy").locator("h3")).toHaveText("Busy company");
+  await expect(page.getByTestId("demo-scenario-short").locator("h3")).toHaveText("Short facilities");
+  for (const id of ["golden", "busy", "short"]) await expect(page.getByTestId(`demo-scenario-help-${id}`)).not.toBeEmpty();
+  await expect(page.getByTestId("demo-scenario-help-busy")).toHaveText("Three customers, six negotiations, an approval and overdue invoices");
+  // The golden books are loaded: marked, no button; the other two offer Load.
+  await expect(page.getByTestId("demo-scenario-golden")).toHaveAttribute("data-loaded", "true");
+  await expect(page.getByTestId("demo-scenario-loaded-golden")).toHaveText("Loaded");
+  await expect(page.getByTestId("demo-scenario-golden").getByRole("button")).toHaveCount(0);
+  await expect(page.getByTestId("demo-scenario-load-busy")).toBeVisible();
+  await expect(page.getByTestId("demo-scenario-load-short")).toBeVisible();
+  await expect(page.getByTestId("demo-busy-home")).toHaveText("Explore it from Home →");
+  await expect(page.getByTestId("demo-busy-home")).toHaveAttribute("href", "/");
+  // The old fold is gone and the one filled button is still the next control.
+  await expect(page.getByTestId("demo-alternate")).toHaveCount(0);
+  await expect(page.getByTestId("demo-alternate-fold")).toHaveCount(0);
+  expect(await filledBrand(page)).toBe(1);
+  // From fresh books one click loads the busy books: no dialog, the card is marked and the restore is offered.
+  await page.getByTestId("demo-scenario-load-busy").click();
+  await expect(page.getByTestId("books-dialog")).toBeHidden();
+  await expect(page.getByTestId("demo-scenario-busy")).toHaveAttribute("data-loaded", "true", { timeout: 60_000 });
+  await expect(page.getByTestId("demo-scenario-busy").getByRole("button")).toHaveCount(0);
+  await expect(page.getByTestId("demo-scenario-load-golden")).toBeVisible();
+  await expect(page.getByTestId("demo-loaded-banner")).toBeVisible();
+  await expect(page.getByTestId("demo-current-title")).toHaveText("Busy company");
+  // The short-facilities books name themselves, never "Busy company".
+  await page.getByTestId("demo-scenario-load-short").click();
+  await expect(page.getByTestId("demo-scenario-short")).toHaveAttribute("data-loaded", "true", { timeout: 60_000 });
+  await expect(page.getByTestId("demo-current-title")).toHaveText("Short facilities");
+  // One click restores the main books, which are the golden card again.
+  await page.getByTestId("demo-restore").click();
+  await expect(page.getByTestId("demo-scenario-golden")).toHaveAttribute("data-loaded", "true", { timeout: 60_000 });
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+});
+
+test("the busy card's Load is visible without scrolling at 1440 and at 390, and from worked books it asks first", async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshDemo(page);
+  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    await openDemo(page);
+    await expect(page.getByTestId("demo-scenario-load-busy")).toBeInViewport();
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openDemo(page);
+  await pressNext(page);
+  await openDemo(page);
+  await page.getByTestId("demo-scenario-load-busy").click();
+  await expect(page.getByTestId("demo-alternate-dialog")).toBeVisible();
+  await expect(page.getByTestId("demo-alternate-loss").locator("li").first()).toBeVisible();
+  await page.getByTestId("demo-alternate-cancel").click();
+  await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
+});
+
+test("the Demo uses the app's own rail: no engine-views sidebar, and the engine views are reachable inside Operator tools", async ({ page }, info) => {
+  test.skip(info.project.name === "phone", "the rail is the desktop's; the phone has the tab bar");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openDemo(page);
+  await expect(page.getByTestId("nav-rail")).toBeVisible();
+  await expect(page.getByTestId("nav-pills").getByRole("link")).toHaveCount(5);
+  await expect(page.getByText("Engine views", { exact: true })).toBeHidden();
+  for (const name of ["Mandate", "Verdict", "Ledger", "Reconciliation"]) await expect(page.getByTestId("nav-pills").getByRole("link", { name })).toHaveCount(0);
   await expect(page.getByTestId("demo-strip")).toBeVisible();
-  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
-  await expect(page.getByTestId("tab-bar")).toHaveCount(0);
-
-  await page.getByTestId("back-to-business").click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByLabel("Business", { exact: true })).toBeChecked();
-
-  // Choosing Business on an engine view goes Home.
-  await page.goto("/mandate");
-  await expect(page.getByLabel("Demo", { exact: true })).toBeChecked();
-  await page.getByLabel("Business", { exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
+  await openOperatorTools(page);
+  const engine = page.getByTestId("demo-tools-engine");
+  await expect(engine).toBeVisible();
+  await expect(engine.getByRole("link")).toHaveCount(6); // the engine destinations the server lists (it writes this list)
+  await engine.getByRole("link", { name: "Ledger" }).click();
+  await expect(page).toHaveURL(/\/ledger/);
+  // An engine view wears the same shell: the rail and the Demo strip, and the story's way back.
+  await expect(page.getByTestId("nav-rail")).toBeVisible();
+  await expect(page.getByTestId("demo-strip")).toBeVisible();
 });
 
-test("what-if and equipment open from Cash inside the Business shell, with a way back to Cash", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "business" })));
-  await page.goto("/cash");
-  await page.getByRole("link", { name: "Try different terms" }).click();
-  await expect(page).toHaveURL(/\/whatif/);
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByTestId("back-to-business")).toHaveCount(0);
-  await page.getByTestId("back-to-cash").click();
-  await expect(page).toHaveURL(/\/cash/);
-
-  await page.goto("/capex");
-  await expect(page.getByTestId("tab-bar")).toHaveCount(1);
-  await expect(page.getByTestId("demo-strip")).toHaveCount(0);
-  await expect(page.getByTestId("back-to-cash")).toBeVisible();
+test("the proof appendix: the chain badge is the server's verdict (green when valid) and its scope is text under it, not a tooltip", async ({ page }) => {
+  await freshDemo(page);
+  await openDemo(page);
+  const chain = page.getByTestId("demo-chain");
+  await expect(chain).toHaveAttribute("data-valid", "true");
+  await expect(chain).toHaveText("Record chain checks passed");
+  const scope = page.getByTestId("demo-chain-scope");
+  await expect(scope).toBeVisible();
+  await expect(scope).toContainText("does not confirm bank facts or buyer promises");
+  // The ok tone, not the red of a failed check.
+  await expect(chain.locator("span").first()).toHaveClass(/bg-ok-bg/);
 });
 
-test("the Demo sidebar's footer is on screen at 768 px of height", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === "phone", "the sidebar is the desktop's");
-  await page.setViewportSize({ width: 1366, height: 768 });
-  await page.goto("/demo");
-  const footer = page.locator("aside").getByText("Synthetic fixture data. No real funds move.");
-  await expect(footer).toBeVisible();
-  // The column scrolls when its links need more than the window: the footer can be brought into view, and it ends inside the window.
-  await footer.scrollIntoViewIfNeeded();
-  const box = (await footer.boundingBox())!;
-  expect(box.y + box.height).toBeLessThanOrEqual(768);
+test("operator tools hold the clock once: the day's own control, not a second pair of advance buttons", async ({ page }) => {
+  await openDemo(page);
+  await openOperatorTools(page);
+  const clock = page.getByTestId("demo-tools-clock");
+  await expect(clock.getByRole("button", { name: /^Advance [17] days?$/ })).toHaveCount(0);
+  await expect(clock.getByRole("button", { name: /Advance time/ })).toHaveCount(1);
 });

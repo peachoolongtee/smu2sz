@@ -44,12 +44,15 @@ export function AnnotatedText({
   annotations,
   activeId,
   onActivate,
+  onFocusChange,
   ariaLabel,
 }: {
   text: string;
   annotations: Annotation[];
   activeId: string | null;
   onActivate: (id: string | null) => void;
+  /** Keyboard focus on a mark, when the page keeps it apart from the pointer's hover (otherwise `onActivate` hears both). */
+  onFocusChange?: (id: string | null) => void;
   ariaLabel: string;
 }) {
   const segments = segmentise(text.length, annotations);
@@ -73,10 +76,11 @@ export function AnnotatedText({
             data-annotation={seg.covering.map((a) => a.id).join(" ")}
             title={seg.covering.map((a) => `${a.n}. ${a.label}`).join(" / ")}
             aria-description={seg.covering.map((a) => `${a.n}. ${a.label}`).join(" / ")}
-            onMouseEnter={() => onActivate(primary.id)}
+            // A real movement over the mark lights it, not the page scrolling under a parked pointer (that would put out what keyboard focus lit).
+            onMouseMove={() => onActivate(primary.id)}
             onMouseLeave={() => onActivate(null)}
-            onFocus={() => onActivate(primary.id)}
-            onBlur={() => onActivate(null)}
+            onFocus={() => (onFocusChange ?? onActivate)(primary.id)}
+            onBlur={() => (onFocusChange ?? onActivate)(null)}
             className={`rounded-sm px-0.5 text-ink decoration-2 underline-offset-4 ${
               active ? style.markActive : style.mark
             }`}

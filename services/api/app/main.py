@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.activity import router as activity_router
 from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
@@ -17,6 +18,7 @@ from app.api.deals import router as deals_router
 from app.api.decide import router as decide_router
 from app.api.decisions import router as decisions_router
 from app.api.demo_bank import router as demo_bank_router
+from app.api.demo_story import router as demo_story_router
 from app.api.documents import router as documents_router
 from app.api.errors import install_error_handlers
 from app.api.home import router as home_router
@@ -45,6 +47,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(read_router)
+app.include_router(activity_router)
+app.include_router(demo_story_router)
 app.include_router(offers_router)
 app.include_router(operations_router)
 app.include_router(decide_router)

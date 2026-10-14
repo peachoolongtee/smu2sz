@@ -32,6 +32,7 @@ from app.api.presentation import (
     without_record_ids,
 )
 from app.api.runtime import get_runtime
+from app.api.security_words import audit_fields
 from app.api.views import Money, TrajectoryView, trajectory_view
 from app.books import current_books
 from app.decisions.identity import decision_id_for
@@ -218,7 +219,8 @@ def get_audit(lang: str = "en") -> dict:
     board = scoreboard(rt.store, allow_for=_counter_allow)  # computed from every stored verdict, not asserted
     return {
         "lang": lang,
-        "events": [displayed(json.loads(e.model_dump_json())) for e in events],
+        "events": [{**displayed(json.loads(e.model_dump_json())), **audit_fields(state, e, max(rt.day, state.as_of_day), lang)}
+                   for e in events],
         "refusals": refusals,
         "refusal_summary": refusal_block(len(refusals), len(events), lang),
         "documents": [json.loads(d.model_dump_json()) for i, d in rt.documents.items() if i in doc_ids],
@@ -246,8 +248,11 @@ DEMO_SCENARIOS = ("golden_sme", "short_facilities", "public_sme", "busy")
 
 
 @router.post("/demo/reset")
-def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
+def demo_reset(scenario: str = "golden_sme", lang: str = "en", from_scenario: str | None = None, confirm_loss: str | None = None) -> dict:
+    """Reset the books to a scenario. `from_scenario` and `confirm_loss` are an optional guard for a page that may be stale
+    (`app.api.demo_story.check_books_unchanged`); without them the call behaves as it always has."""
     from app.api.demo_seed import DemoSeedError
+    from app.api.demo_story import check_books_unchanged, note_scenario_change
     from app.api.runtime import ResetRefused
 
     if scenario not in DEMO_SCENARIOS:
@@ -260,7 +265,11 @@ def demo_reset(scenario: str = "golden_sme", lang: str = "en") -> dict:
                               f"没有名为 {scenario!r} 的演示场景；请从 {names} 中选择。未重置任何内容。")})
     rt = get_runtime()
     try:
-        rt.reset_demo(scenario)
+        with rt.lock:
+            check_books_unchanged(rt, from_scenario, confirm_loss, "zh" if lang == "zh" else "en")
+            before = rt.scenario
+            rt.reset_demo(scenario)
+            note_scenario_change(rt, before, scenario)
     except ResetRefused as e:
         raise HTTPException(403, {"code": "RESET_REFUSED", "message": str(e)}) from e
     except DemoSeedError as e:
