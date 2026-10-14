@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { contractsOff } from "@/components/documents";
 import { Badge, Button, Callout, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader } from "@/components/ui";
@@ -74,8 +73,7 @@ export default function PlansPage() {
 
   return (
     <>
-      <PageHeader title={t("plans.title")} subtitle={t("plans.subtitle")}
-        actions={<Link className="text-sm font-medium text-brand-700 underline underline-offset-2" href="/buy">{t("buy.back")}</Link>} />
+      <PageHeader title={t("plans.title")} subtitle={t("plans.subtitle")} />
       {error ? <ErrorState error={error} /> : null}
       <Card flat id="projects" title={t("plans.projects")} subtitle={t("plans.projects.sub")}>
         {!purchases.data ? <LoadingBlock rows={2} /> : null}

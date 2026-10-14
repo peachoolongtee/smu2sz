@@ -7,7 +7,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
-import { Button, ButtonLink, ErrorState, PageHeader } from "@/components/ui";
+import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { BuyingCard } from "@/components/deals/buying-card";
 import { contractsOff } from "@/components/documents";
 import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
@@ -68,8 +69,8 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
-  // The buying side (ADR-0013): its link shows only when the server answers it (the feature can be switched off).
-  const buying = useAsync(() => getPurchases(lang).then(() => true).catch(() => false), [lang]);
+  // The buying side (ADR-0013): its door shows only when the server answers it (the feature can be switched off).
+  const buying = useAsync(() => getPurchases(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
@@ -180,6 +181,10 @@ export function DealsPage() {
       onShowAll={() => go({ customer: null, buyer: null })}
     />
   );
+  // The buying side (ADR-0013), second to the selling work: its own card under the queue on the overview, only when the server
+  // answers it. While a negotiation is open the page is that selling decision, so the card steps aside: the queue and the pane
+  // keep their geometry (the pane is sticky beside the queue, and a taller queue column would scroll it out of line).
+  const BUYING_NODE = buying.data && !decision ? <BuyingCard key="buying" purchases={buying.data.purchases} /> : null;
   const INBOX_NODE =
     /* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */
     queue === undefined ? null : (
@@ -225,12 +230,7 @@ export function DealsPage() {
 
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
-      <PageHeader
-        section="deals"
-        title={t("nav.deals")}
-        subtitle={subtitle}
-        actions={buying.data ? <ButtonLink href="/buy" variant="secondary" data-testid="deals-buying">{t("deals.buying")}</ButtonLink> : undefined}
-      />
+      <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}
@@ -256,6 +256,7 @@ export function DealsPage() {
             {PANE}
             <div className="min-w-0 space-y-6">
               {tableMode ? null : QUEUE_NODE}
+              {BUYING_NODE}
               {INBOX_NODE}
             </div>
           </>
@@ -263,6 +264,7 @@ export function DealsPage() {
           <>
             <div className="min-w-0 space-y-6">
               {tableMode ? null : QUEUE_NODE}
+              {BUYING_NODE}
               {INBOX_NODE}
             </div>
             {PANE}

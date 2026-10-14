@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { contractsOff } from "@/components/documents";
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader } from "@/components/ui";
+import { ChevronRightIcon } from "@/components/icons";
+import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, inputClass, LoadingBlock, PageHeader, textLinkClass } from "@/components/ui";
 import { getCapexContractFixtures, getPurchases, submitDocument } from "@/lib/api";
 import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
@@ -68,16 +69,7 @@ export default function BuyPage() {
 
   return (
     <>
-      <PageHeader
-        title={t("buy.title")}
-        subtitle={t("buy.subtitle")}
-        actions={
-          <>
-            <ButtonLink href="/finance" variant="secondary">{t("buy.toFinance")}</ButtonLink>
-            <ButtonLink href="/plans" variant="secondary">{t("buy.toPlans")}</ButtonLink>
-          </>
-        }
-      />
+      <PageHeader section="deals" title={t("buy.title")} subtitle={t("buy.subtitle")} />
       {list.error ? <ErrorState error={list.error} onRetry={list.reload} /> : null}
       {error ? <ErrorState error={error} /> : null}
       {readId ? (
@@ -108,6 +100,23 @@ export default function BuyPage() {
           ))}
         </div>
       )}
+      {/* Two quiet doors, as on Cash: after the page's own work, each with what is behind it. */}
+      <nav aria-label={t("buy.doors")} className="mt-8 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-4" data-testid="buy-doors">
+        {(
+          [
+            ["/finance", "buy.toFinance", "buy.door.finance.sub"],
+            ["/plans", "buy.toPlans", "buy.door.plans.sub"],
+          ] as const
+        ).map(([href, label, sub]) => (
+          <div key={href} className="min-w-0">
+            <Link href={href} className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`} data-testid={`buy-door-${href.slice(1)}`}>
+              {t(label)}
+              <ChevronRightIcon />
+            </Link>
+            <p className="text-supporting text-ink-3">{t(sub)}</p>
+          </div>
+        ))}
+      </nav>
     </>
   );
 }

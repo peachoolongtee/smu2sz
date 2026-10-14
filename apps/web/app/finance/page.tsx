@@ -87,8 +87,7 @@ export default function FinancePage() {
   const h = health.data;
   return (
     <>
-      <PageHeader title={t("finance.title")} subtitle={t("finance.subtitle")}
-        actions={<Link className="text-sm font-medium text-brand-700 underline underline-offset-2" href="/buy">{t("buy.back")}</Link>} />
+      <PageHeader title={t("finance.title")} subtitle={t("finance.subtitle")} />
       {health.error ? <ErrorState error={health.error} onRetry={health.reload} /> : null}
       {error ? <ErrorState error={error} /> : null}
       {!h ? <LoadingBlock rows={4} /> : <Health h={h} />}

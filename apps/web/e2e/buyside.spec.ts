@@ -7,14 +7,39 @@ import { expect, test } from "./fixtures";
  * recording (mocks/buyside).
  */
 
-test("Deals links to the buying side", async ({ page }) => {
+test("Deals shows the buying side in its own card under the selling queue, each purchase with its next step", async ({ page }) => {
   await page.goto("/deals");
-  await page.getByTestId("deals-buying").click();
-  await expect(page).toHaveURL(/\/buy$/);
-  const card = page.getByTestId("purchase-DOC-000004");
+  const card = page.getByTestId("deals-buying");
   await expect(card).toBeVisible();
-  await expect(page.getByText("Ready to plan")).toBeVisible();
-  await expect(card.getByTestId("purchase-next")).toHaveText("Choose the timeline and financing, then commit");
+  await expect(page.locator("header").getByTestId("deals-buying")).toHaveCount(0);
+  await expect(card.getByRole("heading", { name: /Buying/ })).toContainText("1");
+  // selling stays first: the queue comes before the buying card in the reading order, the inbox after it
+  const [queueFirst, inboxAfter] = await page.evaluate(() => {
+    const queue = document.querySelector('[data-testid="deals-queue"]');
+    const buying = document.querySelector('[data-testid="deals-buying"]');
+    const inbox = document.querySelector('[data-testid="deals-inbox"]');
+    const follows = (a: Element | null, b: Element | null) => Boolean(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    return [follows(queue, buying), follows(buying, inbox)];
+  });
+  expect(queueFirst).toBe(true);
+  expect(inboxAfter).toBe(true);
+  const row = card.getByTestId("deals-buying-DOC-000004");
+  await expect(row).toContainText("Choose the timeline and financing, then commit");
+  await expect(row).toContainText("¥600,000.00");
+  await expect(row).toContainText("Ready to plan");
+  await expect(card.getByTestId("deals-buying-finance")).toHaveText("Financial health and loans");
+  await expect(card.getByTestId("deals-buying-plans")).toHaveText("Long-term plans");
+  // while a selling negotiation is open the card steps aside: that page is the selling decision
+  await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
+  await expect(page.getByTestId("deal-pane")).toBeVisible();
+  await expect(page.getByTestId("deals-buying")).toHaveCount(0);
+  await page.goto("/deals");
+  await page.getByTestId("deals-buying-DOC-000004").click();
+  await expect(page).toHaveURL(/\/buy\/contract\?id=DOC-000004$/);
+  await page.goto("/deals");
+  await page.getByTestId("deals-buying-all").click();
+  await expect(page).toHaveURL(/\/buy$/);
+  await expect(page.getByTestId("purchase-DOC-000004")).toBeVisible();
 });
 
 test("a vendor contract's schedule, financing and early payment, then the commitment", async ({ page }) => {
@@ -82,4 +107,24 @@ test("long-term plans rank the permutations and say what the limits cost", async
   await expect(page.getByTestId("plan-1")).toContainText("Worth ¥");
   await expect(page.getByTestId("plans-unconstrained")).toContainText("above the ¥600,000.00 left on it");
   await expect(page.getByTestId("plans-daily")).toContainText("passes the daily test");
+});
+
+test("the buying pages stay in the Business shell, each with its way back", async ({ page }) => {
+  for (const [path, back, label] of [
+    ["/buy", "back-to-deals", "Back to Deals"],
+    ["/buy/contract?id=DOC-000004", "back-to-buy", "Back to Buying"],
+    ["/finance", "back-to-buy", "Back to Buying"],
+    ["/plans", "back-to-buy", "Back to Buying"],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByTestId("demo-strip")).toHaveCount(0);
+    await expect(page.getByTestId("back-to-business")).toHaveCount(0);
+    await expect(page.getByTestId(back)).toHaveText(label);
+  }
+  await page.goto("/buy");
+  await page.getByTestId("buy-door-finance").click();
+  await expect(page).toHaveURL(/\/finance$/);
+  await page.getByTestId("back-to-buy").click();
+  await expect(page).toHaveURL(/\/buy$/);
+  await expect(page.getByTestId("buy-doors")).toContainText("Long-term plans");
 });

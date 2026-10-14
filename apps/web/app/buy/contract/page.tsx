@@ -104,7 +104,6 @@ function ContractPage() {
       <PageHeader
         title={p?.title ?? t("buy.contract.title")}
         subtitle={p ? `${p.vendor_name}${p.price_display ? ` · ${p.price_display}` : ""}` : t("buy.contract.sub")}
-        actions={<Link className="text-sm font-medium text-brand-700 underline underline-offset-2" href="/buy">{t("buy.back")}</Link>}
       />
       {row.error ? <ErrorState error={row.error} onRetry={row.reload} /> : null}
       {error ? <ErrorState error={error} /> : null}

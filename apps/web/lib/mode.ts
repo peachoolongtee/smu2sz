@@ -27,7 +27,16 @@ export function setMode(mode: Mode): void {
  * on Deals opens the contract documents). They render in the Business shell when the mode is Business, with a way back to
  * the section.
  */
-export const OWNER_DETAIL_ROUTES: Record<string, string> = { "/whatif": "/cash", "/capex": "/cash", "/documents": "/deals" };
+export const OWNER_DETAIL_ROUTES: Record<string, string> = {
+  "/whatif": "/cash",
+  "/capex": "/cash",
+  "/documents": "/deals",
+  // The buy side (ADR-0013): Buying opens from Deals; a contract, financial health and long-term plans open from Buying.
+  "/buy": "/deals",
+  "/buy/contract": "/buy",
+  "/finance": "/buy",
+  "/plans": "/buy",
+};
 
 /** Business routes: the owner's six sections, the limits and sign-in, and the detail routes opened from them. Everything else is an engine view of the demo. */
 export const BUSINESS_ROUTES = ["/", "/deals", "/cash", "/receivables", "/approvals", "/activity", "/limits", ...Object.keys(OWNER_DETAIL_ROUTES)] as const;
