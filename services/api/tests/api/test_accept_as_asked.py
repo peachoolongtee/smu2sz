@@ -592,3 +592,29 @@ def test_a_refusal_by_the_executor_is_a_409_with_its_reason_in_business_words(ap
     assert r.status_code == 409 and d["code"] == "NOT_RECORDED"
     assert d["message"].startswith("FLOW could not record") and d["message_when"].startswith("FLOW 未能")
     assert not ID.search(d["message_when"]), d["message_when"]
+
+
+# ================================================================ every surface names the buyer
+
+
+def _home_changes(api: TestClient, lang: str) -> list[dict[str, Any]]:
+    body = api.get("/home", params={"lang": lang}).json()
+    found = body.get("changes") or (body.get("what_changed") or {}).get("items") or []
+    return list(found)
+
+
+@pytest.mark.parametrize(("lang", "declined"), [("en", "You declined Dongguan's request."), ("zh", "您已拒绝Dongguan的请求。")])
+def test_home_and_the_customer_overview_name_the_buyer_of_an_answered_request(busy: TestClient, lang: str, declined: str) -> None:
+    # a decline on one buyer's request and an accept on another's: both surfaces say whose request it was
+    dongguan, dv = _evaluate(busy, DONGGUAN, lang)
+    zhuhai, zv = _evaluate(busy, ZHUHAI, lang)
+    assert busy.post(f"/offers/{dongguan}/decline", params={"lang": lang}, json=_body(dv)).status_code == 200
+    assert busy.post(f"/offers/{zhuhai}/accept", params={"lang": lang}, json=_body(zv)).status_code == 200
+
+    home = " ".join(str(x.get("event_text")) for x in _home_changes(busy, lang))
+    assert declined in home and "买方的请求" not in home and "the buyer's request" not in home
+
+    buyer_history = lambda cid: " ".join(h["text"] for h in busy.get(f"/customers/{cid}/overview", params={"lang": lang}).json()["history"])  # noqa: E731
+    assert declined in buyer_history("BUYER-2")
+    zhuhai_text = buyer_history("BUYER-3")
+    assert ("Zhuhai Kitchenware Wholesale Co." in zhuhai_text) and "the buyer's request" not in zhuhai_text and "买方的请求" not in zhuhai_text

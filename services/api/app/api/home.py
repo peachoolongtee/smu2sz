@@ -49,6 +49,7 @@ from app.api.presentation import (
     leg_words,
     live_windows,
     lowest_point_words,
+    offer_buyers,
     party_name,
     point_words,
     receivable_face,
@@ -896,6 +897,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
     decided_ids = {a.id for a in store.approvals() if str(getattr(a.status, "value", a.status)) != "PENDING"}
     answered = {e.result.approval_id for e in entries
                 if e.result.approval_id and e.result.status != OperationStatus.PENDING_APPROVAL and e.day is not None and e.day >= since}
+    offers = offer_buyers(store, state, (e.payload or {} for e in entries))  # whose request the owner accepted or declined
     for e in entries:
         day = e.day
         if day is None or day < since:
@@ -922,7 +924,7 @@ def _changes(state: FinancialState, store: Any, found: list[Alert], today: int, 
         shown = business_text(state, text, today, lang, agreements, live) or text
         words = (event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                              approval_id=e.result.approval_id, day=day, today=today, lang=lang,
-                             decided=e.result.approval_id in decided_ids, agreements=agreements, window_live=live)
+                             decided=e.result.approval_id in decided_ids, agreements=agreements, window_live=live, offers=offers)
                  if kind != "AGREEMENT" else {"event_text": None, "event_detail": None})
         did = decision_id_for(e.payload, e.idempotency_key, commitments, approval_id=e.result.approval_id)
         item: dict[str, Any] = {"day": day, "seq": e.seq, "kind": kind, "actor": who, "text": shown,

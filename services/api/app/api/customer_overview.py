@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Annotated, Any, Literal, Protocol
@@ -62,6 +63,7 @@ from app.api.presentation import (
     deal_back_label,
     event_words,
     fmt_short,
+    offer_buyers,
     party_name,
     t,
     when_text,
@@ -1133,10 +1135,12 @@ def _exposure_comparison(r: _Read) -> dict[str, Any] | None:
 # ---------------------------------------------------------------- the history
 
 
-def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str]) -> bool:
+def _mine(e: LoggedEntry, rids: set[str], buyer_id: str, agreements: set[str], offers: Collection[str] = ()) -> bool:
     p = e.payload or {}
     if p.get("receivable_id") in rids or p.get("counterparty_id") == buyer_id or p.get("buyer_id") == buyer_id:
         return True
+    if p.get("kind") in ("ACCEPT_OFFER", "REJECT_OFFER") and p.get("offer_id") in offers:
+        return True  # the owner's answer to this buyer's request (a refusal names no agreement)
     message = e.result.message or ""
     return any(cid in message for cid in agreements)
 
@@ -1196,13 +1200,15 @@ def _history(r: _Read) -> list[dict[str, Any]]:
     names = {c.id: party_name(state, c.counterparty_id) for c in ctx.commitments}
     decided = {a.id for a in ctx.approvals if str(getattr(a.status, "value", a.status)) != "PENDING"}
     known = ctx.states()
+    offers = offer_buyers(ctx.rt.store, state, (e.payload or {} for e in ctx.entries))
+    mine_offers = {oid for oid, _ in offers.items() if (o := ctx.offer(oid)) is not None and o.counterparty_id == r.buyer_id}
     entries = sorted((e for e in ctx.entries if e.day is not None and e.result.status not in _SKIP_STATUS and "CLOCK" not in e.kind.upper()
                       and not (e.result.status == OperationStatus.PENDING_APPROVAL and e.result.approval_id in decided)
-                      and _mine(e, rids, r.buyer_id, agreements)), key=lambda e: (-(e.day or 0), -e.seq))
+                      and _mine(e, rids, r.buyer_id, agreements, mine_offers)), key=lambda e: (-(e.day or 0), -e.seq))
     for e in entries[:LOG_ROWS]:
         words = event_words(state, kind=e.kind, status=e.result.status.value, payload=e.payload, message=e.result.message,
                             approval_id=e.result.approval_id, day=e.day, today=r.today, lang=lang,
-                            decided=e.result.approval_id in decided, agreements=names, window_live=False)
+                            decided=e.result.approval_id in decided, agreements=names, window_live=False, offers=offers)
         said = (_financing_event(r, e) if e.kind == "SUBMIT_INVOICE_FOR_FINANCING"
                 else _receipt_event(r, e) if e.kind == "RECEIVE_PAYMENT" else None)
         text, words_of = said if said is not None else (
