@@ -32,6 +32,7 @@ from app.decisions.identity import offer_id_of
 from app.decisions.state import RESERVE_ALERT, derive
 from app.domain.models import CommitmentStatus, ObligationType, OperationStatus
 from app.domain.money import fmt_yuan
+from app.financial.trajectory import early_pay_discount
 from app.strategy.receivable_rows import collection_action, collection_state
 
 log = logging.getLogger("termsledger.tracker")
@@ -571,11 +572,14 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     # Both expected components come from the accepted reply's stored quote-time economics: its supplier cost is the concession (the posted
     # discount) plus the funding quoted for the rest of the gap, so the quoted funding is the supplier cost less the posted discount. The
     # plan that ran may have cost something else; that shows on the planned line's actual. When the figures cannot be split, one line.
-    sent_plan = ds.sent.gap_plan if ds.sent is not None else None
-    split = (planned_line is not None and expected is not None and sent_plan is not None and sent_plan.total_cost_fen is not None
-             and 0 <= sent_plan.total_cost_fen <= expected)
-    planned_expected = sent_plan.total_cost_fen if split and sent_plan is not None and sent_plan.total_cost_fen is not None else 0
-    concession_expected = (expected - planned_expected) if expected is not None else None
+    # No record stores the discount as an amount, so it is the engine's own posted discount (`early_pay_discount`, the figure the
+    # reconciliation posts) on the commitment's stored obligations at their full agreed base: fixed at acceptance, whatever has been paid since.
+    agreed = [ob for ob in c.obligations if ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.base.amount_fen]
+    agreed_discount = sum(early_pay_discount(ob, ob.base.amount_fen or 0) for ob in agreed)
+    split = (planned_line is not None and expected is not None and len(agreed) == len(c.obligations) > 0
+             and 0 < agreed_discount <= expected)
+    concession_expected = agreed_discount if split else expected
+    planned_expected = (expected - agreed_discount) if split and expected is not None else 0
     if planned_line is not None:
         planned_line["expected_fen"], planned_line["expected_display"] = planned_expected, fmt_yuan(planned_expected)
         if planned_line["actual_fen"] is not None and planned_run != planned_expected and split:

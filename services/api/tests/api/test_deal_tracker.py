@@ -723,17 +723,19 @@ def test_an_invoice_paid_before_the_cure_was_quoted_is_not_late_for_that_cure(ap
     assert after["cost"]["actual"]["amount_fen"] == before["cost"]["actual"]["amount_fen"]
 
 
-def test_the_expected_components_come_from_the_stored_facts_and_the_plan_that_ran_is_the_stored_one(api: TestClient, rt: Runtime) -> None:
-    """Evaluated on day 0, agreed on day 1 without the state version: the SENT fact stores the plan that was sent (81,527), and both expected
-    components are read from it, never from the live promises."""
+def test_evaluated_today_and_agreed_tomorrow_keeps_the_agreed_discount_and_shows_the_plan_that_ran(api: TestClient, rt: Runtime) -> None:
+    """Evaluated on day 0, agreed on day 1 without the state version: the terms are the discount as agreed (218,620), the planned funding
+    was quoted at 84,157 and the plan that ran cost 81,527; the funding's change of price is not a change in the terms."""
     offer, did = _offer_evaluated(api)
     api.post("/clock/advance", json={"to_day": 1})
     assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
     d = _tracker(api, did)
     supplier, plan = _stored_split(rt)
+    assert supplier == 302777 and plan == 81527  # the SENT fact: the supplier cost priced at evaluation, the plan that ran at the send
     terms, planned = d["cost"]["lines"]
-    assert (terms["expected_fen"], planned["expected_fen"]) == (supplier - plan, plan) and d["cost"]["expected"]["amount_fen"] == supplier == 302777
-    assert planned["actual_fen"] == planned["figure_fen"] == plan == 81527 and d["cost"]["unmeasured_fen"] == 0
+    assert (terms["expected_fen"], planned["expected_fen"]) == (218620, 84157) and d["cost"]["expected"]["amount_fen"] == supplier
+    assert planned["actual_fen"] == planned["figure_fen"] == 81527 and d["cost"]["unmeasured_fen"] == 0
+    assert planned["actual_note_text"] == "The plan that ran cost ¥815.27 against ¥841.57 quoted."
     assert d["cost"]["actual"]["amount_fen"] == 81527 and d["agreed_text"] == "Agreed today"
     _check_sums(d)
 
@@ -795,7 +797,7 @@ def test_the_expected_columns_are_the_stored_facts_whatever_the_cash_does_afterw
     supplier, plan = _stored_split(rt)
     expected = lambda d: [(x["key"], x["expected_fen"]) for x in d["cost"]["lines"]]
     before = _tracker(api, did)
-    assert expected(before) == [("terms", supplier - plan), ("planned_funding", plan)]
+    assert expected(before) == [("terms", 218620), ("planned_funding", 84157)] and supplier - plan == 218620 and plan == 84157
     api.post("/clock/advance", json={"to_day": 1})
     assert _pay(api, "part", 1_000_000) == "EXECUTED"  # a part early payment shrinks the reconciliation's current posted discount
     after = _tracker(api, did)
@@ -813,7 +815,7 @@ def test_a_revoked_agreement_keeps_its_split_and_says_the_terms_were_withdrawn(a
     rt.store.put_commitment(first.model_copy(update={"status": CommitmentStatus.REVOKED}))
     assert _pay(api, "all", 42_000_000) == "EXECUTED"
     d = _tracker(api, did)
-    assert [x["expected_fen"] for x in d["cost"]["lines"]] == [supplier - plan, plan]
+    assert [x["expected_fen"] for x in d["cost"]["lines"]] == [218620, 84157] and supplier - plan == 218620
     assert d["cost"]["unmeasured_fen"] == 0 and d["cost"]["actual"]["amount_fen"] == plan
     assert d["closeout_text"] is not None and "withdrawn before the discount was given" in d["closeout_text"]
     assert "never measured" not in d["closeout_text"] and _lines(d)["terms"]["actual_note_text"] == "The agreement was withdrawn before the discount was given."
