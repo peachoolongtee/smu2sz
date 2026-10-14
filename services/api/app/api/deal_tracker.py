@@ -32,6 +32,7 @@ from app.decisions.identity import offer_id_of
 from app.decisions.state import RESERVE_ALERT, derive
 from app.domain.models import CommitmentStatus, ObligationType, OperationStatus
 from app.domain.money import fmt_yuan
+from app.financial.trajectory import early_pay_discount
 from app.strategy.receivable_rows import collection_action, collection_state
 
 log = logging.getLogger("termsledger.tracker")
@@ -347,7 +348,9 @@ def _funding_lines(ctx: Context, ds: DecisionState, rids: set[str], lang: str) -
         if fds.family != "FUNDING" or q is None or fds.state in (FundingState.DECLINED, FundingState.FAILED):
             continue
         qday = _quoted_day(ctx, fid, fds)
-        qseq = min((o.seq for o in fds.ops), default=None)  # where the cure sits in the log
+        # where the cure sits in the log: its FIRST entry (queued or pending approval), never the later entry that ran it
+        first = [e.seq for _pos, e in ctx.index.runs.get(fid, ())]
+        qseq = min(first) if first else min((o.seq for o in fds.ops), default=None)
         if agreed is not None and qday is not None and qday < agreed:
             continue
         secured = any(leg.receivable_id in rids for leg in q.legs)
@@ -512,14 +515,25 @@ def _find(ctx: Context, decision_id: str) -> tuple[DecisionState, DecisionInputs
     return derive(inp), inp
 
 
+def _not_agreed_text(state: str, lang: str) -> str:
+    """Why there is nothing to track, in the words of the state the decision is in."""
+    words = {
+        "NO_DEAL": ("No deal was agreed on this offer, so there is nothing to track.", "这份报价没有达成任何协议，因此没有可跟踪的内容。"),
+        "LAPSED": ("This offer lapsed before it was agreed, so there is nothing to track.", "这份报价在达成协议之前已失效，因此没有可跟踪的内容。"),
+        "DECLINED": ("You declined this deal, so nothing was agreed and there is nothing to track.", "您已拒绝这笔交易，没有达成协议，因此没有可跟踪的内容。"),
+        "FAILED": ("This deal could not be agreed, so there is nothing to track.", "这笔交易未能达成，因此没有可跟踪的内容。"),
+    }
+    en, zh = words.get(state, ("This deal has not been agreed yet, so there is nothing to track.", "这笔交易尚未达成，因此没有可跟踪的内容。"))
+    return t(lang, en, zh)
+
+
 def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs, lang: str, context: dict[str, Any]) -> dict[str, Any]:
     c = ds.commitment
     if ds.family != "DEAL":
         return _unavailable(ds.decision_id, lang, t(lang, "This is a funding decision, not an agreed deal, so there is nothing to track.",
                                                     "这是一项融资决定，不是已达成的交易，因此没有可跟踪的内容。"), context)
     if c is None or c.status in (CommitmentStatus.PROPOSED,):
-        return _unavailable(ds.decision_id, lang, t(lang, "This deal has not been agreed yet, so there is nothing to track.",
-                                                    "这笔交易尚未达成，因此没有可跟踪的内容。"), context)
+        return _unavailable(ds.decision_id, lang, _not_agreed_text(ds.state.value, lang), context)
     today, buyer = ctx.today, c.counterparty_id
     name = party_name(ctx.state, buyer)
     promised = [p for p in ctx.promised if getattr(p, "commitment_id", None) == c.id]
@@ -558,10 +572,14 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     # Both expected components come from the accepted reply's stored quote-time economics: its supplier cost is the concession (the posted
     # discount) plus the funding quoted for the rest of the gap, so the quoted funding is the supplier cost less the posted discount. The
     # plan that ran may have cost something else; that shows on the planned line's actual. When the figures cannot be split, one line.
-    split = (planned_line is not None and expected is not None and bool(promised) and 0 < discounts <= expected
-             and all(ob.type == ObligationType.IMMEDIATE_DISCOUNT for ob in c.obligations))
-    concession_expected = discounts if split else expected
-    planned_expected = (expected - discounts) if split and expected is not None else 0
+    # No record stores the discount as an amount, so it is the engine's own posted discount (`early_pay_discount`, the figure the
+    # reconciliation posts) on the commitment's stored obligations at their full agreed base: fixed at acceptance, whatever has been paid since.
+    agreed = [ob for ob in c.obligations if ob.type == ObligationType.IMMEDIATE_DISCOUNT and ob.base.amount_fen]
+    agreed_discount = sum(early_pay_discount(ob, ob.base.amount_fen or 0) for ob in agreed)
+    split = (planned_line is not None and expected is not None and len(agreed) == len(c.obligations) > 0
+             and 0 < agreed_discount <= expected)
+    concession_expected = agreed_discount if split else expected
+    planned_expected = (expected - agreed_discount) if split and expected is not None else 0
     if planned_line is not None:
         planned_line["expected_fen"], planned_line["expected_display"] = planned_expected, fmt_yuan(planned_expected)
         if planned_line["actual_fen"] is not None and planned_run != planned_expected and split:
@@ -571,11 +589,14 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
     booked_fen = sum(booked.values())
     planned_actual = planned_line["actual_fen"] if planned_line is not None and planned_line["actual_fen"] is not None else 0
     # what no record holds: the part of the expected concession that no promise's posted discount covers
-    unmeasured = max(0, concession_expected - discounts) if concession_expected is not None else None
+    # nothing is unmeasured when the stored supplier cost splits into its two stored components; only a whole, unsplit figure can be
+    unmeasured = (0 if split else max(0, concession_expected - discounts)) if concession_expected is not None else None
+    revoked = c.status == CommitmentStatus.REVOKED
     first_seq = min((k for k in booked if isinstance(k, int)), default=None)
     if not booked:
-        note = (t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
-                  "提前付款没有到账，因此这份协议下没有给出任何折扣。") if lapsed
+        note = (t(lang, "The agreement was withdrawn before the discount was given.", "协议在给出折扣之前已被撤回。") if revoked
+                else t(lang, "The early payment did not arrive, so no discount has been given under the agreement.",
+                       "提前付款没有到账，因此这份协议下没有给出任何折扣。") if lapsed
                 else t(lang, "Nothing has been paid under the agreement yet.", "这份协议下目前还没有任何付款。"))
     elif unmeasured:
         note = (t(lang, f"Not measured: {fmt_yuan(unmeasured)} of the expected cost, which no record holds.",
@@ -738,6 +759,9 @@ def build_tracker(rt: Any, ctx: Context, ds: DecisionState, inp: DecisionInputs,
             sentence_zh += f"，其中包含 {fmt_yuan(on_top)} 的额外融资成本"
         sentence += (f"; {fmt_yuan(unmeasured)} of the expected cost was never measured" if unmeasured else "") + "."
         sentence_zh += (f"；预期成本中有 {fmt_yuan(unmeasured)} 始终未能衡量" if unmeasured else "") + "。"
+        if revoked and not booked:
+            sentence += " The agreement was withdrawn before the discount was given."
+            sentence_zh += "协议在给出折扣之前已被撤回。"
         if expected is None:
             sentence += " The cost expected at agreement was not recorded."
             sentence_zh += "达成协议时的预期成本没有记录。"
