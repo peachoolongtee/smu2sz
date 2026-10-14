@@ -234,7 +234,7 @@ def test_golden_scenarios_are_composed_from_the_compare_and_exposure_reads(api: 
         assert r["text"] == stress[r["key"]]["text"] and r["lowest_short"] == stress[r["key"]]["lowest_short"]
     assert late["assumption_text"].startswith("If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast)")
     loss = sc["customer_loss"]
-    assert loss["lost_billings_text"] == "About ¥5,460,000 a year of billings"
+    assert loss["lost_billings_text"] == "About ¥5,460,000 a year of billings (projected from your books)"
     assert loss["cash_effect_text"].startswith("¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives.")
     assert loss["invoice_remains_text"] == "The ¥420,000 already invoiced (due in 32 days) is still paid."
     assert loss["assumption_text"].endswith("This is not a prediction.")
@@ -255,7 +255,7 @@ def test_zhuhai_has_scenarios_and_the_scenario_words_are_clean_in_both_languages
             assert not BAD.search(text), (key, text)
     _, zh = _golden_zh(api)
     assert english_leaks(_scenarios_words(zh), NAMES + ["Foshan Home Retail Co."]) == []
-    assert _scenarios(zh)["customer_loss"]["lost_billings_text"] == "每年约 ¥5,460,000 的开票额"
+    assert _scenarios(zh)["customer_loss"]["lost_billings_text"] == "每年约 ¥5,460,000 的开票额（根据您的账目推算）"
 
 
 def _scenarios_words(pic: dict[str, Any]) -> list[dict[str, Any]]:
@@ -474,3 +474,48 @@ def test_the_late_payment_label_is_in_chinese_and_the_groups_are_ordered(api: Te
 
     assert [after_group_label(g, "zh") for g in GROUP_ORDER] == ["付款逾期", "等待付款", "已结束"]
     assert [after_group_label(g, "en") for g in GROUP_ORDER] == ["Payment late", "Awaiting payment", "Closed"]
+
+
+# ================================================================ the verifier's four defects
+
+
+def test_a_revoked_agreement_with_money_owed_is_payment_late_never_closed(api: TestClient, rt: Runtime) -> None:
+    offer, did = _agree(api)
+    commitment = rt.store.commitments()[0].id
+    assert api.post(f"/commitments/{commitment}/revoke").status_code == 200
+    api.post("/clock/advance", json={"to_day": 40})
+    for lang in ("en", "zh"):
+        q = api.get("/deals", params={"lang": lang}).json()["queue"]
+        [row] = [r for r in q["agreements"] if r["kind"] == "AGREEMENT" and r["decision_id"] == did]
+        assert row["after_group"] == "payment_late" and row["lifecycle"] == "agreed"
+        assert row["status_text"] == ("Payment late" if lang == "en" else "付款逾期")
+        assert q["deals"]["closed"] == 0 and q["deals"]["payment_late"] == 1
+        [hist] = api.get("/customers/BUYER-1/overview", params={"lang": lang}).json()["deals_history"]
+        assert hist["lifecycle"] == "agreed"
+
+
+def test_the_recommendation_is_null_once_the_negotiation_is_answered(api: TestClient) -> None:
+    offer, pic = _golden(api)
+    assert pic["recommendation"] is not None
+    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
+    for lang, agreed, not_chosen in (("en", "Agreed by Foshan", "Sent, not chosen by the buyer"), ("zh", "Foshan 已同意", "已发送，买方未选择")):
+        after = _picture(api, offer, lang)
+        assert after["recommendation"] is None
+        status = {p["label"]: p["buyer_status_text"] for p in after["paths"] if p["kind"] == "reply"}
+        assert list(status.values()).count(agreed) == 1 and not_chosen in status.values()
+        assert not [v for v in status.values() if "等待" in v or "awaiting" in v]
+
+
+def test_the_recommendation_is_null_once_the_buyer_walks_away(api: TestClient) -> None:
+    offer, pic = _golden(api)
+    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "hard_line"}).json()["outcome"] == "NO_DEAL"
+    assert _picture(api, offer)["recommendation"] is None
+
+
+def test_the_way_back_from_the_demo_says_the_demo(api: TestClient) -> None:
+    offer, _ = _golden(api)
+    for lang, label in (("en", "Back to the Demo"), ("zh", "返回演示")):
+        r = api.get(f"/offers/{offer}/picture", params={"lang": lang, "from": "demo", "customer": "BUYER-1"})
+        assert r.json()["context"]["back"] == {"label": label, "href": "/demo"}
+    activity = api.get(f"/offers/{offer}/picture", params={"from": "activity", "customer": "BUYER-1"}).json()["context"]["back"]
+    assert activity == {"label": "Back to Activity", "href": "/activity"}

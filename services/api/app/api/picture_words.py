@@ -182,6 +182,8 @@ def buyer_status(lang: str, kind: str, buyer: str, sent: str | None) -> str:
         return say(lang, "Not yet sent", "尚未发送")
     if sent == "agreed":
         return say(lang, f"Agreed by {buyer}", f"{buyer} 已同意")
+    if sent == "not_chosen":
+        return say(lang, "Sent, not chosen by the buyer", "已发送，买方未选择")
     if sent == "no_deal":
         return say(lang, "Sent, no agreement reached", "已发送，未达成协议")
     return say(lang, "Sent, awaiting reply", "已发送，等待回复")
