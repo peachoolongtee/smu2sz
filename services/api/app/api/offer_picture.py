@@ -34,6 +34,7 @@ from app.api.presentation import (
     whole,
 )
 from app.api.picture_words import (
+    add_pairs,
     add_path_words,
     add_term_scopes,
     buyer_status,
@@ -1048,6 +1049,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
     paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
     _same_day_comparison(paths, lang)
+    add_pairs(paths, today, lang)
     add_path_words(paths, floor, _months(mandate.forward_concession_horizon_days), financing, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
