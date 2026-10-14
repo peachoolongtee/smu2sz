@@ -210,7 +210,7 @@ export function DecisionPane({
   const { t, te } = useI18n();
   const uid = useId();
   const mode = useMode();
-  const n = useNegotiation(decision);
+  const n = useNegotiation(decision, { agreedPicture: view.view === "terms" });
   // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
   const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
   const tracker = useTracker(agreedNow ? decision : null);

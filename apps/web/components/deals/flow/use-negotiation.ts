@@ -33,7 +33,7 @@ export const AGREED_RECORD_STATES: ReadonlySet<string> = new Set(["AGREED", "FUL
 
 const isMissing = (e: unknown) => e instanceof ApiError && e.status === 404;
 
-export function useNegotiation(decision: string | null): Negotiation {
+export function useNegotiation(decision: string | null, opts: { agreedPicture?: boolean } = {}): Negotiation {
   const { lang } = useI18n();
   const offerId = offerOf(decision);
   const offerRead = useAsync(async () => (offerId ? { offerId, offer: await getOffer(offerId, lang).catch((e: unknown) => (isMissing(e) ? null : Promise.reject(e))) } : null), [offerId, lang]);
@@ -44,7 +44,8 @@ export function useNegotiation(decision: string | null): Negotiation {
   // The picture and the exposure are read only while the owner has a reply to read (RESPONSE_READY): a deal not yet checked has none (404), and once it has an outcome, or waits on the buyer
   // or the approval, the record says where it stands and the cash lines are history. They wait for the record, so no read is wasted.
   // An agreed deal's picture is read too (its Terms tab quotes the agreed response); a read that fails there is no picture, never an error on the page.
-  const agreedState = AGREED_RECORD_STATES.has(record.data?.state ?? "");
+  // (Only while the Terms tab is open: an agreed deal's Overview is the tracker and reads no picture.)
+  const agreedState = Boolean(opts.agreedPicture) && AGREED_RECORD_STATES.has(record.data?.state ?? "");
   const wantRead = hasOffer && record.data !== undefined && (record.data === null || record.data.state === "RESPONSE_READY" || agreedState);
   const pictureRead = useAsync(
     async () => (offerId && wantRead ? { offerId, picture: await getOfferPicture(offerId, lang).catch((e: unknown) => (isMissing(e) || agreedState ? null : Promise.reject(e))) } : null),

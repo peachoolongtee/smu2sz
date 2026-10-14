@@ -27150,7 +27150,7 @@
         "assumption_text": "Scenario assumes Foshan stops buying from you after today; the ¥420,000 already invoiced (due in 32 days) is still paid. This is not a prediction.",
         "available": true,
         "unavailable_text": null,
-        "lost_billings_text": "About ¥5,460,000 a year of billings",
+        "lost_billings_text": "About ¥5,460,000 a year of billings (projected from your books)",
         "lost_contribution_text": null,
         "cash_effect_text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives. Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure.",
         "invoice_remains_text": "The ¥420,000 already invoiced (due in 32 days) is still paid.",
@@ -27158,7 +27158,7 @@
           {
             "key": "lost_billings",
             "label": "Billings lost",
-            "text": "About ¥5,460,000 a year of billings"
+            "text": "About ¥5,460,000 a year of billings (projected from your books)"
           },
           {
             "key": "cash_effect",
@@ -54325,7 +54325,7 @@
         "assumption_text": "本情景假设Foshan Home Retail Co.从今天以后不再向您采购；已开票的 ¥420,000（32 天后到期）仍会照付。这不是预测。",
         "available": true,
         "unavailable_text": null,
-        "lost_billings_text": "每年约 ¥5,460,000 的开票额",
+        "lost_billings_text": "每年约 ¥5,460,000 的开票额（根据您的账目推算）",
         "lost_contribution_text": null,
         "cash_effect_text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。",
         "invoice_remains_text": "已开票的 ¥420,000（32 天后到期）仍会照付。",
@@ -54333,7 +54333,7 @@
           {
             "key": "lost_billings",
             "label": "损失的开票额",
-            "text": "每年约 ¥5,460,000 的开票额"
+            "text": "每年约 ¥5,460,000 的开票额（根据您的账目推算）"
           },
           {
             "key": "cash_effect",

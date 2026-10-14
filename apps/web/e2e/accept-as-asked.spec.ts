@@ -69,7 +69,9 @@ test.describe("live", () => {
   test("the golden books' EX01 asked path is over the mandate: the server's reason is said and no accept button is offered", async ({ page, request }) => {
     await resetBooks(request);
     await checkedDeal(page);
-    await expect(page.getByTestId("accept-reason-asked")).toContainText(/mandate/i);
+    await page.getByTestId("deal-tab-compare").click();
+    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toHaveText("Outside mandate");
+    await expect(page.getByTestId("deal-why-authority")).toContainText(/mandate/i);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
   });
@@ -145,7 +147,7 @@ test.describe("live", () => {
     await clean(page.getByTestId("deal-record"), "the record block");
     // The Agreements tab's row for it, and the section under the panes.
     await page.goto("/deals?tab=agreements");
-    await expect(page.getByTestId("queue-list")).toBeVisible();
+    await expect(page.getByTestId("queue-after-list").first()).toBeVisible();
     await clean(page.getByTestId("deals-queue"), "the Agreements tab");
     await clean(page.getByTestId("deals-agreements"), "the agreements section");
     // The decision record page.

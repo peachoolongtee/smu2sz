@@ -583,6 +583,14 @@ test.describe("the whole life of a deal (slice f)", () => {
     expect(inDeals.headline).toBe(read.headline_text);
     expect(inDeals.expected).toBe(read.cost!.expected.amount_display);
     await expect(page.getByTestId("deal-record-link")).toHaveAttribute("href", /\/decisions\/deal%3AOFF-/);
+    // Once the offer is accepted the server sends no recommendation: no mandate or alternative sentence on any tab of an agreed deal.
+    for (const view of ["overview", "terms", "messages"]) {
+      await page.getByTestId(`deal-tab-${view}`).click();
+      await expect(page.getByTestId("deal-recommendation")).toHaveCount(0);
+      await expect(page.getByTestId("deal-mandate")).toHaveCount(0);
+      await expect(page.getByTestId("deal-alternative")).toHaveCount(0);
+    }
+    await page.getByTestId("deal-tab-overview").click();
     // One filled button at most: no next step is due at agreement.
     expect(await filledBrand(page)).toBeLessThanOrEqual(1);
     // The tracker's own address keeps its back link to the record and renders the same figures.
@@ -861,6 +869,9 @@ test.describe("live", () => {
     await expect(link).toHaveAttribute("href", /^\/deals\?customer=BUYER-1&decision=deal:OFF-.*&from=demo$/);
     await link.click();
     await expect(page.getByTestId("deal-tracker")).toBeVisible();
-    await expect(page.getByTestId("queue-back")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toHaveText("Back to the Demo");
+    await expect(page.getByTestId("queue-back")).toHaveAttribute("href", "/demo");
+    await page.getByTestId("queue-back").click();
+    await expect(page).toHaveURL(/\/demo$/);
   });
 });
