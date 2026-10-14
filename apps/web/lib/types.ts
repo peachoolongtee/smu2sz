@@ -2639,6 +2639,22 @@ export interface HomePending {
   }[];
 }
 
+/** The request against the recommended reply on one day, as an older server wrote it. */
+export interface PointComparisonLegacy {
+  label: string;
+  asked_display: string;
+  recommended_display: string;
+  difference_display: string;
+}
+
+/** Two responses on one day (round three, section 6): each one's figure, the signed difference and the cause of it in words (the events up to that day present on one line and not the other). For a pair of replies `asked_display` is the first of the pair and `reply_display` the second. */
+export interface PointComparison {
+  asked_display: string;
+  reply_display: string;
+  difference_display: string;
+  cause_text?: string | null;
+}
+
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
 export interface HomeSeriesPoint {
   day: Day;
@@ -2648,7 +2664,10 @@ export interface HomeSeriesPoint {
   display?: string;
   when?: string;
   /** On a deal's picture series: the same day's figures for the request and the recommended reply, and the server's signed difference (never computed here). */
-  comparison?: { label: string; asked_display: string; recommended_display: string; difference_display: string } | null;
+  /** Round three: a map keyed by the reply's id (an older server: the request against the recommended reply, one strip). The words are the server's; the browser subtracts nothing. */
+  comparison?: PointComparisonLegacy | Record<string, PointComparison> | null;
+  /** Round three: the same day's words for a pair of two replies, keyed `<a>:<b>`. */
+  comparison_pairs?: Record<string, PointComparison> | null;
   events: { kind: string; label: string; amount_fen: Fen; amount_display: string; amount_short: string; label_short?: string; basis?: ReceiptBasis | null; basis_text?: string | null }[];
   /** The day's net movement as the server added it (a day with several events is labelled by this, never by its largest component). */
   net_fen?: Fen;
@@ -3898,6 +3917,8 @@ export interface OfferPictureView {
   accept?: AcceptBlock | null;
   /** Round three: the recommendation in words. Absent from an older server. */
   recommendation?: PictureRecommendation | null;
+  /** Round three, section 4: the consequences apart from the responses (keys `no_new_agreement`, `late_30`, `customer_loss`). Declared ahead of the server's batch. */
+  scenarios?: PictureScenario[] | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */
@@ -3912,6 +3933,22 @@ export interface PathTerm {
   scope_label?: string | null;
   /** Round three: the cell's one word, always present: the value, "Not offered" or "Unchanged" (`value_text` stays null for an untouched row, so the cell reads this). */
   cell_text?: string | null;
+}
+
+/** One scenario card (round three, section 4), every word the server's: the assumption sentence first, then its rows; a late-payment card also carries the lowest cash of each response under the delay. */
+export interface PictureScenario {
+  key: "no_new_agreement" | "late_30" | "customer_loss" | string;
+  label: string;
+  assumption_text: string | null;
+  /** Customer loss separates what is lost and what is not: billings a year, contribution, the effect on cash and the invoice that stays payable. */
+  lost_billings_text?: string | null;
+  lost_contribution_text?: string | null;
+  cash_effect_text?: string | null;
+  invoice_remains_text?: string | null;
+  /** Any other rows of the card, label and words. */
+  rows?: { key?: string; label: string; text: string }[] | null;
+  /** The lowest cash of each response under the scenario (the late-payment test's `stress.paths`). */
+  paths?: { key: string; label?: string | null; lowest_short?: string | null; lowest_when?: string | null; text?: string | null }[] | null;
 }
 
 /** The three scopes of a deal's terms (round three). */

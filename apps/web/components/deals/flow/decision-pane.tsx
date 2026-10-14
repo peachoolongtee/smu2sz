@@ -19,8 +19,7 @@ import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
 import { CompareTab } from "./compare-tab";
-import { Investigate } from "./investigate";
-import { FinancialOutcomes } from "./outcomes";
+import { CashTab } from "./cash-tab";
 import { DealTabs } from "./deal-tabs";
 import { ScopeTerms } from "./scope-terms";
 import { SendBlock } from "./send-block";
@@ -30,6 +29,8 @@ import { useNegotiation } from "./use-negotiation";
 export interface DealView {
   view: DealViewKey;
   late: boolean;
+  /** The responses the chart draws (`lines`, the paths' keys, comma separated); null is the default pair. */
+  lines: string | null;
   /** The accept review is open on arrival (`review=1`): a link from Home or the Customer page to a request that needs the owner's review. */
   review: boolean;
 }
@@ -611,8 +612,7 @@ export function DecisionPane({
         {current === "cash" && picture && analysis ? (
           <div id={`${uid}-panel-cash`} role="tabpanel" aria-labelledby={`${uid}-tab-cash`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-cash">
             {crumbs(t("deals.pane.cash"))}
-            <FinancialOutcomes picture={picture} paths={paths} />
-            <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={false} chartOpen why={false} />
+            <CashTab picture={picture} paths={paths} exposure={exposure} buyer={buyerShort} lines={view.lines} late={late} onLines={(keys) => onGo({ lines: keys.join(",") }, "replace")} onLate={(l) => onGo({ scenario: l ? "late" : null }, "replace")} />
           </div>
         ) : null}
 

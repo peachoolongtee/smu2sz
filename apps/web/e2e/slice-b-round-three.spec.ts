@@ -290,6 +290,117 @@ test.describe("Compare responses (slice c)", () => {
   });
 });
 
+test.describe("Cash impact (slice d)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  const ASKED = "asked";
+  const A = "CTR-193394b6ba8b";
+  const B = "CTR-6b07cbf70441";
+
+  test("the chips choose the lines: two on by default, a third may be added, one always stays; the choice is in the address", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const chip = (k: string) => page.getByTestId(`deal-chip-${k}`);
+    await expect(chip(ASKED)).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(A)).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(B)).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByTestId("deal-chart").locator('[data-testid^="home-line-"]')).toHaveCount(2);
+    await expect(page.getByTestId("deal-chart-funding")).toContainText("Each option with its own funding plan");
+    await chip(B).click();
+    await expect(page).toHaveURL(new RegExp(`lines=${ASKED}%2C${A}%2C${B}|lines=${ASKED},${A},${B}`));
+    await expect(page.getByTestId("deal-chart").locator('[data-testid^="home-line-"]')).toHaveCount(3);
+    await chip(ASKED).click();
+    await chip(A).click();
+    // The last line stays: its chip is held on.
+    await expect(chip(B)).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(B)).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByTestId("deal-chart").locator('[data-testid^="home-line-"]')).toHaveCount(1);
+    // A deep link keeps the choice and its order.
+    await page.goto(`${withView(page.url(), "cash")}`);
+    await expect(chip(B)).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(A)).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("colours mean one thing each: the first line ink, the second purple, the third muted and dashed; the reserve amber and dashed; below it red", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    await page.getByTestId(`deal-chip-${B}`).click();
+    const stroke = (id: string) => page.getByTestId(id).evaluate((el) => ({ stroke: getComputedStyle(el).stroke, dash: getComputedStyle(el).strokeDasharray }));
+    const first = await stroke("home-line-first");
+    const second = await stroke("home-line-second");
+    const third = await stroke("home-line-third");
+    const reserve = await stroke("home-reserve");
+    const red = await stroke("hv2-below-first");
+    expect(new Set([first.stroke, second.stroke, third.stroke, reserve.stroke, red.stroke]).size, "five different colours").toBe(5);
+    expect(first.dash).toBe("none");
+    expect(second.dash).toBe("none");
+    expect(third.dash).not.toBe("none");
+    expect(reserve.dash).not.toBe("none");
+    // Red marks the stretch under the reserve only; no response is named by it.
+    await expect(page.getByTestId("hv2-below-second")).toHaveCount(1);
+    await expect(page.getByTestId("home-legend")).toContainText("Below minimum reserve");
+  });
+
+  test("event markers sit on the first line only and say the server's words for that day; the inspector follows", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const markers = page.getByTestId("deal-marker");
+    await expect(markers.first()).toBeVisible();
+    expect(await markers.count()).toBeGreaterThan(2);
+    const marker = markers.first();
+    const day = await marker.getAttribute("data-day");
+    await marker.hover();
+    await expect(page.getByTestId("deal-marker-tip")).toBeVisible();
+    await expect(page.getByTestId("deal-marker-tip")).toHaveText(((await marker.getAttribute("aria-label")) ?? "").trim());
+    await marker.click();
+    await expect(page.getByTestId("hv2-inspector")).toHaveAttribute("data-day", String(day));
+    // Switching the first line off moves the markers to the new first line.
+    const before = await markers.count();
+    await page.getByTestId("deal-chip-asked").click();
+    await expect(page.getByTestId("deal-marker").first()).toBeVisible();
+    expect(await page.getByTestId("deal-marker").count()).toBeGreaterThan(0);
+    expect(before).toBeGreaterThan(0);
+  });
+
+  test("the inspector shows two comparisons apart: the pair on this day with the server's difference, and each option's lowest point, never subtracted", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const inspector = page.getByTestId("hv2-inspector");
+    const day = inspector.getByTestId("deal-inspector-day");
+    const lowest = inspector.getByTestId("deal-inspector-lowest");
+    await expect(day.getByRole("heading", { name: "On this day" })).toBeVisible();
+    await expect(lowest.getByRole("heading", { name: "Each option's lowest point" })).toBeVisible();
+    await expect(day).toContainText("not negotiation alone");
+    await expect(lowest.getByTestId(`deal-inspector-lowest-${ASKED}`)).toContainText("¥165k");
+    await expect(lowest.getByTestId(`deal-inspector-lowest-${ASKED}`)).toContainText("in 60 days");
+    await expect(lowest.getByTestId(`deal-inspector-lowest-${A}`)).toContainText("¥300k");
+    await expect(lowest.getByTestId(`deal-inspector-lowest-${A}`)).toContainText("in 30 days");
+    // The lowest points are never subtracted: no difference in that block.
+    await expect(lowest.locator('[data-testid$="-diff"]')).toHaveCount(0);
+    await expect(lowest).toContainText("never subtracted");
+    // Today, the pair's words are the server's own strip for that day.
+    await page.getByTestId("home-chart").focus();
+    await page.keyboard.press("Home");
+    await expect(inspector).toHaveAttribute("data-day", "0");
+    await expect(day.getByTestId("deal-inspector-day-diff")).toContainText("+¥149,986.20");
+    await expect(day.getByTestId(`deal-inspector-day-${ASKED}`)).toContainText("¥400,000.00");
+    await expect(day.getByTestId(`deal-inspector-day-${A}`)).toContainText("¥549,986.20");
+  });
+
+  test("the payment-timing switch swaps every drawn line to its stressed series; markers go with it", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    await expect(page.getByTestId("deal-chart")).toHaveAttribute("data-late", "false");
+    await page.getByTestId("deal-scenario-late").click();
+    await expect(page).toHaveURL(/scenario=late/);
+    await expect(page.getByTestId("deal-chart")).toHaveAttribute("data-late", "true");
+    await expect(page.getByTestId("deal-marker")).toHaveCount(0);
+    await expect(page.getByTestId("deal-panel-cash")).not.toContainText(/\bSafe\b|\bbest\b/i);
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

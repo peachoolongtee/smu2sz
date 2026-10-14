@@ -56,7 +56,7 @@ export function DealsPage() {
   // Home's table is the queue's layout from 20 negotiations; the compact rows are the default (a view choice, held by the page so the queue can take the full width).
   const [layout, setLayout] = useState<QueueLayout>("compact");
   const { view: viewKey, legacy } = viewOf(params);
-  const view: DealView = { view: viewKey, late: sel.scenario === "late", review: params.get("review") === "1" };
+  const view: DealView = { view: viewKey, late: sel.scenario === "late", lines: params.get("lines"), review: params.get("review") === "1" };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
   const [opened] = useState<DealsContext>(() => ({ customer: sel.customer ?? null, invoice: sel.invoice ?? null, path: sel.path ?? null, decision: sel.decision ?? null, from: sel.from ?? null }));
