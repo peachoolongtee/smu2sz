@@ -697,4 +697,136 @@ test.describe("live", () => {
     expect(ids.length).toBeLessThanOrEqual(1);
     await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   });
+
+  async function reset(request: import("@playwright/test").APIRequestContext) {
+    const port = process.env.E2E_API_PORT ?? 8000;
+    const res = await request.post(`http://localhost:${port}/demo/reset`, { headers: { "X-Owner-Token": DEMO_TOKEN } });
+    expect(res.ok()).toBeTruthy();
+  }
+  const group = (page: import("@playwright/test").Page, g: string) => page.locator(`[data-testid="queue-after-group"][data-group="${g}"]`);
+
+  test("the four tabs share one line inside the queue at 1280 and 1440, in English and Chinese, with the busy books' two-digit-ready counts and no label cut", async ({ page, request }) => {
+    await busy(request);
+    for (const lang of ["en", "zh"] as const) {
+      await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
+      for (const width of [1280, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/deals");
+        await expect(page.getByTestId("queue-tabs")).toBeVisible();
+        const ids = ["all", "needs_you", "waiting", "agreements"];
+        const boxes = await Promise.all(ids.map((k) => page.getByTestId(`queue-tab-${k}`).evaluate((el) => ({ top: Math.round(el.getBoundingClientRect().top), right: el.getBoundingClientRect().right, clipped: el.scrollWidth > el.clientWidth + 1 }))));
+        expect(new Set(boxes.map((b) => b.top)).size, `${lang} ${width}: one line`).toBe(1);
+        const queue = await page.getByTestId("deals-queue").evaluate((el) => el.getBoundingClientRect().right);
+        for (const b of boxes) {
+          expect(b.right, "inside the queue").toBeLessThanOrEqual(queue);
+          expect(b.clipped, "no label cut").toBe(false);
+        }
+      }
+    }
+  });
+
+  test("the golden story's deal in the Agreements tier: Awaiting payment at agreement, Payment late on the late day and after the cure, Closed (folded) once the rest is paid; the Overview is the tracker at every moment", async ({ page, request }) => {
+    test.setTimeout(480_000);
+    await reset(request);
+    await page.goto("/demo");
+    await walkStory(page, 3);
+    await page.goto("/deals?tab=agreements");
+    await expect(group(page, "awaiting_payment")).toBeVisible();
+    await expect(group(page, "payment_late")).toHaveCount(0);
+    await expect(group(page, "closed")).toHaveCount(0);
+    await expect(group(page, "awaiting_payment").getByTestId("queue-after-group-heading")).toContainText("Awaiting payment");
+    const row = group(page, "awaiting_payment").getByTestId("queue-row").first();
+    await expect(row.getByTestId("queue-status")).toBeVisible();
+    await row.getByTestId("queue-select").click();
+    // The agreed deal's Overview is the tracker: the same words on the route, figure for figure.
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("deal-tabs").getByRole("tab")).toHaveText(["Overview", "Terms", "Messages"]);
+    const deal = new URL(page.url());
+    const figures = async () => ({ headline: await page.getByTestId("tracker-headline").innerText(), expected: await page.getByTestId("tracker-expected-figure").innerText(), actual: await page.getByTestId("tracker-actual-figure").innerText() });
+    const inDeals = await figures();
+    await page.goto(`/decisions/${encodeURIComponent(deal.searchParams.get("decision")!)}/tracker`);
+    expect(await figures()).toEqual(inDeals);
+    await expect(page.getByTestId("tracker-back")).toContainText("Back to the record");
+    // The late day: the deal moves to Payment late (the bad tone), still in Agreements, never in Needs you.
+    await page.goto("/demo");
+    await walkStory(page, 3, 3);
+    await page.goto("/deals?tab=agreements");
+    await expect(group(page, "payment_late")).toBeVisible();
+    await expect(group(page, "payment_late").getByTestId("queue-after-group-heading")).toContainText("Payment late");
+    await expect(group(page, "awaiting_payment")).toHaveCount(0);
+    await page.goto("/deals?tab=needs_you");
+    await expect(page.locator('[data-testid="queue-row"][data-key^="agreement:"]')).toHaveCount(0);
+    // After the cure it is still Payment late until the money is in; the next step is the header's one filled button.
+    await page.goto("/demo");
+    await walkStory(page, 2, 6);
+    await page.goto("/deals?tab=agreements");
+    await expect(group(page, "payment_late")).toBeVisible();
+    // The rest paid: Closed, folded by default, the tracker's own state word on the row.
+    await page.goto("/demo");
+    await walkStory(page, 3, 8);
+    await page.goto("/deals?tab=agreements");
+    const closed = group(page, "closed");
+    await expect(closed).toBeVisible();
+    expect(await closed.evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
+    await closed.locator("summary").click();
+    await expect(closed.getByTestId("queue-row").first().getByTestId("queue-status")).toContainText("Paid late");
+    await expect(group(page, "payment_late")).toHaveCount(0);
+    await expect(group(page, "awaiting_payment")).toHaveCount(0);
+    // The queue's count says agreements and closed together; the row keeps the close-out sentence.
+    await expect(closed.getByTestId("queue-row").first().getByTestId("queue-consequence")).not.toBeEmpty();
+    await closed.getByTestId("queue-row").first().getByTestId("queue-select").click();
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("tracker-closeout")).toBeVisible();
+  });
+
+  test("after the story's end: the Customer page lists Deals with Foshan and leads into Deals with its way back; Activity opens Deals and keeps the record; the Demo's Track the deal; a new Foshan request carries Last time and its verdict does not move", async ({ page, request }) => {
+    test.setTimeout(480_000);
+    await reset(request);
+    await page.goto("/demo");
+    await walkStory(page, 9);
+    // Customer: the agreed and closed deals as rows, each into Deals with the origin.
+    await page.goto("/customers/BUYER-1");
+    const history = page.getByTestId("customer-deals-history");
+    await expect(history.getByRole("heading", { name: "Deals with Foshan" })).toBeVisible();
+    const first = history.getByTestId("customer-deals-history-row").first();
+    await expect(first.getByTestId("customer-deals-history-link")).toHaveAttribute("href", /^\/deals\?customer=BUYER-1&decision=deal:OFF-.*&from=customer$/);
+    await first.getByTestId("customer-deals-history-link").click();
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toBeVisible();
+    await page.getByTestId("queue-back").click();
+    await expect(page).toHaveURL(/\/customers\/BUYER-1/);
+    // Activity: an agreed deal's row opens Deals (from=activity) and the decision record is one link away.
+    await page.goto("/activity");
+    await expect(page.locator('[data-testid="activity-open-decision"][href^="/deals?"]').first()).toHaveAttribute("href", /from=activity/);
+    await expect(page.locator('[data-testid="activity-open-record"]').first()).toHaveAttribute("href", /^\/decisions\/deal:OFF-/);
+    await page.locator('[data-testid="activity-open-decision"][href^="/deals?"]').first().click();
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toBeVisible();
+    // A new request from the same buyer carries one quiet line, "Last time", and nothing about the verdict changes.
+    await page.goto("/deals");
+    await page.getByTestId("deals-inbox").waitFor();
+    if (await page.getByTestId("inbox-back").count()) await page.getByTestId("inbox-back").click();
+    await page.getByTestId("inbox-msg-EX01B").click();
+    await page.getByTestId("queue-check-button").click();
+    await expect(page.getByTestId("deal-recommendation")).toBeVisible();
+    const last = page.getByTestId("deal-last-time");
+    await expect(last).toContainText("Last time Foshan agreed");
+    await expect(last).toHaveAttribute("title", /changes no verdict, counter, plan or authority/);
+    const verdictWith = await page.getByTestId("deal-mandate").innerText();
+    expect(verdictWith).not.toMatch(/last time/i);
+    await expect(page.getByTestId("queue-ask")).not.toContainText(/last time/i);
+  });
+
+  test("the Demo's agreement scene leads to Track the deal (from=demo) and Deals says the way back", async ({ page, request }) => {
+    test.setTimeout(240_000);
+    await reset(request);
+    await page.goto("/demo");
+    await walkStory(page, 3);
+    await page.goto("/demo");
+    const link = page.getByRole("link", { name: "Track the deal" }).first();
+    await expect(link).toHaveAttribute("href", /^\/deals\?customer=BUYER-1&decision=deal:OFF-.*&from=demo$/);
+    await link.click();
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("queue-back")).toBeVisible();
+  });
 });
