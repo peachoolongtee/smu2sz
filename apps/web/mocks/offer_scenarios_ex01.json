@@ -1,0 +1,182 @@
+{
+  "en": [
+    {
+      "key": "no_new_agreement",
+      "label": "Continue current position",
+      "assumption_text": "Your books as they stand: Foshan keeps buying on today's terms.",
+      "available": true,
+      "unavailable_text": null,
+      "rows": [
+        {
+          "key": "lowest",
+          "label": "Lowest cash",
+          "text": "−¥105k in 30 days"
+        },
+        {
+          "key": "reserve",
+          "label": "Against your minimum",
+          "text": "Below your minimum for 20 days"
+        },
+        {
+          "key": "funding",
+          "label": "Funding",
+          "text": "Cash is below your minimum on 20 days. FLOW's committed plan covers the ¥405,000.00 shortfall for ¥3,113.93."
+        }
+      ]
+    },
+    {
+      "key": "late_30",
+      "label": "Buyer pays 30 days late",
+      "assumption_text": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥420,000.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,344,000.00.",
+      "available": true,
+      "unavailable_text": null,
+      "rows": [
+        {
+          "key": "asked",
+          "label": "As they asked",
+          "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 80 days below your minimum; no committed facility covers the ¥550,000.",
+          "lowest_short": "−¥250k",
+          "lowest_when": "in 60 days",
+          "breach_days_text": "Below your minimum for 80 days",
+          "assumption_text": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥420,000.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,008,000.00."
+        },
+        {
+          "key": "CTR-193394b6ba8b",
+          "label": "Option A",
+          "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 65 days below your minimum; no committed facility covers the ¥550,000.",
+          "lowest_short": "−¥250k",
+          "lowest_when": "in 60 days",
+          "breach_days_text": "Below your minimum for 65 days",
+          "assumption_text": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥420,000.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,344,000.00."
+        },
+        {
+          "key": "CTR-6b07cbf70441",
+          "label": "Option B",
+          "text": "Paid 30 days late: cash falls to −¥250,000 in 60 days, 75 days below your minimum; no committed facility covers the ¥550,000.",
+          "lowest_short": "−¥250k",
+          "lowest_when": "in 60 days",
+          "breach_days_text": "Below your minimum for 75 days",
+          "assumption_text": "If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast). Buyer early-payment offer is taken out: it needs Foshan Home Retail Co.'s agreement. ¥421,260.00 from 1 invoice moves past the 120-day horizon. FLOW assumes none of these invoices can be financed; that understates what could be financed by at most ¥1,347,024.00."
+        }
+      ]
+    },
+    {
+      "key": "customer_loss",
+      "label": "Buyer stops placing new orders",
+      "assumption_text": "Scenario assumes Foshan stops buying from you after today; the ¥420,000 already invoiced (due in 32 days) is still paid. This is not a prediction.",
+      "available": true,
+      "unavailable_text": null,
+      "lost_billings_text": "About ¥5,460,000 a year of billings (projected from your books)",
+      "lost_contribution_text": null,
+      "cash_effect_text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives. Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure.",
+      "invoice_remains_text": "The ¥420,000 already invoiced (due in 32 days) is still paid.",
+      "rows": [
+        {
+          "key": "lost_billings",
+          "label": "Billings lost",
+          "text": "About ¥5,460,000 a year of billings (projected from your books)"
+        },
+        {
+          "key": "cash_effect",
+          "label": "Effect on cash",
+          "text": "¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives. Costs that would also stop are not modelled; the economic loss is the gross-profit figure, not the cash figure."
+        },
+        {
+          "key": "invoice_remains",
+          "label": "The invoice that stays",
+          "text": "The ¥420,000 already invoiced (due in 32 days) is still paid."
+        }
+      ]
+    }
+  ],
+  "zh": [
+    {
+      "key": "no_new_agreement",
+      "label": "维持现状",
+      "assumption_text": "您账面的现状：Foshan Home Retail Co.按今天的条款继续采购。",
+      "available": true,
+      "unavailable_text": null,
+      "rows": [
+        {
+          "key": "lowest",
+          "label": "最低现金",
+          "text": "−¥105k（30 天后）"
+        },
+        {
+          "key": "reserve",
+          "label": "对照最低现金储备",
+          "text": "低于您的最低现金储备 20 天"
+        },
+        {
+          "key": "funding",
+          "label": "融资",
+          "text": "现金有 20 天低于您的最低现金。 FLOW 已承诺的方案能以 ¥3,113.93 覆盖 ¥405,000.00 的缺口。"
+        }
+      ]
+    },
+    {
+      "key": "late_30",
+      "label": "买方晚付 30 天",
+      "assumption_text": "如果 Foshan Home Retail Co. 的每张发票都晚付 30 天（这是压力测试，不是预测）。 已去掉Buyer early-payment offer：它需要 Foshan Home Retail Co. 同意。 1 张发票的 ¥420,000.00 移到了 120 天预测期之后。 FLOW 假设这些发票都无法融资；这最多会低估可融资的金额 ¥1,344,000.00。",
+      "available": true,
+      "unavailable_text": null,
+      "rows": [
+        {
+          "key": "asked",
+          "label": "按对方要求",
+          "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 80 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
+          "lowest_short": "−¥250k",
+          "lowest_when": "60 天后",
+          "breach_days_text": "低于您的最低现金 80 天",
+          "assumption_text": "如果 Foshan Home Retail Co. 的每张发票都晚付 30 天（这是压力测试，不是预测）。 已去掉Buyer early-payment offer：它需要 Foshan Home Retail Co. 同意。 1 张发票的 ¥420,000.00 移到了 120 天预测期之后。 FLOW 假设这些发票都无法融资；这最多会低估可融资的金额 ¥1,008,000.00。"
+        },
+        {
+          "key": "CTR-193394b6ba8b",
+          "label": "方案 A",
+          "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 65 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
+          "lowest_short": "−¥250k",
+          "lowest_when": "60 天后",
+          "breach_days_text": "低于您的最低现金 65 天",
+          "assumption_text": "如果 Foshan Home Retail Co. 的每张发票都晚付 30 天（这是压力测试，不是预测）。 已去掉Buyer early-payment offer：它需要 Foshan Home Retail Co. 同意。 1 张发票的 ¥420,000.00 移到了 120 天预测期之后。 FLOW 假设这些发票都无法融资；这最多会低估可融资的金额 ¥1,344,000.00。"
+        },
+        {
+          "key": "CTR-6b07cbf70441",
+          "label": "方案 B",
+          "text": "晚付 30 天：60 天后现金将跌至 −¥250,000，有 75 天低于您的最低现金；您已承诺的融资额度无法弥补 ¥550,000 的缺口。",
+          "lowest_short": "−¥250k",
+          "lowest_when": "60 天后",
+          "breach_days_text": "低于您的最低现金 75 天",
+          "assumption_text": "如果 Foshan Home Retail Co. 的每张发票都晚付 30 天（这是压力测试，不是预测）。 已去掉Buyer early-payment offer：它需要 Foshan Home Retail Co. 同意。 1 张发票的 ¥421,260.00 移到了 120 天预测期之后。 FLOW 假设这些发票都无法融资；这最多会低估可融资的金额 ¥1,347,024.00。"
+        }
+      ]
+    },
+    {
+      "key": "customer_loss",
+      "label": "买方停止下新订单",
+      "assumption_text": "本情景假设Foshan Home Retail Co.从今天以后不再向您采购；已开票的 ¥420,000（32 天后到期）仍会照付。这不是预测。",
+      "available": true,
+      "unavailable_text": null,
+      "lost_billings_text": "每年约 ¥5,460,000 的开票额（根据您的账目推算）",
+      "lost_contribution_text": null,
+      "cash_effect_text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。",
+      "invoice_remains_text": "已开票的 ¥420,000（32 天后到期）仍会照付。",
+      "rows": [
+        {
+          "key": "lost_billings",
+          "label": "损失的开票额",
+          "text": "每年约 ¥5,460,000 的开票额（根据您的账目推算）"
+        },
+        {
+          "key": "cash_effect",
+          "label": "对现金的影响",
+          "text": "未来 120 天内减少 ¥1,260,000 回款；仍会收到 ¥420,000。也会随之停止的成本没有计入；经济损失看毛利数字，而不是现金数字。"
+        },
+        {
+          "key": "invoice_remains",
+          "label": "仍会收回的发票",
+          "text": "已开票的 ¥420,000（32 天后到期）仍会照付。"
+        }
+      ]
+    }
+  ]
+}

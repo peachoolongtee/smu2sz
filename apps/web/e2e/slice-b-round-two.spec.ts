@@ -1,5 +1,5 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, openOperatorTools, warmPictures } from "./helpers";
+import { checkedDeal, openOperatorTools } from "./helpers";
 
 /**
  * Slice B round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md): the Deals queue's controls, the workspace's timing diagram and its two switchable cards, the Customer page's flow,
@@ -129,7 +129,6 @@ test.describe("live", () => {
     const port = process.env.E2E_API_PORT ?? 8000;
     const res = await request.post(`http://localhost:${port}/demo/reset?scenario=busy`, { headers: { "X-Owner-Token": DEMO_TOKEN } });
     expect(res.ok()).toBeTruthy();
-  await warmPictures(request);
   }
 
   test("the busy queue: distinct subjects, lifecycle words, sort by latest activity and grouping by customer", async ({ page, request }) => {

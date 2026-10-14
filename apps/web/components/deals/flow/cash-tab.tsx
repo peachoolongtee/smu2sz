@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { ErrorState, LoadingBlock } from "@/components/ui";
+import { getOfferScenarios } from "@/lib/api";
+import { useAsync } from "@/lib/use-async";
 import { CashPreview, LegendItem, type InspectorCell, type InspectorWords, type LineStyle, type PreviewLine } from "@/components/home/v2/cash-preview";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { pairWords } from "@/lib/point-comparison";
-import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenario, PictureScenarioRow } from "@/lib/types";
+import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenarioRow } from "@/lib/types";
 import { chosenLines, MAX_LINES } from "./deal-model";
 import { FinancialOutcomes } from "./outcomes";
 
@@ -33,7 +36,7 @@ const ORDER: LineStyle[] = ["first", "second", "third"];
  * two blocks that never mix (the chosen pair on a day with the server's difference and its cause, and each option's own lowest point); then the business consequences. The browser positions marks from
  * `*_fen` and `lowest_day`; every label and sentence is the server's or the dictionary's.
  */
-export function CashTab({ picture, paths, exposure, buyer, lines, late, onLines, onLate }: { picture: OfferPictureView; paths: PicturePath[]; exposure: ExposureView | null | undefined; buyer: string; lines: string | null; late: boolean; onLines: (keys: string[]) => void; onLate: (late: boolean) => void }) {
+export function CashTab({ offerId, picture, paths, exposure, buyer, lines, late, onLines, onLate }: { offerId: string; picture: OfferPictureView; paths: PicturePath[]; exposure: ExposureView | null | undefined; buyer: string; lines: string | null; late: boolean; onLines: (keys: string[]) => void; onLate: (late: boolean) => void }) {
   const { t } = useI18n();
   const chosen = chosenLines(paths, lines);
   const chosenPaths = chosen.map((k) => paths.find((p) => p.key === k)).filter((p): p is PicturePath => Boolean(p));
@@ -175,7 +178,7 @@ export function CashTab({ picture, paths, exposure, buyer, lines, late, onLines,
           />
         </div>
       ) : null}
-      <BusinessConsequences scenarios={picture.scenarios ?? null} />
+      <BusinessConsequences offerId={offerId} />
     </div>
   );
 }
@@ -186,9 +189,30 @@ export function CashTab({ picture, paths, exposure, buyer, lines, late, onLines,
  * loss, what is lost in billings and in contribution, the effect on cash and the invoice that stays payable, each its own sentence; for the late payment, the lowest cash of each response. Nothing
  * here is the browser's; with no `scenarios` from the server nothing is drawn.
  */
-export function BusinessConsequences({ scenarios }: { scenarios: PictureScenario[] | null }) {
-  const { t } = useI18n();
+export function BusinessConsequences({ offerId }: { offerId: string }) {
+  const { t, lang } = useI18n();
   const [pick, setPick] = useState<string | null>(null);
+  // The scenarios are their own read, made when Cash impact opens (composing them is slow on a cold start): a skeleton while it is on its way, the error with Retry when it fails.
+  const read = useAsync(() => getOfferScenarios(offerId, lang), [offerId, lang]);
+  if (read.error)
+    return (
+      <section aria-labelledby="deal-biz-title" className="border-t border-line pt-7" data-testid="deal-scenarios-failed">
+        <h3 id="deal-biz-title" className="type-section mb-3 text-ink">
+          {t("deals.biz.title")}
+        </h3>
+        <ErrorState error={read.error} onRetry={read.reload} />
+      </section>
+    );
+  if (read.data === undefined)
+    return (
+      <section aria-labelledby="deal-biz-title" aria-busy className="border-t border-line pt-7" data-testid="deal-scenarios-loading">
+        <h3 id="deal-biz-title" className="type-section mb-3 text-ink">
+          {t("deals.biz.title")}
+        </h3>
+        <LoadingBlock rows={3} />
+      </section>
+    );
+  const scenarios = read.data;
   if (!scenarios?.length) return null;
   const current = scenarios.find((x) => x.key === pick) ?? scenarios[0];
   // The server's rows say each sentence with its label; a card that carries only the named sentences (an older shape) is read from them.

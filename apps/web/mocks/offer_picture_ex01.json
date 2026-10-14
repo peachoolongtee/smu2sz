@@ -76007,7 +76007,8 @@
     ],
     "buyer_history_text": null,
     "buyer_history_title": null,
-    "scenarios": []
+    "scenarios": [],
+    "scenarios_href": "/offers/OFF-f806f79b6c21/scenarios?lang=en"
   },
   "zh": {
     "offer_id": "OFF-f806f79b6c21",
@@ -152017,6 +152018,7 @@
     ],
     "buyer_history_text": null,
     "buyer_history_title": null,
-    "scenarios": []
+    "scenarios": [],
+    "scenarios_href": "/offers/OFF-f806f79b6c21/scenarios?lang=zh"
   }
 }

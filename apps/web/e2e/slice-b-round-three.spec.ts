@@ -1,7 +1,7 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkedDeal, filledBrand, walkStory, warmPictures } from "./helpers";
+import { checkedDeal, filledBrand, walkStory } from "./helpers";
 import type { TrackerView } from "../lib/tracker";
 
 /**
@@ -16,7 +16,6 @@ async function busy(request: import("@playwright/test").APIRequestContext) {
   const port = process.env.E2E_API_PORT ?? 8000;
   const res = await request.post(`http://localhost:${port}/demo/reset?scenario=busy`, { headers: { "X-Owner-Token": DEMO_TOKEN } });
   expect(res.ok()).toBeTruthy();
-  await warmPictures(request);
 }
 
 /** The address of the selected deal with a view: the current path and query with `view` set (or removed for the Overview). */

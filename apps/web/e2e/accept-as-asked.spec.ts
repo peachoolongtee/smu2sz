@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, resetBooks, warmPictures } from "./helpers";
+import { checkedDeal, resetBooks } from "./helpers";
 
 /**
  * Accept as asked (map #121): a negotiation whose buyer request needs the owner's review and has no counter (the busy books' Zhuhai 75-day terms and Dongguan rebate,
@@ -18,7 +18,6 @@ const headers = { "X-Owner-Token": DEMO_TOKEN };
 async function busy(request: APIRequestContext) {
   const res = await request.post(`${API()}/demo/reset?scenario=busy`, { headers });
   expect(res.ok()).toBeTruthy();
-  await warmPictures(request);
 }
 
 /** The queue's row for a customer's request that needs the owner's review, selected. */

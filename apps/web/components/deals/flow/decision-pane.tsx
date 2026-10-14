@@ -734,7 +734,7 @@ export function DecisionPane({
         {current === "cash" && picture && analysis ? (
           <div id={`${uid}-panel-cash`} role="tabpanel" aria-labelledby={`${uid}-tab-cash`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-cash">
             {crumbs(t("deals.pane.cash"))}
-            <CashTab picture={picture} paths={paths} exposure={exposure} buyer={buyerShort} lines={view.lines} late={late} onLines={(keys) => onGo({ lines: keys.join(",") }, "replace")} onLate={(l) => onGo({ scenario: l ? "late" : null }, "replace")} />
+            <CashTab offerId={offer.offer.offer_id} picture={picture} paths={paths} exposure={exposure} buyer={buyerShort} lines={view.lines} late={late} onLines={(keys) => onGo({ lines: keys.join(",") }, "replace")} onLate={(l) => onGo({ scenario: l ? "late" : null }, "replace")} />
           </div>
         ) : null}
 

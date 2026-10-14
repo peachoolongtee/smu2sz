@@ -43,6 +43,7 @@ import type {
   DealsView,
   NavCounts,
   OfferPictureView,
+  PictureScenario,
   DocumentDecision,
   DocumentsList,
   DocumentView,
@@ -1154,6 +1155,16 @@ export async function getOfferExposure(offerId: string, lang: "en" | "zh"): Prom
   if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return null;
   const rec = cast<Record<"en" | "zh", ExposureView>>((await import("../../mocks/offer_exposure_ex01.json")).default);
   return { ...clone(rec[lang === "zh" ? "zh" : "en"]), offer_id: offerId };
+}
+
+/** GET /offers/{id}/scenarios: the recording taken with the exposure on, in both languages, while the exposure is on; an empty list (as a server with it off) under the exposure-off hook or for any other offer. */
+export async function getOfferScenarios(offerId: string, lang: "en" | "zh"): Promise<PictureScenario[]> {
+  await delay();
+  if (exposureOff()) return [];
+  const ex01 = FIXTURE_OFFERS.find((f) => f.fixture_id === "EX01_PACKAGE");
+  if (!load().offers[offerId] || offerId !== ex01?.view.offer.offer_id) return [];
+  const rec = cast<Record<"en" | "zh", PictureScenario[]>>((await import("../../mocks/offer_scenarios_ex01.json")).default);
+  return clone(rec[lang === "zh" ? "zh" : "en"]);
 }
 
 /** GET /pilot/journal: the mock has no recording (the pilot journal is the shadow pilot's, against a real runtime), so it is absent. */
