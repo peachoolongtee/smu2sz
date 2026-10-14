@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.accept import router as accept_router
 from app.api.activity import router as activity_router
 from app.api.alerts import router as alerts_router
+from app.api.auth import demo_mode
 from app.api.borrower_file import router as borrower_file_router
 from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
@@ -39,8 +40,25 @@ from app.config import get_settings, load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="TermsLedger API", version="0.1.0")
+# SEC-13: the interactive docs and the schema map every route; they are served for the demo only
+_docs = demo_mode()
+app = FastAPI(title="TermsLedger API", version="0.1.0", docs_url="/docs" if _docs else None, redoc_url="/redoc" if _docs else None,
+              openapi_url="/openapi.json" if _docs else None)
 install_error_handlers(app)  # a conflict that survives the retries is a 409 with a retry hint, never a 500
+
+# SEC-12: every response (the API also serves the borrower file as HTML) is never sniffed, never framed and sends no referrer
+SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Content-Security-Policy": "frame-ancestors 'none'",
+                    "Referrer-Policy": "no-referrer"}
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):  # type: ignore[no-untyped-def]
+    response = await call_next(request)
+    for k, v in SECURITY_HEADERS.items():
+        response.headers.setdefault(k, v)
+    return response
+
+  # a conflict that survives the retries is a 409 with a retry hint, never a 500
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in os.environ.get(
