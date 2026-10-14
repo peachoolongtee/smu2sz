@@ -6,7 +6,7 @@ decisions not to re-open), then the brief this handoff executes: `docs/design/fl
 
 ## Where dev is
 - The accept-as-asked batch (the owner's accept and decline of a buyer's request; the queue expand cue) is merged into dev
-  `--no-ff` on 14 Oct evening (see `git log --first-parent dev -3`). It passed an independent verifier (six claims on the busy
+  `--no-ff` on 14 Oct evening at 98df7d1b (tests/api on the merged tree 1409 passed, 2 skipped). It passed an independent verifier (six claims on the busy
   books: authority, money, siblings, words, the cue, the 409 in place) and the full gates: tests/api 1359+, unit 152, whole mock
   435 / 0 failed, whole live 141 / 0 failed. Debt from it: #158 (executor), #159 (words). Do not reopen either in round three.
 - The deal tracker (map #148) is on dev at its own route `/decisions/{id}/tracker`; nothing links to it yet. Round three §11 is
@@ -16,7 +16,7 @@ decisions not to re-open), then the brief this handoff executes: `docs/design/fl
   mode until engine #147). Build as the brief says unless the owner answers.
 
 ## What to build: the brief, as two branches and one verifier
-Start from dev AFTER the accept merge (check `git log --first-parent origin/dev -1` names it). Branch names are distinct from
+Start from dev at or after 98df7d1b (the accept merge). Branch names are distinct from
 anything this machine used: `feat/slice-b-r3-api` (services/api only) and `feat/slice-b-r3-web` (apps/web only). One worktree
 each; one server implementer, one frontend owner; a verifier in a detached worktree with its own scratch folder.
 
