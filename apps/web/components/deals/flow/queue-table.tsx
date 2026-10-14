@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { CustomerName } from "@/components/customer-link";
 import { ErrorState, LoadingBlock, toggleClass } from "@/components/ui";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
+import { RowChevron } from "@/components/ui/row-chevron";
 import { StatusPill } from "@/components/ui/status-pill";
 import { UnderlineTabs, WORKLIST_COLUMNS, WorklistAlertLine, WorklistEmpty, WorklistRow, WorklistSearch } from "@/components/ui/worklist-rows";
 import type { DictKey } from "@/lib/dictionary";
@@ -60,7 +61,7 @@ function SeverityDot({ severity }: { severity: QueueRowView["severity"] }) {
  * the task); the customer's name inside it is its own link, carrying THIS row's customer, decision and invoice and the origin. The selected row is the lavender fill with a purple edge and
  * `aria-current`; a row is held (disabled) while a send is in flight.
  */
-function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean }) {
+function CompactRow({ tier, row, selected, locked, onSelect, activity, hint }: { tier: DealTier; row: QueueRowView; selected: boolean; locked: boolean; onSelect: Select; activity: boolean; hint: boolean }) {
   const { t } = useI18n();
   const target = rowTarget(row);
   const pill = rowPill(tier, row);
@@ -69,13 +70,13 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier:
   const cls = "absolute inset-0 z-0 rounded-[16px] outline-offset-0 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:cursor-wait";
   return (
     <li className="relative" data-testid="queue-row" data-tier={tier} data-kind={row.kind} data-key={row.key} data-lifecycle={pill.lifecycle ?? undefined} data-selected={selected ? "true" : "false"}>
-      <div className="flow-row relative px-4 py-3" aria-current={selected ? "true" : undefined}>
+      <div className="flow-row group relative flex items-center gap-2 px-4 py-3" aria-current={selected ? "true" : undefined}>
         {target.kind === "select" ? (
           <button type="button" className={cls} aria-label={label} aria-current={selected ? "true" : undefined} disabled={locked} onClick={() => onSelect(target.customer, target.decision, target.invoice)} data-testid="queue-select" />
         ) : (
           <Link href={target.href} prefetch={false} className={cls} aria-label={label} data-testid="queue-go" />
         )}
-        <div className="pointer-events-none relative z-[1] min-w-0">
+        <div className="pointer-events-none relative z-[1] min-w-0 flex-1">
           <p className="text-[15px] leading-snug text-ink" data-testid="queue-subject">
             <Subject row={row} decision={decision} invoice={row.invoice_id ?? null} />
             {row.is_new ? <span className="ml-2 text-supporting font-semibold text-ink-2">{t("hv2.work.new")}</span> : null}
@@ -96,6 +97,11 @@ function CompactRow({ tier, row, selected, locked, onSelect, activity }: { tier:
             </p>
           ) : null}
         </div>
+        <span className="relative z-[1]">
+          <RowChevron selected={selected} hint={hint} />
+        </span>
+        {/* Beside the workspace (from xl) the selected row opens into it: a 2 px purple connector from the row's right edge, across the queue card's padding and the gap, to the workspace, at the row's vertical centre. */}
+        {selected ? <span aria-hidden className="pointer-events-none absolute left-full top-1/2 hidden h-0.5 w-11 -translate-y-1/2 bg-f-purple xl:block" data-testid="row-connector" /> : null}
       </div>
     </li>
   );
@@ -125,7 +131,6 @@ function TableRow({ tier, row, selected, locked, hrefOf, onSelect }: { tier: Dea
       isNew={row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={row.differentiator_text}
-      selectLabel={t("hv2.row.select")}
       nextStep={row.consequence_text}
       pill={
         <StatusPill tone={pill.tone} testId="queue-status" data-tier={tier}>
@@ -160,6 +165,7 @@ export function QueuePanel({
   alertGo,
   onlyCustomer,
   onShowAll,
+  hint = false,
 }: {
   queue: Queue | null | undefined;
   customers: CustomersView | null | undefined;
@@ -179,6 +185,8 @@ export function QueuePanel({
   /** A customer's page sent the owner for all of its tasks: only that customer's rows are listed, and the chip says so with the way to show everyone. */
   onlyCustomer?: string | null;
   onShowAll?: () => void;
+  /** First visit with nothing selected: the top row's chevron pulses twice. */
+  hint?: boolean;
 }) {
   const { t } = useI18n();
   const uid = useId();
@@ -232,8 +240,9 @@ export function QueuePanel({
   };
   const rowsOf = (list: DealRow[]) =>
     list.map(({ tier, row }) => {
+      const first = hint && sorted[0]?.row.key === row.key;
       const selected = Boolean(selectedDecision) && rowDecision(row) === selectedDecision;
-      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} />;
+      return asTable ? <TableRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} hrefOf={hrefOf} onSelect={onSelect} /> : <CompactRow key={row.key} tier={tier} row={row} selected={selected} locked={locked} onSelect={onSelect} activity={sort === "latest" && latestOk} hint={first} />;
     });
   const listClass = asTable ? "space-y-2" : "space-y-2";
   return (

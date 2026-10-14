@@ -66,7 +66,7 @@ export default defineConfig({
           {
             name: "live",
             // The same demo walk, what-if and document specs as mock mode, plus the live-only checks and the adapter contract tests.
-            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents|slice-b|slice-b-round-two|home-v2-states|ask-header-live|activity|trust|tracker)\.spec\.ts/, // Deal tracker: tracker added
+            testMatch: /(demo|whatif|alerts|contract|live|chat|strategy|slow|lang|documents|slice-b|slice-b-round-two|accept-as-asked|home-v2-states|ask-header-live|activity|trust|tracker)\.spec\.ts/, // Deal tracker: tracker added
             use: { ...desktop, baseURL: `http://localhost:${LIVE_PORT}` },
           },
         ]

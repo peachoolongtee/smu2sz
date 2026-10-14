@@ -11,6 +11,9 @@ import { ApiError } from "../errors";
 import { contextQuery, type CustomerContext } from "../customer-href";
 import { serverScenario } from "../selection";
 import type {
+  AcceptRequest,
+  AcceptResult,
+  DeclineResult,
   ActivityView,
   DemoRestoreResult,
   DemoStoryView,
@@ -155,6 +158,10 @@ export const live = {
     const n = await http<NegotiationView>("POST", `/negotiate/${enc(offerId)}`, { body: req });
     return { ...n, operations: n.operations.map((o) => asOperationView(o as unknown as Record<string, unknown>)) };
   },
+
+  /** POST /offers/{id}/accept and /decline (accept as asked): the verdict and books version the owner was shown; a 409 refuses with the server's words and moves nothing. */
+  acceptOffer: (offerId: string, req: AcceptRequest) => http<AcceptResult>("POST", `/offers/${enc(offerId)}/accept`, { body: req }),
+  declineOffer: (offerId: string, req: AcceptRequest) => http<DeclineResult>("POST", `/offers/${enc(offerId)}/decline`, { body: req }),
 
   planFunding: (req: PlanRequest, lang: "en" | "zh" = "en") => http<FundingView>("POST", lang === "zh" ? "/router/plan?lang=zh" : "/router/plan", { body: req }),
 

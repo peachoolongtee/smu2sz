@@ -316,6 +316,8 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
                 partial.add("offer_picture")
                 failed = True
         severity, breach, consequence = _deal_effect(pic, floor, failed, lang)
+        if lifecycle == "owner_review":
+            consequence += _act_text(pic, lang)
         activity = _activity(_latest(ds, offer), ctx.today, lang)
         needs.append(Row(key=f"deal:{view['offer_id']}", kind="DECISION", customer_id=cid, customer_short=who, subject=subject,
                          status=lifecycle_text(lifecycle, lang), consequence=consequence, severity=severity, deadline_day=breach,
@@ -323,6 +325,17 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
                          lifecycle=lifecycle, subject_demo=subject_demo, topic=_topic(offer, lang),
                          activity=activity[0], activity_text=activity[1]))
     return needs, waits
+
+
+def _act_text(pic: dict[str, Any] | None, lang: Lang) -> str:
+    """What the owner can do with a request that waits for their review, said after its cash effect ("Accept, decline, or try other terms."): the
+    picture's own `accept` block says whether the asked terms can be accepted at all; without one the row names no act."""
+    pic = pic or {}
+    block = pic.get("accept")
+    if not block or not pic.get("available"):
+        return ""
+    return t(lang, " Accept, decline, or try other terms.", "接受、拒绝，或尝试其他条款。") if block.get("available") else t(
+        lang, " Decline, or try other terms.", "拒绝，或尝试其他条款。")
 
 
 def _first_below(path: dict[str, Any] | None, floor: int, today: int) -> int | None:

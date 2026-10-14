@@ -108,7 +108,7 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("deal-money-lines")).toContainText("¥149,986.20");
   await expect(page.getByTestId("deal-terms")).toContainText("0.85% off");
   await expect(page.getByTestId("deal-waiting")).toContainText("Waiting for Foshan Home Retail Co. to pay");
-  await expect(page.getByTestId("deal-agreement-receipt")).toContainText("Expires in 7 days.");
+  await expect(page.getByTestId("deal-agreement-receipt")).toContainText("In force.");
   await expect(page.getByTestId("deal-agreements").or(page.locator("#commitments"))).toContainText("0.85% off");
   await expect(page.locator("body")).not.toContainText(/\bDay \d/);
 });

@@ -88,7 +88,7 @@ export function obligationSentence(o: Ob, t: I18n["t"], te: I18n["te"], today: n
   }
 }
 
-function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; summary?: React.ReactNode }) {
+function CommitmentItem({ c, buyer, buyerId, today, recordState, inForce, summary }: { c: Displayed<Commitment>; buyer: string; buyerId: string; today: number; recordState: string | null; inForce: boolean; summary?: React.ReactNode }) {
   const { t, te } = useI18n();
   return (
     <li className="border-t border-line py-4 first:border-t-0 first:pt-1" data-testid={`commitment-${c.id}`} data-status={c.status}>
@@ -116,10 +116,13 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c:
           <dt className="text-ink-3">{t("biz.deals.giveawaysBooked")}</dt>
           <dd className="font-medium tabular-nums text-ink">{c.forward_value_display}</dd>
         </div>
-        <div>
-          <dt className="text-ink-3">{t(c.expires_day < today ? "deal.expired" : "deal.expires")}</dt>
-          <dd className="font-medium text-ink">{whenText(c.expires_day, today, t)}</dd>
-        </div>
+        {/* An agreement in force (the record's state is AGREED) does not expire: the server's record says "In force." and carries no expiry, so none is said here either. */}
+        {inForce ? null : (
+          <div>
+            <dt className="text-ink-3">{t(c.expires_day < today ? "deal.expired" : "deal.expires")}</dt>
+            <dd className="font-medium text-ink">{whenText(c.expires_day, today, t)}</dd>
+          </div>
+        )}
       </dl>
       {summary}
     </li>
@@ -153,6 +156,7 @@ export function ActiveCommitments({
   // A failed record read only costs the server's wording of the status: the commitment's own status is then shown.
   const records = useDecisions({ family: "DEAL" });
   const stateText = new Map((records.data?.decisions ?? []).map((d) => [d.id, d.state_text]));
+  const inForce = new Set((records.data?.decisions ?? []).filter((d) => d.state === "AGREED").map((d) => d.id));
   const all = ledger.data ? [...ledger.data.commitments].reverse() : [];
   const live = [...all.filter((c) => LIVE.includes(c.status)), ...all.filter((c) => !LIVE.includes(c.status))];
   // An empty section is noise on the deal page: with `hideEmpty` the card appears only once a deal is on the books (or the summaries could not be read).
@@ -165,7 +169,7 @@ export function ActiveCommitments({
     placed.add(buyerId);
     return <DealSummary deal={deal} today={dealsDay ?? today} />;
   };
-  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} summary={summaryFor(c.counterparty_id)} />);
+  const items = live.map((c) => <CommitmentItem key={c.id} c={c} buyer={buyerName(c.counterparty_id)} buyerId={c.counterparty_id} today={today} recordState={stateText.get(dealRecordId(c.offer_id)) ?? null} inForce={inForce.has(dealRecordId(c.offer_id))} summary={summaryFor(c.counterparty_id)} />);
   const loose = agreed.filter((d) => !placed.has(d.counterparty_id) && ledger.data);
   return (
     <Card

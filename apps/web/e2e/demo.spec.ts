@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, test } from "./fixtures";
+import { DEMO_TOKEN, expect, test } from "./fixtures";
 import { filledBrand, openOperatorTools } from "./helpers";
 
 /**
@@ -524,7 +524,25 @@ test("the busy card's Load is visible without scrolling at 1440 and at 390, and 
   await expect(page.getByTestId("demo-loaded-banner")).toHaveCount(0);
 });
 
-test("the Demo uses the app's own rail: no engine-views sidebar, and the engine views are reachable inside Operator tools", async ({ page }, info) => {
+/** The engine destinations the server lists in Operator tools (`operator_tools`, group `engine`, the items with a link): the recorded read in mock mode, the API's own in live mode. */
+async function serverEngineLinks(request: import("@playwright/test").APIRequestContext, info: { project: { name: string } }): Promise<number> {
+  type Tools = { groups: { key: string; items: { href?: string }[] }[] };
+  let tools: Tools;
+  if (info.project.name === "live") {
+    const res = await request.get(`http://localhost:${process.env.E2E_API_PORT ?? 8000}/demo/story?lang=en`, { headers: { "X-Owner-Token": DEMO_TOKEN } });
+    expect(res.ok()).toBeTruthy();
+    tools = ((await res.json()) as { operator_tools: Tools }).operator_tools;
+  } else {
+    const { readFileSync } = await import("node:fs");
+    const recorded = JSON.parse(readFileSync("mocks/slice_d/story.json", "utf8")) as Record<string, { en: { operator_tools: Tools } }>;
+    tools = recorded.fresh.en.operator_tools;
+  }
+  const links = tools.groups.find((g) => g.key === "engine")!.items.filter((i) => i.href).length;
+  expect(links, "the server lists engine views").toBeGreaterThan(0);
+  return links;
+}
+
+test("the Demo uses the app's own rail: no engine-views sidebar, and the engine views are reachable inside Operator tools", async ({ page, request }, info) => {
   test.skip(info.project.name === "phone", "the rail is the desktop's; the phone has the tab bar");
   await page.setViewportSize({ width: 1440, height: 900 });
   await openDemo(page);
@@ -536,7 +554,7 @@ test("the Demo uses the app's own rail: no engine-views sidebar, and the engine 
   await openOperatorTools(page);
   const engine = page.getByTestId("demo-tools-engine");
   await expect(engine).toBeVisible();
-  await expect(engine.getByRole("link")).toHaveCount(6); // the engine destinations the server lists (it writes this list)
+  await expect(engine.getByRole("link")).toHaveCount(await serverEngineLinks(request, info)); // the engine destinations the server lists (it writes this list)
   await engine.getByRole("link", { name: "Ledger" }).click();
   await expect(page).toHaveURL(/\/ledger/);
   // An engine view wears the same shell: the rail and the Demo strip, and the story's way back.
