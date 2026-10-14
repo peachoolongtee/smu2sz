@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
-import { canSortLatest, dealTabCounts, DEAL_TABS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
+import { canSortLatest, dealTabCounts, DEAL_TABS, groupByCustomer, isClosedRow, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
 
 export type QueueLayout = "compact" | "table";
@@ -330,9 +330,22 @@ export function QueuePanel({
                 ))}
               </div>
             ) : (
-              <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
-                {rowsOf(sorted)}
-              </ul>
+              <>
+                <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
+                  {rowsOf(sorted.filter((x) => !isClosedRow(x.row)))}
+                </ul>
+                {/* The Closed group (round three, section 11): agreed deals that are over stay in the queue, after the agreements in force. */}
+                {sorted.some((x) => isClosedRow(x.row)) ? (
+                  <section className="mt-4" aria-label={t("deals.closed.title")} data-testid="queue-closed">
+                    <h3 className="px-1 pb-1.5 text-supporting font-bold text-ink-2" data-testid="queue-closed-heading">
+                      {t("deals.closed.title")} <span className="font-semibold tabular-nums text-ink-3">({sorted.filter((x) => isClosedRow(x.row)).length})</span>
+                    </h3>
+                    <ul className={listClass} aria-label={t("deals.closed.title")} data-testid="queue-closed-list">
+                      {rowsOf(sorted.filter((x) => isClosedRow(x.row)))}
+                    </ul>
+                  </section>
+                ) : null}
+              </>
             )}
           </>
         )}

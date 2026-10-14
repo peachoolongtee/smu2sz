@@ -453,7 +453,8 @@
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 0
+      "agreements": 0,
+      "closed": 1
     },
     "alert": {
       "key": "company-cash",
@@ -493,7 +494,31 @@
       }
     ],
     "waiting": [],
-    "agreements": [],
+    "agreements": [
+      {
+        "key": "agreement:deal:OFF-f806f79b6c21",
+        "kind": "AGREEMENT",
+        "tier": "AGREEMENTS",
+        "customer_id": "BUYER-1",
+        "customer_short": "Foshan",
+        "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+        "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+        "lifecycle": "closed",
+        "topic_text": "Payment terms",
+        "last_activity_day": 0,
+        "last_activity_text": "34 days ago",
+        "status_text": "Payment late",
+        "consequence_text": "The buyer is late on this deal",
+        "severity": "NORMAL",
+        "deadline_day": null,
+        "expected_day": null,
+        "differentiator_text": null,
+        "decision_id": "deal:OFF-f806f79b6c21",
+        "invoice_id": null,
+        "approval_id": null,
+        "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
+      }
+    ],
     "needs_you_empty_text": "Nothing else needs you.",
     "waiting_empty_text": "Nothing is waiting on anyone else.",
     "agreements_empty_text": "No agreement is in force."

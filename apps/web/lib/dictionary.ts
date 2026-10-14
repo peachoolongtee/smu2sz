@@ -2864,6 +2864,13 @@ export const en = {
   "deals.biz.cash": "Effect on cash",
   "deals.biz.invoice": "The invoice",
   "deals.biz.lowest": "Lowest cash of each response",
+  "deals.life.label": "Where this deal stands",
+  "deals.closed.title": "Closed",
+  "deals.history.title": "Deals with {buyer}",
+  "deals.history.open": "Open the deal",
+  "deals.terms.agreed": "Agreed",
+  "deals.terms.agreedCost": "What it was quoted to cost when agreed",
+  "deals.tracker.unavailable": "The tracker is not available for this deal yet.",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5726,4 +5733,11 @@ export const zh: Record<DictKey, string> = {
   "deals.biz.cash": "对现金的影响",
   "deals.biz.invoice": "这张发票",
   "deals.biz.lowest": "各回复的最低现金",
+  "deals.life.label": "这笔交易进行到哪一步",
+  "deals.closed.title": "已结束",
+  "deals.history.title": "与{buyer}的交易",
+  "deals.history.open": "打开这笔交易",
+  "deals.terms.agreed": "已达成",
+  "deals.terms.agreedCost": "达成时报价的成本",
+  "deals.tracker.unavailable": "这笔交易暂时没有跟踪记录。",
 };

@@ -398,7 +398,8 @@
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 2
+      "agreements": 2,
+      "closed": 0
     },
     "alert": null,
     "needs_you": [],

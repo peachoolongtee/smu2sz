@@ -1,5 +1,8 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal, filledBrand } from "./helpers";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { checkedDeal, filledBrand, walkStory } from "./helpers";
+import type { TrackerView } from "../lib/tracker";
 
 /**
  * Slice B round three (docs/design/flow-mockup-2026-10-13/05_slice_b_round_three.md): the selected deal as one comparison. The tabs and their address, the sticky deal header with the
@@ -536,6 +539,82 @@ test.describe("the pair's cause (slice d, task 4)", () => {
     await expect(inspector.getByTestId("deal-inspector-day-diff")).toContainText("−¥59,986.20");
     await expect(inspector.getByTestId("deal-inspector-day")).toContainText("Option B against Option A");
     await expect(cause).toContainText("Option A: Credit line draw ¥150k today. Option B: Credit line draw ¥90k today.");
+  });
+});
+
+test.describe("the whole life of a deal (slice f)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  const recorded = (m: string): { en: TrackerView; zh: TrackerView } => JSON.parse(readFileSync(join(__dirname, "..", "mocks", "tracker", `${m}.json`), "utf8"));
+  const figures = async (page: import("@playwright/test").Page) => ({
+    headline: await page.getByTestId("tracker-headline").innerText(),
+    state: await page.getByTestId("tracker-state").innerText(),
+    terms: await page.getByTestId("tracker-terms").innerText(),
+    expected: await page.getByTestId("tracker-expected-figure").innerText(),
+    actual: await page.getByTestId("tracker-actual-figure").innerText(),
+    toCome: await page.getByTestId("tracker-to-come-figure").innerText(),
+  });
+
+  test("an agreed deal's Overview is the tracker's body, figure for figure; the lifecycle strip is the server's; Terms holds the agreed terms by scope; the record stays reachable", async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.goto("/demo");
+    await walkStory(page, 3);
+    const read = recorded("agreed").en;
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(read.decision_id)}`);
+    // Three tabs from agreement on; the Overview is the tracker.
+    await expect(page.getByTestId("deal-tabs").getByRole("tab")).toHaveText(["Overview", "Terms", "Messages"]);
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.locator("h1")).toHaveCount(1);
+    // The strip: the server's stages in the server's words, never more than seven, a stage the deal does not have is absent.
+    const strip = page.getByTestId("deal-lifecycle");
+    const stages = read.lifecycle_stages ?? [];
+    expect(stages.length).toBeGreaterThan(2);
+    expect(stages.length).toBeLessThanOrEqual(7);
+    await expect(strip.locator("li")).toHaveCount(stages.length);
+    for (const s of stages) {
+      const li = strip.getByTestId(`lifecycle-stage-${s.key}`);
+      await expect(li).toHaveAttribute("data-state", s.state);
+      await expect(li).toContainText(s.label);
+      await expect(li).toContainText(s.state_text);
+    }
+    const inDeals = await figures(page);
+    expect(inDeals.headline).toBe(read.headline_text);
+    expect(inDeals.expected).toBe(read.cost!.expected.amount_display);
+    await expect(page.getByTestId("deal-record-link")).toHaveAttribute("href", /\/decisions\/deal%3AOFF-/);
+    // One filled button at most: no next step is due at agreement.
+    expect(await filledBrand(page)).toBeLessThanOrEqual(1);
+    // The tracker's own address keeps its back link to the record and renders the same figures.
+    await page.goto(`/decisions/${encodeURIComponent(read.decision_id)}/tracker`);
+    await expect(page.getByTestId("tracker-back")).toContainText("Back to the record");
+    expect(await figures(page)).toEqual(inDeals);
+    // Terms: the agreed response alone, in the column "Agreed", with its cost quoted.
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(read.decision_id)}&view=terms`);
+    await expect(page.getByTestId("deal-agreed-scope-terms-head-reply")).toHaveText("Agreed");
+    await expect(page.getByTestId("deal-agreed-scope-terms-cell-existing-reply")).toContainText("0.85% off");
+    await expect(page.getByTestId("deal-agreed-cost-table")).toBeVisible();
+    await expect(page.getByTestId("deal-panel-terms").getByTestId("deal-chart")).toHaveCount(0);
+    await expect(page.getByTestId("deal-compare-table")).toHaveCount(0);
+    // An address for a tab the agreed deal does not have lands on the Overview.
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(read.decision_id)}&view=cash`);
+    await expect(page).not.toHaveURL(/view=cash/);
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+  });
+
+  test("the one next step is the deal header's primary button (the tracker's own page keeps its own)", async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.goto("/demo");
+    await walkStory(page, 6);
+    const read = recorded("late").en;
+    expect(read.next).toBeTruthy();
+    await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(read.decision_id)}`);
+    const next = page.getByTestId("deal-header").getByTestId("deal-next-action");
+    await expect(next).toHaveText(read.next!.label);
+    await expect(next).toHaveAttribute("href", read.next!.href);
+    expect(await filledBrand(page)).toBe(1);
+    await expect(page.getByTestId("deal-tracker").getByTestId("tracker-next-action")).toHaveCount(0);
+    await expect(page.getByTestId("deal-tracker").getByTestId("tracker-next")).toContainText(read.next!.text);
   });
 });
 

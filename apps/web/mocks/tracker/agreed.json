@@ -18,31 +18,73 @@
         "key": "read",
         "label": "Contract read",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "Terms negotiated",
         "state": "done",
-        "state_text": "Done"
+        "state_text": "Done",
+        "when_text": "today"
       },
       {
         "key": "early_payment",
         "label": "Early payment in",
         "state": "part",
-        "state_text": "Under way"
+        "state_text": "Under way",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "Collecting",
         "state": "now",
-        "state_text": "Now"
+        "state_text": "Now",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "Fulfilled",
         "state": "todo",
-        "state_text": "Still to come"
+        "state_text": "Still to come",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "Contract read",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "Terms negotiated",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": "today"
+      },
+      {
+        "key": "early_payment",
+        "label": "Early payment in",
+        "state": "part",
+        "state_text": "Under way",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "Collecting",
+        "state": "now",
+        "state_text": "Now",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "Fulfilled",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
       }
     ],
     "cost": {
@@ -187,31 +229,73 @@
         "key": "read",
         "label": "合同已读取",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": null
       },
       {
         "key": "negotiated",
         "label": "条款已谈判",
         "state": "done",
-        "state_text": "已完成"
+        "state_text": "已完成",
+        "when_text": "今天"
       },
       {
         "key": "early_payment",
         "label": "提前付款到账",
         "state": "part",
-        "state_text": "等待中"
+        "state_text": "等待中",
+        "when_text": null
       },
       {
         "key": "collecting",
         "label": "催收中",
         "state": "now",
-        "state_text": "进行中"
+        "state_text": "进行中",
+        "when_text": null
       },
       {
         "key": "fulfilled",
         "label": "已履行完毕",
         "state": "todo",
-        "state_text": "尚未开始"
+        "state_text": "尚未开始",
+        "when_text": null
+      }
+    ],
+    "lifecycle_stages": [
+      {
+        "key": "read",
+        "label": "合同已读取",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "negotiated",
+        "label": "条款已谈判",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": "今天"
+      },
+      {
+        "key": "early_payment",
+        "label": "提前付款到账",
+        "state": "part",
+        "state_text": "等待中",
+        "when_text": null
+      },
+      {
+        "key": "collecting",
+        "label": "催收中",
+        "state": "now",
+        "state_text": "进行中",
+        "when_text": null
+      },
+      {
+        "key": "fulfilled",
+        "label": "已履行完毕",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
       }
     ],
     "cost": {

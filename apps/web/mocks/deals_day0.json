@@ -373,7 +373,8 @@
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 0
+      "agreements": 0,
+      "closed": 0
     },
     "alert": {
       "key": "company-cash",

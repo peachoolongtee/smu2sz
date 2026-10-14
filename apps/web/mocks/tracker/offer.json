@@ -14,6 +14,43 @@
     "state_tone": "neutral",
     "state_text": null,
     "stages": [],
+    "lifecycle_stages": [
+      {
+        "key": "received",
+        "label": "Received",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": "today"
+      },
+      {
+        "key": "analysed",
+        "label": "Analysed",
+        "state": "done",
+        "state_text": "Done",
+        "when_text": null
+      },
+      {
+        "key": "reply_ready",
+        "label": "Reply ready",
+        "state": "now",
+        "state_text": "Now",
+        "when_text": null
+      },
+      {
+        "key": "sent",
+        "label": "Sent",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
+      },
+      {
+        "key": "agreed",
+        "label": "Agreed",
+        "state": "todo",
+        "state_text": "Still to come",
+        "when_text": null
+      }
+    ],
     "cost": {
       "expected": null,
       "actual": null,
@@ -61,6 +98,43 @@
     "state_tone": "neutral",
     "state_text": null,
     "stages": [],
+    "lifecycle_stages": [
+      {
+        "key": "received",
+        "label": "已收到",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": "今天"
+      },
+      {
+        "key": "analysed",
+        "label": "已分析",
+        "state": "done",
+        "state_text": "已完成",
+        "when_text": null
+      },
+      {
+        "key": "reply_ready",
+        "label": "回复已就绪",
+        "state": "now",
+        "state_text": "进行中",
+        "when_text": null
+      },
+      {
+        "key": "sent",
+        "label": "已发送",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
+      },
+      {
+        "key": "agreed",
+        "label": "已达成",
+        "state": "todo",
+        "state_text": "尚未开始",
+        "when_text": null
+      }
+    ],
     "cost": {
       "expected": null,
       "actual": null,

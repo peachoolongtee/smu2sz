@@ -35,18 +35,19 @@ export function dealTabCounts(q: Queue): Record<DealTab, number> {
   const rows = negotiationRows(q);
   const held = { needs_you: rows.filter((x) => x.tier === "needs_you").length, waiting: rows.filter((x) => x.tier === "waiting").length, agreements: rows.filter((x) => x.tier === "agreements").length };
   const served: DealsCounts | null = q.deals ? ("counts" in q.deals && q.deals.counts ? q.deals.counts : (q.deals as DealsCounts)) : null;
+  // Round three (section 11): the Agreed tab holds the agreements in force and, after them, the closed ones; the server counts them apart (`agreements`, `closed`) and the tab says both together.
   const n = {
     needs_you: served?.needs_you ?? held.needs_you,
     waiting: served?.waiting ?? held.waiting,
-    agreements: served?.agreements ?? held.agreements,
+    agreements: served ? (served.agreements ?? held.agreements) + (served.closed ?? 0) : held.agreements,
   };
   return { all: served?.all ?? served?.total ?? n.needs_you + n.waiting + n.agreements, ...n };
 }
 
 // ---------------------------------------------------------------- the lifecycle pill
 
-export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed";
-const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed"]);
+export type Lifecycle = "counter_ready" | "owner_review" | "awaiting_buyer" | "more_info" | "agreed" | "declined" | "lapsed" | "closed";
+const LIFECYCLES: ReadonlySet<string> = new Set<Lifecycle>(["counter_ready", "owner_review", "awaiting_buyer", "more_info", "agreed", "declined", "lapsed", "closed"]);
 /** The server's key for "More information needed" is `more_information`. */
 const ALIAS: Record<string, Lifecycle> = { more_information: "more_info" };
 
@@ -57,7 +58,7 @@ export function lifecycleOf(row: Pick<QueueRowView, "lifecycle">): Lifecycle | n
 }
 
 /** The pill's tone by lifecycle: amber is the owner's turn (a counter ready, a review, a question), lavender somebody else's (waiting for the buyer), green agreed, neutral closed (declined, lapsed). */
-const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral" };
+const LIFECYCLE_TONE: Record<Lifecycle, PillTone> = { counter_ready: "amber", owner_review: "amber", more_info: "amber", awaiting_buyer: "lavender", agreed: "green", declined: "neutral", lapsed: "neutral", closed: "neutral" };
 
 /** The record's states as a pill tone, for the selected negotiation when the queue holds no row for it. */
 export function recordTone(state: string): PillTone {
@@ -414,3 +415,6 @@ export function chosenLines(paths: Pick<PicturePath, "key" | "kind" | "recommend
   return [asked?.key, reply?.key].filter((k): k is string => Boolean(k));
 }
 
+
+/** A row of the Closed group under the Agreed tab: an agreed deal that is over (its status is the tracker's state word, its consequence the close-out sentence). */
+export const isClosedRow = (row: Pick<QueueRowView, "lifecycle">): boolean => lifecycleOf(row) === "closed";

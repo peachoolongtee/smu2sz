@@ -213,7 +213,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "Contract read",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "Terms negotiated",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment in",
+          "state": "part",
+          "state_text": "Under way",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "Collecting",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "Fulfilled",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -428,7 +467,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "合同已读取",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "条款已谈判",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "early_payment",
+          "label": "提前付款到账",
+          "state": "part",
+          "state_text": "等待中",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "催收中",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "已履行完毕",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "apply_approved": {
@@ -2953,7 +3031,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "Contract read",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "Terms negotiated",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "34 days ago"
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment in",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "Collecting",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "Fulfilled",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -3194,7 +3311,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "合同已读取",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "条款已谈判",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "34 天前"
+        },
+        {
+          "key": "early_payment",
+          "label": "提前付款到账",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "催收中",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "已履行完毕",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "half_day34.ex01": {
@@ -3437,7 +3593,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "Contract read",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "Terms negotiated",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "34 days ago"
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment in",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "Collecting",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "Fulfilled",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -3678,7 +3873,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "合同已读取",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "条款已谈判",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "34 天前"
+        },
+        {
+          "key": "early_payment",
+          "label": "提前付款到账",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "催收中",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "已履行完毕",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "nodeal.ex01": {
@@ -3855,7 +4089,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Reply ready",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "missed",
+          "state_text": "Not agreed",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “extend our standard terms to 60 days going…”",
@@ -4030,7 +4303,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "回复已就绪",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "missed",
+          "state_text": "未达成",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "noreceipt_day34.ex01": {
@@ -4247,7 +4559,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "Contract read",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "Terms negotiated",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "34 days ago"
+        },
+        {
+          "key": "early_payment",
+          "label": "Early payment in",
+          "state": "missed",
+          "state_text": "Missed",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "Collecting",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "Fulfilled",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -4462,7 +4813,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "read",
+          "label": "合同已读取",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "negotiated",
+          "label": "条款已谈判",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "34 天前"
+        },
+        {
+          "key": "early_payment",
+          "label": "提前付款到账",
+          "state": "missed",
+          "state_text": "已错过",
+          "when_text": null
+        },
+        {
+          "key": "collecting",
+          "label": "催收中",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "fulfilled",
+          "label": "已履行完毕",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "ready.accept": {
@@ -4555,7 +4945,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 提前结算 ¥420k 的发票",
@@ -4646,7 +5075,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "ready.ex01": {
@@ -4756,7 +5224,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Reply ready",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -4864,7 +5371,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "回复已就绪",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "ready.ex01b": {
@@ -4974,7 +5520,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Reply ready",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “Standard terms going forward: 60 days”",
@@ -5082,7 +5667,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "回复已就绪",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "ready.sec": {
@@ -5175,7 +5799,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": "today"
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "done",
+          "state_text": "Done",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "FASTCAPITAL · 报价",
@@ -5266,7 +5929,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": "今天"
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "done",
+          "state_text": "已完成",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "received.accept": {
@@ -5347,7 +6049,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 提前结算 ¥420k 的发票",
@@ -5426,7 +6167,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "received.ex01": {
@@ -5509,7 +6289,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -5590,7 +6409,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "received.ex01b": {
@@ -5673,7 +6531,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
@@ -5754,7 +6651,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   },
   "received.sec": {
@@ -5835,7 +6771,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "Received",
+          "state": "now",
+          "state_text": "Now",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "Analysed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "Owner review needed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "Sent",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "Agreed",
+          "state": "todo",
+          "state_text": "Still to come",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     },
     "zh": {
       "subject_text": "FASTCAPITAL · 报价",
@@ -5914,7 +6889,46 @@
         "scenario": null,
         "back": null,
         "irrelevant_text": null
-      }
+      },
+      "lifecycle_stages": [
+        {
+          "key": "received",
+          "label": "已收到",
+          "state": "now",
+          "state_text": "进行中",
+          "when_text": null
+        },
+        {
+          "key": "analysed",
+          "label": "已分析",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "reply_ready",
+          "label": "需要您审核",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "sent",
+          "label": "已发送",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        },
+        {
+          "key": "agreed",
+          "label": "已达成",
+          "state": "todo",
+          "state_text": "尚未开始",
+          "when_text": null
+        }
+      ],
+      "buyer_history_text": null,
+      "buyer_history_title": null
     }
   }
 }

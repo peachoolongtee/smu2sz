@@ -149,6 +149,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -428,6 +429,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -728,6 +730,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "offer_received",
           "eyebrow": "One offer waits to be read",
@@ -1065,6 +1068,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "offer_received",
           "eyebrow": "有一份报价等待阅读",
@@ -1404,6 +1408,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "One commercial decision waits for you",
@@ -1759,6 +1764,7 @@
           "href": "/deals?decision=deal%3AOFF-f806f79b6c21&path=CTR-193394b6ba8b"
         },
         "other_open_count": 0,
+        "deals_history": [],
         "decision": {
           "kind": "counter",
           "eyebrow": "有一项商务决定等待您处理",
@@ -2097,6 +2103,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -2393,6 +2400,7 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -2691,6 +2699,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "closed",
+            "state_word": "Payment late",
+            "state_tone": "bad",
+            "summary_text": "Agreed 34 days ago",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -2986,6 +3005,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "closed",
+            "state_word": "付款逾期",
+            "state_tone": "bad",
+            "summary_text": "34 天前达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [
@@ -3283,6 +3313,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+            "lifecycle": "closed",
+            "state_word": "Payment late",
+            "state_tone": "bad",
+            "summary_text": "Agreed 34 days ago",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "No commercial decision is waiting for you with Foshan.",
         "actions": [
@@ -3595,6 +3636,17 @@
         "open_negotiations": [],
         "primary_decision": null,
         "other_open_count": 0,
+        "deals_history": [
+          {
+            "decision_id": "deal:OFF-f806f79b6c21",
+            "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+            "lifecycle": "closed",
+            "state_word": "付款逾期",
+            "state_tone": "bad",
+            "summary_text": "34 天前达成协议",
+            "href": "/deals?customer=BUYER-1&decision=deal:OFF-f806f79b6c21&from=customer"
+          }
+        ],
         "decision": null,
         "none_text": "目前没有需要您对Foshan作出的商务决定。",
         "actions": [

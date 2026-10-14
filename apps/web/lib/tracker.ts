@@ -6,6 +6,7 @@
  * the buyer, the one next step); the browser shows them. The types are the server's contract and nothing is derived from them for display.
  */
 
+import type { LifecycleStageView } from "@/lib/types";
 import { apiMode } from "./api";
 import { ApiError } from "./errors";
 import { useI18n } from "./i18n";
@@ -91,6 +92,8 @@ export interface TrackerView {
   state_tone: TrackerTone;
   state_text: string | null;
   stages: TrackerStage[];
+  /** Round three: the same strip the deal workspace read carries (one function on the server). */
+  lifecycle_stages?: LifecycleStageView[];
   /** On an unavailable read the server sends the cost with every part null; the page draws it only when `available`. */
   cost: TrackerCost | null;
   promises: TrackerPromise[];

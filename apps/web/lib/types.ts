@@ -3590,8 +3590,35 @@ export interface QueueRowView {
   why_first?: never;
 }
 
-/** The counts of the negotiations the Deals queue lists (round two). */
-export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements", number>>;
+/** The counts of the negotiations the Deals queue lists (round two). `agreements` counts the agreements in force; `closed` the agreed deals that are over (round three, section 11). */
+export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements" | "closed", number>>;
+
+/** One step of a deal's whole life (round three, section 11): the offer's stages before agreement (Received, Analysed, Reply ready or Owner review, Sent, Agreed), the contract stages after it. `state_text` is the server's word for the state; `when_text` says when a done stage happened. A stage the deal does not have is absent. */
+export interface LifecycleStageView {
+  key: string;
+  label: string;
+  state: "done" | "now" | "todo" | "missed" | "part";
+  state_text: string;
+  when_text?: string | null;
+}
+
+/** What the deal workspace reads add for section 11: the lifecycle strip, and the sentence about the buyer's last agreed or ended deal (context only; `buyer_history_title` says so). */
+export interface DealLifeWords {
+  lifecycle_stages?: LifecycleStageView[] | null;
+  buyer_history_text?: string | null;
+  buyer_history_title?: string | null;
+}
+
+/** One of a buyer's agreed or closed deals on the Customer page (round three, section 11): the subject, the tracker's state word, the close-out (or the agreed sentence) and the link into Deals. */
+export interface DealsHistoryRow {
+  decision_id: string;
+  subject_text: string;
+  lifecycle: "agreed" | "closed" | string;
+  state_word: string;
+  state_tone: "ok" | "warn" | "bad" | "neutral" | string;
+  summary_text: string | null;
+  href: string;
+}
 
 /** GET /deals `queue`: the three tiers of tasks and the counts the tabs show (Needs you = distinct tasks, Waiting = distinct pending outcomes, Agreements = agreements and their promises, Customers = unique relationships; the company alert is counted nowhere). The customers themselves are `GET /customers`. */
 export interface DealsQueue {
@@ -3802,7 +3829,7 @@ export type DecisionSent =
     };
 
 /** GET /decisions/{id}: the summary plus everything the record holds. Every sentence and figure is the server's. */
-export interface DecisionView extends DecisionSummary {
+export interface DecisionView extends DecisionSummary, DealLifeWords {
   source: {
     kind: "OFFER" | "ALERT" | "OPERATION";
     offer_id?: string;
@@ -3888,7 +3915,7 @@ export interface OfferPictureLine {
 }
 
 /** GET /offers/{offer_id}/picture: the offer as asked and one line per reply FLOW has ready. Display only. */
-export interface OfferPictureView {
+export interface OfferPictureView extends DealLifeWords {
   offer_id: string;
   verdict_id: string | null;
   lang: "en" | "zh";
@@ -4368,6 +4395,8 @@ export interface CustomerOverviewView {
   summary_text?: string;
   /** Round two: the one sentence first ("Foshan contributes an estimated ¥1.09m a year, owes ¥420k (54.5% of your open receivables), and has three negotiations that could change your cash."). */
   relationship_text?: string | null;
+  /** Round three, section 11: the buyer's agreed and closed deals, newest first. */
+  deals_history?: DealsHistoryRow[] | null;
   figures?: OverviewFigure[];
   /** Round two: the receivable-to-financing-to-net-collection flow for the customer's largest open invoice. */
   receivable_flow?: ReceivableFlow | FlowStep[] | null;
@@ -4495,6 +4524,8 @@ export interface ActivityRow {
   decision_id: string | null;
   href: string | null;
   href_label: string | null;
+  /** Round three: `href` leads to Deals for an agreed or ended deal; the decision record stays reachable here. */
+  record_href?: string | null;
   evidence_href: string;
   evidence_label: string;
   /** Lower-cased words of the row, for the page's search box. */

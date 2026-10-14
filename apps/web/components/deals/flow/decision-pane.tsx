@@ -24,6 +24,10 @@ import { DealTabs } from "./deal-tabs";
 import { ScopeTerms } from "./scope-terms";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
+import { LifecycleStrip } from "@/components/deals/lifecycle-strip";
+import { TrackerBody } from "@/components/tracker/tracker-body";
+import { useTracker } from "@/lib/tracker";
+import { CostTable } from "./cost-table";
 
 /** The deal's own view of the page, in the address: the tab (`view=`), the payment-timing assumption (`scenario=late`) and the accept review open on arrival (`review=1`). */
 export interface DealView {
@@ -207,6 +211,9 @@ export function DecisionPane({
   const uid = useId();
   const mode = useMode();
   const n = useNegotiation(decision);
+  // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
+  const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
+  const tracker = useTracker(agreedNow ? decision : null);
   const [sent, setSent] = useState<NegotiationView | null>(null);
   // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
   const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
@@ -289,6 +296,14 @@ export function DecisionPane({
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
 
   const status = paneStatus(row, record?.state_text, stateCode);
+  const trackerRead = tracker.data;
+  const agreedView = AGREED_STATES.has(stateCode) && trackerRead?.available === true;
+  const agreedLoading = AGREED_STATES.has(stateCode) && trackerRead === undefined && !tracker.error;
+  const lifeStages = (agreedView ? (trackerRead?.lifecycle_stages ?? null) : null) ?? record?.lifecycle_stages ?? picture?.lifecycle_stages ?? null;
+  // The carry-over: what the buyer's last agreed or ended deal was, one quiet line; it changes no verdict, counter, plan or authority and says so in its title.
+  const history = (picture?.buyer_history_text ?? record?.buyer_history_text) || null;
+  const historyTitle = picture?.buyer_history_title ?? record?.buyer_history_title ?? undefined;
+  const agreedPath = paths.find((p) => p.key === (record?.response as { sent?: { accepted_counter_id?: string | null } } | undefined)?.sent?.accepted_counter_id) ?? null;
   const analysis = Boolean(picture && evaluated && picture.available !== false && pair.length && !done && !waitsOnApproval);
   const customerLine = (
     <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-ink-2" data-testid="deal-customer-line">
@@ -394,11 +409,17 @@ export function DecisionPane({
                     {reviewKind === "send" ? t("deals.review.counter") : t("accept.review")}
                   </Button>
                 ) : null}
+                {agreedView && trackerRead?.next ? (
+                  <ButtonLink href={trackerRead.next.href} variant="primary" data-testid="deal-next-action">
+                    {trackerRead.next.label}
+                  </ButtonLink>
+                ) : null}
                 <Button variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
                   <span aria-hidden>×</span> {t("deals.dismiss")}
                 </Button>
               </div>
             </header>
+            <LifecycleStrip stages={lifeStages} />
             <DealTabs label={t("deals.pane.tabs")} tabs={tabs.map((k) => ({ value: k, label: tabLabel(k) }))} value={current} onChange={(k) => onGo({ view: k === "overview" ? null : k })} idPrefix={uid} />
           </div>
         </div>
@@ -411,7 +432,24 @@ export function DecisionPane({
           </div>
         ) : null}
 
-        {current === "overview" ? (
+        {current === "overview" && (agreedView || agreedLoading) ? (
+          <div id={`${uid}-panel-overview`} role="tabpanel" aria-labelledby={`${uid}-tab-overview`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-overview" data-agreed="true">
+            {outcome ? <AcceptResult outcome={outcome} /> : null}
+            {sent ? <SendResult n={sent} /> : null}
+            {agreedView && trackerRead ? (
+              <div className="flex flex-col gap-6" data-testid="deal-tracker">
+                <TrackerBody d={trackerRead} mode="deal" />
+                <p className="text-sm">
+                  <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
+                    {t("deals.record")}
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <LoadingBlock rows={4} />
+            )}
+          </div>
+        ) : current === "overview" ? (
         <div id={`${uid}-panel-overview`} role="tabpanel" aria-labelledby={`${uid}-tab-overview`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-overview">
         {/* Level 1: decide */}
         <div className="space-y-4" data-testid="deal-level-decide">
@@ -453,6 +491,12 @@ export function DecisionPane({
           </div>
 
           )}
+
+          {!done && history ? (
+            <p className="max-w-[68ch] text-supporting text-ink-2" title={historyTitle} data-testid="deal-last-time">
+              {history}
+            </p>
+          ) : null}
 
           {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
           {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
@@ -621,7 +665,23 @@ export function DecisionPane({
 
         {current === "terms" ? (
           <div id={`${uid}-panel-terms`} role="tabpanel" aria-labelledby={`${uid}-tab-terms`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-terms">
-            {record ? <RecordBlock record={record} decision={decision} /> : null}
+            {/* After agreement: the terms by scope of the agreed response alone (the column "Agreed"), with the cost rows quoted when it was agreed; no comparison, no chart. */}
+            {picture && agreedPath ? (
+              <div className="space-y-6" data-testid="deal-agreed-terms">
+                <ScopeTerms picture={picture} paths={[agreedPath]} heads={[t("deals.terms.agreed")]} testId="deal-agreed-scope-terms" />
+                <div>
+                  <h3 className="mb-1 text-supporting font-bold text-ink-3">{t("deals.terms.agreedCost")}</h3>
+                  <CostTable paths={[agreedPath]} heads={[t("deals.terms.agreed")]} caption={t("deals.terms.agreedCost")} testId="deal-agreed-cost-table" />
+                </div>
+                <p className="text-sm">
+                  <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
+                    {t("deals.record")}
+                  </Link>
+                </p>
+              </div>
+            ) : record ? (
+              <RecordBlock record={record} decision={decision} />
+            ) : null}
           </div>
         ) : null}
 

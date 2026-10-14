@@ -94,6 +94,12 @@ function BusinessRow({ row }: { row: ActivityRow }) {
               {row.href_label}
             </Link>
           ) : null}
+          {/* An agreed or ended deal opens in Deals (`href`); the decision record stays one link away. */}
+          {row.record_href ? (
+            <Link href={row.record_href} className={linkCls} data-testid="activity-open-record">
+              {t("deals.record")}
+            </Link>
+          ) : null}
         </div>
         {row.detail_text ? (
           <p className="mt-0.5 break-words text-sm text-ink-2" data-testid="activity-detail">
