@@ -1,5 +1,5 @@
 import { DEMO_TOKEN, expect, test } from "./fixtures";
-import { checkedDeal } from "./helpers";
+import { checkedDeal, openOperatorTools } from "./helpers";
 
 /**
  * Slice B round two (docs/design/flow-mockup-2026-10-13/04_slice_b_round_two.md): the Deals queue's controls, the workspace's timing diagram and its two switchable cards, the Customer page's flow,
@@ -107,6 +107,7 @@ test.describe("mock", () => {
 
   test("Approvals: the lifecycle shows three stages, the first current while the owner has not authorized, and the button names the act", async ({ page }) => {
     await page.goto("/demo");
+    await openOperatorTools(page); // the optional scenes sit in the Demo's operator tools fold
     await page.getByTestId("more-run-capex").click();
     await page.getByTestId("capex-apply").click();
     await expect(page.getByTestId("capex-applied")).toBeVisible();
