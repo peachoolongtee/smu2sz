@@ -314,6 +314,17 @@ def _bound(rt: Runtime, offer_id: str, body: AcceptIn, lang: str, *, accepting: 
     return offer, latest
 
 
+def _open_proposal(rt: Runtime, offer: CompiledOffer, verdict: Verdict) -> Commitment | None:
+    """The PROPOSED commitment an earlier refused accept of this verdict left (its accept never queued nor ran), still unexpired, else None.
+    Reusing it keeps a refused click from leaving one more proposal behind each time (SEC-03). Call under `rt.lock`."""
+    want = committable(list(verdict.bound_obligations))
+    entries, _ = read_entries(rt.store.operations())
+    used = {e.idempotency_key for e in entries if e.result.status in (OperationStatus.EXECUTED, OperationStatus.PENDING_APPROVAL)}
+    return next((c for c in rt.store.commitments()
+                 if c.offer_id == offer.offer_id and c.verdict_id == verdict.id and c.status == CommitmentStatus.PROPOSED
+                 and c.expires_day >= rt.day and list(c.obligations) == want and f"accept-{c.id}" not in used), None)
+
+
 def _not_recorded(rt: Runtime, offer_id: str, result: OperationResult, lang: str, *, accepting: bool) -> HTTPException:
     """409 NOT_RECORDED: the executor refused the owner's request after every check here passed (a circuit it opened, the books moved under it).
     Its reason, in Business words."""
@@ -360,7 +371,8 @@ def accept_as_asked(offer_id: str, body: AcceptIn, lang: str = "en") -> dict[str
             raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang)
         try:
-            commitment = rt.executor.propose_commitment(verdict.id, expires_day=rt.day + PROPOSAL_DAYS)  # the verdict's own bound terms, no counter
+            # the verdict's own bound terms, no counter; an earlier refused attempt's proposal is reused, never a new one per click (SEC-03)
+            commitment = _open_proposal(rt, offer, verdict) or rt.executor.propose_commitment(verdict.id, expires_day=rt.day + PROPOSAL_DAYS)
         except (LookupError, ValueError):
             raise _conflict("NOT_ACCEPTABLE", offer_id, "FLOW cannot accept this request as asked; nothing was accepted.",
                             "FLOW 无法按对方的要求接受该请求；未接受任何内容。", lang) from None
