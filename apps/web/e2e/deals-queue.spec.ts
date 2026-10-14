@@ -336,3 +336,120 @@ for (const lang of ["en", "zh"] as const) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------------
+// The owner's cue that a row opens the workspace beside it (the chevron, the connector, the empty sentence, the slide, the first-visit pulse)
+
+const phoneProject = (info: { project: { name: string } }) => info.project.name === "phone";
+
+test("every queue row has a decorative chevron, quiet at rest, ink on hover and keyboard focus, filled on the selected row; the row's accessible name is its own words", async ({ page }, testInfo) => {
+  await checkedDeal(page);
+  const rows = page.getByTestId("queue-row");
+  const n = await rows.count();
+  expect(n).toBeGreaterThan(0);
+  await expect(page.getByTestId("queue-list").getByTestId("row-chevron")).toHaveCount(n);
+  for (let i = 0; i < n; i++) {
+    const chevron = rows.nth(i).getByTestId("row-chevron");
+    await expect(chevron).toHaveAttribute("aria-hidden", "true");
+    await expect(chevron).toHaveText("");
+    await expect(chevron).toHaveAttribute("data-selected", (await rows.nth(i).getAttribute("data-selected")) === "true" ? "true" : "false");
+  }
+  const ink = await page.getByTestId("deals-queue").locator("h2").first().evaluate((el) => getComputedStyle(el).color);
+  const selected = page.locator('[data-testid="queue-row"][data-selected="true"]').first();
+  const filled = selected.getByTestId("row-chevron");
+  await expect(filled).toHaveAttribute("data-selected", "true");
+  expect(await filled.evaluate((el) => getComputedStyle(el).backgroundColor), "the selected row's chevron is an ink disc").toBe(ink);
+  // The accessible name is the row's words, never the chevron's.
+  const name = await selected.getByTestId("queue-select").getAttribute("aria-label");
+  expect(name).toContain("Foshan");
+  expect(name).not.toMatch(/[›>]/);
+  // A row that is not selected: quiet at rest, ink on hover and on keyboard focus (a pointer is not a phone's input).
+  if (n > 0 && !phoneProject(testInfo)) {
+    await page.getByTestId("deal-close").click();
+    const row = rows.first();
+    const chevron = row.getByTestId("row-chevron");
+    await expect(chevron).toHaveAttribute("data-selected", "false");
+    const quiet = await chevron.evaluate((el) => getComputedStyle(el).color);
+    await row.hover();
+    await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).toBe(ink);
+    expect(quiet).not.toBe(ink);
+    await page.mouse.move(2, 2);
+    await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).toBe(quiet);
+    await row.getByTestId("queue-select").focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(row.getByTestId("queue-select")).toBeFocused();
+    await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).toBe(ink);
+  }
+});
+
+test("at 1440 the selected row opens into the workspace: a 2 px purple connector at the row's centre reaches the workspace; a phone has none", async ({ page }, testInfo) => {
+  await checkedDeal(page);
+  const row = page.locator('[data-testid="queue-row"][data-selected="true"]').first();
+  if (phoneProject(testInfo)) {
+    await expect(row.getByTestId("row-connector")).toBeHidden();
+    return;
+  }
+  const connector = row.getByTestId("row-connector");
+  await expect(connector).toBeVisible();
+  const [c, r, pane] = await Promise.all([connector.boundingBox(), row.locator(".flow-row").boundingBox(), page.getByTestId("deals-detail").boundingBox()]);
+  expect(c!.height).toBeCloseTo(2, 0);
+  expect(Math.abs(c!.y + c!.height / 2 - (r!.y + r!.height / 2)), "aligned to the row's vertical centre").toBeLessThan(1);
+  expect(Math.abs(c!.x - (r!.x + r!.width)), "starts at the row's right edge").toBeLessThan(1);
+  expect(Math.abs(c!.x + c!.width - pane!.x), "ends at the workspace").toBeLessThan(1.5);
+  expect(await connector.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+  expect(await connector.evaluate((el) => [getComputedStyle(el).backgroundImage, getComputedStyle(el).boxShadow])).toEqual(["none", "none"]);
+});
+
+test("with nothing selected the workspace says to choose a request, with the same chevron, in English and Chinese", async ({ page }, testInfo) => {
+  await checkedDeal(page);
+  await page.getByTestId("deal-close").click();
+  const body = page.getByTestId("deals-select-body");
+  await expect(body).toBeVisible();
+  await expect(body).toHaveText(phoneProject(testInfo) ? "Choose a request above to review it here" : "Choose a request on the left to review it here");
+  await expect(body.locator("svg")).toHaveCount(1);
+  await page.evaluate(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+  await page.reload();
+  await expect(page.getByTestId("deals-select-body")).toHaveText(phoneProject(testInfo) ? "在上方选择一项请求，即可在此查看" : "在左侧选择一项请求，即可在此查看");
+});
+
+test("a newly selected negotiation slides in from the queue's side over the base duration (a fade on a phone); under reduced motion there is none", async ({ page }, testInfo) => {
+  await checkedDeal(page);
+  await page.getByTestId("deal-close").click();
+  const anim = async () => page.getByTestId("deal-pane").locator(".motion-slide").first().evaluate((el) => ({ name: getComputedStyle(el).animationName, duration: getComputedStyle(el).animationDuration }));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByTestId("queue-select").first().click();
+  await expect(page.getByTestId("deal-pane")).toBeVisible();
+  expect((await anim()).name, "reduced motion: no slide, no fade").toBe("none");
+  await page.getByTestId("deal-close").click();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.getByTestId("queue-select").first().click();
+  await expect(page.getByTestId("deal-pane")).toBeVisible();
+  const on = await anim();
+  expect(on.name).toBe(phoneProject(testInfo) ? "deals-fade-in" : "deals-slide-in");
+  expect(on.duration).toBe("0.22s");
+});
+
+test("the first visit's cue: with nothing selected the top row's chevron pulses twice, once, and not on the second load", async ({ page }, testInfo) => {
+  test.skip(phoneProject(testInfo), "the cue is the desktop list's; a phone's rows are links with the chevron");
+  await checkedDeal(page);
+  await page.evaluate(() => localStorage.removeItem("tl-deals-hint"));
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/deals");
+  const first = page.getByTestId("queue-row").first().getByTestId("row-chevron");
+  await expect(first).toHaveAttribute("data-hint", "true");
+  expect(await first.evaluate((el) => [getComputedStyle(el).animationName, getComputedStyle(el).animationIterationCount, getComputedStyle(el).animationDuration])).toEqual(["row-hint", "2", "0.6s"]);
+  await expect(first).not.toHaveAttribute("data-hint", "true", { timeout: 4000 });
+  expect(await page.evaluate(() => localStorage.getItem("tl-deals-hint"))).toBe("1");
+  await page.reload();
+  await expect(page.getByTestId("queue-row").first()).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.getByTestId("queue-row").first().getByTestId("row-chevron")).not.toHaveAttribute("data-hint", "true");
+  // Under reduced motion the stylesheet draws no pulse even where the cue is due.
+  await page.evaluate(() => localStorage.removeItem("tl-deals-hint"));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  const again = page.getByTestId("queue-row").first().getByTestId("row-chevron");
+  await expect(again).toHaveAttribute("data-hint", "true");
+  expect(await again.evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+});

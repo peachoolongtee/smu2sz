@@ -19,6 +19,7 @@ import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowView } from "@/lib/types";
+import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { AnalysisCards, type ShowKey } from "./analysis-cards";
 import { CostTable } from "./cost-table";
 import { costHeadline, paneStatus, timingOf } from "./deal-model";
@@ -38,6 +39,8 @@ export interface DealView {
   investigate: boolean;
   /** Which of the two cards is open (`show=cost|cash`; `none` both folded); null is the default card. */
   show: ShowKey | null;
+  /** The accept review is open on arrival (`review=1`): a link from Home or the Customer page to a request that needs the owner's review. */
+  review: boolean;
 }
 
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
@@ -67,6 +70,18 @@ function SendResult({ n }: { n: NegotiationView }) {
           {summary}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/** What the owner's accept (or a refusal of it) said, in the server's words, beside the record that moved on: the execution's summary after an accept, the 409's sentence after a refusal. A decline says nothing more than the record's Declined. */
+function AcceptResult({ outcome }: { outcome: AcceptOutcome }) {
+  if (outcome.kind === "declined") return null;
+  const text = outcome.text;
+  if (!text) return null;
+  return (
+    <div role={outcome.kind === "refused" ? "alert" : "status"} className="mt-5 rounded-tile border border-line bg-subtle px-4 py-3 text-sm text-ink" data-testid={outcome.kind === "accepted" ? "deal-accepted" : "deal-accept-refused"}>
+      <p data-testid={outcome.kind === "accepted" ? "deal-accepted-ran" : undefined}>{text}</p>
     </div>
   );
 }
@@ -189,6 +204,8 @@ export function DecisionPane({
   const slot = typeof document !== "undefined" ? document.getElementById("deals-investigate") : null;
   const n = useNegotiation(decision);
   const [sent, setSent] = useState<NegotiationView | null>(null);
+  // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
+  const [outcome, setOutcome] = useState<AcceptOutcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -335,7 +352,7 @@ export function DecisionPane({
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="flow-card min-w-0 p-5 sm:p-7" data-testid="deal-pane" data-decision={decision} data-state={stateCode}>
       <Announce text={title} />
-      <div key={decision} className="motion-swap">
+      <div key={decision} className="motion-slide">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="mb-1.5" data-testid="deal-state-chip" data-state={stateCode}>
@@ -392,6 +409,13 @@ export function DecisionPane({
 
           )}
 
+          {/* A request FLOW has a reply for that the owner still cannot accept as asked: the server's reason, said once under the ask ("only a new mandate changes that"); no button. */}
+          {!done && !waitsOnApproval && focus && picture?.accept && !picture.accept.available && picture.accept.reason_text ? (
+            <p className="max-w-[68ch] text-supporting text-ink-2" data-testid="accept-reason-asked">
+              {picture.accept.reason_text}
+            </p>
+          ) : null}
+
           {/* The evaluation prompt belongs to a negotiation still open to evaluate: an agreed or finished one shows its record (receipt and terms) and nothing to clarify, and one that waits on an approval is past it. */}
           {offer.offer.abstentions.length && !done && !waitsOnApproval ? (
             <div data-testid="deal-abstentions">
@@ -408,6 +432,7 @@ export function DecisionPane({
 
           {done || waitsOnApproval || stateCode === "NEEDS_CLARIFICATION" ? (
             <>
+              {outcome ? <AcceptResult outcome={outcome} /> : null}
               {record ? <RecordBlock record={record} decision={decision} /> : null}
               {waitsOnApproval ? (
                 <ActionGroup testId="deal-actions" label={t("deals.actions")}>
@@ -490,7 +515,7 @@ export function DecisionPane({
                   <h3 className="text-supporting font-bold text-ink-3">{t("dq.rec.plain")}</h3>
                   <p className="max-w-[68ch] text-[15px] leading-snug text-ink">{asked?.decides_text ?? t("glance.offer.none")}</p>
                   {/* No reply FLOW can send: the ask itself is what the owner can accept or decline, so its authority, the server's words for what the owner can do, and its cost with the basis are
-                      still said. There is no commit control here (the route that would accept the ask as asked does not exist); nothing is invented. */}
+                      said first; then the commit area below ("Review the request", the accept review) when the server offers it. Nothing is invented. */}
                   {asked ? (
                     <div data-testid="queue-authority" data-authority={asked.authority ?? ""} data-tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>
                       {asked.authority_text && asked.authority_text !== asked.decides_text ? <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_text}</StateWord> : null}
@@ -523,6 +548,19 @@ export function DecisionPane({
                     </Link>
                   ) : null}
                 </SendBlock>
+              ) : !focus && asked && picture.accept && !sent ? (
+                <AcceptBlock
+                  key={offer.offer.offer_id}
+                  offerId={offer.offer.offer_id}
+                  accept={picture.accept}
+                  asked={asked}
+                  picture={picture}
+                  buyer={buyerShort}
+                  recordHref={`/decisions/${encodeURIComponent(decision)}`}
+                  initialOpen={view.review}
+                  onDone={setOutcome}
+                  onBusy={setBusyBoth}
+                />
               ) : (
                 <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
                   {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}

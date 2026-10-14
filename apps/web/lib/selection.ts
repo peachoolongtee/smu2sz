@@ -75,6 +75,16 @@ export function originOf(pathname: string | null | undefined): string | null {
   return null;
 }
 
+/**
+ * The link to a request that needs the owner's review, with the accept review open on arrival (`review=1`, a view of the Deals pane, not a selection key). Another
+ * address is returned as it is; so is one that already says it; the hash is kept.
+ */
+export function reviewHref(href: string): string {
+  if (!href.startsWith("/deals") || /[?&]review=/.test(href)) return href;
+  const [path, hash] = href.split("#");
+  return `${path}${path.includes("?") ? "&" : "?"}review=1${hash ? `#${hash}` : ""}`;
+}
+
 /** The deal a decision id names (`deal:<offer>`); null for any other record (a funding request has no offer). */
 export function offerOf(decision: string | null | undefined): string | null {
   return decision?.startsWith("deal:") ? decision.slice("deal:".length) || null : null;

@@ -518,7 +518,7 @@ test("round four: the worklist is a fixed-column table: the same columns on ever
     expect(Math.abs(c.next.x - first.next.x), `row ${i} next x`).toBeLessThan(1);
     expect(Math.abs(c.status.x + c.status.width - (first.status.x + first.status.width)), `row ${i} status right edge`).toBeLessThan(1);
     expect(Math.abs(c.next.width - first.next.width)).toBeLessThan(1);
-    expect(Math.round(c.select.width), "the select column").toBe(72);
+    expect(Math.round(c.select.width), "the chevron column").toBe(32);
   }
   const ratio = first.subject.width / first.next.width;
   expect(ratio).toBeGreaterThan(0.7);
@@ -537,15 +537,14 @@ test("round four: the worklist is a fixed-column table: the same columns on ever
   await expect(next).toHaveAttribute("title", w.needs_you[0].consequence_text);
   const pillBefore = (await one.getByTestId("home-row-status").boundingBox())!;
   await one.getByRole("link").hover();
-  await expect(one.getByTestId("hv2-row-select")).toHaveCSS("opacity", "1");
   const pillAfter = (await one.getByTestId("home-row-status").boundingBox())!;
   expect(pillAfter.x).toBe(pillBefore.x);
   expect(pillAfter.y).toBe(pillBefore.y);
-  // Below lg the rows are two lines at a fixed 64 px (subject and status, then the next step), no select column.
+  // Below lg the rows are two lines at a fixed 64 px (subject and status, then the next step); the chevron stays at the right edge.
   await page.setViewportSize({ width: 820, height: 1000 });
   await expect(page.getByTestId("hv2-work-head")).toBeHidden();
   for (let i = 0; i < n; i++) expect(Math.round((await rows.nth(i).boundingBox())!.height), `phone row ${i}`).toBe(64);
-  await expect(rows.first().getByTestId("hv2-row-select-cell")).toBeHidden();
+  await expect(rows.first().getByTestId("row-chevron")).toBeVisible();
   const [s1, n1] = await Promise.all([rows.first().getByTestId("hv2-row-subject").boundingBox(), rows.first().getByTestId("hv2-row-next").boundingBox()]);
   expect(n1!.y).toBeGreaterThan(s1!.y + s1!.height - 1);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1242,32 +1241,38 @@ test("round four sizes at 1440: the three cards are 300 px tall at most (the tal
   }
 });
 
-test("hover and focus only highlight a worklist row and reveal Select; a click or Enter selects; hovering never changes the cards", async ({ page }) => {
+test("every worklist row carries a chevron (quiet, ink on hover and focus, filled on the selected row); hover never changes the cards; a click or Enter selects", async ({ page }) => {
   await open(page, { offer: true });
-  const link = page.getByTestId("home-worklist-row").first().getByRole("link");
-  const select = page.getByTestId("home-worklist-row").first().getByTestId("hv2-row-select");
-  await expect(select).toHaveText("Select →");
-  await expect(select).toHaveCSS("opacity", "0");
+  const first = page.getByTestId("home-worklist-row").first();
+  const link = first.getByRole("link");
+  const chevron = first.getByTestId("row-chevron");
+  const count = await page.getByTestId("home-worklist-row").count();
+  await expect(page.getByTestId("home-worklist-row").getByTestId("row-chevron")).toHaveCount(count);
+  await expect(chevron).toHaveAttribute("aria-hidden", "true");
+  await expect(first.getByTestId("hv2-row-select")).toHaveCount(0);
+  const quiet = await chevron.evaluate((el) => getComputedStyle(el).color);
   const before = await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map((id) => page.getByTestId(id).boundingBox()));
   await link.hover();
-  await expect(select).toHaveCSS("opacity", "1");
+  await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).not.toBe(quiet);
   await page.waitForTimeout(400);
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible();
   await expect(page.getByTestId("hv2-stage")).toHaveAttribute("data-mode", "ov");
   expect(await Promise.all(["hv2-cash-card", "hv2-action", "hv2-outlook-card"].map((id) => page.getByTestId(id).boundingBox()))).toEqual(before);
   await page.mouse.move(5, 5);
-  await expect(select).toHaveCSS("opacity", "0");
-  // Keyboard focus reveals it too, and Enter selects.
+  await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).toBe(quiet);
+  // Keyboard focus strengthens it too, and Enter selects.
   await page.getByTestId("home-tab-needs_you").focus();
   for (let i = 0; i < 6 && !(await link.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
   await expect(link).toBeFocused();
-  await expect(select).toHaveCSS("opacity", "1");
+  await expect.poll(() => chevron.evaluate((el) => getComputedStyle(el).color)).not.toBe(quiet);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/decision=/);
   await expect(page.getByTestId("home-deal-focus")).toBeVisible();
-  // A selected row no longer offers Select.
-  await expect(page.getByTestId("home-worklist-row").first().getByTestId("hv2-row-select")).toHaveCount(0);
+  // The selected row's chevron is filled (an ink disc).
+  const selected = page.getByTestId("home-worklist-row").first().getByTestId("row-chevron");
+  await expect(selected).toHaveAttribute("data-selected", "true");
+  expect(await selected.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("selecting a row transforms the cards: the company line, the deal's card, the one cash-impact card with the deal's own paths, the context panel; the three ways back and the browser's Back restore the overview", async ({ page }) => {

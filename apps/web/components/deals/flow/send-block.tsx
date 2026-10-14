@@ -251,7 +251,7 @@ export function SendBlock({
 }
 
 /** The three statements above the send button: what it authorizes, what happens immediately, what does not happen yet. The server's words, in this order; a statement it did not write is not drawn. */
-function Statements({ receipt }: { receipt: CommitmentReceiptView }) {
+export function Statements({ receipt }: { receipt: CommitmentReceiptView }) {
   const { t } = useI18n();
   const wanted = new Set(["authorizes", "executes_now", "remaining"]);
   const label = { authorizes: "deals.review.authorizing", executes_now: "deals.review.now", remaining: "deals.review.later" } as const;

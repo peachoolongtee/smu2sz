@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, type KeyboardEvent, type MouseEventHandler, type ReactNode } from "react";
+import { RowChevron } from "@/components/ui/row-chevron";
 import { nextTabIndex } from "@/components/ui/segmented-tabs-model";
 
 export interface UnderlineTab<T extends string> {
@@ -104,13 +105,13 @@ export function WorklistAlertLine({ tone, eyebrow, text, action, describedBy, no
   );
 }
 
-/** The table's one column template (the header row and every row share it, so they align): Customer / deal 36%, Next step 44%, Status 20% (right-aligned) and the 72 px "Select" column. */
-export const WORKLIST_COLUMNS = "lg:grid-cols-[minmax(0,36fr)_minmax(0,44fr)_minmax(14rem,20fr)_72px]";
+/** The table's one column template (the header row and every row share it, so they align): Customer / deal 36%, Next step 44%, Status 20% (right-aligned) and the 32 px column of the chevron. */
+export const WORKLIST_COLUMNS = "lg:grid-cols-[minmax(0,36fr)_minmax(0,44fr)_minmax(14rem,20fr)_32px]";
 
 /**
  * One row of the worklist table (a white 16 px row on the panel): a link that opens its item, a fixed height (56 px from `lg`, 64 px below it) so no two rows differ. From `lg` four fixed columns:
  * the subject (15 px semibold, with the server's quoted differentiator after it at 13 px muted), the next step (13 px muted, ONE line, cut with an ellipsis and whole in `title`), the status pill
- * right-aligned (a long status word wraps inside the pill to a second line, never cut), and the "Select" affordance in its own 72 px column so the pill never moves. Below `lg` the subject and the pill share the first line and the next step is the second.
+ * right-aligned (a long status word wraps inside the pill to a second line, never cut), and the row's chevron in its own 32 px column so the pill never moves (a right-pointing chevron says the row opens something; filled on the selected row). Below `lg` the subject and the pill share the first line, the next step is the second and the chevron stays at the right edge.
  * Selected is the lavender fill with a purple hairline. `severity` is the screen-reader word (the pill carries the status for the eye).
  */
 export function WorklistRow({
@@ -123,7 +124,6 @@ export function WorklistRow({
   nextStep,
   pill,
   severity,
-  selectLabel,
   onWarm,
   onClick,
   testId,
@@ -138,8 +138,6 @@ export function WorklistRow({
   nextStep?: string | null;
   pill?: ReactNode;
   severity?: ReactNode;
-  /** "Select": the affordance that hover and keyboard focus reveal in the row's own last column (a click or Enter selects; hovering changes nothing else on the page). */
-  selectLabel?: string;
   /** Called when the pointer rests on the row or focus enters it: the page starts the reads a selection would make, so the selection paints at once. */
   onWarm?: () => void;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
@@ -156,7 +154,7 @@ export function WorklistRow({
         onPointerEnter={onWarm}
         onFocus={onWarm}
         data-testid="hv2-row-link"
-        className={`group motion-press relative grid h-16 grid-cols-[minmax(0,1fr)_auto] content-center items-center gap-x-4 gap-y-0.5 rounded-[16px] px-4 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus lg:h-14 ${WORKLIST_COLUMNS} ${
+        className={`group motion-press relative grid h-16 grid-cols-[minmax(0,1fr)_auto_24px] content-center items-center gap-x-4 gap-y-0.5 rounded-[16px] px-4 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus lg:h-14 ${WORKLIST_COLUMNS} ${
           selected ? "bg-brand-50 ring-1 ring-f-purple" : "bg-card hover:shadow-f hover:ring-1 hover:ring-line"
         }`}
       >
@@ -181,12 +179,8 @@ export function WorklistRow({
         <span className="col-start-2 row-start-1 flex min-w-0 max-w-[14rem] justify-end justify-self-end lg:col-start-3 lg:max-w-full [&>*]:max-w-full [&>*]:!whitespace-normal [&>*]:!py-1 [&>*]:!leading-tight" data-testid="hv2-row-status">
           {pill}
         </span>
-        <span aria-hidden className="hidden whitespace-nowrap text-right text-supporting font-semibold text-ink lg:block" data-testid="hv2-row-select-cell">
-          {selectLabel && !selected ? (
-            <span className="opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 group-focus-visible:opacity-100" data-testid="hv2-row-select">
-              {selectLabel} →
-            </span>
-          ) : null}
+        <span className="col-start-3 row-span-2 row-start-1 grid place-items-center lg:col-start-4 lg:row-span-1" data-testid="hv2-row-select-cell">
+          <RowChevron selected={selected} />
         </span>
         {severity}
       </Link>
