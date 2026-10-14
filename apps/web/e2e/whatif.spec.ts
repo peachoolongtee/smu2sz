@@ -21,7 +21,9 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await expect(page.getByText("Reserve breach in 47 days").first()).toBeVisible();
   // Level 1 is the summary: the verdict in words and three figures; the engine's cards wait behind one disclosure.
   await expect(outcome).toHaveText("Breaks your limits");
-  await expect(page.getByTestId("whatif-cash-fig")).toContainText("Below it in 47 days");
+  await expect(page.getByTestId("whatif-cash-fig")).toHaveText("Below it for 15 days"); // the server's cash word (reserve.cash_text), not the breach day's
+  // The assumption sentence stands under the subject, as sent. The mock recording was made without an offer, so it has no negotiation clause and no compare_text; the live API adds both (e2e/slice-b.spec.ts).
+  await expect(page.getByTestId("whatif-scope-text")).toContainText("The sandbox applies the terms to every Foshan invoice for the next 12 months, not only the next one");
   await expect(page.getByTestId("whatif-plan-cost")).toContainText("¥1,468.05");
   const details = page.getByTestId("whatif-details");
   await expect(details).not.toHaveAttribute("open", "");
@@ -48,6 +50,7 @@ test("what-if: moving the terms slider changes the hypothetical verdict", async 
   await expect(page.getByTestId("whatif-discount-readout")).toHaveText("0.85%");
   await expect(page.getByTestId("whatif-face-readout")).toHaveText("¥257,200.00");
   await expect(outcome).toHaveAttribute("data-outcome", "ACCEPT");
+  await expect(page.getByTestId("whatif-cash-fig")).toHaveText("Below it for 12 days");
 
   // Back to the buyer's actual offer.
   await page.getByTestId("whatif-preset-actual").click();

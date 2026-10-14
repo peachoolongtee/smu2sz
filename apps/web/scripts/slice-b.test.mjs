@@ -109,9 +109,11 @@ test("a negotiation, an agreement and a promise select in place; any other task 
   assert.deepEqual(queue.rowTarget(promise), { kind: "select", customer: "B1", decision: "deal:OFF-1", invoice: "RCV-A" });
   const collection = { key: "collection:B1", kind: "COLLECTION", customer_id: "B1", invoice_id: "RCV-A", subject_text: "s", status_text: "Overdue", consequence_text: "", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" };
   assert.deepEqual(queue.rowTarget(collection), { kind: "go", href: "/receivables?customer=B1&invoice=RCV-A&from=deals" });
-  const approval = { key: "approval:A1", kind: "APPROVAL", customer_id: null, subject_text: "s", status_text: "Waiting", consequence_text: "", href: "/approvals#approval-A1" };
+  const approval = { key: "approval:A1", kind: "APPROVAL", customer_id: null, decision_id: "approval:A1", subject_text: "s", status_text: "Waiting", consequence_text: "", href: "/approvals#approval-A1" };
   assert.deepEqual(queue.rowTarget(approval), { kind: "go", href: "/approvals#approval-A1" });
+  // A funding request has a decision id of its own, but only a `deal:` id selects: the approval row is a link to the server's href, never a selection.
   assert.equal(queue.rowDecision(approval), null);
+  assert.equal(queue.tierOfDecision({ needs_you: [approval], waiting: [], agreements: [], customers: [] }, "approval:A1"), null);
 });
 
 test("the status pill and the next step are the server's words, split at its own separator", () => {
@@ -144,19 +146,42 @@ test("the commitment receipt is eleven lines in the ticket's order, and a line t
   for (const l of receiptModel.RECEIPT_LINES) assert.ok(en[`receipt.${l.key === "executes_now" ? "executesNow" : l.key === "others_must_agree" ? "othersMustAgree" : l.key === "in_hand_vs_future" ? "inHandVsFuture" : l.key}`], l.key);
 });
 
-test("the send's receipt is the server's block on the priced response of the very verdict; without one the path's own words stand", () => {
-  const path = { key: "CTR-1", reply_text: "Terms stay at 45 days.", decides_text: "FLOW can send it. Your approval is not needed.", authority_text: "FLOW can send it", cost_once_display: "¥3,027.77", cost_basis_text: "once, nothing ongoing", scenario_assumption_text: "Assumes the buyer accepts." };
-  const own = { authorizes_text: "Sends it", net_display: "¥1" };
-  const verdict = { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: own } } };
-  assert.equal(receipt.receiptOfSend(path, verdict), own);
-  // another counter than the one priced has no receipt of its own: the path's words stand
-  const other = receipt.receiptOfSend({ ...path, key: "CTR-2" }, verdict);
-  assert.deepEqual(other, { authorizes_text: "Terms stay at 45 days.", fees_display: "¥3,027.77\nonce, nothing ongoing", assumptions_text: "Assumes the buyer accepts.", authority_text: "FLOW can send it. Your approval is not needed." });
-  // an older server sends none, or an empty one
-  assert.deepEqual(receipt.receiptOfSend(path, { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: null } } }), other);
-  assert.deepEqual(receipt.receiptOfSend(path, null), other);
+test("the send's receipt is the server's block for THAT reply; a reply the server did not price has none and nothing is composed from the path's words", () => {
+  const a = { key: "CTR-1", reply_text: "Terms stay at 45 days.", authority_text: "FLOW can send it", cost_once_display: "¥3,027.77" };
+  const b = { ...a, key: "CTR-2" };
+  const ra = { authorizes_text: "Sends A", net_display: "¥1" };
+  const rb = { authorizes_text: "Sends B", net_display: "¥2" };
+  const verdict = { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: ra }, priced_responses: [{ counter_id: "CTR-1", receipt: ra }, { counter_id: "CTR-2", receipt: rb }] } };
+  assert.equal(receipt.receiptOfSend(a, verdict), ra);
+  assert.equal(receipt.receiptOfSend(b, verdict), rb, "another reply reads its own entry");
+  assert.equal(receipt.receiptOfSend({ ...a, key: "CTR-9" }, verdict), null, "a reply nobody priced has no receipt");
+  assert.equal(receipt.pricedFor(b, verdict).counter_id, "CTR-2");
+  // an older server sends the single priced response: it is a list of one, and only for its own counter
+  const single = { id: "V1", workspace: { priced_response: { counter_id: "CTR-1", receipt: ra } } };
+  assert.equal(receipt.receiptOfSend(a, single), ra);
+  assert.equal(receipt.receiptOfSend(b, single), null);
+  // an empty receipt, a null one and no verdict are all "none"
+  assert.equal(receipt.receiptOfSend(a, { id: "V1", workspace: { priced_responses: [{ counter_id: "CTR-1", receipt: null }] } }), null);
+  assert.equal(receipt.receiptOfSend(a, { id: "V1", workspace: { priced_responses: [{ counter_id: "CTR-1", receipt: { net_display: " " } }] } }), null);
+  assert.equal(receipt.receiptOfSend(a, null), null);
+  assert.ok(en["receipt.unpriced"] && zh["receipt.unpriced"]);
 });
 
 test("every word the slice owns exists in both languages", () => {
   for (const key of Object.keys(en).filter((k) => /^(deals|receipt|chat\.scope|customer\.(fig|outstanding|allTasks)|whatif\.scope|appr\.receipt)/.test(k))) assert.ok(zh[key], key);
+});
+
+test("the owner's widened choice holds on the route it was made on and is void once it is cleared (the panel clears it when the route changes)", () => {
+  const params = new URLSearchParams("customer=B1&decision=deal%3AO");
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "decision");
+  scopeLib.chosenStore.set({ kind: "company" });
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "company");
+  // a kind the address does not hold is not offered, so the choice does not apply
+  assert.equal(scopeLib.resolveScope("/activity", new URLSearchParams("")).chosen.kind, "company");
+  scopeLib.chosenStore.set({ kind: "decision" });
+  assert.equal(scopeLib.resolveScope("/customers/B1", new URLSearchParams("")).chosen.kind, "customer");
+  scopeLib.chosenStore.set({ kind: null });
+  assert.equal(scopeLib.resolveScope("/deals", params).chosen.kind, "decision");
+  // the store keeps no route: nothing is remembered per route
+  assert.deepEqual(Object.keys(scopeLib.chosenStore.get()), ["kind"]);
 });

@@ -3459,11 +3459,130 @@
     "empty_text": "最近没有变化。",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": "没有需要执行的操作。1 项催收需要您处理。",
+    "upcoming": [
+      {
+        "label": "发放工资",
+        "amount_display": "−¥200k",
+        "when": "4 天后",
+        "kind": "outflow"
+      },
+      {
+        "label": "Foshan付款",
+        "amount_display": "+¥420k",
+        "when": "9 天后",
+        "kind": "inflow"
+      },
+      {
+        "label": "支付债务还款",
+        "amount_display": "−¥45k",
+        "when": "22 天后",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "可用现金",
+        "value_display": "¥200,000",
+        "note": "比您 ¥300k 的最低现金低 ¥100k",
+        "tone": "bad",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 20000000,
+          "min_display": "¥300k",
+          "headroom_text": "−¥100k",
+          "cash_display": "¥200,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "未来最低现金",
+        "value_display": "¥0",
+        "note": "比您的最低现金低 ¥300k（4 天后） · 当前账目，方案已执行",
+        "short_note": "4 天后缺口 ¥300k",
+        "tone": "bad",
+        "with_plan_hint": "未应用任何假设。",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "NONE",
+        "eyebrow": "融资",
+        "value_display": "无",
+        "note": "融资已到账 · ¥155k 发票融资已到账，由Foshan的回款偿还（9 天后）。",
+        "status_text": null,
+        "hint": null
+      }
+    },
+    "action": {
+      "variant": "ACTION",
+      "key": null,
+      "tone": "bad",
+      "eyebrow": "下一步 · 0 天内",
+      "title": "今天现金低于储备。",
+      "text": "现金比您 ¥300k 的最低现金储备低 ¥100k。",
+      "facts": [],
+      "primary": {
+        "label": "查看选项",
+        "href": "/cash#cash-options"
+      },
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": "现金将在今天首次低于您的最低现金。即使方案已执行，缺口仍将在 4 天后达到 ¥300k。",
+      "legs": [],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "公司现金预测",
+      "legend": [
+        {
+          "label": "当前账目 · 方案已执行",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "最低点 · 4 天后",
+        "projected_display": "¥0",
+        "minimum_display": "¥300,000",
+        "third_label": "缺口",
+        "third_display": "¥300,000",
+        "note": "FLOW 目前没有能补上这一缺口的融资方案。"
+      },
+      "lowest": {
+        "cause": "发放工资"
+      },
+      "scenario_title_text": null,
+      "note": "当前账目，没有假设任何新增事项。数字与现金与融资页一致。"
+    },
+    "links": [
+      {
+        "label": "现金的去向",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "融资额度余量",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "应收款的到期时间",
+        "href": "/receivables"
+      },
+      {
+        "label": "全部交易",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
   "open_decisions": [
     {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",

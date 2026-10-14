@@ -17,8 +17,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.api.presentation import buyer_of_receivable, invoice_words, party_name
 from app.domain.models import Outcome, Verdict
 from app.domain.money import fmt_yuan
+from app.financial.lots import ensure_lots
 from app.nl import lexicon as lx
 from app.nl.context import NlContext
 from app.nl.models import Intent
@@ -51,6 +53,11 @@ def _when(day: int, today: int, lang: str) -> str:
     if lang == "zh":
         return "今天" if n == 0 else (f"{n} 天后" if n > 0 else f"{-n} 天前")
     return "today" if n == 0 else (f"in {_days(n)}" if n > 0 else f"{_days(-n)} ago")
+
+
+def _said(ctx: NlContext, text: str) -> str:
+    """An engine sentence in Business words (names for ids, distances from today, no status codes), as the Business pages say it."""
+    return ctx.reads.words(text, ctx.lang) if ctx.reads is not None else text
 
 
 def _cap(text: str) -> str:
@@ -99,6 +106,79 @@ def _unpaid_line(ctx: NlContext, r: dict[str, Any]) -> str:
     return t(ctx, f"Not yet paid: {r['invoice']}, due {r['due_when']}.", f"尚未收到：{r['invoice']}，{r['due_when']}到期。")
 
 
+# ---------------------------------------------------------------- the request's scope (a customer, an invoice, a negotiation)
+#
+# A read that lists per-customer rows keeps the scope's own rows and says it kept them (`ctx.scope_read = "filtered"`); a company-wide read
+# says so (`"company"`), and the service then answers in the company scope instead of pretending to a narrower one.
+
+
+def _scoped(ctx: NlContext) -> bool:
+    return ctx.scope_customer is not None
+
+
+def _who(ctx: NlContext) -> str:
+    """The scope's buyer, said as the books name it."""
+    return party_name(ctx.state(), ctx.scope_customer)
+
+
+def _end(text: str) -> str:
+    """One full stop at the end: a buyer's name that ends in "Co." takes no second."""
+    return text.replace("..", ".") if text.endswith("..") else text
+
+
+def _row_buyer(ctx: NlContext, row: dict[str, Any]) -> str | None:
+    return row.get("buyer_id") or buyer_of_receivable(ctx.state(), row.get("receivable_id"))
+
+
+def _mine(ctx: NlContext, row: dict[str, Any]) -> bool:
+    """Whether a Home-read row belongs to the request's scope: its invoice when the scope names one, else its buyer. Everything when unscoped."""
+    if not _scoped(ctx):
+        return True
+    ctx.scope_read = "filtered"
+    if ctx.scope_invoice is not None and row.get("receivable_id"):
+        return bool(row["receivable_id"] == ctx.scope_invoice)
+    return _row_buyer(ctx, row) == ctx.scope_customer
+
+
+def _mine_approval(ctx: NlContext, a: dict[str, Any]) -> bool:
+    if not _scoped(ctx):
+        return True
+    ctx.scope_read = "filtered"
+    return a.get("buyer_name") == _who(ctx)
+
+
+def _mine_lots(ctx: NlContext, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The funding in transit that is against the scope's invoices (the Home read's rows are in the order of the unsettled lots)."""
+    if not _scoped(ctx):
+        return rows
+    ctx.scope_read = "filtered"
+    lots = sorted((x for x in ensure_lots(ctx.state()).lots if not x.settled), key=lambda x: (x.arrival_day, x.id))
+    if len(lots) != len(rows):
+        return []
+    return [row for row, lot in zip(rows, lots, strict=True)
+            if lot.receivable_id and (lot.receivable_id == ctx.scope_invoice if ctx.scope_invoice is not None
+                                      else buyer_of_receivable(ctx.state(), lot.receivable_id) == ctx.scope_customer)]
+
+
+def _next_due(ctx: NlContext, r: dict[str, Any], *, late_ok: bool = False) -> dict[str, Any] | None:
+    """The next payment due: the company's, or the scope's own (its invoice, or its buyer's earliest unpaid invoice not yet due; with `late_ok`
+    an invoice already late when it has none ahead)."""
+    if not _scoped(ctx):
+        return r.get("next_receipt")
+    ctx.scope_read = "filtered"
+    state = ctx.state()
+    mine = [x for x in state.receivables if x.status != "SETTLED" and x.face_fen > x.settled_fen
+            and (x.id == ctx.scope_invoice if ctx.scope_invoice is not None else x.counterparty_id == ctx.scope_customer)]
+    ahead = [x for x in mine if x.issue_day + x.terms_days >= ctx.day]
+    mine = ahead or (mine if late_ok else [])
+    if not mine:
+        return None
+    first = min(mine, key=lambda x: (x.issue_day + x.terms_days, x.id))
+    due = first.issue_day + first.terms_days
+    return {"receivable_id": first.id, "invoice": invoice_words(state, first.id, ctx.lang), "due_day": due,
+            "due_when": _when(due, ctx.day, ctx.lang), "face_fen": first.face_fen - first.settled_fen}
+
+
 # ---------------------------------------------------------------- CHANGES
 
 
@@ -124,7 +204,7 @@ def changes(ctx: NlContext) -> Turn:
     if away_:
         lines.append(t(ctx, f"- Time moved forward {_days(away)}, to today.", f"- 时间向前推进了 {away} 天，到今天。"))
     for row in events[:MAX_EVENTS]:
-        lines.append(f"- {_sentence(str(row.get('event_text') or row.get('text') or ''))} {_status_of(ctx, row)}")
+        lines.append(f"- {_sentence(_said(ctx, str(row.get('event_text') or row.get('text') or '')))} {_status_of(ctx, row)}")
     if len(events) > MAX_EVENTS:
         lines.append(t(ctx, f"- {len(events) - MAX_EVENTS} more are on the Activity page.",
                        f"- 另有 {len(events) - MAX_EVENTS} 项见“动态”页面。"))
@@ -142,25 +222,142 @@ def changes(ctx: NlContext) -> Turn:
 # ---------------------------------------------------------------- SHOW_STATUS reads
 
 
+_NUMBER_WORDS = ("Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten")
+
+
+def _count(n: int) -> str:
+    return _NUMBER_WORDS[n] if 0 <= n < len(_NUMBER_WORDS) else str(n)
+
+
+def _lower_first(text: str) -> str:
+    """"Rebate" -> "rebate", but "EBITDA" and a name stay as written."""
+    return text[:1].lower() + text[1:] if len(text) > 1 and text[0].isupper() and text[1].islower() else text
+
+
+def _topic(row: dict[str, Any]) -> str:
+    """What a queue row is about in a word or two ("Rebate"): its `topic_text`, else the part of its subject after the customer."""
+    return str(row.get("topic_text") or str(row.get("subject_text") or "").partition(" · ")[2]).strip()
+
+
+def _queue_mine(ctx: NlContext, row: dict[str, Any]) -> bool:
+    """Whether a Deals-queue row belongs to the request's scope: its invoice when the scope names one and the row has one, else its customer."""
+    if not _scoped(ctx):
+        return True
+    ctx.scope_read = "filtered"
+    if ctx.scope_invoice is not None and row.get("invoice_id"):
+        return bool(row["invoice_id"] == ctx.scope_invoice)
+    return bool(row.get("customer_id") == ctx.scope_customer)
+
+
+def _queue_parts(ctx: NlContext, who: str, rows: list[dict[str, Any]]) -> list[str]:
+    """The sentences' clauses for one customer's queue rows: what needs the owner, then what waits on the buyer or on FLOW's own funding."""
+    zh = ctx.lang == "zh"
+    parts: list[str] = []
+    replies = [r for r in rows if r["kind"] == "DECISION"]
+    if len(replies) == 1:
+        topic = _topic(replies[0])
+        parts.append(t(ctx, f"a reply to {who}{f' about the {_lower_first(topic)}' if topic else ''} needs you",
+                       f"{who}{f'关于{topic}' if topic else ''}的答复需要您处理"))
+    elif replies:
+        parts.append(t(ctx, f"{_count(len(replies)).lower()} replies to {who} need you", f"{who}有 {len(replies)} 项答复需要您处理"))
+    if any(r["kind"] == "SETUP" for r in rows):
+        parts.append(t(ctx, f"{who}'s contract needs your review", f"{who}的合同需要您审核"))
+    clarifying = [r for r in rows if r["kind"] == "BUYER_REPLY"]
+    if len(clarifying) == 1:
+        topic = _topic(clarifying[0])
+        parts.append(t(ctx, f"FLOW is waiting for {who}'s clarification{f' on the {_lower_first(topic)}' if topic else ''}",
+                       f"FLOW 正在等待{who}{f'就{topic}' if topic else ''}作出澄清"))
+    elif clarifying:
+        parts.append(t(ctx, f"FLOW is waiting for {who}'s clarification on {len(clarifying)} offers",
+                       f"FLOW 正在等待{who}就 {len(clarifying)} 项报价作出澄清"))
+    for r in rows:
+        if r["kind"] == "PROMISE":
+            status = _lower_first(str(r.get("status_text") or "")).replace(" · ", "，" if zh else ", ")
+            parts.append(t(ctx, f"{who}'s promised payment is {status}", f"{who}承诺的付款：{status}"))
+    return parts
+
+
 def waiting(ctx: NlContext) -> Turn:
-    """What is open: decisions waiting for the owner, a buyer's promised payment, money on its way, invoices unpaid."""
+    """What is open. The replies that need the owner and what waits on the buyer are the Deals queue's own rows (app/api/worklist.py `queue`), said
+    per customer ("Three replies to Foshan need you; FLOW is waiting for Foshan's clarification on the rebate."): a customer's own for a scope,
+    every customer's company-wide. Beside them, from the Home read: the approvals waiting for the owner (the company plan's too, which the queue
+    leaves to the alert), the funding in transit and the invoices still unpaid."""
+    h = _home(ctx)
+    q = ctx.reads.queue(ctx.lang) if ctx.reads is not None else None
+    if h is None or q is None:
+        return _unavailable(ctx, Intent.SHOW_STATUS)
+    r = h.get("receivables") or {}
+    zh = ctx.lang == "zh"
+    rows = [x for tier in ("needs_you", "waiting", "agreements") for x in q.get(tier) or []
+            if x["kind"] in ("DECISION", "SETUP", "BUYER_REPLY", "PROMISE") and _queue_mine(ctx, x)]
+    by_customer: dict[str, list[dict[str, Any]]] = {}
+    for x in rows:
+        by_customer.setdefault(str(x["customer_id"]), []).append(x)
+    lines: list[str] = []
+    for a in h.get("approvals") or []:
+        if _mine_approval(ctx, a):
+            lines.append(t(ctx, "Waiting for your decision: ", "等待您的决定：") + _approval_line(ctx, a))
+    for cid, group in by_customer.items():
+        parts = _queue_parts(ctx, group[0].get("customer_short") or party_name(ctx.state(), cid), group)
+        if parts:
+            lines.append(_sentence(("；" if zh else "; ").join([_cap(parts[0]), *parts[1:]])))
+    for lot in _mine_lots(ctx, ((h.get("cash") or {}).get("in_transit") or {}).get("lots") or []):
+        lines.append(t(ctx, f"Waiting for funding to land: {lot['headline']}.", f"等待资金到账：{lot['headline']}。"))
+    lines += [t(ctx, "Waiting for payment: ", "等待付款：") + _unpaid_line(ctx, x) for x in r.get("past_due") or [] if _mine(ctx, x)]
+    if not lines:
+        lines.append(_end(t(ctx, f"Nothing is waiting on you or on {_who(ctx)} right now.", f"目前没有在等待您或{_who(ctx)}的事项。"))
+                     if _scoped(ctx) else t(ctx, "Nothing is waiting on you or on anyone else right now.", "目前没有在等待您或其他方的事项。"))
+    return Turn(intent=Intent.SHOW_STATUS, reply="\n".join(lines))
+
+
+def owed(ctx: NlContext) -> Turn:
+    """"Who owes us money?": what each customer still owes, largest first, with how much of it is overdue and when the next payment is due, from the
+    books' unpaid invoices; the scope's own customer (or invoice) when the request has one. A promised early payment is said beside the customer
+    that made it. Nothing is sent to anyone."""
     h = _home(ctx)
     if h is None:
         return _unavailable(ctx, Intent.SHOW_STATUS)
-    r = h.get("receivables") or {}
-    lines: list[str] = []
-    for a in h.get("approvals") or []:
-        lines.append(t(ctx, "Waiting for your decision: ", "等待您的决定：") + _approval_line(ctx, a))
-    p = r.get("promised")
-    if p:
-        lines.append(t(ctx, f"Waiting for {p['buyer_name']} to pay {p['expected_display']} {p['when']}.",
-                       f"等待{p['buyer_name']}{p['when']}支付 {p['expected_display']}。"))
-    for lot in ((h.get("cash") or {}).get("in_transit") or {}).get("lots") or []:
-        lines.append(t(ctx, f"Waiting for funding to land: {lot['headline']}.", f"等待资金到账：{lot['headline']}。"))
-    lines += [t(ctx, "Waiting for payment: ", "等待付款：") + _unpaid_line(ctx, x) for x in r.get("past_due") or []]
-    if not lines:
-        lines.append(t(ctx, "Nothing is waiting on you or on anyone else right now.", "目前没有在等待您或其他方的事项。"))
-    return Turn(intent=Intent.SHOW_STATUS, reply="\n".join(lines))
+    state = ctx.state()
+    zh = ctx.lang == "zh"
+    unpaid = [x for x in state.receivables if x.status != "SETTLED" and x.face_fen > x.settled_fen
+              and _mine(ctx, {"receivable_id": x.id, "buyer_id": x.counterparty_id})]
+    if not unpaid:
+        return Turn(intent=Intent.SHOW_STATUS, reply=_end(
+            t(ctx, f"{_who(ctx)} owes you nothing right now.", f"{_who(ctx)}目前不欠您款项。") if _scoped(ctx)
+            else t(ctx, "Nobody owes you anything right now.", "目前没有客户欠您款项。")))
+    by_buyer: dict[str, list[Any]] = {}
+    for x in unpaid:
+        by_buyer.setdefault(x.counterparty_id, []).append(x)
+    promised = (h.get("receivables") or {}).get("promised")
+    rows = []
+    for cid, invoices in by_buyer.items():
+        total = sum(x.face_fen - x.settled_fen for x in invoices)
+        late = [x for x in invoices if x.issue_day + x.terms_days < ctx.day]
+        ahead = sorted((x for x in invoices if x.issue_day + x.terms_days >= ctx.day), key=lambda x: (x.issue_day + x.terms_days, x.id))
+        late_fen = sum(x.face_fen - x.settled_fen for x in late)
+        n = len(invoices)
+        name = party_name(state, cid)
+        bits = [t(ctx, f"{name} owes {fmt_yuan(total)} on {n} invoice{'' if n == 1 else 's'}",
+                  f"{name}欠 {fmt_yuan(total)}，共 {n} 张发票")]
+        if late:
+            oldest = min(late, key=lambda x: (x.issue_day + x.terms_days, x.id))
+            days = ctx.day - (oldest.issue_day + oldest.terms_days)
+            bits.append(t(ctx, f"{fmt_yuan(late_fen)} of it is overdue, the oldest by {_days(days)}",
+                          f"其中 {fmt_yuan(late_fen)} 已逾期，最久的逾期 {days} 天"))
+        if ahead:
+            due = ahead[0].issue_day + ahead[0].terms_days
+            bits.append(t(ctx, f"the next payment is due {_when(due, ctx.day, 'en')}", f"下一笔{_when(due, ctx.day, 'zh')}到期"))
+        if promised and promised.get("when") and buyer_of_receivable(state, promised.get("receivable_id")) == cid:
+            bits.append(t(ctx, f"{promised['buyer_name']} has promised {promised['expected_display']} {promised['when']}",
+                          f"{promised['buyer_name']}承诺{promised['when']}支付 {promised['expected_display']}"))
+        rows.append((-late_fen, -total, cid, _sentence(("，" if zh else ", ").join(bits))))
+    rows.sort()
+    grand = sum(x.face_fen - x.settled_fen for x in unpaid)
+    if _scoped(ctx):
+        return Turn(intent=Intent.SHOW_STATUS, reply="\n".join(r[3] for r in rows))
+    lead = t(ctx, f"{fmt_yuan(grand)} is owed to you across {len(rows)} customer{'' if len(rows) == 1 else 's'}.",
+             f"共有 {len(rows)} 位客户欠您款项，合计 {fmt_yuan(grand)}。")
+    return Turn(intent=Intent.SHOW_STATUS, reply="\n".join([lead, *(f"- {r[3]}" for r in rows)]))
 
 
 def arrival(ctx: NlContext) -> Turn:
@@ -169,17 +366,18 @@ def arrival(ctx: NlContext) -> Turn:
     if h is None:
         return _unavailable(ctx, Intent.SHOW_STATUS)
     r = h.get("receivables") or {}
-    lots = ((h.get("cash") or {}).get("in_transit") or {}).get("lots") or []
-    approvals = [a for a in h.get("approvals") or [] if a.get("lands_text")]
-    promised = r.get("promised")
+    lots = _mine_lots(ctx, ((h.get("cash") or {}).get("in_transit") or {}).get("lots") or [])
+    approvals = [a for a in h.get("approvals") or [] if a.get("lands_text") and _mine_approval(ctx, a)]
+    promised = r.get("promised") if r.get("promised") and _mine(ctx, r["promised"]) else None
     lines = [_sentence(str(lot["headline"])) for lot in lots]
     lines += [_join([str(a["headline"]), str(a["lands_text"])], ctx.lang == "zh") for a in approvals]
     if promised:
         lines.append(t(ctx, f"{promised['buyer_name']} has promised {promised['expected_display']} {promised['when']}.",
                        f"{promised['buyer_name']}承诺{promised['when']}支付 {promised['expected_display']}。"))
     if not (lots or approvals or promised):
-        lines.append(t(ctx, "No funding is on its way.", "目前没有在途资金。"))
-    nxt = r.get("next_receipt")
+        lines.append(_end(t(ctx, f"No funding is on its way for {_who(ctx)}.", f"目前没有与{_who(ctx)}相关的在途资金。")) if _scoped(ctx)
+                     else t(ctx, "No funding is on its way.", "目前没有在途资金。"))
+    nxt = _next_due(ctx, r)
     if nxt:
         lines.append(t(ctx, f"The next payment due is {nxt['invoice']}, {nxt['due_when']}.",
                        f"下一笔到期的款项是{nxt['invoice']}，{nxt['due_when']}到期。"))
@@ -197,16 +395,20 @@ def receivables(ctx: NlContext) -> Turn:
     if h is None:
         return _unavailable(ctx, Intent.RECONCILE)
     r = h.get("receivables") or {}
-    late = sorted(r.get("past_due") or [], key=lambda x: (-int(x.get("face_fen") or 0), -int(x.get("days_late") or 0)))
+    late = sorted((x for x in r.get("past_due") or [] if _mine(ctx, x)),
+                  key=lambda x: (-int(x.get("face_fen") or 0), -int(x.get("days_late") or 0)))
     if not late:
-        nxt = r.get("next_receipt")
+        nxt = _next_due(ctx, r)
         tail = (t(ctx, f" The next payment due is {nxt['invoice']}, {nxt['due_when']}.",
                   f"下一笔到期的款项是{nxt['invoice']}，{nxt['due_when']}到期。") if nxt else "")
-        return Turn(intent=Intent.RECONCILE, reply=t(ctx, "Nothing is overdue.", "目前没有逾期款项。") + tail)
+        none = (_end(t(ctx, f"Nothing is overdue from {_who(ctx)}.", f"{_who(ctx)}目前没有逾期款项。")) if _scoped(ctx)
+                else t(ctx, "Nothing is overdue.", "目前没有逾期款项。"))
+        return Turn(intent=Intent.RECONCILE, reply=none + tail)
     first = late[0]
-    lines = [t(ctx, f"{r['overdue_total_display']} is overdue across {len(late)} invoice{'' if len(late) == 1 else 's'} "
-                    f"({r['open_total_display']} is open in all).",
-               f"共有 {len(late)} 张发票逾期，合计 {r['overdue_total_display']}（未收总额 {r['open_total_display']}）。"),
+    total = fmt_yuan(sum(int(x.get("face_fen") or 0) for x in late)) if _scoped(ctx) else r["overdue_total_display"]
+    lines = [t(ctx, f"{total} is overdue across {len(late)} invoice{'' if len(late) == 1 else 's'}"
+                    + ("." if _scoped(ctx) else f" ({r['open_total_display']} is open in all)."),
+               f"共有 {len(late)} 张发票逾期，合计 {total}" + ("。" if _scoped(ctx) else f"（未收总额 {r['open_total_display']}）。")),
              t(ctx, f"Chase {first['buyer_name']} first: {first['invoice']}, due {first['due_when']} "
                     f"({_days(int(first['days_late']))} late). It is the largest overdue amount.",
                f"请先催{first['buyer_name']}：{first['invoice']}，{first['due_when']}到期（已逾期 {first['days_late']} 天），"
@@ -231,6 +433,13 @@ def late_payment(ctx: NlContext) -> Turn:
     pay: dict[str, Any] | None = None
     bound = ctx.binding.invoice_id if ctx.binding is not None else None
     inv = next((x for x in state.receivables if x.id == bound and x.status != "SETTLED"), None)
+    if inv is None and _scoped(ctx):  # a customer's late payment is about its own next unpaid invoice, never the company's
+        nxt = _next_due(ctx, r, late_ok=True)
+        inv = next((x for x in state.receivables if nxt is not None and x.id == nxt["receivable_id"]), None)
+        if inv is None:
+            return Turn(intent=Intent.WHAT_IF, reply=t(
+                ctx, f"No payment is due from {_who(ctx)}, so there is nothing to be late. I have not changed anything.",
+                f"{_who(ctx)}目前没有到期的款项，因此不存在延迟付款。我没有更改任何内容。"))
     if inv is not None:
         buyer = next((c.name for c in state.counterparties if c.id == inv.counterparty_id), inv.counterparty_id)
         left = inv.face_fen - inv.settled_fen

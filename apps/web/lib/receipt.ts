@@ -1,27 +1,20 @@
 import { receiptLines } from "@/components/ui/commitment-receipt-model";
-import type { CommitmentReceiptView, PicturePath, VerdictView } from "./types";
+import type { CommitmentReceiptView, PicturePath, PricedResponse, VerdictView } from "./types";
 
 /**
- * The commitment receipt for sending a reply (ticket #128): the server's block on the priced response of the evaluation the review was read from (`workspace.priced_response.receipt`),
- * for the very counter it prices. Any other reply (one the owner picked from the comparison) has no receipt of its own yet, and a server that sends none gives none: the words the
- * path already carries then stand (what the reply says, who decides, what it costs and on what basis, what it assumes). Nothing is computed; a line without a word is absent.
+ * The commitment receipt for sending a reply (tickets #128, slice B fixes): the server's block on THAT reply's priced response. The evaluation the review was read from sends one
+ * `workspace.priced_responses` entry per sendable counter, each with its own `receipt` (`counter_id` is the picture path's key); the review of any path reads its own entry. A
+ * server that sends the single `priced_response` (the first reply) is read the same way, as a list of one. Nothing is composed from the path's own words: a reply the server did not
+ * price has no receipt, the review says so and offers no Send. A line without a word is absent (`receiptLines`).
  */
-export function receiptOfSend(path: PicturePath, verdict: VerdictView | null | undefined): CommitmentReceiptView {
-  const priced = verdict?.workspace?.priced_response;
-  if (priced && priced.counter_id === path.key && priced.receipt && receiptLines(priced.receipt).length) return priced.receipt;
-  return {
-    authorizes_text: path.reply_text ?? null,
-    // The cost figure and, on the next line, the server's words for what it is (once, net over twelve months).
-    fees_display: costWithBasis(path),
-    assumptions_text: path.scenario_assumption_text ?? path.assumption_text ?? null,
-    authority_text: path.decides_text || path.authority_text || null,
-  };
+export function pricedFor(path: Pick<PicturePath, "key">, verdict: VerdictView | null | undefined): PricedResponse | null {
+  const w = verdict?.workspace;
+  const list = w?.priced_responses ?? (w?.priced_response ? [w.priced_response] : []);
+  return list.find((p) => p.counter_id === path.key) ?? null;
 }
 
-/** A path's cost figure with the server's basis words after a line break (the receipt draws the second line quietly); null when the path has no cost figure. */
-function costWithBasis(path: PicturePath): string | null {
-  const figure = path.cost_once_display ?? path.cost_total_display ?? null;
-  if (!figure) return null;
-  const basis = path.cost_basis_text ?? path.cost_note;
-  return basis ? `${figure}\n${basis}` : figure;
+/** The server's receipt for this reply, or null when it sent none (or an empty one). */
+export function receiptOfSend(path: Pick<PicturePath, "key">, verdict: VerdictView | null | undefined): CommitmentReceiptView | null {
+  const receipt = pricedFor(path, verdict)?.receipt;
+  return receipt && receiptLines(receipt).length ? receipt : null;
 }

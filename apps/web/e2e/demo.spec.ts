@@ -54,7 +54,7 @@ test("one filled next control at every step of the walk; the owner's step only o
       await expect(page.getByTestId("demo-owner-text")).toBeVisible();
       await expect(page.getByTestId("demo-scene-owner")).toHaveAttribute("data-state", "current");
       await next(page).click();
-      const approve = page.getByRole("button", { name: /^Approve/ });
+      const approve = page.getByRole("button", { name: /^(Approve|Authorize)/ });
       await expect(approve).toBeVisible();
       // The test is the owner here: the one click on the approval card.
       await approve.click();

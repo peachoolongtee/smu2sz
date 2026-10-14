@@ -290,7 +290,16 @@
     },
     "partial": null,
     "last_read_when": "today",
-    "last_read_day": 34
+    "last_read_day": 34,
+    "context": {
+      "customer": null,
+      "decision": null,
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
   },
   "zh": {
     "day": 34,
@@ -583,6 +592,15 @@
     },
     "partial": null,
     "last_read_when": "今天",
-    "last_read_day": 34
+    "last_read_day": 34,
+    "context": {
+      "customer": null,
+      "decision": null,
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": null,
+      "irrelevant_text": null
+    }
   }
 }

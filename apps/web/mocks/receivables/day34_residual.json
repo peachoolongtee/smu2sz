@@ -49,6 +49,9 @@
       },
       "net_short": "about ¥420k",
       "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "breakdown": [],
+      "net_after_repayment_display": "about ¥420k",
+      "collection_due_text": "6 days overdue",
       "financing_state": "NONE",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -131,6 +134,20 @@
       },
       "net_short": "about ¥264k",
       "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "breakdown": [
+        {
+          "label": "Invoice financing repayment",
+          "amount_display": "¥156,395.12",
+          "share_text": "37%"
+        },
+        {
+          "label": "Cash remaining",
+          "amount_display": "¥263,604.88",
+          "share_text": "63%"
+        }
+      ],
+      "net_after_repayment_display": "about ¥264k",
+      "collection_due_text": "In 9 days",
       "financing_state": "RECEIVED",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -209,6 +226,9 @@
       },
       "net_short": "about ¥420k",
       "recourse_text": "If the receipt falls short, what is left is owed by you.",
+      "breakdown": [],
+      "net_after_repayment_display": "about ¥420k",
+      "collection_due_text": "In 39 days",
       "financing_state": "NONE",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -270,5 +290,14 @@
   "partial": null,
   "last_read_when": "today",
   "last_read_day": 38,
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  },
   "computed_in_seconds": 0
 }

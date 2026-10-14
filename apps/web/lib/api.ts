@@ -76,6 +76,8 @@ import type {
   VerdictView,
   WhatIfParams,
   WhatIfResult,
+  WhatIfScope,
+  WhatIfUnscoped,
   WorklistView,
 } from "./types";
 
@@ -110,8 +112,8 @@ export async function submitOffer(req: SubmitOfferRequest): Promise<OfferView> {
 }
 
 /** GET /offers/{id} (owner): the offer, its documents, the latest verdict id and the deal's record id. A 404 means the server does not know the offer. */
-export async function getOffer(offerId: string): Promise<OfferView> {
-  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId);
+export async function getOffer(offerId: string, lang: "en" | "zh" = "en"): Promise<OfferView> {
+  return isMock ? (await mock()).getOffer(offerId) : (await live()).getOffer(offerId, lang);
 }
 
 /** POST /offers/{id}/evaluate. `fixtureId` lets the server use the owner-declared costs of a demo fixture. */
@@ -383,8 +385,13 @@ export function alertChanged(e: unknown): AlertChangedDetail | null {
   return d && d.code === "ALERT_CHANGED" ? (d as AlertChangedDetail) : null;
 }
 
+/** GET /whatif/presets?offer_id=: whether the sandbox can act on the negotiation's buyer, and on which invoice, before any slider is sent. Null in the mock (one recorded sandbox) and from a server without the route. */
+export async function whatIfScope(offerId: string, lang: "en" | "zh" = "en"): Promise<WhatIfScope | null> {
+  return isMock ? null : (await live()).whatIfScope(offerId, lang).catch(() => null);
+}
+
 /** POST /whatif: a hypothetical verdict for slider positions. Display-only; nothing is booked or executed. */
-export async function whatIf(params: WhatIfParams, scope: { customer?: string | null; decision?: string | null } = {}): Promise<WhatIfResult> {
+export async function whatIf(params: WhatIfParams, scope: { offerId?: string | null; lang?: "en" | "zh" } = {}): Promise<WhatIfResult | WhatIfUnscoped> {
   return isMock ? (await mock()).whatIf(params) : (await live()).whatIf(params, scope);
 }
 

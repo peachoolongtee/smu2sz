@@ -17,7 +17,8 @@ import {
 } from "@/components/whatif-results";
 import { Disclosure } from "@/components/business/kit";
 import { Badge, Callout, EmptyState, ErrorState, LoadingBlock, PageHeader, ButtonLink } from "@/components/ui";
-import { getClock, getDeals, getOffer, getState, getWorklist } from "@/lib/api";
+import { getClock, getDeals, getOffer, getState, getWorklist, whatIfScope } from "@/lib/api";
+import type { WhatIfResult } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
 import { offerOf, readSelection, selectionHref } from "@/lib/selection";
 import type { WhatIfParams } from "@/lib/types";
@@ -44,16 +45,17 @@ function WhatIf() {
   const params = useSearchParams();
   const sel = readSelection(params);
   const decision = sel.decision ?? null;
-  return decision ? <Run key={decision} decision={decision} customer={sel.customer ?? null} /> : <Ask customer={sel.customer ?? null} lang={lang} t={t} />;
+  // (keyed by the language too: the server words the invoice and the labels in the language it was asked in)
+  return decision ? <Run key={`${decision}|${lang}`} decision={decision} customer={sel.customer ?? null} /> : <Ask customer={sel.customer ?? null} lang={lang} t={t} />;
 }
 
-/** No negotiation named: ask which one, from the queue's own rows (one per negotiation). */
+/** No negotiation named: ask which one, from the queue's own rows that are negotiations (kind DECISION: a loan approval, a promise or an agreement is not one, though it may carry a record id). */
 function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"; t: ReturnType<typeof useI18n>["t"] }) {
   const deals = useAsync(() => getDeals(lang, {}).catch(() => null), [lang]);
   const needWorklist = deals.data !== undefined && !deals.data?.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang).catch(() => null) : Promise.resolve(null)), [lang, needWorklist]);
   const queue = deals.data === undefined || (needWorklist && worklist.data === undefined) ? undefined : buildQueue(deals.data, worklist.data, null, { agreedTerms: (x: string) => x, agreedRef: (x: string) => x });
-  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
+  const open = queue ? taskRows(queue).filter((x) => x.tier !== "agreements" && (x.row.kind === "DECISION" || x.row.kind === "BUYER_REPLY") && rowDecision(x.row) && (!customer || x.row.customer_id === customer)) : [];
   return (
     <>
       <PageHeader title={t("whatif.title")} subtitle={t("whatif.ask.sub")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
@@ -89,10 +91,12 @@ function Ask({ customer, lang, t }: { customer: string | null; lang: "en" | "zh"
 
 /** A negotiation named: the sandbox opens on its terms. */
 function Run({ decision, customer }: { decision: string; customer: string | null }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const offerId = offerOf(decision);
   const offer = useAsync(async () => ({ offerId, view: offerId ? await getOffer(offerId).catch(() => null) : null }), [offerId]);
   const books = useAsync(getState, []);
+  // Whether the sandbox can act on this buyer at all, before any slider is sent (a buyer with no recurring invoice has no terms to start from).
+  const scope = useAsync(async () => ({ offerId, scope: offerId ? await whatIfScope(offerId, lang) : null }), [offerId, lang]);
   const record = useDecision(decision);
   const read = offer.data && offer.data.offerId === offerId ? offer.data : undefined;
   const buyerId = read?.view?.offer.counterparty_id ?? null;
@@ -114,16 +118,39 @@ function Run({ decision, customer }: { decision: string; customer: string | null
   if (offer.error) return <ErrorState error={offer.error} onRetry={offer.reload} />;
   if (!read || !books.data) return books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : <LoadingBlock rows={4} />;
   if (!read.view || mismatch) return ask(t("deals.irrelevant"));
+  if (!scope.data || scope.data.offerId !== offerId) return scope.error ? <ErrorState error={scope.error} onRetry={scope.reload} /> : <LoadingBlock rows={4} />;
+  if (scope.data.scope && scope.data.scope.available === false) {
+    const s = scope.data.scope;
+    return (
+      <>
+        <PageHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
+        <p className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="whatif-scope">
+          <span className="font-bold text-ink">{t("whatif.scope")}</span>
+          <span>{record.data?.headline ?? record.data?.counterparty_name ?? ""}</span>
+          {s.invoice_text ? <span data-testid="whatif-invoice">{s.invoice_text}</span> : null}
+          <Link href={`/deals?decision=${encodeURIComponent(decision)}${buyerId ? `&customer=${encodeURIComponent(buyerId)}` : ""}&from=whatif`} className="font-bold text-brand-700 underline underline-offset-2" data-testid="whatif-scope-back">
+            {t("whatif.scope.back")}
+          </Link>
+        </p>
+        <div className="max-w-2xl" data-testid="whatif-unscoped">
+          <Callout tone="warn">{s.scope_text}</Callout>
+        </div>
+      </>
+    );
+  }
   return <Sandbox decision={decision} customer={buyerId} start={startOf(read.view, books.data)} title={record.data?.headline ?? record.data?.counterparty_name ?? null} />;
 }
 
 function Sandbox({ decision, customer, start, title }: { decision: string; customer: string | null; start: WhatIfParams; title: string | null }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [params, setParams] = useState<WhatIfParams>(start);
-  const { result, error, loading, reload } = useWhatIf(params, { customer, decision });
+  const { result: answer, error, loading, reload } = useWhatIf(params, { offerId: offerOf(decision), lang });
   // Days are said as distances from the simulated today.
   const clock = useAsync(getClock, []);
   const today = clock.data?.day ?? 0;
+  // The server says which invoice it ran on (`invoice_text`), or why the buyer has none the sandbox can act on (`scope_text`, with no verdict and no controls).
+  const unscoped = answer && answer.available === false ? answer : null;
+  const result: WhatIfResult | undefined = answer && answer.available !== false ? answer : undefined;
   const near = result?.mock_nearest;
   // The server says what it ran for (`context`): another customer than the one asked about is shown, not hidden, and a selection it cannot honour asks again.
   const ran = result?.context ?? null;
@@ -147,20 +174,31 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
   return (
     <>
       <PageHeader title={t("whatif.title")} subtitle={t("whatif.subtitle")} actions={<Badge tone="info">{t("whatif.hypothetical")}</Badge>} />
-      <p className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2" data-testid="whatif-scope">
+      <p className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-ink-2 ${result?.scope_text || result?.compare_text ? "mb-1" : "mb-4"}`} data-testid="whatif-scope">
         <span className="font-bold text-ink">{t("whatif.scope")}</span>
         <span>{title ?? ""}</span>
+        {(result ?? unscoped)?.invoice_text ? <span data-testid="whatif-invoice">{(result ?? unscoped)?.invoice_text}</span> : null}
         <Link href={`/deals?decision=${encodeURIComponent(decision)}${customer ? `&customer=${encodeURIComponent(customer)}` : ""}&from=whatif`} className="font-bold text-brand-700 underline underline-offset-2" data-testid="whatif-scope-back">
           {t("whatif.scope.back")}
         </Link>
       </p>
+      {result?.scope_text || result?.compare_text ? (
+        <div className="mb-4 max-w-[68ch] space-y-1 text-sm text-ink-2">
+          {result.scope_text ? <p data-testid="whatif-scope-text">{result.scope_text}</p> : null}
+          {result.compare_text ? <p data-testid="whatif-compare">{result.compare_text}</p> : null}
+        </div>
+      ) : null}
       {other ? (
         <div className="mb-4" data-testid="whatif-scope-mismatch">
           <Callout tone="warn">{t("whatif.scope.mismatch")}</Callout>
         </div>
       ) : null}
 
-      {!result ? (
+      {unscoped ? (
+        <div className="max-w-2xl" data-testid="whatif-unscoped">
+          <Callout tone="warn">{unscoped.scope_text}</Callout>
+        </div>
+      ) : !result ? (
         error ? (
           <ErrorState error={error} onRetry={reload} />
         ) : (
@@ -183,7 +221,7 @@ function Sandbox({ decision, customer, start, title }: { decision: string; custo
                 })}
               </Callout>
             ) : null}
-            <WhatIfSummaryCard r={result} loading={loading} today={today} />
+            <WhatIfSummaryCard r={result} loading={loading} />
             <WhatIfCashCard r={result} today={today} />
             <Disclosure className="border-t border-line pt-1" summary={t("whatif.details")} testId="whatif-details">
               <div className="space-y-6">

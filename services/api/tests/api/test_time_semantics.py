@@ -236,10 +236,10 @@ def test_after_a_partial_receipt_the_change_says_what_arrived(client):
     assert not any("did not arrive" in c["text"] for c in changes)
     assert not any("CMT-" in c["text"] for c in changes)
     overdue = next(c for c in changes if c["kind"] == "LATE" and not c.get("window_state"))
-    assert overdue["text"] == "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN."
+    assert overdue["text"] == "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid."
     warnings = client.get("/home").json()["warnings"]
     assert next(w["detail"] for w in warnings) == (
-        "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. "
+        "¥291,400.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. "
         "The cash forecast no longer counts on a dated receipt.")
     assert not any("CMT-" in w["title"] + w["detail"] for w in warnings)
 
@@ -273,9 +273,9 @@ def test_a_queued_agreement_carries_its_terms_and_the_buyer(client):
     assert p["counterparty_name"] == "Foshan Home Retail Co."
     # a zero forward value is not "free": no figure, and the economic effect said in words
     assert p["forward_value_display"] is None
-    assert p["economic_effect_text"] == "No cost over the valuation window beyond the early-payment discount."
+    assert p["economic_effect_text"] == "No cost over the next 12 months beyond the early-payment discount."
     assert p["what_you_agree_to"] == p["terms"][0] + "."
-    assert p["headline"] == "Approve this agreement with Foshan Home Retail Co.?"
+    assert p["headline"] == "Record the agreement with Foshan Home Retail Co."
     assert p["amount_display"] == "¥420,000.00" and row["amount_display"] == "¥420,000.00"
     assert "¥0.00" not in p["what"] and "Accept offer" not in p["what"]
     assert p["lands_text"] is None and p["residual"] is None
@@ -416,7 +416,7 @@ def test_option_b_of_the_package_reads_as_terms_not_as_an_invoice_amount(client)
     queued = _queue_counter(client, 1)
     assert queued["result"]["status"] == "PENDING_APPROVAL"
     p = queued["row"]["presentation"]
-    assert p["terms_available"] is True and p["headline"] == "Approve this agreement with Foshan Home Retail Co.?"
+    assert p["terms_available"] is True and p["headline"] == "Record the agreement with Foshan Home Retail Co."
     assert p["terms"] == ["The buyer gets 55-day payment terms on future invoices (ongoing, no end date)",
                           "The price changes by 0.30% on future invoices (ongoing, no end date)"]
     assert p["amount_display"] is None and queued["row"]["amount_display"] is None  # the bases are not invoices

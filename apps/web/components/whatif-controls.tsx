@@ -64,7 +64,7 @@ function Slider({
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-2 h-2 w-full cursor-pointer accent-brand-600 touch:h-11 disabled:cursor-not-allowed"
       />
-      {hint ? <p className="mt-1 text-meta text-ink-3">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-supporting text-ink-3">{hint}</p> : null}
     </div>
   );
 }
@@ -153,7 +153,7 @@ export function WhatIfControlsCard({
               onChange={(e) => set({ settle_face_fen: e.target.checked ? middle.fen : null })}
               className="size-4 accent-brand-600"
             />
-            {t("whatif.partial", { id: controls.receivable_id })}
+            {t("whatif.partial")}
           </label>
           {partial ? (
             <div className="mt-2">
@@ -168,7 +168,7 @@ export function WhatIfControlsCard({
               />
             </div>
           ) : (
-            <p className="mt-1 text-meta text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
+            <p className="mt-1 text-supporting text-ink-3">{t("whatif.face.whole", { face: controls.receivable_face_display })}</p>
           )}
         </div>
         <Slider

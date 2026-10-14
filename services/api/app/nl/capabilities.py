@@ -17,11 +17,13 @@ from fractions import Fraction
 
 from app.alerts import (
     AlertKind,
+    OutstandingReceivable,
     PromiseStatus,
     alerts,
     covenant_limits,  # the covenant thresholds as the covenant alerts take them
     reconcile,
 )
+from app.api.presentation import buyer_of_receivable, invoice_words, party_name
 from app.borrower_file import BorrowerFileError, build, remember
 from app.capex import CapexDisabled, CapexRequest, CapexResult, CapexStructure, evaluate_capex
 from app.capex.models import CHARGES_BASIS
@@ -159,40 +161,112 @@ def compare_financing(ctx: NlContext) -> Turn:
 # ---------------------------------------------------------------- RECONCILE
 
 
+def _in_scope(ctx: NlContext, receivable_id: str | None, counterparty_id: str | None) -> bool:
+    """Whether a reconciliation row belongs to the request's scope: its invoice when the scope names one, else its buyer. Everything when unscoped."""
+    if ctx.scope_customer is None:
+        return True
+    ctx.scope_read = "filtered"
+    if ctx.scope_invoice is not None:
+        return receivable_id == ctx.scope_invoice
+    return (counterparty_id or buyer_of_receivable(ctx.state(), receivable_id)) == ctx.scope_customer
+
+
+def _business_when(day: int, today: int, lang: str) -> str:
+    n = day - today
+    if lang == "zh":
+        return "今天" if n == 0 else (f"{n} 天后" if n > 0 else f"{-n} 天前")
+    days = "1 day" if abs(n) == 1 else f"{abs(n)} days"
+    return "today" if n == 0 else (f"in {days}" if n > 0 else f"{days} ago")
+
+
 def reconcile_receipts(ctx: NlContext) -> Turn:
+    """The receipts reconciliation: the scope's own rows when the request has a scope, and in Business mode in the owner's words (the buyer's
+    name for an id, a distance from today for a day number, no status code)."""
     if not get_settings().features.alerts:
         return _off(ctx, Intent.RECONCILE, "FEATURE_ALERTS")
+    from app.nl import business
+
+    biz = business.active(ctx)
+    zh = ctx.lang == "zh"
+    state = ctx.state()
     rep = reconcile(ctx.store, day=ctx.day)
-    lines = [t(ctx, f"Reconciliation to day {rep.as_of_day}: {rep.matched} receipt(s) matched, {rep.flagged} flagged; "
-                    f"received {fmt_yuan(rep.received_total_fen)} of {fmt_yuan(rep.expected_total_fen)} expected.",
-               f"截至第 {rep.as_of_day} 天对账：{rep.matched} 笔回款匹配，{rep.flagged} 笔有异常；"
-               f"实收 {fmt_yuan(rep.received_total_fen)}，应收 {fmt_yuan(rep.expected_total_fen)}。")]
-    for m in [m for m in rep.receipts if m.flagged][:MAX_FLAGGED]:
+    receipts = [m for m in rep.receipts if _in_scope(ctx, m.receivable_id, m.counterparty_id)]
+    promised = [p for p in rep.promised if _in_scope(ctx, p.receivable_id, p.counterparty_id)]
+    out = sorted((o for o in rep.outstanding if _in_scope(ctx, o.receivable_id, o.counterparty_id)),
+                 key=lambda o: (not o.past_due, o.due_day, o.receivable_id))
+    scoped = ctx.scope_customer is not None
+    matched, flagged = (len(receipts) - sum(1 for m in receipts if m.flagged), sum(1 for m in receipts if m.flagged)) if scoped \
+        else (rep.matched, rep.flagged)
+    received = sum(m.received_fen for m in receipts) if scoped else rep.received_total_fen
+    expected = sum(m.expected_fen or 0 for m in receipts) if scoped else rep.expected_total_fen
+    who = party_name(state, ctx.scope_customer) if scoped else ""
+
+    def inv(receivable_id: str) -> str:
+        return invoice_words(state, receivable_id, "zh" if zh else "en")
+
+    sums = t(ctx, f"{matched} receipt(s) matched, {flagged} flagged; received {fmt_yuan(received)} of {fmt_yuan(expected)} expected.",
+             f"{matched} 笔回款匹配，{flagged} 笔有异常；实收 {fmt_yuan(received)}，应收 {fmt_yuan(expected)}。")
+    if biz:
+        head = t(ctx, "Checked against today's books: ", "按今天的账目核对：") + sums
+        if scoped:
+            head = t(ctx, f"Checked against today's books for {who}: ", f"按今天的账目核对{who}：") + sums
+    else:
+        head = t(ctx, f"Reconciliation to day {rep.as_of_day}: ", f"截至第 {rep.as_of_day} 天对账：") + sums
+    lines = [head]
+    for m in [m for m in receipts if m.flagged][:MAX_FLAGGED]:
         ref = m.bank_reference
+        if biz:
+            detail = ctx.reads.words(m.detail, ctx.lang) if ctx.reads is not None else m.detail
+            lines.append(t(ctx, f"- Flagged: {inv(m.receivable_id)}{f' (bank reference {ref})' if ref else ''}, {fmt_yuan(m.received_fen)} received. {detail}",
+                           f"- 异常：{inv(m.receivable_id)}{f'（银行流水号 {ref}）' if ref else ''}，已收 {fmt_yuan(m.received_fen)}。{detail}"))
+            continue
         lines.append(t(ctx, f"- Flagged: {m.receivable_id}{f' (bank ref {ref})' if ref else ''} {fmt_yuan(m.received_fen)}: "
                             f"{m.status.value}. {m.detail}",
                        f"- 异常：{m.receivable_id}{f'（银行流水号 {ref}）' if ref else ''} {fmt_yuan(m.received_fen)}："
                        f"{m.status.value}。{m.detail}"))
-    if rep.promised:
-        counts = {s: sum(1 for p in rep.promised if p.status == s) for s in PromiseStatus}
-        lines.append(t(ctx, "Promised early payments: " + ", ".join(f"{s.value} {n}" for s, n in counts.items() if n) + ".",
-                       "承诺的提前付款：" + "，".join(f"{s.value} {n}" for s, n in counts.items() if n) + "。"))
-        for p in [p for p in rep.promised if p.status == PromiseStatus.LAPSED]:
+    if promised:
+        counts = {s: sum(1 for p in promised if p.status == s) for s in PromiseStatus}
+        words = {PromiseStatus.AWAITED: ("awaited", "等待中"), PromiseStatus.RECEIVED: ("received", "已收到"),
+                 PromiseStatus.LAPSED: ("lapsed", "已逾期"), PromiseStatus.SETTLED_OTHERWISE: ("settled another way", "已另行结清")}
+        if biz:
+            en = ", ".join(f"{n} {words[s][0]}" for s, n in counts.items() if n)
+            cn = "，".join(f"{n} 笔{words[s][1]}" for s, n in counts.items() if n)
+        else:
+            en = ", ".join(f"{s.value} {n}" for s, n in counts.items() if n)
+            cn = "，".join(f"{s.value} {n}" for s, n in counts.items() if n)
+        lines.append(t(ctx, f"Promised early payments: {en}.", f"承诺的提前付款：{cn}。"))
+        for p in [p for p in promised if p.status == PromiseStatus.LAPSED]:
+            if biz:
+                detail = ctx.reads.words(p.detail, ctx.lang) if ctx.reads is not None else p.detail
+                for_day_en = f" for {_business_when(p.promised_day, ctx.day, 'en')}" if p.promised_day is not None else ""
+                for_day_zh = _business_when(p.promised_day, ctx.day, "zh") if p.promised_day is not None else ""
+                lines.append(t(ctx, f"- Lapsed: {inv(p.receivable_id)}, {fmt_yuan(p.expected_fen)} promised{for_day_en}. {detail}",
+                               f"- 已逾期：{inv(p.receivable_id)}，承诺{for_day_zh}支付 {fmt_yuan(p.expected_fen)}。{detail}"))
+                continue
             lines.append(t(ctx, f"- Lapsed: {p.receivable_id} ({p.counterparty_id}), {fmt_yuan(p.expected_fen)} promised for "
                                 f"day {p.promised_day}. {p.detail}",
                            f"- 已逾期：{p.receivable_id}（{p.counterparty_id}），承诺第 {p.promised_day} 天支付 "
                            f"{fmt_yuan(p.expected_fen)}。{p.detail}"))
-    out = sorted(rep.outstanding, key=lambda o: (not o.past_due, o.due_day, o.receivable_id))
     if out:
-        shown = "; ".join(
-            f"{o.receivable_id} ({o.counterparty_id}) {fmt_yuan(o.face_fen)} due day {o.due_day}"
-            + (" past due" if o.past_due else "") for o in out[:MAX_OUTSTANDING])
-        shown_zh = "；".join(
-            f"{o.receivable_id}（{o.counterparty_id}）{fmt_yuan(o.face_fen)}，第 {o.due_day} 天到期"
-            + ("，已逾期" if o.past_due else "") for o in out[:MAX_OUTSTANDING])
         more = len(out) - MAX_OUTSTANDING
+        if biz:
+            def one(o: OutstandingReceivable) -> tuple[str, str]:
+                days = abs(o.due_day - ctx.day)
+                if o.past_due:
+                    return (f"{inv(o.receivable_id)}, {days} day{'' if days == 1 else 's'} overdue", f"{inv(o.receivable_id)}，已逾期 {days} 天")
+                return (f"{inv(o.receivable_id)}, due {_business_when(o.due_day, ctx.day, 'en')}",
+                        f"{inv(o.receivable_id)}，{_business_when(o.due_day, ctx.day, 'zh')}到期")
+            rows = [one(o) for o in out[:MAX_OUTSTANDING]]
+            shown, shown_zh = "; ".join(x[0] for x in rows), "；".join(x[1] for x in rows)
+        else:
+            shown = "; ".join(f"{o.receivable_id} ({o.counterparty_id}) {fmt_yuan(o.face_fen)} due day {o.due_day}"
+                              + (" past due" if o.past_due else "") for o in out[:MAX_OUTSTANDING])
+            shown_zh = "；".join(f"{o.receivable_id}（{o.counterparty_id}）{fmt_yuan(o.face_fen)}，第 {o.due_day} 天到期"
+                                + ("，已逾期" if o.past_due else "") for o in out[:MAX_OUTSTANDING])
         lines.append(t(ctx, f"Outstanding receivables, past due first: {shown}" + (f" and {more} more" if more > 0 else "") + ".",
                        f"未收应收款（逾期优先）：{shown_zh}" + (f"，另有 {more} 笔" if more > 0 else "") + "。"))
+    elif scoped:
+        lines.append(t(ctx, f"{who} has no receivable outstanding.", f"{who}目前没有未收的应收款。").replace("..", "."))
     else:
         lines.append(t(ctx, "No receivable is outstanding.", "没有未收的应收款。"))
     lines.append(t(ctx, "The audit chain verifies." if rep.chain_valid else "The audit chain does NOT verify.",

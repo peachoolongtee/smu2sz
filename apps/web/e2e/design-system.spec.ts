@@ -434,11 +434,13 @@ test("the owner's mockup tokens: the canvas app-wide, the palette and its dark p
   expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
   expect(await active.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
   expect(await nav.getByRole("link", { name: "Deals", exact: true }).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
-  // Ask FLOW is a quiet outline pill, not a second filled button.
-  const ask = page.getByTestId("chat-open");
+  // Ask FLOW is a quiet outlined input in the header (round two), not a floating pill and not a second filled button; a phone keeps the bar's cell.
+  const ask = page.getByTestId("ask-header");
   expect(await ask.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
   expect(await ask.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("1px");
-  expect(await ask.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(36, 50, 74)");
+  expect(await ask.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("9999px");
+  expect(await page.getByTestId("ask-input").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(36, 50, 74)");
+  await expect(page.locator(".ask-trigger")).toHaveCount(0);
   // Home: the cards are the panel tone, 24 px, with the one soft shadow; the white row on a card; the filled button is the ink primary.
   await page.goto("/");
   await expect(page.getByTestId("hv2-cash-card")).toBeVisible({ timeout: 15_000 });
@@ -492,4 +494,116 @@ test("rail: a bad stored value cannot skip the language, and the folds open at o
     return t;
   });
   expect(["none", ""]).toContain(transition);
+});
+
+/**
+ * The rail on every page (hover expansion that clipped or covered content). On Home, Deals, Customer, Approvals, Cash, Receivables and Activity, at 1280, 1440 and 1680:
+ * collapsed, the first content element starts right of the 56 px rail plus a gutter and nothing is under the rail; hovered open, the panel is 200 px wide, inside the viewport, and
+ * what the pointer would hit at its labels and its foot is the panel itself (no sticky header, page stacking context or scroll container above it); pinned open, the content
+ * starts right of the 200 px track plus the gutter.
+ */
+const RAIL_PAGES = ["/", "/deals", "/customers/BUYER-1", "/approvals", "/cash", "/receivables", "/activity"] as const;
+const GUTTER = 16;
+
+/** The left edge of the page's first content: the first heading or card inside `main`, the box a reader sees start. */
+const contentLeft = (page: Pg) =>
+  page.locator("main").evaluate((main) => {
+    const first = Array.from(main.querySelectorAll<HTMLElement>("h1, h2, [data-testid], section, article")).find((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 40 && r.height > 8 && getComputedStyle(el).visibility !== "hidden";
+    });
+    const r = (first ?? main).getBoundingClientRect();
+    return Math.round(r.left);
+  });
+
+/** The open panel's box, and what the pointer meets at its foot and at each destination's label. */
+const panelProbe = (page: Pg) =>
+  page.getByTestId("nav-rail-panel").evaluate((panel) => {
+    const r = panel.getBoundingClientRect();
+    const hits = (el: Element | null) => {
+      if (!el) return { ok: false, why: "missing" };
+      const b = el.getBoundingClientRect();
+      const x = Math.min(Math.max(b.left + 4, 0), innerWidth - 1);
+      const y = Math.min(Math.max(b.top + b.height / 2, 0), innerHeight - 1);
+      const top = document.elementFromPoint(x, y);
+      return { ok: Boolean(top && panel.contains(top)), why: top ? `${top.tagName}.${String(top.className).slice(0, 40)}` : "none", inView: b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight };
+    };
+    const labels = Array.from(panel.querySelectorAll("#nav-pills .side-label")).map((el) => ({ text: el.textContent, ...hits(el), clippedByPanel: el.getBoundingClientRect().right > r.right }));
+    // The whole 200 px box: a grid of points, each of which must hit the panel or something inside it (a page's positioned element, a z-index or a stacking context of its own must never paint over it).
+    const covered: string[] = [];
+    for (let y = r.top + 6; y < Math.min(r.bottom, innerHeight) - 2; y += 14) {
+      for (let x = r.left + 6; x < r.right - 2; x += 14) {
+        const top = document.elementFromPoint(x, y);
+        if (!top || !panel.contains(top)) covered.push(`${Math.round(x)},${Math.round(y)} ${top ? `${top.tagName}.${String(top.className).slice(0, 30)}` : "none"}`);
+      }
+    }
+    const foot = panel.querySelector(".side-foot");
+    const toggle = panel.querySelector('[data-testid="sidebar-toggle"]');
+    return {
+      width: Math.round(r.width),
+      left: Math.round(r.left),
+      right: Math.round(r.right),
+      bottom: Math.round(r.bottom),
+      vw: innerWidth,
+      vh: innerHeight,
+      labels,
+      covered: covered.slice(0, 5),
+      foot: hits(foot),
+      footText: foot?.textContent ?? "",
+      footOverflows: foot ? foot.getBoundingClientRect().bottom > r.bottom || foot.scrollHeight > foot.clientHeight + 1 : true,
+      toggle: hits(toggle),
+    };
+  });
+
+test("rail: on every page the collapsed rail covers no content, the open panel is whole and on top, and pinned the content sits beside it", async ({ page }) => {
+  test.setTimeout(240_000);
+  for (const [width, height] of [[1280, 720], [1440, 900], [1680, 1000], [1440, 700]] as const) {
+    await page.setViewportSize({ width, height });
+    for (const path of RAIL_PAGES) {
+      const at = `${path} at ${width}x${height}`;
+      await page.goto(path);
+      await expect(page.locator("main h1").first()).toBeVisible({ timeout: 15_000 });
+      await page.mouse.move(width - 100, 500);
+      await expect(page.getByTestId("nav-rail")).toHaveAttribute("data-rail", "closed");
+      // Collapsed: the content starts right of the 56 px rail and a gutter.
+      expect(await railColumn(page), `${at} column`).toBe(56);
+      expect(await contentLeft(page), `${at} collapsed content left`).toBeGreaterThanOrEqual(56 + GUTTER);
+      // Hovered open: 200 px wide, inside the window, its words and its foot not under anything else.
+      await page.getByTestId("nav-pills").getByRole("link", { name: "Home" }).hover();
+      await expect.poll(() => panelWidth(page), at).toBe(200);
+      const open = await panelProbe(page);
+      expect(open.left, `${at} open left`).toBe(0);
+      expect(open.right, `${at} open right`).toBe(200);
+      expect(open.bottom, `${at} open bottom within the window`).toBeLessThanOrEqual(open.vh);
+      expect(open.labels.length, `${at} five labels`).toBe(5);
+      for (const l of open.labels) {
+        expect(l.ok, `${at} label ${l.text} is on top (${l.why})`).toBe(true);
+        expect(l.clippedByPanel, `${at} label ${l.text} fits the panel`).toBe(false);
+      }
+      expect(open.footText, `${at} foot note`).toContain("simulated company");
+      expect(open.covered, `${at} nothing paints over the open panel`).toEqual([]);
+      expect(open.foot.ok, `${at} foot note on top (${open.foot.why})`).toBe(true);
+      expect(open.footOverflows, `${at} foot note fits the panel`).toBe(false);
+      expect(open.toggle.ok, `${at} Keep open on top (${open.toggle.why})`).toBe(true);
+      // Scrolled to the foot of the page, the same: the panel stays whole and on top.
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.mouse.move(width - 100, 500);
+      await page.getByTestId("nav-pills").getByRole("link", { name: "Home" }).hover();
+      await expect.poll(() => panelWidth(page), at).toBe(200);
+      const scrolled = await panelProbe(page);
+      expect(scrolled.covered, `${at} scrolled: nothing paints over the open panel`).toEqual([]);
+      expect(scrolled.foot.ok && scrolled.toggle.ok, `${at} scrolled: the foot is on top`).toBe(true);
+      // Pinned open: the content is laid out beside the 200 px track.
+      await page.mouse.move(width - 100, 500);
+      await page.getByTestId("sidebar-toggle").click({ force: true });
+      await page.mouse.move(width - 100, 500);
+      await expect(page.locator("html")).toHaveAttribute("data-sidebar", "pinned");
+      expect(await railColumn(page), `${at} pinned column`).toBe(200);
+      expect(await contentLeft(page), `${at} pinned content left`).toBeGreaterThanOrEqual(200 + GUTTER);
+      const pinned = await panelProbe(page);
+      expect(pinned.foot.ok && pinned.toggle.ok, `${at} pinned foot on top`).toBe(true);
+      await page.getByTestId("sidebar-toggle").click();
+      await expect(page.locator("html")).not.toHaveAttribute("data-sidebar", "pinned");
+    }
+  }
 });

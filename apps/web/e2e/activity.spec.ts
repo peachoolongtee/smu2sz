@@ -18,7 +18,7 @@ async function approvedDay34(page: Page) {
   await page.goto("/");
   await runPlan(page, "ALERT-RESERVE-42");
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^(Approve|Authorize)/ }).click();
   await expect(page.locator("#approval-APR-000001")).toContainText("Approved");
   await page.goto("/activity");
   await expect(page.getByTestId("activity-read")).toBeVisible();

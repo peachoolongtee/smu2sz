@@ -26,7 +26,8 @@
   "decided_day": 34,
   "result_message": "Advance ¥200,000.00 on RI:BUYER-1:2 from FAC-IF on day 34; the cash lands on day 37 after the 3-day lead time, not today",
   "presentation": {
-    "headline": "You approved ¥200,000.00 of invoice financing.",
+    "headline": "You authorized the financing request; FLOW sent it to the lender.",
+    "title_text": "Request ¥200,000 of invoice financing",
     "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
     "facility_name": "Invoice financing (onboarded platform)",
     "buyer_name": "Foshan Home Retail Co.",
@@ -109,5 +110,36 @@
   "result_state_text": "Approved, cash arrives in 3 days",
   "result_tone": "info",
   "receipt": null,
+  "commit_label": "Authorize the financing request",
+  "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+  "terms_state_text": null,
+  "terms_rows": [
+    {
+      "label": "Amount",
+      "value_text": "¥200,000.00"
+    },
+    {
+      "label": "Cost",
+      "value_text": "¥1,782.19"
+    },
+    {
+      "label": "Rate",
+      "value_text": "32.5%"
+    },
+    {
+      "label": "Cash lands",
+      "value_text": "in 3 days"
+    },
+    {
+      "label": "Basis",
+      "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    }
+  ],
+  "lifecycle": null,
+  "summary_rows": null,
+  "deadline_text": null,
+  "deadline_day": null,
+  "title_text": "Request ¥200,000 of invoice financing",
+  "decided_text": "You authorized the financing request; FLOW sent it to the lender.",
   "execution_status": "EXECUTED"
 }

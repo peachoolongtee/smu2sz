@@ -15,11 +15,13 @@ import type { NlScope } from "./types";
 export const SCOPE_KINDS: ScopeKind[] = ["decision", "invoice", "customer", "company"];
 
 interface Chosen {
-  /** The route and selection the choice was made on; any other route or selection makes it void. */
-  route: string;
   kind: ScopeKind | null;
 }
-export const chosenStore = createStore<Chosen>({ route: "", kind: null });
+/**
+ * The kind the owner widened (or narrowed) the question to. It has no memory of the route it was made on: `useClearScopeOnRouteChange` (chat-scope.ts, mounted with the panel, which
+ * outlives every page) empties it whenever the address's route changes, so coming Back to a page never brings the choice back.
+ */
+export const chosenStore = createStore<Chosen>({ kind: null });
 
 /** What a page registered as its own selection, for the route it registered on (cleared when the page unmounts). */
 interface Registered {
@@ -57,15 +59,14 @@ export function scopeChoices(base: ChatScope): { kind: ScopeKind; scope: ChatSco
   return out;
 }
 
-/** The scope in force for a route: the page's registration over the address, then the owner's narrowing if it is for this route. */
+/** The scope in force for a route: the page's registration over the address, then the owner's narrowing (void as soon as the route changes). */
 export function resolveScope(pathname: string, params: Params | null | undefined): { choices: { kind: ScopeKind; scope: ChatScope }[]; chosen: ChatScope } {
-  const route = routeOf(pathname, params);
   const fromAddress = scopeOf(pathname, params, customerOfPath(pathname));
   const reg = pageStore.get();
   const base: ChatScope = reg.route === pathname && reg.scope ? { ...fromAddress, ...reg.scope, kind: reg.scope.kind } : fromAddress;
   const choices = scopeChoices(base);
   const picked = chosenStore.get();
-  const chosen = (picked.route === route && picked.kind ? choices.find((c) => c.kind === picked.kind) : null) ?? choices[0];
+  const chosen = (picked.kind ? choices.find((c) => c.kind === picked.kind) : null) ?? choices[0];
   return { choices, chosen: chosen.scope };
 }
 

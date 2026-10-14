@@ -480,7 +480,8 @@ def test_the_state_tables_cover_every_member_of_both_enums() -> None:
     """Every state in both machines is reachable from stored data only (the table-driven rows above)."""
     reached_deal = {r[2] for r in DEAL_ROWS}
     reached_funding = {r[2] for r in FUNDING_ROWS}
-    assert reached_deal == set(DealState)
+    # LAPSED is a fact about the books, not about the records: the API read sets it (`Context.lapse`, tests/api/test_lapsed_offers.py)
+    assert reached_deal == set(DealState) - {DealState.LAPSED}
     assert reached_funding == set(FundingState)
 
 

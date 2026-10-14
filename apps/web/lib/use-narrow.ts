@@ -24,6 +24,26 @@ export function useNarrow(): boolean {
   );
 }
 
+const WIDE = "(min-width: 64rem)";
+
+function subscribeWide(onChange: () => void): () => void {
+  const list = window.matchMedia(WIDE);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+}
+
+/**
+ * True on a desktop width (1024 px and up) once the page is in the browser; false while rendering on the server and during hydration, so a part that only a desktop has (the header's Ask FLOW input) is
+ * never in the server's HTML, where it would overflow a phone's first paint until hydration removed it.
+ */
+export function useWide(): boolean {
+  return useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia(WIDE).matches,
+    () => false,
+  );
+}
+
 /** A short window (a 768 px laptop, a phone on its side): the answer must reach the first screen without the stat tiles. */
 const SHORT = "(max-height: 800px)";
 

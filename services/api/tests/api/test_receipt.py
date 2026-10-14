@@ -17,7 +17,7 @@ from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
-from tests.api.conftest import english_leaks
+from tests.api.conftest import agree_on_rcv_a, english_leaks
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 AGENT = {"X-Agent-Key": "demo-agent-key"}
@@ -76,16 +76,19 @@ def test_the_send_receipt_keeps_the_three_lines_of_the_ex01_receipt(api: TestCli
     pr = _evaluate(api, "en")["priced_response"]
     r = _whole(pr["receipt"], "en")
     agreement, draw, cost = pr["send_scope_lines"]
-    assert agreement == "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)"
+    # what sending authorizes: the exact counter, recorded as a proposed agreement; nothing about who approves it (the authority sentence says that)
+    assert agreement == "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts."
     assert draw == "Draws ¥149,986.20 on the Bank credit line today"
     assert cost == "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"
     assert r["authorizes_text"] == agreement and r["executes_now_text"] == f"{draw}; {cost}"
     assert r["fees_display"] == "¥3,027.77" == pr["supplier_cost_display"] and r["gross_display"] is None and r["net_display"] is None
-    assert r["assumptions_text"] == pr["recheck_text"]
+    # the recheck sentence, then what the engine does whatever the buyer answers (the funding runs when the counter is sent)
+    assert r["assumptions_text"].startswith(pr["recheck_text"]) and "Runs when you send, whether or not the buyer agrees" in r["assumptions_text"]
     assert r["authority_text"] == "FLOW can send it. Your approval is not needed."
     assert r["others_must_agree_text"] == "Foshan Home Retail Co. must accept the counter before it takes effect."
     assert r["in_hand_vs_future_text"] == "The draw is in hand today. Nothing from Foshan Home Retail Co. counts as cash until it arrives."
-    assert r["when_text"] == "As soon as you confirm." and "has not accepted yet" in r["remaining_text"]
+    assert r["when_text"] == "As soon as you confirm."
+    assert r["remaining_text"] == "The terms take effect only when Foshan accepts; no payment and no financing settles because the counter is sent."
 
 
 def test_the_send_receipt_in_chinese(api: TestClient) -> None:
@@ -93,7 +96,8 @@ def test_the_send_receipt_in_chinese(api: TestClient) -> None:
     r = _whole(pr["receipt"], "zh")
     assert r["authority_text"] == "FLOW 可以发送。无需您批准。"
     assert r["in_hand_vs_future_text"].startswith("提款今天到账。") and r["fees_display"] == "¥3,027.77"
-    assert r["authorizes_text"] == pr["send_scope_lines"][0] and "；" in r["executes_now_text"]
+    assert r["authorizes_text"] == pr["send_scope_lines"][0] == "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。"
+    assert "；" in r["executes_now_text"] and r["remaining_text"] == "只有Foshan接受后条款才会生效；发送还价本身不会结算任何付款或融资。"
 
 
 def test_a_reply_that_cannot_be_sent_has_no_receipt(api: TestClient) -> None:
@@ -189,10 +193,12 @@ def test_the_collection_draft_says_nothing_is_sent(api: TestClient, lang: str) -
 @pytest.mark.parametrize("lang", ["en", "zh"])
 def test_the_agreement_on_the_record_carries_its_receipt(api: TestClient, lang: str) -> None:
     api.post("/demo/reset", params={"scenario": "busy"})
+    agree_on_rcv_a(api)
     agreed = next(d for d in api.get("/decisions").json()["decisions"] if d["state"] == "AGREED")
     detail = api.get(f"/decisions/{quote(agreed['id'], safe='')}", params={"lang": lang}).json()
     r = _whole(detail["agreement"]["receipt"], lang)
-    assert r["executes_now_text"] == detail["agreement"]["status_text"] and r["authorizes_text"]
+    assert r["executes_now_text"] == detail["execution"]["summary_text"] != detail["agreement"]["status_text"] and r["authorizes_text"]  # what ran, not "Agreed"
+    assert ("recorded" if lang == "en" else "已记录") in r["executes_now_text"]
     assert detail["agreement"]["terms"][0] in r["authorizes_text"]
     assert r["when_text"] and detail["agreement"]["expires_when"] in r["when_text"]
     assert r["remaining_text"]  # the promised payment is still awaited

@@ -21,9 +21,15 @@ make; nothing is ranked, priced, projected or decided a second time:
                  `financing_words.state_of` ARRANGED), PROMISE (an early payment a live agreement promised, still awaited).
     customers    the buyers on the books, one row each: `GET /customers` returns these same rows (one function) and `search_terms`
                  (each customer's name and short name), for a page to filter the list it already holds.
-    counts       counted from the rows above, never stored: needs_you, waiting, customers.
+    counts       the Deals queue's own counts (needs_you, waiting, agreements, customers): a promise is counted under agreements though its row stays in `waiting`.
     needs_you_empty_text  what an empty Needs you says: "Nothing else needs you." while the alert is up, else "Nothing needs a decision from
                  you." (the waiting and customers lists carry no word that differs by the alert).
+
+A negotiation row (DECISION, BUYER_REPLY, AGREEMENT) carries `subject_text` (the obligation and its scope, distinct among one customer's
+negotiations: `app.api.subjects`), `subject_demo_text` (the same with the offer's id, for the Demo view) and `lifecycle`, a key of
+counter_ready | owner_review | awaiting_buyer | more_information | agreed | declined | lapsed, with `status_text` its word. `severity` stays the
+separate mark of risk. `topic_text` is what the offer is about in a word or two ("Payment terms", "Rebate"), the coarse topic the subject used to be. Every
+other row has `lifecycle`, `subject_demo_text` and `topic_text` null.
 
 Severity (documented, separate from who acts) is a word about the item's weight, from its authority class and its cash effect:
 
@@ -50,7 +56,9 @@ Ordering (deterministic; `order`, pinned by tests). Five tiers, then within a ti
 APPROVAL's the day the agreement expires, a COLLECTION's the day the invoice fell due. `is_new` is true when the item arrived after the
 `since_day` the page last read (without `since_day`, nothing is new). `why_first_text` says why the first row is first, by its tier.
 
-`queue` (Deals, ticket #127; not part of `GET /worklist`): the same rows, one per task, by who owes the next step, in three tiers: `needs_you`
+`queue` (Deals, ticket #127; not part of `GET /worklist`; `queue.deals` is the negotiations' own counts, Slice B round two: `needs_you` the DECISION
+rows, `waiting` the BUYER_REPLY rows, `agreements` the AGREEMENT rows and the PROMISE rows under them; an approval, a collection and a set-up row are
+counted in `counts` only, for the Home): the same rows, one per task, by who owes the next step, in three tiers: `needs_you`
 (the rows above), `waiting` (BUYER_REPLY and SETTLEMENT) and `agreements` (AGREEMENT, one per agreed deal, and PROMISE: the promised payment of
 an agreement stays a row of the tier it belongs to). Each row carries its own identity (`decision_id`, `invoice_id`, `approval_id`: null where
 the task has none) and a `href` that selects that task in Deals, or opens the page where it is done, with the row's own customer, decision and
@@ -76,17 +84,18 @@ from fastapi import APIRouter, Depends, Query
 from app.api.auth import require_owner
 from app.api.customer_overview import customer_context
 from app.api.deal_offers import open_deals
-from app.api.decisions import Context, _agreed_terms, _status_text, approval_decision, load_context
+from app.api.decisions import Context, _agreed_terms, approval_decision, load_context
 from app.api.display import displayed
 from app.api.financing_words import financing_state_words, state_of
 from app.api.home import Partial, read_home
 from app.api.home_hybrid import _ASK_ORDER, _pending_lots
 from app.api.offer_picture import cached_picture
 from app.api.presentation import (
+    CLOSED_IF_DECLINED,
     COMMERCIAL_KINDS,
     Lang,
+    approving_text,
     buyer_of_receivable,
-    decision_state_text,
     find_agreement,
     party_name,
     t,
@@ -94,6 +103,7 @@ from app.api.presentation import (
 )
 from app.api.receivables import read_rows
 from app.api.runtime import Runtime, get_runtime
+from app.api.subjects import deal_lifecycle, lifecycle_text, subject_for
 from app.books import current_books
 from app.config import get_settings
 from app.decisions.identity import deal_id
@@ -155,6 +165,11 @@ class Row:
     since: int | None = None  # the day it arrived, for `is_new`
     ask: str | None = None  # a DECISION's ask in the buyer's own words (the first span of the obligation its subject names), never worded here
     differentiator: str | None = None  # what separates it from another row of the same customer and subject (`_differentiate`)
+    lifecycle: str | None = None  # a negotiation's lifecycle key (`app.api.subjects.LIFECYCLE`); None for every other kind of row
+    subject_demo: str | None = None  # the subject with the offer's id appended, for the Demo view only
+    topic: str | None = None  # what the offer is about in a word or two ("Payment terms"), for a sentence that names the topic
+    activity: int | None = None  # the day of the row's latest activity (a negotiation's latest event), for sorting by it
+    activity_text: str | None = None  # the same in relative words ("3 days ago")
 
 
 def tier_of(kind: str, severity: str, breach_day: int | None, deadline_day: int | None) -> int:
@@ -193,7 +208,9 @@ def order(rows: list[Row]) -> list[Row]:
 def _needs_item(row: Row, first: bool, since_day: int | None, lang: Lang) -> dict[str, Any]:
     tier = tier_of(row.kind, row.severity, row.breach_day, row.deadline_day)
     return {"key": row.key, "kind": row.kind, "customer_id": row.customer_id, "customer_short": row.customer_short,
-            "subject_text": row.subject, "status_text": row.status, "consequence_text": row.consequence, "owner": NEEDS_YOU,
+            "subject_text": row.subject, "subject_demo_text": row.subject_demo, "lifecycle": row.lifecycle, "topic_text": row.topic, "last_activity_day": row.activity, "last_activity_text": row.activity_text,
+            "status_text": row.status,
+            "consequence_text": row.consequence, "owner": NEEDS_YOU,
             "severity": row.severity, "deadline_day": row.deadline_day, "differentiator_text": row.differentiator, "why_first_text": t(lang, *_WHY[tier]) if first else None,
             "href": row.href, "is_new": since_day is not None and row.since is not None and row.since > since_day}
 
@@ -204,6 +221,16 @@ def _needs_item(row: Row, first: bool, since_day: int | None, lang: Lang) -> dic
 def _focus(customer_id: str, deal: str | None = None) -> str:
     """The Home's own URL state: `customer`, and `deal` once a decision is chosen."""
     return f"/?customer={quote(customer_id, safe='')}" + (f"&deal={quote(deal, safe='')}" if deal else "")
+
+
+def _latest(ds: Any, offer: Any) -> int | None:
+    """The day of a negotiation's latest event (its decision record's), else the day the offer arrived."""
+    return ds.updated_day if ds.updated_day is not None else offer.received_day
+
+
+def _activity(day: int | None, today: int, lang: Lang) -> tuple[int | None, str | None]:
+    """(the day of a row's latest activity, said as a distance from today); both None when the row has none."""
+    return (day, when_text(day, today, lang)) if day is not None else (None, None)
 
 
 def _asks(offer: Any) -> list[Any]:
@@ -266,13 +293,16 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
         offer = ds.offer
         cid = offer.counterparty_id
         who = buyer_short(party_name(state, cid))
-        subject = f"{who} · {_topic(offer, lang)}"
+        subject, subject_demo = subject_for(ctx, offer, lang)
+        subject = subject or f"{who} · {_topic(offer, lang)}"
+        lifecycle = deal_lifecycle(ds)
         if st == DealState.NEEDS_CLARIFICATION:
+            asked = (t(lang, f"Asked {when_text(ds.updated_day, ctx.today, lang)}. ", f"{when_text(ds.updated_day, ctx.today, lang)}提出。")
+                     if ds.updated_day is not None else "")
             waits.append(_wait_row(f"buyer-reply:{view['offer_id']}", "BUYER_REPLY", cid, subject,
-                                   t(lang, "Waiting for the buyer's clarification", "等待买方澄清")
-                                   + ((t(lang, f" · asked {when_text(ds.updated_day, ctx.today, lang)}",
-                                         f" · {when_text(ds.updated_day, ctx.today, lang)}提出")) if ds.updated_day is not None else ""),
-                                   t(lang, "Nothing to resend.", "无需重新发送。"), NORMAL, ds.updated_day, None, _focus(cid)))
+                                   lifecycle_text(lifecycle, lang), asked + t(lang, "Nothing to resend.", "无需重新发送。"), NORMAL,
+                                   ds.updated_day, None, _focus(cid), lifecycle=lifecycle, subject_demo=subject_demo,
+                                   topic=_topic(offer, lang), activity=_activity(_latest(ds, offer), ctx.today, lang)))
             continue
         if st == DealState.AUTHORIZATION_REQUIRED:
             continue
@@ -286,22 +316,13 @@ def _deal_rows(rt: Runtime, ctx: Context, lang: Lang, deals: list[tuple[dict[str
                 partial.add("offer_picture")
                 failed = True
         severity, breach, consequence = _deal_effect(pic, floor, failed, lang)
+        activity = _activity(_latest(ds, offer), ctx.today, lang)
         needs.append(Row(key=f"deal:{view['offer_id']}", kind="DECISION", customer_id=cid, customer_short=who, subject=subject,
-                         status=_deal_status(st, pic, lang), consequence=consequence, severity=severity, deadline_day=breach,
-                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])), since=offer.received_day, ask=_ask_phrase(offer)))
+                         status=lifecycle_text(lifecycle, lang), consequence=consequence, severity=severity, deadline_day=breach,
+                         breach_day=breach, href=_focus(cid, deal_id(view["offer_id"])), since=offer.received_day, ask=_ask_phrase(offer),
+                         lifecycle=lifecycle, subject_demo=subject_demo, topic=_topic(offer, lang),
+                         activity=activity[0], activity_text=activity[1]))
     return needs, waits
-
-
-def _deal_status(st: DealState, pic: dict[str, Any] | None, lang: Lang) -> str:
-    """Who acts, in the row's words: the counter FLOW has ready, or a recommendation, or the offer that has not been read."""
-    if st == DealState.RECEIVED:
-        return t(lang, "Offer received · Your review needed", "已收到报价 · 需要您审核")
-    rec = next((p for p in (pic or {}).get("paths") or [] if p.get("recommended")), None)
-    if rec is not None and rec.get("kind") == "reply" and rec.get("sendable"):
-        return t(lang, "Counter ready · Reply needed", "还价已就绪 · 需要您答复")
-    if rec is not None and rec.get("kind") == "asked":
-        return t(lang, "Recommendation ready · Reply needed", "建议已就绪 · 需要您答复")
-    return t(lang, "Read by FLOW · Reply needed", "FLOW 已读取 · 需要您答复")
 
 
 def _first_below(path: dict[str, Any] | None, floor: int, today: int) -> int | None:
@@ -374,16 +395,21 @@ def _approval_rows(home: dict[str, Any], ctx: Context, lang: Lang, plan_alert: s
         if card.get("cost_display"):
             consequence = t(lang, f"Estimated cost {card['cost_display']}.", f"预计成本 {card['cost_display']}。")
         else:
-            consequence = str(card.get("economic_effect_text") or card.get("if_decline") or "")
+            # a pending request says what approving does; the decline sentence stays only where it says something (an alert's shortfall)
+            declined = card.get("if_decline")
+            declined = None if declined == t(lang, *CLOSED_IF_DECLINED) else declined
+            consequence = str(card.get("economic_effect_text") or declined or approving_text(rec.kind or "", lang) or "")
+        requested = _activity(op.get("day") if isinstance(op.get("day"), int) else None, ctx.today, lang)
         out.append(Row(key=f"approval:{rec.id}", kind="APPROVAL", customer_id=cid, customer_short=who, subject=subject,
                        status=t(lang, "Approval requested · Your approval needed", "已提交批准申请 · 需要您批准"), consequence=consequence,
                        severity=CAUTION if card.get("protects") else NORMAL, deadline_day=agreement.expires_day if agreement else None,
                        breach_day=None, href=f"/approvals#approval-{quote(rec.id, safe='')}",
-                       since=op.get("day") if isinstance(op.get("day"), int) else None))
+                       since=op.get("day") if isinstance(op.get("day"), int) else None,
+                       activity=requested[0], activity_text=requested[1]))
     return out
 
 
-def _collection_rows(rows: list[dict[str, Any]], unsafe: bool, lang: Lang) -> list[Row]:
+def _collection_rows(rows: list[dict[str, Any]], unsafe: bool, lang: Lang, today: int) -> list[Row]:
     """One COLLECTION row per buyer with an invoice OVERDUE or PROMISE_MISSED (the receivable rows' own `collection_state`)."""
     late = [r for r in rows if r["collection_state"] in ("OVERDUE", "PROMISE_MISSED")]
     out: list[Row] = []
@@ -404,7 +430,7 @@ def _collection_rows(rows: list[dict[str, Any]], unsafe: bool, lang: Lang) -> li
                        status=(t(lang, "Promised payment missed · Your follow-up needed", "承诺的付款未到账 · 需要您跟进") if missed
                                else t(lang, "Payment overdue · Your follow-up needed", "款项已逾期 · 需要您跟进")),
                        consequence=t(lang, " ", "").join(said), severity=CRITICAL if missed or unsafe else CAUTION, deadline_day=due,
-                       breach_day=None, href=_focus(cid), since=due + 1))
+                       breach_day=None, href=_focus(cid), since=due + 1, activity=due, activity_text=when_text(due, today, lang)))
     return out
 
 
@@ -427,10 +453,13 @@ def _setup_rows(rt: Runtime, ctx: Context, lang: Lang) -> list[Row]:
 
 
 def _wait_row(key: str, kind: str, customer_id: str | None, subject: str, status: str, consequence: str, severity: str,
-              since_day: int | None, expected_day: int | None, href: str) -> dict[str, Any]:
-    return {"key": key, "kind": kind, "customer_id": customer_id, "subject_text": subject, "status_text": status,
-            "consequence_text": consequence, "since_day": since_day, "expected_day": expected_day, "owner": WAITING,
-            "severity": severity, "href": href}
+              since_day: int | None, expected_day: int | None, href: str, *, lifecycle: str | None = None,
+              subject_demo: str | None = None, topic: str | None = None, activity: tuple[int | None, str | None] = (None, None)
+              ) -> dict[str, Any]:
+    return {"key": key, "kind": kind, "customer_id": customer_id, "subject_text": subject, "subject_demo_text": subject_demo,
+            "lifecycle": lifecycle, "topic_text": topic, "last_activity_day": activity[0], "last_activity_text": activity[1],
+            "status_text": status, "consequence_text": consequence, "since_day": since_day,
+            "expected_day": expected_day, "owner": WAITING, "severity": severity, "href": href}
 
 
 def _settlement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
@@ -445,7 +474,7 @@ def _settlement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
                              f"{t(lang, 'Invoice financing', '发票融资') if lot.receivable_id else t(lang, 'Credit-line draw', '信用额度提款')}"
                              f" · {fmt_yuan_short(lot.remaining_fen)}",
                              said[:1].upper() + said[1:], t(lang, "Not counted as cash until it lands.", "到账前不计入现金。"), NORMAL,
-                             lot.request_day, lot.arrival_day, "/cash"))
+                             lot.request_day, lot.arrival_day, "/cash", activity=_activity(lot.request_day, ctx.today, lang)))
     return out
 
 
@@ -529,7 +558,8 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
     rows: list[tuple[tuple[int, int, int, str], dict[str, Any]]] = []
     for buyer in (c for c in state.counterparties if c.role == "BUYER"):
         mine = [r for r in needs if r.customer_id == buyer.id]
-        waits = sum(1 for w in waiting if w["customer_id"] == buyer.id)
+        waits = sum(1 for w in waiting if w["customer_id"] == buyer.id and w["kind"] != "PROMISE")  # as the queue counts: a promise belongs to its agreement
+        promises = sum(1 for w in waiting if w["customer_id"] == buyer.id and w["kind"] == "PROMISE")
         conc: dict[str, Any] | None = None
         if books is not None:
             try:
@@ -542,7 +572,8 @@ def _customer_rows(rt: Runtime, ctx: Context, lang: Lang, needs: list[Row], wait
         n, k = negotiations.get(buyer.id, 0), len(mine)
         parts = [t(lang, f"{n} open {'negotiation' if n == 1 else 'negotiations'}", f"{n} 项进行中的谈判") if n else None,
                  (t(lang, f"{k} {'needs' if k == 1 else 'need'} you", f"{k} 项需要您处理") if k else
-                  t(lang, f"{waits} waiting", f"{waits} 项在等待") if waits else None)]
+                  t(lang, f"{waits} waiting", f"{waits} 项在等待") if waits else
+                  t(lang, f"{promises} {'payment' if promises == 1 else 'payments'} promised", f"{promises} 笔承诺付款") if promises else None)]
         status = " · ".join(p for p in parts if p) or t(lang, "Nothing open", "没有进行中的事项")
         weight = min((_SEVERITY_RANK[r.severity] for r in mine), default=3)
         has_share = share is not None and conc is not None and conc["ar_buyer_fen"] > 0
@@ -578,9 +609,12 @@ def _agreement_rows(ctx: Context, lang: Lang) -> list[dict[str, Any]]:
         cid = offer.counterparty_id
         who = buyer_short(party_name(ctx.state, cid))
         c = ds.commitment
+        subject, subject_demo = subject_for(ctx, offer, lang)
         out.append({"key": f"agreement:{ds.decision_id}", "kind": "AGREEMENT", "customer_id": cid, "customer_short": who,
-                    "subject_text": f"{who} · {_topic(offer, lang)}",
-                    "status_text": _status_text(c, ds, lang) if c is not None else decision_state_text("DEAL", ds.state.value, lang),
+                    "subject_text": subject or f"{who} · {_topic(offer, lang)}", "subject_demo_text": subject_demo, "lifecycle": "agreed", "topic_text": _topic(offer, lang),
+                    "last_activity_day": _activity(_latest(ds, offer), ctx.today, lang)[0],
+                    "last_activity_text": _activity(_latest(ds, offer), ctx.today, lang)[1],
+                    "status_text": lifecycle_text("agreed", lang),
                     "consequence_text": t(lang, "; ", "；").join(_agreed_terms(ctx, c, lang)) if c is not None else "",
                     "severity": NORMAL, "deadline_day": None, "expected_day": None, "since_day": ds.updated_day,
                     "differentiator_text": None, "decision_id": ds.decision_id})
@@ -641,7 +675,9 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
         if row["kind"] == "APPROVAL":  # the one word the record uses for a state that waits on the owner
             status = t(lang, "Waiting for your approval", "等待您批准")
         return {"key": row["key"], "kind": row["kind"], "tier": tier, "customer_id": cid, "customer_short": who,
-                "subject_text": row["subject_text"], "status_text": status, "consequence_text": row["consequence_text"],
+                "subject_text": row["subject_text"], "subject_demo_text": row.get("subject_demo_text"), "lifecycle": row.get("lifecycle"), "topic_text": row.get("topic_text"),
+                "last_activity_day": row.get("last_activity_day"), "last_activity_text": row.get("last_activity_text"),
+                "status_text": status, "consequence_text": row["consequence_text"],
                 "severity": row["severity"], "deadline_day": row.get("deadline_day"), "expected_day": row.get("expected_day"),
                 "differentiator_text": row.get("differentiator_text"), "decision_id": decision, "invoice_id": invoice, "approval_id": approval,
                 "href": href(row["kind"], cid, decision, invoice, approval, row.get("href") or "/deals")}
@@ -651,8 +687,12 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
     promises = [w for w in waiting if w["kind"] == "PROMISE"]
     waiting_rows = [item(w, WAITING_TIER) for w in waits]
     agreement_rows = [item(r, AGREEMENTS_TIER) for r in [*_agreement_rows(ctx, lang), *promises]]
+    negotiations = {"needs_you": sum(1 for r in needs_rows if r["kind"] == "DECISION"),
+                    "waiting": sum(1 for r in waiting_rows if r["kind"] == "BUYER_REPLY"),
+                    "agreements": sum(1 for r in agreement_rows if r["kind"] in ("AGREEMENT", "PROMISE"))}
     return {
         "counts": {"needs_you": len(needs_rows), "waiting": len(waiting_rows), "agreements": len(agreement_rows), "customers": customers},
+        "deals": negotiations,
         "alert": alert, "needs_you": needs_rows, "waiting": waiting_rows, "agreements": agreement_rows,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
                                  else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
@@ -684,7 +724,7 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] 
     _state, _today, body, rows_partial = read_rows(rt, lang)
     for name in rows_partial.missing:
         partial.add(name)
-    needs += _collection_rows(body["rows"], home["cash"].get("first_breach_day") is not None, lang)
+    needs += _collection_rows(body["rows"], home["cash"].get("first_breach_day") is not None, lang, ctx.today)
     needs += _setup_rows(rt, ctx, lang)
     waiting += _settlement_rows(ctx, lang) + _promise_rows(ctx, lang)
     needs_sorted = order(_differentiate(needs))
@@ -694,12 +734,14 @@ def _build(rt: Runtime, lang: Lang, since_day: int | None, home: dict[str, Any] 
         negotiations[ds.offer.counterparty_id] = negotiations.get(ds.offer.counterparty_id, 0) + 1
     customers = _customer_rows(rt, ctx, lang, needs_sorted, waiting_sorted, negotiations, partial)
     late = [r for r in body["rows"] if r["collection_state"] in ("OVERDUE", "PROMISE_MISSED")]
+    queue_body = _queue(ctx, lang, needs_sorted, waiting_sorted, alert, late, len(customers))
     return {
-        "queue": _queue(ctx, lang, needs_sorted, waiting_sorted, alert, late, len(customers)),
+        "queue": queue_body,
         "lang": lang, "day": ctx.today, "state_version": ctx.state.state_version, "alert": alert,
         "needs_you_empty_text": (t(lang, "Nothing else needs you.", "没有其他事项需要您处理。") if alert is not None
                                  else t(lang, "Nothing needs a decision from you.", "没有需要您决定的事项。")),
-        "counts": {"needs_you": len(needs_sorted), "waiting": len(waiting_sorted), "customers": len(customers)},
+        # the queue's own counts, so the Home and Deals never disagree: a promise is counted under Agreements there, though its row stays in `waiting`
+        "counts": dict(queue_body["counts"]),
         "needs_you": [_needs_item(r, i == 0, since_day, lang) for i, r in enumerate(needs_sorted)],
         "waiting": waiting_sorted, "customers": customers,
         "search_terms": [{"customer_id": c["customer_id"], "terms": [c["name"], c["short"]]} for c in customers],

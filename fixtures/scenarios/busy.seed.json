@@ -1,5 +1,4 @@
 {
   "offers": ["EX01_PACKAGE", "EX02_EARLY_1_5", "EX03_AS_USUAL", "EX07_CONFLICT", "EX08B_JOINT_BUYER2", "EX09_TERMS_BUYER3"],
-  "negotiate": [{"offer": "EX03_AS_USUAL", "mode": "cooperative"}],
   "operations": [{"kind": "APPLY_FOR_FACILITY", "facility": "FAC-GGL", "amount_fen": 20000000}]
 }

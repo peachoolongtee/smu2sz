@@ -114,7 +114,7 @@ def test_the_fix_is_bound_to_what_the_home_showed_and_the_home_turns_calm(client
     assert zh["changes"][0]["text"].endswith("申请融资 ¥255,000.00（融资已安排）；资金将于3 天后到账，不是今天")
 
 
-def test_a_queued_cure_is_a_question_with_its_cost_and_landing_day(client):
+def test_a_queued_cure_states_what_it_asks_with_its_cost_and_landing_day(client):
     _exhaust_line(get_runtime())
     h = client.get("/home").json()
     a = h["next_action"]
@@ -126,7 +126,7 @@ def test_a_queued_cure_is_a_question_with_its_cost_and_landing_day(client):
     assert h["status"] == "CRITICAL" and h["pending_count"] == 1
     assert h["next_action"]["pending_approval_id"] == "APR-000001"
     [card] = h["approvals"]
-    assert card["id"] == "APR-000001" and card["headline"].startswith("Approve ") and card["headline"].endswith("?")
+    assert card["id"] == "APR-000001" and card["headline"] == "Apply for ¥405,000 in equipment financing"  # a statement, not a question
     # an application for an uncommitted facility: the alert prices nothing for it and nothing lands until it is committed
     assert card["kind"] == "APPLY_FOR_FACILITY" and card["cost_display"] is None and card["lands_day"] is None
     assert card["facility_name"] == "Equipment lease" and card["protects"] is None
@@ -155,7 +155,7 @@ def test_a_priced_cure_in_the_queue_carries_its_cost_and_landing_day(client):
     assert [x["op_id"].split(":")[-2] for x in rows] == ["plan", "plan"]
     priced = [x["presentation"] for x in rows if x["kind"] == "SUBMIT_INVOICE_FOR_FINANCING"]
     assert priced and priced[0]["cost_display"] == "¥2,272.29" and priced[0]["lands_day"] == 3
-    assert priced[0]["headline"] == "Approve ¥255,000.00 of invoice financing?"
+    assert priced[0]["headline"] == "Request ¥255,000 of invoice financing"
     drawn = [x["presentation"] for x in rows if x["kind"] == "DRAW_FACILITY"]
     assert drawn[0]["cost_display"] == "¥841.64"
     h = client.get("/home").json()

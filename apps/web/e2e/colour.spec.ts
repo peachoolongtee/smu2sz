@@ -32,9 +32,9 @@ function contrast(a: string, b: string): number {
   return (x + 0.05) / (y + 0.05);
 }
 
-test("the Home headline sits on the canvas with no card; the state is a filled pill whose word meets AA; the figures meet AA on the panel", async ({ page }) => {
+test("the Home headline sits on the canvas with no card; the planned pill meets AA; the figures meet AA on the panel", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByTestId("hv2-state-pill")).toBeVisible();
+  await expect(page.getByTestId("hv2-plan-pill")).toBeVisible();
   const hero = page.getByTestId("home-status");
   // No card, no deep block, no gradient: the header is transparent on the owner's canvas.
   expect(await bg(hero)).toBe("rgba(0, 0, 0, 0)");
@@ -43,10 +43,7 @@ test("the Home headline sits on the canvas with no card; the state is a filled p
   expect(contrast(await color(page.getByTestId("home-headline")), CANVAS)).toBeGreaterThan(4.5);
   // The headline is one colour: the server's sentence is never parsed or part-coloured.
   expect(await page.getByTestId("home-headline").evaluate((el) => el.children.length)).toBe(0);
-  // The state pill: the amber fill and its dark amber word, AA; the planned pill the lavender pair.
-  const pill = page.getByTestId("hv2-state-pill");
-  expect(await bg(pill)).toBe("rgb(249, 212, 145)");
-  expect(contrast(await color(pill), await bg(pill))).toBeGreaterThan(4.5);
+  // The planned pill is the lavender pair, AA.
   const planned = page.getByTestId("hv2-plan-pill");
   expect(await bg(planned)).toBe("rgb(235, 222, 250)");
   expect(contrast(await color(planned), await bg(planned))).toBeGreaterThan(4.5);
@@ -70,7 +67,7 @@ test("the Home headline sits on the canvas with no card; the state is a filled p
   await page.getByTestId("fix-ALERT-RESERVE-12").click();
   await expect(page.getByTestId("home-status")).toHaveAttribute("data-status", "WATCH");
   expect(await bg(page.getByTestId("home-status"))).toBe("rgba(0, 0, 0, 0)");
-  await expect(page.getByTestId("hv2-state-pill")).toBeVisible();
+  await expect(page.getByTestId("hv2-action")).toBeVisible();
 });
 
 test("one filled brand button per Business page, no gradient anywhere, the deep block only in the Demo strip", async ({ page }) => {

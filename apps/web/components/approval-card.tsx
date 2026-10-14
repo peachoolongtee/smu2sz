@@ -6,6 +6,7 @@ import { TierBadge } from "@/components/badges";
 import { Disclosure } from "@/components/business/kit";
 import { CashPicture } from "@/components/business/cash-picture";
 import { Badge, Button, Callout, DecisionCard, KeyValueList, textLinkClass, type Tone } from "@/components/ui";
+import { ApprovalLifecycle } from "@/components/approval-lifecycle";
 import { CommitmentReceipt } from "@/components/ui/commitment-receipt";
 import { StateWord } from "@/components/ui/state-word";
 import { approveDisabled, termsGate } from "@/lib/approval-terms";
@@ -36,7 +37,7 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands 
   return (
     <section aria-labelledby={bare ? undefined : `quote-${id}`} aria-label={bare ? t("appr.quote.title") : undefined} className={bare ? "mt-2" : "mt-4 border-t border-line pt-3"} data-testid="approval-quote">
       {bare ? null : (
-        <h3 id={`quote-${id}`} className="mb-1.5 text-meta font-medium text-ink-3">
+        <h3 id={`quote-${id}`} className="mb-1.5 text-supporting font-medium text-ink-3">
           {quote.recorded && quote.quoted_when ? t("appr.quote.when", { when: quote.quoted_when }) : t("appr.quote.title")}
         </h3>
       )}
@@ -65,12 +66,12 @@ export function QuoteBlock({ id, quote, missing, alwaysLines = false, hideLands 
               ) : null}
             </ul>
           ) : null}
-          {quote.rate_basis ? <p className="text-meta text-ink-2">{quote.rate_basis}</p> : null}
-          {quote.cost_note ? <p className="text-meta text-ink-2">{quote.cost_note}</p> : null}
-          {quote.lands_when && !lines.length && !hideLands ? <p className="text-meta text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
+          {quote.rate_basis ? <p className="text-supporting text-ink-2">{quote.rate_basis}</p> : null}
+          {quote.cost_note ? <p className="text-supporting text-ink-2">{quote.cost_note}</p> : null}
+          {quote.lands_when && !lines.length && !hideLands ? <p className="text-supporting text-ink-2">{t("appr.quote.lands", { when: quote.lands_when })}</p> : null}
           {quote.actual?.length ? (
             <div data-testid="approval-quote-actual">
-              <p className="text-meta font-medium text-ink-3">{t("appr.quote.actual")}</p>
+              <p className="text-supporting font-medium text-ink-3">{t("appr.quote.actual")}</p>
               <ul className="mt-0.5 space-y-0.5">
                 {quote.actual.map((x) => (
                   <li key={x.op_id} className="text-ink">
@@ -151,6 +152,15 @@ export function ApprovalCard({
   const stateText = a.result_state_text ?? p?.result_state_text ?? null;
   const stateTone: Tone = (a.result_tone ?? p?.result_tone ?? "neutral") as Tone;
 
+  // Round two's authorization words, from `presentation` or the row itself; a server that does not send them leaves each out.
+  const words = {
+    commit: p?.commit_label ?? a.commit_label ?? null,
+    authorize: p?.authorize_text ?? a.authorize_text ?? null,
+    termsState: p?.terms_state_text ?? a.terms_state_text ?? null,
+    lifecycle: p?.lifecycle ?? a.lifecycle ?? [],
+    summary: (p?.summary_rows ?? a.summary_rows ?? []).filter((r) => r.value_text),
+    terms: (p?.terms_rows ?? a.terms_rows ?? []).filter((r) => r.value_text),
+  };
   const names: { k: string; v: React.ReactNode }[] = [];
   if (op?.facility_id) names.push({ k: t("appr.facility"), v: op.facility_id });
   if (op?.receivable_id) names.push({ k: t("appr.receivable"), v: op.receivable_id });
@@ -174,7 +184,7 @@ export function ApprovalCard({
       v: (
         <span data-testid="approval-cost">
           {p.cost_display}
-          {p.rate_text ? <span className={`font-normal text-ink-3 ${priced ? "block text-meta" : "ml-1"}`}>{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
+          {p.rate_text ? <span className={`font-normal text-ink-3 ${priced ? "block text-supporting" : "ml-1"}`}>{t("biz.costRateOnly", { rate: p.rate_text })}</span> : null}
         </span>
       ),
     });
@@ -209,7 +219,7 @@ export function ApprovalCard({
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-3">
           {keyFacts.map((f, i) => (
             <div key={i} className="min-w-0">
-              <dt className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{f.k}</dt>
+              <dt className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{f.k}</dt>
               <dd className="mt-0.5 break-words font-display text-xl font-extrabold tabular-nums tracking-[-0.01em] text-ink">{f.v}</dd>
             </div>
           ))}
@@ -219,7 +229,7 @@ export function ApprovalCard({
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           {otherFacts.map((f, i) => (
             <div key={i} className="min-w-0">
-              <dt className="text-meta font-medium text-ink-3">{f.k}</dt>
+              <dt className="text-supporting font-medium text-ink-3">{f.k}</dt>
               <dd className="break-words font-semibold tabular-nums text-ink">{f.v}</dd>
             </div>
           ))}
@@ -229,7 +239,8 @@ export function ApprovalCard({
   ) : null;
 
   const stateChip = stateText ? <StateWord tone={stateTone} testId={`approval-state-${a.id}`}>{stateText}</StateWord> : <Badge tone={statusTone[a.status]}>{te("apprstatus", a.status)}</Badge>;
-  const headlineText = p?.headline ?? a.subject;
+  // The statement of what is authorized (`title_text`) while the request waits, what came of it (`decided_text`) once answered; the older question headline is the fallback.
+  const headlineText = isPending ? (a.title_text ?? p?.title_text ?? p?.headline ?? a.subject) : (a.decided_text ?? p?.decided_text ?? p?.headline ?? a.subject);
   // The sentence under the question says what the request is; when the Source and Invoice facts say it already, it is not said twice.
   const whatText = p?.facility_name && p?.invoice ? undefined : (p?.what ?? `${a.id} · ${te("opkind", a.operation_kind)}`);
 
@@ -239,7 +250,7 @@ export function ApprovalCard({
       <div className="border-t border-line pt-3">
         {gate.available ? (
           <section aria-labelledby={`terms-${a.id}`} data-testid="approval-terms">
-            <h3 id={`terms-${a.id}`} className="mb-1.5 text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
+            <h3 id={`terms-${a.id}`} className="mb-1.5 text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">
               {isPending ? t("appr.agreeTo") : t("appr.agreedTo")}
             </h3>
             {p?.terms?.length ? (
@@ -293,13 +304,13 @@ export function ApprovalCard({
   ) : null;
 
   const auditFold = (
-    <Disclosure className="border-t border-line pt-1" testId={`approval-toggle-${a.id}`} summary={t("biz.auditDetails")}>
+    <Disclosure className="border-t border-line pt-1" testId={`approval-toggle-${a.id}`} summary={isPending ? t("deals.review.audit") : t("biz.auditDetails")}>
       <div className="space-y-4" data-testid={`approval-detail-${a.id}`}>
         <section aria-label={t("appr.what")}>
-          <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
+          <h3 className="mb-1.5 text-supporting font-semibold uppercase tracking-wide text-ink-3">{t("appr.what")}</h3>
           <KeyValueList
             items={[
-              { k: t("common.id"), v: <span className="font-mono text-meta">{a.id}</span> },
+              { k: t("common.id"), v: <span className="font-mono text-supporting">{a.id}</span> },
               { k: t("appr.operation"), v: te("opkind", a.operation_kind) || a.operation_kind },
               ...names,
               ...(a.amount_display ? [{ k: t("item.amount"), v: a.amount_display }] : []),
@@ -310,14 +321,14 @@ export function ApprovalCard({
                   ? t("appr.requestedWhen", { when: p.created_when, who: te("actor", op?.requested_by ?? a.requested_by) })
                   : t("appr.requestedValue", { day: a.created_day, who: te("actor", op?.requested_by ?? a.requested_by) }),
               },
-              { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-meta text-ink-2">{te("tier.short", a.tier)}</span></span> },
-              ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-meta">{a.op_id}</span> }] : []),
+              { k: t("ledger.tier"), v: <span className="inline-flex items-center gap-2"><TierBadge tier={a.tier} /> <span className="text-supporting text-ink-2">{te("tier.short", a.tier)}</span></span> },
+              ...(a.op_id ? [{ k: t("appr.opId"), v: <span className="font-mono text-supporting">{a.op_id}</span> }] : []),
             ]}
           />
         </section>
         {a.reason && p?.reason && a.reason !== p.reason ? (
           <section aria-label={t("appr.why")}>
-            <h3 className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
+            <h3 className="mb-1.5 text-supporting font-semibold uppercase tracking-wide text-ink-3">{t("biz.executorWords")}</h3>
             <p className="text-sm text-ink-2">{a.reason}</p>
           </section>
         ) : null}
@@ -331,23 +342,38 @@ export function ApprovalCard({
 
   if (isPending) {
     // The picture: the cash line if the owner declines and if the owner approves, against the minimum; the server's two sentences are its captions.
-    const decide = (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="primary"
-            loading={busyId === `${a.id}:APPROVE`}
-            disabled={approveDisabled(a, busyId !== null)}
-            aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
-            onClick={() => onDecide(a.id, "APPROVE")}
-          >
-            {p?.approve_label ?? (a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve"))}
-          </Button>
-          <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")}>
-            {t("appr.reject")}
-          </Button>
-        </div>
-    );
     const picture = cash && p?.series_if_declined?.length && p?.series_if_approved?.length ? <ApprovalPicture a={a} cash={cash} after={afterText} decline={declineText} /> : null;
+    // Round two, exact authorization: the button names the act, the first sentence says what approving does and does not mean, the lifecycle and a compact summary stand above the button,
+    // and everything else (why it needs you, the cash picture, the terms, the receipt) is behind "View application details"; the authority and the audit evidence are folds of their own.
+    const commitLabel = words.commit ?? p?.approve_label ?? (a.amount_display ? t("appr.approveAmount", { amount: a.amount_display }) : t("appr.approve"));
+    const summary = words.summary.length ? (
+      <dl className="divide-y divide-line border-y border-line" aria-label={t("appr.summary")} data-testid={`approval-summary-${a.id}`}>
+        {words.summary.map((r, i) => (
+          <div key={r.key ?? i} className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]" data-testid={`approval-summary-row-${r.key ?? i}`}>
+            <dt className="text-supporting font-bold text-ink-3">{r.label}</dt>
+            <dd className="m-0 min-w-0 break-words text-[15px] leading-snug text-ink">{r.value_text}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : null;
+    const decide = (
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="primary"
+          loading={busyId === `${a.id}:APPROVE`}
+          disabled={approveDisabled(a, busyId !== null)}
+          aria-describedby={gate.commercial && !gate.available ? `terms-${a.id}` : undefined}
+          onClick={() => onDecide(a.id, "APPROVE")}
+          data-testid={`approval-approve-${a.id}`}
+        >
+          {commitLabel}
+        </Button>
+        <Button variant="secondary" loading={busyId === `${a.id}:REJECT`} disabled={busyId !== null} onClick={() => onDecide(a.id, "REJECT")} data-testid={`approval-decline-${a.id}`}>
+          {t("appr.reject")}
+        </Button>
+      </div>
+    );
+    const authorityText = a.receipt?.authority_text ?? null;
     return (
       <Wrap
         id={`approval-${a.id}`}
@@ -369,43 +395,82 @@ export function ApprovalCard({
           {stateChip}
         </div>
 
-        {factsBlock}
+        {words.authorize ? (
+          <p className="text-pretty text-[15px] font-semibold leading-snug text-ink" data-testid={`approval-authorize-${a.id}`}>
+            {words.authorize}
+          </p>
+        ) : null}
+        {words.termsState ? (
+          <p className="border-l-2 border-warn-solid py-0.5 pl-3 text-sm text-ink" data-testid={`approval-terms-state-${a.id}`}>
+            {words.termsState}
+          </p>
+        ) : null}
 
         <dl className="border-t border-line pt-3">
-          <dt className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.why")}</dt>
+          <dt className="text-supporting font-bold text-ink-3">{t("appr.why")}</dt>
           <dd className="mt-1 text-pretty text-ink" data-testid="approval-reason">
             {reasonText}
           </dd>
         </dl>
 
-        {picture}
-        {termsBlock}
-        {picture ? null : (
-          // No cash line (an agreement's terms, or an older answer): the two sentences stand on their own.
-          <dl className="grid gap-x-8 gap-y-3 border-t border-line pt-3 text-sm sm:grid-cols-2">
-            {afterText ? (
-              <div>
-                <dt className="text-meta font-medium text-ink-3">{t("biz.after")}</dt>
-                <dd className="text-ink" data-testid="approval-after">
-                  {afterText}
-                </dd>
+        <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
+        {/* A priced request keeps its three facts (what you get, what it costs, when it lands); the summary's six rows follow. */}
+        {priced || !summary ? factsBlock : null}
+        {summary}
+        {/* A real quote's terms are shown while the request waits, not folded (the server's `terms_rows`); a stored quote with no terms of its own stays in the application details. */}
+        {words.terms.length && !priced ? (
+          <dl className="divide-y divide-line border-y border-line" aria-label={t("appr.quoted.title")} data-testid={`approval-terms-rows-${a.id}`}>
+            {words.terms.map((r, i) => (
+              <div key={i} className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
+                <dt className="text-supporting font-bold text-ink-3">{r.label}</dt>
+                <dd className="m-0 min-w-0 break-words text-[15px] leading-snug text-ink">{r.value_text}</dd>
               </div>
-            ) : null}
-            <div>
-              <dt className="text-meta font-medium text-ink-3">{t("biz.ifDecline")}</dt>
-              <dd className="text-ink-2" data-testid="approval-if-decline">
-                {declineText}
-              </dd>
-            </div>
+            ))}
           </dl>
-        )}
-        {quoteFold}
+        ) : null}
 
-        {/* The terms come first at every width, then the one button that names what it does (ticket #128, audit UX03): the receipt on screen is the review, and Approve asks nothing more. */}
-        <CommitmentReceipt receipt={a.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} className="border-t border-line pt-3" />
+        {/* An agreement's terms come first at every width, then the one button that names what it does (ticket #128, audit UX03): the summary on screen is the review, and the button asks nothing more. */}
+        {termsBlock}
         {decide}
-        {recordLink}
+
+        <Disclosure className="border-t border-line pt-1" testId={`approval-details-${a.id}`} summary={t("appr.details")}>
+          <div className="space-y-4 pt-2">
+            {picture}
+            {picture ? null : (
+              // No cash line (an agreement's terms, or an older answer): the two sentences stand on their own.
+              <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+                {afterText ? (
+                  <div>
+                    <dt className="text-supporting font-medium text-ink-3">{t("biz.after")}</dt>
+                    <dd className="text-ink" data-testid="approval-after">
+                      {afterText}
+                    </dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt className="text-supporting font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+                  <dd className="text-ink-2" data-testid="approval-if-decline">
+                    {declineText}
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {quoteFold}
+            <CommitmentReceipt receipt={a.receipt} id={`approval-${a.id}-receipt`} title={t("receipt.title.approve")} omit={["authority"]} className="pt-1" />
+          </div>
+        </Disclosure>
+        {authorityText || a.tier ? (
+          <Disclosure className="border-t border-line pt-1" testId={`approval-authority-${a.id}`} summary={t("appr.authority")}>
+            <div className="space-y-2 pt-2 text-sm">
+              {authorityText ? <p className="text-pretty text-ink" data-testid={`approval-authority-text-${a.id}`}>{authorityText}</p> : null}
+              <p className="inline-flex items-center gap-2">
+                <TierBadge tier={a.tier} /> <span className="text-supporting text-ink-2">{te("tier.short", a.tier)}</span>
+              </p>
+            </div>
+          </Disclosure>
+        ) : null}
         {auditFold}
+        {recordLink ? <div className="-mt-1">{recordLink}</div> : null}
       </Wrap>
     );
   }
@@ -422,8 +487,10 @@ export function ApprovalCard({
         </div>
         {stateChip}
       </div>
+      {/* Where the application stands once the owner has authorized it (the server's stages: You authorize done, Lender reviews current, Funding decision next). */}
+      <ApprovalLifecycle stages={words.lifecycle} id={a.id} />
       <div className="space-y-1 text-sm" data-testid={`approval-outcome-${a.id}`} data-execution={execution ?? ""}>
-        <p className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.result")}</p>
+        <p className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">{t("appr.result")}</p>
         {approvedButRefused ? (
           <div role="status" data-testid={`approval-refused-${a.id}`}>
             <p className="break-words text-ink" data-testid={`approval-result-${a.id}`}>
@@ -449,7 +516,7 @@ export function ApprovalCard({
           </p>
         ) : null}
         {/* The day of a decision is shown only when the API recorded it for that decision. */}
-        <p className="text-meta text-ink-3" data-testid={`approval-decided-${a.id}`}>
+        <p className="text-supporting text-ink-3" data-testid={`approval-decided-${a.id}`}>
           {p?.decided_when ? t("appr.decidedWhen", { when: p.decided_when }) : a.decided_day !== null && a.decided_day !== undefined ? t("appr.decidedOn", { day: a.decided_day }) : t("appr.decided")}
         </p>
       </div>
@@ -457,7 +524,7 @@ export function ApprovalCard({
       {termsBlock}
       {quoteFold}
       <dl>
-        <dt className="text-meta font-medium text-ink-3">{t("appr.why")}</dt>
+        <dt className="text-supporting font-medium text-ink-3">{t("appr.why")}</dt>
         <dd className="text-sm text-ink" data-testid="approval-reason">
           {reasonText}
         </dd>
@@ -507,7 +574,7 @@ function ApprovalPicture({ a, cash, after, decline }: { a: ApprovalView; cash: A
       labelledBy={`approval-${a.id}-picture-title`}
       header={
         <>
-          <h3 id={`approval-${a.id}-picture-title`} className="text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
+          <h3 id={`approval-${a.id}-picture-title`} className="text-supporting font-extrabold uppercase tracking-[0.08em] text-ink-3">
             {t("biz.appr.pic.title")}
           </h3>
           <dl className="mt-1 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
@@ -531,14 +598,14 @@ function ApprovalPicture({ a, cash, after, decline }: { a: ApprovalView; cash: A
       captions={
         <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-meta font-medium text-ink-3">{t("biz.ifDecline")}</dt>
+            <dt className="text-supporting font-medium text-ink-3">{t("biz.ifDecline")}</dt>
             <dd className="text-ink-2" data-testid="approval-if-decline">
               {decline}
             </dd>
           </div>
           {after ? (
             <div>
-              <dt className="text-meta font-medium text-ink-3">{t("biz.after")}</dt>
+              <dt className="text-supporting font-medium text-ink-3">{t("biz.after")}</dt>
               <dd className="text-ink" data-testid="approval-after">
                 {after}
               </dd>

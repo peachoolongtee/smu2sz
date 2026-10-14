@@ -7,6 +7,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
+      "agreements": 0,
       "customers": 2
     },
     "needs_you": [
@@ -16,6 +17,11 @@
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
         "subject_text": "Foshan · ¥163k overdue",
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "topic_text": null,
+        "last_activity_day": 32,
+        "last_activity_text": "2 days ago",
         "status_text": "Payment overdue · Your follow-up needed",
         "consequence_text": "2 days overdue.",
         "owner": "NEEDS_YOU",
@@ -34,6 +40,11 @@
         "kind": "SETTLEMENT",
         "customer_id": "BUYER-1",
         "subject_text": "Invoice financing · ¥200k",
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "topic_text": null,
+        "last_activity_day": 34,
+        "last_activity_text": "today",
         "status_text": "Financing arranged, expected in 3 days",
         "consequence_text": "Not counted as cash until it lands.",
         "since_day": 34,
@@ -81,6 +92,7 @@
     "counts": {
       "needs_you": 1,
       "waiting": 1,
+      "agreements": 0,
       "customers": 2
     },
     "needs_you": [
@@ -90,6 +102,11 @@
         "customer_id": "BUYER-1",
         "customer_short": "Foshan",
         "subject_text": "Foshan · 逾期 ¥163k",
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "topic_text": null,
+        "last_activity_day": 32,
+        "last_activity_text": "2 天前",
         "status_text": "款项已逾期 · 需要您跟进",
         "consequence_text": "已逾期 2 天。",
         "owner": "NEEDS_YOU",
@@ -108,6 +125,11 @@
         "kind": "SETTLEMENT",
         "customer_id": "BUYER-1",
         "subject_text": "发票融资 · ¥200k",
+        "subject_demo_text": null,
+        "lifecycle": null,
+        "topic_text": null,
+        "last_activity_day": 34,
+        "last_activity_text": "今天",
         "status_text": "融资已安排，预计3 天后到账",
         "consequence_text": "到账前不计入现金。",
         "since_day": 34,

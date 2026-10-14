@@ -3441,6 +3441,118 @@
     "empty_text": "Nothing has changed lately.",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": null,
+    "upcoming": [
+      {
+        "label": "Payroll is paid",
+        "amount_display": "−¥340k",
+        "when": "in 10 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "A supplier payment goes out",
+        "amount_display": "−¥120k",
+        "when": "in 18 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "A loan repayment goes out",
+        "amount_display": "−¥45k",
+        "when": "in 28 days",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "CASH AVAILABLE",
+        "value_display": "¥805,000",
+        "note": "¥505k above your ¥300k minimum",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 80500000,
+          "min_display": "¥300k",
+          "headroom_text": "+¥505k",
+          "cash_display": "¥805,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "LOWEST CASH AHEAD",
+        "value_display": "¥300,000",
+        "note": "reaches your minimum in 28 days · current books, the plan ran",
+        "short_note": "At your minimum in 28 days",
+        "tone": "warn",
+        "with_plan_hint": "No hypothetical applied.",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "NONE",
+        "eyebrow": "FUNDING",
+        "value_display": "None",
+        "note": "No funding is arranged.",
+        "status_text": null,
+        "hint": null
+      }
+    },
+    "action": {
+      "variant": "QUIET",
+      "key": null,
+      "tone": "ok",
+      "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
+      "title": "Your cash is covered on the plan that ran.",
+      "text": "Next: Foshan pays ¥163k in 30 days (owed).",
+      "facts": [],
+      "primary": null,
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": null,
+      "legs": [],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "COMPANY CASH FORECAST",
+      "legend": [
+        {
+          "label": "Current books · the plan ran",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "The lowest point · in 28 days",
+        "projected_display": "¥300,000",
+        "minimum_display": "¥300,000",
+        "third_label": "Above your minimum",
+        "third_display": "¥0",
+        "note": "At your minimum; nothing below it in the window."
+      },
+      "lowest": {
+        "cause": "a loan repayment goes out"
+      },
+      "scenario_title_text": null,
+      "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
+    },
+    "links": [
+      {
+        "label": "Where the cash goes",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "Facility headroom",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "What you are owed, by when",
+        "href": "/receivables"
+      },
+      {
+        "label": "All deals",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": null,
   "approvals": [],
   "pending_count": 0,

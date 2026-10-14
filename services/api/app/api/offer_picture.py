@@ -17,7 +17,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.auth import require_owner
-from app.api.decisions import latest_verdict_for
+from app.api.decisions import latest_verdict_for, offer_as_asked
 from app.api.home import _distance, _lowest_ahead, _series
 from app.api.presentation import (
     business_action,
@@ -35,8 +35,7 @@ from app.api.presentation import (
 from app.api.presentation import t as say
 from app.api.runtime import get_runtime
 from app.api.selection import Selection, build_context, selection
-from app.api.workspace import _months, _posted_discount
-from app.books import current_books
+from app.api.workspace import _months, _posted_discount, _send_runs_funding
 from app.decisions.identity import deal_id
 from app.domain.models import (
     Actor,
@@ -108,6 +107,12 @@ def _terms_in_force(state: Any, buyer: str | None) -> int | None:
     return ri.terms_days if ri is not None else None
 
 
+def _current_terms_text(state: Any, buyer: str | None, lang: str) -> str | None:
+    """The buyer's current payment terms in words ("45 days"), null when the books hold none."""
+    days = _terms_in_force(state, buyer)
+    return None if days is None else say(lang, f"{days} {'day' if days == 1 else 'days'}", f"{days} 天")
+
+
 def _payment_days(state: Any, obligations: list[Any], buyer: str | None) -> int | None:
     """The payment terms of a path in days: its terms extension's target (or the terms in force plus its delta), else the terms in force."""
     in_force = _terms_in_force(state, buyer)
@@ -131,10 +136,10 @@ def _rebate_what(o: Any) -> str:
     return _pct(o.rate_bp) if o.rate_bp is not None else (fmt_yuan(o.amount_fen) if o.amount_fen is not None else "")
 
 
-def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str) -> dict[str, tuple[str, str]]:
+def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str) -> dict[str, tuple[str | None, str | None]]:
     """The three rows of a path from its obligations, each as (what the column says, the same said after "instead of"). A term the
-    path does not carry is "None"; payment terms it leaves alone are the terms in force."""
-    none = say(lang, "None", "无")
+    path does not carry is (None, None), sent as null for the page to leave out (never the word "None"); payment terms it leaves alone are
+    the terms in force."""
     days = _payment_days(state, obligations, buyer)
     if days is not None:
         terms = (say(lang, f"{days} days", f"{days} 天"), say(lang, str(days), f"{days} 天"))
@@ -142,6 +147,8 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         unchanged = say(lang, "Unchanged", "不变")
         terms = (unchanged, unchanged)
     early = [o for o in obligations if o.type == ObligationType.IMMEDIATE_DISCOUNT]
+    early_row: tuple[str | None, str | None]
+    other_row: tuple[str | None, str | None]
     if early:
         parts = []
         for o in early:
@@ -151,7 +158,7 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         text = say(lang, ", ", "、").join(parts)
         early_row = (text, text)
     else:
-        early_row = (none, say(lang, "none", "无"))
+        early_row = (None, None)
     other = []
     for o in obligations:
         if o.type == ObligationType.CONTINGENT_REBATE:
@@ -168,15 +175,18 @@ def _term_rows(state: Any, obligations: list[Any], buyer: str | None, lang: str)
         join = say(lang, ", ", "、")
         other_row = (join.join(v for v, _ in other), join.join(i for _, i in other))
     else:
-        other_row = (none, say(lang, "none", "无"))
+        other_row = (None, None)
     return {"payment_terms": terms, "early_payment": early_row, "rebate_or_price": other_row}
 
 
-def _terms_view(rows: dict[str, tuple[str, str]], asked_rows: dict[str, tuple[str, str]] | None, lang: str) -> list[dict[str, Any]]:
+def _terms_view(rows: dict[str, tuple[str | None, str | None]], asked_rows: dict[str, tuple[str | None, str | None]] | None,
+                lang: str) -> list[dict[str, Any]]:
+    """The terms column: `value_text` is what the path carries and `instead_of_text` what the buyer asked for in its place; either is null where
+    there is nothing to say (the page leaves the line out)."""
     out = []
     for key, en, zh in _TERM_ROWS:
         value, instead = rows[key][0], None
-        if asked_rows is not None and value != asked_rows[key][0]:
+        if asked_rows is not None and value != asked_rows[key][0] and asked_rows[key][1] is not None:
             instead = say(lang, f"instead of {asked_rows[key][1]}", f"而非 {asked_rows[key][1]}")
         out.append({"key": key, "label": say(lang, en, zh), "value_text": value, "instead_of_text": instead})
     return out
@@ -309,8 +319,9 @@ def _changes_text(lang: str, state: Any, obligations: list[Any], buyer: str | No
         out.append(say(lang, f"Payment terms {before_days} → {after_days} days." if before_days is not None else f"Payment terms {after_days} days.",
                        f"账期 {before_days} → {after_days} 天。" if before_days is not None else f"账期 {after_days} 天。"))
     if after["early_payment"][0] != now["early_payment"][0]:
-        out.append(say(lang, f"Early payment {now['early_payment'][1]} → {after['early_payment'][0]}.",
-                       f"提前付款 {now['early_payment'][1]} → {after['early_payment'][0]}。"))
+        before = now["early_payment"][1] or say(lang, "none", "无")
+        after_text = after["early_payment"][0] or say(lang, "none", "无")
+        out.append(say(lang, f"Early payment {before} → {after_text}.", f"提前付款 {before} → {after_text}。"))
     for o in obligations:
         if o.type == ObligationType.CONTINGENT_REBATE:
             out.append(say(lang, f"Rebate none → {_rebate_what(o)}.", f"返利 无 → {_rebate_what(o)}。"))
@@ -413,6 +424,16 @@ def _below_band(series: list[dict[str, Any]], floor: int, breach_day: int, lang:
             else say(lang, "Below your minimum to the end of the forecast", "到预测期结束前一直低于您的最低现金储备"))
 
 
+def _reason_kind(asked_breaches: bool, reply_breaches: bool, asked_over_limit: bool, reply_authority: str | None) -> str:
+    """What the recommendation reason turns on, for a page to open the right comparison: "cash" when the buyer's request takes cash below the
+    reserve and the reply does not; "authority" when the request exceeds the mandate and the reply is within it; "cost" otherwise."""
+    if asked_breaches and not reply_breaches:
+        return "cash"
+    if asked_over_limit and reply_authority in (FLOW_MAY, NEEDS_OWNER):
+        return "authority"
+    return "cost"
+
+
 def _recommended_reason(lang: str, needs_owner: bool) -> str:
     """Why this reply is the recommended one, by the rule `_paths` applies (the first reply FLOW could send, in the verdict's order: one
     FLOW may send alone, else the first that needs the owner). Nothing about cost: cost is not what picks it."""
@@ -456,6 +477,71 @@ def _scenario_assumption(lang: str, kind: str, legs: str | None, *, funded: bool
     return say(lang, "Assumes the buyer accepts this reply; no new funding is needed.", "假设买方接受此回复；无需新增融资。")
 
 
+def _terms_delta(lang: str, days: int | None, current: int | None, kind: str) -> str | None:
+    """The timing diagram's label for a path: how far its payment terms are from the terms in force ("+15 days requested by buyer" for the offer as
+    asked, "+10 days in this counter" for a reply), "no change" at the terms in force; null when either is unknown."""
+    if days is None or current is None:
+        return None
+    if days == current:
+        return say(lang, "no change", "无变化")
+    n, longer = abs(days - current), days > current
+    sign = "+" if longer else "−"
+    if kind == "asked":
+        return say(lang, f"{sign}{n} {'day' if n == 1 else 'days'} requested by buyer", f"买方要求{'延长' if longer else '缩短'} {n} 天")
+    return say(lang, f"{sign}{n} {'day' if n == 1 else 'days'} in this counter", f"此还价{'延长' if longer else '缩短'} {n} 天")
+
+
+def _funding_short(lang: str, kind: str, legs: str | None, *, funded: bool, projected: bool = True) -> str | None:
+    """The funding assumption of a path in a few words, for a comparison row: "No new funding" (the offer as asked, or a reply that needs none),
+    "Funding plan required: ¥150k credit-line draw today" (a reply drawn with its own plan's legs), "No funding plan available" (a reply that
+    needs funding and has no admissible plan). Null for a reply that cannot be drawn on today's books. The same facts as `_scenario_assumption`."""
+    if kind == "asked":
+        return say(lang, "No new funding", "不新增融资")
+    if not projected:
+        return None
+    if legs:
+        return say(lang, f"Funding plan required: {legs}", f"需要融资方案：{legs}")
+    if funded:
+        return say(lang, "No funding plan available", "没有可用的融资方案")
+    return say(lang, "No new funding", "不新增融资")
+
+
+def _cost_row(key: str, label: str, fen: int | None, basis: str, note: str | None = None) -> dict[str, Any]:
+    return {"key": key, "label": label, "amount_display": fmt_yuan(fen) if fen is not None else None, "basis_text": basis, "note": note}
+
+
+def _cost_rows(lang: str, months: int, *, discount: int | None, terms: int | None, rebate: int | None, price: int | None,
+               funding: int | None, total: str | None, total_basis: str, funding_note: str | None = None) -> list[dict[str, Any]]:
+    """The cost of a path as table rows: the immediate discount, the forward payment-term cost, the rebate, the funding cost and the total,
+    each `{key, label, amount_display, basis_text, note}`. `note` is null except on the funding row of a reply whose plan cannot run when it is sent
+    ("if the plan runs; it cannot run today"): the cost is still the plan's, and the table says what the send receipt says. An amount is null where the path has no such component (the offer as asked carries no
+    funding cost; a reply with no rebate has none). Each component says its own horizon ("once", "over 12 months"); the total's basis is the
+    path's `cost_basis_text`, word for word, and the horizons are not normalised: the parts are never added here. A path that offsets its
+    cost with a price rise carries one more row, `price_offset`, between the rebate and the funding cost."""
+    over = say(lang, f"over {months} months", f"{months} 个月内")
+    once = say(lang, "once", "一次性")
+    rows = [_cost_row("immediate_discount", say(lang, "Immediate discount", "立即折扣"), discount, once),
+            _cost_row("payment_terms", say(lang, "Forward payment-term cost", "远期账期成本"), terms, over),
+            _cost_row("rebate", say(lang, "Rebate", "返利"), rebate, over)]
+    if price is not None:
+        rows.append(_cost_row("price_offset", say(lang, "Offset by the price adjustment", "价格调整的抵补"), price, over))
+    rows.append(_cost_row("funding", say(lang, "Funding cost", "融资成本"), funding, once, funding_note if funding is not None else None))
+    rows.append({"key": "total", "label": say(lang, "Total", "合计"), "amount_display": total, "basis_text": total_basis, "note": None})
+    return rows
+
+
+def _forward_by_kind(values: list[tuple[str, int]]) -> dict[str, int | None]:
+    """The forward values of a path's obligations summed by kind: {payment_terms, rebate, price}, each None where the path has no such
+    obligation. `values` pairs an obligation's type with its value over the concession horizon."""
+    out: dict[str, int | None] = {"payment_terms": None, "rebate": None, "price": None}
+    key = {ObligationType.TERMS_EXTENSION.value: "payment_terms", ObligationType.CONTINGENT_REBATE.value: "rebate",
+           ObligationType.PRICE_ADJUSTMENT.value: "price"}
+    for kind, fen in values:
+        if kind in key:
+            out[key[kind]] = (out[key[kind]] or 0) + fen
+    return out
+
+
 def _ask_words(state: Any, bound: list[Any], buyer: str | None, once: int, lang: str) -> tuple[list[dict[str, str]], dict[str, str | None]]:
     """(`ask_breakdown`, `ask_facts`) of the offer as asked, the figures the deal card shows. The invoice value is the face of the one immediate
     discount the buyer asks (its base), the requested discount the amount the projection posted for it (`once`, the path's own `cost_once`),
@@ -479,19 +565,60 @@ def _path_entry(*, key: str, kind: str, label: str, recommended: bool, sendable:
                 authority: str | None, authority_text: str, assumption: str | None, reply_text: str | None,
                 series: list[dict[str, Any]] | None, low: dict[str, Any], breach_when: str | None, band: str | None,
                 lang: str, reason: str | None = None, recommended_reason: str | None = None,
-                scenario_assumption: str | None = None, ask: tuple[list[dict[str, str]], dict[str, str | None]] | None = None) -> dict[str, Any]:
+                scenario_assumption: str | None = None, ask: tuple[list[dict[str, str]], dict[str, str | None]] | None = None,
+                funding_assumption: str | None = None, terms_days: int | None = None, terms_delta: str | None = None,
+                cost_rows: list[dict[str, Any]] | None = None, recommended_reason_kind: str | None = None) -> dict[str, Any]:
     tag_text, tag_tone = _tag(lang, tag)
     return {"key": key, "kind": kind, "label": label, "recommended": recommended, "sendable": sendable, "needs_owner": needs_owner,
             "tag_text": tag_text, "tag_tone": tag_tone, "cost_display": cost_display, "cost_note": cost_note, **cost, "terms": terms,
-            "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason,
-            "scenario_assumption_text": scenario_assumption, "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
+            "decides_text": decides, "authority_reason_text": reason, "recommended_reason_text": recommended_reason, "recommended_reason_kind": recommended_reason_kind,
+            "scenario_assumption_text": scenario_assumption, "funding_assumption_text": funding_assumption, "terms_days": terms_days, "terms_delta_text": terms_delta,
+            "cost_rows": cost_rows or [], "authority": authority, "authority_text": authority_text, "assumption_text": assumption,
             "reply_text": reply_text, "series": series, **low, "first_breach_when": breach_when, "band_text": band,
             "ask_breakdown": ask[0] if ask is not None else None, "ask_facts": ask[1] if ask is not None else None}
 
 
+def _asked_cost_rows(verdict: Any, bound: list[Any], once: int, total: str | None, basis: str, months: int, lang: str) -> list[dict[str, Any]]:
+    """The cost rows of the offer as asked: the immediate discount as the projection posted it, the forward values the verdict gives each of
+    the buyer's asks (`concession_values`), and the total with the basis it already states."""
+    kinds = {o.id: o.type.value for o in bound}
+    forward = _forward_by_kind([(kinds[cv.obligation_id], cv.value_fen) for cv in verdict.concession_values
+                                if kinds.get(cv.obligation_id) not in (None, ObligationType.IMMEDIATE_DISCOUNT.value)])
+    has_discount = any(o.type == ObligationType.IMMEDIATE_DISCOUNT for o in bound)
+    return _cost_rows(lang, months, discount=once if has_discount and once > 0 else None, terms=forward["payment_terms"],
+                      rebate=forward["rebate"], price=forward["price"], funding=None, total=total, total_basis=basis)
+
+
+def _reply_cost_rows(c: Any, traj: Any, state: Any, mandate: Any, months: int, lang: str, runs_on_send: bool = True) -> list[dict[str, Any]]:
+    """The cost rows of a reply: its immediate discount as its own projection posts it, its obligations' forward values (the valuation behind
+    `cost_components`), the rest of its immediate cost as the funding cost (the verifier's figure for the reply less the discount, never
+    priced again here), and the total with the basis the reply already states."""
+    obligations = list(c.obligations)
+    discounts = [o for o in obligations if o.type == ObligationType.IMMEDIATE_DISCOUNT]
+    posted = [d for o in discounts if (d := _posted_discount(traj, o.id)) is not None]
+    discount = sum(posted) if posted else None
+    try:
+        eco = counter_economics(obligations, state, mandate)
+    except EngineError:
+        eco = None
+    forward = _forward_by_kind([(p["type"], p["value_fen"]) for p in eco["components"]] if eco is not None else [])
+    once = c.supplier_cost_fen
+    funding = once - (discount or 0) if once > 0 and not (eco is not None and eco["is_net"]) else None
+    if funding is not None and funding <= 0:
+        funding = None
+    if eco is not None and eco["is_net"]:  # the cost nets a funding cost against a price offset: the terms row is the funding of the longer terms
+        forward["payment_terms"] = eco["funding_cost_fen"] if forward["payment_terms"] is not None else None
+        forward["price"] = eco["offset_fen"]
+    total, basis = _cost_basis(once, c.forward_value_fen, months, bool(eco is not None and eco["is_net"]), lang)
+    note = None if runs_on_send else say(lang, "if the plan runs; it cannot run today", "若方案得以执行才会产生；今天无法执行")
+    return _cost_rows(lang, months, discount=discount, terms=forward["payment_terms"], rebate=forward["rebate"], price=forward["price"],
+                      funding=funding, total=total, total_basis=basis, funding_note=note)
+
+
 def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: int, lang: str, asked: Any, asked_view: dict[str, Any],
            breach: tuple[int, int] | None, replies: list[dict[str, Any]], trajs: dict[str, Any], flagged: set[str],
-           rechecked: dict[str, Any], plan_costs: dict[str, int], assumed: dict[str, str]) -> list[dict[str, Any]]:
+           rechecked: dict[str, Any], plan_costs: dict[str, int], assumed: dict[str, str],
+           funding_said: dict[str, str | None], send_runs: dict[str, bool]) -> list[dict[str, Any]]:
     """One entry per line on the chart: the offer as asked, then each reply in the verdict's order, with every word its column says.
     Each figure and word is the verdict's, the workspace's or the executor's own (see the comment on each). `flagged` holds the ids of
     the replies whose funding plan needs the owner's approval; `rechecked` the verifier's verdict on each reply as an agreement."""
@@ -530,7 +657,10 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
         authority=authority, authority_text=authority_text, assumption=None, reply_text=None, series=asked_view["series"],
         low={k: asked_view[k] for k in ("lowest_fen", "lowest_short", "lowest_when")},
         breach_when=asked_view["first_breach_when"], band=band, lang=lang,
-        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang))]
+        scenario_assumption=_scenario_assumption(lang, "asked", None, funded=False), ask=_ask_words(state, bound, buyer, once, lang),
+        funding_assumption=_funding_short(lang, "asked", None, funded=False), terms_days=_payment_days(state, bound, buyer),
+        terms_delta=_terms_delta(lang, _payment_days(state, bound, buyer), _terms_in_force(state, buyer), "asked"),
+        cost_rows=_asked_cost_rows(verdict, bound, once, asked_total, asked_basis, months, lang))]
 
     by_id = {r["counter_id"]: r for r in replies}
     who: dict[str, tuple[str | None, str, bool, str]] = {}  # per reply: (authority, its words, whether the owner decides, the rule that says so)
@@ -588,7 +718,11 @@ def _paths(rt: Any, offer: Any, verdict: Any, books: Any, mandate: Any, today: i
             breach_when=_distance(reply_breach[0], today, lang) if reply_breach else None, band=band, lang=lang,
             reason=_authority_reason(lang, r_authority, owner_rule if needs_owner else None, state, obligations, buyer, mandate),
             recommended_reason=_recommended_reason(lang, needs_owner) if recommended else None,
-            scenario_assumption=assumed[c.id]))
+            recommended_reason_kind=(_reason_kind(breach is not None, reply_breach is not None, authority == OVER_LIMIT, r_authority)
+                                     if recommended else None),
+            scenario_assumption=assumed[c.id], funding_assumption=funding_said.get(c.id), terms_days=_payment_days(state, obligations, buyer),
+            terms_delta=_terms_delta(lang, _payment_days(state, obligations, buyer), _terms_in_force(state, buyer), "reply"),
+            cost_rows=_reply_cost_rows(c, traj, state, mandate, months, lang, send_runs.get(c.id, True))))
     return paths
 
 
@@ -835,18 +969,19 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                                   "message": "evaluate the offer first; there is nothing to draw yet"})
     state, mandate = rt.store.get_state(), rt.store.get_mandate()
     held = [c for c in rt.store.commitments() if c.offer_id != offer_id]  # the offer as asked, not as it was later booked
-    books = current_books(state, held)
     today = max(rt.day, state.as_of_day)
     floor = mandate.min_cash_fen
-    try:
-        asked = project(books.state, books.with_(verdict.bound_obligations), [], Mode.CONSERVATIVE, mandate.horizon_days, floor)
-    except EngineError:
-        # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books
+    books, asked = offer_as_asked(state, mandate, rt.store.commitments(), offer_id, verdict)
+    if asked is None:
+        # the days the offer named have passed, or its invoice has changed since: there is nothing to draw on today's books (the decision
+        # record words it as LAPSED, by the same rule)
         return {"offer_id": offer_id, "verdict_id": verdict.id, "lang": lang, "day": today, "available": False,
                 "unavailable_text": say(lang, "This offer can no longer be drawn on today's books: the days it named have passed or the "
                                               "invoice has changed since.",
                                         "此报价已无法按今天的账目绘制：它所说的日期已过，或发票自那时起已有变动。"),
                 "asked": None, "replies": [], "paths": [], "moments": [], "axis": None, "picture_days": None,
+                "current_terms_days": _terms_in_force(state, offer.counterparty_id) if offer is not None else None,
+                "current_terms_text": _current_terms_text(state, offer.counterparty_id if offer is not None else None, lang),
                 "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days}
     breach = first_breach_ahead(asked, today, floor)
     replies = []
@@ -854,6 +989,8 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
     flagged: set[str] = set()  # the replies whose funding plan needs the owner's approval
     plan_costs: dict[str, int] = {}  # each reply's own funding plan cost, the router's total
     assumed: dict[str, str] = {}  # each reply's scenario assumption: the legs of its own funding plan, or why it has none
+    funding_said: dict[str, str | None] = {}  # the same, in the short form a comparison row reads
+    send_runs: dict[str, bool] = {}  # whether each reply's funding plan can run when it is sent (the receipt's `executes_now_text` says the same)
     recheck = counter_recheck(state, mandate, trusted_owner_key_hex=rt.owner_key_hex, day=today, commitments=held)
     for c in verdict.counters:
         label = option_label(c.label, lang)
@@ -864,12 +1001,16 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
             traj = project(books.state, with_counter, actions, Mode.CONSERVATIVE, mandate.horizon_days, floor)
         except EngineError:
             assumed[c.id] = _scenario_assumption(lang, "reply", None, funded=True, projected=False)
+            funding_said[c.id] = _funding_short(lang, "reply", None, funded=True, projected=False)
             replies.append({"counter_id": c.id, "label": label, "series": None, "lowest_fen": None, "lowest_short": None,
                             "lowest_when": None, "note": say(lang, "Cash cannot be projected for this reply.", "无法为此回复预测现金。")})
             continue
         trajs[c.id] = traj
         plan_costs[c.id] = funding.total_cost_fen
-        assumed[c.id] = _scenario_assumption(lang, "reply", _plan_legs(actions, today, lang), funded=funding.need_fen != 0)
+        send_runs[c.id] = _send_runs_funding(funding)
+        legs = _plan_legs(actions, today, lang)
+        assumed[c.id] = _scenario_assumption(lang, "reply", legs, funded=funding.need_fen != 0)
+        funding_said[c.id] = _funding_short(lang, "reply", legs, funded=funding.need_fen != 0)
         if funding.needs_owner_approval:
             flagged.add(c.id)
         if actions:
@@ -889,7 +1030,7 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
                   "first_breach_when": _distance(breach[0], today, lang) if breach else None}
     # the verifier's own verdict on each reply as an agreement on these books: the tier, the past-due and autonomy rules, the cap codes
     rechecked = {c.id: _safe_recheck(recheck, c) for c in verdict.counters if c.id in trajs}
-    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed)
+    paths = _paths(rt, offer, verdict, books, mandate, today, lang, asked, asked_view, breach, replies, trajs, flagged, rechecked, plan_costs, assumed, funding_said, send_runs)
     _same_day_comparison(paths, lang)
     invoice_days = [d for t in (asked, *trajs.values()) if (d := _next_invoice_day(books.state, t, today, offer.counterparty_id)) is not None]
     moments, picture_days = _moments(paths, today, floor, mandate.horizon_days, min(invoice_days) if invoice_days else None, lang)
@@ -901,6 +1042,8 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "paths": paths,
         "moments": moments,
         "picture_days": picture_days,
+        "current_terms_days": _terms_in_force(books.state, offer.counterparty_id),
+        "current_terms_text": _current_terms_text(books.state, offer.counterparty_id, lang),
         "axis": series_axis([asked_series, *(r["series"] for r in replies)], floor, picture_days),
         "floor_fen": floor, "floor_short": fmt_short(floor), "horizon_days": mandate.horizon_days,
     }

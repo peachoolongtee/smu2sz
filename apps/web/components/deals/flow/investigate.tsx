@@ -48,6 +48,55 @@ export function packageClass(p: Pick<EnvelopePackageView, "outcome" | "tier">): 
 const SHOWN_FIRST = 3;
 
 /**
+ * "Why FLOW recommends this" (round two, section 6): the server's reason for the recommended reply, who decides each path and why, the sentence each path's cash assumes, and the rule in words.
+ * Every sentence is the server's except the rule, which is the dictionary's; a path the server wrote nothing for is left out.
+ */
+function WhyRecommends({ paths }: { paths: PicturePath[] }) {
+  const { t } = useI18n();
+  const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
+  const authority = paths.filter((p) => p.authority_reason_text);
+  const assumes = paths.filter((p) => p.scenario_assumption_text ?? p.assumption_text);
+  return (
+    <OpenSection first title={t("deals.why.title")} testId="deal-why" id="deal-why-section">
+      <div className="space-y-4 text-sm text-ink-2">
+        {recommended?.recommended_reason_text ? (
+          <p className="max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-why-reason">
+            {recommended.recommended_reason_text}
+          </p>
+        ) : null}
+        {authority.length ? (
+          <div data-testid="deal-why-authority">
+            <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.authority")}</p>
+            <ul className="space-y-1">
+              {authority.map((p) => (
+                <li key={p.key}>
+                  <b className="font-bold text-ink">{p.label}.</b> {p.authority_reason_text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {assumes.length ? (
+          <div data-testid="deal-why-assumes">
+            <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.assumes")}</p>
+            <ul className="space-y-1">
+              {assumes.map((p) => (
+                <li key={p.key}>
+                  <b className="font-bold text-ink">{p.label}.</b> {p.scenario_assumption_text ?? p.assumption_text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        <p className="border-l-2 border-line-strong pl-3 text-ink" data-testid="deal-why-rule">
+          {t("deals.why.rule")}
+        </p>
+      </div>
+    </OpenSection>
+  );
+}
+
+/**
  * What the owner can live with for this buyer, by who may act on it (FLOW may send it, you approve first, over a limit you signed): the envelope's packages in the server's
  * one-line words, the first three of each class and the rest behind "more". Read only when the investigation is open and only with the strategy flag; a server without the
  * route (or with the feature off) mounts nothing.
@@ -121,6 +170,7 @@ export function Investigate({
   onPick,
   compareOpen,
   chartOpen,
+  why = false,
 }: {
   offerId: string;
   buyer: string;
@@ -133,6 +183,8 @@ export function Investigate({
   /** The full table of every response is open (`compare=1`), and the deal's cash chart (`chart=1`): each is asked for by its own button. */
   compareOpen: boolean;
   chartOpen: boolean;
+  /** "Full analysis" is open: the reasons come first. */
+  why?: boolean;
 }) {
   const { t, lang } = useI18n();
   // The comparator is the heavier read: asked for only while the full table is open.
@@ -149,7 +201,7 @@ export function Investigate({
   const term = (p: PicturePath, key: string) => p.terms.find((x) => x.key === key);
   const termCell = (p: PicturePath, key: string) => {
     const x = term(p, key);
-    return x ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>{NONE}</span>;
+    return x && (x.value_text || x.instead_of_text) ? <Cell key={`${p.key}-${key}`} value={x.value_text} sub={x.instead_of_text} /> : <span key={`${p.key}-${key}`}>{NONE}</span>;
   };
 
   const columns: CompareColumn[] = [
@@ -321,6 +373,7 @@ export function Investigate({
 
   return (
     <div data-testid="deal-level-investigate" className="space-y-0">
+      {why ? <WhyRecommends paths={paths} /> : null}
       {compareOpen ? (
         <>
       <OpenSection id="deal-compare" title={t("hv2.deal.responses")} subtitle={t("deals.compare.note")} testId="deal-compare" className="mt-8">

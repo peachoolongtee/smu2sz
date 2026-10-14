@@ -235,18 +235,12 @@ def test_a_reply_that_still_dips_below_the_minimum_says_so_not_how_soon_the_invo
 
 def test_an_unprojectable_reply_is_said_plainly_and_never_recommended(client, monkeypatch):
     oid, _ = _evaluated(client)
-    real = offer_picture.project
-    calls: list[int] = []
 
-    def project(*a, **k):
-        calls.append(1)
-        if len(calls) > 1:
-            raise offer_picture.EngineError("no")
-        return real(*a, **k)
+    def project(*a, **k):  # the offer as asked is projected by the decision record's own rule (it is drawable); every reply's projection fails
+        raise offer_picture.EngineError("no")
 
     monkeypatch.setattr(offer_picture, "project", project)
     offer_picture._cache.clear()
-    calls.clear()
     pic = client.get(f"/offers/{oid}/picture").json()
     _, opt_a, opt_b = pic["paths"]
     for p in (opt_a, opt_b):
@@ -255,7 +249,6 @@ def test_an_unprojectable_reply_is_said_plainly_and_never_recommended(client, mo
         assert p["decides_text"] == p["authority_text"] and "limits" not in p["decides_text"] and p["band_text"] is None
         assert p["needs_owner"] is False
     assert all(len(m["values"]) == 1 for m in pic["moments"])
-    calls.clear()
     zh = client.get(f"/offers/{oid}/picture", params={"lang": "zh"}).json()["paths"][1]
     assert zh["authority_text"] == "FLOW 无法按今天的账目绘制此回复"
 

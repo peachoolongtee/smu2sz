@@ -25,6 +25,8 @@ from app.nl.sessions import Session
 HomeRead = Callable[[str, "int | None"], "dict[str, Any] | None"]
 # business_text(text, lang): the same "day 47" -> "in 47 days" rewrite the Business pages use; identity when unwired.
 Words = Callable[[str, str], str]
+# The Deals queue (app/api/worklist.py `queue`) for a language: the rows that need the owner and the rows that wait on someone else. None when it cannot be read.
+QueueRead = Callable[[str], "dict[str, Any] | None"]
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,7 @@ class OwnerReads:
     home: HomeRead
     words: Words = lambda text, lang: text
     latest_verdict: Mapping[str, str] | None = None
+    queue: QueueRead = lambda lang: None
     business: bool = False  # the request asked for Business words (POST /nl?mode=business): see app/nl/business.py
 
 

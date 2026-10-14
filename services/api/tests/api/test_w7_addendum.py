@@ -49,11 +49,11 @@ def test_the_workspace_follows_the_mission_order_and_names_the_buyer_and_the_agr
 def test_the_send_has_lines_with_the_router_plans_own_figures_in_both_languages(client):
     (en, offer), (zh, _) = _evaluate(client, "en"), _evaluate(client, "zh")
     assert en["workspace"]["priced_response"]["send_scope_lines"] == [
-        "Records the agreement with Foshan Home Retail Co. (needs your approval when it changes terms)",
+        "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts.",
         "Draws ¥149,986.20 on the Bank credit line today",
         "Funding cost ¥841.57 for the draw (already inside the ¥3,027.77 above)"]
     assert zh["workspace"]["priced_response"]["send_scope_lines"] == [
-        "记录与Foshan Home Retail Co.的协议（若改变条款，需要您批准）", "从Bank credit line提款 ¥149,986.20，今天到账",
+        "向Foshan原样发送方案 A 的还价；FLOW 将其记为拟议中的协议，只有Foshan接受后才成立。", "从Bank credit line提款 ¥149,986.20，今天到账",
         "融资成本 ¥841.57（已计入上方的 ¥3,027.77）"]
     sent = client.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()
     assert sent["plan"]["total_cost_display"] == "¥841.57" and sent["plan"]["actions"][0]["amount_fen"] == 14_998_620  # the lines are what runs

@@ -62,7 +62,7 @@ test("Business navigation: five pills on a desktop, the same five tabs on a phon
   // Buy equipment and What-if are doors from Cash & funding, not sections; no hamburger in Business mode.
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: "Business" })).toBeAttached();
-  await expect(page.getByTestId("chat-open")).toContainText("Ask FLOW");
+  await expect(page.getByTestId("chat-open")).toHaveAttribute("aria-label", "Ask FLOW");
   await expect(page.getByTestId("chat-open")).toBeInViewport();
   // Ask FLOW never covers content: on a phone it is the bar's last cell (beside the five tabs, not over one); from sm a pill above the bar.
   const chat = (await page.getByTestId("chat-open").boundingBox())!;
@@ -229,7 +229,11 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   const ids = twoPanes ? detail : [...detail, "inbox-collapsed"];
   const tops = await page.evaluate((list) => list.map((id) => {
     const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
-    return el ? el.getBoundingClientRect().top + scrollY : -1;
+    if (!el) return -1;
+    // From `xl` the negotiation scrolls on its own (round two): its parts are placed within that scroller; below it the window's scroll is the page's.
+    const box = document.querySelector('[data-testid="deals-detail"]');
+    const own = box && getComputedStyle(box).overflowY === "auto" && box.contains(el);
+    return own ? el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop : el.getBoundingClientRect().top + scrollY;
   }), ids);
   expect(tops.every((y) => y >= 0)).toBe(true);
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
@@ -294,7 +298,7 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   const asks = (await topOf(page, "deal-ask-quote"))!;
   expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter recommended");
+  await expect(page.getByTestId("deal-state-chip")).toContainText("Counter ready");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the review button is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the review button is inside the first 915 px").toBeLessThanOrEqual(915);
@@ -378,7 +382,7 @@ test("phone: every primary ends above y 840, on day 0 and on day 34 (Home, Cash)
   await page.getByTestId(`fix-${alert34}`).click();
   await expect(page.getByTestId(`alert-waiting-${alert34}`)).toBeVisible();
   await page.goto("/approvals");
-  const approve = page.getByRole("button", { name: /^Approve/ }).first();
+  const approve = page.getByRole("button", { name: /^Authorize/ }).first();
   await expect(approve).toBeVisible();
   // The approval's terms come before its one button at every width (ticket #128, audit UX03), so on a phone the button is no longer in the first screen: it is after the terms,
   // and still reachable (not hidden, not behind the tab bar once scrolled to).
