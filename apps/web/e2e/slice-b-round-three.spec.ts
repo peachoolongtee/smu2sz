@@ -508,6 +508,37 @@ test.describe("Messages and the queue (slice e)", () => {
   });
 });
 
+test.describe("the pair's cause (slice d, task 4)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("What caused the difference? is the server's cause_text for the chosen pair on that day; two replies read the pair map; nothing is listed by the browser", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const inspector = page.getByTestId("hv2-inspector");
+    await page.getByTestId("home-chart").focus();
+    await page.keyboard.press("Home");
+    await expect(inspector).toHaveAttribute("data-day", "0");
+    const cause = inspector.getByTestId("deal-inspector-day").getByTestId("deal-cause");
+    await expect(cause.getByRole("heading", { name: "What caused the difference?" })).toBeVisible();
+    await expect(cause).toContainText("Option A: Credit line draw ¥150k today.");
+    // Day 2: the request's early payment is on one line and not the other, said by the server.
+    await page.keyboard.press("ArrowRight");
+    await expect(inspector).toHaveAttribute("data-day", "2");
+    await expect(cause).toContainText("As asked: Early payment from Foshan Home Retail Co.");
+    // Two replies: Option A and Option B, the request off.
+    await page.getByTestId(`deal-chip-${"CTR-6b07cbf70441"}`).click();
+    await page.getByTestId("deal-chip-asked").click();
+    await page.getByTestId("home-chart").focus();
+    await page.keyboard.press("Home");
+    await expect(inspector).toHaveAttribute("data-day", "0");
+    await expect(inspector.getByTestId("deal-inspector-day-diff")).toContainText("−¥59,986.20");
+    await expect(inspector.getByTestId("deal-inspector-day")).toContainText("Option B against Option A");
+    await expect(cause).toContainText("Option A: Credit line draw ¥150k today. Option B: Credit line draw ¥90k today.");
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

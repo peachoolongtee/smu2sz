@@ -6,6 +6,7 @@ import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { pairWords } from "@/lib/point-comparison";
 import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenario, PictureScenarioRow } from "@/lib/types";
+import { chosenLines, MAX_LINES } from "./deal-model";
 import { FinancialOutcomes } from "./outcomes";
 
 /** The chart's frame from the picture: the reserve, the window and the axis the server drew it with (the chart needs no company read to draw one deal). */
@@ -23,21 +24,7 @@ const pointAt = (points: HomeSeriesPoint[] | null | undefined, day: number): Hom
 };
 const shown = (p: HomeSeriesPoint | undefined): string => p?.display ?? p?.closing_display ?? "";
 
-/** The most responses the chart draws at once. */
-export const MAX_LINES = 3;
 const ORDER: LineStyle[] = ["first", "second", "third"];
-
-/**
- * Which responses the chart draws: the address's `lines` (the paths' keys, comma separated, the first chosen first) kept to the paths that exist and to three; else the request and the recommended
- * reply (the first reply when none is recommended).
- */
-export function chosenLines(paths: PicturePath[], raw: string | null): string[] {
-  const keys = (raw ?? "").split(",").filter((k, i, a) => k && a.indexOf(k) === i && paths.some((p) => p.key === k)).slice(0, MAX_LINES);
-  if (keys.length) return keys;
-  const asked = paths.find((p) => p.kind === "asked");
-  const reply = paths.find((p) => p.kind === "reply" && p.recommended) ?? paths.find((p) => p.kind === "reply");
-  return [asked?.key, reply?.key].filter((k): k is string => Boolean(k));
-}
 
 /**
  * Cash impact (round three, sections 5, 6 and 4): the financial outcomes first (the table and the headroom plot), then "Cash over time": chips for which responses to draw (two on by default, a
@@ -93,7 +80,7 @@ export function CashTab({ picture, paths, exposure, buyer, lines, late, onLines,
       ...(first ? [cell(first, pw?.aDisplay)] : []),
       ...(second ? [cell(second, pw?.bDisplay)] : []),
       ...(pw?.difference
-        ? [{ key: "diff", label: pw.againstAsked && first && second ? t("deals.diff.against", { label: (first.kind === "asked" ? second : first).label, against: (first.kind === "asked" ? first : second).label }) : t("hv2.inspect.diff"), value: pw.difference }]
+        ? [{ key: "diff", label: first && second ? t("deals.diff.against", { label: (pw.differenceOf === "a" ? first : second).label, against: (pw.differenceOf === "a" ? second : first).label }) : t("hv2.inspect.diff"), value: pw.difference }]
         : []),
     ];
     const lowCells: InspectorCell[] = chosenPaths.map((p) => {

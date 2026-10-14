@@ -396,3 +396,21 @@ export function headroomPlot(paths: PicturePath[], floorFen: number): Plot | nul
     dots: drawn.map((p) => ({ key: p.key, label: p.label, short: p.lowest_short as string, when: p.lowest_when, at: at(p.lowest_fen), below: p.lowest_fen < floorFen })),
   };
 }
+
+// ---------------------------------------------------------------- the chart's lines (round three, section 6)
+
+/** The most responses the chart draws at once. */
+export const MAX_LINES = 3;
+
+/**
+ * Which responses the chart draws: the address's `lines` (the paths' keys, comma separated, the first chosen first) kept to the paths that exist and to three; else the request and the recommended
+ * reply (the first reply when none is recommended).
+ */
+export function chosenLines(paths: Pick<PicturePath, "key" | "kind" | "recommended">[], raw: string | null): string[] {
+  const keys = (raw ?? "").split(",").filter((k, i, a) => k && a.indexOf(k) === i && paths.some((p) => p.key === k)).slice(0, MAX_LINES);
+  if (keys.length) return keys;
+  const asked = paths.find((p) => p.kind === "asked");
+  const reply = paths.find((p) => p.kind === "reply" && p.recommended) ?? paths.find((p) => p.kind === "reply");
+  return [asked?.key, reply?.key].filter((k): k is string => Boolean(k));
+}
+
