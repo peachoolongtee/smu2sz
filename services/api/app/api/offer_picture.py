@@ -1131,4 +1131,7 @@ def get_picture(offer_id: str, lang: str = "en", *, sel: Annotated[Selection, De
         context = build_context(rt, lang, sel, page="picture", buyer=offer.counterparty_id if offer is not None else None, deal=deal_id(offer_id))
         picture = cached_picture(rt, offer_id, lang)
         picture = with_buyer_status(rt, offer_id, picture, lang)
-        return {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
+        body = {**picture, "accept": answered_block(rt, offer_id, picture.get("accept"), lang), "context": context}
+    from app.api.picture_scenarios import scenarios  # after the lock: the compare and exposure reads take it themselves, and are cached
+
+    return {**body, "scenarios": scenarios(rt, offer_id, picture, lang)}
