@@ -66,19 +66,25 @@ def test_a_second_agreement_for_the_same_request_is_refused_even_when_the_owner_
     assert rt.store.get_state().forward_concessions == fc_before
 
 
-def test_refused_owner_accepts_do_not_pile_up_proposals_and_a_later_accept_leaves_none_behind(env):
+def test_refused_owner_accepts_do_not_pile_up_proposals_and_a_later_accept_leaves_none_behind(env, monkeypatch):
+    from app.operations import executor as ex
+
     rt, c = env
     oid, v = _evaluate(c)
-    for i in range(3):  # three refused agent ops open the buyer's circuit, so the owner's accept is refused after it proposed
-        c.post("/operations", headers=AGENT, json={"kind": "COUNTER_OFFER", "op_id": f"x{i}", "idempotency_key": f"x{i}", "mandate_version": 1,
-                                                 "requested_by": "AGENT", "offer_id": oid, "counter_id": "CTR-none"})
+    refusals = {"left": 2}  # the executor refuses the owner's first two accepts after the route has proposed (as an open circuit used to)
+    screen = ex.Executor._screen_commitment
+
+    def refusing(self, ctx):
+        if refusals["left"]:
+            refusals["left"] -= 1
+            raise ex._refuse(ex.Code.STALE_VERDICT, "refused for the test")
+        return screen(self, ctx)
+
+    monkeypatch.setattr(ex.Executor, "_screen_commitment", refusing)
     body = {"verdict_id": v["id"], "state_version": v["state_version"]}
-    refused = [c.post(f"/offers/{oid}/accept", headers=OWNER, json=body).status_code for _ in range(2)]
+    assert [c.post(f"/offers/{oid}/accept", headers=OWNER, json=body).status_code for _ in range(2)] == [409, 409]
     proposed = [x for x in rt.store.commitments() if x.offer_id == oid and x.status == CommitmentStatus.PROPOSED]
-    if refused == [409, 409]:
-        assert len(proposed) <= 1
-    cp = rt.store.get_offer(oid).counterparty_id
-    c.post(f"/circuit/{cp}/reset", headers=OWNER)
+    assert len(proposed) == 1  # one proposal, reused by the second click
     assert c.post(f"/offers/{oid}/accept", headers=OWNER, json=body).status_code == 200
     assert len(_live(rt, oid)) == 1
     assert not [x for x in rt.store.commitments() if x.offer_id == oid and x.status == CommitmentStatus.PROPOSED]
