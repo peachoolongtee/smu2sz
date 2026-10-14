@@ -677,6 +677,7 @@ _KIND_TEXT = {
     "COUNTER_OFFER": ("Counter sent", "已发送还价"), "REVOKE_COMMITMENT": ("Agreement revoked", "协议已撤销"),
     "ADD_FACILITY": ("Facility added", "已添加融资工具"), "REJECT_OFFER": ("Offer declined", "报价已拒绝"),
     "CONFIRM_DOCUMENT": ("Document confirmed", "文件已确认"), "REJECT_DOCUMENT": ("Document rejected", "文件已驳回"),
+    "OPEN_BOOKS": ("Books opened", "账簿已开立"),
 }
 
 

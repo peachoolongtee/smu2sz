@@ -37,7 +37,7 @@ _CATEGORY = {
     "ACCEPT_OFFER": "deals", "RECORD_COMMITMENT": "deals", "COUNTER_OFFER": "deals", "REJECT_OFFER": "deals", "REVOKE_COMMITMENT": "deals",
     "DRAW_FACILITY": "cash", "REPAY_FACILITY": "cash", "SUBMIT_INVOICE_FOR_FINANCING": "cash", "APPLY_FOR_FACILITY": "cash",
     "ADD_FACILITY": "cash",
-    "RECEIVE_PAYMENT": "receivables",
+    "RECEIVE_PAYMENT": "receivables", "OPEN_BOOKS": "cash",
     "CONFIRM_DOCUMENT": "documents", "REJECT_DOCUMENT": "documents",
 }
 _LABELS = {

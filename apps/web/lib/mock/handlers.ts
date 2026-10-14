@@ -9,6 +9,7 @@ import { getOwnerToken, requestSignIn } from "../auth";
 import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
+import type { SetupDocument, SetupOpenResult, SetupPreview, SetupStatus } from "../types";
 import type {
   AcceptRequest,
   AcceptResult,
@@ -1527,4 +1528,29 @@ export async function decideDocument(id: string, decision: "confirm" | "reject",
 export async function getContractFixtures(): Promise<ContractFixture[]> {
   await delay();
   return documents.mockContractFixtures();
+}
+
+// set up your books (ADR-0013): the mock build shows the demo books and cannot open new ones (that needs the live API).
+const SETUP_LIVE_ONLY = "Setting up your own books needs the full app (live mode), where the API checks, signs and opens them.";
+
+export async function getSetupStatus(): Promise<SetupStatus> {
+  await delay();
+  return { books: "demo", scenario: "golden_sme", can_open: false, can_open_text: SETUP_LIVE_ONLY, opened: null };
+}
+
+export async function getSetupDocuments(): Promise<SetupDocument[]> {
+  await delay();
+  return [];
+}
+
+export async function readSetupDocument(): Promise<SetupDocument> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function previewSetup(): Promise<SetupPreview> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
+}
+
+export async function openBooks(): Promise<SetupOpenResult> {
+  throw new ApiError(0, SETUP_LIVE_ONLY, undefined, "mock_setup");
 }

@@ -8,11 +8,12 @@ import { useAsync } from "@/lib/use-async";
 import { useWide } from "@/lib/use-narrow";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
 import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
+import { useSetupStatus } from "@/lib/setup-draft";
 import type { DictKey } from "@/lib/dictionary";
 import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ArrowLeftIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
+import { ArrowLeftIcon, BankIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { BooksDialog } from "./demo/books-dialog";
@@ -240,6 +241,22 @@ function TourRow() {
   );
 }
 
+/** Set up your books (ADR-0013): the way in for a new owner, and for an owner whose books are open, where they started from. */
+function BooksRow() {
+  const { t } = useI18n();
+  const { status } = useSetupStatus();
+  const own = status?.books === "own" && status.opened;
+  return (
+    <Link href="/setup" onClick={closeMenu} className={sheetRow} data-testid="account-books">
+      <BankIcon className="text-brand-600" />
+      <span className="min-w-0">
+        {own ? t("setup.menu.own") : t("setup.menu.start")}
+        {own ? <span className="block truncate text-meta font-normal text-ink-3">{status.opened?.text}</span> : null}
+      </span>
+    </Link>
+  );
+}
+
 function AccountMenu() {
   const { t } = useI18n();
   const { token } = useAuth();
@@ -269,6 +286,7 @@ function AccountMenu() {
         <ShieldCheckIcon className="text-brand-600" />
         {t("nav.limits.menu")}
       </Link>
+      <BooksRow />
       <TourRow />
       <LangSwitch />
       <p className="text-meta text-ink-3">{t("biz.demoData.hint")}</p>
@@ -393,6 +411,13 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
   // A detail page the owner opened from a section (what-if and equipment from Cash, documents from Deals) says how to get back to it.
   const backTo = OWNER_DETAIL_ROUTES[pathname];
   const counts = useNavCounts();
+  // A new business with no books yet (ADR-0013): Home offers the setup, and the other sections wait until the books are open.
+  const { status: setup } = useSetupStatus();
+  const locked = (href: string) => !demo && setup?.books === "blank" && href !== "/";
+  const lockProps = (href: string) =>
+    locked(href)
+      ? { "aria-disabled": true as const, tabIndex: -1, title: t("setup.nav.locked"), onClick: (e: React.MouseEvent) => e.preventDefault() }
+      : {};
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
   const rail = useRail();
@@ -419,11 +444,13 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
           {wide ? <AskHeaderInput /> : null}
           <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
             <ApprovalsBadge />
-            <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
-              <Badge tone="neutral" title={t("biz.demoData.hint")}>
-                {t("biz.demoData")}
-              </Badge>
-            </span>
+            {setup?.books === "own" ? null : (
+              <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
+                <Badge tone="neutral" title={t("biz.demoData.hint")}>
+                  {t("biz.demoData")}
+                </Badge>
+              </span>
+            )}
             <ModeSwitch />
             <AccountMenu />
           </div>
@@ -466,9 +493,10 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
                           href={n.href}
                           aria-current={active ? "page" : undefined}
                           aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
+                          {...lockProps(n.href)}
                           className={`side-link motion-press relative flex min-h-11 items-center gap-3 rounded-control px-2.5 text-sm ${
                             active ? "bg-card font-bold text-ink shadow-f" : "font-medium text-ink-2 hover:bg-panel hover:text-ink"
-                          }`}
+                          } ${locked(n.href) ? "cursor-not-allowed opacity-40" : ""}`}
                         >
                           <Icon width={20} height={20} className={`shrink-0 ${active ? "text-ink" : "text-ink-3"}`} />
                           <span className="side-label">{t(n.key)}</span>
@@ -480,7 +508,7 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
                 </ul>
               </nav>
               <div className="mt-auto">
-                <p className="side-foot px-3 pb-2 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>
+                {setup?.books === "own" ? null : <p className="side-foot px-3 pb-2 text-supporting leading-relaxed text-ink-3">{t("biz.demoData.hint")}</p>}
                 <SidebarToggle controls="nav-pills" />
               </div>
             </div>
@@ -519,7 +547,8 @@ function BusinessShell({ children, demo = false }: { children: ReactNode; demo?:
                       href={n.href}
                       aria-current={active ? "page" : undefined}
                       aria-label={navName(t, n.href, n.key, counts[n.href as NavKey])}
-                      className={`motion-press relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-meta font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"}`}
+                      {...lockProps(n.href)}
+                      className={`motion-press relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-meta font-medium tracking-tight ${active ? "text-ink" : "text-ink-3 hover:text-ink"} ${locked(n.href) ? "cursor-not-allowed opacity-40" : ""}`}
                     >
                       <span className="relative">
                         <Icon width={20} height={20} className={`transition-colors duration-(--dur) ${active ? SECTIONS[section].solidText : ""}`} />
@@ -545,6 +574,7 @@ const TITLE_KEY: Record<string, DictKey> = {
   ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
   "/approvals": "nav.approvals",
   "/limits": "nav.limits",
+  "/setup": "setup.title",
 };
 
 /**

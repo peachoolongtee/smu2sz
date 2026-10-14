@@ -201,7 +201,7 @@ def test_any_other_name_is_a_422_that_wipes_nothing(api: TestClient, rt: Runtime
     r = api.post("/demo/reset", params={"scenario": name})
     assert r.status_code == 422
     detail = r.json()["detail"]
-    assert detail["code"] == "UNKNOWN_SCENARIO" and detail["scenarios"] == ["golden_sme", "short_facilities", "public_sme", "busy"]
+    assert detail["code"] == "UNKNOWN_SCENARIO" and detail["scenarios"] == ["golden_sme", "short_facilities", "public_sme", "busy", "blank"]
     assert "Nothing was reset" in detail["message"] and "没有名为" in api.post("/demo/reset", params={"scenario": name, "lang": "zh"}).json()["detail"]["message_when"]
     assert (len(rt.store.verdicts()), len(rt.store.commitments()), len(rt.store.approvals("PENDING"))) == before
     assert rt.scenario == "busy"
