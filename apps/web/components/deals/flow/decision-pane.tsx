@@ -18,7 +18,9 @@ import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowVie
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { paneStatus, tabsOf, viewIn, type DealViewKey } from "./deal-model";
 import { quietLink } from "./flow-parts";
+import { CompareTab } from "./compare-tab";
 import { Investigate } from "./investigate";
+import { FinancialOutcomes } from "./outcomes";
 import { DealTabs } from "./deal-tabs";
 import { ScopeTerms } from "./scope-terms";
 import { SendBlock } from "./send-block";
@@ -593,13 +595,23 @@ export function DecisionPane({
         {current === "compare" && picture && analysis ? (
           <div id={`${uid}-panel-compare`} role="tabpanel" aria-labelledby={`${uid}-tab-compare`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-compare">
             {crumbs(t("deals.pane.compare"))}
-            <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen chartOpen={false} why />
+            <CompareTab
+              picture={picture}
+              paths={paths}
+              buyerId={buyerId ?? ""}
+              focusKey={focus?.key ?? null}
+              onPick={(k) => onPick(k)}
+              onReviewSelected={reviewKind === "send" && !reviewing ? () => setSignal((n) => n + 1) : undefined}
+              onReviewRequest={reviewKind === "accept" && !reviewing ? () => setSignal((n) => n + 1) : undefined}
+              onBack={() => onGo({ view: null })}
+            />
           </div>
         ) : null}
 
         {current === "cash" && picture && analysis ? (
           <div id={`${uid}-panel-cash`} role="tabpanel" aria-labelledby={`${uid}-tab-cash`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-cash">
             {crumbs(t("deals.pane.cash"))}
+            <FinancialOutcomes picture={picture} paths={paths} />
             <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={false} chartOpen why={false} />
           </div>
         ) : null}

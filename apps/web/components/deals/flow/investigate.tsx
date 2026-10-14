@@ -48,16 +48,17 @@ export function packageClass(p: Pick<EnvelopePackageView, "outcome" | "tier">): 
 const SHOWN_FIRST = 3;
 
 /**
- * "Why FLOW recommends this" (round two, section 6): the server's reason for the recommended reply, who decides each path and why, the sentence each path's cash assumes, and the rule in words.
- * Every sentence is the server's except the rule, which is the dictionary's; a path the server wrote nothing for is left out.
+ * "Why these results differ" (round three, sections 1, 3 and 8): the server's reason for the recommended reply, who decides each response and why (said once in full here), the sentence each
+ * response's cash assumes (the funding plans differ: that is said in the server's words, never as parity), and the rule the server states (`recommendation.rule_text`). Every sentence is the server's;
+ * a response the server wrote nothing for is left out.
  */
-function WhyRecommends({ paths }: { paths: PicturePath[] }) {
+export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, "recommendation">; paths: PicturePath[] }) {
   const { t } = useI18n();
   const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
   const authority = paths.filter((p) => p.authority_reason_text);
   const assumes = paths.filter((p) => p.scenario_assumption_text ?? p.assumption_text);
   return (
-    <OpenSection first title={t("deals.why.title")} testId="deal-why" id="deal-why-section">
+    <OpenSection first title={t("deals.why.differ")} testId="deal-why" id="deal-why-section">
       <div className="space-y-4 text-sm text-ink-2">
         {recommended?.recommended_reason_text ? (
           <p className="max-w-[68ch] text-[15px] leading-snug text-ink" data-testid="deal-why-reason">
@@ -88,9 +89,11 @@ function WhyRecommends({ paths }: { paths: PicturePath[] }) {
             </ul>
           </div>
         ) : null}
-        <p className="border-l-2 border-line-strong pl-3 text-ink" data-testid="deal-why-rule">
-          {t("deals.why.rule")}
-        </p>
+        {picture.recommendation?.rule_text ? (
+          <p className="border-l-2 border-line-strong pl-3 text-ink" data-testid="deal-why-rule">
+            {picture.recommendation.rule_text}
+          </p>
+        ) : null}
       </div>
     </OpenSection>
   );
@@ -101,7 +104,7 @@ function WhyRecommends({ paths }: { paths: PicturePath[] }) {
  * one-line words, the first three of each class and the rest behind "more". Read only when the investigation is open and only with the strategy flag; a server without the
  * route (or with the feature off) mounts nothing.
  */
-function EnvelopePackages({ buyerId }: { buyerId: string }) {
+export function EnvelopePackages({ buyerId }: { buyerId: string }) {
   const { t, lang } = useI18n();
   const read = useAsync<EnvelopeView | null>(async () => (STRATEGY_MVP ? await getEnvelope(buyerId, lang, false) : null), [buyerId, lang]);
   const e = read.data;
@@ -373,40 +376,6 @@ export function Investigate({
 
   return (
     <div data-testid="deal-level-investigate" className="space-y-0">
-      {why ? <WhyRecommends paths={paths} /> : null}
-      {compareOpen ? (
-        <>
-      <OpenSection id="deal-compare" title={t("hv2.deal.responses")} subtitle={t("deals.compare.note")} testId="deal-compare" className="mt-8">
-        <ComparisonTable testId="deal-compare-table" caption={t("hv2.deal.responses")} columns={columns} rows={rows} />
-        {compare.loading && !cmp ? (
-          <p className="mt-2 text-supporting text-ink-3" role="status">
-            {t("deals.compare.loading")}
-          </p>
-        ) : null}
-        {loss?.assumption_text ? <p className="mt-3 text-supporting text-ink-2">{loss.assumption_text}</p> : null}
-        {cmp?.note ? <p className="mt-1 text-supporting text-ink-3">{cmp.note}</p> : null}
-        {exposure?.band.concentration || caps.length ? (
-          <Disclosure summary={t("hv2.deal.impact")} testId="deal-impact" className="mt-5 border-y border-line">
-            <div className="space-y-3 pb-1 text-sm text-ink-2">
-              {exposure?.band.concentration ? <p data-testid="deal-impact-concentration">{exposure.band.concentration}</p> : null}
-              {caps.map(({ p, cap }) => (
-                <p key={p.key} data-testid="deal-impact-capacity">
-                  <b className="font-bold text-ink">{p.label}.</b> {cap}
-                </p>
-              ))}
-            </div>
-          </Disclosure>
-        ) : null}
-      </OpenSection>
-      {/* What the owner can live with for this buyer (the strategy build): the ceilings and the levers behind a fold, then the packages by who may send them. */}
-      {STRATEGY_MVP ? (
-        <div className="mt-8" data-testid="deal-before-they-ask">
-          <BeforeTheyAsk buyerId={buyerId} />
-        </div>
-      ) : null}
-      <EnvelopePackages buyerId={buyerId} />
-        </>
-      ) : null}
       {chartOpen && lines.length ? (
         <div id="deal-chart" className="mt-8" data-testid="deal-chart">
           <CashPreview

@@ -192,6 +192,104 @@ test.describe("the Overview and the terms by scope (slice b)", () => {
   });
 });
 
+test.describe("Compare responses (slice c)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("the commercial packages only: three columns with the short authority words, five rows, each cell the server's word; no scenarios here", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    const table = page.getByTestId("deal-compare-table");
+    await expect(table.getByRole("columnheader").filter({ hasText: /\S/ })).toHaveCount(3);
+    await expect(page.getByTestId("deal-compare-head-asked")).toContainText("Buyer request");
+    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toHaveText("Outside mandate");
+    await expect(page.getByTestId("deal-compare-head-reply").first()).toContainText("Option A");
+    await expect(page.getByTestId("deal-compare-head-reply").first().getByTestId("deal-compare-badge")).toHaveText("FLOW can send");
+    await expect(page.getByTestId("deal-compare-head-reply").nth(1).getByTestId("deal-compare-badge")).toHaveText("Needs your approval");
+    const rowKeys = ["terms", "economic", "cash", "authority", "status"];
+    const rowLabels = ["Commercial terms", "Economic impact", "Cash outcome", "Authorization", "Buyer status"];
+    await expect(table.locator('tbody tr[data-testid^="deal-compare-row-"]')).toHaveCount(5);
+    for (const [i, k] of rowKeys.entries()) await expect(table.getByTestId(`deal-compare-row-${k}`).locator("th")).toContainText(rowLabels[i]);
+    await expect(page.getByTestId("deal-compare-cell-terms-reply").first()).toContainText("Not offered");
+    await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("¥5,040.00 once, ¥28,326.92 over 12 months");
+    await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("Two parts, not added together");
+    await expect(page.getByTestId("deal-compare-cell-economic-reply").nth(1)).toContainText("About ¥0");
+    await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("Breached by ¥135k for 15 days");
+    await expect(page.getByTestId("deal-compare-cell-status-asked")).toHaveText("Asked by Foshan");
+    await expect(page.getByTestId("deal-compare-cell-status-reply").first()).toHaveText("Not yet sent");
+    // Doing nothing and the buyer stopping are Business consequences on Cash impact, not columns here.
+    await expect(page.getByTestId("deal-panel-compare")).not.toContainText(/Do nothing|stops buying/i);
+    await expect(page.getByTestId("deal-panel-compare")).not.toContainText(/\bSafe\b/);
+    // The buyer's request cannot be accepted here: no [Review the request].
+    await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
+  });
+
+  test("a row expands in place to its calculation: the terms by scope, the cost rows, the funding each response rests on", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    await page.getByTestId("deal-compare-expand-economic").click();
+    await expect(page.getByTestId("deal-compare-expand-economic")).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table")).toBeVisible();
+    await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table-total-asked")).toBeVisible();
+    await page.getByTestId("deal-compare-expand-cash").click();
+    await expect(page.getByTestId("deal-compare-calc-cash").getByTestId("deal-funding-plans")).toContainText("Funding plan required: ¥150k credit-line draw today");
+    await page.getByTestId("deal-compare-expand-terms").click();
+    await expect(page.getByTestId("deal-compare-calc-terms").getByTestId("deal-compare-scope-terms")).toBeVisible();
+    await page.getByTestId("deal-compare-expand-economic").click();
+    await expect(page.getByTestId("deal-compare-calc-economic")).toHaveCount(0);
+  });
+
+  test("[Choose A] / [Review B] only select: the address names the response, the review below is of it, and nothing is sent", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    // (the table and its stacked twin are both in the page; one of them is shown)
+    const a = page.locator('[data-testid="deal-use-CTR-193394b6ba8b"]:visible');
+    const b = page.locator('[data-testid="deal-use-CTR-6b07cbf70441"]:visible');
+    await expect(a).toHaveText("Option A is selected");
+    await expect(b).toHaveText("Review Option B");
+    await b.click();
+    await expect(page).toHaveURL(/path=CTR-6b07cbf70441/);
+    await expect(b).toHaveText("Option B is selected");
+    await expect(b).toHaveAttribute("aria-pressed", "true");
+    await page.getByTestId("deal-review-selected").click();
+    await expect(page.getByTestId("queue-review")).toBeVisible();
+    await expect(page.getByTestId("deal-send")).toContainText("Option B");
+    await expect(page.getByTestId("deal-sent")).toHaveCount(0);
+    await expect(page.getByTestId("send-statements")).toBeVisible();
+    await page.getByTestId("queue-review-close").click();
+    await page.getByTestId("deal-back").click();
+    await expect(page.getByTestId("deal-panel-overview")).toBeVisible();
+  });
+
+  test("financial outcomes: the outcome table and the headroom dot plot are the server's words; below the reserve is red, the reserve a labelled dashed line; and Why these results differ states the rule once", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    const out = page.getByTestId("deal-outcomes");
+    await expect(out.getByTestId("deal-outcome-row-lowest")).toContainText("¥165k");
+    await expect(out.getByTestId("deal-outcome-row-when")).toContainText("in 60 days");
+    await expect(out.getByTestId("deal-outcome-row-reserve")).toContainText("Breached by ¥135k for 15 days");
+    await expect(out.getByTestId("deal-outcome-row-reserve")).toContainText("Held, no buffer at the lowest point");
+    await expect(out.getByTestId("deal-outcome-row-financing")).toContainText("None in this scenario");
+    await expect(out.getByTestId("deal-outcome-row-financing")).toContainText("¥150k credit-line draw today");
+    await expect(out.getByTestId("deal-outcome-row-send")).toContainText("Needs your approval");
+    const rows = out.getByTestId("deal-headroom-row");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.first()).toHaveAttribute("data-below", "true");
+    await expect(rows.nth(1)).toHaveAttribute("data-below", "false");
+    await expect(out.getByTestId("deal-headroom-reserve-label")).toContainText("Minimum cash reserve");
+    const red = await rows.first().locator("span.rounded-pill").first().evaluate((el) => getComputedStyle(el).backgroundColor);
+    const ink = await rows.nth(1).locator("span.rounded-pill").first().evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(red).not.toBe(ink);
+    // The dots stand left to right in the order of their cash: the request's lowest is the smallest.
+    const xs = await rows.evaluateAll((els) => els.map((e) => e.querySelector('[data-testid="deal-headroom-dot"]')!.getBoundingClientRect().x));
+    expect(xs[0]).toBeLessThan(xs[1]);
+    await expect(page.getByTestId("deal-why")).toContainText("Why these results differ");
+    await expect(page.getByTestId("deal-why-rule")).toHaveText("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.");
+    await expect(page.getByTestId("deal-why-authority")).toContainText("Option A.");
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

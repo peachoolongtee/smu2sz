@@ -322,3 +322,77 @@ export function tabsOf(opts: { agreed: boolean; analysis: boolean }): DealViewKe
 
 /** A view the deal has, else the Overview. */
 export const viewIn = (view: DealViewKey, tabs: DealViewKey[]): DealViewKey => (tabs.includes(view) ? view : "overview");
+
+// ---------------------------------------------------------------- the comparison's rows and the outcome plot (round three, sections 1 and 5)
+
+export type CompareRowKey = "terms" | "economic" | "cash" | "authority" | "status";
+export const COMPARE_ROWS: readonly CompareRowKey[] = ["terms", "economic", "cash", "authority", "status"];
+
+export interface CompareCellModel {
+  /** The cell's main word and the words under it: each is one server field. */
+  value: string | null;
+  sub: string | null;
+  note: string | null;
+  /** The path breaches the reserve (a mark in the cell, never a verdict). */
+  bad: boolean;
+  /** Commercial terms only: one line per scope, the server's scope word and its `cell_text`. */
+  lines?: { scope: string | null; text: string }[];
+}
+
+/**
+ * The comparison as one model: for each of the five default rows, one cell per path. Every cell is a server word (`economic_headline_text`, `lowest_short`, `reserve_state_text`, `authority_short_text`,
+ * `buyer_status_text`, the terms' `cell_text`); an older server that lacks the short words leaves the cell with what it did send (the cost headline, the band). Nothing is composed or computed.
+ */
+export function comparisonRows(paths: PicturePath[]): { key: CompareRowKey; cells: CompareCellModel[] }[] {
+  const groups = termsGroups(paths);
+  return COMPARE_ROWS.map((key) => ({
+    key,
+    cells: paths.map((p, i): CompareCellModel => {
+      const empty: CompareCellModel = { value: null, sub: null, note: null, bad: false };
+      if (key === "terms") return { ...empty, lines: groups.flatMap((g) => g.rows.map((r) => ({ scope: g.label, text: r.cells[i]?.text ?? "" })).filter((l) => l.text)) };
+      if (key === "economic") {
+        const h = costHeadline(p);
+        return { ...empty, value: p.economic_headline_text ?? h.display, sub: p.economic_basis_text ?? h.basis };
+      }
+      if (key === "cash") return { value: p.lowest_short, sub: p.lowest_when, note: p.reserve_state_text ?? p.band_text, bad: p.first_breach_when !== null };
+      if (key === "authority") return { ...empty, value: p.authority_short_text ?? null };
+      return { ...empty, value: p.buyer_status_text ?? null };
+    }),
+  }));
+}
+
+export interface PlotDot {
+  key: string;
+  label: string;
+  /** The server's words for the dot (`lowest_short`) and its day (`lowest_when`). */
+  short: string;
+  when: string | null;
+  /** 0 to 100: where the dot sits on the scale, from `lowest_fen` against the scale's ends (positions only; no figure is drawn from it). */
+  at: number;
+  /** The dot is below the reserve (red); on or above it is ink. */
+  below: boolean;
+}
+export interface Plot {
+  dots: PlotDot[];
+  /** Where the reserve's dashed line sits, 0 to 100. */
+  reserveAt: number;
+}
+
+/**
+ * The headroom dot plot's geometry (section 5): a horizontal scale from the lowest value to the highest of the responses' lowest cash and the reserve, a vertical line at `floor_fen` and one dot per
+ * response at its `lowest_fen`. The browser scales positions only; every label is a server word. A response whose cash cannot be drawn (no `lowest_fen`) has no dot; with none there is no plot.
+ */
+export function headroomPlot(paths: PicturePath[], floorFen: number): Plot | null {
+  const drawn = paths.filter((p): p is PicturePath & { lowest_fen: number } => typeof p.lowest_fen === "number" && Boolean(p.lowest_short));
+  if (!drawn.length) return null;
+  const values = [...drawn.map((p) => p.lowest_fen), floorFen];
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const span = hi - lo;
+  // Room at each end so a dot on the scale's end is not clipped.
+  const at = (v: number) => (span > 0 ? 8 + ((v - lo) / span) * 84 : 50);
+  return {
+    reserveAt: at(floorFen),
+    dots: drawn.map((p) => ({ key: p.key, label: p.label, short: p.lowest_short as string, when: p.lowest_when, at: at(p.lowest_fen), below: p.lowest_fen < floorFen })),
+  };
+}
