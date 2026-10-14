@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createStore } from "@/lib/create-store";
 import type { DictKey } from "@/lib/dictionary";
@@ -8,17 +8,60 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "../ui";
 
 /**
- * "Show me around": a short tour of the page the owner is on, started from the account sheet and never by itself (no
- * first-visit autoplay, so an automated browser and a returning owner both see the page as it is). Each page has at most
- * two steps, each a spotlight on one part of the page with what it is for and what its buttons do; a step whose part is
- * not on the page now (a quiet home has no recommendation) is skipped. Esc, "Skip" or a click outside closes it.
- * The words are in the dictionary in both languages and use the labels the pages use.
+ * "Show me around": a tour of the page the owner is on, a spotlight on each part in reading order with what it is for and what its
+ * buttons do; a step whose part is not on the page now (a quiet home has no recommendation) is skipped. It opens by itself the first time
+ * the owner lands on a page (once the page has drawn its parts), with "Skip tour" and "Don't show tours again", and from the account
+ * sheet any time. An automated browser never gets the autoplay unless it asks for it (`tl-tour-auto`), so tests see the page as it is.
+ * Esc, "Skip tour" or a click outside closes it. The words are in the dictionary in both languages and use the labels the pages use.
  */
 
-const tourStore = createStore<{ open: boolean }>({ open: false });
+const tourStore = createStore<{ open: boolean; auto: boolean }>({ open: false, auto: false });
 
 export function startTour(): void {
-  tourStore.set({ open: true });
+  tourStore.set({ open: true, auto: false });
+}
+
+// ---- first visits: the pages whose tour was shown (or skipped) and the owner's "no more tours", per browser; every read and write may fail
+const SEEN_KEY = "tl-tours-seen";
+const OFF_KEY = "tl-tours-off";
+function seenPages(): string[] {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(SEEN_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+function markSeen(path: string): void {
+  try {
+    const seen = seenPages();
+    if (!seen.includes(path)) window.localStorage.setItem(SEEN_KEY, JSON.stringify([...seen, path]));
+  } catch {
+    /* storage unavailable: the tour may show again */
+  }
+}
+function toursOff(): boolean {
+  try {
+    return window.localStorage.getItem(OFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function turnToursOff(): void {
+  try {
+    window.localStorage.setItem(OFF_KEY, "1");
+  } catch {
+    /* storage unavailable */
+  }
+}
+/** Autoplay is for people: an automated browser (tests, screenshots) opts in with `tl-tour-auto`. */
+function autoplayAllowed(): boolean {
+  try {
+    if (navigator.webdriver && window.localStorage.getItem("tl-tour-auto") !== "1") return false;
+  } catch {
+    if (navigator.webdriver) return false;
+  }
+  return !toursOff();
 }
 
 interface Step {
@@ -30,29 +73,68 @@ interface Step {
   extra?: "sections";
 }
 
-const NAV: Step = { target: '[data-testid="nav-pills"], [data-testid="tab-bar"]', title: "tour.nav.title", body: "tour.nav.body", extra: "sections" };
+const NAV: Step = { target: '[data-testid="nav-pills"], [data-testid="tab-bar"]', title: "tour.p.shell.nav.title", body: "tour.p.shell.nav.body", extra: "sections" };
 
 const tid = (id: string) => `[data-testid="${id}"]`;
+/** A step whose title and body are `tour.p.<key>.title` and `.body`. */
+const part = (key: string, target: string, extra?: Step["extra"]): Step => ({ target, title: `tour.p.${key}.title` as DictKey, body: `tour.p.${key}.body` as DictKey, extra });
 
-/** The steps of each page, in reading order. */
+/** The steps of each page, in reading order: every section, and what its buttons do. A step whose part is not on screen is left out. */
 const STEPS: Record<string, Step[]> = {
-  "/": [{ target: '[data-testid="home-status"]', title: "tour.home.status.title", body: "tour.home.status.body" }, NAV],
+  "/": [
+    part("home.status", tid("home-status")),
+    part("home.cash", tid("hv2-cash-card")),
+    part("home.mix", '[data-tour="home-mix"]'),
+    part("home.action", tid("hv2-action")),
+    part("home.outlook", tid("hv2-outlook-card")),
+    part("home.worklist", tid("home-worklist-panel")),
+    part("home.upcoming", tid("hv2-upcoming")),
+    part("home.owed", tid("hv2-owed-card")),
+    part("home.tools", '[data-tour="home-tools"]'),
+    part("shell.ask", tid("ask-header")),
+    NAV,
+    part("shell.account", tid("account-menu")),
+  ],
   "/deals": [
-    { target: "#inbox-list", title: "tour.deals.inbox.title", body: "tour.deals.inbox.body" },
-    { target: "#deal-recommendation-card", title: "tour.deals.answer.title", body: "tour.deals.answer.body" },
+    part("deals.attach", '[data-tour="deals-attach"]'),
+    part("deals.list", tid("deal-list")),
+    part("deals.messages", tid("deal-list-messages")),
+    part("deals.guide", tid("deals-progress")),
+    part("deals.next", '[data-next="true"]'),
+    part("deals.queue", tid("deals-queue")),
+    part("deals.inbox", tid("deals-inbox")),
+    part("deals.pane", tid("deal-pane")),
   ],
   "/cash": [
-    { target: "#cash-answer", title: "tour.cash.risk.title", body: "tour.cash.risk.body" },
-    { target: "#cash-options", title: "tour.cash.options.title", body: "tour.cash.options.body" },
+    part("cash.status", "#cash-answer"),
+    part("cash.summary", '[data-tour="cash-summary"]'),
+    part("cash.plan", tid("cash-plan-ring")),
+    part("cash.chart", tid("cash-forecast")),
+    part("cash.markers", '[data-testid^="picture-marker-"]'),
+    part("cash.try", tid("cash-try")),
+    part("cash.more", tid("cash-more")),
+    part("cash.options", tid("cash-options-all")),
+    part("cash.sources", "#cash-sources-now"),
+    part("cash.readings", tid("cash-readings")),
   ],
+  "/whatif": [part("sandbox.pick", tid("whatif-ask")), part("sandbox.controls", "#whatif-controls"), part("sandbox.outcome", tid("whatif-outcome"))],
+  "/capex": [part("capex.start", '[data-tour="capex-start"]'), part("capex.result", tid("capex-recommendation")), part("capex.structures", "#structures")],
   "/receivables": [
-    { target: "#recv-summary", title: "tour.recv.summary.title", body: "tour.recv.summary.body" },
-    { target: "#recv-open", title: "tour.recv.open.title", body: "tour.recv.open.body" },
+    part("recv.figures", tid("recv3-cards")),
+    part("recv.customers", tid("recv-customer-list")),
+    part("recv.invoices", tid("recv3-list")),
+    part("recv.selected", tid("recv3-selected")),
+    part("recv.stress", tid("recv3-stress")),
   ],
   "/activity": [
-    { target: '#activity-timeline, [data-testid="activity-list"]', title: "tour.activity.list.title", body: "tour.activity.list.body" },
-    { target: '#activity-refused, [data-testid="activity-security"]', title: "tour.activity.refused.title", body: "tour.activity.refused.body" },
+    part("activity.state", tid("activity-state")),
+    part("activity.chain", tid("chain-status")),
+    part("activity.view", tid("activity-view")),
+    part("activity.search", tid("activity-search")),
+    part("activity.list", tid("activity-list")),
   ],
+  "/documents": [part("docs.read", "#docs-read"), part("docs.review", '#doc-text, [data-tour="docs-review"]'), part("docs.list", "#docs-list")],
+  "/trust": [part("trust.view", tid("trust-view")), part("trust.body", '[data-testid="trust-security"], [data-testid="trust-evidence"]')],
   "/demo": [
     { target: tid("demo-current"), title: "tour.demo.current.title", body: "tour.demo.current.body" },
     { target: tid("demo-books"), title: "tour.demo.alt.title", body: "tour.demo.alt.body" },
@@ -62,10 +144,28 @@ const STEPS: Record<string, Step[]> = {
   "/limits": [{ target: "#limits-rules", title: "tour.limits.title", body: "tour.limits.body" }],
 };
 
+/** The page's name on the card ("Deals · step 2 of 7"). */
+const PAGE_NAME: Record<string, DictKey> = {
+  "/": "nav.home",
+  "/deals": "nav.deals",
+  "/cash": "nav.cash",
+  "/whatif": "nav.sandbox",
+  "/capex": "nav.loans",
+  "/receivables": "nav.receivables",
+  "/activity": "nav.activity",
+  "/documents": "nav.attach",
+  "/trust": "nav.trust",
+  "/approvals": "nav.approvals",
+  "/limits": "nav.limits",
+};
+
 const SECTIONS: { key: DictKey; body: DictKey }[] = [
   { key: "nav.home", body: "tour.sec.home" },
   { key: "nav.deals", body: "tour.sec.deals" },
+  { key: "nav.attach", body: "tour.sec.docs" },
   { key: "nav.cash", body: "tour.sec.cash" },
+  { key: "nav.sandbox", body: "tour.sec.sandbox" },
+  { key: "nav.loans", body: "tour.sec.capex" },
   { key: "nav.receivables", body: "tour.sec.receivables" },
   { key: "nav.activity", body: "tour.sec.activity" },
 ];
@@ -85,9 +185,19 @@ function stepsFor(pathname: string): Step[] {
   return own.length ? own : [NAV];
 }
 
+/**
+ * The pages whose view changes with the address (Deals and Receivables open on one customer): that view is a first visit of its own, so its parts (the
+ * outlined next click, the queue, the invoices) get their tour the first time too.
+ */
+const DETAIL_PARAMS: Record<string, string[]> = { "/deals": ["customer", "buyer", "decision", "tab"], "/receivables": ["buyer", "customer", "invoice"] };
+
 export function Tour() {
   const { open } = tourStore.useValue();
   const pathname = usePathname();
+  const params = useSearchParams();
+  const detail = (DETAIL_PARAMS[pathname] ?? []).some((k) => params.get(k));
+  const seenKey = detail ? `${pathname}:detail` : pathname;
+  useAutoplay(pathname, seenKey);
   // A tour belongs to the page it was started on: the steps are read when it opens, and it closes when the page changes.
   const [run, setRun] = useState<{ path: string; steps: Step[] } | null>(null);
   useEffect(() => {
@@ -99,14 +209,39 @@ export function Tour() {
     return () => window.cancelAnimationFrame(frame);
   }, [open, pathname]);
   useEffect(() => {
-    if (open && run && run.path !== pathname) tourStore.set({ open: false });
+    if (open && run && run.path !== pathname) tourStore.set({ open: false, auto: false });
   }, [open, run, pathname]);
   if (!open || !run || run.path !== pathname) return null;
-  return <TourCard steps={run.steps} />;
+  return <TourCard steps={run.steps} path={run.path} seenKey={seenKey} />;
 }
 
-function TourCard({ steps }: { steps: Step[] }) {
+/**
+ * The first visit to a page with a tour opens it by itself, once the page has drawn its parts: the page is watched until the steps it can show stop
+ * changing (two quiet reads in a row, at least one part on screen), for at most eight seconds. A page already toured, or tours turned off, opens nothing.
+ */
+function useAutoplay(pathname: string, seenKey: string) {
+  useEffect(() => {
+    if (!STEPS[pathname] || !autoplayAllowed() || seenPages().includes(seenKey)) return;
+    let last = -1;
+    let quiet = 0;
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      if (tourStore.get().open) return window.clearInterval(timer);
+      const n = (STEPS[pathname] ?? []).filter((s) => visibleTarget(s.target)).length;
+      quiet = n > 0 && n === last ? quiet + 1 : 0;
+      last = n;
+      if (quiet >= 2) {
+        window.clearInterval(timer);
+        tourStore.set({ open: true, auto: true });
+      } else if (Date.now() - started > 8000) window.clearInterval(timer);
+    }, 400);
+    return () => window.clearInterval(timer);
+  }, [pathname, seenKey]);
+}
+
+function TourCard({ steps, path, seenKey }: { steps: Step[]; path: string; seenKey: string }) {
   const { t } = useI18n();
+  const { auto } = tourStore.useValue();
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [cardH, setCardH] = useState(280);
@@ -115,7 +250,15 @@ function TourCard({ steps }: { steps: Step[] }) {
   const nextRef = useRef<HTMLButtonElement>(null);
   const current = steps[step];
   const last = step === steps.length - 1;
-  const close = useCallback(() => tourStore.set({ open: false }), []);
+  // However it closes (finished, skipped, Esc, a click outside), this page's tour has been seen: it does not open by itself again.
+  const close = useCallback(() => {
+    markSeen(seenKey);
+    tourStore.set({ open: false, auto: false });
+  }, [seenKey]);
+  const stopAll = () => {
+    turnToursOff();
+    close();
+  };
 
   // A real modal: the browser makes the page behind it inert (focus cannot leave the card) and Esc cancels. The tour starts from a row
   // in the account sheet, which closes as it starts, so the browser has nothing to give focus back to: it goes to the account button.
@@ -220,7 +363,20 @@ function TourCard({ steps }: { steps: Step[] }) {
         className="flow-f motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
-        <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>
+        <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">
+          {PAGE_NAME[path] ? t("tour.page", { page: t(PAGE_NAME[path]), n: step + 1, total: steps.length }) : t("tour.step", { n: step + 1, total: steps.length })}
+        </p>
+        {/* Where the owner is in the tour: one dot per step. */}
+        <div aria-hidden className="mt-2 flex gap-1">
+          {steps.map((_, i) => (
+            <span key={i} className={`h-1 rounded-pill transition-all duration-(--dur) ${i === step ? "w-5 bg-f-purple" : i < step ? "w-2 bg-f-purple/40" : "w-2 bg-line"}`} />
+          ))}
+        </div>
+        {auto && step === 0 ? (
+          <p className="mt-3 rounded-tile bg-f-purple-soft px-3 py-2 text-sm text-f-purple-ink" data-testid="tour-intro">
+            {t("tour.auto.intro")}
+          </p>
+        ) : null}
         <h2 id="tour-title" className="mt-1 text-balance text-lg font-semibold leading-snug">
           {t(current.title)}
         </h2>
@@ -236,10 +392,10 @@ function TourCard({ steps }: { steps: Step[] }) {
             ))}
           </ul>
         ) : null}
-        <div className="mt-5 flex items-center justify-end gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
           {last ? null : (
-            <Button variant="ghost" onClick={close} data-testid="tour-skip">
-              {t("tour.skip")}
+            <Button variant="ghost" onClick={close} data-testid="tour-skip" className="mr-auto">
+              {t("tour.skipTour")}
             </Button>
           )}
           {step > 0 ? <Button onClick={() => setStep(step - 1)}>{t("tour.back")}</Button> : null}
@@ -247,6 +403,15 @@ function TourCard({ steps }: { steps: Step[] }) {
             {last ? t("tour.finish") : t("tour.next")}
           </Button>
         </div>
+        {/* Offered when the tour opened by itself: the replay is in the account menu, and tours can be turned off for good. */}
+        {auto ? (
+          <p className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-line pt-3 text-supporting text-ink-3">
+            <span>{t("tour.replayHint")}</span>
+            <button type="button" onClick={stopAll} className="font-semibold text-brand-700 underline underline-offset-2 hover:text-ink" data-testid="tour-off">
+              {t("tour.off")}
+            </button>
+          </p>
+        ) : null}
       </div>
     </dialog>
   );

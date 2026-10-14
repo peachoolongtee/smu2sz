@@ -159,7 +159,9 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
   const planPoints = alternative?.length ? alternative : null;
   const hasPlan = linesDiffer(baseline, planPoints);
   const [view, setView] = useState<"nothing" | "plan">(hasPlan ? "plan" : "nothing");
+  // The day whose cash moves are open in the chart's callout: the one the owner picked (a marker or the legend), and the one under the pointer or the keyboard.
   const [focus, setFocus] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
   const showPlan = hasPlan && view === "plan";
   // Another alternative was chosen by the page: show it.
   const [seenKey, setSeenKey] = useState(resetKey);
@@ -384,17 +386,34 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
     chosen.push(e);
   }
   const planEvents = showPlan && planPoints ? eventsOf(planPoints, planSegs, (e) => e.kind === "DRAW" || e.kind === "ADVANCE", "p").sort((a, b) => b.amount - a.amount) : [];
-  const dots: { key: string; x: number; y: number; neg: boolean }[] = [];
-  for (const e of [...chosen, ...planEvents]) {
-    if (place(e.key, e.text, e.neg ? "ink" : "ok", true, beside(xOf(e.day), e.y))) dots.push({ key: e.key, x: xOf(e.day), y: e.y, neg: e.neg });
-  }
 
-  // ---- the causes: one chip per event in the window, from the do-nothing line
+  // ---- the causes: every event in the window on the do-nothing line, and one numbered marker on the line for each day that has any
   const chips = (withChips ? base : [])
     .filter((p) => p.day <= end)
     .flatMap((p) => p.events.map((e) => ({ day: p.day, e })))
     .map((c, index) => ({ ...c, index }));
-  const bandDay = focus !== null ? chips.find((c) => c.index === focus)?.day : undefined;
+  const moveDays = [...new Set(chips.map((c) => c.day))];
+  const moves = moveDays.map((day, i) => {
+    const events = chips.filter((c) => c.day === day);
+    const net = events.reduce((a, c) => a + c.e.amount_fen, 0);
+    // Kept inside the plot's box so a marker at either end is never cut by the frame.
+    return { day, n: i + 1, events, x: Math.min(Math.max(xOf(day), 12), W - 12), y: yOf(valueAt(baseSegs, day)), neg: net < 0 };
+  });
+  const numberOf = (day: number) => moves.find((m) => m.day === day)?.n ?? null;
+  // The markers are obstacles for every label after them.
+  for (const m of moves) obstacles.push({ x0: m.x - 13, x1: m.x + 13, y0: m.y - 13, y1: m.y + 13 });
+  const dots: { key: string; x: number; y: number; neg: boolean }[] = [];
+  // An event with a marker says nothing on the chart until the owner points at it (the callout); without markers the largest keep their label and dot.
+  for (const e of chosen) {
+    if (withChips && numberOf(e.day) !== null) continue;
+    if (place(e.key, e.text, e.neg ? "ink" : "ok", true, beside(xOf(e.day), e.y))) dots.push({ key: e.key, x: xOf(e.day), y: e.y, neg: e.neg });
+  }
+  for (const e of planEvents) {
+    if (place(e.key, e.text, e.neg ? "ink" : "ok", true, beside(xOf(e.day), e.y))) dots.push({ key: e.key, x: xOf(e.day), y: e.y, neg: e.neg });
+  }
+  const openDay = hover ?? focus;
+  const openMove = openDay !== null ? (moves.find((m) => m.day === openDay) ?? null) : null;
+  const bandDay = openMove?.day;
 
   // ---- the server's y ticks: a hairline and its label in the gutter, skipping a tick that would crowd the one before it
   const yTicks: { key: number; y: number; label: string }[] = [];
@@ -463,7 +482,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
         </ul>
       ) : null}
 
-      <div ref={frame} className="w-full" style={{ minHeight: H }}>
+      <div ref={frame} className="relative w-full" style={{ minHeight: H }}>
         {W > 0 ? (
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel} className="block max-w-full select-none overflow-visible tabular-nums" fontSize={FONT}>
             {bandDay !== undefined ? (
@@ -529,6 +548,34 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
             ))}
           </svg>
         ) : null}
+        {/* The cash moves on the line: a numbered marker at each day's step (red for money out, green for money in); hover, focus or a tap opens what moved and why. */}
+        {W > 0
+          ? moves.map((m) => {
+              const on = focus === m.day;
+              return (
+                <button
+                  key={m.day}
+                  type="button"
+                  aria-pressed={on}
+                  aria-label={`${m.n}. ${m.events.map((c) => `${c.e.label_short ?? c.e.label} ${c.e.amount_short}`).join(", ")}, ${when(m.day)}`}
+                  onClick={() => setFocus(on ? null : m.day)}
+                  onMouseEnter={() => setHover(m.day)}
+                  onMouseLeave={() => setHover(null)}
+                  onFocus={() => setHover(m.day)}
+                  onBlur={() => setHover(null)}
+                  className={`hit motion-press absolute z-10 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-pill border-2 font-bold ${phone ? "size-5 text-[10px]" : "size-6 text-[11px]"} leading-none tabular-nums shadow-(--shadow-f) transition-transform duration-(--dur-fast) hover:scale-110 ${fade} ${
+                    on || openDay === m.day ? (m.neg ? "border-bad-solid bg-bad-solid text-white" : "border-ok-solid bg-ok-solid text-white") : m.neg ? "border-bad-solid bg-card text-bad-fg" : "border-ok-solid bg-card text-ok-fg"
+                  }`}
+                  style={{ left: m.x, top: m.y, ...fadeStyle }}
+                  data-testid={`picture-marker-${m.n}`}
+                  data-day={m.day}
+                >
+                  {m.n}
+                </button>
+              );
+            })
+          : null}
+        {W > 0 && openMove ? <MoveCallout move={openMove} point={base.find((p) => p.day === openMove.day) ?? null} before={openMove.day > today ? valueAt(baseSegs, openMove.day - 1) : null} floor={floor} when={when(openMove.day)} W={W} H={H} /> : null}
       </div>
 
       {captions}
@@ -562,30 +609,54 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
       </table>
       </div>
 
-      {chips.length ? (
-        <div className="flex flex-wrap items-center gap-2" data-testid="picture-chips" role="group" aria-label={t("biz.picture.chips")}>
-          <span className="mr-1 text-sm font-semibold text-ink-2" aria-hidden>
-            {t("biz.picture.chips")}
-          </span>
-          {chips.map((c) => {
-            const on = focus === c.index;
-            return (
-              <button
-                key={c.index}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setFocus(on ? null : c.index)}
-                data-testid={`picture-chip-${c.index}`}
-                className={`motion-press inline-flex min-h-9 touch:min-h-11 items-baseline gap-1.5 rounded-pill border px-3.5 py-2 text-left text-sm font-medium text-ink ${on ? "border-brand-600 bg-brand-50" : "border-line-strong bg-surface hover:bg-subtle"}`}
-              >
-                <span>{c.e.label_short ?? c.e.label}</span>
-                <strong className={c.e.amount_fen < 0 ? "text-bad-fg" : "text-ok-fg"}>{c.e.amount_short}</strong>
-                <span className="text-ink-3">{when(c.day)}</span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
     </section>
+  );
+}
+
+type Move = { day: number; n: number; x: number; y: number; neg: boolean; events: { day: number; index: number; e: HomeSeriesPoint["events"][number] }[] };
+
+/**
+ * One day's cash moves, opened from its marker: when, each event's short name and amount, the server's longer words for what it is and what it rests on (the why), the cash
+ * after the day, and, where the line crosses the minimum that day, that this is the crossing. Placed above the marker (below it near the top), inside the chart's width.
+ */
+function MoveCallout({ move, point, before, floor, when, W, H }: { move: Move; point: HomeSeriesPoint | null; before: number | null; floor: number; when: string; W: number; H: number }) {
+  const { t } = useI18n();
+  const width = Math.min(300, W - 8);
+  const left = Math.min(Math.max(move.x - width / 2, 4), W - width - 4);
+  const above = move.y > 150;
+  const after = point?.closing_fen ?? null;
+  const cross = after === null || before === null ? null : before >= floor && after < floor ? "below" : before < floor && after >= floor ? "above" : null;
+  return (
+    <div
+      role="status"
+      className="motion-pop pointer-events-none absolute z-20 rounded-tile border border-line bg-card p-3 text-sm shadow-(--shadow-lift)"
+      style={{ left, width, ...(above ? { bottom: H - move.y + 18 } : { top: move.y + 18 }) }}
+      data-testid="picture-callout"
+      data-day={move.day}
+    >
+      <p className="text-supporting font-semibold text-ink-3 first-letter:uppercase">
+        {move.n} · {when}
+      </p>
+      <ul className="mt-1 space-y-1.5">
+        {move.events.map((c) => {
+          const long = c.e.label_short && c.e.label !== c.e.label_short ? c.e.label : null;
+          return (
+            <li key={c.index}>
+              <p className="flex items-baseline justify-between gap-3">
+                <span className="font-semibold text-ink">{c.e.label_short ?? c.e.label}</span>
+                <strong className={`shrink-0 tabular-nums ${c.e.amount_fen < 0 ? "text-bad-fg" : "text-ok-fg"}`}>{c.e.amount_short}</strong>
+              </p>
+              {long || c.e.basis_text ? <p className="text-supporting text-ink-2">{[long, c.e.basis_text].filter(Boolean).join(" · ")}</p> : null}
+            </li>
+          );
+        })}
+      </ul>
+      {point ? (
+        <p className="mt-2 border-t border-line pt-2 text-supporting text-ink-2">
+          {t("biz.picture.after", { amount: point.closing_display })}
+          {cross ? <span className={`mt-0.5 block font-semibold ${cross === "below" ? "text-bad-fg" : "text-ok-fg"}`}>{cross === "below" ? t("biz.picture.crossBelow") : t("biz.picture.crossAbove")}</span> : null}
+        </p>
+      ) : null}
+    </div>
   );
 }

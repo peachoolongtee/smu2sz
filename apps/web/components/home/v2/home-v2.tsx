@@ -9,7 +9,8 @@ import { CompanyChart } from "@/components/home/v2/company-chart";
 import { ContextCard } from "@/components/home/v2/context-card";
 import { CustomerFocusPanel } from "@/components/home/v2/customer-focus";
 import { DealFocusPanel } from "@/components/home/v2/deal-focus";
-import { CashCard, FooterLinks, OutlookCard, OwedCard, UpcomingCard } from "@/components/home/v2/home-cards";
+import { CashCard, OutlookCard, OwedCard, UpcomingCard } from "@/components/home/v2/home-cards";
+import { HomeTools } from "@/components/deals/tools";
 import { fromWarm, key } from "@/components/home/v2/prefetch";
 import { WorklistPanel } from "@/components/home/v2/worklist";
 import { ErrorState } from "@/components/ui";
@@ -181,8 +182,8 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
       action={v2.action}
       kpis={v2.kpis}
       nextAction={h.next_action}
-      stateVersion={h.state_version}
-      fixer={fixer}
+      alarm={h.next_action && cash.lowest_fen < 0 && cash.lowest_short ? { amount: cash.lowest_short, when: cash.lowest_when ?? "" } : null}
+      covered={!h.next_action && cash.first_breach_day == null && !cash.below_reserve_today}
       line={cash.headline_note}
       fundingTotal={v2.kpis.funding.value_display}
       onBack={shown ? () => clear("action") : undefined}
@@ -216,13 +217,13 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
               // A customer: the customer card beside the company's cash card (the default's left pair); the owed donut stays below the movements.
               <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
                 <CustomerFocusPanel customerId={shown.customer as string} worklist={worklist.data} selection={selection} onAll={() => clear()} />
-                <CashCard kpis={v2.kpis} />
+                <CashCard kpis={v2.kpis} h={h} customers={customers.data?.customers} />
               </div>
             )}
           </>
         ) : (
           <div className="grid items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
-            <CashCard kpis={v2.kpis} />
+            <CashCard kpis={v2.kpis} h={h} customers={customers.data?.customers} />
             {bar}
             {outlook}
           </div>
@@ -233,8 +234,13 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           <CompanyChart h={h} chart={v2.chart} onClose={() => setFlag("expand", false)} />
         </div>
       ) : null}
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]">
-        {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : <span />}
+      {/* The worklist and the shortcuts are the page's working area (the wide column); the upcoming movements and what is owed are a quiet side column. */}
+      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,3.2fr)_minmax(15rem,1fr)]">
+        {/* The worklist, and under it the owner's shortcuts as one low strip (approvals, the sandbox, loans and purchases, attaching a deal). */}
+        <div className="grid min-w-0 content-start gap-4">
+          {hasWorklist ? <WorklistPanel read={worklist.data} customers={customers.data} loading={worklist.loading} error={worklist.error} onRetry={worklist.reload} selection={selection} showAlert={!hasCard} /> : null}
+          <HomeTools />
+        </div>
         <div className="grid min-w-0 content-start gap-4">
           <div style={fade} className="min-w-0">
             {shown ? <ContextCard customerId={shown.customer as string} decision={shown.decision} row={row} customer={customerRow} onBack={() => clear()} /> : <UpcomingCard h={h} overdue={overdue} />}
@@ -242,7 +248,11 @@ export function HomeV2Page({ h, fixer, loading, onRetry }: { h: HomeView; fixer:
           {owedCard}
         </div>
       </div>
-      <FooterLinks separate={Boolean(shown && !shown.decision)} />
+      {shown && !shown.decision ? (
+        <p className="mt-4 text-supporting text-ink-3" data-testid="hv2-foot-separate">
+          {t("hv2.foot.separate")}
+        </p>
+      ) : null}
     </div>
   );
 }

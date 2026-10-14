@@ -2836,6 +2836,8 @@ export interface HomeRailEvent {
   label_short?: string;
   amount_fen?: Fen;
   amount_short: string;
+  /** The amount in full ("¥257,200.00"), beside the short one. */
+  amount_display?: string;
   cash_after_short?: string;
   room_after_short?: string | null;
   tone?: HomeTone;
