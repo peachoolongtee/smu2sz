@@ -233,7 +233,11 @@ def test_the_busy_books_are_loaded_without_a_story(api: TestClient, rt: Runtime)
     scope = alt["scope_text"]
     assert f"{queue['counts']['customers']} customers" in scope
     assert f"{sum(1 for r in queue['needs_you'] if r['kind'] == 'DECISION')} negotiations waiting for your decision" in scope
-    assert f"{queue['counts']['agreements']} agreements in force" in scope or f"{queue['counts']['agreements']} agreement in force" in scope
+    # The busy seed opens with no agreement (Slice B's seed keeps EX01 sendable), and the scope sentence says nothing of agreements then.
+    if queue["counts"]["agreements"]:
+        assert f"{queue['counts']['agreements']} agreements in force" in scope or f"{queue['counts']['agreements']} agreement in force" in scope
+    else:
+        assert "agreement" not in scope
     assert f"{overdue} overdue invoice" in scope
     assert f"{sum(1 for a in rt.store.approvals() if a.status.value == 'PENDING')} approval waiting for you" in scope
     assert alt["history"][0]["text"] == "The main books were replaced by the busy company." and alt["history"][0]["when"] == "just now"

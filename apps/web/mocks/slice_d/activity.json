@@ -6315,7 +6315,7 @@
       "state_tone": "warn",
       "state_text": "Latest, today: Waiting for your approval: an application for ¥200,000.00 on Government-guaranteed working-capital loan. 1 approval waits for you.",
       "summary": {
-        "business_count": 2,
+        "business_count": 1,
         "security_alert_count": 0,
         "benign_auth_count": 0,
         "system_count": 0,
@@ -6328,11 +6328,6 @@
         {
           "key": "all",
           "label": "All",
-          "count": 2
-        },
-        {
-          "key": "deals",
-          "label": "Deals",
           "count": 1
         },
         {
@@ -6343,7 +6338,7 @@
       ],
       "rows": [
         {
-          "id": "op:2",
+          "id": "op:1",
           "kind": "business",
           "category": "cash",
           "category_label": "Cash",
@@ -6363,54 +6358,22 @@
           "decision_id": "approval:APR-000001",
           "href": "/decisions/approval:APR-000001",
           "href_label": "Open this decision",
-          "evidence_href": "/trust?view=evidence&entry=2&from=activity",
-          "evidence_label": "Evidence",
-          "record": {
-            "seq": 2,
-            "entry_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
-            "prev_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
-            "kind_text": "Facility application",
-            "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
-          },
-          "search_text": "waiting for your approval: an application for ¥200,000.00 on government-guaranteed working-capital loan. apply for facility government-guaranteed working-capital loan (¥200,000.00). waiting for your approval. cash"
-        },
-        {
-          "id": "op:1",
-          "kind": "business",
-          "category": "deals",
-          "category_label": "Deals",
-          "when": "today",
-          "title_text": "Agreement with Foshan Home Retail Co. recorded; concessions booked against your budget: ¥0.00.",
-          "detail_text": null,
-          "why_text": "Cash forecast is now ¥243,570.00 below your minimum in 25 days.",
-          "why_as_of_text": "now",
-          "why_changed": true,
-          "remaining_text": "Waiting for Foshan Home Retail Co. to pay, due in 2 days.",
-          "actor": "agent",
-          "actor_text": "FLOW, within your limits",
-          "status_word": "Done",
-          "tone": "ok",
-          "customer_id": "BUYER-1",
-          "customer_name": "Foshan Home Retail Co.",
-          "decision_id": "deal:OFF-39cabafae4ee",
-          "href": "/decisions/deal:OFF-39cabafae4ee",
-          "href_label": "Open this decision",
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "Evidence",
           "record": {
             "seq": 1,
             "entry_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
             "prev_hash": "18b540fbc85a31f3ad180d2a76139e05369440a6d769ffb12dd35c854a02c8b0",
-            "kind_text": "Agreement recorded",
-            "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
+            "kind_text": "Facility application",
+            "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
           },
-          "search_text": "agreement with foshan home retail co. recorded; concessions booked against your budget: ¥0.00. cash forecast is now ¥243,570.00 below your minimum in 25 days. waiting for foshan home retail co. to pay, due in 2 days. foshan home retail co. deals"
+          "search_text": "waiting for your approval: an application for ¥200,000.00 on government-guaranteed working-capital loan. apply for facility government-guaranteed working-capital loan (¥200,000.00). waiting for your approval. cash"
         }
       ],
       "chain": {
         "chain_valid": true,
-        "chain_length": 2,
-        "head_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
+        "chain_length": 1,
+        "head_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
         "chain_text": "Record chain checks passed",
         "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
       },
@@ -6433,7 +6396,7 @@
       "state_tone": "warn",
       "state_text": "最新，今天：等待您批准：在Government-guaranteed working-capital loan申请 ¥200,000.00。 有 1 项批准事项在等您。",
       "summary": {
-        "business_count": 2,
+        "business_count": 1,
         "security_alert_count": 0,
         "benign_auth_count": 0,
         "system_count": 0,
@@ -6446,11 +6409,6 @@
         {
           "key": "all",
           "label": "全部",
-          "count": 2
-        },
-        {
-          "key": "deals",
-          "label": "交易",
           "count": 1
         },
         {
@@ -6461,7 +6419,7 @@
       ],
       "rows": [
         {
-          "id": "op:2",
+          "id": "op:1",
           "kind": "business",
           "category": "cash",
           "category_label": "现金",
@@ -6481,54 +6439,22 @@
           "decision_id": "approval:APR-000001",
           "href": "/decisions/approval:APR-000001",
           "href_label": "查看这项决定",
-          "evidence_href": "/trust?view=evidence&entry=2&from=activity",
-          "evidence_label": "证据",
-          "record": {
-            "seq": 2,
-            "entry_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
-            "prev_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
-            "kind_text": "融资申请",
-            "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
-          },
-          "search_text": "等待您批准：在government-guaranteed working-capital loan申请 ¥200,000.00。 申请融资工具government-guaranteed working-capital loan（¥200,000.00）。 等待您批准。 现金"
-        },
-        {
-          "id": "op:1",
-          "kind": "business",
-          "category": "deals",
-          "category_label": "交易",
-          "when": "今天",
-          "title_text": "已记录与Foshan Home Retail Co.的协议；已计入您预算的让步：¥0.00。",
-          "detail_text": null,
-          "why_text": "截至现在，现金预测显示25 天后将比您的最低现金储备低 ¥243,570.00。",
-          "why_as_of_text": "现在",
-          "why_changed": true,
-          "remaining_text": "等待Foshan Home Retail Co.付款，应于2 天后到账。",
-          "actor": "agent",
-          "actor_text": "FLOW，在您的限额内",
-          "status_word": "已完成",
-          "tone": "ok",
-          "customer_id": "BUYER-1",
-          "customer_name": "Foshan Home Retail Co.",
-          "decision_id": "deal:OFF-39cabafae4ee",
-          "href": "/decisions/deal:OFF-39cabafae4ee",
-          "href_label": "查看这项决定",
           "evidence_href": "/trust?view=evidence&entry=1&from=activity",
           "evidence_label": "证据",
           "record": {
             "seq": 1,
             "entry_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
             "prev_hash": "18b540fbc85a31f3ad180d2a76139e05369440a6d769ffb12dd35c854a02c8b0",
-            "kind_text": "协议已记录",
-            "message": "Commitment CMT-a78afaa5becb5273 is ACTIVE; forward concession ¥0.00 booked"
+            "kind_text": "融资申请",
+            "message": "Queued for owner approval (APR-000001): apply for facility FAC-GGL (¥200,000.00)"
           },
-          "search_text": "已记录与foshan home retail co.的协议；已计入您预算的让步：¥0.00。 截至现在，现金预测显示25 天后将比您的最低现金储备低 ¥243,570.00。 等待foshan home retail co.付款，应于2 天后到账。 foshan home retail co. 交易"
+          "search_text": "等待您批准：在government-guaranteed working-capital loan申请 ¥200,000.00。 申请融资工具government-guaranteed working-capital loan（¥200,000.00）。 等待您批准。 现金"
         }
       ],
       "chain": {
         "chain_valid": true,
-        "chain_length": 2,
-        "head_hash": "ebfecf7b436564154ab704d0a13fbf5a3c1048cec745c0c048efcdf138a9afa1",
+        "chain_length": 1,
+        "head_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
         "chain_text": "记录链检查通过",
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },

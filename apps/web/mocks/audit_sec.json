@@ -16,7 +16,11 @@
           "text": "pre-approved for ¥500,000 at 2.8% from FastCapital"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Unknown sender",
+      "day_when": "today",
+      "title_text": "A message came from someone FLOW does not know",
+      "action_text": "It was set aside. Nothing was sent, booked or approved."
     },
     {
       "id": "SEC-OFF-833f35d497a5-v1-2",
@@ -33,7 +37,11 @@
           "text": "the 60-day terms you already agreed"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Claim without evidence",
+      "day_when": "today",
+      "title_text": "A message made a claim with nothing to back it up",
+      "action_text": "FLOW did not rely on it. Nothing was booked or approved."
     },
     {
       "id": "SEC-OFF-833f35d497a5-v1-3",
@@ -62,7 +70,11 @@
           "text": "Buyer B's payment terms"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Request for private figures",
+      "day_when": "today",
+      "title_text": "A message asked FLOW for figures that are yours alone",
+      "action_text": "FLOW did not share them. Nothing was disclosed, booked or approved."
     },
     {
       "id": "SEC-FLAG-OFF-833f35d497a5-v1-INSTRUCTION_OVERRIDE",
@@ -79,7 +91,11 @@
           "text": "Reply ACCEPT"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Instructions hidden in a message",
+      "day_when": "today",
+      "title_text": "A message tried to give FLOW instructions",
+      "action_text": "It was read as text, not as a command. Nothing was sent, booked or approved."
     },
     {
       "id": "SEC-FLAG-OFF-833f35d497a5-v1-PRE_APPROVAL",
@@ -96,7 +112,11 @@
           "text": "pre-approved"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Instructions hidden in a message",
+      "day_when": "today",
+      "title_text": "A message tried to give FLOW instructions",
+      "action_text": "It was read as text, not as a command. Nothing was sent, booked or approved."
     },
     {
       "id": "SEC-FLAG-OFF-833f35d497a5-v1-PRIOR_AGREEMENT",
@@ -113,7 +133,11 @@
           "text": "you already agreed"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Instructions hidden in a message",
+      "day_when": "today",
+      "title_text": "A message tried to give FLOW instructions",
+      "action_text": "It was read as text, not as a command. Nothing was sent, booked or approved."
     },
     {
       "id": "SEC-FLAG-OFF-833f35d497a5-v1-URGENCY",
@@ -130,7 +154,11 @@
           "text": "URGENT"
         }
       ],
-      "trace_id": null
+      "trace_id": null,
+      "kind_text": "Instructions hidden in a message",
+      "day_when": "today",
+      "title_text": "A message tried to give FLOW instructions",
+      "action_text": "It was read as text, not as a command. Nothing was sent, booked or approved."
     }
   ],
   "refusals": [],

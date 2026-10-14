@@ -7661,7 +7661,7 @@
         "label": "Load alternate scenario",
         "scenario": "busy",
         "title_text": "Busy company",
-        "scope_text": "3 customers, 4 negotiations waiting for your decision, 1 negotiation waiting for the buyer's reply, 2 agreements in force, 1 approval waiting for you and 2 overdue invoices.",
+        "scope_text": "3 customers, 5 negotiations waiting for your decision, 1 negotiation waiting for the buyer's reply, 1 approval waiting for you and 2 overdue invoices.",
         "loss_title_text": "What the main books lose",
         "loss_items": [
           "Nothing has been done on these books yet, so nothing is lost."
@@ -7674,7 +7674,7 @@
         "confirm_label": "Load the busy company",
         "cancel_label": "Keep the main books",
         "loaded": true,
-        "loaded_text": "You are on the alternate books (Busy company). 3 customers, 4 negotiations waiting for your decision, 1 negotiation waiting for the buyer's reply, 2 agreements in force, 1 approval waiting for you and 2 overdue invoices. The main books are not here; restore them to run the story.",
+        "loaded_text": "You are on the alternate books (Busy company). 3 customers, 5 negotiations waiting for your decision, 1 negotiation waiting for the buyer's reply, 1 approval waiting for you and 2 overdue invoices. The main books are not here; restore them to run the story.",
         "restore_label": "Restore the main books",
         "restore_text": "Puts the main books back at the start of the story. What you did on the alternate books is not kept.",
         "history": []
@@ -7934,7 +7934,7 @@
         "label": "加载备用场景",
         "scenario": "busy",
         "title_text": "繁忙的公司",
-        "scope_text": "3 位客户、4 项谈判等您决定、1 项谈判等买方回复、2 项协议已生效、1 项批准事项等您处理、2 张发票已逾期。",
+        "scope_text": "3 位客户、5 项谈判等您决定、1 项谈判等买方回复、1 项批准事项等您处理、2 张发票已逾期。",
         "loss_title_text": "主账目会失去什么",
         "loss_items": [
           "这些账目上还没有做任何事，所以不会损失任何内容。"
@@ -7947,7 +7947,7 @@
         "confirm_label": "加载“繁忙的公司”",
         "cancel_label": "保留主账目",
         "loaded": true,
-        "loaded_text": "您正在备用账目上。3 位客户、4 项谈判等您决定、1 项谈判等买方回复、2 项协议已生效、1 项批准事项等您处理、2 张发票已逾期。主账目不在这里；恢复它才能运行故事。",
+        "loaded_text": "您正在备用账目上。3 位客户、5 项谈判等您决定、1 项谈判等买方回复、1 项批准事项等您处理、2 张发票已逾期。主账目不在这里；恢复它才能运行故事。",
         "restore_label": "恢复主账目",
         "restore_text": "让主账目回到故事的起点。您在备用账目上做过的事不会保留。",
         "history": []
