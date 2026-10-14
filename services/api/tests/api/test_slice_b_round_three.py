@@ -261,3 +261,54 @@ def test_zhuhai_has_scenarios_and_the_scenario_words_are_clean_in_both_languages
 def _scenarios_words(pic: dict[str, Any]) -> list[dict[str, Any]]:
     drop = {"assumption_text", "text"}  # the engine's long assumption sentences are checked by the compare and exposure tests
     return [{k: v for k, v in s.items() if k not in drop and k != "rows"} for s in pic["scenarios"]]
+
+
+# ================================================================ task 4: the chart's pairs
+
+
+def _point(path: dict[str, Any], day: int) -> dict[str, Any]:
+    return next(pt for pt in path["series"] if pt["day"] == day)
+
+
+def test_each_point_carries_the_pair_words_for_every_reply_and_every_reply_pair(api: TestClient) -> None:
+    _, pic = _golden(api)
+    by = _by_label(pic)
+    asked, a, b = by["asked"], by["Option A"], by["Option B"]
+    for day in (0, 2, 30):
+        for path in (asked, a, b):
+            cmp = _point(path, day)["comparison"]
+            assert set(cmp) >= {a["key"], b["key"]}
+        cmp = _point(asked, day)["comparison"]
+        for reply in (a, b):
+            got = cmp[reply["key"]]
+            assert set(got) == {"asked_display", "reply_display", "difference_display", "cause_text"}
+            assert got["asked_display"] == _point(asked, day)["closing_display"] and got["reply_display"] == _point(reply, day)["closing_display"]
+            diff = _point(reply, day)["closing_fen"] - _point(asked, day)["closing_fen"]
+            assert got["difference_display"].lstrip("+−-¥").replace(",", "").startswith(str(abs(diff) // 100)) or diff == 0
+        pair = _point(asked, day)["comparison_pairs"][f"{a['key']}:{b['key']}"]
+        assert pair["asked_display"] == _point(a, day)["closing_display"] and pair["reply_display"] == _point(b, day)["closing_display"]
+    # the round-two strip is still beside the map for the recommended reply
+    old = _point(asked, 2)["comparison"]
+    assert old["asked_display"] == _point(asked, 2)["closing_display"] and old["recommended_display"] == _point(a, 2)["closing_display"]
+
+
+def test_the_cause_names_what_one_line_has_and_the_other_does_not(api: TestClient) -> None:
+    _, pic = _golden(api)
+    by = _by_label(pic)
+    asked, a = by["asked"], by["Option A"]
+    cause = _point(asked, 2)["comparison"][a["key"]]["cause_text"]
+    assert "Option A:" in cause and "As asked:" in cause and "today" in cause and "in 2 days" in cause
+    asked_part, reply_part = cause.split("As asked:")[1].split("Option A:")[0], cause.split("Option A:")[1]
+    assert "Early payment" in asked_part and "draw" in reply_part.lower()
+    assert not BAD.search(cause), cause
+    # on day 0 the request has nothing yet that the reply lacks except what the reply draws
+    day0 = _point(asked, 0)["comparison"][a["key"]]["cause_text"]
+    assert "As asked:" not in day0
+
+
+def test_the_pair_words_are_in_chinese_with_no_english_left(api: TestClient) -> None:
+    _, pic = _golden_zh(api)
+    by = _by_label(pic)
+    cmp = _point(by["asked"], 2)["comparison"]
+    words = [{k: v for k, v in cmp[by["方案 A"]["key"]].items()}, _point(by["asked"], 2)["comparison_pairs"][f"{by['方案 A']['key']}:{by['方案 B']['key']}"]]
+    assert english_leaks(words, NAMES) == []

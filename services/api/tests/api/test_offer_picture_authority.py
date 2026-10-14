@@ -434,19 +434,28 @@ def _point(path, day):
     return next(p for p in path["series"] if p["day"] == day)
 
 
+STRIP = ("label", "asked_display", "recommended_display", "difference_display")
+
+
+def _strip(point):
+    """The round-two strip, which round three keeps beside the per-reply map in `comparison` (the page of round two reads it)."""
+    c = point["comparison"]
+    return None if c is None or "recommended_display" not in c else {k: c[k] for k in STRIP}
+
+
 def test_every_point_carries_the_same_day_strip_of_the_asked_path_and_the_recommended_reply(client):
     oid, _ = _evaluated(client)
     asked, opt_a, opt_b = _paths(client, oid)
     low_day = min(asked["series"], key=lambda p: (p["closing_fen"], p["day"]))["day"]
     assert low_day == 60
     for path in (asked, opt_a, opt_b):  # the strip is the day's, whichever line the point is on
-        assert _point(path, low_day)["comparison"] == {"label": "Same day", "asked_display": "¥164,960.00",
+        assert _strip(_point(path, low_day)) == {"label": "Same day", "asked_display": "¥164,960.00",
                                                        "recommended_display": "¥586,972.23", "difference_display": "+¥422,012.23"}
         # day 0: Option A's own funding plan draws the credit line today (the asked path takes no new funding)
-        assert _point(path, 0)["comparison"] == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
+        assert _strip(_point(path, 0)) == {"label": "Same day", "asked_display": _point(asked, 0)["closing_display"],
                                                  "recommended_display": _point(opt_a, 0)["closing_display"],
                                                  "difference_display": "+¥149,986.20"}
-    assert all(p["comparison"] is not None for p in asked["series"])
+    assert all(_strip(p) is not None for p in asked["series"])
     zh = _paths(client, oid, "zh")
     assert _point(zh[0], low_day)["comparison"]["label"] == "同一天" and _point(zh[0], low_day)["comparison"]["difference_display"] == "+¥422,012.23"
 
@@ -456,7 +465,7 @@ def test_the_strip_is_the_two_series_own_figures_and_null_where_there_is_nothing
     asked, opt_a, _ = _paths(client, oid)
     for pt in asked["series"]:
         mine = next((q for q in opt_a["series"] if q["day"] == pt["day"]), None)
-        c = pt["comparison"]
+        c = _strip(pt)
         if mine is None:
             assert c is None
             continue
@@ -470,7 +479,7 @@ def test_with_no_recommended_reply_there_is_no_strip(client, monkeypatch):
     oid, _ = _evaluated(client)
     _recheck_as(monkeypatch, outcome=Outcome.REJECT, violations=[])
     offer_picture._cache.clear()
-    assert all(p["comparison"] is None for path in _paths(client, oid) for p in path["series"])
+    assert all(_strip(p) is None for path in _paths(client, oid) for p in path["series"])  # no strip of the recommended reply (the per-reply map is round three's)
 
 
 # ---------------------------------------------------------------- what each line assumes

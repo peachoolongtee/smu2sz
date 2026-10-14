@@ -185,3 +185,88 @@ def buyer_status(lang: str, kind: str, buyer: str, sent: str | None) -> str:
     if sent == "no_deal":
         return say(lang, "Sent, no agreement reached", "已发送，未达成协议")
     return say(lang, "Sent, awaiting reply", "已发送，等待回复")
+
+
+# ---------------------------------------------------------------- the chart's pairs
+
+
+def _signed_whole(fen: int, whole: Any) -> str:
+    return "¥0" if fen == 0 else (f"+{whole(fen)}" if fen > 0 else whole(fen))
+
+
+def _event_words(p: dict[str, Any], pt_day: int, e: dict[str, Any], today: int, lang: str) -> str:
+    from app.api.presentation import when_text
+
+    label = say(lang, "Early-payment discount", "提前付款折扣") if e["kind"] == "DISCOUNT" else e["label_short"]  # the discount's own label is a whole sentence
+    return f"{label} {e['amount_short']} {when_text(pt_day, today, lang)}"
+
+
+def _cause(a: dict[str, Any], b: dict[str, Any], day: int, seen: dict[str, dict[int, Any]], names: dict[str, str], lang: str) -> str:
+    """In words, the events up to `day` that one line has and the other does not (the same event, same amount and same day, on both lines is
+    not a cause): "Option A: Credit-line draw ¥150k today. As asked: Early payment from Foshan ¥414,960 in 2 days."."""
+    only_a = list((seen[a["key"]][day] - seen[b["key"]][day]).elements())
+    only_b = list((seen[b["key"]][day] - seen[a["key"]][day]).elements())
+    sep = say(lang, "; ", "；")
+    parts = []
+    for p, only in ((a, only_a), (b, only_b)):
+        if only:
+            words = sep.join(text for _, text in sorted(only))
+            parts.append(say(lang, f"{names[p['key']]}: {words}.", f"{names[p['key']]}：{words}。"))
+    return " ".join(parts) if parts else say(lang, "No event separates the two lines yet.", "目前没有事件使两条线分开。")
+
+
+def add_pairs(paths: list[dict[str, Any]], today: int, lang: str) -> None:
+    """The chart's per-day pair words on every point of every series. `comparison` is a map keyed by reply id with
+    `{asked_display, reply_display, difference_display, cause_text}` (the reply against the offer as asked on that day; the difference is the
+    reply less the request, in the KPIs' signed money form), and `comparison_pairs["<a>:<b>"]` the same words for two replies (`asked_display` is
+    then the first reply's cash and `reply_display` the second's; the difference is the second less the first). The round-two keys of the strip
+    (`label`, `asked_display`, `recommended_display`, `difference_display`) stay beside the map for the recommended reply, so the page of round
+    two reads on. Every figure is the series' own closing cash; the difference includes every assumption that differs, not negotiation alone."""
+    from collections import Counter
+
+    from app.api.presentation import whole
+
+    live = [p for p in paths if p["series"]]
+    asked = next((p for p in live if p["kind"] == "asked"), None)
+    if not live:
+        return
+    names = {p["key"]: (say(lang, "As asked", "按对方要求") if p["kind"] == "asked" else p["label"]) for p in live}
+    by_day = {p["key"]: {pt["day"]: pt for pt in p["series"]} for p in live}
+    seen: dict[str, dict[int, Any]] = {}
+    for p in live:  # the events up to each day, as a multiset of their words
+        total: Counter[tuple[int, str]] = Counter()
+        seen[p["key"]] = {}
+        for pt in p["series"]:
+            for e in pt["events"]:
+                total[(pt["day"], _event_words(p, pt["day"], e, today, lang))] += 1
+            seen[p["key"]][pt["day"]] = total.copy()
+    recommended = next((p for p in live if p["kind"] == "reply" and p["recommended"]), None)
+    replies = [p for p in live if p["kind"] == "reply"]
+    days = sorted({d for p in live for d in by_day[p["key"]]})
+    cache: dict[int, tuple[dict[str, Any], dict[str, Any]]] = {}
+    for d in days:
+        if any(d not in by_day[p["key"]] for p in live):
+            continue
+        cmp_map: dict[str, Any] = {}
+        pairs: dict[str, Any] = {}
+        for r in replies:
+            if asked is not None:
+                cmp_map[r["key"]] = {"asked_display": by_day[asked["key"]][d]["closing_display"], "reply_display": by_day[r["key"]][d]["closing_display"],
+                                     "difference_display": _signed_whole(by_day[r["key"]][d]["closing_fen"] - by_day[asked["key"]][d]["closing_fen"], whole),
+                                     "cause_text": _cause(asked, r, d, seen, names, lang)}
+        for i, a in enumerate(replies):
+            for b in replies[i + 1:]:
+                pairs[f"{a['key']}:{b['key']}"] = {
+                    "asked_display": by_day[a["key"]][d]["closing_display"], "reply_display": by_day[b["key"]][d]["closing_display"],
+                    "difference_display": _signed_whole(by_day[b["key"]][d]["closing_fen"] - by_day[a["key"]][d]["closing_fen"], whole),
+                    "cause_text": _cause(a, b, d, seen, names, lang)}
+        if recommended is not None and asked is not None:  # the strip of round two, kept for the page that reads it
+            mine = cmp_map[recommended["key"]]
+            cmp_map = {"label": say(lang, "Same day", "同一天"), "asked_display": mine["asked_display"], "recommended_display": mine["reply_display"],
+                       "difference_display": mine["difference_display"], **cmp_map}
+        cache[d] = (cmp_map, pairs)
+    for p in live:
+        for pt in p["series"]:
+            got = cache.get(pt["day"])
+            pt["comparison"] = got[0] if got and got[0] else None
+            pt["comparison_pairs"] = got[1] if got else {}
