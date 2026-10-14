@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.accept import router as accept_router
 from app.api.activity import router as activity_router
 from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
@@ -70,6 +71,7 @@ app.include_router(documents_router)
 app.include_router(deals_router)
 app.include_router(nav_router)
 app.include_router(offer_picture_router)
+app.include_router(accept_router)
 app.include_router(worklist_router)
 
 
