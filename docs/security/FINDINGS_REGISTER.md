@@ -32,10 +32,10 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | open |
 | SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
 | SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed** `sec/authority-boundaries` (amends ADR-0006 §2) |
-| SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | open |
+| SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | **fixed** `sec/security-event-growth` (401 rate limit at the proxy remains) |
 | SEC-11 | Multi-process unsafe: stale clock books backdated ops; route checks rely on a per-process lock | Info / High | CONFIRMED (two runtimes, one SQLite) | open |
-| SEC-12 | No security headers (CSP, frame-ancestors, nosniff, HSTS); owner token in `sessionStorage` | Low / Medium | CONFIRMED (code) | open |
-| SEC-13 | Public `/docs`, `/redoc`, `/openapi.json`; `/health` discloses `llm_mode` and every feature flag | Low / Low | CONFIRMED | open |
+| SEC-12 | No security headers (CSP, frame-ancestors, nosniff, HSTS); owner token in `sessionStorage` | Low / Medium | CONFIRMED (code) | **partly fixed** `sec/headers` (frame, sniff, referrer); full CSP and HSTS open |
+| SEC-13 | Public `/docs`, `/redoc`, `/openapi.json`; `/health` discloses `llm_mode` and every feature flag | Low / Low | CONFIRMED | **docs fixed** `sec/headers`; `/health` kept (the web needs it) |
 | SEC-14 | Refused operations return HTTP 200 (`/circuit/*/reset`, `/approvals/*` by agent) | Info / Low | CONFIRMED | open |
 | SEC-15 | Container and secret hygiene: root containers, unpinned bases, `uv:latest`, no `.dockerignore`, placeholder secrets accepted | Info / Low | REVIEWER-CONFIRMED (code) | open |
 | R-2 | One owner credential + one signing key; accept route queues and approves in one call | Info / Medium | open (accepted risk, re-confirmed in code) | design |
