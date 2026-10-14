@@ -70,3 +70,19 @@ data for the judge's path; the golden story stays the six-scene walk.
 API suite green; typecheck/lint/unit green; the Activity, Demo, trust and tour specs green under mock and live; the full
 pair at the merge; DESIGN.md gets an "Activity and Demo" section; ticket #145 closed with the counts; the ui-ux-testing
 PR comment to Dylan.
+
+## Addendum (14 Oct, owner): the Demo page is overloaded; the busy scenario is not findable
+The owner, looking for the busy scenario: "I still don't understand where to find the busy scenario; the demo page now is way
+too overloaded with information and features and pages." Today the page holds an engine-views sidebar of fourteen entries,
+an eleven-step story, the clock, "The books" with a scenario dropdown (where "Busy company" hides, applied only by "Reset
+the books"), side doors, "More to show" and the engine pages, all in the pre-overhaul style. Slice D's Demo therefore:
+- is built in the Home design language (the canvas, the panel cards, StatusPill, the ink primary; the Demo's own sidebar of
+  engine views goes: the app's rail stays, the engine views live in the proof appendix and the Operator tools disclosure);
+- opens with ONE question at the top, "Which books?", as three cards (Golden story · Busy company · Short facilities) each
+  with its one-line help and a "Load" button that resets to it at once (no separate Reset); the loaded one is marked; the
+  busy card says what it holds ("three customers, six negotiations, an approval, overdue invoices") and links to Home;
+- then the story as scenes with ONE next control (the golden story's six scenes; the busy books have no story: the card
+  says "explore it from Home");
+- "Load alternate scenario" (the buyer walks away, etc.) with the loss preview, the confirmation and "Restore the main books";
+- Operator tools (clock, reset, engine destinations, side doors) behind one disclosure; the proof appendix under the scenes;
+- the phone keeps the Load buttons in the first viewport.
