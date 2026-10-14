@@ -3,6 +3,15 @@
 Second machine. Round three (brief `docs/design/flow-mockup-2026-10-13/05_slice_b_round_three.md`, handoff 17) is built and
 verified twice, and is **not merged**. It was paused on the owner's request after the last verifier fixes landed.
 
+## STOP: the owner's review on 15 Oct (#160)
+The owner reviewed the preview and found it still buggy and not intuitive:
+- the minimised queue with "Show queue" is inelegant;
+- the charts ("As they asked", the headroom plot) make no sense;
+- the breadcrumb is redundant;
+- no Option B appears for any deal on the busy books.
+
+All work is paused. **Do not run the gate or merge.** The next step is a full audit of the Deals flow and mock-ups of alternatives (#160 lists them), not the "To finish" list below.
+
 ## Where it stands
 | | Branch | Head | State |
 |---|---|---|---|
