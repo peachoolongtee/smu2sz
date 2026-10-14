@@ -54,13 +54,13 @@
 // languages, and POST /demo/restore, at the moments the mock walks through. The walk is the Demo's own: lib/demo.ts DEMO_STEPS run in order through the
 // live adapters (the stepper section above records the same walk for the pages), the owner's approval pressed by this recorder between `queue` and
 // `approve` exactly as the section above does (the product never presses it). The story is read with `seen` = the last view step shown (cash, outcome or proof), as the Demo page sends it.
-//   story.json    { fresh, ask, decide, agree, cash, bank, time, queue, approve, settle, outcome, proof, busy }: each { en, zh } of GET /demo/story
-//   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy }: each { en, zh } of GET /activity; `security` is the
+//   story.json    { fresh, ask, decide, agree, cash, bank, time, queue, approve, settle, outcome, proof, busy, short }: each { en, zh } of GET /demo/story
+//   activity.json { fresh, ask, decide, agree, bank, time, queue, approve, settle, security, busy, short }: each { en, zh } of GET /activity; `security` is the
 //                 settled books after two refused sign-ins and the FastCapital scene (benign sign-ins beside a real alert); `busy` is the busy company
 //   restore.json  { en, zh } of POST /demo/restore, made on the busy books
 //   guard.json    { loss_not_confirmed, loss_changed, books_changed }: { en, zh } of the message words of the 409s of POST /demo/reset?from_scenario= (work on the books not confirmed; books that are another)
 //   audit.json    GET /audit at the `security` moment (the same events the Activity rows link to), served by the mock for the security view
-// lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` once the busy books are loaded.
+// lib/mock/handlers.ts picks among them by the mock's own state (cure stage, clock day, offers, receipt) and serves `busy` (or `short`) once those books are loaded.
 //   cd services/api && TERMSLEDGER_NO_DOTENV=1 DATABASE_URL=memory LLM_MODE=cache DEMO_MODE=1 PYTHONUTF8=1 uv run uvicorn app.main:app --port 8221
 //   node scripts/record-mocks.mjs --api http://localhost:8221 --slice-d
 //
@@ -590,6 +590,11 @@ if (SLICE_D) {
   await takeStory("busy");
   await takeActivity("busy");
   const restore = await both((lang) => live.restoreDemo(lang));
+  // The short-facilities books (the third card of "Which books?"): the story and Activity reads on them, like the busy company's.
+  await live.demoReset("short_facilities");
+  clearDemo();
+  await takeStory("short");
+  await takeActivity("short");
   await live.demoReset();
   guard.books_changed = await both((lang) => refusal("from_scenario=busy", lang));
   write("slice_d/story.json", story);

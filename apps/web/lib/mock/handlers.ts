@@ -414,6 +414,12 @@ type StoryBook = "fresh" | "ask" | "decide" | "agree" | "bank" | "time" | "queue
 const SCENARIO_KEY = "tl-mock-scenario";
 let scenario: string | null = null;
 
+/** The recorded read of the loaded books when they are not the main books' (the recordings are named `busy` and `short`), else null. */
+function otherBooks(): "busy" | "short" | null {
+  const now = currentScenario();
+  return now === "busy" ? "busy" : now === "short_facilities" ? "short" : null;
+}
+
 function currentScenario(): string | null {
   if (scenario) return scenario;
   if (typeof window === "undefined") return null;
@@ -460,18 +466,18 @@ export async function getActivity(lang: "en" | "zh", _ctx: object = {}): Promise
   seedStory();
   const book = storyBook();
   // A log with no entry at all (a business's first day) has nothing to list: the opening books' read without its rows, tabs and chain words.
-  if (!load().ops.length && currentScenario() !== "busy") {
+  if (!load().ops.length && !otherBooks()) {
     const empty = pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), "fresh", lang);
     return { ...empty, rows: [], categories: empty.categories.filter((c) => c.key === "all").map((c) => ({ ...c, count: 0 })), chain: { ...empty.chain, chain_length: 0, chain_text: null } };
   }
-  const key = currentScenario() === "busy" ? "busy" : load().securityScene && (book === "settle" || book === "approve") ? "security" : book;
+  const key = otherBooks() ?? (load().securityScene && (book === "settle" || book === "approve") ? "security" : book);
   return pick(cast<Record<string, Pair<ActivityView>>>(sliceDActivity), key, lang);
 }
 
 function storyKey(seen?: string | null): string {
   const book = storyBook();
   // The view steps change nothing, so the page says which it has shown; the books must support it, as the server checks.
-  return currentScenario() === "busy" ? "busy" : book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book;
+  return otherBooks() ?? (book === "agree" && seen === "cash" ? "cash" : book === "settle" && (seen === "outcome" || seen === "proof") ? seen : book);
 }
 
 export async function getDemoStory(lang: "en" | "zh", seen?: string | null): Promise<DemoStoryView> {

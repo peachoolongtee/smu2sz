@@ -55,7 +55,7 @@ const STEPS: Record<string, Step[]> = {
   ],
   "/demo": [
     { target: tid("demo-current"), title: "tour.demo.current.title", body: "tour.demo.current.body" },
-    { target: tid("demo-alternate"), title: "tour.demo.alt.title", body: "tour.demo.alt.body" },
+    { target: tid("demo-books"), title: "tour.demo.alt.title", body: "tour.demo.alt.body" },
     { target: tid("demo-operator-tools"), title: "tour.demo.tools.title", body: "tour.demo.tools.body" },
   ],
   "/approvals": [{ target: '[id^="approval-APR"]', title: "tour.approvals.title", body: "tour.approvals.body" }],
@@ -217,7 +217,7 @@ function TourCard({ steps }: { steps: Step[] }) {
         ref={cardRef}
         key={step}
         data-testid="tour-card"
-        className="motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
+        className="flow-f motion-pop fixed w-[min(24rem,calc(100vw-2rem))] rounded-card border border-line bg-surface p-5 text-ink shadow-pop"
         style={place}
       >
         <p className="text-meta font-semibold uppercase tracking-wide text-ink-3">{t("tour.step", { n: step + 1, total: steps.length })}</p>

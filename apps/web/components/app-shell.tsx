@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { apiMode, getApprovals, getNavCounts } from "@/lib/api";
+import { getApprovals, getNavCounts } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
 import { useWide } from "@/lib/use-narrow";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
-import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
+import { ArrowLeftIcon, ShieldCheckIcon, ShieldIcon, SparkIcon } from "./icons";
 import { signOut, useAuth } from "@/lib/auth";
 import { Tour, startTour } from "./business/tour";
 import { BooksDialog } from "./demo/books-dialog";
@@ -277,35 +277,7 @@ function AccountMenu() {
 }
 
 /**
- * The Demo shell's account sheet, for a phone and a tablet: what this data is (mock or live), who is signed in with sign-out, and
- * the language, so the header keeps the brand, the menu, the mode switch and this one button. The content mounts when the sheet
- * opens, so a test id appears once (the desktop header carries the same controls inline).
- */
-function DemoAccountMenu() {
-  const { t } = useI18n();
-  const { token } = useAuth();
-  return (
-    <div className="lg:hidden">
-      <AccountSheet signedIn={Boolean(token)}>
-        {(open) =>
-          open ? (
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <Badge tone={apiMode === "mock" ? "warn" : "ok"}>{t(apiMode === "mock" ? "mode.mock" : "mode.live")}</Badge>
-                <OwnerSessionControl />
-              </div>
-              <LangSwitch />
-              <p className="text-meta text-ink-3">{t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}</p>
-            </>
-          ) : null
-        }
-      </AccountSheet>
-    </div>
-  );
-}
-
-/**
- * Publishes the measured height of a fixed bottom bar (the phone tab bar, the Demo stepper) as `--dock-h` on <html>, in px, and 0 when
+ * Publishes the measured height of a fixed bottom bar (the phone tab bar) as `--dock-h` on <html>, in px, and 0 when
  * the bar is not fixed or not shown (a desktop). Page padding, the Ask FLOW pill and `scroll-padding-bottom` read it (globals.css),
  * so nothing fixed to the bottom is covered by another fixed thing or covers content, whatever the bar's height (the stepper wraps).
  */
@@ -408,8 +380,13 @@ const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash" 
 /** The way back from a detail page, by the section it opens from. */
 const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals" };
 
-function BusinessShell({ children }: { children: ReactNode }) {
+/**
+ * The one shell. The Demo is the same app with the same rail and header (the Demo's own sidebar of engine views is gone: they are in the Demo page's Operator tools), plus the deep strip that
+ * says the data is synthetic and, on every page but the story's own, the story's strip.
+ */
+function BusinessShell({ children, demo = false }: { children: ReactNode; demo?: boolean }) {
   const { t } = useI18n();
+  const stored = useMode();
   const pathname = usePathname();
   const activeIdx = BUSINESS_NAV.findIndex((n) => n.href === pathname);
   const activeSection = activeIdx < 0 ? null : TAB_SECTION[BUSINESS_NAV[activeIdx].href];
@@ -427,9 +404,17 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <OwnerSignInDialog />
       <Tour />
       <BooksDialog />
+      {demo ? (
+        // The Demo is visibly not the product: a deep strip across the top says so.
+        <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-meta" data-testid="demo-strip">
+          <span className="font-bold tracking-wide text-info-bright">{t("demo.strip.label")}</span>
+          <span aria-hidden className="text-on-deep-muted">·</span>
+          <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
+        </div>
+      ) : null}
       <header className="sticky top-0 z-30 bg-canvas">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
-          <Brand href="/" />
+          <Brand href={demo ? "/demo" : "/"} />
           {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
           {wide ? <AskHeaderInput /> : null}
           <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
@@ -444,6 +429,23 @@ function BusinessShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+      {demo ? (
+        <>
+          {/* The story's strip: the ink primary of the owner's language, never the engine's blue. */}
+          <div className="flow-f" data-testid="demo-strip-band">
+            <DemoStepper />
+          </div>
+          {/* Business is the stored choice but this page is an engine view or the story: say so, and offer the way back in one line. */}
+          {stored === "business" ? (
+            <div className="px-4 pb-1 lg:px-8">
+              <Link href="/" className={`${textLinkClass} -ml-2 gap-1`} data-testid="back-to-business">
+                <ArrowLeftIcon width={14} height={14} />
+                {t("mode.back")}
+              </Link>
+            </div>
+          ) : null}
+        </>
+      ) : null}
       {/* Desktop, as in Endowus: a quiet white sidebar of the five sections (icon and word), the page on the soft canvas beside it.
           Phones get the tab bar at the bottom instead. */}
       <div className="shell-grid lg:grid lg:grid-cols-[3.5rem_minmax(0,1fr)]">
@@ -484,7 +486,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </aside>
-      <main id="main" tabIndex={-1} className="dock-pad isolate mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
+      <main id="main" tabIndex={-1} className={`dock-pad isolate mx-auto w-full px-4 pt-5 lg:px-10 lg:pt-8 ${demo ? "max-w-[1280px]" : "max-w-[1120px]"}`}>
         {backTo ? (
           <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid={`back-to-${backTo.slice(1)}`}>
             <ArrowLeftIcon width={14} height={14} />
@@ -538,132 +540,6 @@ function BusinessShell({ children }: { children: ReactNode }) {
   );
 }
 
-// ---------------------------------------------------------------- Demo
-
-function DemoNavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const { t } = useI18n();
-  const pathname = usePathname();
-  const render = (group: "story" | "engine") => (
-    <ul className="space-y-0.5">
-      {DEMO_NAV.filter((n) => n.group === group).map((n) => {
-        const active = pathname === n.href;
-        return (
-          <li key={n.href}>
-            <Link
-              href={n.href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`motion-press flex min-h-10 items-center rounded-pill px-4 text-sm font-medium ${
-                active ? "bg-brand-50 text-brand-700" : "text-ink-2 hover:bg-subtle hover:text-ink"
-              }`}
-            >
-              {t(n.key)}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-  return (
-    <nav aria-label={t("nav.label")} className="space-y-4">
-      {render("story")}
-      <div>
-        <p className="px-3 pb-1 text-meta font-semibold uppercase tracking-wide text-ink-3">{t("nav.engine")}</p>
-        {render("engine")}
-      </div>
-    </nav>
-  );
-}
-
-function DemoShell({ children }: { children: ReactNode }) {
-  const { t } = useI18n();
-  const stored = useMode();
-  const [open, setOpen] = useState(false);
-  const stepper = useRef<HTMLDivElement>(null);
-  useDock(stepper);
-  return (
-    <div className="min-h-dvh">
-      {/* The Demo is visibly not the product: a deep strip across the top says so (the deep hero is the Business home's alone). */}
-      <div className="on-deep flex min-h-9 items-center justify-center gap-2 bg-brand-900 px-4 py-1.5 text-center text-meta" data-testid="demo-strip">
-        <span className="font-bold tracking-wide text-info-bright">{t("demo.strip.label")}</span>
-        <span aria-hidden className="text-on-deep-muted">·</span>
-        <span className="text-on-deep-muted">{t("demo.strip.text")}</span>
-      </div>
-      <div className="lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
-      <SkipLink />
-      {/* The strip above is 36 px of the first screen: the footer reserves that height (pb-12) so a 768 px window never cuts it, and the column scrolls when it must. */}
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-3 pb-20 pt-4 lg:flex">
-        <div className="px-2">
-          <Brand href="/demo" />
-        </div>
-        <DemoNavLinks />
-        <p className="mt-auto px-3 text-meta text-ink-3">{t("common.synthetic")}</p>
-      </aside>
-
-      <OwnerSignInDialog />
-      <Tour />
-      <BooksDialog />
-
-      <div className="min-w-0">
-        <div className="border-b border-line bg-surface lg:sticky lg:top-0 lg:z-30">
-          <header>
-            <div className="flex items-center justify-between gap-3 px-4 py-2 lg:px-8">
-              <div className="flex items-center gap-2 lg:hidden">
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  aria-controls="mobile-nav"
-                  aria-label={open ? t("nav.close") : t("nav.open")}
-                  onClick={() => setOpen((v) => !v)}
-                  className="motion-press grid size-10 place-items-center rounded-pill border border-line-ui text-ink-2 hover:bg-subtle touch:size-11"
-                >
-                  {open ? <XIcon /> : <MenuIcon />}
-                </button>
-                <Brand href="/demo" />
-              </div>
-              <div className="hidden text-meta text-ink-3 lg:block">{t("common.tagline")}</div>
-              <div className="flex items-center justify-end gap-2">
-                <ModeSwitch />
-                {/* Desktop: what this data is, who is signed in and the language sit in the header. Below lg they are the account sheet. */}
-                <div className="hidden items-center gap-2 lg:flex">
-                  <Badge tone={apiMode === "mock" ? "warn" : "ok"} title={t(apiMode === "mock" ? "mode.mock.hint" : "mode.live.hint")}>
-                    {t(apiMode === "mock" ? "mode.mock" : "mode.live")}
-                  </Badge>
-                  <OwnerSessionControl />
-                  <LangSwitch />
-                </div>
-                <DemoAccountMenu />
-              </div>
-            </div>
-            {/* Business is the stored choice but this page is an engine view: say so, and offer the way back in one line. */}
-            {stored === "business" ? (
-              <div className="px-4 pb-1 lg:px-8">
-                <Link href="/" className={`${textLinkClass} -ml-2 gap-1`} data-testid="back-to-business">
-                  <ArrowLeftIcon width={14} height={14} />
-                  {t("mode.back")}
-                </Link>
-              </div>
-            ) : null}
-            {open ? (
-              <div id="mobile-nav" className="border-t border-line bg-surface px-3 py-3 lg:hidden">
-                <DemoNavLinks onNavigate={() => setOpen(false)} />
-              </div>
-            ) : null}
-          </header>
-          <div ref={stepper} className="fixed inset-x-0 bottom-0 z-30 bg-brand-50 pb-[env(safe-area-inset-bottom)] shadow-up lg:static lg:pb-0 lg:shadow-none">
-            <DemoStepper />
-          </div>
-        </div>
-        <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1280px] px-4 pt-5 lg:px-8 lg:pt-6">
-          {children}
-        </main>
-      </div>
-      </div>
-      <ChatPanel />
-    </div>
-  );
-}
-
 /** The page's name for the browser tab: the navigation label of the route. */
 const TITLE_KEY: Record<string, DictKey> = {
   ...Object.fromEntries([...BUSINESS_NAV, ...DEMO_NAV].map((n) => [n.href, n.key])),
@@ -697,10 +573,10 @@ function useDocumentMeta(pathname: string, mode: Mode) {
   }, [mode, lang]);
 }
 
-/** Two shells. The owner's Business shell has no demo control; the Demo shell carries the story bar and the engine views. */
+/** One shell, in two dresses: the Business pages have no demo control; the story and the engine views carry the deep strip and the story's strip. */
 export function AppShell({ children }: { children: ReactNode }) {
   const mode = useMode();
   const pathname = usePathname();
   useDocumentMeta(pathname, mode);
-  return shellFor(pathname, mode) === "demo" ? <DemoShell>{children}</DemoShell> : <BusinessShell>{children}</BusinessShell>;
+  return shellFor(pathname, mode) === "demo" ? <BusinessShell demo>{children}</BusinessShell> : <BusinessShell>{children}</BusinessShell>;
 }

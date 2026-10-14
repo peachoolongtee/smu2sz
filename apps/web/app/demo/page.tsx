@@ -4,19 +4,19 @@ import "@/app/flow-look.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AlternateSection } from "@/components/demo/alternate-dialog";
+import { BOOKS, BooksCards, type BooksId } from "@/components/demo/books-cards";
 import { TodayCard } from "@/components/home/today-card";
 import { Disclosure } from "@/components/business/kit";
 import { startTour } from "@/components/business/tour";
 import { ArrowRightIcon } from "@/components/icons";
 import { Badge, Button, ButtonLink, Callout, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
-import { advanceClock, getDemoStory, restoreDemo } from "@/lib/api";
+import { getDemoStory, restoreDemo } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { changeBooks, resetTo } from "@/lib/books-guard";
 import { goToMore, requestStart, runStoryAction, seenOf } from "@/lib/demo-control";
 import { MORE, type MoreId } from "@/lib/demo";
-import { bump, reachedOf, resetSession, useDemo } from "@/lib/demo-store";
+import { reachedOf, resetSession, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
 import { useAsync } from "@/lib/use-async";
 import type { DemoStoryView, StoryScene } from "@/lib/types";
@@ -60,10 +60,7 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
   const demo = useDemo();
   const tools = view.operator_tools;
   const act = async (action: string) => {
-    if (action.startsWith("advance:")) {
-      await advanceClock(Number(action.slice("advance:".length)));
-      bump();
-    } else if (action === "reset") await changeBooks(view.books, resetTo(view.main ? undefined : view.books.scenario, router.push));
+    if (action === "reset") await changeBooks(view.books, resetTo(view.main ? undefined : view.books.scenario, router.push));
   };
   return (
     <Disclosure card testId="demo-operator-tools" summary={<span>{tools.label} <span className="text-supporting font-normal text-ink-3">{tools.hint_text}</span></span>}>
@@ -118,8 +115,8 @@ function OperatorTools({ view, busy }: { view: DemoStoryView; busy: boolean }) {
 }
 
 /**
- * The story, read from GET /demo/story: one current scene with the page's only filled button, the six scenes as a list, another set of books behind a confirmation dialog
- * (with the one-click restore), the operator tools folded away and the proof appendix. Every sentence is the server's. The owner's step only opens the approval: nothing here
+ * The story, read from GET /demo/story: "Which books?" first (three cards, each loaded through the guard), one current scene with the page's only filled button, the six scenes as
+ * a list, the one-click restore of the main books while others are loaded, the operator tools folded away and the proof appendix. Every sentence is the server's. The owner's step only opens the approval: nothing here
  * presses it, and the stepper never runs it.
  */
 export default function DemoPage() {
@@ -136,17 +133,22 @@ export default function DemoPage() {
   const busy = demo.busy || working;
   const view = signedIn ? (story.data ?? null) : null;
 
-  // The books dialog (the same one every reset uses) lists what the main books lose from a fresh read; its confirm button is the one thing that loads the busy books.
-  async function openAlternate() {
+  // Every card's Load goes through the guard (lib/books-guard.ts): a straight reset on fresh books, else the books dialog (the one every reset uses) lists what the current books lose from
+  // a fresh read, and its confirm button is the one thing that replaces them. The server writes the busy company's words while the main books are the ones replaced.
+  async function load(id: BooksId) {
     if (!view) return;
     setRestored(null);
+    const card = BOOKS.find((b) => b.id === id)!;
     const alt = view.alternate;
-    await changeBooks(view.books, resetTo(alt.scenario, router.push), {
-      always: true,
-      alternate: true,
+    const name = t(card.name);
+    const server = id === "busy" && view.main;
+    await changeBooks(view.books, resetTo(id === "golden" ? undefined : card.scenario, router.push), {
+      alternate: server,
       prefix: "demo-alternate",
-      labels: { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text },
-      gives: { heading: t("demo.alt.get"), text: alt.scope_text },
+      labels: server
+        ? { title: alt.confirm_title_text, confirm: alt.confirm_label, cancel: alt.cancel_label, keeps: alt.keeps_text }
+        : { title: t("demo.load.title", { name }), confirm: t("demo.load.confirm", { name }), cancel: t("demo.load.cancel"), keeps: view.books.reset_keeps_text },
+      gives: { heading: t("demo.alt.get"), text: id === "busy" ? alt.scope_text : t(card.help) },
     });
   }
 
@@ -209,6 +211,8 @@ export default function DemoPage() {
       ) : !view ? (
         <LoadingBlock rows={4} />
       ) : (
+        <>
+        <BooksCards view={view} busy={busy} onLoad={(id) => void load(id)} />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-6">
             <section aria-label={t("demo.scene.aria")} className="card-standard p-5" data-testid="demo-current">
@@ -230,7 +234,10 @@ export default function DemoPage() {
                   <StatusPill tone="lavender" testId="demo-progress">
                     {view.progress_text}
                   </StatusPill>
-                  <h2 className="type-section mt-2 text-balance text-ink">{view.alternate.title_text}</h2>
+                  {/* All six scenes done: the story says so (never the other books' name). On the other books there is no story: the card names the books loaded. */}
+                  <h2 className="type-section mt-2 text-balance text-ink" data-testid="demo-current-title">
+                    {view.complete ? t("demo.complete.title") : t((BOOKS.find((b) => b.scenario === view.books.scenario) ?? BOOKS[1]).name)}
+                  </h2>
                 </>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -241,7 +248,7 @@ export default function DemoPage() {
                   </ButtonLink>
                 ) : (
                   <Button variant="primary" loading={busy} onClick={() => void runStoryAction(view.next.action ?? "", router.push, view.books)} data-testid="demo-next">
-                    {view.next.label}
+                    {view.complete && view.next.action === "restart" ? t("demo.startAgain") : view.next.label}
                     <ArrowRightIcon />
                   </Button>
                 )}
@@ -284,23 +291,26 @@ export default function DemoPage() {
                 ))}
               </p>
               {view.proof.chain.chain_text ? (
-                <p className="mt-1">
-                  <Badge tone={view.proof.chain.chain_valid ? "ok" : "bad"} title={view.proof.chain.chain_scope_text}>
-                    {view.proof.chain.chain_text}
-                  </Badge>
-                </p>
+                <div className="mt-1">
+                  <span data-testid="demo-chain" data-valid={view.proof.chain.chain_valid ? "true" : "false"}>
+                    <Badge tone={view.proof.chain.chain_valid ? "ok" : "bad"}>{view.proof.chain.chain_text}</Badge>
+                  </span>
+                  <p className="mt-1 text-sm text-ink-3" data-testid="demo-chain-scope">
+                    {view.proof.chain.chain_scope_text}
+                  </p>
+                </div>
               ) : null}
             </section>
           </div>
 
           <div className="min-w-0 space-y-6">
-            <AlternateSection alt={view.alternate} busy={busy} onOpen={() => void openAlternate()} />
             <OperatorTools view={view} busy={busy} />
             <Callout tone="info">
               <p>{view.simulation_text}</p>
             </Callout>
           </div>
         </div>
+        </>
       )}
     </div>
   );

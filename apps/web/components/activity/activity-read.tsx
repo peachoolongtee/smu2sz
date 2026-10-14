@@ -31,6 +31,14 @@ function RecordBody({ record }: { record: ActivityRecord }) {
         </dd>
         <dt>{t("activity.record.sentence")}</dt>
         <dd className="break-words">{record.message}</dd>
+        {record.reference_text ? (
+          <>
+            <dt>{t("activity.record.bank")}</dt>
+            <dd className="break-words" data-testid="activity-record-bank">
+              {record.reference_text}
+            </dd>
+          </>
+        ) : null}
       </dl>
     );
   }

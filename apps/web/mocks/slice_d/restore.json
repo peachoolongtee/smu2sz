@@ -205,16 +205,7 @@
           {
             "key": "clock",
             "label": "The clock",
-            "items": [
-              {
-                "label": "Advance 1 day",
-                "action": "advance:1"
-              },
-              {
-                "label": "Advance 7 days",
-                "action": "advance:7"
-              }
-            ]
+            "items": []
           },
           {
             "key": "books",
@@ -278,6 +269,9 @@
           }
         ],
         "chain": {
+          "chain_valid": true,
+          "chain_length": 3,
+          "head_hash": "53c84f3f768debd62db8636ce48daa1fe85ee6994f36b05239a5faff9a187cc9",
           "chain_text": "Record chain checks passed",
           "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
         }
@@ -491,16 +485,7 @@
           {
             "key": "clock",
             "label": "时钟",
-            "items": [
-              {
-                "label": "推进 1 天",
-                "action": "advance:1"
-              },
-              {
-                "label": "推进 7 天",
-                "action": "advance:7"
-              }
-            ]
+            "items": []
           },
           {
             "key": "books",
@@ -564,6 +549,9 @@
           }
         ],
         "chain": {
+          "chain_valid": true,
+          "chain_length": 3,
+          "head_hash": "53c84f3f768debd62db8636ce48daa1fe85ee6994f36b05239a5faff9a187cc9",
           "chain_text": "记录链检查通过",
           "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
         }

@@ -31,7 +31,7 @@ test("a REJECT verdict shows the outcome only, no tier badge, and says evaluatio
 
 test("a Tier 1 ACCEPT shows why the agent may accept it alone, with the server's three tests", async ({ page }) => {
   await page.goto("/inbox");
-  await page.getByRole("textbox").fill(ACCEPT_TEXT);
+  await page.getByRole("textbox", { name: "Message text" }).fill(ACCEPT_TEXT);
   await page.getByRole("button", { name: "Compile" }).click();
   await page.getByRole("button", { name: "Evaluate against the mandate" }).click();
   await expect(page).toHaveURL(/\/verdict/);

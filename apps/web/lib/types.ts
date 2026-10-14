@@ -4345,7 +4345,7 @@ export type ActivityTone = "ok" | "warn" | "bad";
 
 /** The record behind an Activity row: an operation's entry, or a security event. Shown only under the evidence fold. */
 export type ActivityRecord =
-  | { seq: number; entry_hash: string; prev_hash: string; kind_text: string; message: string }
+  | { seq: number; entry_hash: string; prev_hash: string; kind_text: string; message: string; /** The guided Demo's receipt: the sentence naming the bank's reference, which stays out of the row's Business words. */ reference_text?: string }
   | { event_id: string; kind_text: string; action_text: string; detail: string };
 
 export interface ActivityRow {

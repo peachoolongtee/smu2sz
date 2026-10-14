@@ -64,7 +64,7 @@ test("the books move and the alert is gone: the 409 says the alert no longer app
 
 test("MANDATE_EXPIRING: a warning 14 days before, critical once expired; information only, no button", async ({ page }) => {
   await advanceTo(page, 80);
-  await page.getByRole("navigation").getByRole("link", { name: "Alerts", exact: true }).first().click();
+  await page.goto("/alerts");
   const warning = page.locator("#alert-ALERT-MANDATE-EXPIRY");
   await expect(warning).toContainText("Mandate v1 expires in 10 day(s)");
   await expect(warning).toContainText("Mandate expiring");
@@ -73,7 +73,7 @@ test("MANDATE_EXPIRING: a warning 14 days before, critical once expired; informa
   await expect(warning.getByText("Warning", { exact: true })).toBeVisible();
 
   await advanceTo(page, 95, 80);
-  await page.getByRole("navigation").getByRole("link", { name: "Alerts", exact: true }).first().click();
+  await page.goto("/alerts");
   const expired = page.locator("#alert-ALERT-MANDATE-EXPIRY");
   await expect(expired).toContainText("mandate expired: the agent can no longer act");
   await expect(expired.getByText("Critical", { exact: true })).toBeVisible();
@@ -83,7 +83,7 @@ test("MANDATE_EXPIRING: a warning 14 days before, critical once expired; informa
 
 test("receivables and reconciliation list the bank's reference on a receipt that carries one", async ({ page }) => {
   await advanceTo(page, 34);
-  await page.getByRole("navigation").getByRole("link", { name: "Reconciliation", exact: true }).first().click();
+  await page.goto("/reconciliation");
   await expect(page).toHaveURL(/\/reconciliation/);
   const receipts = page.getByRole("table", { name: "Receipts" }).or(page.locator("#receipts"));
   await expect(receipts.getByTestId("receipt-rec-receipt-1")).toContainText("RCV-A");

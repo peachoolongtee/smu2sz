@@ -180,18 +180,15 @@ test("the document review fits the viewport", async ({ page }) => {
   expect(await overflowX(page), "the confirmed review overflows horizontally").toBeLessThanOrEqual(1);
 });
 
-test("the stepper and navigation are reachable in Demo mode", async ({ page }) => {
+test("the story's strip and the app's navigation are reachable on an engine view; the engine views open from the Demo's Operator tools", async ({ page }) => {
   await page.goto("/mandate");
   await expect(page.getByTestId("demo-next")).toBeInViewport();
-  const menu = page.getByRole("button", { name: "Open navigation" });
-  if (await menu.isVisible()) {
-    await menu.click();
-    await page.getByRole("link", { name: "Funding" }).click();
-    await expect(page).toHaveURL(/\/funding/);
-  } else {
-    await page.getByRole("link", { name: "Funding" }).click();
-    await expect(page).toHaveURL(/\/funding/);
-  }
+  await expect(page.getByTestId(page.viewportSize()!.width >= 1024 ? "nav-pills" : "tab-bar")).toBeVisible();
+  await page.goto("/demo");
+  await openOperatorTools(page);
+  await page.getByTestId("demo-tools-engine").getByRole("link", { name: "Debt Desk" }).click();
+  await expect(page).toHaveURL(/\/funding/);
+  await expect(page.getByTestId("demo-next")).toBeInViewport();
 });
 
 test("the slide-over chat fits the viewport with a long reply", async ({ page }) => {
@@ -418,10 +415,12 @@ test("at tablet width (820) the open invoices are one card each, so no column is
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });
 
-test("phone: the Demo story keeps 'Another set of books' and 'Operator tools' under one closed fold each, so the page is short", async ({ page }, testInfo) => {
+test("phone: the Demo story keeps 'Operator tools' under one closed fold and the three books cards in the first screen, so the page is short", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "phone", "the folds are the phone's");
   await page.goto("/demo");
-  for (const id of ["demo-alternate-fold", "demo-operator-tools"]) {
+  await expect(page.getByTestId("demo-scenario-load-busy")).toBeInViewport();
+  await expect(page.getByTestId("demo-alternate-fold")).toHaveCount(0);
+  for (const id of ["demo-operator-tools"]) {
     const fold = page.getByTestId(id);
     await expect(fold).toBeAttached();
     await expect(fold).not.toHaveAttribute("open", "");
@@ -437,7 +436,7 @@ test("phone: the Demo story keeps 'Another set of books' and 'Operator tools' un
   await expect(page.getByTestId("home-day")).toBeAttached();
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   const view = page.viewportSize()?.height ?? 915;
-  // One current scene, six one-line scenes and two closed folds: the page is short.
+  // Three one-line books, one current scene, six one-line scenes and one closed fold: the page is short.
   expect(height, `the story page is ${(height / view).toFixed(2)} screens`).toBeLessThanOrEqual(view * 3 + 16);
   expect(await overflowX(page)).toBeLessThanOrEqual(1);
 });

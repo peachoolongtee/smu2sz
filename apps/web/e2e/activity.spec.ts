@@ -161,3 +161,16 @@ test("the page's order: the state, then the search, then the business rows", asy
   expect(order[0]).toBeLessThan(order[1]);
   expect(order[1]).toBeLessThan(order[2]);
 });
+
+test("the tour's Activity step names the fold the page has: Evidence, not Audit details", async ({ page }, info) => {
+  test.skip(isLive(info), "mock-mode spec: the recorded demo path");
+  await approvedDay34(page);
+  const menu = page.getByTestId("account-menu");
+  if ((await menu.count()) && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) await menu.locator("> summary").click();
+  await page.getByTestId("account-tour").locator("visible=true").first().click();
+  const card = page.getByTestId("tour-card");
+  await expect(card).toContainText("Everything that happened");
+  await expect(card).toContainText("“Evidence” under a row holds the exact record.");
+  await expect(card).not.toContainText("Audit details");
+  await expect(page.getByTestId("activity-evidence").first().locator("> summary")).toHaveText("Evidence");
+});

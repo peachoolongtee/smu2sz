@@ -1372,7 +1372,7 @@
           "category_label": "Receivables",
           "when": "today",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": true,
@@ -1393,9 +1393,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days. synthetic bank event, reference demo-rcpt-1; no real funds moved. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due in 30 days. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -1665,7 +1666,7 @@
           "category_label": "应收款",
           "when": "今天",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": true,
@@ -1686,9 +1687,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定30 天后到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -1992,7 +1994,7 @@
           "category_label": "Receivables",
           "when": "32 days ago",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -2013,9 +2015,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. synthetic bank event, reference demo-rcpt-1; no real funds moved. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -2317,7 +2320,7 @@
           "category_label": "应收款",
           "when": "32 天前",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -2338,9 +2341,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -2676,7 +2680,7 @@
           "category_label": "Receivables",
           "when": "32 days ago",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
           "why_text": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -2697,9 +2701,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. synthetic bank event, reference demo-rcpt-1; no real funds moved. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. cash forecast is now ¥200,000.00 below your minimum in 8 days. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -3033,7 +3038,7 @@
           "category_label": "应收款",
           "when": "32 天前",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
           "why_text": "截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -3054,9 +3059,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 截至现在，现金预测显示8 天后将比您的最低现金储备低 ¥200,000.00。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -3424,7 +3430,7 @@
           "category_label": "Receivables",
           "when": "32 days ago",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -3445,9 +3451,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. synthetic bank event, reference demo-rcpt-1; no real funds moved. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 2 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -3813,7 +3820,7 @@
           "category_label": "应收款",
           "when": "32 天前",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -3834,9 +3841,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定2 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -4236,7 +4244,7 @@
           "category_label": "Receivables",
           "when": "36 days ago",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -4257,9 +4265,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. synthetic bank event, reference demo-rcpt-1; no real funds moved. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -4657,7 +4666,7 @@
           "category_label": "应收款",
           "when": "36 天前",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -4678,9 +4687,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -5364,7 +5374,7 @@
           "category_label": "Receivables",
           "when": "36 days ago",
           "title_text": "Received ¥255,013.80 from Foshan Home Retail Co.",
-          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. Synthetic bank event, reference DEMO-RCPT-1; no real funds moved.",
+          "detail_text": "Settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago.",
           "why_text": "The forecast stays at or above your minimum.",
           "why_as_of_text": "now",
           "why_changed": false,
@@ -5385,9 +5395,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "Payment received",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "Synthetic bank event, reference DEMO-RCPT-1; no real funds moved."
           },
-          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. synthetic bank event, reference demo-rcpt-1; no real funds moved. the forecast stays at or above your minimum. foshan home retail co. receivables"
+          "search_text": "received ¥255,013.80 from foshan home retail co. settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 was still due 6 days ago. the forecast stays at or above your minimum. foshan home retail co. receivables"
         },
         {
           "id": "op:6",
@@ -6069,7 +6080,7 @@
           "category_label": "应收款",
           "when": "36 天前",
           "title_text": "已收到Foshan Home Retail Co.的 ¥255,013.80。",
-          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。",
+          "detail_text": "按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。",
           "why_text": "预测现金不低于您的最低现金储备。",
           "why_as_of_text": "现在",
           "why_changed": false,
@@ -6090,9 +6101,10 @@
             "entry_hash": "d9d2eeb0ee6130036c3715bbfe509b973c5b0b2ccff2b7945665551f4f7a029f",
             "prev_hash": "b05a0581829ad5240bbe2196112d167b80a20576b994ced6695cd92e49d10307",
             "kind_text": "已收到付款",
-            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)"
+            "message": "Received ¥255,013.80 on RCV-A (settles ¥257,200.00 at the agreed 0.85% early-payment discount; ¥162,800.00 still due on day 32)",
+            "reference_text": "模拟银行事件，银行参考号 DEMO-RCPT-1；没有真实资金流动。"
           },
-          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 模拟银行事件，银行参考号 demo-rcpt-1；没有真实资金流动。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
+          "search_text": "已收到foshan home retail co.的 ¥255,013.80。 按约定的 0.85% 提前付款折扣结清 ¥257,200.00；另有 ¥162,800.00 原定6 天前到期。 预测现金不低于您的最低现金储备。 foshan home retail co. 应收款"
         },
         {
           "id": "op:6",
@@ -6456,6 +6468,94 @@
         "chain_length": 1,
         "head_hash": "86948db473120eb1475e9f2ccb4399e7e298a09417003ed8bb03c47a0a80d595",
         "chain_text": "记录链检查通过",
+        "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
+      },
+      "context": {
+        "customer": null,
+        "decision": null,
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
+      },
+      "last_read_when": "今天",
+      "last_read_day": 0
+    }
+  },
+  "short": {
+    "en": {
+      "lang": "en",
+      "title_text": "Activity",
+      "state_word": "Nothing waits on you",
+      "state_tone": "ok",
+      "state_text": "Nothing has changed in the books yet.",
+      "summary": {
+        "business_count": 0,
+        "security_alert_count": 0,
+        "benign_auth_count": 0,
+        "system_count": 0,
+        "benign_auth_text": null,
+        "benign_auth_word": null,
+        "security_alerts_text": null,
+        "kept_text": "Every entry stays in the record whatever the filter."
+      },
+      "categories": [
+        {
+          "key": "all",
+          "label": "All",
+          "count": 0
+        }
+      ],
+      "rows": [],
+      "chain": {
+        "chain_valid": true,
+        "chain_length": 0,
+        "head_hash": null,
+        "chain_text": null,
+        "chain_scope_text": "Every entry's hash matches the entry before it. This checks the log's own integrity; it does not confirm bank facts or buyer promises."
+      },
+      "context": {
+        "customer": null,
+        "decision": null,
+        "path": null,
+        "invoice": null,
+        "scenario": null,
+        "back": null,
+        "irrelevant_text": null
+      },
+      "last_read_when": "today",
+      "last_read_day": 0
+    },
+    "zh": {
+      "lang": "zh",
+      "title_text": "动态",
+      "state_word": "没有事项在等您",
+      "state_tone": "ok",
+      "state_text": "账目中还没有任何变化。",
+      "summary": {
+        "business_count": 0,
+        "security_alert_count": 0,
+        "benign_auth_count": 0,
+        "system_count": 0,
+        "benign_auth_text": null,
+        "benign_auth_word": null,
+        "security_alerts_text": null,
+        "kept_text": "无论如何筛选，每一条记录都会保留。"
+      },
+      "categories": [
+        {
+          "key": "all",
+          "label": "全部",
+          "count": 0
+        }
+      ],
+      "rows": [],
+      "chain": {
+        "chain_valid": true,
+        "chain_length": 0,
+        "head_hash": null,
+        "chain_text": null,
         "chain_scope_text": "每条记录的哈希都与前一条吻合。这只检查日志自身的完整性，不能证实银行事实或买方承诺。"
       },
       "context": {
