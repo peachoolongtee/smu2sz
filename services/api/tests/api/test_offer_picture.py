@@ -65,6 +65,7 @@ def test_no_id_in_a_sentence_and_early_payment_names_the_buyer(client):
     for lang in ("en", "zh"):
         pic = client.get(f"/offers/{oid}/picture", params={"lang": lang}).json()
         ctx = pic.pop("context")  # the URL contract's selections are identifiers; its sentences are checked
+        pic.pop("scenarios_href")  # an address, which carries the offer's id by design
         pic["context"] = {"back": ctx["back"] and {"label": ctx["back"]["label"]}, "irrelevant_text": ctx["irrelevant_text"]}
         hits = [s for s in _strings(pic) if CODES.search(s)]
         assert hits == []
