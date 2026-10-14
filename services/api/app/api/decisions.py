@@ -37,6 +37,7 @@ from app.api.presentation import (
     lapsed_offer_text,
     leg_words,
     obligation_sentence,
+    offer_buyers,
     option_label,
     party_name,
     quote_not_recorded,
@@ -439,7 +440,8 @@ def execution_view(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any]
     cp = ds.commitment.counterparty_id if ds.commitment is not None else (ds.offer.counterparty_id if ds.offer else None)
     text = execution_summary(lang, ctx.today, family=ds.family, state=ds.state.value, buyer=party_name(ctx.state, cp) or None,
                              agreement=agreement, requested_fen=requested, landed_fen=landed, in_transit_fen=transit,
-                             arrival_day=arrival, repaid_fen=repaid, pending=pending, refused=refused, blocked=blocked)
+                             arrival_day=arrival, repaid_fen=repaid, pending=pending, refused=refused, blocked=blocked,
+                             as_asked=ds.accepted_as_asked)
     return {"summary_text": text, "requested_fen": requested, "requested_display": fmt_yuan(requested) if requested else None,
             "landed_fen": landed, "landed_display": fmt_yuan(landed) if landed else None,
             "in_transit_fen": transit, "in_transit_display": fmt_yuan(transit) if transit else None}
@@ -544,10 +546,13 @@ def _response(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | No
                                "net_fen": eco.net_fen, "basis_facility_name": facility_name(ctx.state, eco.basis_facility_id) or None}
                               if eco is not None else None),
                 "funding_blocked": s.funding_blocked}
-    elif ds.commitment is not None:
+    elif ds.commitment is not None and not ds.accepted_as_asked:
         sent = {"recorded": False, "text": t(lang, "The counter sent was not recorded.", "当时发送的还价没有记录。")}
     return {"counters": counters, "recommended_counter_id": ds.evaluated.recommended_counter_id if ds.evaluated else None,
-            "sent": sent}
+            "sent": sent,
+            # the owner accepted the buyer's request as asked: no counter was sent and the buyer was not asked
+            "accepted_as_asked": ({"text": t(lang, "You accepted the request as asked. Nothing was sent to the buyer.",
+                                             "您已按对方要求接受该请求，未向买方发送任何内容。")} if ds.accepted_as_asked else None)}
 
 
 def _authorization(ctx: Context, ds: DecisionState, lang: str) -> dict[str, Any] | None:
@@ -567,6 +572,9 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
     approval = str(getattr(a.status, "value", a.status)) if a is not None else None
     authority = {"APPROVED": t(lang, "Approved by you.", "已由您批准。"), "PENDING": t(lang, "Waiting for your approval.", "等待您批准。"),
                  "REJECTED": t(lang, "You declined it.", "您已拒绝。")}.get(approval or "")
+    if ds.accepted_as_asked:  # the owner's click was the approval: say whose decision it was
+        authority = (t(lang, "You accepted it as asked; your click was the approval.", "您已按对方要求接受；您的点击即是批准。")
+                     if approval == "APPROVED" else t(lang, "You accepted it as asked.", "您已按对方要求接受。"))
     awaited = next((p["detail_when"] for p in promises if p.get("status") == "AWAITED" and p.get("detail_when")), None)
     return agreement_receipt(lang, buyer=party_name(ctx.state, c.counterparty_id), terms=_agreed_terms(ctx, c, lang),
                              status_text=execution_view(ctx, ds, lang)["summary_text"], forward_value_display=fmt_yuan(c.forward_value_fen) if c.forward_value_fen else None,
@@ -577,6 +585,7 @@ def _agreement_receipt(ctx: Context, ds: DecisionState, c: Any, promises: list[d
 def _operations(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str, Any]]:
     by_seq = {e.seq: e for e in ctx.entries}
     decided = frozenset(a.id for a in ctx.approvals if str(getattr(a.status, "value", a.status)) != "PENDING")
+    offers = offer_buyers(ctx.rt.store, ctx.state, (dict(by_seq[o.seq].payload) for o in ds.ops if o.seq in by_seq))
     out = []
     for o in ds.ops:
         e = by_seq.get(o.seq)
@@ -584,7 +593,7 @@ def _operations(ctx: Context, ds: DecisionState, lang: str) -> list[dict[str, An
         if e is not None:
             words = event_words(ctx.state, kind=o.kind, status=o.status.value, payload=dict(e.payload), message=e.result.message,
                                 approval_id=e.result.approval_id, day=o.day, today=ctx.today, lang=lang,
-                                decided=e.result.approval_id in decided, agreements=_agreements(ctx))
+                                decided=e.result.approval_id in decided, agreements=_agreements(ctx), offers=offers)
             text = words["event_text"]
         out.append({"op_id": o.op_id, "kind": o.kind, "kind_text": kind_text(o.kind, lang), "status": o.status.value, "event_text": text, "day": o.day,
                     "when": when_text(o.day, ctx.today, lang) if o.day is not None else None, "approval_id": o.approval_id,
