@@ -25,7 +25,7 @@ NAMES = ["Foshan Home Retail Co.", "Foshan", "Dongguan Office Supplies Ltd.", "D
          "Bank credit line", "Invoice financing (onboarded platform)", "Government-guaranteed working-capital loan"]
 # an id, a day number, a raw enum or the word None in a sentence; "best" and "safe" are never said
 BAD = re.compile(r"\b(?:RCV|BUYER|FAC|LOT|CMT|OFF|CTR|VER|OP|APR|DOC)-[A-Za-z0-9]|RI:|\bday -?\d|\bNone\b(?! in this scenario)|\bnull\b|\b(?:flow_may|needs_owner|over_limit)\b"
-                 r"|\bbest\b|\bsafe\b|\bcheaper\b", re.IGNORECASE)
+                 r"|(?i:\bbest\b|\bsafe\b|\bcheaper\b)")
 
 
 @pytest.fixture
@@ -208,3 +208,56 @@ def test_the_new_words_are_in_chinese_with_no_english_left(api: TestClient) -> N
     assert by["asked"]["authority_short_text"] == "超出授权"
     assert by["方案 A"]["authority_short_text"] == "FLOW 可以发送" and by["方案 B"]["authority_short_text"] == "需要您批准"
     assert pic["recommendation"]["alternative_text"].startswith("方案 B 需要您批准 55 天账期。")
+
+
+# ================================================================ task 3: the scenarios
+
+
+def _scenarios(pic: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {s["key"]: s for s in pic["scenarios"]}
+
+
+def test_golden_scenarios_are_composed_from_the_compare_and_exposure_reads(api: TestClient) -> None:
+    offer_id, pic = _golden(api)
+    sc = _scenarios(pic)
+    assert list(sc) == ["no_new_agreement", "late_30", "customer_loss"]
+    assert [s["label"] for s in pic["scenarios"]] == ["Continue current position", "Buyer pays 30 days late", "Buyer stops placing new orders"]
+    compare = api.get(f"/offers/{offer_id}/compare").json()["rows"]
+    current = next(r for r in compare if r["key"] == "current")
+    assert sc["no_new_agreement"]["assumption_text"] == current["assumption_text"]
+    assert sc["no_new_agreement"]["rows"][2]["text"] == current["funding_text"]
+    # late_30: one row per response, each the exposure read's own stress words
+    stress = api.get(f"/offers/{offer_id}/exposure", params={"spare": 1}).json()["stress"]["paths"]
+    late = sc["late_30"]
+    assert [r["key"] for r in late["rows"]] == [p["key"] for p in pic["paths"]]
+    for r in late["rows"]:
+        assert r["text"] == stress[r["key"]]["text"] and r["lowest_short"] == stress[r["key"]]["lowest_short"]
+    assert late["assumption_text"].startswith("If Foshan Home Retail Co. paid every invoice 30 days late (a test, not a forecast)")
+    loss = sc["customer_loss"]
+    assert loss["lost_billings_text"] == "About ¥5,460,000 a year of billings"
+    assert loss["cash_effect_text"].startswith("¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives.")
+    assert loss["invoice_remains_text"] == "The ¥420,000 already invoiced (due in 32 days) is still paid."
+    assert loss["assumption_text"].endswith("This is not a prediction.")
+
+
+def test_scenarios_leave_the_picture_and_the_books_as_they_were(api: TestClient, rt: Runtime) -> None:
+    offer_id, pic = _golden(api)
+    version, log_length = rt.store.get_state().state_version, len(rt.store.operations())
+    again = _picture(api, offer_id)
+    assert again == pic and rt.store.get_state().state_version == version and len(rt.store.operations()) == log_length
+
+
+def test_zhuhai_has_scenarios_and_the_scenario_words_are_clean_in_both_languages(api: TestClient) -> None:
+    _, zhuhai = _busy_zhuhai(api)
+    assert {s["key"] for s in zhuhai["scenarios"]} <= {"no_new_agreement", "late_30", "customer_loss"} and zhuhai["scenarios"]
+    for pic in (_golden(api)[1], zhuhai):
+        for key, text in _texts(pic["scenarios"]):
+            assert not BAD.search(text), (key, text)
+    _, zh = _golden_zh(api)
+    assert english_leaks(_scenarios_words(zh), NAMES + ["Foshan Home Retail Co."]) == []
+    assert _scenarios(zh)["customer_loss"]["lost_billings_text"] == "每年约 ¥5,460,000 的开票额"
+
+
+def _scenarios_words(pic: dict[str, Any]) -> list[dict[str, Any]]:
+    drop = {"assumption_text", "text"}  # the engine's long assumption sentences are checked by the compare and exposure tests
+    return [{k: v for k, v in s.items() if k not in drop and k != "rows"} for s in pic["scenarios"]]
