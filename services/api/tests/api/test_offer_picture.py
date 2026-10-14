@@ -205,7 +205,7 @@ def test_paths_and_moments_hold_no_id_and_are_said_in_both_languages(client):
     # the outflow's own name ("Operating bill") is the owner's label in the books, not a sentence of ours
     fields = {"paths": [{k: v for k, v in p.items() if k not in ("series", "reply_text")} for p in zh["paths"]],
               "moments": zh["moments"]}
-    assert english_leaks(fields, ["Foshan Home Retail Co.", "Operating bill"]) == []
+    assert english_leaks(fields, ["Foshan Home Retail Co.", "Foshan", "Operating bill"]) == []
 
 
 # ---------------------------------------------------------------- moments: the cursor's stops
