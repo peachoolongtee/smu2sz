@@ -5,7 +5,7 @@ import { CashPreview, LegendItem, type InspectorCell, type InspectorWords, type 
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { useI18n } from "@/lib/i18n";
 import { pairWords } from "@/lib/point-comparison";
-import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenario } from "@/lib/types";
+import type { ExposureView, HomeSeriesPoint, HomeView, OfferPictureView, PicturePath, PictureScenario, PictureScenarioRow } from "@/lib/types";
 import { FinancialOutcomes } from "./outcomes";
 
 /** The chart's frame from the picture: the reserve, the window and the axis the server drew it with (the chart needs no company read to draw one deal). */
@@ -203,14 +203,15 @@ export function BusinessConsequences({ scenarios }: { scenarios: PictureScenario
   const { t } = useI18n();
   const [pick, setPick] = useState<string | null>(null);
   if (!scenarios?.length) return null;
-  const current = scenarios.find((s) => s.key === pick) ?? scenarios[0];
-  const lines: { key: string; label: string | null; text: string }[] = [
-    ...(current.lost_billings_text ? [{ key: "billings", label: t("deals.biz.billings"), text: current.lost_billings_text }] : []),
-    ...(current.lost_contribution_text ? [{ key: "contribution", label: t("deals.biz.contribution"), text: current.lost_contribution_text }] : []),
-    ...(current.cash_effect_text ? [{ key: "cash", label: t("deals.biz.cash"), text: current.cash_effect_text }] : []),
-    ...(current.invoice_remains_text ? [{ key: "invoice", label: t("deals.biz.invoice"), text: current.invoice_remains_text }] : []),
-    ...(current.rows ?? []).map((r, i) => ({ key: r.key ?? `row-${i}`, label: r.label, text: r.text })),
+  const current = scenarios.find((x) => x.key === pick) ?? scenarios[0];
+  // The server's rows say each sentence with its label; a card that carries only the named sentences (an older shape) is read from them.
+  const named: PictureScenarioRow[] = [
+    ...(current.lost_billings_text ? [{ key: "lost_billings", label: t("deals.biz.billings"), text: current.lost_billings_text }] : []),
+    ...(current.lost_contribution_text ? [{ key: "lost_contribution", label: t("deals.biz.contribution"), text: current.lost_contribution_text }] : []),
+    ...(current.cash_effect_text ? [{ key: "cash_effect", label: t("deals.biz.cash"), text: current.cash_effect_text }] : []),
+    ...(current.invoice_remains_text ? [{ key: "invoice_remains", label: t("deals.biz.invoice"), text: current.invoice_remains_text }] : []),
   ];
+  const rows = current.rows?.length ? current.rows : named;
   return (
     <section aria-labelledby="deal-biz-title" className="border-t border-line pt-7" data-testid="deal-scenarios">
       <h3 id="deal-biz-title" className="type-section mb-3 text-ink">
@@ -223,32 +224,28 @@ export function BusinessConsequences({ scenarios }: { scenarios: PictureScenario
             {current.assumption_text}
           </p>
         ) : null}
-        {lines.length ? (
-          <dl className="divide-y divide-line">
-            {lines.map((l) => (
-              <div key={l.key} className="py-2" data-testid={`deal-scenario-${l.key}`}>
-                {l.label ? <dt className="text-supporting font-bold text-ink-3">{l.label}</dt> : null}
-                <dd className="m-0 mt-0.5 max-w-[68ch] text-sm text-ink">{l.text}</dd>
+        {current.available === false && current.unavailable_text ? (
+          <p className="max-w-[68ch] text-sm text-ink-2" role="status" data-testid="deal-scenario-unavailable">
+            {current.unavailable_text}
+          </p>
+        ) : null}
+        {rows.length ? (
+          <dl className="divide-y divide-line" data-testid="deal-scenario-rows">
+            {rows.map((r) => (
+              <div key={r.key} className="py-2" data-testid={`deal-scenario-${r.key}`}>
+                <dt className="flex flex-wrap items-baseline justify-between gap-x-3 text-supporting font-bold text-ink-3">
+                  <span>{r.label}</span>
+                  {r.lowest_short ? (
+                    <span className="text-right text-sm text-ink" data-testid="deal-scenario-lowest">
+                      <b className="font-display tabular-nums">{r.lowest_short}</b>
+                      {r.lowest_when ? <span className="font-normal text-ink-3"> · {r.lowest_when}</span> : null}
+                    </span>
+                  ) : null}
+                </dt>
+                <dd className="m-0 mt-0.5 max-w-[68ch] text-sm text-ink">{r.text}</dd>
               </div>
             ))}
           </dl>
-        ) : null}
-        {current.paths?.length ? (
-          <div data-testid="deal-scenario-paths">
-            <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.biz.lowest")}</p>
-            <ul className="divide-y divide-line">
-              {current.paths.map((p) => (
-                <li key={p.key} className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5 text-sm">
-                  <span className="font-bold text-ink">{p.label}</span>
-                  <span className="text-right text-ink">
-                    {p.lowest_short ? <b className="font-display tabular-nums">{p.lowest_short}</b> : null}
-                    {p.lowest_when ? <span className="text-ink-3"> · {p.lowest_when}</span> : null}
-                    {p.text ? <span className="block text-supporting text-ink-2">{p.text}</span> : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
         ) : null}
       </div>
     </section>

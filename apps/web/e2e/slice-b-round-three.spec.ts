@@ -401,6 +401,48 @@ test.describe("Cash impact (slice d)", () => {
   });
 });
 
+test.describe("Business consequences (slice d)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("three scenario controls, one read-only card at a time: the assumption sentence first, then its rows; the late payment shows the lowest cash of each response; the customer loss separates its sentences; no id, no None, no best", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const section = page.getByTestId("deal-scenarios");
+    await expect(section.getByRole("heading", { name: "Business consequences" })).toBeVisible();
+    await expect(section.getByRole("tab")).toHaveText(["Continue current position", "Buyer pays 30 days late", "Buyer stops placing new orders"]);
+    const card = section.getByTestId("deal-scenario-card");
+    await expect(card).toHaveAttribute("data-scenario", "no_new_agreement");
+    await expect(card.getByTestId("deal-scenario-assumption")).toHaveText("Your books as they stand: Foshan keeps buying on today's terms.");
+    await expect(card.getByTestId("deal-scenario-lowest")).toContainText("−¥105k");
+    await section.getByTestId("deal-scenario-tab-late_30").click();
+    await expect(card).toHaveAttribute("data-scenario", "late_30");
+    await expect(card.getByTestId("deal-scenario-assumption")).toContainText("paid every invoice 30 days late (a test, not a forecast)");
+    await expect(card.getByTestId("deal-scenario-lowest")).toHaveCount(3);
+    await expect(card.getByTestId("deal-scenario-asked")).toContainText("As they asked");
+    await expect(card.getByTestId("deal-scenario-asked")).toContainText("−¥250k");
+    await expect(card.getByTestId("deal-scenario-asked")).toContainText("in 60 days");
+    await section.getByTestId("deal-scenario-tab-customer_loss").click();
+    await expect(card.getByTestId("deal-scenario-assumption")).toContainText("This is not a prediction.");
+    await expect(card.getByTestId("deal-scenario-lost_billings")).toContainText("About ¥5,460,000 a year of billings");
+    await expect(card.getByTestId("deal-scenario-cash_effect")).toContainText("¥1,260,000 of receipts removed within the next 120 days; ¥420,000 still arrives.");
+    await expect(card.getByTestId("deal-scenario-invoice_remains")).toHaveText(/The ¥420,000 already invoiced \(due in 32 days\) is still paid\./);
+    const text = (await section.innerText()).replace(/\s+/g, " ");
+    expect(text).not.toMatch(/\bNone\b|\bbest\b|\bSafe\b|CTR-|OFF-|BUYER-/);
+  });
+
+  test("zh: the scenario labels and sentences are the server's Chinese", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const section = page.getByTestId("deal-scenarios");
+    await expect(section.getByRole("tab")).toHaveCount(3);
+    await expect(section.getByRole("heading", { name: "业务后果" })).toBeVisible();
+    await expect(section.getByTestId("deal-scenario-assumption")).toContainText(/[一-鿿]/);
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

@@ -66,7 +66,7 @@
 //
 // home_summary_day0_counter[_zh].json is GET /home on the opening books with the package offer read and no reply sent (cash.pending and its legend; ticket #116).
 //
-// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
+// --exposure records ONLY apps/web/mocks/offer_exposure_ex01.json, offer_picture_ex01_exposure.json (the picture with its scenarios) and deals_day0_evaluated_back.json (the deals read opened with a customer: `open_offer.context.back`) and exits: { en, zh } of GET /offers/{id}/exposure?lang= for the package offer (EX01) after
 // FLOW has read it, on the opening books. One read carries every path (the sentences of every path are in `band.by_path`), so there is no per-response file. The API needs
 // FEATURE_EXPOSURE=1 (and FEATURE_ENVELOPE=1 FEATURE_PRICE_CURVE=1 FEATURE_COLLECTIONS_WORTH=1 as above):
 //   node scripts/record-mocks.mjs --api http://localhost:8193 --exposure
@@ -432,6 +432,8 @@ if (EXPOSURE) {
   const pic = await live.getOfferPicture(id, "en");
   const recommended = pic.paths?.find((p) => p.recommended)?.key;
   files["deals_day0_evaluated_back.json"] = await live.getDeals("en", { customer: "BUYER-1", path: recommended });
+  // The same offer's picture with the exposure read on (round three: its `scenarios[]` are composed from the exposure and compare reads); the mock serves it while the exposure is on.
+  files["offer_picture_ex01_exposure.json"] = { en: pic, zh: await live.getOfferPicture(id, "zh") };
   await live.demoReset();
   for (const name of Object.keys(files)) write(name, files[name]);
   console.log(`recorded ${written.join(", ")} into ${OUT} from ${API}`);

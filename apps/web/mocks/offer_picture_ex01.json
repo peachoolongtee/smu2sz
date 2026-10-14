@@ -12523,7 +12523,8 @@
         "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
       },
       "irrelevant_text": null
-    }
+    },
+    "scenarios": []
   },
   "zh": {
     "offer_id": "OFF-f806f79b6c21",
@@ -25049,6 +25050,7 @@
         "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
       },
       "irrelevant_text": null
-    }
+    },
+    "scenarios": []
   }
 }

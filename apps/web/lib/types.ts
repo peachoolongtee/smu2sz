@@ -3935,20 +3935,29 @@ export interface PathTerm {
   cell_text?: string | null;
 }
 
-/** One scenario card (round three, section 4), every word the server's: the assumption sentence first, then its rows; a late-payment card also carries the lowest cash of each response under the delay. */
+/** One row of a scenario card: its label and words; a late-payment row is one response's lowest cash under the delay (`key` is the response's key, never shown). */
+export interface PictureScenarioRow {
+  key: string;
+  label: string;
+  text: string;
+  lowest_short?: string | null;
+  lowest_when?: string | null;
+  breach_days_text?: string | null;
+}
+
+/** One scenario card (round three, section 4), every word the server's: the assumption sentence first, then its rows. The customer loss also names its four sentences apart (the rows repeat them in order). */
 export interface PictureScenario {
   key: "no_new_agreement" | "late_30" | "customer_loss" | string;
   label: string;
   assumption_text: string | null;
-  /** Customer loss separates what is lost and what is not: billings a year, contribution, the effect on cash and the invoice that stays payable. */
+  /** False when the scenario cannot be drawn on today's books: `unavailable_text` says why. */
+  available?: boolean;
+  unavailable_text?: string | null;
   lost_billings_text?: string | null;
   lost_contribution_text?: string | null;
   cash_effect_text?: string | null;
   invoice_remains_text?: string | null;
-  /** Any other rows of the card, label and words. */
-  rows?: { key?: string; label: string; text: string }[] | null;
-  /** The lowest cash of each response under the scenario (the late-payment test's `stress.paths`). */
-  paths?: { key: string; label?: string | null; lowest_short?: string | null; lowest_when?: string | null; text?: string | null }[] | null;
+  rows?: PictureScenarioRow[] | null;
 }
 
 /** The three scopes of a deal's terms (round three). */
