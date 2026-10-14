@@ -24,10 +24,11 @@ const SHOWN_FIRST = 3;
  * response's cash assumes (the funding plans differ: that is said in the server's words, never as parity), and the rule the server states (`recommendation.rule_text`). Every sentence is the server's;
  * a response the server wrote nothing for is left out.
  */
-export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, "recommendation">; paths: PicturePath[] }) {
+export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, "recommendation" | "accept">; paths: PicturePath[] }) {
   const { t } = useI18n();
   const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
-  const authority = paths.filter((p) => p.authority_reason_text);
+  // The request's own reason (a request FLOW has a reply for that the owner still cannot accept as asked) is the server's `accept.reason_text`; it stands for the request when the path carries none.
+  const authority = paths.map((p) => ({ p, text: p.authority_reason_text ?? (p.kind === "asked" && picture.accept && !picture.accept.available ? picture.accept.reason_text : null) })).filter((x) => x.text);
   const assumes = paths.filter((p) => p.scenario_assumption_text ?? p.assumption_text);
   return (
     <OpenSection first title={t("deals.why.differ")} testId="deal-why" id="deal-why-section">
@@ -41,9 +42,9 @@ export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, 
           <div data-testid="deal-why-authority">
             <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.authority")}</p>
             <ul className="space-y-1">
-              {authority.map((p) => (
+              {authority.map(({ p, text }) => (
                 <li key={p.key}>
-                  <b className="font-bold text-ink">{p.label}.</b> {p.authority_reason_text}
+                  <b className="font-bold text-ink">{p.label}.</b> {text}
                 </li>
               ))}
             </ul>

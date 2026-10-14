@@ -44,10 +44,13 @@ test.describe("mock", () => {
     test.skip(live(testInfo), "mock-mode: the recorded reads");
   });
 
-  test("the golden EX01 asked path is over the mandate: the server's reason is said under the ask and no accept button is offered", async ({ page }) => {
+  test("the golden EX01 asked path is over the mandate: the comparison says it is outside the mandate, the server's reason is said once in full, and no accept button is offered", async ({ page }) => {
     await checkedDeal(page);
-    await expect(page.getByTestId("accept-reason-asked")).toBeVisible();
-    await expect(page.getByTestId("accept-reason-asked")).toContainText(/mandate/i);
+    await page.getByTestId("deal-tab-compare").click();
+    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toHaveText("Outside mandate");
+    await expect(page.getByTestId("deal-why-authority")).toContainText("As they asked.");
+    await expect(page.getByTestId("deal-why-authority")).toContainText(/mandate/i);
+    await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
     await expect(page.getByTestId("accept-review-open")).toHaveCount(0);
     // The one filled button is still the send's, and its review has no fourth statement: "What it does to your cash" belongs to accepting as asked, and only when the server writes it.

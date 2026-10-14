@@ -216,30 +216,24 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await page.getByTestId("next-step").getByRole("button", { name: "Check against my limits" }).click();
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  // The buyer's messages are the deal's Messages tab: no inbox card is under the queue while a deal is selected.
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
+  // The page's order on the Overview: the verdict, what they ask, FLOW's reply, the terms by scope.
+  const overview = ["queue-heading", "queue-ask", "queue-recommends", "deal-terms-section"];
+  const orderTops = await page.evaluate((list) => list.map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1), overview);
+  expect(orderTops.every((y) => y >= 0)).toBe(true);
+  expect(orderTops).toEqual([...orderTops].sort((a, b) => a - b));
   await openCompare(page);
   expect(await overflowX(page), "/deals overflows horizontally").toBeLessThanOrEqual(1);
-  // One order per width (the DOM order is the visual order): the verdict (the heading), what they ask, the recommendation, the consequence; below the two-pane width
-  // the negotiation comes first and the queue's cards (the folded inbox row among them) after it; from `xl` they are the left pane, and only the negotiation's parts are in one column.
-  const twoPanes = (page.viewportSize()?.width ?? 1440) >= 1280;
-  const detail = ["queue-heading", "deal-ask-quote", "queue-recommends", "deal-level-consequence"];
-  const ids = twoPanes ? detail : [...detail, "inbox-collapsed"];
-  const tops = await page.evaluate((list) => list.map((id) => {
-    const el = document.getElementById(id) ?? document.querySelector(`[data-testid="${id}"]`);
-    if (!el) return -1;
-    // From `xl` the negotiation scrolls on its own (round two): its parts are placed within that scroller; below it the window's scroll is the page's.
-    const box = document.querySelector('[data-testid="deals-detail"]');
-    const own = box && getComputedStyle(box).overflowY === "auto" && box.contains(el);
-    return own ? el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop : el.getBoundingClientRect().top + scrollY;
-  }), ids);
-  expect(tops.every((y) => y >= 0)).toBe(true);
-  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  await page.getByTestId("deal-tab-cash").click();
+  await expect(page.getByTestId("deal-chart")).toBeVisible();
+  expect(await overflowX(page), "/deals cash impact overflows horizontally").toBeLessThanOrEqual(1);
   await page.goto("/cash");
   await expect(page.getByTestId("cash-options-list")).toBeVisible();
   expect(await overflowX(page), "/cash overflows horizontally").toBeLessThanOrEqual(1);
   const narrow = (page.viewportSize()?.width ?? 1440) < 1024;
   if (narrow) {
-    for (const [route, ready] of [["/deals", "inbox-collapsed"], ["/cash", "cash-options-list"]] as const) {
+    for (const [route, ready] of [["/deals", "deals-inbox"], ["/cash", "cash-options-list"]] as const) {
       await page.goto(route);
       await expect(page.getByTestId(ready)).toBeVisible();
       const short = await page.evaluate(() =>
@@ -291,17 +285,17 @@ test("phone priority: Home's primary action, Deals' priced response and Cash's o
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   const rec = (await topOf(page, "queue-heading"))!;
   const send = await page.getByTestId("queue-review-open").boundingBox();
-  const inbox = (await topOf(page, "inbox-collapsed"))!;
-  const asks = (await topOf(page, "deal-ask-quote"))!;
-  expect(inbox.top, "the inbox is one folded row, after the deal on a phone").toBeGreaterThan((await topOf(page, "queue-recommends"))!.top);
+  const asks = (await topOf(page, "queue-ask"))!;
+  // The buyer's messages are the deal's Messages tab: no inbox row is under the queue while a deal is selected.
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   await expect(page.getByTestId("deal-steps")).toHaveCount(0);
   await expect(page.getByTestId("deal-state-chip")).toContainText("Counter ready");
   expect(rec.top, "the recommendation card starts in the first screen").toBeLessThan(915);
   expect(send, "the review button is on the page").not.toBeNull();
   expect(send!.y + send!.height, "the review button is inside the first 915 px").toBeLessThanOrEqual(915);
   expect(send!.y + send!.height, "and above the tab bar").toBeLessThanOrEqual(tab.y);
-  expect(asks.top, "the ask comes before the reply card (the board's order)").toBeLessThan(send!.y);
-  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, inbox, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+  expect(asks.top, "the ask comes before the reply card (the board's order)").toBeLessThan((await topOf(page, "queue-recommends"))!.top);
+  measured.deals = { recommendation: rec, send: { top: Math.round(send!.y), bottom: Math.round(send!.y + send!.height) }, asks, pageHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
 
   // Cash: the answer, the plan, the picture, then the comparison; its options list starts inside the first three screens.
   await page.goto("/cash");

@@ -657,13 +657,16 @@ test("Deals: the negotiation is the API's, in its order, with the costs it price
   await checkedDeal(page);
   await expect(page.getByTestId("queue-heading")).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // Every sentence below is the server's: the ask in the buyer's words, the recommendation and its reason, the costs with their basis.
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
-  await expect(page.getByTestId("deal-recommended-reason")).toContainText("Recommended because FLOW can send it");
-  const tops = await page.evaluate(() => ["queue-heading", "deal-ask-quote", "queue-recommends", "deal-level-consequence"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("deal-mandate")).toHaveText("Option A is the reply FLOW can send within your mandate.");
+  const tops = await page.evaluate(() => ["queue-heading", "queue-ask", "queue-recommends", "deal-terms-section"].map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  await page.getByTestId("deal-tab-messages").click();
+  await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("We'll settle the ¥420k early at 1.2%");
   await openCompare(page);
-  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("¥28,326.92");
-  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-why-reason")).toContainText("Recommended because FLOW can send it");
+  await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("¥3,027.77");
   await post("/demo/reset", {});
 });
 

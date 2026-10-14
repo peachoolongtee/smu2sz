@@ -56,8 +56,10 @@ test("Deals: the inbox, a checked deal with its priced response, and the decisio
   await openReview(page);
   await scan(page, "/deals the receipt");
   await openCompare(page);
+  await scan(page, "/deals compare open");
+  await page.getByTestId("deal-tab-cash").click();
   await expect(page.getByTestId("deal-chart")).toBeVisible();
-  await scan(page, "/deals compare and chart open");
+  await scan(page, "/deals cash impact: outcomes, chart and scenarios open");
   const offerId = await page.evaluate(() => JSON.parse(sessionStorage.getItem("tl-demo-v3") ?? "{}").offerId as string);
   await page.goto(`/decisions/${encodeURIComponent(`deal:${offerId}`)}`);
   await expect(page).toHaveURL(/\/decisions\//);

@@ -48,8 +48,9 @@ test("the steps follow the record: Response ready names the recommendation, a se
   await expect(steps).toContainText("Counter ready");
   await expect(steps).not.toContainText("Agreed");
   // The inbox row says the record's state in the server's words (the inbox is one row until it is asked for).
-  await page.getByTestId("inbox-back").click();
+  await page.getByTestId("deal-tab-messages").click();
   await expect(page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01")).toContainText("Showing below");
+  await page.getByTestId("deal-tab-overview").click();
 
   await openReview(page);
   await sendCounter(page.locator("#counters"));
@@ -72,8 +73,8 @@ test("the send names its option, says the reply is simulated, and carries what w
   // Option B is a path of its own: picking it in the comparison makes it the reply under review, with its own send; Option A's gives way, never two at once.
   await openCompare(page);
   await page.locator('[data-testid^="deal-use-CTR-"]:visible').last().click();
-  await expect(page.getByTestId("queue-recommends")).toContainText("Option B");
-  await expect(page.getByTestId("queue-authority")).toContainText("Needs your approval");
+  await expect(page.locator('[data-testid^="deal-use-CTR-"]:visible').last()).toHaveText("Option B is selected");
+  await expect(page.getByTestId("deal-compare-cell-authority-reply").nth(1)).toContainText("Needs your approval");
   await openReview(page);
   await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
   await expect(page.getByTestId("deal-send")).toHaveCount(1);

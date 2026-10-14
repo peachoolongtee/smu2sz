@@ -55,14 +55,16 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("inbox-thread-BUYER-1").locator("details > summary").first()).toContainText("earlier message");
   await expect(page.getByTestId("inbox-blocked")).toBeVisible();
   await expect(page.getByTestId("deal-pane")).toHaveCount(0);
-  // Opening a message reads it (no separate button): the inbox folds to one row and the pane opens on the ask.
+  // Opening a message reads it (no separate button): the inbox card gives way (the buyer's messages are the deal's Messages tab) and the pane opens on the ask.
   await inbox.getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("inbox-collapsed")).toContainText("Buyer messages (3)");
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
+  await page.getByTestId("deal-tab-messages").click();
+  await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("We'll settle the ¥420k early at 1.2%");
+  await page.getByTestId("deal-tab-overview").click();
   await page.getByTestId("queue-check-button").click();
   await expect(page.getByTestId("queue-recommends")).toBeVisible();
   // Reading the same message again costs nothing: it is selected, not read twice.
-  await page.getByTestId("inbox-back").click();
+  await page.getByTestId("deal-tab-messages").click();
   await expect(inbox.getByTestId("inbox-msg-EX01")).toContainText("Showing below");
   await inbox.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("queue-recommends")).toBeVisible();
@@ -119,7 +121,7 @@ test("a deep link in a fresh session hydrates the evaluated negotiation: nothing
   await page.evaluate(() => sessionStorage.removeItem("tl-demo-v3"));
   await page.goto(url);
   await expect(page.getByTestId("queue-recommends")).toContainText("Option A");
-  await expect(page.getByTestId("deal-recommended-reason")).toBeVisible();
+  await expect(page.getByTestId("deal-mandate")).toBeVisible();
   // The review reads the terms of this send from the server (the same check as "Check again", on the owner's own press) and sends what it showed.
   await page.getByTestId("queue-review-open").click();
   await expect(page.getByTestId("receipt-line-authorizes")).toContainText("proposed agreement");
