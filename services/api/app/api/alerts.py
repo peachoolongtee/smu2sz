@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -176,7 +177,7 @@ def act_on_alert(alert_id: str, body: ActRequest | None = None, lang: str = "en"
                              if body is not None and body.suggestions is not None else None)
         plan = None
         if shown_version is None and shown_suggestions is None:
-            key = f"unbound-act|{alert_id}|{rt.day}|{len(rt.store.security_events())}"
+            key = f"unbound-act|{alert_id}|{rt.day}|{uuid.uuid4().hex}"
             rt.store.add_security_event(SecurityEvent(
                 id="SEC-ACT-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
                 kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=None,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from collections.abc import Mapping
 from typing import Annotated, Literal
 
@@ -51,7 +52,7 @@ def enforce_intake_cap(rt: Runtime, route: str, claimed: str | None) -> None:
     with rt.lock:
         if rt.take_intake_slot():
             return
-        key = f"intake-capped {route} {claimed} {rt.day} {len(rt.store.security_events())}"
+        key = f"intake-capped {route} {claimed} {rt.day} {uuid.uuid4().hex}"
         rt.store.add_security_event(SecurityEvent(
             id="SEC-INTAKE-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
             kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=claimed,

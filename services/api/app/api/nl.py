@@ -12,6 +12,7 @@ handling; no key or a wrong key (also a security event) is a proposal only, so n
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Any, Literal
 
 from fastapi import APIRouter, Header, HTTPException
@@ -110,7 +111,7 @@ def _security_event(rt, kind: str, claimed: str | None, action: str, detail: str
 
     from app.domain.models import SecurityEvent, SecurityEventKind
 
-    key = f"{kind} {claimed} {rt.day} {len(rt.store.security_events())}"
+    key = f"{kind} {claimed} {rt.day} {uuid.uuid4().hex}"
     rt.store.add_security_event(SecurityEvent(
         id="SEC-CPKEY-" + hashlib.sha256(key.encode()).hexdigest()[:12], day=rt.day,
         kind=SecurityEventKind.PRIVILEGE_ESCALATION, counterparty_id=claimed, action_taken=action, detail=detail))
