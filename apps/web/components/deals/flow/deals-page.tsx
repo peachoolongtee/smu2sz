@@ -7,13 +7,14 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
+import { BuyingCard } from "@/components/deals/buying-card";
 import { DealList, useDealRows } from "@/components/deals/deal-list";
 import { DealTools } from "@/components/deals/tools";
 import { FoldCard } from "@/components/business/surface";
 import { ArrowLeftIcon } from "@/components/icons";
 import { Button, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { contractsOff } from "@/components/documents";
-import { getClock, getCustomers, getDeals, getLedger, getState, getWorklist, submitOffer } from "@/lib/api";
+import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
 import { recordOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -76,6 +77,8 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
+  // The buying side (ADR-0013): its door shows only when the server answers it (the feature can be switched off).
+  const buying = useAsync(() => getPurchases(lang).catch(() => null), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
@@ -225,6 +228,9 @@ export function DealsPage() {
       nextKey={!decision ? (firstRequest?.row.key ?? null) : null}
     />
   );
+  // The buying side (ADR-0013), second to the selling work: its own card under the list of every deal, only when the server
+  // answers it. A buyer's queue and an open negotiation are the selling work, so the card is not drawn there.
+  const BUYING_NODE = buying.data && !decision ? <BuyingCard key="buying" purchases={buying.data.purchases} /> : null;
   const INBOX_NODE =
     /* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */
     queue === undefined ? null : (
@@ -276,6 +282,7 @@ export function DealsPage() {
           {books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : null}
           {readError ? <ErrorState error={readError} /> : null}
           {(deals.loading && !deals.data) || (!books.data && !books.error) ? <LoadingBlock rows={3} /> : <DealList rows={listRows} />}
+          {BUYING_NODE}
           {/* Every message, as it arrived: a dropdown under the list. Opening one reads it and opens its deal in full. */}
           <FoldCard title={t("deals.list.messages")} hint={t("deals.list.messages.hint", { n: inboxCount })} testId="deal-list-messages">
             <InboxList

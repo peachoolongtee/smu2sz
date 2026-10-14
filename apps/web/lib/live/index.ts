@@ -25,10 +25,22 @@ import type {
   BorrowerFileView,
   BuyerExposureView,
   ChaseView,
+  AddToMenuResult,
+  BuyEstimate,
+  BuySideEvaluationView,
+  BuyTimeline,
   CapexApplyRequest,
   CapexApplyResult,
+  CapexPlansRequest,
+  CapexPlansView,
   CapexRequest,
   CapexView,
+  EligibilityView,
+  FinanceHealthView,
+  HealthInputsRequest,
+  PurchaseCommitResult,
+  PurchaseRow,
+  PurchasesView,
   CompareView,
   DealsContext,
   EnvelopeView,
@@ -297,6 +309,26 @@ export const live = {
       body: linkFacilityId ? { doc_hash: docHash, link_facility_id: linkFacilityId } : { doc_hash: docHash },
     }),
   getContractFixtures: async (): Promise<ContractFixture[]> => (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/contracts")).contracts,
+
+  // the buy side (ADR-0013, FEATURE_CAPEX_CONTRACTS): every route needs the owner token; the responses already have the page's shape
+  getPurchases: (lang: "en" | "zh" = "en") => http<PurchasesView>("GET", `/purchases${lang === "zh" ? "?lang=zh" : ""}`),
+  getPurchase: async (id: string, lang: "en" | "zh" = "en"): Promise<PurchaseRow> =>
+    (await http<{ purchase: PurchaseRow }>("GET", `/purchases/${enc(id)}${lang === "zh" ? "?lang=zh" : ""}`)).purchase,
+  getCapexContractFixtures: async (): Promise<ContractFixture[]> =>
+    (await http<{ contracts: ContractFixture[] }>("GET", "/fixtures/capex-contracts")).contracts,
+  evaluateContract: (id: string, timeline: BuyTimeline, estimate: BuyEstimate = {}) =>
+    http<BuySideEvaluationView>("POST", `/capex/contracts/${enc(id)}/evaluate`, { body: { timeline, estimate } }),
+  commitContract: (id: string, timeline: BuyTimeline, scheduleHash: string, takeEarlyPay: boolean) =>
+    http<PurchaseCommitResult>("POST", `/capex/contracts/${enc(id)}/commit`, {
+      body: { timeline, schedule_hash: scheduleHash, take_early_pay: takeEarlyPay },
+    }),
+  getFinanceHealth: (inputs: HealthInputsRequest | null = null) =>
+    inputs ? http<FinanceHealthView>("POST", "/finance/health", { body: { inputs } }) : http<FinanceHealthView>("GET", "/finance/health"),
+  getEligibility: (inputs: { months_trading?: number | null; amount_fen?: number | null } | null = null) =>
+    inputs ? http<EligibilityView>("POST", "/lending/eligibility", { body: { inputs } }) : http<EligibilityView>("GET", "/lending/eligibility"),
+  addProductToMenu: (productId: string, amountFen: number | null = null) =>
+    http<AddToMenuResult>("POST", `/lending/products/${enc(productId)}/add-to-menu`, { body: amountFen ? { amount_fen: amountFen } : {} }),
+  runCapexPlans: (req: CapexPlansRequest) => http<CapexPlansView>("POST", "/capex/plans", { body: req }),
 
   /** GET /nav/counts: numbers only (deals needing the owner, approvals pending, late invoices). */
   getNavCounts: (lang: "en" | "zh" = "en") => http<NavCounts>("GET", `/nav/counts?lang=${lang}`),

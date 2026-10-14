@@ -80,6 +80,7 @@ import type {
 } from "../types";
 
 import type { CustomerContext } from "../customer-href";
+import * as buyside from "./buyside";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
 import * as home from "./home";
@@ -1236,6 +1237,7 @@ export async function demoReset(requested?: string, guard?: { from: string; conf
   save();
   home.resetHome();
   documents.resetDocuments();
+  buyside.resetBuyside();
 }
 
 // ------------------------------------------------------------------ contract ingestion and the deal summary (brief 03)
@@ -1500,3 +1502,16 @@ export async function getContractFixtures(): Promise<ContractFixture[]> {
   await delay();
   return documents.mockContractFixtures();
 }
+
+// ------------------------------------------------------------------ the buy side (ADR-0013): mocks/buyside, see lib/mock/buyside.ts
+export {
+  addProductToMenu,
+  commitContract,
+  evaluateContract,
+  getCapexContractFixtures,
+  getEligibility,
+  getFinanceHealth,
+  getPurchase,
+  getPurchases,
+  runCapexPlans,
+} from "./buyside";

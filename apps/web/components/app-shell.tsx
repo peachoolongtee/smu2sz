@@ -406,7 +406,7 @@ function sectionOf(pathname: string): Section {
 }
 const TAB_LABEL: Partial<Record<string, DictKey>> = { "/cash": "nav.short.cash", "/documents": "nav.short.attach" };
 /** The way back from a detail page, by the section it opens from. */
-const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals" };
+const BACK_LABEL: Record<string, DictKey> = { "/cash": "nav.backToCash", "/deals": "nav.backToDeals", "/buy": "nav.backToBuying" };
 
 /**
  * The one shell. The Demo is the same app with the same rail and header (the Demo's own sidebar of engine views is gone: they are in the Demo page's Operator tools), plus the deep strip that

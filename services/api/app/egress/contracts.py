@@ -4,7 +4,9 @@ private whatever the owner decided about the reading.
 
 What is protected from each record: amounts and rates, the payment days and the early-payment window days (matched next to the
 owner's name, like the books' terms), the retention days and months, every date the contract states, the buyer's name as the
-contract writes it, the contract reference, and the clauses' own words (each quote and each clause's text).
+contract writes it, the contract reference, and the clauses' own words (each quote and each clause's text). In a capex contract
+(ADR-0013) the parties are the other way round: the SME is the buyer and the counterparty the vendor, so the vendor's name is
+protected and the SME's own name, its identity in every message, is not.
 
 Who may be told: **a buyer may be told values from its own contract and never another counterparty's.** Every value is owned by
 the counterparty the record is with, so a reply to that counterparty may state them (the guard's `entitled`), a reply to anyone
@@ -26,7 +28,7 @@ from collections.abc import Sequence
 from datetime import date
 from typing import Any
 
-from app.domain.models import ContractField, ContractRecord, Counterparty, FinancialState
+from app.domain.models import ContractField, ContractRecord, Counterparty, DocumentKind, FinancialState
 from app.domain.ports import ContractGuardRow, guard_row
 from app.egress.protected import ProtectedSet, counterparty_aliases
 from app.egress.values import Category, PrivateValue
@@ -64,6 +66,11 @@ def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow]
         cp = known.get(owner) or Counterparty(id=owner, name=owner, role="BUYER")
         names, extra = counterparty_aliases(cp)
         p = f"contract.{r.id}"
+        # The counterparty's party in the contract is protected; the SME's own party is its identity and is not. A buyer
+        # contract names the counterparty as the buyer; a capex contract (ADR-0013) names it as the supplier.
+        capex = r.kind == DocumentKind.CAPEX_CONTRACT.value
+        their_party = ContractField.PARTY_SUPPLIER if capex else ContractField.PARTY_BUYER
+        own_party = ContractField.PARTY_BUYER if capex else ContractField.PARTY_SUPPLIER
 
         def terms(label: str, days: int, owner: str = owner, names: tuple[str, ...] = names,
                   extra: tuple[str, ...] = extra) -> None:
@@ -93,10 +100,10 @@ def contract_private_values(records: Sequence[ContractRecord | ContractGuardRow]
                 words(f"{label}.date", forms[0], *forms[1])
             if t.field == ContractField.CONTRACT_REFERENCE and t.text:
                 words(f"{label}.text", t.text)
-            elif t.field == ContractField.PARTY_BUYER and t.text:
-                buyer_names, _ = counterparty_aliases(Counterparty(id=owner, name=t.text.strip(), role="BUYER"))
-                words(f"{label}.party", buyer_names[0], *buyer_names[1:-1])  # the contract's name, and without its suffix
-            elif t.text and t.field not in (ContractField.PARTY_SUPPLIER,):
+            elif t.field == their_party and t.text:
+                party_names, _ = counterparty_aliases(Counterparty(id=owner, name=t.text.strip(), role="BUYER"))
+                words(f"{label}.party", party_names[0], *party_names[1:-1])  # the contract's name, and without its suffix
+            elif t.text and t.field != own_party:
                 words(f"{label}.clause_text", t.text, minimum=_MIN_CLAUSE_CHARS)
             words(f"{label}.quote", t.span.text, minimum=_MIN_CLAUSE_CHARS)
         f = r.facility

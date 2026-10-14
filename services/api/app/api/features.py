@@ -14,6 +14,7 @@ _MESSAGES = {
     "exposure": "Buyer exposure is switched off (FEATURE_EXPOSURE).",
     "customer_economics": "Customer economics is switched off (FEATURE_CUSTOMER_ECONOMICS).",
     "pilot_journal": "The pilot journal is switched off (FEATURE_PILOT_JOURNAL).",
+    "capex_contracts": "The buy side (capex contracts, health, eligibility, plans) is switched off (FEATURE_CAPEX_CONTRACTS).",
 }
 
 

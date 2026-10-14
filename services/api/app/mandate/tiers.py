@@ -23,6 +23,7 @@ from app.domain.models import (
     AddFacility,
     ApplyForFacility,
     ChangeMandate,
+    CommitPurchase,
     CounterOffer,
     DrawFacility,
     FacilityStatus,
@@ -41,7 +42,7 @@ from app.domain.models import (
 )
 
 _ALWAYS_TIER3 = (SignPersonalGuarantee, PledgeCollateral, IssueEquity, ChangeMandate)
-_ALWAYS_TIER2 = (ApplyForFacility,)
+_ALWAYS_TIER2 = (ApplyForFacility, CommitPurchase)  # ADR-0013: buying equipment is always the owner's decision
 _TIER1_BASE = (
     AcceptOffer,
     CounterOffer,
