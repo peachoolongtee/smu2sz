@@ -666,6 +666,9 @@ def leg_words(state: FinancialState, kind: str, facility_id: str | None, receiva
     if kind == "RECEIVE_PAYMENT":
         inv = invoice_words(state, receivable_id, lang)
         return t(lang, f"Collect {amount} on {inv}", f"收回{inv}的 {amount}")
+    if kind == "COMMIT_PURCHASE":  # ADR-0013
+        return t(lang, f"Book the {amount} equipment purchase on the contract's payment days",
+                 f"按合同付款日记入 {amount} 的设备采购")
     return f"{kind.replace('_', ' ').capitalize()} {amount}".strip()
 
 
@@ -677,6 +680,7 @@ _KIND_TEXT = {
     "COUNTER_OFFER": ("Counter sent", "已发送还价"), "REVOKE_COMMITMENT": ("Agreement revoked", "协议已撤销"),
     "ADD_FACILITY": ("Facility added", "已添加融资工具"),
     "CONFIRM_DOCUMENT": ("Document confirmed", "文件已确认"), "REJECT_DOCUMENT": ("Document rejected", "文件已驳回"),
+    "COMMIT_PURCHASE": ("Purchase committed", "采购已确定"),  # ADR-0013
 }
 
 
@@ -695,6 +699,7 @@ def short_kind(kind: str, lang: Lang) -> str:
         "RECEIVE_PAYMENT": ("payment receipt", "收款入账"),
         "ACCEPT_OFFER": ("buyer agreement", "买方协议"),
         "RECORD_COMMITMENT": ("buyer agreement", "买方协议"),
+        "COMMIT_PURCHASE": ("equipment purchase", "设备采购"),  # ADR-0013
     }
     en, zh = words.get(kind, (kind.replace("_", " ").lower(), kind))
     return t(lang, en, zh)
@@ -957,6 +962,8 @@ def approval_title(state: FinancialState, kind: str, op: dict[str, Any], buyer: 
         return t(lang, f"Request {money} of invoice financing", f"申请 {money} 的发票融资")
     if kind == "REPAY_FACILITY" and money:
         return t(lang, f"Repay {money} to the {fac}" if fac else f"Repay {money}", f"向{fac}还款 {money}" if fac else f"还款 {money}")
+    if kind == "COMMIT_PURCHASE" and money:  # ADR-0013
+        return t(lang, f"Commit to the {money} equipment purchase", f"确定 {money} 的设备采购")
     return t(lang, f"Authorize this {short_kind(kind, 'en')}", f"授权这项{short_kind(kind, 'zh')}")
 
 
@@ -969,6 +976,8 @@ _DECIDED = {  # kind: (what was authorized, what FLOW did with it, what did not 
     "REPAY_FACILITY": (("the repayment", "FLOW paid it", "nothing was repaid"), ("该还款", "FLOW 已还款", "没有还款")),
     "RECORD_COMMITMENT": (("the agreement", "FLOW recorded it", "the agreement was not recorded"), ("该协议", "FLOW 已记录", "该协议未记录")),
     "ACCEPT_OFFER": (("the agreement", "FLOW recorded it", "the agreement was not recorded"), ("该协议", "FLOW 已记录", "该协议未记录")),
+    "COMMIT_PURCHASE": (("the purchase", "FLOW booked its payments", "nothing was booked"),
+                        ("该采购", "FLOW 已记入其付款", "没有记入任何付款")),
 }
 _DECIDED_OTHER = (("the request", "FLOW ran it", "nothing ran"), ("该请求", "FLOW 已执行", "没有执行任何操作"))
 
@@ -1855,6 +1864,9 @@ def approving_text(kind: str, lang: Lang) -> str | None:
     """What approving a waiting request comes to, in a sentence, for the kinds that have no cost or agreement effect to say."""
     if kind == "APPLY_FOR_FACILITY":
         return t(lang, "Approving submits the application; nothing runs until the bank commits.", "批准后将提交这份申请；在银行承诺之前不会执行任何操作。")
+    if kind == "COMMIT_PURCHASE":  # ADR-0013
+        return t(lang, "Approving books the contract's payments on the days they fall; each is paid from cash on its day.",
+                 "批准后，合同的各笔付款将按到期日记入账簿；每笔款项在到期日从现金中支付。")
     if kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING", "REPAY_FACILITY"):
         return t(lang, "Approving sends the request as soon as you approve.", "批准后立即提交该请求。")
     return None

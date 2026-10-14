@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.activity import router as activity_router
 from app.api.alerts import router as alerts_router
 from app.api.borrower_file import router as borrower_file_router
+from app.api.buyside import router as buyside_router
 from app.api.capex import router as capex_router
 from app.api.clock import router as clock_router
 from app.api.collections import router as collections_router
@@ -54,6 +55,7 @@ app.include_router(operations_router)
 app.include_router(decide_router)
 app.include_router(decisions_router)
 app.include_router(capex_router)
+app.include_router(buyside_router)  # ADR-0013, the buy side's company-wide reads
 app.include_router(whatif_router)
 app.include_router(borrower_file_router)
 app.include_router(alerts_router)

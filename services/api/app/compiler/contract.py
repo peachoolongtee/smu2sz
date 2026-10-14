@@ -56,6 +56,17 @@ I = re.IGNORECASE
 MAX_CHUNK_CHARS = 6_000
 MAX_CHUNKS = 40  # a contract that needs more chunks than this is refused before any model call (each chunk is a call)
 MATERIAL_FIELDS = (F.PRICE, F.PAYMENT_TERMS)  # a supply contract read without these is ABSTAINED
+# ADR-0013: a capex contract states when its price is paid either as milestones or as payment terms; read without a price
+# and without either of those, it is ABSTAINED (a payment schedule could not be derived from it).
+CAPEX_WHEN_PAID = (F.MILESTONE, F.PAYMENT_TERMS)
+
+
+def material_missing(kind: DocumentKind, found: set[ContractField]) -> bool:
+    """Whether a reading of `kind` lacks a material field: a supply contract needs a price and payment terms; a capex
+    contract needs a price and either milestones or payment terms."""
+    if kind == DocumentKind.CAPEX_CONTRACT:
+        return F.PRICE not in found or not any(f in found for f in CAPEX_WHEN_PAID)
+    return any(f not in found for f in MATERIAL_FIELDS)
 
 # ---------------------------------------------------------------- chunking
 
@@ -121,7 +132,7 @@ def contract_document(text: str, kind: DocumentKind, counterparty_id: str) -> So
     no upload day or file name, so the same text read for the same counterparty always has the same cache key."""
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return SourceDocument(doc_id=f"DOC-{digest[:16]}",
-                          channel="attachment" if kind == DocumentKind.BUYER_CONTRACT else "term_sheet",
+                          channel="term_sheet" if kind == DocumentKind.LENDER_AGREEMENT else "attachment",
                           sender_id=counterparty_id, received_day=0, text=text)
 
 
@@ -421,7 +432,11 @@ def _merge(terms: list[ContractTerm], abst: list[Abstention]) -> tuple[list[Cont
 
 
 def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExtraction]], compiler_id: str,
-                   prompt_version: str) -> CompiledContract:
+                   prompt_version: str, kind: DocumentKind = DocumentKind.BUYER_CONTRACT) -> CompiledContract:
+    """The grounded reading of a contract of `kind` (a buyer contract or, ADR-0013, a capex contract): the same terms and
+    flags for both; only the material fields that decide ABSTAINED differ (`material_missing`)."""
+    if kind not in (DocumentKind.BUYER_CONTRACT, DocumentKind.CAPEX_CONTRACT):
+        raise ValueError(f"{kind.value} is not read as a contract")
     ctx = _Ctx(doc=doc, abst=[])
     grounded: list[ContractTerm] = []
     extra_authority: list[XAuthorityClaim] = []
@@ -435,7 +450,7 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
         # a backend's flags quote its chunk; the quotes are located again in the whole document
         extra_authority += [a.model_copy(update={"doc_id": doc.doc_id}) for a in ex.authority_claims]
         extra_requests += [r.model_copy(update={"doc_id": doc.doc_id}) for r in ex.data_requests]
-    claims, requests = ground_flags(doc, DocumentKind.BUYER_CONTRACT, extra_authority, extra_requests)
+    claims, requests = ground_flags(doc, kind, extra_authority, extra_requests)
     blocking = [c.span for c in claims if c.kind == "INSTRUCTION_OVERRIDE"]
     blocking += [r.span for r in requests if r.kind in _BLOCKING_REQUESTS]
     clean: list[ContractTerm] = []
@@ -450,10 +465,9 @@ def build_contract(doc: SourceDocument, parts: Sequence[tuple[Chunk, ContractExt
     found = {t.field for t in terms}
     conflicted = {a.field for a in ctx.abst if a.reason.startswith("conflicting sources")}
     not_found = [f for f in ContractField if f not in found and f.value not in conflicted]
-    material_missing = any(f not in found for f in MATERIAL_FIELDS)
     if conflict:
         status = CompileStatus.CONFLICTING_SOURCES
-    elif material_missing:
+    elif material_missing(kind, found):
         status = CompileStatus.ABSTAINED
     else:
         status = CompileStatus.COMPILED
@@ -470,6 +484,7 @@ def _same_sentence(text: str, a: SourceSpan, b: SourceSpan) -> bool:
 
 __all__ = [
     "AGENT_ADDRESSED",
+    "CAPEX_WHEN_PAID",
     "MAX_CHUNKS",
     "MAX_CHUNK_CHARS",
     "Chunk",
@@ -481,4 +496,5 @@ __all__ = [
     "contract_document",
     "document_flags",
     "ground_flags",
+    "material_missing",
 ]
