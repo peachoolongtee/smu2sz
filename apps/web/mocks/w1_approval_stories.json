@@ -28,7 +28,8 @@
     "decided_day": null,
     "result_message": null,
     "presentation": {
-      "headline": "Approve this agreement with Foshan Home Retail Co.?",
+      "headline": "Record the agreement with Foshan Home Retail Co.",
+      "title_text": "Record the agreement with Foshan Home Retail Co.",
       "what": "Agreement with Foshan Home Retail Co.",
       "facility_name": null,
       "buyer_name": "Foshan Home Retail Co.",
@@ -49,7 +50,7 @@
       ],
       "counterparty_name": "Foshan Home Retail Co.",
       "forward_value_display": null,
-      "economic_effect_text": "No cost over the valuation window beyond the early-payment discount.",
+      "economic_effect_text": "No cost over the next 12 months beyond the early-payment discount.",
       "what_you_agree_to": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
       "approve_label": "Approve the agreement (0.50% early-payment discount, about ¥2,100.00)",
       "why_text": "This changes the terms with a buyer, which you keep for yourself.",
@@ -86,7 +87,7 @@
       "authorizes_text": "The buyer may pay early and take 0.50% off the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
       "executes_now_text": "Records the agreement with Foshan Home Retail Co. as in force.",
       "others_must_agree_text": null,
-      "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+      "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
       "gross_display": null,
       "fees_display": null,
       "net_display": null,
@@ -94,7 +95,17 @@
       "assumptions_text": null,
       "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
       "remaining_text": null
-    }
+    },
+    "commit_label": "Authorize the agreement",
+    "authorize_text": null,
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": null,
+    "deadline_text": "Expires in 14 days",
+    "deadline_day": 14,
+    "title_text": "Record the agreement with Foshan Home Retail Co.",
+    "decided_text": null
   },
   "expired": {
     "id": "APR-000001",
@@ -125,7 +136,8 @@
     "decided_day": null,
     "result_message": null,
     "presentation": {
-      "headline": "Approve this agreement with Foshan Home Retail Co.?",
+      "headline": "Record the agreement with Foshan Home Retail Co.",
+      "title_text": "Record the agreement with Foshan Home Retail Co.",
       "what": "Agreement with Foshan Home Retail Co.",
       "facility_name": null,
       "buyer_name": "Foshan Home Retail Co.",
@@ -144,7 +156,7 @@
       "terms": [],
       "counterparty_name": "Foshan Home Retail Co.",
       "forward_value_display": null,
-      "economic_effect_text": "No cost over the valuation window beyond the early-payment discount.",
+      "economic_effect_text": "No cost over the next 12 months beyond the early-payment discount.",
       "what_you_agree_to": null,
       "approve_label": null,
       "why_text": "This changes the terms with a buyer, which you keep for yourself.",
@@ -181,7 +193,7 @@
       "authorizes_text": "Agreement with Foshan Home Retail Co.",
       "executes_now_text": "Records the agreement with Foshan Home Retail Co. as in force.",
       "others_must_agree_text": null,
-      "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+      "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
       "gross_display": null,
       "fees_display": null,
       "net_display": null,
@@ -189,7 +201,17 @@
       "assumptions_text": null,
       "authority_text": "This changes the terms with a buyer, which you keep for yourself.",
       "remaining_text": null
-    }
+    },
+    "commit_label": "Authorize the agreement",
+    "authorize_text": null,
+    "terms_state_text": null,
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": null,
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "Record the agreement with Foshan Home Retail Co.",
+    "decided_text": null
   },
   "refused": {
     "pending": {
@@ -220,7 +242,8 @@
       "decided_day": null,
       "result_message": null,
       "presentation": {
-        "headline": "Approve ¥200,000.00 of invoice financing?",
+        "headline": "Request ¥200,000 of invoice financing",
+        "title_text": "Request ¥200,000 of invoice financing",
         "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
         "facility_name": "Invoice financing (onboarded platform)",
         "buyer_name": "Foshan Home Retail Co.",
@@ -2759,7 +2782,63 @@
         "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
         "authority_text": "The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
         "remaining_text": null
-      }
+      },
+      "commit_label": "Authorize the financing request",
+      "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+      "terms_state_text": null,
+      "terms_rows": [
+        {
+          "label": "Amount",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Cost",
+          "value_text": "¥1,782.19"
+        },
+        {
+          "label": "Rate",
+          "value_text": "32.5%"
+        },
+        {
+          "label": "Cash lands",
+          "value_text": "in 3 days"
+        },
+        {
+          "label": "Basis",
+          "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+        }
+      ],
+      "lifecycle": null,
+      "summary_rows": [
+        {
+          "label": "Amount requested",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Facility",
+          "value_text": "Invoice financing (onboarded platform)"
+        },
+        {
+          "label": "What happens now",
+          "value_text": "Sends the request as soon as you approve: Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)."
+        },
+        {
+          "label": "Does money move now",
+          "value_text": "If you approve today, the cash lands in 3 days."
+        },
+        {
+          "label": "Who decides whether funds are offered",
+          "value_text": null
+        },
+        {
+          "label": "What if you decline",
+          "value_text": "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days."
+        }
+      ],
+      "deadline_text": "Cash needed in 8 days",
+      "deadline_day": 42,
+      "title_text": "Request ¥200,000 of invoice financing",
+      "decided_text": null
     },
     "decided": {
       "id": "APR-000001",
@@ -2789,7 +2868,8 @@
       "decided_day": 91,
       "result_message": "Refused: Mandate v1 expired on day 90",
       "presentation": {
-        "headline": "Approved, but it did not run: ¥200,000.00 of invoice financing.",
+        "headline": "You authorized the financing request, but it could not run. No money moved.",
+        "title_text": "Request ¥200,000 of invoice financing",
         "what": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
         "facility_name": "Invoice financing (onboarded platform)",
         "buyer_name": "Foshan Home Retail Co.",
@@ -2863,6 +2943,37 @@
       "result_state_text": "Approved, did not run. No money moved.",
       "result_tone": "bad",
       "receipt": null,
+      "commit_label": "Authorize the financing request",
+      "authorize_text": "Approval sends the invoice to be financed. The advance is not cash until it lands.",
+      "terms_state_text": null,
+      "terms_rows": [
+        {
+          "label": "Amount",
+          "value_text": "¥200,000.00"
+        },
+        {
+          "label": "Cost",
+          "value_text": "¥1,782.19"
+        },
+        {
+          "label": "Rate",
+          "value_text": "32.5%"
+        },
+        {
+          "label": "Cash lands",
+          "value_text": "54 days ago"
+        },
+        {
+          "label": "Basis",
+          "value_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid."
+        }
+      ],
+      "lifecycle": null,
+      "summary_rows": null,
+      "deadline_text": null,
+      "deadline_day": null,
+      "title_text": "Request ¥200,000 of invoice financing",
+      "decided_text": "You authorized the financing request, but it could not run. No money moved.",
       "execution_status": "REFUSED"
     }
   }

@@ -851,11 +851,15 @@ def find_agreement(op: dict[str, Any], commitments: list[Commitment]) -> Commitm
 
 
 def economic_effect_text(commitment: Commitment, horizon_days: int | None, lang: Lang = "en") -> str:
-    """What the terms cost the owner over the valuation window, from the commitment's stored forward value (never recomputed): a
+    """What the terms cost the owner over the next months (the concession horizon), from the commitment's stored forward value (never recomputed): a
     discount alone has no forward cost, so a zero value says so instead of showing "¥0.00" as if the agreement were free."""
     only_discount = all(ob.type == ObligationType.IMMEDIATE_DISCOUNT for ob in commitment.obligations)
     if commitment.forward_value_fen == 0 and only_discount:
-        return t(lang, "No cost over the valuation window beyond the early-payment discount.", "除提前付款折扣外，估值期内没有其他成本。")
+        months = max(1, round(horizon_days * 12 / 365)) if horizon_days is not None else None
+        if months is None:
+            return t(lang, "No cost beyond the early-payment discount.", "除提前付款折扣外，没有其他成本。")
+        return t(lang, f"No cost over the next {months} months beyond the early-payment discount.",
+                 f"除提前付款折扣外，未来 {months} 个月内没有其他成本。")
     window = t(lang, f" over the next {horizon_days} days", f"，未来 {horizon_days} 天内") if horizon_days is not None else ""
     return t(lang, f"Future cost of the terms you promise: {fmt_yuan(commitment.forward_value_fen)}{window}.",
              f"您承诺的条款带来的未来成本：{fmt_yuan(commitment.forward_value_fen)}{window}。")
@@ -923,6 +927,66 @@ def agreement_terms(state: FinancialState, commitment: Commitment | None, today:
             "what_you_agree_to": ("; " if lang != "zh" else "；").join(terms) + t(lang, ".", "。")}
 
 
+_FINANCING_NOUN = {  # what a facility is, as the owner says it after "Apply for ¥200,000 in ..."
+    "CREDIT_LINE": ("working-capital financing", "营运资金融资"), "GOV_GUARANTEED_LOAN": ("working-capital financing", "营运资金融资"),
+    "INVOICE_FINANCING": ("invoice financing", "发票融资"), "EQUIPMENT_TERM_LOAN": ("equipment financing", "设备融资"),
+    "EQUIPMENT_LEASE": ("equipment financing", "设备融资"),
+}
+
+
+def _whole(fen: int) -> str:
+    """¥200,000 for a whole number of yuan, else with the fen."""
+    return fmt_yuan(fen).removesuffix(".00")
+
+
+def approval_title(state: FinancialState, kind: str, op: dict[str, Any], buyer: str | None, lang: Lang) -> str:
+    """What an approval asks the owner to authorize, as a statement and not a question: "Apply for ¥200,000 in working-capital financing",
+    "Draw ¥150,000 on the Bank credit line", "Record the agreement with Foshan Home Retail Co."."""
+    amount = op.get("amount_fen", op.get("advance_fen"))
+    money = _whole(amount) if isinstance(amount, int) else None
+    fac = facility_name(state, op.get("facility_id"))
+    if kind in COMMERCIAL_KINDS:
+        return t(lang, f"Record the agreement with {buyer}", f"记录与{buyer}的协议") if buyer else t(lang, "Record this agreement", "记录这项协议")
+    if kind == "APPLY_FOR_FACILITY" and money:
+        facility = next((f for f in state.facilities if f.id == op.get("facility_id")), None)
+        noun = _FINANCING_NOUN.get(facility.kind.value if facility is not None else "", ("financing", "融资"))
+        return t(lang, f"Apply for {money} in {noun[0]}", f"申请 {money} 的{noun[1]}")
+    if kind == "DRAW_FACILITY" and money:
+        return t(lang, f"Draw {money} on the {fac}" if fac else f"Draw {money}", f"从{fac}提款 {money}" if fac else f"提款 {money}")
+    if kind == "SUBMIT_INVOICE_FOR_FINANCING" and money:
+        return t(lang, f"Request {money} of invoice financing", f"申请 {money} 的发票融资")
+    if kind == "REPAY_FACILITY" and money:
+        return t(lang, f"Repay {money} to the {fac}" if fac else f"Repay {money}", f"向{fac}还款 {money}" if fac else f"还款 {money}")
+    return t(lang, f"Authorize this {short_kind(kind, 'en')}", f"授权这项{short_kind(kind, 'zh')}")
+
+
+_DECIDED = {  # kind: (what was authorized, what FLOW did with it, what did not happen when declined), en then zh
+    "APPLY_FOR_FACILITY": (("the application", "FLOW sent it to the lender", "the application was not sent"),
+                           ("该申请", "FLOW 已将其提交给贷款方", "该申请未提交")),
+    "DRAW_FACILITY": (("the draw", "FLOW ran it", "the draw did not run"), ("该提款", "FLOW 已执行", "该提款未执行")),
+    "SUBMIT_INVOICE_FOR_FINANCING": (("the financing request", "FLOW sent it to the lender", "the request was not sent"),
+                                     ("该融资申请", "FLOW 已将其提交给贷款方", "该申请未提交")),
+    "REPAY_FACILITY": (("the repayment", "FLOW paid it", "nothing was repaid"), ("该还款", "FLOW 已还款", "没有还款")),
+    "RECORD_COMMITMENT": (("the agreement", "FLOW recorded it", "the agreement was not recorded"), ("该协议", "FLOW 已记录", "该协议未记录")),
+    "ACCEPT_OFFER": (("the agreement", "FLOW recorded it", "the agreement was not recorded"), ("该协议", "FLOW 已记录", "该协议未记录")),
+}
+_DECIDED_OTHER = (("the request", "FLOW ran it", "nothing ran"), ("该请求", "FLOW 已执行", "没有执行任何操作"))
+
+
+def decided_text(kind: str, status: str, execution_status: str | None, lang: Lang) -> str | None:
+    """What came of an approval the owner has answered, in one sentence by kind: "You authorized the application; FLOW sent it to the lender.",
+    "You declined; the application was not sent.", or, when the run was refused, "You authorized the application, but it could not run. Nothing
+    was sent." None while it waits."""
+    if status == "PENDING":
+        return None
+    en, zh = _DECIDED.get(kind, _DECIDED_OTHER)
+    if status == "REJECTED" or execution_status == "DECLINED":
+        return t(lang, f"You declined; {en[2]}.", f"您已拒绝；{zh[2]}。")
+    if execution_status == "REFUSED":
+        return t(lang, f"You authorized {en[0]}, but it could not run. No money moved.", f"您已授权{zh[0]}，但未能执行。资金未动。")
+    return t(lang, f"You authorized {en[0]}; {en[1]}.", f"您已授权{zh[0]}；{zh[1]}。")
+
+
 def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, today: int, alert: Alert | None,
                    lang: Lang, plan_costs: dict[tuple[str, str, str | None, int], Any] | None = None,
                    after: str | None = None, *, status: str = "PENDING", agreement: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -936,18 +1000,12 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
     receivable_id = op.get("receivable_id")
     amount = op.get("amount_fen", op.get("advance_fen"))
     amount_display = fmt_yuan(amount) if isinstance(amount, int) else None
-    what = short_kind(kind, lang)
     ag = agreement or {}
     agreement_buyer = ag.get("counterparty_name")
     if kind in COMMERCIAL_KINDS:
         # An agreement with a buyer has no funding amount; its scope is the face it states (None when it states none), never ¥0.00.
         amount_display = fmt_yuan(ag["agreement_fen"]) if ag.get("agreement_fen") else None
-        headline = (t(lang, f"Approve this agreement with {agreement_buyer}?", f"批准与{agreement_buyer}的这项协议？") if agreement_buyer
-                    else t(lang, f"Approve this {what}?", f"批准这项{what}？"))
-    elif amount_display:
-        headline = t(lang, f"Approve {amount_display} of {what}?", f"批准 {amount_display} 的{what}？")
-    else:
-        headline = t(lang, f"Approve this {what}?", f"批准这项{what}？")
+    headline = approval_title(state, kind, op, agreement_buyer, lang)  # a statement of what is authorized, never a question
     lands: int | None = None
     if kind in ("DRAW_FACILITY", "SUBMIT_INVOICE_FOR_FINANCING"):
         if pending:
@@ -999,6 +1057,7 @@ def approval_words(state: FinancialState, op: dict[str, Any], kind: str | None, 
         words = leg_words(state, kind, facility_id, receivable_id, amount if isinstance(amount, int) else None, lang)
     out: dict[str, Any] = {
         "headline": headline,
+        "title_text": headline,
         "what": words,
         "facility_name": facility_name(state, facility_id) or None,
         "buyer_name": buyer or agreement_buyer,
@@ -1156,22 +1215,12 @@ def result_words(state: FinancialState, *, kind: str, status: str, payload: dict
 
 def decided_headline(*, kind: str, status: str, execution_status: str | None, amount_display: str | None, what: str,
                      buyer: str | None, lang: Lang) -> tuple[str, str | None, str | None]:
-    """The card of an approval the owner has answered, in the past tense: "You approved ¥155,013.80 of invoice financing.", "Approved,
-    but it did not run: ...", "You declined ...". A refused run also says what to do next (`next_step_text`, `next_step_href`)."""
-    if kind in COMMERCIAL_KINDS:
-        en_subject = f"the agreement with {buyer}" if buyer else "this agreement"
-        zh_subject = f"与{buyer}的协议" if buyer else "这项协议"
-    elif amount_display:
-        en_subject, zh_subject = f"{amount_display} of {what}", f" {amount_display} 的{what}"
-    else:
-        en_subject, zh_subject = f"this {what}", f"这项{what}"
-    stop = "" if en_subject.endswith(".") else "."  # a buyer named "... Co." already ends in one
-    if status == "REJECTED" or execution_status == "DECLINED":
-        return t(lang, f"You declined {en_subject}{stop}", f"您已拒绝{zh_subject}。"), None, None
-    if execution_status == "REFUSED":
-        return (t(lang, f"Approved, but it did not run: {en_subject}{stop}", f"已批准，但未能执行：{zh_subject.strip()}。"),
-                t(lang, "Renew your signed limits, then ask FLOW to try again.", "请续签您的授权，然后让 FLOW 重试。"), "/limits")
-    return t(lang, f"You approved {en_subject}{stop}", f"您已批准{zh_subject}。"), None, None
+    """The card of an approval the owner has answered (`decided_text`): "You authorized the application; FLOW sent it to the lender.",
+    "You declined; the application was not sent.". A refused run also says what to do next (`next_step_text`, `next_step_href`)."""
+    said = decided_text(kind, status, execution_status, lang) or ""
+    if execution_status == "REFUSED" and status != "REJECTED":
+        return (said, t(lang, "Renew your signed limits, then ask FLOW to try again.", "请续签您的授权，然后让 FLOW 重试。"), "/limits")
+    return said, None, None
 
 
 def approval_result_state(*, kind: str, status: str, execution_status: str | None, lands_day: int | None, today: int,
@@ -1963,7 +2012,7 @@ def execution_summary(lang: Lang, today: int, *, family: str, state: str, buyer:
         parts.append(t(lang, "One step could not run. No money moved for it." if refused == 1
                        else f"{refused} steps could not run. No money moved for them.", f"有 {refused} 步未能执行，对应资金未动。"))
     if blocked and family == "DEAL":
-        parts.append(t(lang, "The gap was not funded: the router's plan could not run today.", "缺口未获融资：路由方案今天无法执行。"))
+        parts.append(t(lang, "The gap was not funded: today's funding plan could not run.", "缺口未获融资：今天的融资方案无法执行。"))
     if not parts:
         return t(lang, "Nothing has been executed yet.", "尚未执行任何操作。")
     return " ".join(parts)

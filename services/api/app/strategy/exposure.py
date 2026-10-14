@@ -12,7 +12,9 @@ is written here for `lang` through `t(lang, en, zh)`. The browser computes nothi
                    aggregate buyer (a name that stands for many small customers has no payment statistics of its own)
     stress         the buyer paying every invoice 30 days late (a test): `now` on the books as they stand and, per path, on the
                    copy with that path's package in force; each row carries the server series of the stressed line for the picture
-                   and its lowest point as a moment (`lowest_day`, `lowest_short`, `lowest_when`). `also` holds the same set at the
+                   and its lowest point as a moment (`lowest_day`, `lowest_short`, `lowest_when`). `expected` is the same set at a delay of 0 (every
+                   invoice paid on its day: the column the late one is read against; a delay of 0 reproduces the decision's own unfunded
+                   projection). `also` holds the same set at the
                    delays the buyer's own history asks for: the owner's typical delay when it is the only estimate (below 3
                    completed invoices; labelled "your estimate") and the observed P90 once 10 invoices exist and it exceeds 30
     capacity       per path: the capacity windows before and after the package, and `spare`, the largest further one-off payment
@@ -364,6 +366,7 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
                               f"FLOW 今天无法按您的账目核算此回复（{p.label}）。")
 
     standing = _stress_set(books, mandate, buyer_id, day, commitments, paths, bound, failed, name, history, STRESS_DELAY_DAYS, lang)
+    expected = _stress_set(books, mandate, buyer_id, day, commitments, paths, bound, failed, name, history, 0, lang)  # no lateness: the column beside it
     also = ([{**_stress_set(books, mandate, buyer_id, day, commitments, paths, bound, failed, name, history, delay, lang),
               "basis": basis, "label": label} for delay, basis, label in extra_delays(paid, inputs.typical_delay(buyer_id), lang)]
             if standing["now"]["available"] and paid is not None else [])
@@ -383,7 +386,7 @@ def _compute_base(rt: Source, books: Books, mandate: Mandate, day: int, buyer_id
         "paths": [{"key": p.key, "kind": p.kind, "label": p.label} for p in paths],
         "concentration": shares.model_dump(mode="json"),
         "payments": paid.model_dump(mode="json") if paid is not None else None, "payments_note": _payments_note(paid, name, lang),
-        "stress": {**standing, "also": also},
+        "stress": {**standing, "also": also, "expected": expected},
         "capacity": capacity_paths, "economics": None, "loss": None, "partial": False, "flag": _flag(shares, lang),
         "_afters": afters, "_bound": bound,
     }

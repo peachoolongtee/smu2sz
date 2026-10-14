@@ -3644,6 +3644,10 @@
   "pending_count": 0,
   "open_decisions": [
     {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "Agreed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "AGREED",

@@ -56,7 +56,7 @@ export async function walkStory(page: Page, steps: number, from = 0): Promise<vo
     // The owner's step: the strip only opens the approval; the decision is the card's one filled Approve, and then the strip moves the story on.
     if ((await button.textContent())?.includes("Open the approval")) {
       await button.click();
-      await page.getByRole("button", { name: /^Approve/ }).click();
+      await page.getByRole("button", { name: /^Authorize/ }).click();
       await expect(page.getByText("0 pending")).toBeVisible();
       await expect(button).toHaveText("Next");
     }

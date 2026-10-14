@@ -114,6 +114,13 @@ def test_every_sendable_reply_has_its_own_plan_and_receipt_with_the_first_kept_a
     assert a["send_scope_lines"][2].endswith("(already inside the ¥3,027.77 above)")
     assert b["receipt"]["in_hand_vs_future_text"].startswith("The funding arrives in 3 days.")
     assert b["receipt"]["authority_text"] == "It changes your terms, so you approve it first."  # its own authority, not A's
+    # the three statements are specific to each send, and authority is said only in `authority_text` (Option B needs approval, A does not)
+    for r, name in ((a, "Option A"), (b, "Option B")):
+        assert r["receipt"]["authorizes_text"] == r["send_scope_lines"][0] == (
+            f"Send the exact {name} counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan accepts.")
+        assert r["receipt"]["remaining_text"] == ("The terms take effect only when Foshan accepts; no payment and no financing settles because "
+                                                  "the counter is sent.")
+        assert "approval" not in r["receipt"]["authorizes_text"] and "(" not in r["receipt"]["authorizes_text"]
     for r in rs:  # the funding runs on send whether or not the buyer agrees, said in words, with what a refusal runs (the gap as it stands)
         assert "Runs when you send, whether or not the buyer agrees." in r["receipt"]["assumptions_text"]
         assert r["receipt"]["assumptions_text"].startswith(r["recheck_text"])

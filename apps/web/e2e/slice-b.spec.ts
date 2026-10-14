@@ -87,15 +87,16 @@ test.describe("mock", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await checkedDeal(page);
     await openReview(page);
-    const lines = page.locator('[data-testid^="receipt-line-"]');
-    expect(await lines.count()).toBeGreaterThanOrEqual(4);
+    // The three statements (authorizing, immediately, not yet) come before the button; the rest of the receipt is the fold after it.
+    const lines = page.locator('[data-testid="send-statements"] [data-testid^="receipt-line-"]');
+    expect(await lines.count()).toBeGreaterThanOrEqual(3);
     const order = await lines.evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-line"))));
     expect(order).toEqual([...order].sort((a, b) => a - b));
     const lastLine = (await lines.last().boundingBox())!;
     const send = (await page.getByTestId("deal-send").boundingBox())!;
     expect(lastLine.y + lastLine.height, "the last line ends before the button begins").toBeLessThanOrEqual(send.y);
     expect(await page.evaluate(() => {
-      const last = Array.from(document.querySelectorAll('[data-testid^="receipt-line-"]')).pop()!;
+      const last = Array.from(document.querySelectorAll('[data-testid="send-statements"] [data-testid^="receipt-line-"]')).pop()!;
       const button = document.querySelector('[data-testid="deal-send"]')!;
       return Boolean(last.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING);
     })).toBe(true);
@@ -126,7 +127,7 @@ test.describe("mock", () => {
     await expect(page.getByRole("dialog", { name: "Ask FLOW" }).locator('[data-testid^="prompt-"]')).toHaveText(["What changed today?", "What are we waiting for?", "Which payments are late?", "Who owes us money?"]);
   });
 
-  test("the queue's five tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
+  test("the queue's four tabs are all visible and inside their card at 1440, 820 and 390, in English and in Chinese", async ({ page }) => {
     for (const lang of ["en", "zh"] as const) {
       await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
       for (const width of [1440, 820, 390]) {
@@ -135,7 +136,7 @@ test.describe("mock", () => {
         const card = page.getByTestId("deals-queue");
         await expect(card).toBeVisible();
         const box = (await card.boundingBox())!;
-        for (const tab of ["all", "needs_you", "waiting", "agreements", "customers"]) {
+        for (const tab of ["all", "needs_you", "waiting", "agreements"]) {
           const t = page.getByTestId(`queue-tab-${tab}`);
           await expect(t, `${lang} ${width}: ${tab} is shown`).toBeVisible();
           const b = (await t.boundingBox())!;
@@ -145,8 +146,8 @@ test.describe("mock", () => {
         const tabs = page.getByTestId("queue-tabs");
         expect(await tabs.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), `${lang} ${width}: the tab row does not scroll or clip`).toBe(true);
         // The last tab is reachable by the pointer as it stands.
-        await page.getByTestId("queue-tab-customers").click();
-        await expect(page.getByTestId("queue-tab-customers")).toHaveAttribute("aria-selected", "true");
+        await page.getByTestId("queue-tab-agreements").click();
+        await expect(page.getByTestId("queue-tab-agreements")).toHaveAttribute("aria-selected", "true");
       }
     }
   });
@@ -171,7 +172,7 @@ test.describe("mock", () => {
     await expect(await scope(page)).toHaveAttribute("data-kind", "customer");
   });
 
-  test("no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount, Funding source and If you decline", async ({ page }) => {
+  test("no financial qualifier is 12 px: What-if's limit, face and current terms, and the approval's Amount requested, Facility and What if you decline", async ({ page }) => {
     const small = (el: Element) => parseFloat(getComputedStyle(el).fontSize) < 13;
     await checkedDeal(page);
     await page.getByTestId("deal-whatif").click();
@@ -194,7 +195,8 @@ test.describe("mock", () => {
     await expect(page.getByTestId("capex-applied")).toBeVisible();
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
-    for (const label of ["Amount", "Funding source", "If you decline"]) {
+    // Round two: the summary's rows (Amount requested, Facility, What if you decline) are the card's own, 13 px at the least.
+    for (const label of ["Amount requested", "Facility", "What if you decline"]) {
       const el = card.getByText(label, { exact: true }).first();
       await expect(el, label).toBeVisible();
       expect(await el.evaluate(small), label).toBe(false);
@@ -250,20 +252,20 @@ test.describe("live", () => {
     await busy(request);
     await page.goto("/deals");
     // Day 0 of the busy books: nothing is agreed yet (the agreements come from the owner's own sends), so the Agreements tab is empty.
-    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("7");
+    // Round two: Deals lists negotiations only (the server's `queue.deals` counts): the five decisions waiting on the owner and the buyer's reply; the loan approval and the overdue collection are Approvals' and Receivables' (Home keeps all eight).
+    await expect(page.getByTestId("queue-count-needs_you")).toHaveText("5");
     await expect(page.getByTestId("queue-count-waiting")).toHaveText("1");
     await expect(page.getByTestId("queue-count-agreements")).toHaveText("0");
-    await expect(page.getByTestId("queue-count-customers")).toHaveText("3");
-    await expect(page.getByTestId("queue-count-all")).toHaveText("8");
+    await expect(page.getByTestId("queue-count-all")).toHaveText("6");
     const rows = page.locator('[data-testid="queue-row"]');
-    await expect(rows).toHaveCount(8);
+    await expect(rows).toHaveCount(6);
     const foshan = page.locator('[data-testid="queue-row"][data-tier="needs_you"][data-kind="DECISION"]').filter({ hasText: "Foshan" });
     await expect(foshan).toHaveCount(3);
     const hrefs = await foshan.getByTestId("queue-customer").evaluateAll((els) => els.map((el) => el.getAttribute("href")!));
     expect(new Set(hrefs).size, "each row's customer link carries its own decision").toBe(3);
     for (const href of hrefs) expect(href).toMatch(/^\/customers\/BUYER-1\?decision=deal%3AOFF-.*&from=deal$/);
-    await expect(page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="queue-row"][data-kind="COLLECTION"]')).toHaveCount(1);
+    await expect(page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="queue-row"][data-kind="COLLECTION"]')).toHaveCount(0);
     // No id and no day number in the prose.
     await expect(page.locator("main")).not.toContainText(/OFF-|BUYER-\d|RCV-|\bDay \d/);
     // Selecting one of the Foshan rows opens that negotiation and no other.
@@ -279,13 +281,16 @@ test.describe("live", () => {
 
   test("the approval row is a link to the Approvals page with that approval in view, never a selection; a differentiator is quoted once, on Deals and on Home", async ({ page, request }) => {
     await busy(request);
-    await page.goto("/deals");
-    const approval = page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]');
+    // The approval is Home's row (Deals lists negotiations only): a link to the Approvals page with that approval in view, never a selection.
+    await page.goto("/");
+    const approval = page.locator('[data-testid="home-worklist-row"][data-kind="APPROVAL"]');
     await expect(approval).toHaveCount(1);
-    await expect(approval.getByTestId("queue-select")).toHaveCount(0);
-    const href = await approval.getByTestId("queue-go").getAttribute("href");
+    const href = await approval.getByTestId("hv2-row-link").getAttribute("href");
     expect(href).toMatch(/^\/approvals#approval-APR-\d+$/);
-    await approval.getByTestId("queue-go").click();
+    await page.goto("/deals");
+    await expect(page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]')).toHaveCount(0);
+    await page.goto("/");
+    await approval.getByTestId("hv2-row-link").click();
     await expect(page).toHaveURL((url) => url.pathname + url.hash === href);
     await expect(page.locator(`#${href!.split("#")[1]}`)).toBeVisible();
     await expect(page.getByTestId("deal-ask-which")).toHaveCount(0);
@@ -295,16 +300,18 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-ask-which")).toContainText("Which negotiation?");
     await expect(page.getByText("Working it out…")).toHaveCount(0);
 
-    // The server sends the differentiator already quoted: the page adds nothing, so the text opens with exactly one quote mark.
+    // Round two: the server writes the subject distinct, the differentiator in it already quoted (one quoted phrase, never doubled quote marks), on Deals and on Home.
     await page.goto("/deals");
     await expect(page.getByTestId("queue-row").first()).toBeVisible();
-    const sub = page.getByTestId("queue-differentiator");
-    expect(await sub.count(), "the busy books hold rows that need a differentiator").toBeGreaterThan(0);
-    for (const text of await sub.allTextContents()) expect(text, "Deals queue").toMatch(/^“[^“”]/);
+    const quoted = async (testId: string) => (await page.getByTestId(testId).allTextContents()).filter((t) => t.includes("“"));
+    const deals = await quoted("queue-subject");
+    expect(deals.length, "the busy books hold rows that need a differentiator").toBeGreaterThan(0);
+    for (const text of deals) expect(text, "Deals queue").toMatch(/^[^“”]*“[^“”]+”[^“”]*$/);
     await page.goto("/");
-    const qual = page.getByTestId("hv2-row-qualifier");
-    await expect(qual.first()).toBeVisible();
-    for (const text of await qual.allTextContents()) expect(text, "Home worklist").toMatch(/^“[^“”]/);
+    await expect(page.getByTestId("hv2-row-subject").first()).toBeVisible();
+    const home = await quoted("hv2-row-subject");
+    expect(home.length, "Home shows the same rows").toBeGreaterThan(0);
+    for (const text of home) expect(text, "Home worklist").toMatch(/^[^“”]*“[^“”]+”[^“”]*$/);
   });
 
   test("the What-if list offers negotiations only, not the loan approval; an agreed negotiation shows its record and no evaluation prompt; an ask that needs approval and has no counter shows its cost and offers no button", async ({ page, request }) => {
@@ -313,7 +320,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("queue-row").first()).toBeVisible();
     // The sandbox offers every negotiation (one needing the owner, or one waiting on the buyer), never an approval, collection or promise.
     const decisions = await page.locator('[data-testid="queue-row"][data-kind="DECISION"]:not([data-tier="agreements"]), [data-testid="queue-row"][data-kind="BUYER_REPLY"]:not([data-tier="agreements"])').count();
-    expect(await page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]').count(), "the busy books hold a loan approval").toBe(1);
+    expect(await page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]').count(), "the loan approval is not a negotiation: it is not in Deals' queue").toBe(0);
     await page.goto("/whatif");
     await expect(page.getByTestId("whatif-choice")).toHaveCount(decisions);
     await expect(page.getByTestId("whatif-choices")).not.toContainText(/loan|approval/i);
@@ -339,13 +346,13 @@ test.describe("live", () => {
     await page.locator('[data-testid="queue-row"][data-kind="DECISION"]').filter({ hasText: "Zhuhai" }).getByTestId("queue-select").click();
     const none = page.getByTestId("deal-no-reply");
     await expect(none).toBeVisible();
-    await expect(none.getByTestId("deal-cost-asked")).toContainText(/¥\d/);
-    await expect(none.getByTestId("deal-cost-asked")).toContainText("over 12 months");
+    await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText(/¥\d/);
+    await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("over 12 months");
     await expect(none).toContainText("you approve it first");
     await expect(page.getByTestId("deal-send")).toHaveCount(0);
     await expect(page.getByTestId("deal-review")).toHaveCount(0);
     await expect(page.getByTestId("deal-pane")).not.toContainText(/\bNone\b/);
-    await expect(page.getByTestId("deal-ask-terms")).not.toContainText(/Early payment|Rebate or price/);
+    await expect(page.getByTestId("deal-terms-table")).not.toContainText(/\bNone\b/);
   });
 
   test("the send review of a picked reply reads that reply's own receipt, not the recommended one's, and Send names the picked reply", async ({ page, request }) => {
@@ -418,17 +425,21 @@ test.describe("live", () => {
     await busy(request);
     const port = process.env.E2E_API_PORT ?? 8000;
     const rows = async () => ((await (await request.get(`http://localhost:${port}/approvals/queue?lang=en`, { headers: { "X-Owner-Token": DEMO_TOKEN } })).json()) as { approvals: { id: string; result_state_text: string | null }[] }).approvals;
-    await page.goto("/deals");
-    const row = page.locator('[data-testid="queue-row"][data-kind="APPROVAL"]');
+    await page.goto("/");
+    const row = page.locator('[data-testid="home-worklist-row"][data-kind="APPROVAL"]');
     await expect(row).toContainText("Approving submits the application; nothing runs until the bank commits.");
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
-    await card.getByRole("button", { name: /^Approve ¥200,000\.00/ }).click();
+    // The button names the act (the server's `commit_label`), not the amount.
+    await expect(card.getByTestId("approval-approve-APR-000001")).toHaveText("Authorize the application");
+    await card.getByTestId("approval-approve-APR-000001").click();
     const served = (await rows()).find((r) => r.id === "APR-000001")!.result_state_text;
     expect(served, "the server names the result").toBeTruthy();
     await expect(card.getByTestId("approval-state-APR-000001")).toHaveText(served!);
     await expect(card).toContainText(/submitted/i);
-    await expect(card).not.toContainText(/\bdone\b/i);
+    // (the lifecycle names its stage "done" for assistive tools; the outcome, the state word and the headline never say the bare word)
+    await expect(card.getByTestId("approval-outcome-APR-000001")).not.toContainText(/\bdone\b/i);
+    await expect(card.getByTestId("approval-state-APR-000001")).not.toContainText(/\bdone\b/i);
   });
 
   test("Ask FLOW sends the scope the chip showed and nothing stale, and says what the server used", async ({ page, request }) => {

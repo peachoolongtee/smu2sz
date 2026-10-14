@@ -33,14 +33,15 @@ async function scan(page: Page, label: string) {
 test("the opening books: the name, the four figures, no decision waiting, the two other links, both panels and the history", async ({ page }) => {
   await page.goto("/customers/BUYER-1");
   await expect(page.locator("h1")).toHaveText("Foshan Home Retail Co.");
-  await expect(page.getByText("What this relationship is worth, and what it puts at risk.")).toBeVisible();
+  // The one sentence first (round two): the server's, with what the customer contributes, owes and has open.
+  await expect(page.getByTestId("customer-relationship")).toContainText("Foshan contributes an estimated ¥1.09m a year, owes ¥420k");
   const figures = page.getByTestId("customer-figures");
   await expect(figures.locator("dt")).toHaveText(["Estimated annual gross contribution", "Outstanding", "Financing linked", "Share of what you are owed"]);
   await expect(page.locator("body")).not.toContainText("Relationship value");
   await expect(page.getByTestId("customer-figure-outstanding-value")).toHaveText("¥420,000");
   await expect(page.getByTestId("customer-figure-outstanding-note")).toHaveText("due in 32 days, nothing overdue");
   await expect(page.getByTestId("customer-figure-share-value")).toHaveText("100%");
-  await expect(page.getByTestId("customer-figure-share-note")).toHaveText("one open invoice; not its share of your sales");
+  await expect(page.getByTestId("customer-figure-share-note")).toHaveText("100% of currently open receivables");
   // The Demo's sales and margin give the server's estimate; the browser makes none of its own.
   await expect(page.getByTestId("customer-figure-value-value")).toHaveText("about ¥1.09m");
   // Where it comes from is said beside it, in the server's words (the margin is the weakest link), once.
@@ -64,8 +65,11 @@ test("the opening books: the name, the four figures, no decision waiting, the tw
   await expect(page.getByTestId("customer-economics-note")).toContainText("None of this changes what FLOW may do on its own.");
   // The facts are editable only where the server gives the place (`edit_href` is null until the economics flag is on).
   await expect(page.getByTestId("customer-edit")).toHaveCount(0);
-  await expect(page.getByTestId("customer-exposure-rows-stress")).toContainText("Paid 30 days late");
-  await expect(page.getByTestId("customer-exposure-rows-stress")).toContainText("¥550,000 uncovered");
+  // The exposure is a comparison (round two): expected payment against 30 days late, four rows, every cell the server's sentence.
+  const table = page.getByTestId("customer-exposure-table");
+  await expect(table.locator("thead th")).toHaveText(["Expected payment", "30 days late"]);
+  for (const label of ["Lowest cash", "Reserve breach", "Maximum shortfall", "Additional funding needed"]) await expect(table.getByRole("rowheader", { name: label })).toBeVisible();
+  await expect(page.getByTestId("customer-explore")).toHaveText(/Explore late-payment impact/);
   await expect(page.getByTestId("customer-exposure-note")).toContainText("The same figures as on the deal, on Receivables and on Cash");
   await expect(page.getByTestId("customer-history-row").first()).toContainText("In force");
   // The back link, with no context, is the server's plain one.
@@ -80,13 +84,14 @@ test("a deal waiting: the decision card leads with its primary, and the back lin
   await checkedDeal(page);
   const query = await decisionQuery(page);
   const card = page.getByTestId("customer-decision");
-  await expect(card).toContainText("One commercial decision waits for you");
-  // What is open with the customer is the queue's own row for this negotiation, in focus, and the way to the complete queue carries the origin.
-  await expect(page.getByTestId("customer-task")).toHaveCount(1);
-  await expect(page.getByTestId("customer-task")).toHaveAttribute("data-focus", "true");
-  await expect(page.getByTestId("customer-task")).toContainText("Payment terms");
+  await expect(card).toContainText("Foshan has one commercial decision requiring your response.");
+  // The block is about the selected negotiation (the queue's own row, its words and status); with nothing else open the list of others is absent, and the way to the complete queue carries the origin.
+  await expect(card).toHaveAttribute("data-focus", /^deal:/);
+  await expect(page.getByTestId("customer-decision-heading")).toContainText("60-day terms on future invoices");
+  await expect(page.getByTestId("customer-decision-status")).toContainText("Counter ready");
+  await expect(page.getByTestId("customer-task")).toHaveCount(0);
   await expect(page.getByTestId("customer-all-tasks")).toHaveAttribute("href", "/deals?customer=BUYER-1&from=customer");
-  await expect(page.getByTestId("customer-decision-text")).toContainText("FLOW recommends countering with Option A, ¥3,027.77 once if accepted.");
+  await expect(page.getByTestId("customer-decision-text")).toHaveText("FLOW recommends Option A.");
   const primary = page.getByTestId("customer-decision-primary");
   await expect(primary).toHaveText("Review the counter");
   await expect(card.getByRole("link")).toHaveText(["Review the counter", "View the invoices", "Stress-test payment"]);
@@ -114,7 +119,7 @@ test("an offer not yet read: the decision says so and its primary is Read the of
   await page.getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("queue-check-button")).toBeVisible();
   await page.goto("/customers/BUYER-1");
-  await expect(page.getByTestId("customer-decision")).toContainText("One offer waits to be read");
+  await expect(page.getByTestId("customer-decision")).toContainText("Foshan has one commercial decision requiring your response.");
   await expect(page.getByTestId("customer-decision-primary")).toHaveText("Read the offer");
   await expect(page.getByTestId("customer-decision-primary")).toHaveAttribute("href", /^\/deals\?decision=/);
   await expect(page.getByTestId("customer-decision-authority")).toHaveCount(0);
@@ -189,7 +194,7 @@ test("in Chinese the page reads in Chinese with the same figures", async ({ page
   await expect(page.getByRole("heading", { name: "客户经济状况" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "财务风险敞口" })).toBeVisible();
   await expect(page.getByTestId("customer-back")).toBeVisible();
-  await expect(page.getByTestId("customer-exposure-rows-stress")).toContainText("晚付 30 天");
+  await expect(page.getByTestId("customer-exposure-table")).toContainText("晚付 30 天");
   await expect(page.getByTestId("customer-decision-primary")).toBeVisible();
   await scan(page, "/customers/BUYER-1 zh");
 });
@@ -227,7 +232,7 @@ for (const lang of ["en", "zh"] as const) {
       await page.goto("/customers/BUYER-1");
       const primary = page.getByTestId("customer-decision-primary");
       await expect(primary).toBeVisible();
-      await expect(page.getByTestId("customer-decision")).toContainText(moment === "offer_received" ? (lang === "en" ? "One offer waits to be read" : "有一份报价等待阅读") : (lang === "en" ? "One commercial decision waits for you" : "有一项商务决定等待您处理"));
+      await expect(page.getByTestId("customer-decision")).toContainText(lang === "en" ? "Foshan has one commercial decision requiring your response." : "Foshan有一项商务决定需要您答复。");
       const box = (await primary.boundingBox())!;
       const bar = (await page.getByTestId("tab-bar").boundingBox())!;
       expect(box.y).toBeGreaterThanOrEqual(0);
@@ -281,7 +286,7 @@ test("a history row with a link says where it goes and opens it", async ({ page 
 });
 
 test("a section the server did not send is not drawn, and the other panel takes the width", async ({ page }) => {
-  await patched(page, { exposure: null, note: null, history: [] });
+  await patched(page, { exposure: null, exposure_comparison: null, note: null, history: [] });
   await page.goto("/customers/BUYER-1");
   await expect(page.getByTestId("customer-economics-rows")).toBeVisible();
   await expect(page.locator("#customer-exposure")).toHaveCount(0);
@@ -296,5 +301,5 @@ test("the decision is a named region in both of its forms", async ({ page }) => 
   await expect(page.getByRole("region", { name: "Commercial decision" })).toContainText("No commercial decision is waiting");
   await checkedDeal(page);
   await page.goto("/customers/BUYER-1");
-  await expect(page.getByRole("region", { name: "One commercial decision waits for you" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Foshan has one commercial decision requiring your response." })).toBeVisible();
 });

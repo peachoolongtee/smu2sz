@@ -106,6 +106,8 @@ test("after the buyer accepts: the dashed line is gone and the moved receipts ar
 });
 
 test("a counter the buyer refuses changes nothing: no pending line, the terms in force stand", async ({ page }) => {
+  // The simulated buyer's lean is the Demo's control.
+  await page.addInitScript(() => localStorage.setItem("tl-mode", JSON.stringify({ mode: "demo" })));
   await readOffer(page);
   await openReview(page);
   const box = page.locator("#counters").getByTestId("deal-send-confirm-box");

@@ -6,7 +6,7 @@
  */
 
 import { ApiError } from "../errors";
-import type { CommitmentReceiptView, StateTone, ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
+import type { CommitmentReceiptView, StateTone, ApprovalLifecycleStage, ApprovalSummaryRow, ApprovalDecision, ApprovalExecutionStatus, ApprovalOperation, ApprovalPresentation, ApprovalQuote, ApprovalStatus, ApprovalView, DecisionState, OperationResult, Tier } from "../types";
 import { http } from "./http";
 
 interface RawApproval {
@@ -38,6 +38,17 @@ interface RawApproval {
   result_tone?: StateTone | null;
   /** The commitment receipt of a pending approval (the server's words in its order); null for a decided one. */
   receipt?: CommitmentReceiptView | null;
+  /** Round two: the exact-authorization words (the button's act, the first sentence, the terms state, the lifecycle, the summary and a real quote's terms). */
+  commit_label?: string | null;
+  authorize_text?: string | null;
+  terms_state_text?: string | null;
+  terms_rows?: ApprovalSummaryRow[] | null;
+  lifecycle?: ApprovalLifecycleStage[] | null;
+  summary_rows?: ApprovalSummaryRow[] | null;
+  deadline_text?: string | null;
+  deadline_day?: number | null;
+  title_text?: string | null;
+  decided_text?: string | null;
 }
 
 export async function getApprovals(): Promise<ApprovalView[]> {
@@ -80,6 +91,16 @@ function toViews(approvals: RawApproval[]): ApprovalView[] {
         result_state_text: a.result_state_text ?? a.presentation?.result_state_text ?? null,
         result_tone: a.result_tone ?? a.presentation?.result_tone ?? null,
         receipt: a.receipt ?? null,
+        commit_label: a.commit_label ?? null,
+        authorize_text: a.authorize_text ?? null,
+        terms_state_text: a.terms_state_text ?? null,
+        terms_rows: a.terms_rows ?? null,
+        lifecycle: a.lifecycle ?? null,
+        summary_rows: a.summary_rows ?? null,
+        deadline_text: a.deadline_text ?? null,
+        deadline_day: a.deadline_day ?? null,
+        title_text: a.title_text ?? null,
+        decided_text: a.decided_text ?? null,
       }) as ApprovalView,
   );
 }

@@ -25,9 +25,10 @@ from app.api.presentation import (
     t,
     when_text,
 )
-from app.api.receipt import send_receipt
+from app.api.receipt import send_authorizes, send_receipt
 from app.domain.models import CommitmentStatus, FinancialState, LedgerEventKind, Mandate
 from app.domain.money import fmt_yuan
+from app.strategy.words import buyer_short
 
 # The mission order: who is asking, what FLOW recommends and the one priced response first, then what is asked, what it costs and why it
 # matters, the agreements already in force, and the folds. The page follows this list.
@@ -84,11 +85,23 @@ def _send_runs_funding(send_plan: Any) -> bool:
                 and all(a.kind.value in ("DRAW", "FINANCE_INVOICE") for a in send_plan.actions))
 
 
-def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str, counter: dict[str, Any] | None = None) -> list[str]:
-    """The lines under "Send this counter": the agreement it records, and the funding the send would run, from the router plan's own legs and
-    cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
-    lines = [t(lang, f"Records the agreement with {buyer} (needs your approval when it changes terms)",
-               f"记录与{buyer}的协议（若改变条款，需要您批准）")]
+def _send_funding(send_plan: Any) -> str:
+    """What the send does about funding, for the receipt: runs | none_needed | cannot_run | no_plan | unknown (no plan could be read)."""
+    if send_plan is None:
+        return "unknown"
+    if _send_runs_funding(send_plan):
+        return "runs"
+    if send_plan.actions:
+        return "cannot_run"
+    return "none_needed" if send_plan.need_fen == 0 else "no_plan"
+
+
+def send_scope_lines(state: FinancialState, buyer: str, send_plan: Any, today: int, lang: str, counter: dict[str, Any] | None = None,
+                     who: str | None = None) -> list[str]:
+    """The lines under "Send this counter": what sending authorizes (`send_authorizes`: the exact counter, recorded as a proposed agreement that
+    stands only if the buyer accepts, and no word about who approves it), and the funding the send would run, from the router plan's own legs
+    and cost. No funding line when none would run (the plan is empty, or it cannot run today)."""
+    lines = [send_authorizes(lang, option=option_label(counter.get("label"), lang) or None if counter is not None else None, who=who or buyer)]
     runnable = _send_runs_funding(send_plan)
     if runnable:
         legs = [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in send_plan.actions]
@@ -112,11 +125,11 @@ def _funding_cost_line(send_plan: Any, legs: list[Any], counter: dict[str, Any] 
 
 
 def priced_response(counter: dict[str, Any], *, view: dict[str, Any], verdict_id: str, state: FinancialState, buyer: str, send_plan: Any,
-                    today: int, lang: str, authority_text: str | None, decline_plan: Any = None) -> dict[str, Any]:
+                    today: int, lang: str, authority_text: str | None, decline_plan: Any = None, who: str | None = None) -> dict[str, Any]:
     """One reply the owner could send, with its own send scope and receipt: `send_plan` is the router's plan for the gap that would remain
     if the buyer accepts THIS counter (what its send would run), `decline_plan` the plan for the gap as it stands if the buyer declines (the
     funding the send runs anyway), `authority_text` the sentence the offer picture gives it (who decides)."""
-    lines = send_scope_lines(state, buyer, send_plan, today, lang, counter)
+    lines = send_scope_lines(state, buyer, send_plan, today, lang, counter, who)
     lands = [a.lands_day for a in send_plan.actions] if _send_runs_funding(send_plan) else []
     recheck = t(lang, _RECHECK[0], _RECHECK[1])
     return {
@@ -127,7 +140,7 @@ def priced_response(counter: dict[str, Any], *, view: dict[str, Any], verdict_id
         "receipt": send_receipt(lang, buyer=buyer, lines=lines, recheck_text=recheck, cost_display=counter["supplier_cost_display"],
                                 funds_when=when_text(max(lands), today, lang) if lands else None,
                                 funds_today=bool(lands) and max(lands) <= today, authority_text=authority_text,
-                                unfunded=bool(send_plan is not None and send_plan.actions and not _send_runs_funding(send_plan)),
+                                funding=_send_funding(send_plan), option=option_label(counter["label"], lang), who=who,
                                 if_declined_lines=(funding_lines(state, [(a.kind.value, a.facility_id, a.amount_fen, a.lands_day) for a in decline_plan.actions],
                                                                  None, today, lang) if _send_runs_funding(decline_plan) else [])),
         "supplier_cost_display": counter["supplier_cost_display"], "forward_value_display": counter["forward_value_display"],
@@ -170,7 +183,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
                 "obligation_id": cv.obligation_id, "type": kind, "label": _label(kind, lang), "horizon": "FORWARD",
                 "amount_fen": cv.value_fen, "amount_display": fmt_yuan(cv.value_fen),
                 "window_text": t(lang, f"Valued over the next {months} months at your cheapest committed source.",
-                                 f"按您最便宜的已承诺资金来源，估值期为未来 {months} 个月。"),
+                                 f"按您最便宜的已承诺资金来源估值，期限为未来 {months} 个月。"),
                 "basis": cv.basis, "basis_when": business_text(state, cv.basis, today, lang)})
     fc = view["forward_concession"]
     impact = {
@@ -199,6 +212,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
     chosen = counters[0] if counters and action == "counter" else None
     cp = offer.counterparty_id if offer is not None else None
     buyer_name = party_name(state, cp) or t(lang, "the buyer", "买方")
+    said_aloud = buyer_short(buyer_name) if party_name(state, cp) else buyer_name
     agreements = [{"commitment_id": c.id, "status": c.status.value, "status_text": t(lang, *_LIVE_AGREEMENT[c.status]),
                    "forward_value_fen": c.forward_value_fen, "forward_value_display": fmt_yuan(c.forward_value_fen),
                    **commitment_cost_words(c, lang),
@@ -208,7 +222,7 @@ def build(view: dict[str, Any], *, bundle: Any, state: FinancialState, mandate: 
 
     def priced(counter: dict[str, Any]) -> dict[str, Any]:
         return priced_response(counter, view=view, verdict_id=verdict.id, state=state, buyer=buyer_name, send_plan=plans.get(counter["id"]),
-                               today=today, lang=lang, authority_text=authorities.get(counter["id"]), decline_plan=decline_plan)
+                               today=today, lang=lang, authority_text=authorities.get(counter["id"]), decline_plan=decline_plan, who=said_aloud)
 
     offered = [c for c in counters if sendable_ids is None or c["id"] in sendable_ids] if action == "counter" else []
     if sendable_ids is None:

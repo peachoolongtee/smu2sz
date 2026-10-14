@@ -1,4 +1,4 @@
-import { expect, test as signedOut } from "@playwright/test";
+import { expect, test as signedOut, type Locator } from "@playwright/test";
 import { proseOf, test } from "./fixtures";
 import { filledBrand, runPlan } from "./helpers";
 
@@ -7,6 +7,12 @@ import { filledBrand, runPlan } from "./helpers";
  * on a Tier 1 ACCEPT, and the demo stepper resuming after sign-in. The Tier 1 offer is recorded from the live API
  * (mocks/offer_accept.json, verdict_accept.json); the mock matches it by its text.
  */
+
+/** The waiting card keeps its summary, the terms and the one button in view; the why-detail (the cash picture, the decline sentence, the receipt) is the "View application details" fold. */
+async function openDetails(card: Locator): Promise<void> {
+  const summary = card.getByTestId("approval-details-APR-000001").locator("> summary");
+  await summary.click();
+}
 
 const ACCEPT_TEXT = "We will pay the full ¥420,000 invoice early at 0.5%.";
 
@@ -68,7 +74,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   const card = page.locator("#approval-APR-000001");
   await expect(card).toContainText("¥600,000.00");
   // The card speaks in business words (the facility's name); the executor's own sentence with the id is an audit detail.
-  await expect(page.getByTestId("approval-headline")).toHaveText("Approve ¥600,000.00 of facility application?");
+  await expect(page.getByTestId("approval-headline")).toHaveText("Apply for ¥600,000 in equipment financing");
   await expect(card.getByTestId("approval-reason")).toContainText("Apply for facility Equipment term loan");
   await expect(card.getByTestId("approval-detail-APR-000001")).toBeHidden();
   await card.getByTestId("approval-toggle-APR-000001").locator("> summary").click();
@@ -82,7 +88,7 @@ test("an approval card expands in place to the operation, the reason, the amount
   // The buttons say what they do: the amount to approve, and "Decline"; an approval no alert asked for is simply closed by declining.
   await expect(card.getByTestId("approval-if-decline")).toHaveText("Nothing runs; the request is closed.");
   await expect(card.getByRole("button", { name: "Decline", exact: true })).toBeVisible();
-  await card.getByRole("button", { name: "Approve ¥600,000.00", exact: true }).click();
+  await card.getByRole("button", { name: "Authorize the application", exact: true }).click();
   await expect(card.getByTestId("approval-outcome-APR-000001")).toContainText("Result");
   await expect(card).toContainText("Approved");
 });
@@ -97,7 +103,8 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await page.getByTestId("alert-approval-link-ALERT-RESERVE-42").click();
   await expect(page).toHaveURL(/\/approvals#approval-APR-000001/);
   const card = page.locator("#approval-APR-000001");
-  // The server's sentence, not a static one: the shortfall and the day it peaks, never "Day N".
+  // The server's sentence, not a static one: the shortfall and the day it peaks, never "Day N" (it is in the application details, a fold of its own).
+  await openDetails(card);
   await expect(card.getByTestId("approval-if-decline")).toHaveText(
     "¥200,000.00 below your minimum cash reserve in 8 days; the gap peaks at ¥200,000.00 in 8 days.",
   );
@@ -111,7 +118,7 @@ test("an approval born of the reserve alert says what declining leaves, in days 
   await expect(card.getByTestId("approval-reason")).not.toContainText("32.52");
   await expect(card.getByTestId("approval-result-APR-000001")).toHaveCount(0);
   expect(await proseOf(page, ["[data-testid^=\"approval-detail-\"]"])).not.toMatch(/\bday \d/i);
-  await expect(card.getByRole("button", { name: "Approve ¥200,000.00", exact: true })).toBeVisible();
+  await expect(card.getByRole("button", { name: "Authorize the financing request", exact: true })).toBeVisible();
   // The tier is an audit detail, closed by default; so are the working behind the rate and the facility's lead time.
   // What the owner sees (a closed Audit details fold is not rendered) carries neither the tier nor the working.
   const visible = await card.innerText();
@@ -168,7 +175,8 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   await expect(h1).toHaveCount(1);
   await expect(h1).toHaveText("Approvals");
   const card = page.locator("#approval-APR-000001");
-  await expect(card.getByTestId("approval-headline")).toHaveText("Approve ¥200,000.00 of invoice financing?");
+  await expect(card.getByTestId("approval-headline")).toHaveText("Request ¥200,000 of invoice financing");
+  await openDetails(card); // the cash picture is in the application details
   // The three facts, then the picture: the decline line is the baseline and the approve line the alternative, each lowest point named in the server's words.
   await expect(card.getByTestId("approval-lands")).toBeVisible();
   const picture = card.getByTestId("approval-picture");
@@ -185,7 +193,7 @@ test("with one approval waiting the page's title is stable, the card asks the qu
   const [pb, cb] = [await picture.boundingBox(), await card.getByTestId("approval-if-decline").boundingBox()];
   expect(cb!.y).toBeGreaterThan(pb!.y + 150);
   await expect(card.getByTestId("approval-after")).toBeVisible();
-  // The quote waits behind one fold; the one filled primary is Approve.
+  // The quote waits behind one fold in the application details; the one filled primary is Approve.
   await expect(card.getByTestId("approval-quote")).toBeHidden();
   await card.getByTestId("approval-quoted-APR-000001").locator("> summary").click();
   await expect(card.getByTestId("approval-quote")).toBeVisible();
@@ -199,6 +207,7 @@ test("an agreement approval shows its terms and no picture", async ({ page }) =>
   await expect(card.getByTestId("approval-terms")).toBeVisible();
   await expect(card.getByTestId("approval-picture")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await openDetails(card);
   await expect(card.getByTestId("approval-if-decline")).toBeVisible();
 });
 
@@ -209,18 +218,18 @@ test("the terms come before the one approve button at every width, and approving
     await page.goto("/approvals");
     const card = page.locator("#approval-APR-000001");
     const terms = await card.getByTestId("approval-terms").boundingBox();
-    const approve = card.getByRole("button", { name: /^Approve/ });
+    const approve = card.getByRole("button", { name: /^Authorize/ });
     const button = await approve.boundingBox();
     expect(terms!.y + terms!.height, `${width}: the terms end before the button begins`).toBeLessThanOrEqual(button!.y);
     // DOM order says the same (reading and focus order).
     expect(await card.evaluate((el) => {
       const t = el.querySelector('[data-testid="approval-terms"]')!;
-      const b = Array.from(el.querySelectorAll("button")).find((x) => /^Approve/.test(x.textContent ?? ""))!;
+      const b = Array.from(el.querySelectorAll("button")).find((x) => /^Authorize/.test(x.textContent ?? ""))!;
       return Boolean(t.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
     })).toBe(true);
   }
   // One press approves: the button is the whole commit.
-  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Approve/ }).click();
+  await page.locator("#approval-APR-000001").getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.getByTestId("approval-decided-APR-000001")).toBeVisible();
 });
 
@@ -229,11 +238,11 @@ test("a decided approval is a row on a hairline under the plain title, and the p
   await page.setViewportSize({ width: 390, height: 844 });
   const card = page.locator("#approval-APR-000001");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   await expect(card.getByTestId("approval-decided-APR-000001")).toBeVisible();
   await expect(page.getByTestId("approvals-decided")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Approvals");
-  await expect(page.getByTestId("approval-headline")).toHaveText("You approved ¥200,000.00 of invoice financing.");
+  await expect(page.getByTestId("approval-headline")).toHaveText("You authorized the financing request; FLOW sent it to the lender.");
   expect(await filledBrand(page)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

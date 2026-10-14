@@ -43,17 +43,47 @@ def _join(lang: Lang, parts: Sequence[str | None]) -> str | None:
 # ---------------------------------------------------------------- the counter to send (Deals: the evaluate read's priced response)
 
 
+def send_authorizes(lang: Lang, *, option: str | None, who: str) -> str:
+    """What sending authorizes: "Send the exact Option A counter to Foshan; FLOW records it as a proposed agreement that stands only if Foshan
+    accepts." No word about who approves it (the authority sentence is the one place that is said)."""
+    if lang == "zh":
+        return f"向{who}原样发送{option + ' 的' if option else '此'}还价；FLOW 将其记为拟议中的协议，只有{who}接受后才成立。"
+    return f"Send the exact {option + ' ' if option else ''}counter to {who}; FLOW records it as a proposed agreement that stands only if {who} accepts."
+
+
+_NO_FUNDING = {
+    "none_needed": ("No funding runs when you send: this counter leaves no cash gap to fund.",
+                    "发送时不会办理融资：此还价不会留下需要补的资金缺口。"),
+    # the gap as it stands is still funded when the buyer declines (the assumptions say so): then it is only if the buyer agrees that none runs
+    "none_needed_unless_declined": ("No funding runs when you send if the buyer agrees: this counter leaves no cash gap to fund.",
+                                    "若买方同意，发送时不会办理融资：此还价不会留下需要补的资金缺口。"),
+    "cannot_run": ("No funding runs when you send: today's plan cannot run; the gap stays open.",
+                   "发送时不会办理融资：今天的方案无法执行；缺口仍未补上。"),
+    "no_plan": ("No funding runs when you send: no funding plan fits within your limits; the gap stays open.",
+                "发送时不会办理融资：您的授权范围内没有可用的融资方案；缺口仍未补上。"),
+    "unknown": ("No funding runs when you send.", "发送时不会办理融资。"),
+}
+
+
 def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: str | None, cost_display: str | None,
                  funds_when: str | None, funds_today: bool, authority_text: str | None,
-                 if_declined_lines: Sequence[str] = (), unfunded: bool = False) -> dict[str, str | None]:
+                 if_declined_lines: Sequence[str] = (), funding: str = "unknown", option: str | None = None,
+                 who: str | None = None) -> dict[str, str | None]:
     """The send-the-counter review. `lines` are `send_scope_lines` (the agreement, then the draws and the funding cost, when the send runs
     funding); `funds_when` is the distance the last draw lands ("in 3 days") and `funds_today` whether it lands today; `authority_text` is the
     sentence the offer picture gives the reply (who decides), null when the picture cannot say. `if_declined_lines` are the funding legs the send
     runs if the buyer declines (the gap as it stands without the agreement): the engine funds the cash gap when the counter is sent, whatever the
-    buyer answers, and the assumptions say so in words. `unfunded`: the gap has a plan and the plan cannot run today, so the send runs no funding
-    and `executes_now_text` says so before the send, as the record says it after ("The gap was not funded")."""
-    funding = list(lines[1:])
-    if funding and funds_when:
+    buyer answers, and the assumptions say so in words. When the gap has a plan and the plan cannot run today, the send runs no funding and
+    `executes_now_text` says so before the send, as the record says it after ("The gap was not funded").
+
+    The three statements (Slice B round two), specific to this send: `authorizes_text` is what is sent and what FLOW records it as (a proposed
+    agreement that stands only if the buyer accepts) and carries no word about who approves (the authority sentence, `authority_text`, is the one
+    place authority is said); `executes_now_text` what runs when you send (the gap plan's funding, or why none does: `funding` is one of
+    runs | none_needed | cannot_run | no_plan | unknown); `remaining_text` what does not happen yet. `option` is the counter's name ("Option A")
+    and `who` the buyer as the owner says it aloud ("Foshan"); `buyer` is the buyer's name in the other lines."""
+    funding_lines = list(lines[1:])
+    funding_state = "none_needed_unless_declined" if funding == "none_needed" and if_declined_lines else funding
+    if funding_lines and funds_when:
         landing = (t(lang, "The draw is in hand today.", "提款今天到账。") if funds_today
                    else t(lang, f"The funding arrives {funds_when}.", f"融资将于{_gap(funds_when)}到账。"))
     else:
@@ -63,7 +93,7 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
     # take the funding back (`_negotiate_locked` plans the gap on both outcomes). Said where the owner reads the assumptions.
     declined = t(lang, "; ", "；").join(if_declined_lines)
     runs_anyway: str | None = None
-    if funding:
+    if funding_lines:
         runs_anyway = t(lang, "Runs when you send, whether or not the buyer agrees.", "发送时即执行，无论买方是否同意。")
         if declined:
             runs_anyway += t(lang, f" If the buyer declines, it is sized to the gap as it stands without the agreement: {declined}.",
@@ -71,18 +101,18 @@ def send_receipt(lang: Lang, *, buyer: str, lines: Sequence[str], recheck_text: 
     elif declined:
         runs_anyway = t(lang, f"If the buyer declines, the funding for your cash gap still runs when you send: {declined}.",
                         f"若买方拒绝，发送时仍会为您的资金缺口办理融资：{declined}。")
+    said = who or buyer
     return receipt(
-        authorizes_text=lines[0] if lines else None,
-        executes_now_text=_join(lang, funding) or (
-            t(lang, "No funding runs when you send: today's plan cannot run; the gap stays open.",
-              "发送时不会办理融资：今天的方案无法执行；缺口仍未补上。") if unfunded else None),
+        authorizes_text=send_authorizes(lang, option=option, who=said),
+        executes_now_text=_join(lang, funding_lines) or t(lang, *_NO_FUNDING.get(funding_state, _NO_FUNDING["unknown"])),
         others_must_agree_text=t(lang, f"{buyer} must accept the counter before it takes effect.", f"{buyer}需先接受此还价，还价才会生效。"),
         in_hand_vs_future_text=f"{landing} {future}" if lang != "zh" else f"{landing}{future}",
         fees_display=cost_display,
         when_text=t(lang, "As soon as you confirm.", "您确认后立即生效。"),
         assumptions_text=(" " if lang != "zh" else "").join(x for x in (recheck_text, runs_anyway) if x) or None,
         authority_text=authority_text,
-        remaining_text=t(lang, f"{buyer} has not accepted yet; the agreement stands only if it does.", f"{buyer}尚未接受；只有接受后协议才成立。"))
+        remaining_text=t(lang, f"The terms take effect only when {said} accepts; no payment and no financing settles because the counter is sent.",
+                         f"只有{said}接受后条款才会生效；发送还价本身不会结算任何付款或融资。"))
 
 
 # ---------------------------------------------------------------- an approval waiting for the owner (GET /approvals/queue)
