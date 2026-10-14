@@ -545,7 +545,7 @@ def negotiate_intent(ctx: NlContext, slots: Slots, *, execute: bool = True, data
     elif neg.outcome == "NO_DEAL":
         legs = stored.get("refuse_ops", [])
         if legs:
-            lines, _ok = run_legs(ctx, steps, legs, t(ctx, "NO DEAL: the router's plan", "未成交：融资路由方案"))
+            lines, _ok = run_legs(ctx, steps, legs, t(ctx, "NO DEAL: today's funding plan", "未成交：今天的融资方案"))
             reply.append(t(ctx, f"NO DEAL. The funding I showed for this case ({stored.get('refuse_label')}):",
                            f"未成交。按之前给出的该情形下的融资方案（{stored.get('refuse_label')}）："))
             reply.extend(lines)

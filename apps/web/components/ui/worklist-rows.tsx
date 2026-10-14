@@ -21,7 +21,7 @@ export interface UnderlineTab<T extends string> {
  * The worklist's filters as the mockup's: text tabs, the chosen one a white pill (the count beside each label at 13 px in neutral text; colour is for the status pill only). A tablist:
  * one tab stop, arrow keys, Home and End move and the choice follows the focus.
  */
-export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[] }) {
+export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, dense = false }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[]; /** For a narrow card (the Deals queue): tighter padding, and the count a small badge so the tabs keep one line. */ dense?: boolean }) {
   const track = useRef<HTMLDivElement>(null);
   const selected = tabs.findIndex((t) => t.value === value);
   const els = () => Array.from(track.current?.querySelectorAll<HTMLButtonElement>("[role=tab]") ?? []);
@@ -49,10 +49,13 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs }
             data-testid={t.testId}
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKey(e, i)}
-            className={`motion-press inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-pill px-3.5 text-[15px] font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
+            className={`motion-press inline-flex h-10 items-center whitespace-nowrap rounded-pill ${dense ? "gap-1 px-1.5 text-sm" : "gap-1.5 px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
           >
             {t.label}
-            <span className={`text-supporting tabular-nums ${on ? "text-ink" : "text-ink-3"}`} data-testid={t.countTestId}>
+            <span
+              className={`text-supporting tabular-nums ${dense ? `inline-grid min-w-[1.125rem] place-items-center rounded-pill px-1 font-semibold leading-[1.125rem] ${on ? "bg-subtle text-ink" : "bg-subtle/60 text-ink-3"}` : on ? "text-ink" : "text-ink-3"}`}
+              data-testid={t.countTestId}
+            >
               {t.count}
             </span>
           </button>
@@ -101,10 +104,14 @@ export function WorklistAlertLine({ tone, eyebrow, text, action, describedBy, no
   );
 }
 
+/** The table's one column template (the header row and every row share it, so they align): Customer / deal 36%, Next step 44%, Status 20% (right-aligned) and the 72 px "Select" column. */
+export const WORKLIST_COLUMNS = "lg:grid-cols-[minmax(0,36fr)_minmax(0,44fr)_minmax(14rem,20fr)_72px]";
+
 /**
- * One row of the worklist table (a white 16 px row on the panel): a link that opens its item. Columns from `md`: the subject (15 px, with a quoted differentiator under it when the
- * server sends one for two alike subjects), the next step (the server's consequence, 14 px muted) and the status pill at the right; on a phone the subject and the pill share the first
- * line and the next step sits under the subject. Selected is the lavender fill with a purple hairline. `severity` is the screen-reader word (the pill carries the status for the eye).
+ * One row of the worklist table (a white 16 px row on the panel): a link that opens its item, a fixed height (56 px from `lg`, 64 px below it) so no two rows differ. From `lg` four fixed columns:
+ * the subject (15 px semibold, with the server's quoted differentiator after it at 13 px muted), the next step (13 px muted, ONE line, cut with an ellipsis and whole in `title`), the status pill
+ * right-aligned (a long status word wraps inside the pill to a second line, never cut), and the "Select" affordance in its own 72 px column so the pill never moves. Below `lg` the subject and the pill share the first line and the next step is the second.
+ * Selected is the lavender fill with a purple hairline. `severity` is the screen-reader word (the pill carries the status for the eye).
  */
 export function WorklistRow({
   href,
@@ -116,7 +123,8 @@ export function WorklistRow({
   nextStep,
   pill,
   severity,
-  after,
+  selectLabel,
+  onWarm,
   onClick,
   testId,
   data,
@@ -130,8 +138,10 @@ export function WorklistRow({
   nextStep?: string | null;
   pill?: ReactNode;
   severity?: ReactNode;
-  /** Under the row's lines (the reason the first row is first). */
-  after?: ReactNode;
+  /** "Select": the affordance that hover and keyboard focus reveal in the row's own last column (a click or Enter selects; hovering changes nothing else on the page). */
+  selectLabel?: string;
+  /** Called when the pointer rests on the row or focus enters it: the page starts the reads a selection would make, so the selection paints at once. */
+  onWarm?: () => void;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   testId?: string;
   data?: Record<string, string>;
@@ -143,27 +153,42 @@ export function WorklistRow({
         scroll={false}
         aria-current={selected ? "true" : undefined}
         onClick={onClick}
-        className={`motion-press relative grid grid-cols-1 items-center gap-x-4 gap-y-1.5 rounded-[16px] px-4 py-3.5 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(7.5rem,auto)] ${
+        onPointerEnter={onWarm}
+        onFocus={onWarm}
+        data-testid="hv2-row-link"
+        className={`group motion-press relative grid h-16 grid-cols-[minmax(0,1fr)_auto] content-center items-center gap-x-4 gap-y-0.5 rounded-[16px] px-4 outline-offset-0 focus-visible:outline-2 focus-visible:outline-focus lg:h-14 ${WORKLIST_COLUMNS} ${
           selected ? "bg-brand-50 ring-1 ring-f-purple" : "bg-card hover:shadow-f hover:ring-1 hover:ring-line"
         }`}
       >
-        <span className="min-w-0 text-[15px] font-medium leading-snug text-ink">
-          {subject}
+        <span className="flex min-w-0 items-baseline gap-2 text-[15px] font-semibold leading-snug text-ink" data-testid="hv2-row-subject">
+          <span className="min-w-0 truncate" title={subject}>
+            {subject}
+          </span>
           {isNew && newLabel ? (
-            <span className="ml-2 text-supporting font-semibold text-ink-2" data-testid="home-row-new">
+            <span className="shrink-0 text-supporting font-semibold text-ink-2" data-testid="home-row-new">
               {newLabel}
             </span>
           ) : null}
           {qualifier ? (
-            <span className="mt-0.5 block text-supporting font-normal italic text-ink-3" data-testid="hv2-row-qualifier">
-              “{qualifier}”
+            <span className="max-w-[55%] shrink-0 truncate text-supporting font-normal italic text-ink-3" title={qualifier} data-testid="hv2-row-qualifier">
+              {qualifier}
             </span>
           ) : null}
         </span>
-        {nextStep ? <span className="min-w-0 text-supporting text-ink-3 md:text-sm">{nextStep}</span> : <span className="hidden md:block" />}
-        <span className="flex min-w-0 items-center justify-start">{pill}</span>
+        <span className="col-span-2 row-start-2 min-w-0 truncate text-supporting text-ink-3 lg:col-span-1 lg:col-start-2 lg:row-start-1" title={nextStep ?? undefined} data-testid="hv2-row-next">
+          {nextStep}
+        </span>
+        <span className="col-start-2 row-start-1 flex min-w-0 max-w-[14rem] justify-end justify-self-end lg:col-start-3 lg:max-w-full [&>*]:max-w-full [&>*]:!whitespace-normal [&>*]:!py-1 [&>*]:!leading-tight" data-testid="hv2-row-status">
+          {pill}
+        </span>
+        <span aria-hidden className="hidden whitespace-nowrap text-right text-supporting font-semibold text-ink lg:block" data-testid="hv2-row-select-cell">
+          {selectLabel && !selected ? (
+            <span className="opacity-0 transition-opacity duration-(--dur-fast) group-hover:opacity-100 group-focus-visible:opacity-100" data-testid="hv2-row-select">
+              {selectLabel} →
+            </span>
+          ) : null}
+        </span>
         {severity}
-        {after ? <span className="col-span-full mt-1 block">{after}</span> : null}
       </Link>
     </li>
   );

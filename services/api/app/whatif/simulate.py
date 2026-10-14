@@ -41,7 +41,7 @@ from app.financial import project
 from app.funding import NoPermanentSourceError, break_even_discount
 from app.verifier import VerdictBundle, evaluate
 from app.whatif.offer import DOC_ID, Context, build, context
-from app.whatif.params import PRESETS, RATE_STEP_BP, WhatIfParams, grid
+from app.whatif.params import PRESETS, RATE_STEP_BP, WhatIfParamError, WhatIfParams, grid
 
 CACHE_SIZE = 256
 FACE_STOP_FEN = 1_000_000  # face slider stops every ¥10,000, plus the whole invoice and preset faces
@@ -127,12 +127,14 @@ def _normalise(params: WhatIfParams, ctx: Context) -> WhatIfParams:
 
 
 def cache_key(state: FinancialState, mandate: Mandate, day: int, params: WhatIfParams,
-              live: Sequence[Obligation] = ()) -> str:
-    """The commitments in force change the books, so their obligations are part of the key."""
+              live: Sequence[Obligation] = (), buyer_id: str | None = None) -> str:
+    """The commitments in force change the books, so their obligations are part of the key; so is the buyer the sandbox runs on when one is named."""
     h = hashlib.sha256()
     parts = [state.model_dump_json(), mandate.model_dump_json(), str(day), params.model_dump_json()]
     if live:
         parts.append("|".join(o.model_dump_json() for o in live))
+    if buyer_id is not None:
+        parts.append("buyer:" + buyer_id)
     for part in parts:
         h.update(part.encode())
         h.update(b"|")
@@ -220,12 +222,17 @@ def _break_even(params: WhatIfParams, state: FinancialState, mandate: Mandate) -
 
 
 def _reserve(v: Violation | None, traj: dict[str, Any] | None) -> dict[str, Any]:
+    """The reserve verdict. `breach_day` and its siblings are the verifier's: a breach the hypothetical package CAUSES (none when the books are
+    already below the minimum without it). `below_days` is the cash line's own: how many days of the horizon close below the minimum, whatever the
+    cause, so the word beside "lowest cash" can follow that lowest cash (`stays_above` is its negation; both null without a trajectory)."""
+    below = sum(1 for d in traj["days"] if d["below_floor"]) if traj else None
+    own = {"below_days": below, "stays_above": below == 0 if below is not None else None}
     if v is None:
         return {"breach_day": None, "curable": None, "cure_cost_fen": None, "cure_cost_display": None,
-                "observed": None, "first_unfunded_day": traj["first_breach_day"] if traj else None}
+                "observed": None, "first_unfunded_day": traj["first_breach_day"] if traj else None, **own}
     return displayed({"breach_day": v.day, "curable": v.curable, "cure_cost_fen": v.cure_cost_fen,
                       "observed": v.observed, "cure_note": v.cure_note,
-                      "first_unfunded_day": traj["first_breach_day"] if traj else None})
+                      "first_unfunded_day": traj["first_breach_day"] if traj else None, **own})
 
 
 def _view(b: VerdictBundle, params: WhatIfParams, ctx: Context, text: str, key: str,
@@ -277,15 +284,17 @@ def simulate(
     trusted_owner_key_hex: str,
     day: int = 0,
     commitments: Sequence[Commitment] = (),
+    buyer_id: str | None = None,
 ) -> WhatIfResult:
     """Evaluate the hypothetical package `params` against current books (`state` plus the obligations of
-    the live `commitments`) under `mandate`. Pure: reads its arguments only and writes nothing. Raises
-    WhatIfParamError when the params do not fit the state."""
+    the live `commitments`) under `mandate`, on `buyer_id`'s recurring invoice and earliest open receivable (without one: the books' first
+    buyer with a recurring invoice). Pure: reads its arguments only and writes nothing. Raises WhatIfParamError when the params do not fit the
+    state, or when the buyer has no recurring invoice to extend."""
     started = time.perf_counter()
-    ctx = context(state, day)
+    ctx = resolve(state, day, buyer_id)
     params = _normalise(params, ctx)
     live = current_books(state, commitments).obligations
-    key = cache_key(state, mandate, day, params, live)
+    key = cache_key(state, mandate, day, params, live, buyer_id)
     hit = _cache.get(key)
     if hit is not None:
         return hit.model_copy(update={"cached": True,
@@ -299,10 +308,23 @@ def simulate(
     return result
 
 
-def presets(state: FinancialState, day: int = 0) -> dict[str, Any]:
+def resolve(state: FinancialState, day: int = 0, buyer_id: str | None = None) -> Context:
+    """The rows the sliders act on: the buyer's recurring invoice and earliest open receivable not yet past due (`buyer_id`), else the books'
+    first buyer with both. A buyer the sandbox cannot value as a whole (no recurring invoice: only an early payment, or only a rebate, can be
+    valued) is refused with the reason, since the sliders move terms, price and rebate on a recurring invoice."""
+    if buyer_id is None:
+        return context(state, day)
+    found = context(state, day, buyer_id)
+    if not isinstance(found, Context):
+        name = next((c.name for c in state.counterparties if c.id == buyer_id), buyer_id)
+        raise WhatIfParamError(f"{name} has no recurring invoice to extend; the sandbox needs one")
+    return found
+
+
+def presets(state: FinancialState, day: int = 0, buyer_id: str | None = None) -> dict[str, Any]:
     """Preset slider positions, the slider grid, and server-formatted labels for every slider stop,
-    so the UI shows readouts without formatting a rate or an amount itself (INVARIANT 13)."""
-    ctx = context(state, day)
+    so the UI shows readouts without formatting a rate or an amount itself (INVARIANT 13). On `buyer_id`'s invoice when one is named."""
+    ctx = resolve(state, day, buyer_id)
     face = ctx.receivable.face_fen
     g = grid(face)
     rate_max = max(g[k]["max"] for k in ("discount_bp", "rebate_bp", "price_adjustment_bp"))

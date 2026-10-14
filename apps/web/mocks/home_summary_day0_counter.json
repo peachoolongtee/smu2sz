@@ -7051,6 +7051,171 @@
     "empty_text": "Nothing has changed lately.",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": "One funding action ready. One deal decision needs you.",
+    "upcoming": [
+      {
+        "label": "Payroll is paid",
+        "amount_display": "−¥340k",
+        "when": "in 12 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "A supplier payment goes out",
+        "amount_display": "−¥120k",
+        "when": "in 20 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "A loan repayment goes out",
+        "amount_display": "−¥45k",
+        "when": "in 30 days",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "CASH AVAILABLE",
+        "value_display": "¥400,000",
+        "note": "¥100k above your ¥300k minimum",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 40000000,
+          "min_display": "¥300k",
+          "headroom_text": "+¥100k",
+          "cash_display": "¥400,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "LOWEST CASH AHEAD",
+        "value_display": "−¥105,000",
+        "note": "¥405k below your minimum in 30 days · current books, no new funding",
+        "short_note": "¥405k shortfall in 30 days",
+        "tone": "bad",
+        "with_plan_hint": "If FLOW's plan executes: ¥300,000, assuming the funds arrive as planned.",
+        "with_plan": {
+          "label": "with plan",
+          "value_text": "¥300,000"
+        }
+      },
+      "funding": {
+        "state": "PROPOSED",
+        "eyebrow": "PLANNED FUNDING",
+        "value_display": "¥405,000",
+        "note": "¥150k credit line today + ¥255k invoice financing in 3 days",
+        "status_text": "Ready to run",
+        "hint": "Conditional on you running the plan; not counted as cash."
+      }
+    },
+    "action": {
+      "variant": "ACTION",
+      "key": "funding:ALERT-RESERVE-12",
+      "tone": "bad",
+      "eyebrow": "NEXT ACTION · WITHIN 12 DAYS",
+      "title": "Secure ¥405,000 before payroll in 12 days.",
+      "text": "FLOW's plan within your signed limits: ¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned · cost ¥3,113.93 · no approval needed.",
+      "facts": [
+        {
+          "label": "Estimated cost",
+          "value": "¥3,113.93"
+        },
+        {
+          "label": "Funding",
+          "value": "¥150k credit-line draw today, ¥255k invoice financing in 3 days, both planned"
+        },
+        {
+          "label": "Approval",
+          "value": "No approval needed"
+        }
+      ],
+      "primary": {
+        "label": "Run the funding plan",
+        "href": "/cash#cash-options"
+      },
+      "secondary": {
+        "label": "Compare",
+        "href": "/cash#cash-options"
+      },
+      "control": "RUN_PLAN",
+      "approval_text": "No approval needed",
+      "approval_needed": false,
+      "consequence_text": "Cash first falls below your minimum in 12 days. Without new funding, the shortfall reaches ¥405k in 30 days.",
+      "legs": [
+        {
+          "label": "Credit-line draw",
+          "amount_display": "¥150,000",
+          "amount_fen": 15000000,
+          "lands_when": "today",
+          "lands_day": 0,
+          "cost_display": "¥841.64",
+          "repaid_when": "in 32 days",
+          "state": "PLANNED",
+          "state_text": "Planned",
+          "authority_text": "Within your signed limits. No additional approval required.",
+          "share_text": "37%"
+        },
+        {
+          "label": "Invoice financing",
+          "amount_display": "¥255,000",
+          "amount_fen": 25500000,
+          "lands_when": "in 3 days",
+          "lands_day": 3,
+          "cost_display": "¥2,272.29",
+          "repaid_when": null,
+          "state": "PLANNED",
+          "state_text": "Planned",
+          "authority_text": "Within your signed limits. No additional approval required.",
+          "share_text": "63%"
+        }
+      ],
+      "cost_basis_text": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid."
+    },
+    "chart": {
+      "scope_title": "COMPANY CASH FORECAST",
+      "legend": [
+        {
+          "label": "Current books · no new funding",
+          "kind": "current"
+        },
+        {
+          "label": "If FLOW's plan runs (planned)",
+          "kind": "planned"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "The lowest point · in 30 days",
+        "projected_display": "−¥105,000",
+        "minimum_display": "¥300,000",
+        "third_label": "Shortfall",
+        "third_display": "¥405,000",
+        "note": "With FLOW's plan (planned): ¥300,000, assuming it runs and the funds arrive as planned."
+      },
+      "lowest": {
+        "cause": "a loan repayment goes out"
+      },
+      "scenario_title_text": null,
+      "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
+    },
+    "links": [
+      {
+        "label": "Where the cash goes",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "Facility headroom",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "What you are owed, by when",
+        "href": "/receivables"
+      },
+      {
+        "label": "All deals",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": {
     "alert_id": "ALERT-RESERVE-12",
     "kind": "RESERVE_BREACH_AHEAD",
@@ -7174,12 +7339,29 @@
         "amount_display": "¥255,000.00"
       }
     ],
+    "receipt": {
+      "authorizes_text": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "executes_now_text": "Draw ¥150,000.00 on Bank credit line; Finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+      "others_must_agree_text": null,
+      "in_hand_vs_future_text": "Arrives: ¥150k today; ¥255k in 3 days.",
+      "gross_display": "¥405,000.00",
+      "fees_display": "¥3,113.93",
+      "net_display": null,
+      "when_text": "The last funds land in 3 days.",
+      "assumptions_text": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+      "authority_text": "Within your signed limits. No additional approval required.",
+      "remaining_text": null
+    },
     "after_lowest_display": "¥300,000.00"
   },
   "approvals": [],
   "pending_count": 0,
   "open_decisions": [
     {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "counter_ready",
+      "status_text": "Counter ready",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "RESPONSE_READY",

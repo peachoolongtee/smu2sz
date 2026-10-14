@@ -18,6 +18,7 @@ from app.api.display import displayed
 from app.api.presentation import (
     agreement_words,
     business_text,
+    commitment_cost_words,
     document_decision_words,
     event_words,
     first_breach_ahead,
@@ -190,7 +191,7 @@ def get_ledger(lang: str = "en") -> dict:
         views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents) for o in ops]
         mark_changed(views)
         return {
-            "commitments": [displayed(json.loads(c.model_dump_json())) for c in commitments],
+            "commitments": [{**displayed(json.loads(c.model_dump_json())), **commitment_cost_words(c, lang)} for c in commitments],
             "operations": views,
             "chain_valid": chain_valid,
             "chain_length": len(ops),

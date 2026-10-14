@@ -95,3 +95,13 @@ def unchanged_words(en: _Any, zh: _Any, names: _Iterable[str] = (), raw_fields: 
     z = dict(_walk(zh))
     return [(p, s) for p, s in _walk(en)
             if WORD_KEY.search(p) and z.get(p) == s and not any(r.fullmatch(p) for r in skip) and _LATIN_RUN.search(strip_names(s, names))]
+
+
+def agree_on_rcv_a(api: _Any, fixture: str = "EX03_AS_USUAL") -> str:
+    """On the busy books, send Foshan's offer to the cooperative buyer and reach an agreement on invoice RCV-A (what the busy seed's day 0 used to
+    hold): every other Foshan reply about that invoice can then no longer be drawn on today's books. Returns the offer's id."""
+    offer_id = api.post("/offers", json={"fixture_id": fixture}).json()["offer"]["offer_id"]
+    api.post(f"/offers/{offer_id}/evaluate", json={"fixture_id": fixture})
+    sent = api.post(f"/negotiate/{offer_id}", json={"buyer_profile": "cooperative"})
+    assert sent.status_code == 200 and sent.json()["outcome"] == "DEAL", sent.text
+    return str(offer_id)

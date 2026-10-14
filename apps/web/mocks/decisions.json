@@ -1,6 +1,10 @@
 {
   "agreed_day0.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "Agreed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "AGREED",
@@ -113,9 +117,9 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time).",
-          "executes_now_text": "Agreed",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -211,6 +215,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "已达成",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "AGREED",
@@ -323,9 +331,9 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）。",
-          "executes_now_text": "已达成协议",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -423,6 +431,10 @@
   },
   "apply_approved": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "EXECUTED",
@@ -519,6 +531,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "EXECUTED",
@@ -617,6 +633,10 @@
   },
   "apply_pending": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
@@ -713,6 +733,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
@@ -811,6 +835,10 @@
   },
   "apply_rejected": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "DECLINED",
@@ -907,6 +935,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "approval:APR-000001",
       "family": "FUNDING",
       "state": "DECLINED",
@@ -1005,6 +1037,10 @@
   },
   "cure_approved": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
@@ -1140,6 +1176,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
@@ -1277,6 +1317,10 @@
   },
   "cure_day0": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-12:v1:plan",
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
@@ -1428,6 +1472,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-12:v1:plan",
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",
@@ -1581,6 +1629,10 @@
   },
   "cure_failed": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "FAILED",
@@ -1697,6 +1749,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "FAILED",
@@ -1815,6 +1871,10 @@
   },
   "cure_pending": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
@@ -1929,6 +1989,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "AUTHORIZATION_REQUIRED",
@@ -2045,6 +2109,10 @@
   },
   "cure_residual": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",
@@ -2202,6 +2270,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-34:v6",
       "family": "FUNDING",
       "state": "SETTLED",
@@ -2361,6 +2433,10 @@
   },
   "cure_settled": {
     "en": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "SETTLED",
@@ -2496,6 +2572,10 @@
       }
     },
     "zh": {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-42:v7",
       "family": "FUNDING",
       "state": "SETTLED",
@@ -2633,6 +2713,10 @@
   },
   "fulfilled_day34.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "Agreed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "FULFILLED",
@@ -2745,9 +2829,9 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Fulfilled",
+          "executes_now_text": "Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -2869,6 +2953,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "已达成",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "FULFILLED",
@@ -2981,9 +3069,9 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "已履行",
+          "executes_now_text": "已记录与Foshan Home Retail Co.的协议。 已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -3107,6 +3195,10 @@
   },
   "half_day34.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "Agreed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "MISSED",
@@ -3219,9 +3311,9 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Early payment did not arrive",
+          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -3343,6 +3435,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "已达成",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "MISSED",
@@ -3455,9 +3551,9 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "提前付款未到账",
+          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -3581,6 +3677,10 @@
   },
   "nodeal.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms · “extend our standard terms to 60 days going…”",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · “extend our standard terms to 60 days going…” · OFF-f806f79b6c21",
+      "lifecycle": "declined",
+      "status_text": "Declined",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "NO_DEAL",
@@ -3751,6 +3851,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “extend our standard terms to 60 days going…”",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “extend our standard terms to 60 days going…” · OFF-f806f79b6c21",
+      "lifecycle": "declined",
+      "status_text": "已拒绝",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "NO_DEAL",
@@ -3923,6 +4027,10 @@
   },
   "noreceipt_day34.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "Agreed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "MISSED",
@@ -4035,9 +4143,9 @@
         ],
         "receipt": {
           "authorizes_text": "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective 32 days ago; one time).",
-          "executes_now_text": "Early payment did not arrive",
+          "executes_now_text": "Funding of ¥149,986.20 was requested and has landed.",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "No cost over the valuation window beyond the early-payment discount.",
+          "in_hand_vs_future_text": "No cost over the next 12 months beyond the early-payment discount.",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -4133,6 +4241,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "agreed",
+      "status_text": "已达成",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "MISSED",
@@ -4245,9 +4357,9 @@
         ],
         "receipt": {
           "authorizes_text": "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（32 天前生效；一次性）。",
-          "executes_now_text": "提前付款未到账",
+          "executes_now_text": "已提交 ¥149,986.20 的融资，并已到账。",
           "others_must_agree_text": null,
-          "in_hand_vs_future_text": "除提前付款折扣外，估值期内没有其他成本。",
+          "in_hand_vs_future_text": "除提前付款折扣外，未来 12 个月内没有其他成本。",
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
@@ -4345,6 +4457,10 @@
   },
   "ready.accept": {
     "en": {
+      "subject_text": "Foshan · Early settlement on the ¥420k invoice",
+      "subject_demo_text": "Foshan · Early settlement on the ¥420k invoice · OFF-8e944bff0cc9",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-8e944bff0cc9",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4431,6 +4547,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 提前结算 ¥420k 的发票",
+      "subject_demo_text": "Foshan · 提前结算 ¥420k 的发票 · OFF-8e944bff0cc9",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-8e944bff0cc9",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4519,6 +4639,10 @@
   },
   "ready.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "counter_ready",
+      "status_text": "Counter ready",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4622,6 +4746,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "counter_ready",
+      "status_text": "还价已就绪",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4727,6 +4855,10 @@
   },
   "ready.ex01b": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms · “Standard terms going forward: 60 days”",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · “Standard terms going forward: 60 days” · OFF-1559c5b525ed",
+      "lifecycle": "counter_ready",
+      "status_text": "Counter ready",
       "id": "deal:OFF-1559c5b525ed",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4830,6 +4962,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “Standard terms going forward: 60 days”",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · “Standard terms going forward: 60 days” · OFF-1559c5b525ed",
+      "lifecycle": "counter_ready",
+      "status_text": "还价已就绪",
       "id": "deal:OFF-1559c5b525ed",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -4935,6 +5071,10 @@
   },
   "ready.sec": {
     "en": {
+      "subject_text": "FASTCAPITAL · Offer",
+      "subject_demo_text": "FASTCAPITAL · Offer · OFF-833f35d497a5",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-833f35d497a5",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -5021,6 +5161,10 @@
       }
     },
     "zh": {
+      "subject_text": "FASTCAPITAL · 报价",
+      "subject_demo_text": "FASTCAPITAL · 报价 · OFF-833f35d497a5",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-833f35d497a5",
       "family": "DEAL",
       "state": "RESPONSE_READY",
@@ -5109,6 +5253,10 @@
   },
   "received.accept": {
     "en": {
+      "subject_text": "Foshan · Early settlement on the ¥420k invoice",
+      "subject_demo_text": "Foshan · Early settlement on the ¥420k invoice · OFF-8e944bff0cc9",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-8e944bff0cc9",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5184,6 +5332,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 提前结算 ¥420k 的发票",
+      "subject_demo_text": "Foshan · 提前结算 ¥420k 的发票 · OFF-8e944bff0cc9",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-8e944bff0cc9",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5261,6 +5413,10 @@
   },
   "received.ex01": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5338,6 +5494,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-f806f79b6c21",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-f806f79b6c21",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5417,6 +5577,10 @@
   },
   "received.ex01b": {
     "en": {
+      "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
+      "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-1559c5b525ed",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-1559c5b525ed",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5494,6 +5658,10 @@
       }
     },
     "zh": {
+      "subject_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款",
+      "subject_demo_text": "Foshan · 60 天账期（今后的发票），另有 2 项条款 · OFF-1559c5b525ed",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-1559c5b525ed",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5573,6 +5741,10 @@
   },
   "received.sec": {
     "en": {
+      "subject_text": "FASTCAPITAL · Offer",
+      "subject_demo_text": "FASTCAPITAL · Offer · OFF-833f35d497a5",
+      "lifecycle": "owner_review",
+      "status_text": "Owner review needed",
       "id": "deal:OFF-833f35d497a5",
       "family": "DEAL",
       "state": "RECEIVED",
@@ -5648,6 +5820,10 @@
       }
     },
     "zh": {
+      "subject_text": "FASTCAPITAL · 报价",
+      "subject_demo_text": "FASTCAPITAL · 报价 · OFF-833f35d497a5",
+      "lifecycle": "owner_review",
+      "status_text": "需要您审核",
       "id": "deal:OFF-833f35d497a5",
       "family": "DEAL",
       "state": "RECEIVED",

@@ -49,6 +49,20 @@
       },
       "net_short": "约 ¥163k",
       "recourse_text": "如果回款不足，差额由您承担。",
+      "breakdown": [
+        {
+          "label": "发票融资还款",
+          "amount_display": "¥257,272.29",
+          "share_text": "61%"
+        },
+        {
+          "label": "剩余现金",
+          "amount_display": "¥162,727.71",
+          "share_text": "39%"
+        }
+      ],
+      "net_after_repayment_display": "约 ¥163k",
+      "collection_due_text": "32 天后",
       "financing_state": "ARRANGED",
       "governed_by": {
         "contract_ref": "FHR-2026-07",
@@ -110,5 +124,14 @@
   "partial": null,
   "last_read_when": "今天",
   "last_read_day": 0,
+  "context": {
+    "customer": null,
+    "decision": null,
+    "path": null,
+    "invoice": null,
+    "scenario": null,
+    "back": null,
+    "irrelevant_text": null
+  },
   "computed_in_seconds": 0
 }

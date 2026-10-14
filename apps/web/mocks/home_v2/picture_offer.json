@@ -5918,7 +5918,48 @@
         "decides_text": "Cannot be accepted within your signed limits.",
         "authority_reason_text": null,
         "recommended_reason_text": null,
+        "recommended_reason_kind": null,
         "scenario_assumption_text": "Assumes the buyer accepts this offer and FLOW takes no new funding.",
+        "funding_assumption_text": "No new funding",
+        "terms_days": 60,
+        "terms_delta_text": "+15 days requested by buyer",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "Immediate discount",
+            "amount_display": "¥5,040.00",
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "Forward payment-term cost",
+            "amount_display": "¥24,326.92",
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "Rebate",
+            "amount_display": "¥4,000.00",
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "Funding cost",
+            "amount_display": null,
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "Total",
+            "amount_display": null,
+            "basis_text": "two parts: once, and over 12 months",
+            "note": null
+          }
+        ],
         "authority": "over_limit",
         "authority_text": "Over a limit you signed: only a new mandate changes that",
         "assumption_text": null,
@@ -7893,14 +7934,55 @@
           {
             "key": "rebate_or_price",
             "label": "Rebate or price",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of a 1.00% rebate"
           }
         ],
         "decides_text": "FLOW can send it. Your approval is not needed.",
         "authority_reason_text": "Terms stay at 45 days, no rebate. The early-settlement offer at 0.85% is within the 1.50% limit you signed.",
         "recommended_reason_text": "Recommended because FLOW can send it within your mandate without your approval.",
+        "recommended_reason_kind": "cash",
         "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥150k credit-line draw today); without the plan, cash falls lower.",
+        "funding_assumption_text": "Funding plan required: ¥150k credit-line draw today",
+        "terms_days": 45,
+        "terms_delta_text": "no change",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "Immediate discount",
+            "amount_display": "¥2,186.20",
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "Forward payment-term cost",
+            "amount_display": null,
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "Rebate",
+            "amount_display": null,
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "Funding cost",
+            "amount_display": "¥841.57",
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "Total",
+            "amount_display": "¥3,027.77",
+            "basis_text": "once, nothing ongoing",
+            "note": null
+          }
+        ],
         "authority": "flow_may",
         "authority_text": "FLOW can send it",
         "assumption_text": "If the buyer accepts this reply",
@@ -9909,7 +9991,7 @@
           {
             "key": "early_payment",
             "label": "Early payment",
-            "value_text": "None",
+            "value_text": null,
             "instead_of_text": "instead of 1.20% off ¥420,000.00"
           },
           {
@@ -9922,7 +10004,55 @@
         "decides_text": "It changes your terms, so you approve it first.",
         "authority_reason_text": "Payment terms 45 → 55 days. Price on future invoices +0.30%. Your mandate lets FLOW send a counter on its own only when the terms stay as they are.",
         "recommended_reason_text": null,
+        "recommended_reason_kind": null,
         "scenario_assumption_text": "Assumes the buyer accepts this reply and FLOW's funding plan runs (¥90k credit-line draw today, ¥315k invoice financing in 3 days); without the plan, cash falls lower.",
+        "funding_assumption_text": "Funding plan required: ¥90k credit-line draw today, ¥315k invoice financing in 3 days",
+        "terms_days": 55,
+        "terms_delta_text": "+10 days in this counter",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "Immediate discount",
+            "amount_display": null,
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "Forward payment-term cost",
+            "amount_display": "¥16,217.95",
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "Rebate",
+            "amount_display": null,
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "price_offset",
+            "label": "Offset by the price adjustment",
+            "amount_display": "−¥16,380.00",
+            "basis_text": "over 12 months",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "Funding cost",
+            "amount_display": null,
+            "basis_text": "once",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "Total",
+            "amount_display": "¥0.00",
+            "basis_text": "net over 12 months",
+            "note": null
+          }
+        ],
         "authority": "needs_owner",
         "authority_text": "Needs your approval",
         "assumption_text": "If the buyer accepts this reply",
@@ -11915,6 +12045,7 @@
         "day": 0,
         "label": "Today",
         "title": "Today",
+        "when": "today",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -11975,6 +12106,7 @@
         "day": 30,
         "label": "In 30 days",
         "title": "In 30 days",
+        "when": "in 30 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12036,6 +12168,7 @@
         "day": 47,
         "label": "In 47 days",
         "title": "In 47 days",
+        "when": "in 47 days",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -12099,6 +12232,7 @@
         "day": 60,
         "label": "In 60 days",
         "title": "In 60 days",
+        "when": "in 60 days",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -12160,6 +12294,7 @@
         "day": 62,
         "label": "In 62 days",
         "title": "In 62 days",
+        "when": "in 62 days",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -12217,12 +12352,13 @@
         "day": 66,
         "label": "In 66 days",
         "title": "In 66 days",
+        "when": "in 66 days",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "Day 66",
+        "word": "End, in 66 days",
         "text": "No cash moves on any path.",
         "values": [
           {
@@ -12270,6 +12406,8 @@
       }
     ],
     "picture_days": 66,
+    "current_terms_days": 45,
+    "current_terms_text": "45 days",
     "axis": {
       "min_fen": 0,
       "max_fen": 100000000,
@@ -12302,7 +12440,19 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "Back to Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   },
   "zh": {
     "offer_id": "OFF-f806f79b6c21",
@@ -18223,7 +18373,48 @@
         "decides_text": "在您已签署的授权内无法接受。",
         "authority_reason_text": null,
         "recommended_reason_text": null,
+        "recommended_reason_kind": null,
         "scenario_assumption_text": "假设买方接受此报价，且 FLOW 不新增融资。",
+        "funding_assumption_text": "不新增融资",
+        "terms_days": 60,
+        "terms_delta_text": "买方要求延长 15 天",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "立即折扣",
+            "amount_display": "¥5,040.00",
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "远期账期成本",
+            "amount_display": "¥24,326.92",
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "返利",
+            "amount_display": "¥4,000.00",
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "融资成本",
+            "amount_display": null,
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "合计",
+            "amount_display": null,
+            "basis_text": "两部分：一次性，以及 12 个月内",
+            "note": null
+          }
+        ],
         "authority": "over_limit",
         "authority_text": "超出您签署的上限：只有签署新的授权才能改变",
         "assumption_text": null,
@@ -20198,14 +20389,55 @@
           {
             "key": "rebate_or_price",
             "label": "返利或价格",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 1.00% 返利"
           }
         ],
         "decides_text": "FLOW 可以发送。无需您批准。",
         "authority_reason_text": "账期保持 45 天，无返利。0.85% 的提前结算方案在您签署的 1.50% 上限之内。",
         "recommended_reason_text": "推荐原因：FLOW 可以在您的授权范围内直接发送，无需您批准。",
+        "recommended_reason_kind": "cash",
         "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥150k（今天））；没有该方案，现金会更低。",
+        "funding_assumption_text": "需要融资方案：信用额度提款 ¥150k（今天）",
+        "terms_days": 45,
+        "terms_delta_text": "无变化",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "立即折扣",
+            "amount_display": "¥2,186.20",
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "远期账期成本",
+            "amount_display": null,
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "返利",
+            "amount_display": null,
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "融资成本",
+            "amount_display": "¥841.57",
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "合计",
+            "amount_display": "¥3,027.77",
+            "basis_text": "一次性，之后无持续成本",
+            "note": null
+          }
+        ],
         "authority": "flow_may",
         "authority_text": "FLOW 可以直接发送",
         "assumption_text": "如果买方接受此回复",
@@ -22214,7 +22446,7 @@
           {
             "key": "early_payment",
             "label": "提前付款",
-            "value_text": "无",
+            "value_text": null,
             "instead_of_text": "而非 ¥420,000.00 减免 1.20%"
           },
           {
@@ -22227,7 +22459,55 @@
         "decides_text": "它会改变您的条款，需要您先批准。",
         "authority_reason_text": "账期 45 → 55 天。今后发票的价格 +0.30%。您的授权只允许 FLOW 在条款保持不变时自行发送还价。",
         "recommended_reason_text": null,
+        "recommended_reason_kind": null,
         "scenario_assumption_text": "假设买方接受此回复，且 FLOW 的融资方案得以执行（信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后））；没有该方案，现金会更低。",
+        "funding_assumption_text": "需要融资方案：信用额度提款 ¥90k（今天）、发票融资 ¥315k（3 天后）",
+        "terms_days": 55,
+        "terms_delta_text": "此还价延长 10 天",
+        "cost_rows": [
+          {
+            "key": "immediate_discount",
+            "label": "立即折扣",
+            "amount_display": null,
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "payment_terms",
+            "label": "远期账期成本",
+            "amount_display": "¥16,217.95",
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "rebate",
+            "label": "返利",
+            "amount_display": null,
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "price_offset",
+            "label": "价格调整的抵补",
+            "amount_display": "−¥16,380.00",
+            "basis_text": "12 个月内",
+            "note": null
+          },
+          {
+            "key": "funding",
+            "label": "融资成本",
+            "amount_display": null,
+            "basis_text": "一次性",
+            "note": null
+          },
+          {
+            "key": "total",
+            "label": "合计",
+            "amount_display": "¥0.00",
+            "basis_text": "12 个月内的净额",
+            "note": null
+          }
+        ],
         "authority": "needs_owner",
         "authority_text": "需要您批准",
         "assumption_text": "如果买方接受此回复",
@@ -24220,6 +24500,7 @@
         "day": 0,
         "label": "今天",
         "title": "今天",
+        "when": "今天",
         "decisive": false,
         "kind": "today",
         "kinds": [
@@ -24280,6 +24561,7 @@
         "day": 30,
         "label": "30 天后",
         "title": "30 天后",
+        "when": "30 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24341,6 +24623,7 @@
         "day": 47,
         "label": "47 天后",
         "title": "47 天后",
+        "when": "47 天后",
         "decisive": true,
         "kind": "reserve_cross",
         "kinds": [
@@ -24404,6 +24687,7 @@
         "day": 60,
         "label": "60 天后",
         "title": "60 天后",
+        "when": "60 天后",
         "decisive": false,
         "kind": "lowest",
         "kinds": [
@@ -24465,6 +24749,7 @@
         "day": 62,
         "label": "62 天后",
         "title": "62 天后",
+        "when": "62 天后",
         "decisive": false,
         "kind": "reserve_cross",
         "kinds": [
@@ -24522,12 +24807,13 @@
         "day": 66,
         "label": "66 天后",
         "title": "66 天后",
+        "when": "66 天后",
         "decisive": false,
         "kind": "end",
         "kinds": [
           "end"
         ],
-        "word": "第 66 天",
+        "word": "终点，66 天后",
         "text": "各路径都没有现金变动。",
         "values": [
           {
@@ -24575,6 +24861,8 @@
       }
     ],
     "picture_days": 66,
+    "current_terms_days": 45,
+    "current_terms_text": "45 天",
     "axis": {
       "min_fen": 0,
       "max_fen": 100000000,
@@ -24607,6 +24895,18 @@
     },
     "floor_fen": 30000000,
     "floor_short": "¥300k",
-    "horizon_days": 120
+    "horizon_days": 120,
+    "context": {
+      "customer": "BUYER-1",
+      "decision": "deal:OFF-f806f79b6c21",
+      "path": null,
+      "invoice": null,
+      "scenario": null,
+      "back": {
+        "label": "返回Foshan",
+        "href": "/customers/BUYER-1?decision=deal%3AOFF-f806f79b6c21"
+      },
+      "irrelevant_text": null
+    }
   }
 }

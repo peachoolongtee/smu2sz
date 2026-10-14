@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { XIcon, ChatIcon } from "@/components/icons";
 import { setPanelOpen, useChat } from "@/lib/chat";
+import { useClearScopeOnRouteChange } from "@/lib/chat-scope";
 import { useI18n } from "@/lib/i18n";
 import { ChatView } from "./chat-view";
 
@@ -13,7 +14,13 @@ import { ChatView } from "./chat-view";
  * above the bar with the page's bottom padding sized to clear it (`.ask-trigger` and `.dock-pad` in globals.css).
  * A native modal <dialog> gives focus trapping, Esc to close and focus return for free.
  */
-export function ChatPanel() {
+/** Renders nothing; it lives in its own Suspense because it reads the address's search keys. */
+function ScopeRouteWatcher() {
+  useClearScopeOnRouteChange();
+  return null;
+}
+
+export function ChatPanel({ headerEntry = false }: { headerEntry?: boolean } = {}) {
   const { t } = useI18n();
   const pathname = usePathname();
   const { panelOpen } = useChat();
@@ -26,10 +33,14 @@ export function ChatPanel() {
     if (!panelOpen && d.open) d.close();
   }, [panelOpen]);
 
-  const onChatPage = pathname === "/chat";
+  // The Business header carries Ask FLOW from `lg` (components/ask-header.tsx): no floating pill there; on the chat page itself there is none either.
+  const onChatPage = pathname === "/chat" || headerEntry;
 
   return (
     <>
+      <Suspense fallback={null}>
+        <ScopeRouteWatcher />
+      </Suspense>
       {onChatPage ? null : (
         <button
           type="button"

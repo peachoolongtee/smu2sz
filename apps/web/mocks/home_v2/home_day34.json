@@ -5555,7 +5555,7 @@
         {
           "id": "alert:ALERT-PASTDUE-RCV-A",
           "when": "2 days ago",
-          "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+          "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
           "kind": "LATE"
         }
       ],
@@ -5803,6 +5803,19 @@
           "amount_display": "¥200,000.00"
         }
       ],
+      "receipt": {
+        "authorizes_text": "Finance ¥200,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "executes_now_text": "Nothing runs until you approve it.",
+        "others_must_agree_text": null,
+        "in_hand_vs_future_text": "Arrives: ¥200k in 3 days.",
+        "gross_display": "¥200,000.00",
+        "fees_display": "¥1,782.19",
+        "net_display": null,
+        "when_text": "The last funds land in 3 days.",
+        "assumptions_text": "Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "authority_text": "Needs your approval: The yearly cost of 32.5% is above the 15.00% limit you signed for funding without your approval.",
+        "remaining_text": null
+      },
       "after_lowest_display": "¥300,000.00"
     },
     "approvals": [],
@@ -5817,8 +5830,8 @@
         "seq": null,
         "kind": "LATE",
         "actor": "",
-        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
-        "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
+        "event_text": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
         "event_detail": null,
         "when": "2 days ago",
         "id": "alert:ALERT-PASTDUE-RCV-A",
@@ -5826,7 +5839,7 @@
         "commitment_id": null,
         "decision_id": null,
         "superseded_by": null,
-        "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN.",
+        "what_changed": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid.",
         "why_it_matters": "Cash forecast is now ¥200,000.00 below your minimum in 8 days.",
         "why_it_matters_as_of": "now",
         "what_remains": null,
@@ -5879,7 +5892,7 @@
         "id": "ALERT-PASTDUE-RCV-A",
         "kind": "RECEIVABLE_PAST_DUE",
         "title": "Receivable the ¥420,000.00 invoice to Foshan Home Retail Co. due 2 days ago is 2 days past due",
-        "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still OPEN. The cash forecast no longer counts on a dated receipt.",
+        "detail": "¥162,800.00 outstanding from Foshan Home Retail Co. was due 2 days ago and is still unpaid. The cash forecast no longer counts on a dated receipt.",
         "day": 32,
         "when": "2 days ago"
       },
@@ -11739,6 +11752,19 @@
           "amount_display": "¥200,000.00"
         }
       ],
+      "receipt": {
+        "authorizes_text": "以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥200,000.00",
+        "executes_now_text": "在您批准之前不会执行任何操作。",
+        "others_must_agree_text": null,
+        "in_hand_vs_future_text": "到账：¥200k 3 天后。",
+        "gross_display": "¥200,000.00",
+        "fees_display": "¥1,782.19",
+        "net_display": null,
+        "when_text": "最后一笔资金将于 3 天后到账。",
+        "assumptions_text": "发票融资按整 30 天计费，直至发票付清。",
+        "authority_text": "需要您批准：年化成本 32.5% 高于您签署的无需批准融资上限 15.00%。",
+        "remaining_text": null
+      },
       "after_lowest_display": "¥300,000.00"
     },
     "approvals": [],

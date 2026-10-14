@@ -64,7 +64,7 @@ def test_the_other_checks_the_verifier_writes_are_known_to_the_templates():
     assert _zh("¥300,000.00 on day 42") == "¥300,000.00（第 42 天）"
     assert _zh("¥300,000.00 in 8 days") == "¥300,000.00（8 天后）"
     assert _zh("Lowest monthly DSCR (month 3)") == "最低月度偿债覆盖率 DSCR（第 3 月）"
-    assert _zh("Early payment against the router's plan") == "提前付款与融资路由方案的对比"
+    assert _zh("Early payment against the router's plan") == "提前付款与融资方案的对比"
     assert _zh("no admissible plan without the offer") == "没有该报价就没有可行的融资方案"
     assert _zh("a base amount is stated only approximately") == "基数金额只给出了大约数"
     assert _zh("EX03-msg holds a question beyond the extracted terms") == "EX03-msg 含有超出已提取条款的问题"

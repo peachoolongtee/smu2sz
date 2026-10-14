@@ -370,6 +370,11 @@
       "agreements": 0,
       "customers": 2
     },
+    "deals": {
+      "needs_you": 0,
+      "waiting": 0,
+      "agreements": 0
+    },
     "alert": {
       "key": "company-cash",
       "eyebrow": "Company cash",

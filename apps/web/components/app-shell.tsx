@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { apiMode, getApprovals, getNavCounts } from "@/lib/api";
 import { useAsync } from "@/lib/use-async";
+import { useWide } from "@/lib/use-narrow";
 import { getLang, setLang, useI18n } from "@/lib/i18n";
 import { getMode, OWNER_DETAIL_ROUTES, setMode, shellFor, useMode, type Mode } from "@/lib/mode";
 import type { DictKey } from "@/lib/dictionary";
+import { AskHeaderInput } from "./ask-header";
 import { ChatPanel } from "./chat/chat-panel";
 import { DemoStepper } from "./demo-stepper";
 import { ArrowLeftIcon, MenuIcon, ShieldCheckIcon, ShieldIcon, SparkIcon, XIcon } from "./icons";
@@ -416,15 +418,19 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const bar = useRef<HTMLElement>(null);
   useDock(bar);
   const rail = useRail();
+  // From `lg` Ask FLOW is an input in the header (the floating pill is gone); a phone and a tablet keep the pill and the bottom bar's "Ask".
+  const wide = useWide() && pathname !== "/chat";
   return (
     <div className="min-h-dvh">
       <SkipLink />
       <OwnerSignInDialog />
       <Tour />
       <header className="sticky top-0 z-30 bg-canvas">
-        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:px-6">
           <Brand href="/" />
-          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+          {/* From lg Ask FLOW is the header's centre (the viewport's: the two outer columns are equal); a phone and a tablet have the pill and the bar's "Ask". */}
+          {wide ? <AskHeaderInput /> : null}
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap lg:col-start-3">
             <ApprovalsBadge />
             <span className="hidden sm:inline-flex" data-testid="demo-data-indicator">
               <Badge tone="neutral" title={t("biz.demoData.hint")}>
@@ -441,7 +447,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
       <div className="shell-grid lg:grid lg:grid-cols-[3.5rem_minmax(0,1fr)]">
         {/* The rail: a 56 px column of icons; its panel opens over the page to 200 px (no reflow) on hover or focus, or stays open once pinned. */}
         <aside className="rail relative hidden lg:block" data-rail={rail.open ? "open" : "closed"} {...rail.handlers} data-testid="nav-rail">
-          <div className="sticky top-16 h-[calc(100dvh-4rem)]">
+          {/* A sticky box is a stacking context of its own at z-index auto, which any positioned element later in the page (a z-10 tab bar, a link's focus ring, a tooltip) paints over: the box itself takes the header's layer so the open panel is above the page whole. */}
+          <div className="sticky top-16 z-30 h-[calc(100dvh-4rem)]">
             <div className="rail-panel absolute inset-y-0 left-0 z-30 flex w-14 flex-col overflow-hidden bg-canvas px-2 pb-20 pt-5" data-testid="nav-rail-panel">
               <nav id="nav-pills" aria-label={t("nav.label")} data-testid="nav-pills">
                 <ul className="space-y-1">
@@ -475,7 +482,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         </aside>
-      <main id="main" tabIndex={-1} className="dock-pad mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
+      <main id="main" tabIndex={-1} className="dock-pad isolate mx-auto w-full max-w-[1120px] px-4 pt-5 lg:px-10 lg:pt-8">
         {backTo ? (
           <Link href={backTo} className={`${textLinkClass} mb-2 -ml-2 gap-1`} data-testid={`back-to-${backTo.slice(1)}`}>
             <ArrowLeftIcon width={14} height={14} />
@@ -524,7 +531,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           <div aria-hidden className="w-12 shrink-0 sm:hidden" />
         </div>
       </nav>
-      <ChatPanel />
+      <ChatPanel headerEntry={wide} />
     </div>
   );
 }

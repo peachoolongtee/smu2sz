@@ -52,6 +52,18 @@ class WhatIfParams(BaseModel):
         return v
 
 
+class WhatIfRequest(WhatIfParams):
+    """The sliders plus the address of the negotiation the sandbox runs on: the buyer of `offer_id`, else `buyer_id`. Neither: the books'
+    first buyer with a recurring invoice, as before. The address is not a slider: it never reaches the engine's params or the cache's key
+    as one (`sliders()` is the params), only the buyer the sandbox resolves."""
+
+    offer_id: str | None = Field(default=None, min_length=1, max_length=120, description="the negotiation whose buyer and invoice to simulate")
+    buyer_id: str | None = Field(default=None, min_length=1, max_length=120, description="the buyer to simulate when no offer is named")
+
+    def sliders(self) -> WhatIfParams:
+        return WhatIfParams(**self.model_dump(exclude={"offer_id", "buyer_id"}))
+
+
 def grid(face_max_fen: int) -> dict[str, dict[str, int]]:
     """Slider bounds and steps, served to the UI so it never hard-codes them."""
     return {

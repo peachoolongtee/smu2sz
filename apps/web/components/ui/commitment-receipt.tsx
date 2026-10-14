@@ -29,17 +29,37 @@ const FIGURE = new Set<ReceiptLineKey>(["gross", "fees", "net"]);
  * composed. It is the terms the commit control follows: put it before the button in the reading order at every width. `children` is for what belongs to the same review (a
  * choice the commit needs, such as the simulated buyer's lean), drawn after the lines.
  */
-export function CommitmentReceipt({ receipt, title, id, testId = "commitment-receipt", className = "", children }: { receipt: CommitmentReceiptView | null | undefined; title?: string; id?: string; testId?: string; className?: string; children?: ReactNode }) {
+export function CommitmentReceipt({
+  receipt,
+  title,
+  id,
+  testId = "commitment-receipt",
+  className = "",
+  omit,
+  hideTitle = false,
+  children,
+}: {
+  receipt: CommitmentReceiptView | null | undefined;
+  title?: string;
+  id?: string;
+  testId?: string;
+  className?: string;
+  /** Lines said elsewhere (the send review states three of them above its button): left out here, never reworded. */
+  omit?: ReceiptLineKey[];
+  /** The title names the region for assistive tools and is not drawn (a fold that already says what it is). */
+  hideTitle?: boolean;
+  children?: ReactNode;
+}) {
   const { t } = useI18n();
-  const lines = receiptLines(receipt);
+  const lines = receiptLines(receipt).filter((l) => !omit?.includes(l.key));
   if (!lines.length && !children) return null;
   const titleId = id ? `${id}-title` : undefined;
   return (
     <section id={id} role="region" aria-labelledby={titleId} aria-label={titleId ? undefined : (title ?? t("receipt.title"))} data-testid={testId} className={`min-w-0 ${className}`}>
-      <h3 id={titleId} className="font-display text-base font-extrabold leading-snug text-ink">
+      <h3 id={titleId} className={hideTitle ? "sr-only" : "font-display text-base font-extrabold leading-snug text-ink"}>
         {title ?? t("receipt.title")}
       </h3>
-      <dl className="mt-2 divide-y divide-line border-y border-line" data-testid={`${testId}-lines`}>
+      <dl className={`${hideTitle ? "" : "mt-2 "}divide-y divide-line border-y border-line`} data-testid={`${testId}-lines`}>
         {lines.map((l, i) => (
           <div key={l.key} data-testid={`receipt-line-${l.key}`} data-line={i} className="grid gap-x-4 gap-y-0.5 py-2.5 sm:grid-cols-[minmax(0,10.5rem)_minmax(0,1fr)]">
             <dt className="text-supporting font-bold text-ink-3">{t(LABEL[l.key])}</dt>

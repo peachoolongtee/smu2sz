@@ -27,7 +27,8 @@
     "decided_day": null,
     "result_message": null,
     "presentation": {
-      "headline": "Approve ¥600,000.00 of facility application?",
+      "headline": "Apply for ¥600,000 in equipment financing",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -95,7 +96,58 @@
       "assumptions_text": null,
       "authority_text": "Apply for facility Equipment term loan (¥600,000.00).",
       "remaining_text": null
-    }
+    },
+    "commit_label": "Authorize the application",
+    "authorize_text": "Approval sends an application to the lender. It does not mean the loan is approved or that funds have arrived.",
+    "terms_state_text": "Loan terms are not yet confirmed: you are authorizing an application, not accepting a financing offer.",
+    "terms_rows": [],
+    "lifecycle": [
+      {
+        "label": "You authorize",
+        "text": "Waiting for you",
+        "state": "current"
+      },
+      {
+        "label": "Lender reviews",
+        "text": "The lender reviews it after you authorize it.",
+        "state": "next"
+      },
+      {
+        "label": "Funding decision",
+        "text": "The lender decides whether to offer funds. Nothing has arrived.",
+        "state": "next"
+      }
+    ],
+    "summary_rows": [
+      {
+        "label": "Amount requested",
+        "value_text": "¥600,000.00"
+      },
+      {
+        "label": "Facility",
+        "value_text": "Equipment term loan"
+      },
+      {
+        "label": "What happens now",
+        "value_text": "FLOW sends the application to the lender as soon as you authorize it."
+      },
+      {
+        "label": "Does money move now",
+        "value_text": "No. Nothing moves until the lender offers funds."
+      },
+      {
+        "label": "Who decides whether funds are offered",
+        "value_text": "The lender, after it reviews the application."
+      },
+      {
+        "label": "What if you decline",
+        "value_text": "Nothing runs; the request is closed."
+      }
+    ],
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": null
   },
   "apply_loan_approved": {
     "id": "APR-000001",
@@ -125,7 +177,8 @@
     "decided_day": 0,
     "result_message": "Applied for ¥600,000.00 on FAC-ETL; it is PENDING and counts as zero until committed",
     "presentation": {
-      "headline": "You approved ¥600,000.00 of facility application.",
+      "headline": "You authorized the application; FLOW sent it to the lender.",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -152,9 +205,9 @@
       "reason": "Apply for facility Equipment term loan (¥600,000.00).",
       "next_step_text": null,
       "next_step_href": null,
-      "result_state_text": "Approved, done",
-      "result_tone": "ok",
-      "result_message": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed",
+      "result_state_text": "Approved and submitted",
+      "result_tone": "info",
+      "result_message": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits",
       "decided_when": "today",
       "created_when": "today"
     },
@@ -177,11 +230,37 @@
     },
     "execution": {
       "status": "EXECUTED",
-      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; it is PENDING and counts as zero until committed"
+      "summary_text": "Applied for ¥600,000.00 on Equipment term loan; the application is submitted and counts as zero cash until the bank commits"
     },
-    "result_state_text": "Approved, done",
-    "result_tone": "ok",
+    "result_state_text": "Approved and submitted",
+    "result_tone": "info",
     "receipt": null,
+    "commit_label": "Authorize the application",
+    "authorize_text": "Approval sends an application to the lender. It does not mean the loan is approved or that funds have arrived.",
+    "terms_state_text": "Loan terms are not yet confirmed: you are authorizing an application, not accepting a financing offer.",
+    "terms_rows": [],
+    "lifecycle": [
+      {
+        "label": "You authorize",
+        "text": "You authorized the application",
+        "state": "done"
+      },
+      {
+        "label": "Lender reviews",
+        "text": "The application is with the lender.",
+        "state": "current"
+      },
+      {
+        "label": "Funding decision",
+        "text": "The lender decides whether to offer funds. Nothing has arrived.",
+        "state": "next"
+      }
+    ],
+    "summary_rows": null,
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": "You authorized the application; FLOW sent it to the lender.",
     "execution_status": "EXECUTED"
   },
   "apply_loan_rejected": {
@@ -212,7 +291,8 @@
     "decided_day": 0,
     "result_message": "Declined by the owner (APR-000001); nothing executed",
     "presentation": {
-      "headline": "You declined ¥600,000.00 of facility application.",
+      "headline": "You declined; the application was not sent.",
+      "title_text": "Apply for ¥600,000 in equipment financing",
       "what": "Apply for ¥600,000.00 on Equipment term loan",
       "facility_name": "Equipment term loan",
       "buyer_name": null,
@@ -269,6 +349,16 @@
     "result_state_text": "Declined, nothing ran",
     "result_tone": "neutral",
     "receipt": null,
+    "commit_label": "Authorize the application",
+    "authorize_text": "Approval sends an application to the lender. It does not mean the loan is approved or that funds have arrived.",
+    "terms_state_text": "Loan terms are not yet confirmed: you are authorizing an application, not accepting a financing offer.",
+    "terms_rows": [],
+    "lifecycle": null,
+    "summary_rows": null,
+    "deadline_text": null,
+    "deadline_day": null,
+    "title_text": "Apply for ¥600,000 in equipment financing",
+    "decided_text": "You declined; the application was not sent.",
     "execution_status": "DECLINED"
   }
 }

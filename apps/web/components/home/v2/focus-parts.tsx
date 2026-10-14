@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { XIcon } from "@/components/icons";
 import { ErrorState, LoadingBlock } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
+import { useDelayed } from "@/lib/use-delayed";
 
 /** "Dismiss": the selected card's way back to the overview (the same as Escape): clears the selection from the address. */
 export function Dismiss({ onDismiss }: { onDismiss: () => void }) {
@@ -29,9 +30,11 @@ export function Announce({ text }: { text: string }) {
 /** A read that is on its way, failed, or is here. */
 export function Reading<T>({ read, children }: { read: { data: T | undefined; error: Error | undefined; reload: () => void }; children: (d: T) => ReactNode }) {
   const { t } = useI18n();
+  const slow = useDelayed(read.data === undefined && !read.error, 300);
   if (read.data !== undefined) return <>{children(read.data)}</>;
   if (read.error) return <ErrorState error={t("hv2.focus.failed")} onRetry={read.reload} />;
-  return <LoadingBlock rows={3} label={t("hv2.focus.working")} />;
+  // The card keeps its height and shows a skeleton only after 300 ms.
+  return <div className="min-h-[14rem]">{slow ? <LoadingBlock rows={3} label={t("hv2.focus.working")} /> : null}</div>;
 }
 
 /** A leaving link: brand text with an arrow, for going to another page without a decision. */

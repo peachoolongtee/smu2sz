@@ -5923,6 +5923,19 @@
           "amount_display": "¥255,000.00"
         }
       ],
+      "receipt": {
+        "authorizes_text": "Draw ¥150,000.00 on Bank credit line and finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "executes_now_text": "Draw ¥150,000.00 on Bank credit line; Finance ¥255,000.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. on Invoice financing (onboarded platform)",
+        "others_must_agree_text": null,
+        "in_hand_vs_future_text": "Arrives: ¥150k today; ¥255k in 3 days.",
+        "gross_display": "¥405,000.00",
+        "fees_display": "¥3,113.93",
+        "net_display": null,
+        "when_text": "The last funds land in 3 days.",
+        "assumptions_text": "Estimated through the expected repayment of the Bank credit line in 32 days, the first receipt that can repay it; the final interest depends on the actual repayment day. Invoice financing is billed in whole 30-day periods until the invoice is paid.",
+        "authority_text": "Within your signed limits. No additional approval required.",
+        "remaining_text": null
+      },
       "after_lowest_display": "¥300,000.00"
     },
     "approvals": [],
@@ -11934,6 +11947,19 @@
           "amount_display": "¥255,000.00"
         }
       ],
+      "receipt": {
+        "authorizes_text": "从Bank credit line提款 ¥150,000.00，以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥255,000.00",
+        "executes_now_text": "从Bank credit line提款 ¥150,000.00；以Foshan Home Retail Co. 的 ¥420,000.00 发票在Invoice financing (onboarded platform)融资 ¥255,000.00",
+        "others_must_agree_text": null,
+        "in_hand_vs_future_text": "到账：¥150k 今天；¥255k 3 天后。",
+        "gross_display": "¥405,000.00",
+        "fees_display": "¥3,113.93",
+        "net_display": null,
+        "when_text": "最后一笔资金将于 3 天后到账。",
+        "assumptions_text": "按预计32 天后（第一笔足以还款的收款）偿还Bank credit line估算；最终利息取决于实际还款日。 发票融资按整 30 天计费，直至发票付清。",
+        "authority_text": "在您签署的授权内，无需额外批准。",
+        "remaining_text": null
+      },
       "after_lowest_display": "¥300,000.00"
     },
     "approvals": [],

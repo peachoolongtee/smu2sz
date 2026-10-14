@@ -63,9 +63,10 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   await walkStory(page, 1, 1);
   await expect(verdictHeading(page)).toContainText(/Don't accept as asked|Counter instead of accepting as asked/);
   // (the 12-month forward total is the figure of the first reason, and of the comparison's 12-month row)
-  await expect(page.getByTestId("deal-cost-asked")).toContainText("¥28,326.92");
+  await page.getByTestId("deal-card-cost-toggle").click();
+  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
   await expect(narration).toContainText("Sends Option A to the buyer (the reply is simulated)");
-  await expect(page.getByTestId("queue-cost")).toContainText("¥3,027.77");
+  await expect(page.getByTestId("deal-cost-table-total-reply")).toContainText("¥3,027.77");
 
   // Scene 3, the agreement and its action: the recommended counter is sent bound to what was shown; the live agreement, then cash now.
   await walkStory(page, 1, 2);
@@ -100,13 +101,13 @@ test("the six scenes run with Next: the buyer asks, FLOW decides, the agreement 
   // Scene 5, the owner stays in control: the cure is queued, not run.
   await walkStory(page, 1, 6);
   await expect(page).toHaveURL(/\/approvals#approval-APR-/);
-  await expect(narration).toContainText("Queued, not run: Approve ¥200,000.00 of invoice financing?");
+  await expect(narration).toContainText("Queued, not run: Request ¥200,000 of invoice financing");
   await expect(page.getByText("1 pending")).toBeVisible();
   // The owner approves ON THE CARD (its one filled Approve); the strip's button only opens the approval, and then moves the story on.
   const card = page.locator('[id^="approval-APR-"]').first();
   await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Approve/ })).toHaveCount(1);
-  await card.getByRole("button", { name: /^Approve/ }).click();
+  await expect(page.getByRole("button", { name: /^Authorize/ })).toHaveCount(1);
+  await card.getByRole("button", { name: /^Authorize/ }).click();
   await expect(card.locator('[data-testid^="approval-result-"]')).toContainText("the cash lands in 3 days");
   await expect(page.getByText("0 pending")).toBeVisible();
   await expect(page.getByTestId("demo-next")).toHaveText("Next");
@@ -167,7 +168,7 @@ test("the approve step needs the owner's click: nothing approves while the story
   await expect(page.getByText("1 pending")).toBeVisible();
   // One decision, one filled Approve: the card's. The strip says where it is ("Scene 5 of 6, step 7 of 11") and only opens the approval.
   await expect(page.getByTestId("demo-next")).toHaveText("Open the approval");
-  await expect(page.getByRole("button", { name: /^Approve/ })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /^Authorize/ })).toHaveCount(1);
   await expect(page.getByTestId("demo-step-title")).toContainText("Scene 5 of 6, step 7 of 11");
   await expect(stripOf(page)).toContainText(`step 7 of ${STORY_STEPS}`);
   // The story page shows the step's state, not a second button for the same decision.
@@ -178,7 +179,7 @@ test("the approve step needs the owner's click: nothing approves while the story
   await expect(page.getByTestId("story-run-9")).toBeDisabled();
   // The owner's click is the card's.
   await page.goto("/approvals");
-  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Approve/ }).click();
+  await page.locator('[id^="approval-APR-"]').first().getByRole("button", { name: /^Authorize/ }).click();
   await expect(page.getByText("0 pending")).toBeVisible();
   await expect(page.getByTestId("demo-next")).toHaveText("Next");
   await page.getByTestId("demo-next").click();
@@ -306,7 +307,7 @@ test("the capex application stays the owner's click and its approval is logged",
   await page.getByTestId("capex-apply").click();
   await expect(page.getByTestId("capex-applied")).toBeVisible();
   await page.goto("/approvals");
-  await page.getByRole("button", { name: /^Approve/ }).first().click();
+  await page.getByRole("button", { name: /^Authorize/ }).first().click();
   await expect(page.getByText("Approved").first()).toBeVisible();
   await page.goto("/ledger");
   await expect(page.getByTestId("chain-status")).toContainText("Chain valid");
@@ -365,7 +366,7 @@ test("rapid clicks on Start and Next end at the last step, in order, with the bo
     const n = await progressOf(page);
     seen.push(n);
     if (n === 7 && (await next.textContent())?.includes("Open the approval") && page.url().includes("/approvals")) {
-      await page.getByRole("button", { name: /^Approve/ }).click();
+      await page.getByRole("button", { name: /^Authorize/ }).click();
       await expect(page.getByText("0 pending")).toBeVisible();
     }
     if (n === STORY_STEPS && clicks >= 30) break; // at least thirty presses, the last ones past the end of the story

@@ -3561,11 +3561,154 @@
     "empty_text": "Nothing has changed lately.",
     "href": "/activity"
   },
+  "home_v2": {
+    "summary_text": null,
+    "upcoming": [
+      {
+        "label": "Invoice financing arrives",
+        "amount_display": "+¥255k",
+        "when": "in 3 days",
+        "kind": "inflow"
+      },
+      {
+        "label": "Payroll is paid",
+        "amount_display": "−¥340k",
+        "when": "in 12 days",
+        "kind": "outflow"
+      },
+      {
+        "label": "A supplier payment goes out",
+        "amount_display": "−¥120k",
+        "when": "in 20 days",
+        "kind": "outflow"
+      }
+    ],
+    "kpis": {
+      "cash_available": {
+        "eyebrow": "CASH AVAILABLE",
+        "value_display": "¥550,000",
+        "note": "¥250k above your ¥300k minimum",
+        "tone": "ok",
+        "buffer": {
+          "min_fen": 30000000,
+          "cash_fen": 55000000,
+          "min_display": "¥300k",
+          "headroom_text": "+¥250k",
+          "cash_display": "¥550,000.00"
+        }
+      },
+      "lowest_ahead": {
+        "eyebrow": "LOWEST CASH AHEAD",
+        "value_display": "¥300,000",
+        "note": "reaches your minimum in 30 days · current books, the plan ran",
+        "short_note": "At your minimum in 30 days",
+        "tone": "warn",
+        "with_plan_hint": "No hypothetical applied.",
+        "with_plan": null
+      },
+      "funding": {
+        "state": "ARRANGED",
+        "eyebrow": "FUNDING ARRANGED",
+        "value_display": "¥255,000 pending",
+        "note": "¥150k credit-line draw received today · ¥255k invoice financing expected in 3 days",
+        "status_text": "Arranged",
+        "hint": "Counted as cash only when it lands."
+      }
+    },
+    "action": {
+      "variant": "QUIET",
+      "key": null,
+      "tone": "ok",
+      "eyebrow": "NOTHING NEEDS YOU FROM THE COMPANY SIDE",
+      "title": "Your cash is covered on the plan that ran.",
+      "text": "Next: ¥255k arrives in 3 days; Foshan pays ¥420k in 32 days (owed).",
+      "facts": [],
+      "primary": null,
+      "secondary": null,
+      "control": null,
+      "approval_text": null,
+      "approval_needed": false,
+      "consequence_text": null,
+      "legs": [
+        {
+          "label": "Credit-line draw",
+          "amount_display": "¥150,000",
+          "amount_fen": 15000000,
+          "lands_when": "today",
+          "lands_day": 0,
+          "cost_display": "¥841.64",
+          "repaid_when": "in 32 days",
+          "state": "RECEIVED",
+          "state_text": "Received",
+          "authority_text": "Within your signed limits; nothing for you to do.",
+          "share_text": "37%"
+        },
+        {
+          "label": "Invoice financing",
+          "amount_display": "¥255,000",
+          "amount_fen": 25500000,
+          "lands_when": "in 3 days",
+          "lands_day": 3,
+          "cost_display": "¥2,272.29",
+          "repaid_when": null,
+          "state": "ARRANGED",
+          "state_text": "Arranged",
+          "authority_text": "Within your signed limits; nothing for you to do.",
+          "share_text": "63%"
+        }
+      ],
+      "cost_basis_text": null
+    },
+    "chart": {
+      "scope_title": "COMPANY CASH FORECAST",
+      "legend": [
+        {
+          "label": "Current books · the plan ran",
+          "kind": "current"
+        }
+      ],
+      "lowest_inspector": {
+        "day_text": "The lowest point · in 30 days",
+        "projected_display": "¥300,000",
+        "minimum_display": "¥300,000",
+        "third_label": "Above your minimum",
+        "third_display": "¥0",
+        "note": "At your minimum; nothing below it in the window."
+      },
+      "lowest": {
+        "cause": "a loan repayment goes out"
+      },
+      "scenario_title_text": null,
+      "note": "Current books, nothing new assumed. The same figures as Cash & Funding."
+    },
+    "links": [
+      {
+        "label": "Where the cash goes",
+        "href": "/cash#where-the-cash-goes"
+      },
+      {
+        "label": "Facility headroom",
+        "href": "/cash#facility-headroom"
+      },
+      {
+        "label": "What you are owed, by when",
+        "href": "/receivables"
+      },
+      {
+        "label": "All deals",
+        "href": "/deals"
+      }
+    ]
+  },
   "next_action": null,
   "approvals": [],
   "pending_count": 0,
   "open_decisions": [
     {
+      "subject_text": null,
+      "subject_demo_text": null,
+      "lifecycle": null,
+      "status_text": null,
       "id": "alert:ALERT-RESERVE-12:v1:plan",
       "family": "FUNDING",
       "state": "SETTLEMENT_PENDING",

@@ -38,5 +38,6 @@
   "security_events": [],
   "parse_source": "rules",
   "trace_id": "rec-home-go:3",
-  "context_echo": null
+  "context_echo": null,
+  "scope_used": null
 }

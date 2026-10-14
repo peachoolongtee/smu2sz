@@ -279,6 +279,8 @@ def parse(text: str, state: FinancialState, *, pending_plan: bool = False) -> Pa
         return hit(Intent.SHOW_STATUS, "arrival")
     if lx.OVERDUE_ASK.search(text):
         return hit(Intent.RECONCILE, "overdue")
+    if lx.OWED_ASK.search(text):
+        return hit(Intent.SHOW_STATUS, "owed")
     if lx.BORROWER_FILE.search(text):
         return hit(Intent.BORROWER_FILE, "borrower_file")
     if lx.COMPARE_FINANCING.search(text) and not lx.ACCELERATE.search(text):
