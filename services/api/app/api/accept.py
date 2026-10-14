@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import secrets
 from collections.abc import Mapping
 from typing import Any, cast
 
@@ -386,7 +387,9 @@ def decline_request(offer_id: str, body: DeclineIn, lang: str = "en") -> dict[st
         offer, verdict = _bound(rt, offer_id, body, lang, accepting=False)
         codes = list(dict.fromkeys(v.code for v in verdict.violations))
         mandate = rt.store.get_mandate()
-        op = RejectOffer(op_id=f"decline-{offer_id}-{verdict.id}", idempotency_key=f"decline-{offer_id}-{verdict.id}", mandate_version=mandate.version,
+        # SEC-04: a server-side random part, so no other credential can claim this key first; a second click is ALREADY_DECLINED (`_standing`)
+        key = f"decline-{offer_id}-{verdict.id}-{secrets.token_hex(6)}"
+        op = RejectOffer(op_id=key, idempotency_key=key, mandate_version=mandate.version,
                          requested_by=Actor.OWNER, source_verdict_id=verdict.id, day=rt.day, offer_id=offer.offer_id, reason_codes=codes)
         result = rt.executor.execute(op)
         if result.status != OperationStatus.EXECUTED:

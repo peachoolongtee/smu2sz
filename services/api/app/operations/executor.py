@@ -644,7 +644,7 @@ class Executor:
             # 3. tier ------------------------------------------------------------------
             if ctx.tier == Tier.TIER_3:
                 raise self._tier3(ctx)
-            if (isinstance(op, _CIRCUIT_OPS) and ctx.counterparty_id is not None
+            if (isinstance(op, _CIRCUIT_OPS) and ctx.counterparty_id is not None and op.requested_by != Actor.OWNER  # SEC-05
                     and self._recent_refusals(ctx.counterparty_id, now) >= CIRCUIT_THRESHOLD):
                 raise _refuse(Code.CIRCUIT_OPEN,
                               f"Circuit open for {ctx.counterparty_id}: {CIRCUIT_THRESHOLD} refusals within "
@@ -880,6 +880,8 @@ class Executor:
                 continue
             if not isinstance(e.op, _CIRCUIT_OPS):
                 continue  # only what a counterparty's own offers cause; never receipts, funding or repayments
+            if e.op.requested_by == Actor.OWNER:
+                continue  # SEC-05: the owner's own refused decisions are not the counterparty's doing
             if e.day is None or not (now - CIRCUIT_WINDOW_DAYS < e.day <= now):
                 continue
             if self._counterparty(e.op, state) == counterparty_id:

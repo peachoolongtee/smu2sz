@@ -1,5 +1,6 @@
-"""The simulated clock. Time moves only here (ADR-0006 §2): the owner or the bank feed advances it,
-the books close the days passed, and nothing is ever recorded as received."""
+"""The simulated clock. Time moves only here (ADR-0006 §2): the owner advances it, the books close the days passed, and nothing is ever
+recorded as received. The bank feed records receipts (POST /operations as SYSTEM) but no longer moves time: alone it could expire the
+mandate, close days and post debt service, irreversibly (security register SEC-09)."""
 
 from __future__ import annotations
 
@@ -8,7 +9,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app.api.auth import is_bank_feed, log_refusal
+from app.api.auth import log_refusal
 from app.api.runtime import get_runtime
 from app.domain.money import fmt_yuan
 
@@ -28,12 +29,11 @@ def get_clock() -> dict:
 
 
 @router.post("/clock/advance")
-def advance_clock(body: AdvanceIn, request: Request, x_owner_token: str | None = Header(default=None),
-                  x_bank_feed_key: str | None = Header(default=None)) -> dict:
+def advance_clock(body: AdvanceIn, request: Request, x_owner_token: str | None = Header(default=None)) -> dict:
     rt = get_runtime()
-    if not (rt.is_owner(x_owner_token) or is_bank_feed(x_bank_feed_key)):
-        log_refusal(request, "clock advance without the owner token or the bank-feed key")
-        raise HTTPException(403, {"code": "CREDENTIAL_REQUIRED", "message": "owner token or bank-feed key required"})
+    if not rt.is_owner(x_owner_token):
+        log_refusal(request, "clock advance without the owner token")
+        raise HTTPException(403, {"code": "CREDENTIAL_REQUIRED", "message": "owner token required"})
     if (body.to_day is None) == (body.days is None):
         raise HTTPException(422, "give exactly one of to_day or days")
     target = body.to_day if body.to_day is not None else rt.day + (body.days or 0)
