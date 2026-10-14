@@ -887,6 +887,8 @@ export interface DealWorkspace {
   priced_response: PricedResponse | null;
   /** One entry per sendable reply, in the verdict's order, each with its own receipt (`counter_id` is the picture path's key). Absent from an older server. */
   priced_responses?: PricedResponse[];
+  /** Accept as asked, as the evaluation carries it (the same block as the picture's). Absent from an older server. */
+  accept?: AcceptBlock | null;
   /** The existing top-level fields of the verdict that the page folds, by what the owner calls them. */
   advanced: { keys: Record<AdvancedKey, string[]> };
 }
@@ -986,6 +988,54 @@ export interface NegotiationView {
   decision_id?: string;
   decision_recorded?: boolean;
   execution?: ExecutionBlock;
+}
+
+/**
+ * The accept-as-asked block (map #121, "Accept as asked"): on `OfferPictureView.accept` (and the evaluation's `workspace.accept`) for a negotiation whose buyer request needs the owner's review and
+ * has no counter FLOW can send. `available` false carries the server's `reason_text` ("only a new mandate changes that") and no commit; the labels and the receipt are the server's words.
+ * `verdict_id` and `state_version` are what the owner was shown (sent back so the server can refuse a stale accept); a server that does not carry them leaves them to the evaluation the picture was drawn from.
+ */
+export interface AcceptBlock {
+  available: boolean;
+  reason_text?: string | null;
+  commit_label?: string | null;
+  decline_label?: string | null;
+  /** Whether the request can be declined (it can, whatever its verdict, unless it has lapsed or is already answered); absent from an older server (then it can). */
+  decline_available?: boolean;
+  /** Who decides the asked terms (flow_may, needs_owner, over_limit) as the picture classes them; null when they cannot be accepted at all. */
+  authority?: PathAuthority | null;
+  /** The eleven lines of the commitment receipt, as for a send (null lines are not drawn); null when there is nothing to accept. */
+  receipt?: CommitmentReceiptView | null;
+  verdict_id?: string | null;
+  state_version?: number | null;
+}
+
+/** POST /offers/{id}/accept and /decline: the verdict and books version the owner was shown. */
+export interface AcceptRequest {
+  verdict_id: string;
+  state_version: number;
+}
+
+/** POST /offers/{id}/accept: the record as it stands after the acceptance, the receipt of what was agreed and what ran, in the server's words. */
+export interface AcceptResult {
+  decision: DecisionView;
+  receipt?: CommitmentReceiptView | null;
+  execution?: ExecutionBlock | null;
+}
+
+/** POST /offers/{id}/decline: the record as it stands once the request is closed. */
+export interface DeclineResult {
+  decision: DecisionView;
+}
+
+/**
+ * The detail of a 409 from /accept or /decline: nothing moved. `message_when` is the sentence in the owner's language (distances from today). The codes: COUNTER_CHANGED (the books or the
+ * verdict moved), OFFER_LAPSED, OVER_MANDATE (only a new mandate changes it), ALREADY_ACCEPTED, ALREADY_DECLINED, NOT_EVALUATED, NOT_ACCEPTABLE, NOT_RECORDED. The page says the sentence, whichever the code.
+ */
+export interface AcceptRefusedDetail {
+  code: string;
+  message: string;
+  message_when?: string | null;
 }
 
 /** One row of the Debt Desk comparison table. */
@@ -3556,6 +3606,8 @@ export interface CommitmentReceiptView {
   assumptions_text?: string | null;
   authority_text?: string | null;
   remaining_text?: string | null;
+  /** Accepting as asked only: what it does to cash (null when the reserve holds); a fourth statement under the three, not one of the eleven lines. */
+  cash_text?: string | null;
 }
 
 /** The scope Ask FLOW sends (ticket #130): the keys of the address that name something; the server validates each and echoes what it used as `scope_used`. */
@@ -3769,7 +3821,7 @@ export interface DecisionView extends DecisionSummary {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];
@@ -3843,6 +3895,8 @@ export interface OfferPictureView {
   /** False when the offer can no longer be drawn (the answer is then 200 with empty paths and moments and `unavailable_text`); absent from an older server. */
   available?: boolean;
   unavailable_text?: string | null;
+  /** Accept as asked (a request that needs the owner's review and has no counter): whether the owner may accept it, the server's reason when not, the labels and the receipt. Absent from an older server. */
+  accept?: AcceptBlock | null;
 }
 
 /** One term of a path, as the owner would say it: what it is now and, for a reply, what it replaces. */

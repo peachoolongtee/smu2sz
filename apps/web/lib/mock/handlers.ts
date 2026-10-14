@@ -10,6 +10,9 @@ import { MOCK_LATENCY_MS } from "../config";
 import type { ExposureContext } from "../api";
 import { ApiError } from "../errors";
 import type {
+  AcceptRequest,
+  AcceptResult,
+  DeclineResult,
   ActivityView,
   DemoRestoreResult,
   DemoStoryView,
@@ -83,6 +86,8 @@ import type { CustomerContext } from "../customer-href";
 import * as buyside from "./buyside";
 import * as documents from "./documents";
 import * as decisions from "./decisions";
+import * as trackerMock from "./tracker"; // Deal tracker
+import type { TrackerView } from "../tracker"; // Deal tracker
 import * as home from "./home";
 import * as homeV2 from "./home-v2";
 import * as receivablesMock from "./receivables";
@@ -671,6 +676,13 @@ export async function getDecision(id: string, lang: "en" | "zh"): Promise<Decisi
   return decisions.mockDecision(decisionContext(), id, lang);
 }
 
+// Deal tracker (#150): GET /decisions/{id}/tracker, served by lib/mock/tracker.ts.
+export async function getTracker(id: string, lang: "en" | "zh"): Promise<TrackerView> {
+  await delay();
+  seedApprovalStory();
+  return trackerMock.mockTracker(decisionContext(), id, lang);
+}
+
 export async function getOffer(offerId: string): Promise<OfferView> {
   await delay();
   const v = load().offers[offerId];
@@ -757,6 +769,22 @@ export async function negotiate(offerId: string, req: NegotiateRequest): Promise
   s.negotiated[offerId] = result;
   save();
   return clone(result);
+}
+
+/**
+ * POST /offers/{id}/accept and /decline: the mock holds no request that may be accepted as asked (its one open offer, EX01, has counters and its ask is over the mandate), so the page never
+ * offers the button here; a call is refused in the server's shape (the 409 words are the API's, recorded by the live specs, not written here).
+ */
+export async function acceptOffer(offerId: string, req: AcceptRequest): Promise<AcceptResult> {
+  void req;
+  await delay();
+  throw new ApiError(409, `Offer ${offerId} has no request that can be accepted as asked in the mock.`, { code: "OVER_MANDATE", message: "Not served by the mock." });
+}
+
+export async function declineOffer(offerId: string, req: AcceptRequest): Promise<DeclineResult> {
+  void req;
+  await delay();
+  throw new ApiError(409, `Offer ${offerId} has no request that can be declined in the mock.`, { code: "OFFER_LAPSED", message: "Not served by the mock." });
 }
 
 const APPROVAL_SEEDS = cast<Record<"apply_loan" | "apply_loan_approved" | "apply_loan_rejected", ApprovalView>>(approvalsSeed);

@@ -25,6 +25,7 @@ from app.api.presentation import (
     kind_text,
     last_read,
     live_windows,
+    offer_buyers,
     party_name,
     t,
     when_text,
@@ -46,8 +47,16 @@ from app.verifier import REFUSAL_REPLY
 router = APIRouter(dependencies=[Depends(require_owner)])
 
 
+def _payload_of(o) -> dict:
+    try:
+        p = json.loads(o.payload_json)
+    except ValueError:
+        return {}
+    return p if isinstance(p, dict) else {}
+
+
 def _op_view(o, state=None, today: int | None = None, commitments=(), decided=frozenset(), agreements=None, live=None,
-             lang: str = "en", causality: Causality | None = None, documents=None) -> dict:
+             lang: str = "en", causality: Causality | None = None, documents=None, offers=None) -> dict:
     """One log entry as the ledger shows it. `message` and `summary` are the executor's own sentence (the audit level);
     `message_when` is the same sentence as a Business page reads it (names, the owner's words, distances from today) and
     `event_text` / `event_detail` the business sentence for what happened (`event_words`), presentation reads added when
@@ -74,7 +83,7 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
         words = event_words(state, kind=o.kind, status=str(res.get("status") or ""), payload=op if isinstance(op, dict) else {},
                             message=str(res.get("message") or ""), approval_id=res.get("approval_id"),
                             day=v["day"] if isinstance(v["day"], int) else None, today=today, lang=lang,
-                            decided=res.get("approval_id") in decided, agreements=agreements, window_live=window_live)
+                            decided=res.get("approval_id") in decided, agreements=agreements, window_live=window_live, offers=offers)
         if o.kind in ("CONFIRM_DOCUMENT", "REJECT_DOCUMENT") and isinstance(op, dict) and res.get("status") == "EXECUTED":
             # the owner's decision on a document the agent read, in the document's own words (never its id or reference code)
             record = (documents or {}).get(op.get("document_id"))
@@ -84,12 +93,19 @@ def _op_view(o, state=None, today: int | None = None, commitments=(), decided=fr
             v["document_id"] = op.get("document_id")
             v["message_when"] = " ".join(x for x in (words["event_text"], words["event_detail"]) if x)
         text = words["event_text"] or v["message_when"]
+        detail = words["event_detail"]
         if o.kind in ("ACCEPT_OFFER", "RECORD_COMMITMENT") and res.get("status") == "EXECUTED":
             cmt = next((c for c in commitments if c.id in summary), None)
             if cmt is not None:
-                text = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen, lang)
+                said = agreement_words(state, cmt.counterparty_id, cmt.forward_value_fen, lang)
+                if isinstance(op, dict) and op.get("requested_by") == "OWNER" and o.kind == "ACCEPT_OFFER":
+                    detail = said  # the owner's own acceptance is the title; the agreement and what it books against the budget follow
+                else:
+                    text = said
+        if o.kind in ("ACCEPT_OFFER", "REJECT_OFFER") and isinstance(op, dict) and op.get("requested_by") == "OWNER" and words["event_text"]:
+            v["message_when"] = " ".join(x for x in (text, detail) if x)  # the owner's own act in the owner's words, never the engine's sentence with an id
         v["event_text"] = text
-        v["event_detail"] = words["event_detail"]
+        v["event_detail"] = detail
         if causality is not None:
             v.update(causality.fields(status=str(res.get("status") or ""), event_text=text, decision_id=decision,
                                       decided=res.get("approval_id") in decided))
@@ -189,7 +205,8 @@ def get_ledger(lang: str = "en") -> dict:
         refused, events = _refusal_counts(rt, ops)
         chain_valid = rt.store.verify_chain()
         documents = {r.id: r for r in rt.store.contract_records()} if any(o.kind.endswith("_DOCUMENT") for o in ops) else {}
-        views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents) for o in ops]
+        offers = offer_buyers(rt.store, state, (_payload_of(o) for o in ops))
+        views = [_op_view(o, state, rt.day, commitments, decided, agreements, live, lang, causality, documents, offers) for o in ops]
         mark_changed(views)
         return {
             "commitments": [{**displayed(json.loads(c.model_dump_json())), **commitment_cost_words(c, lang)} for c in commitments],

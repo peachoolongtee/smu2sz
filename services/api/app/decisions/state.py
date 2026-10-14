@@ -307,6 +307,9 @@ class DecisionState:
     opened_day: int | None
     updated_day: int | None
     updated_seq: int
+    # DEAL: the agreement was recorded by the owner's own acceptance of the buyer's terms as asked (an AcceptOffer the owner requested), so
+    # nothing was sent to the buyer and no simulated reply exists.
+    accepted_as_asked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -413,6 +416,13 @@ def _reserve_alert(i: DecisionInputs) -> AlertLike | None:
 # ---------------------------------------------------------------- DEAL
 
 
+def owner_declined(runs: Sequence[LoggedRun]) -> bool:
+    """Whether the owner declined the offer: a RejectOffer the owner requested ran (EXECUTED) among the decision's runs. A rejection the agent
+    made (the chat's) is not the owner's decision and does not close the offer."""
+    return any(e.kind == "REJECT_OFFER" and e.result.status == OperationStatus.EXECUTED and e.payload.get("requested_by") == "OWNER"
+               and not _is_decide_attempt(e) for e in runs)
+
+
 def _matches_accept(payload: Mapping[str, Any], c: Commitment) -> bool:
     kind = payload.get("kind")
     if kind == "RECORD_COMMITMENT":
@@ -454,8 +464,10 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
         accept_run = accept_ops[-1] if accept_ops else None
     sent_for_verdict = next((f for f in reversed(sents) if verdict is not None and f.verdict_id == verdict.id), None)
     promised = list(idx.promised.get(commitment.id, ())) if commitment is not None else []
+    by_owner = commitment is not None and any(
+        _matches_accept(e.payload, commitment) and e.payload.get("requested_by") == "OWNER" for e in runs)
 
-    state = _deal_state(offer, verdict, commitment, approval, accept_run, sent_for_verdict, promised)
+    state = _deal_state(offer, verdict, commitment, approval, accept_run, sent_for_verdict, promised, owner_declined(runs))
     terminal = state in _DEAL_TERMINAL and not (
         state == DealState.MISSED and commitment is not None and commitment.status != CommitmentStatus.EXPIRED
     )
@@ -465,7 +477,7 @@ def _derive_deal(i: DecisionInputs) -> DecisionState:
         decision_id=i.decision_id, family="DEAL", state=state, terminal=terminal, residual=None, ops=tuple(ops),
         approvals=tuple(approvals), approval=approval, offer=offer, verdict=verdict, commitment=commitment,
         evaluated=evaluated, sent=latest_sent, quote=None, lots=_lots_of(i.state, [o.op_id for o in funding_ops], idx),
-        opened_day=opened, updated_day=updated_day, updated_seq=updated_seq,
+        opened_day=opened, updated_day=updated_day, updated_seq=updated_seq, accepted_as_asked=by_owner,
     )
 
 
@@ -481,7 +493,7 @@ def _op_payload(runs: Sequence[LoggedRun], op_id: str) -> Mapping[str, Any]:
 
 def _deal_state(
     offer: CompiledOffer | None, verdict: Verdict | None, c: Commitment | None, a: ApprovalRecord | None,
-    x: OpState | None, sent_for_verdict: SentFact | None, promised: Sequence[PromiseLike],
+    x: OpState | None, sent_for_verdict: SentFact | None, promised: Sequence[PromiseLike], declined: bool = False,
 ) -> DealState:
     if c is not None:
         if c.status == CommitmentStatus.REVOKED:  # 1
@@ -497,6 +509,8 @@ def _deal_state(
             return DealState.AGREED
         if c.status == CommitmentStatus.EXPIRED:  # 6
             return DealState.EXPIRED
+    if declined:  # 6a: the owner declined the offer outright (RejectOffer); nothing moved, and it is closed
+        return DealState.DECLINED
     if a is not None and a.status == ApprovalStatus.PENDING:  # 7
         return DealState.AUTHORIZATION_REQUIRED
     if a is not None and a.status == ApprovalStatus.REJECTED:  # 8
@@ -751,5 +765,6 @@ __all__ = [
     "derive_all",
     "index_inputs",
     "newest_reserve_decision",
+    "owner_declined",
     "waiting_for",
 ]

@@ -76,7 +76,6 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
       isNew={"is_new" in row && row.is_new}
       newLabel={t("hv2.work.new")}
       qualifier={"differentiator_text" in row ? row.differentiator_text : null}
-      selectLabel={t("hv2.row.select")}
       onWarm={() => (sel ? warmSelection(sel, lang) : undefined)}
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
@@ -87,7 +86,7 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
 
 /** A row of Customers: the name, its negotiations and which need the owner, what is outstanding and its share; the weightiest tone as its dot and word. */
 export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { customer: WorklistCustomer; selection?: HomeSelection; onLeave?: () => void }) {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
   const sel = { customer: customer.customer_id, decision: null };
   return (
     <WorklistRow
@@ -97,7 +96,6 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       selected={isSelected(sel, selection)}
       onClick={onLeave}
       subject={customer.name}
-      selectLabel={t("hv2.row.select")}
       onWarm={() => warmSelection(sel, lang)}
       nextStep={customer.detail_text}
       pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}

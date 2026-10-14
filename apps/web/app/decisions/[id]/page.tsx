@@ -7,6 +7,7 @@ import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, LoadingBlock, 
 import { StateWord } from "@/components/ui/state-word";
 import { OpStatusBadge } from "@/components/badges";
 import { ReceiptFacts } from "@/components/receipt-facts";
+import { TrackerRecordLink } from "@/components/tracker/record-link"; // Deal tracker
 import { useI18n } from "@/lib/i18n";
 import type { DecisionView } from "@/lib/types";
 import { useDecision } from "@/lib/use-decision";
@@ -160,7 +161,7 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <Fact label={t("verdict.exec.agreement")} testId="record-agreement">
                   {d.agreement.status_text}
                 </Fact>
-                <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact>
+                {d.agreement.expires_when ? <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact> : null}
               </>
             ) : null}
           </dl>
@@ -207,6 +208,9 @@ function RecordBody({ d }: { d: DecisionView }) {
           </ul>
         </Card>
       ) : null}
+
+      {/* Deal tracker: shown only for a deal whose tracker read is available. */}
+      {d.family === "DEAL" ? <TrackerRecordLink id={d.id} /> : null}
 
       <p className="text-meta text-ink-3">
         <Link href={dealHome} className={textLinkClass}>

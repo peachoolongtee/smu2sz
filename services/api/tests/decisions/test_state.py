@@ -108,6 +108,39 @@ def test_every_row_of_the_deal_table(name: str, build, state: DealState, termina
     assert (s.family, s.state, s.terminal) == ("DEAL", state, terminal), name
 
 
+# ---------------------------------------------------------------- DEAL: the owner declines a request (RejectOffer)
+
+
+def reject_run(seq: int, status: OperationStatus, *, requested_by: str = "OWNER", offer_id: str = "OFF-1"):
+    return run(seq, "REJECT_OFFER", f"decline-{offer_id}-V-1", status, op_id=f"decline-{offer_id}-V-1", offer_id=offer_id,
+               reason_codes=[], requested_by=requested_by)
+
+
+def test_an_owner_rejection_that_ran_declines_the_deal_and_closes_it() -> None:
+    s = derive(deal_inputs(log=(reject_run(1, OperationStatus.EXECUTED),)))
+    assert (s.state, s.terminal) == (DealState.DECLINED, True)
+    assert [o.kind for o in s.ops] == ["REJECT_OFFER"]  # the refusal is one of the decision's operations
+
+
+def test_a_rejection_the_agent_made_does_not_close_the_deal() -> None:
+    assert derive(deal_inputs(log=(reject_run(1, OperationStatus.EXECUTED, requested_by="AGENT"),))).state == DealState.RESPONSE_READY
+
+
+def test_a_refused_owner_rejection_declines_nothing() -> None:
+    assert derive(deal_inputs(log=(reject_run(1, OperationStatus.REFUSED),))).state == DealState.RESPONSE_READY
+
+
+def test_an_agreement_in_force_wins_over_a_rejection() -> None:
+    assert derive(deal_inputs(status=ACTIVE, log=(reject_run(1, OperationStatus.EXECUTED),))).state == DealState.AGREED
+
+
+def test_an_owner_accept_marks_the_agreement_as_accepted_as_asked() -> None:
+    owner = accept_run(1, OperationStatus.EXECUTED)
+    owner.payload["requested_by"] = "OWNER"
+    assert derive(deal_inputs(status=ACTIVE, log=(owner,))).accepted_as_asked is True
+    assert derive(deal_inputs(status=ACTIVE, log=(accept_run(1, OperationStatus.EXECUTED),))).accepted_as_asked is False
+
+
 # ---------------------------------------------------------------- DEAL precedence
 
 

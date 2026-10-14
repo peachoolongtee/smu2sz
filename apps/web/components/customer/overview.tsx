@@ -9,7 +9,7 @@ import { useMode } from "@/lib/mode";
 import { rowDecision, type Queue } from "@/components/deals/flow/queue-model";
 import { ButtonLink, PageHeader, textLinkClass } from "@/components/ui";
 import { StatusPill } from "@/components/ui/status-pill";
-import { selectionHref } from "@/lib/selection";
+import { reviewHref, selectionHref } from "@/lib/selection";
 import { flowOf } from "@/lib/customer-r2";
 import { ExposureTable } from "./exposure-table";
 import { ReceivableFlowCard } from "./receivable-flow";
@@ -132,7 +132,10 @@ function ActionBlock({ view, selected }: { view: CustomerOverviewView; selected:
   const closed = selected ? selected.closed : decision?.kind === "awaiting_buyer" || decision?.kind === "lapsed";
   // The server's recommendation speaks for the primary decision; the older long sentence is the fallback for a server that does not send it.
   const body = selected ? selected.recommends : (decision?.text ?? null);
-  const href = selected?.href ?? decision?.primary.href ?? "/deals";
+  // A request that needs the owner's review opens its accept review on arrival (`review=1`).
+  const reviewing = selected ? selected.pill.lifecycle === "owner_review" : decision?.kind === "request";
+  const rawHref = selected?.href ?? decision?.primary.href ?? "/deals";
+  const href = reviewing ? reviewHref(rawHref) : rawHref;
   const label = selected ? (selected.label ?? t("customer.review")) : (decision?.primary.label ?? t("customer.review"));
   return (
     <section aria-labelledby="customer-decision-title" className="flow-card p-4 sm:p-6" id="customer-decision" data-testid="customer-decision" data-focus={selected?.key ?? undefined}>

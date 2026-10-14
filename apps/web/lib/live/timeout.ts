@@ -28,7 +28,7 @@ export function kindOf(method: string, path: string): RequestKind {
   const p = path.split("?")[0];
   if (p === "/nl" || p === "/nl/opener") return "reply";
   if (method !== "POST") return "read";
-  if (/^\/(alerts\/[^/]+\/act|approvals\/[^/]+|negotiate\/[^/]+|offers|capex\/apply|clock\/advance|demo\/reset|circuit\/[^/]+\/reset)$/.test(p)) return "write";
+  if (/^\/(alerts\/[^/]+\/act|approvals\/[^/]+|negotiate\/[^/]+|offers|offers\/[^/]+\/(accept|decline)|capex\/apply|clock\/advance|demo\/reset|circuit\/[^/]+\/reset)$/.test(p)) return "write";
   return "read";
 }
 

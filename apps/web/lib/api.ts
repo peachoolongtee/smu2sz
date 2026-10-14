@@ -13,6 +13,9 @@ import { API_MODE } from "./config";
 import { ApiError } from "./errors";
 import type { CustomerContext } from "./customer-href";
 import type {
+  AcceptRequest,
+  AcceptResult,
+  DeclineResult,
   ActivityView,
   DemoRestoreResult,
   DemoStoryView,
@@ -136,6 +139,16 @@ export async function evaluateOffer(offerId: string, fixtureId?: string, lang: "
 /** POST /negotiate/{offer_id}: bounded rounds with the buyer kernel. */
 export async function negotiate(offerId: string, req: NegotiateRequest): Promise<NegotiationView> {
   return isMock ? (await mock()).negotiate(offerId, req) : (await live()).negotiate(offerId, req);
+}
+
+/** POST /offers/{id}/accept: the owner accepts the buyer's request as asked (a request that needs the owner's review and has no counter). A 409 (COUNTER_CHANGED, OFFER_LAPSED, OVER_MANDATE) moved nothing and carries the server's words. */
+export async function acceptOffer(offerId: string, req: AcceptRequest): Promise<AcceptResult> {
+  return isMock ? (await mock()).acceptOffer(offerId, req) : (await live()).acceptOffer(offerId, req);
+}
+
+/** POST /offers/{id}/decline: the owner declines the request; nothing moves and the request closes. */
+export async function declineOffer(offerId: string, req: AcceptRequest): Promise<DeclineResult> {
+  return isMock ? (await mock()).declineOffer(offerId, req) : (await live()).declineOffer(offerId, req);
 }
 
 /**

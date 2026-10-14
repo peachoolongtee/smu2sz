@@ -52,6 +52,10 @@
 .flow-row {
   background: var(--color-card);
   border-radius: 16px;
+  /* A row lifts into its selected state over --dur (colours only; none moves under reduced motion). */
+  transition:
+    background-color var(--dur) var(--ease-ui),
+    box-shadow var(--dur) var(--ease-ui);
 }
 .flow-row[aria-current="true"] {
   background: var(--color-f-purple-soft);
