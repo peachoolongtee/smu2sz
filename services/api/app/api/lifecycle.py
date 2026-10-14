@@ -193,10 +193,14 @@ def deals_history(ctx: Any, buyer: str, lang: str, origin: str = "customer") -> 
         if built is None or ds.offer is None:
             continue
         subject, _ = subject_for(ctx, ds.offer, lang)
-        closed = after_group(ds, built) == CLOSED_GROUP  # closed only when nothing is left owed (the tracker's own `ended`)
+        group = after_group(ds, built)
+        closed = group == CLOSED_GROUP  # closed only when nothing is left owed (the tracker's own `ended`)
+        word, summary = built["state_word"], (built.get("closeout_text") if closed else None) or built.get("agreed_text") or built.get("headline_text")
+        if not closed and (gone := agreement_gone_word(ds, lang)) is not None:  # revoked or expired, and still owed money: say so
+            word, summary = gone, built.get("state_text") or summary
         out.append({"decision_id": ds.decision_id, "subject_text": subject, "lifecycle": "closed" if closed else "agreed",
-                    "state_word": built["state_word"], "state_tone": built["state_tone"],
-                    "summary_text": (built.get("closeout_text") if closed else None) or built.get("agreed_text") or built.get("headline_text"),
+                    "state_word": word, "state_tone": built["state_tone"], "after_group": group, "after_group_label": after_group_label(group, lang),
+                    "summary_text": summary,
                     "href": deal_href(buyer, ds.decision_id, origin)})
     return out
 
@@ -238,19 +242,26 @@ _GROUP_WORDS = {PAYMENT_LATE: ("Payment late", "付款逾期"), AWAITING_PAYMENT
 _OVERDUE_KEYS = ("late", "missed", "failed")  # the tracker's own states for an amount that is overdue and unpaid
 
 
+def agreement_gone_word(ds: Any, lang: str) -> str | None:
+    """"Agreement revoked" / "Agreement expired" for a deal whose agreement was withdrawn or ran out; None for any other."""
+    if ds.state == DealState.REVOKED:
+        return say(lang, "Agreement revoked", "协议已撤销")
+    if ds.state == DealState.EXPIRED:
+        return say(lang, "Agreement expired", "协议已过期")
+    return None
+
+
 def after_group_label(group: str, lang: str) -> str:
     return say(lang, *_GROUP_WORDS[group])
 
 
 def after_group(ds: Any, built: dict[str, Any] | None) -> str:
     """Where an agreed deal stands in the Agreements tier, from the tracker's own read: `payment_late` when an amount is overdue and unpaid (its
-    late, missed or failed states), `closed` when nothing is left owed (the tracker's `ended`) or the agreement was revoked or ran out with nothing overdue, else
-    `awaiting_payment`. Without a tracker read (it could not be drawn) the record's own state decides: a deal over is closed, one in force awaits."""
+    late, missed or failed states), `closed` only when nothing is left owed (the tracker's `ended`), else
+    `awaiting_payment`. The grouping is by money alone: the record's REVOKED or EXPIRED does not close a deal that is still owed. Without a tracker read (it could not be drawn) the record's own state decides: a deal over is closed, one in force awaits."""
     if built is None:
         return CLOSED_GROUP if ds.state in CLOSED else AWAITING_PAYMENT
-    ended = bool(built.get("ended"))
-    if built.get("state_key") in _OVERDUE_KEYS and not ended:  # money first: an overdue, unpaid amount is payment late whatever the record says
-        return PAYMENT_LATE
-    if ended or ds.state in (DealState.REVOKED, DealState.EXPIRED):
+    if built.get("ended"):  # nothing is left owed
         return CLOSED_GROUP
-    return AWAITING_PAYMENT
+    # money only, whatever the record says (a revoked or expired agreement still owed money is not closed)
+    return PAYMENT_LATE if built.get("state_key") in _OVERDUE_KEYS else AWAITING_PAYMENT

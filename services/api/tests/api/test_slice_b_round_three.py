@@ -504,7 +504,7 @@ def test_a_revoked_agreement_with_money_owed_is_payment_late_never_closed(api: T
         q = api.get("/deals", params={"lang": lang}).json()["queue"]
         [row] = [r for r in q["agreements"] if r["kind"] == "AGREEMENT" and r["decision_id"] == did]
         assert row["after_group"] == "payment_late" and row["lifecycle"] == "agreed"
-        assert row["status_text"] == ("Payment late" if lang == "en" else "付款逾期")
+        assert row["status_text"] == ("Agreement revoked" if lang == "en" else "协议已撤销")
         assert q["deals"]["closed"] == 0 and q["deals"]["payment_late"] == 1
         [hist] = api.get("/customers/BUYER-1/overview", params={"lang": lang}).json()["deals_history"]
         assert hist["lifecycle"] == "agreed"
@@ -655,3 +655,38 @@ def test_a_cold_picture_read_on_the_golden_books_is_small(api: TestClient) -> No
     elapsed = time.perf_counter() - started
     print(f"cold picture read: {elapsed:.2f}s")
     assert pic["paths"] and elapsed < 1.5
+
+
+def test_a_revoked_agreement_is_grouped_by_money_alone(api: TestClient, rt: Runtime) -> None:
+    offer, did = _agree(api)
+    assert api.post(f"/commitments/{rt.store.commitments()[0].id}/revoke").status_code == 200
+    # revoked at agreement: the invoice is open and not yet due, so the deal awaits payment and says the agreement was revoked
+    for lang, word, label in (("en", "Agreement revoked", "Awaiting payment"), ("zh", "协议已撤销", "等待付款")):
+        row = _group_row(api, did, lang)
+        assert (row["after_group"], row["status_text"], row["after_group_label"], row["lifecycle"]) == ("awaiting_payment", word, label, "agreed")
+        assert row["consequence_text"] == api.get(f"/decisions/{did}/tracker", params={"lang": lang}).json()["state_text"]
+    q = api.get("/deals").json()["queue"]
+    assert (q["deals"]["closed"], q["deals"]["awaiting_payment"], q["deals"]["payment_late"]) == (0, 1, 0)
+    [hist] = api.get("/customers/BUYER-1/overview").json()["deals_history"]
+    assert hist["lifecycle"] == "agreed" and hist["state_word"] == "Agreement revoked"
+    # past the due day and unpaid: payment late, still saying the agreement was revoked
+    api.post("/clock/advance", json={"to_day": 40})
+    row = _group_row(api, did)
+    assert (row["after_group"], row["status_text"]) == ("payment_late", "Agreement revoked")
+    # paid: nothing is owed, so it is closed, with the tracker's own words
+    rest = next(r for r in rt.store.get_state().receivables if r.id == "RCV-A")
+    version = api.get("/mandate").json()["mandate"]["version"]
+    paid = api.post("/operations", headers=BANK, json={
+        "kind": "RECEIVE_PAYMENT", "op_id": "rc-revoked", "idempotency_key": "rc-revoked", "mandate_version": version, "requested_by": "SYSTEM",
+        "receivable_id": "RCV-A", "amount_fen": rest.face_fen - rest.settled_fen, "bank_reference": "BANK-REVOKED"})
+    assert paid.json()["result"]["status"] == "EXECUTED", paid.text
+    row = _group_row(api, did)
+    tracker = api.get(f"/decisions/{did}/tracker").json()
+    assert (row["after_group"], row["lifecycle"], row["status_text"]) == ("closed", "closed", tracker["state_word"]) and tracker["ended"]
+
+
+def test_customer_loss_cash_effect_leaves_out_the_gross_profit_clause_when_there_is_no_figure(api: TestClient) -> None:
+    offer, _ = _golden(api)
+    loss = {s["key"]: s for s in _scenario_list(api, offer)}["customer_loss"]
+    assert loss["lost_contribution_text"] is None
+    assert "gross-profit" not in loss["cash_effect_text"] and loss["cash_effect_text"].startswith("¥1,260,000 of receipts removed")
