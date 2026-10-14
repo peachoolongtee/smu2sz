@@ -1042,7 +1042,8 @@ def build(rt: Any, offer_id: str, lang: str) -> dict[str, Any]:
         "available": True, "unavailable_text": None,
         # accepting the asked terms: whether it can be done, the two labels, and its receipt, from the asked path's own cost words
         "accept": accept_block(lang, state=state, offer=offer, verdict=verdict, months=_months(mandate.forward_concession_horizon_days),
-                               cost={k: paths[0].get(k) for k in ("cost_total_display", "cost_basis_text", "cost_once_display", "cost_forward_display")}),
+                               cost={k: paths[0].get(k) for k in ("cost_total_display", "cost_basis_text", "cost_once_display", "cost_forward_display",
+                                                                  "band_text", "first_breach_when")}),
         "asked": asked_view,
         "replies": replies,
         "paths": paths,

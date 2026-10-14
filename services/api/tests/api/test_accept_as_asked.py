@@ -114,7 +114,7 @@ def test_the_picture_and_the_workspace_carry_one_accept_block_for_a_request_that
     assert busy.get(f"/offers/{offer_id}/picture", params={"lang": lang}).json()["accept"] == block
     assert block["available"] is True and block["reason_text"] is None and block["authority"] == "needs_owner"
     assert block["decline_available"] is True
-    assert list(block["receipt"]) == RECEIPT_FIELDS
+    assert list(block["receipt"]) == [*RECEIPT_FIELDS, "cash_text"]
     assert not any(ID.search(s) for s in _strings(block)), "no id, no None in a sentence the owner reads"
     if lang == "zh":
         assert english_leaks(block, NAMES) == []
@@ -618,3 +618,56 @@ def test_home_and_the_customer_overview_name_the_buyer_of_an_answered_request(bu
     assert declined in buyer_history("BUYER-2")
     zhuhai_text = buyer_history("BUYER-3")
     assert ("Zhuhai Kitchenware Wholesale Co." in zhuhai_text) and "the buyer's request" not in zhuhai_text and "买方的请求" not in zhuhai_text
+
+
+# ================================================================ an agreement in force has no expiry; the review says what it does to cash
+
+
+@pytest.mark.parametrize("lang", ["en", "zh"])
+def test_an_owner_accepted_agreement_is_in_force_and_says_no_expiry_anywhere(busy: TestClient, lang: str) -> None:
+    offer_id, v = _evaluate(busy, ZHUHAI, lang)
+    body = busy.post(f"/offers/{offer_id}/accept", params={"lang": lang}, json=_body(v)).json()
+    decision = busy.get(f"/decisions/deal:{offer_id}", params={"lang": lang}).json()
+    assert body["decision"]["agreement"]["status"] == "ACTIVE"
+    assert body["receipt"]["when_text"] == ("In force." if lang == "en" else "已生效。")
+    for name, data in (("accept", body), ("decision", decision),
+                       ("queue", busy.get("/deals", params={"lang": lang}).json()["queue"]["agreements"]),
+                       ("worklist", busy.get("/worklist", params={"lang": lang}).json())):
+        assert not [s for s in _strings(data) if re.search(r"expir|到期", s, re.IGNORECASE)], name
+    assert (decision["agreement"]["expires_day"], decision["agreement"]["expires_when"]) == (None, None)
+    assert any(r["key"] == f"agreement:deal:{offer_id}" for r in busy.get("/deals", params={"lang": lang}).json()["queue"]["agreements"])
+
+
+def test_a_proposal_still_waiting_keeps_its_acceptance_window(busy: TestClient, rt: Runtime) -> None:
+    from app.domain.models import AcceptOffer, Actor
+
+    offer_id, v = _evaluate(busy, ZHUHAI)
+    c = rt.executor.propose_commitment(v["id"], expires_day=rt.day + 7)
+    rt.executor.execute(AcceptOffer(op_id="agent-accept", idempotency_key="agent-accept", mandate_version=1, requested_by=Actor.AGENT,
+                                    source_verdict_id=v["id"], day=rt.day, offer_id=offer_id, offer_version=1, terms_hash=c.terms_hash, nonce=c.nonce))
+    agreement = busy.get(f"/decisions/deal:{offer_id}").json()["agreement"]
+    assert agreement["status"] == "PROPOSED" and agreement["expires_day"] == rt.day + 7
+    assert agreement["receipt"]["when_text"] == "Expires in 7 days."
+
+
+@pytest.mark.parametrize(("lang", "cash"), [
+    ("en", "As asked: below your minimum for 35 days, starting in 12 days. Accepting runs no funding, so that gap stays open."),
+    ("zh", "按对方要求：低于您的最低现金储备 35 天（最早 12 天后）。接受不会办理融资，缺口仍然存在。"),
+])
+def test_the_accept_review_says_what_the_asked_terms_do_to_cash(busy: TestClient, lang: str, cash: str) -> None:
+    offer_id, v = _evaluate(busy, ZHUHAI, lang)
+    receipt = v["workspace"]["accept"]["receipt"]
+    assert receipt["cash_text"] == cash
+    # the queue row warns with the same words
+    row = next(r for r in busy.get("/deals", params={"lang": lang}).json()["queue"]["needs_you"] if r["key"] == f"deal:{offer_id}")
+    assert row["consequence_text"].startswith("As asked: below your minimum for 35 days" if lang == "en" else "按对方要求：低于您的最低现金储备 35 天")
+    assert busy.get(f"/offers/{offer_id}/picture", params={"lang": lang}).json()["accept"]["receipt"]["cash_text"] == cash
+
+
+def test_a_request_that_keeps_the_reserve_has_no_cash_line(api: TestClient, rt: Runtime) -> None:
+    state = rt.store.get_state()
+    rt.store.put_state(state.model_copy(update={"cash_fen": state.cash_fen + 10_000_000_000}), expected_version=state.state_version)
+    _, v = _evaluate(api, CONSOLIDATE)
+    block = v["workspace"]["accept"]
+    assert block["available"] is True and block["receipt"]["cash_text"] is None
+    assert block["receipt"]["authorizes_text"]  # the rest of the receipt is whole
