@@ -8,6 +8,7 @@ import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
 import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { WorklistAlertLine } from "@/components/ui/worklist-rows";
 import { contractsOff } from "@/components/documents";
 import { getClock, getCustomers, getDeals, getLedger, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
@@ -228,10 +229,28 @@ export function DealsPage() {
         ) : null}
       </div>
     );
+  // With a deal selected its buyer's messages are in its Messages tab; the inbox card is the way to start a negotiation, so it stands under the queue only while nothing is selected.
+  const INBOX_SLOT = decision ? null : INBOX_NODE;
+  const inboxFor = (buyer: string | null) => (
+    <InboxList
+      currentDocId={decision ? (demo.offers[offerOf(decision) ?? ""]?.documents[0]?.doc_id ?? null) : null}
+      readDocIds={Object.values(demo.offers).map((o) => o.documents[0]?.doc_id)}
+      known={known}
+      busy={reading}
+      today={clock.data?.day ?? books.data?.day ?? 0}
+      mode={mode}
+      statusFor={statusFor}
+      onOpen={(m) => void openMessage(m)}
+      loadError={books.error}
+      onRetry={books.reload}
+      refusals={ledger.data?.refusals ?? null}
+      onlyCounterparty={buyer}
+    />
+  );
   const PANE = (
         <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
           {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
+            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} inbox={inboxFor} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
           ) : queue === undefined ? null : (
             <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
               <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
@@ -257,6 +276,22 @@ export function DealsPage() {
           ‹ {back.label}
         </Link>
       ) : null}
+      {/* The company funding alert is the page's own row, full width under the header (the component Home's worklist uses); it is never one of the queue's rows or counts. */}
+      {queue?.alert ? (
+        <div className="mb-4" data-testid="deals-alert-row">
+          <WorklistAlertLine
+            testId="queue-alert"
+            tone={queue.alert.tone === "bad" ? "bad" : "warn"}
+            eyebrow={queue.alert.kind_text ?? queue.alert.eyebrow}
+            text={queue.alert.pending_text ?? queue.alert.text}
+            action={
+              <Link href={queue.alert.primary.href} className="inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 underline-offset-[3px] hover:underline touch:min-h-11" data-testid="queue-alert-go">
+                {queue.alert.primary.label} <span aria-hidden>→</span>
+              </Link>
+            }
+          />
+        </div>
+      ) : null}
       {dealsError ? (
         <div className="mb-4">
           <ErrorState error={dealsError} onRetry={deals.reload} />
@@ -277,7 +312,7 @@ export function DealsPage() {
             {PANE}
             <div className="min-w-0 space-y-6">
               {tableMode ? null : QUEUE_NODE}
-              {INBOX_NODE}
+              {INBOX_SLOT}
             </div>
           </>
         ) : railed && queue ? (
@@ -291,7 +326,7 @@ export function DealsPage() {
           <>
             <div className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto" data-testid="deals-side">
               {tableMode ? null : QUEUE_NODE}
-              {INBOX_NODE}
+              {INBOX_SLOT}
             </div>
             {PANE}
           </>

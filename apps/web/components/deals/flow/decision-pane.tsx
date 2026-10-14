@@ -181,6 +181,7 @@ export function DecisionPane({
   onClose,
   onBusy,
   irrelevantText,
+  inbox,
 }: {
   decision: string;
   /** The customer in the address, when it names one: a negotiation that is another customer's is asked about, not shown. */
@@ -199,6 +200,8 @@ export function DecisionPane({
   onBusy: (busy: boolean) => void;
   /** The server's sentence when it could not honour the selection (`context.irrelevant_text`). */
   irrelevantText: string | null;
+  /** The buyer's thread of the inbox, for the Messages tab (the page reads and opens messages). */
+  inbox?: (buyerId: string | null) => ReactNode;
 }) {
   const { t, te } = useI18n();
   const uid = useId();
@@ -628,7 +631,13 @@ export function DecisionPane({
             {doc?.text ? (
               <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote-messages">
                 <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+                <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
               </figure>
+            ) : null}
+            {inbox ? (
+              <div className="mt-6" data-testid="deal-thread">
+                {inbox(buyerId)}
+              </div>
             ) : null}
           </div>
         ) : null}

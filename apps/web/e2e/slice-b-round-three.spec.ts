@@ -443,6 +443,71 @@ test.describe("Business consequences (slice d)", () => {
   });
 });
 
+test.describe("Messages and the queue (slice e)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("one negotiation is its row and nothing else: no tabs, no search, no sort, no group, no table switch", async ({ page }) => {
+    await checkedDeal(page);
+    await expect(page.getByTestId("queue-row")).toHaveCount(1);
+    for (const gone of ["queue-tabs", "queue-search", "queue-controls", "queue-sort-urgency", "queue-group", "queue-layout-table"]) await expect(page.getByTestId(gone)).toHaveCount(0);
+    await expect(page.getByTestId("queue-total")).toHaveText("1");
+  });
+
+  test("the company funding alert is the page's own full-width row, outside the queue and in none of its counts", async ({ page }) => {
+    await checkedDeal(page);
+    const alert = page.getByTestId("queue-alert");
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText("FLOW action ready");
+    await expect(page.getByTestId("deals-queue").getByTestId("queue-alert")).toHaveCount(0);
+    await expect(page.getByTestId("deals-alert-row")).toBeVisible();
+    const row = await page.getByTestId("deals-alert-row").boundingBox();
+    const queue = await page.getByTestId("deals-queue").boundingBox();
+    expect(row!.y + row!.height, "the alert row is above the queue").toBeLessThanOrEqual(queue!.y + 1);
+    expect(row!.width).toBeGreaterThan(queue!.width * 2);
+    await expect(page.getByTestId("queue-alert-go")).toHaveAttribute("href", /\//);
+    await expect(page.getByTestId("queue-total")).toHaveText("1");
+  });
+
+  test("the selected row is lighter: no ring, the panel's tint, and a 1 px edge that joins it to the workspace", async ({ page }) => {
+    await checkedDeal(page);
+    const row = page.getByTestId("queue-row").first().locator(".flow-row");
+    await expect(row).toHaveAttribute("aria-current", "true");
+    const style = await row.evaluate((el) => ({ shadow: getComputedStyle(el).boxShadow, bg: getComputedStyle(el).backgroundColor }));
+    expect(style.shadow).toBe("none");
+    const chip = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.background = "var(--color-f-purple-soft)";
+      document.body.appendChild(probe);
+      const c = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return c;
+    });
+    expect(style.bg, "lighter than the chip's tint").not.toBe(chip);
+    const edge = await page.getByTestId("row-connector").boundingBox();
+    expect(edge?.height).toBeLessThanOrEqual(1.5);
+  });
+
+  test("Buyer messages are in the deal's Messages tab, only that customer's thread; opening one still reads it; with no deal the inbox card stays under the queue", async ({ page }) => {
+    await checkedDeal(page);
+    // A deal is selected: the inbox card is not under the queue.
+    await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
+    await page.getByTestId("deal-tab-messages").click();
+    const thread = page.getByTestId("deal-thread");
+    await expect(thread).toBeVisible();
+    await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("early");
+    const ids = await thread.locator('[data-testid^="inbox-thread-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(ids).toEqual(["inbox-thread-BUYER-1"]);
+    await expect(thread.getByTestId("inbox-msg-EX01")).toBeVisible();
+    await thread.getByTestId("inbox-msg-EX01").click();
+    await expect(page).toHaveURL(/decision=deal%3AOFF-/);
+    // Closing the deal returns the card under the queue.
+    await page.getByTestId("deal-close").click();
+    await expect(page.getByTestId("deals-inbox")).toBeVisible();
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");
@@ -456,5 +521,18 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-tabs").getByRole("tab").first()).toHaveText("Overview");
     const open = page.getByTestId("deal-header").locator('[data-testid="queue-review-open"], [data-testid="accept-review-open"]');
     await expect(open).toHaveCount(1);
+  });
+
+  test("busy books: six negotiations show every progressive control; the alert row stays outside the queue; Zhuhai's thread is its own", async ({ page, request }) => {
+    await busy(request);
+    await page.goto("/deals");
+    await expect(page.getByTestId("queue-row")).toHaveCount(6);
+    for (const there of ["queue-tabs", "queue-search", "queue-sort-urgency", "queue-group"]) await expect(page.getByTestId(there)).toBeVisible();
+    await expect(page.getByTestId("deals-queue").getByTestId("queue-alert")).toHaveCount(0);
+    await page.getByTestId("queue-row").filter({ hasText: "Zhuhai" }).first().getByTestId("queue-select").click();
+    await page.getByTestId("deal-tab-messages").click();
+    const ids = await page.getByTestId("deal-thread").locator('[data-testid^="inbox-thread-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(ids.length).toBeLessThanOrEqual(1);
+    await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   });
 });
