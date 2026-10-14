@@ -108,7 +108,7 @@ const STEPS: Record<string, Step[]> = {
   "/cash": [
     part("cash.status", "#cash-answer"),
     part("cash.summary", '[data-tour="cash-summary"]'),
-    part("cash.plan", tid("cash-plan-ring")),
+    part("cash.plan", tid("home-next-action")),
     part("cash.chart", tid("cash-forecast")),
     part("cash.markers", '[data-testid^="picture-marker-"]'),
     part("cash.try", tid("cash-try")),

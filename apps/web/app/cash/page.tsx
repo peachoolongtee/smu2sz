@@ -166,12 +166,7 @@ function Cash() {
     </>
   );
 
-  // The plan to run is the page's loudest part: a ring in Home's ink around the plan bar.
-  const action = h?.next_action ? (
-    <div key="action" className="rounded-[var(--radius-f-card)] ring-2 ring-brand-600 ring-offset-4 ring-offset-canvas" data-testid="cash-plan-ring">
-      <NextActionBlock variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
-    </div>
-  ) : null;
+  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
   const stressView = link ? stressCurrent?.view : null;
   const invoiceRow = ctx.invoice ? invoiceRead.data?.rows?.find((r) => r.receivable_id === ctx.invoice && (!r.buyer_id || r.buyer_id === link?.buyerId)) : null;
   const late = h && stressView ? lateReadOf(stressView, invoiceRow, t) : null;
