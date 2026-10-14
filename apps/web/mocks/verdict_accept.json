@@ -3005,7 +3005,8 @@
         "when_text": "As soon as you confirm.",
         "assumptions_text": "Priced on today's books with no new funding. If the books move before you confirm, nothing is recorded and you are asked to look again.",
         "authority_text": "Within what FLOW may agree.",
-        "remaining_text": "Nothing remains open once recorded."
+        "remaining_text": "Nothing remains open once recorded.",
+        "cash_text": null
       }
     },
     "advanced": {

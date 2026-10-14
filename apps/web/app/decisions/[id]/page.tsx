@@ -161,7 +161,7 @@ function RecordBody({ d }: { d: DecisionView }) {
                 <Fact label={t("verdict.exec.agreement")} testId="record-agreement">
                   {d.agreement.status_text}
                 </Fact>
-                <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact>
+                {d.agreement.expires_when ? <Fact label={t("deal.expires")}>{d.agreement.expires_when}</Fact> : null}
               </>
             ) : null}
           </dl>

@@ -3820,7 +3820,7 @@ export interface DecisionView extends DecisionSummary {
     decided_day: Day | null;
     decided_when: string | null;
   } | null;
-  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; expires_day: Day; expires_when: string; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
+  agreement: { commitment_id: string; status: CommitmentStatus; status_text: string; /** Null for an agreement in force (it does not expire: the receipt says "In force."); the words and the line are then left out, never filled in. */ expires_day: Day | null; expires_when: string | null; /** What was agreed, one sentence per obligation, in the server's words. */ terms?: string[]; /** The receipt of the agreement on the record. */ receipt?: CommitmentReceiptView | null } | null;
   operations: DecisionOperation[];
   execution: ExecutionBlock;
   settlement: DecisionSettlementLot[];

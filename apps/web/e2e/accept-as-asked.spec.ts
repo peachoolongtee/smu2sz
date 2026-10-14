@@ -113,6 +113,42 @@ test.describe("live", () => {
     await expect(page.getByRole("main")).toContainText("You accepted Zhuhai's request as asked.");
   });
 
+  test("an agreed Zhuhai is in force and does not expire: no 'expire' word, no empty or trailing '·', no None or null, on the Deals pane, the Agreements tab, the Deals agreements section and the decision record", async ({ page, request }) => {
+    await busy(request);
+    const offer = await offerOfRow(request, "Zhuhai");
+    const decision = `deal:${offer}`;
+    // Accept through the API with what a review would send (the verdict the owner is shown and its books version).
+    const evaluated = await request.post(`${API()}/offers/${offer}/evaluate`, { headers, data: {} });
+    expect(evaluated.ok()).toBeTruthy();
+    const verdict = (await evaluated.json()) as { id: string; state_version: number };
+    const accepted = await request.post(`${API()}/offers/${offer}/accept`, { headers, data: { verdict_id: verdict.id, state_version: verdict.state_version } });
+    expect(accepted.ok(), await accepted.text()).toBeTruthy();
+    const record = (await (await request.get(`${API()}/decisions/${encodeURIComponent(decision)}?lang=en`, { headers })).json()) as { agreement: { expires_day: number | null; expires_when: string | null } };
+    expect(record.agreement.expires_when, "the server says an agreement in force has no expiry").toBeNull();
+    const clean = async (locator: ReturnType<Page["locator"]>, what: string) => {
+      const text = ((await locator.textContent()) ?? "").replace(/\s+/g, " ");
+      expect(text, `${what}: no expire word`).not.toMatch(/expire/i);
+      expect(text, `${what}: no None or null`).not.toMatch(/\b(None|null|undefined)\b/);
+      expect(text, `${what}: no empty or trailing separator`).not.toMatch(/(^|\s)·(\s|$)\s*$|·\s*·|^\s*·/);
+    };
+    // The Deals pane: the record's agreement line and the agreement receipt.
+    await page.goto(`/deals?decision=${encodeURIComponent(decision)}`);
+    await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await clean(page.getByTestId("deal-agreement"), "the agreement line");
+    await expect(page.getByTestId("deal-agreement")).toHaveText(/\S/);
+    await expect(page.getByTestId("deal-agreement-receipt")).toContainText("In force.");
+    await clean(page.getByTestId("deal-record"), "the record block");
+    // The Agreements tab's row for it, and the section under the panes.
+    await page.goto("/deals?tab=agreements");
+    await expect(page.getByTestId("queue-list")).toBeVisible();
+    await clean(page.getByTestId("deals-queue"), "the Agreements tab");
+    await clean(page.getByTestId("deals-agreements"), "the agreements section");
+    // The decision record page.
+    await page.goto(`/decisions/${encodeURIComponent(decision)}`);
+    await expect(page.getByTestId("record-agreement")).toBeVisible();
+    await clean(page.getByRole("main"), "the decision record page");
+  });
+
   test("Dongguan: declining asks once in one line, closes the request and leaves the queue; the pane shows Declined with the record", async ({ page, request }) => {
     await busy(request);
     await selectRequest(page, "Dongguan");

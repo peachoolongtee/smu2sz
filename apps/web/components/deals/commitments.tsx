@@ -116,10 +116,13 @@ function CommitmentItem({ c, buyer, buyerId, today, recordState, summary }: { c:
           <dt className="text-ink-3">{t("biz.deals.giveawaysBooked")}</dt>
           <dd className="font-medium tabular-nums text-ink">{c.forward_value_display}</dd>
         </div>
-        <div>
-          <dt className="text-ink-3">{t(c.expires_day < today ? "deal.expired" : "deal.expires")}</dt>
-          <dd className="font-medium text-ink">{whenText(c.expires_day, today, t)}</dd>
-        </div>
+        {/* An agreement in force (accepted, active or fulfilled) does not expire: the server's record says "In force." and carries no expiry, so none is said here either. */}
+        {c.status === "PROPOSED" || c.status === "EXPIRED" || c.status === "REVOKED" ? (
+          <div>
+            <dt className="text-ink-3">{t(c.expires_day < today ? "deal.expired" : "deal.expires")}</dt>
+            <dd className="font-medium text-ink">{whenText(c.expires_day, today, t)}</dd>
+          </div>
+        ) : null}
       </dl>
       {summary}
     </li>

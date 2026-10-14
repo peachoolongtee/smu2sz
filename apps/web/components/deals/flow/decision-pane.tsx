@@ -118,7 +118,7 @@ function RecordBlock({ record, decision }: { record: DecisionView; decision: str
       ) : null}
       {record.agreement ? (
         <p className="text-sm font-bold text-ink-2" data-testid="deal-agreement">
-          {record.agreement.status_text} · {record.agreement.expires_when}
+          {[record.agreement.status_text, record.agreement.expires_when].filter(Boolean).join(" · ")}
         </p>
       ) : null}
       {terms.length ? (

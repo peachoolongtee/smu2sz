@@ -111,8 +111,8 @@
         "commitment_id": "CMT-a78afaa5becb5273",
         "status": "ACTIVE",
         "status_text": "Agreed",
-        "expires_day": 7,
-        "expires_when": "in 7 days",
+        "expires_day": null,
+        "expires_when": null,
         "terms": [
           "The buyer may pay early and take 0.85% off up to ¥257,200.00 of the ¥420,000.00 invoice to Foshan Home Retail Co. (effective in 2 days; one time)"
         ],
@@ -124,7 +124,7 @@
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
-          "when_text": "Expires in 7 days.",
+          "when_text": "In force.",
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": "¥255,013.80 promised for the ¥420,000.00 invoice to Foshan Home Retail Co. due in 32 days within 2 days under the agreement with Foshan Home Retail Co.; the day has not passed."
@@ -326,8 +326,8 @@
         "commitment_id": "CMT-a78afaa5becb5273",
         "status": "ACTIVE",
         "status_text": "已达成协议",
-        "expires_day": 7,
-        "expires_when": "7 天后",
+        "expires_day": null,
+        "expires_when": null,
         "terms": [
           "买家可提前付款，Foshan Home Retail Co. 的 ¥420,000.00 发票中最多 ¥257,200.00 减免 0.85%（2 天后生效；一次性）"
         ],
@@ -339,7 +339,7 @@
           "gross_display": null,
           "fees_display": null,
           "net_display": null,
-          "when_text": "7 天后到期。",
+          "when_text": "已生效。",
           "assumptions_text": null,
           "authority_text": null,
           "remaining_text": "与Foshan Home Retail Co.的协议约定，Foshan Home Retail Co. 的 ¥420,000.00 发票（32 天后到期）的 ¥255,013.80 应在2 天内到账；约定日尚未过。"
