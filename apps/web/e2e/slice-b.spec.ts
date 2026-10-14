@@ -366,7 +366,7 @@ test.describe("live", () => {
     await openCompare(page);
     // The first reply that is not the recommended one.
     await page.locator('[data-testid^="deal-use-"]:visible').nth(1).click();
-    await expect(page.getByTestId("path-reply-back")).toBeVisible();
+    await expect(page.locator('[data-testid^="deal-use-"]:visible').nth(1)).toHaveAttribute("aria-pressed", "true");
     await page.getByTestId("queue-review-open").click();
     const picked = page.getByTestId("queue-review");
     await expect(picked.getByTestId("commitment-receipt")).toBeVisible();

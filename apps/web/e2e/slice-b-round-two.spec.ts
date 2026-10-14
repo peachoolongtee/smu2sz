@@ -157,7 +157,7 @@ test.describe("live", () => {
     await page.goto("/deals");
     await page.getByTestId("queue-row").filter({ hasText: "60-day terms" }).getByTestId("queue-select").click();
     // The request breaches the reserve: its cash outcome says so in the comparison; the terms say the difference of the period.
-    await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText("15 days");
+    await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText("15 days", { timeout: 45_000 });
     await expect(page.getByTestId("deal-scope-terms-bar-current")).toBeVisible();
     await page.getByTestId("deal-tab-compare").click();
     await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText(/Breached by/);

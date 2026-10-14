@@ -80,7 +80,8 @@ test.describe("live", () => {
     await busy(request);
     await selectRequest(page, "Zhuhai");
     const none = page.getByTestId("deal-no-reply");
-    await expect(none).toBeVisible();
+    // (The busy books' first picture read is the server's slow one, about nine seconds: the Overview says Loading until it is there.)
+    await expect(none).toBeVisible({ timeout: 45_000 });
     await expect(page.getByTestId("accept-review")).toHaveCount(0);
     // One outline button leads; nothing is filled until the review is open.
     const open = page.getByTestId("accept-review-open");
