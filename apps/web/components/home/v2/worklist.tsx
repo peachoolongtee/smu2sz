@@ -45,6 +45,9 @@ function useSettled<T>(fresh: T | undefined) {
 }
 
 /** The severity word, for a screen reader (the pill carries the status for the eye): the state vocabulary's word, colour is never the only channel. */
+/** How a row's severity shows for the eye: the red edge, tint and words for what is critical, the amber ones for what needs care; a normal row stays plain. */
+const SEVERITY_TONE: Partial<Record<WorklistSeverity, "bad" | "warn">> = { CRITICAL: "bad", CAUTION: "warn" };
+
 function Severity({ severity }: { severity: WorklistSeverity }) {
   const { t } = useI18n();
   if (severity === "NORMAL") return null;
@@ -81,6 +84,8 @@ export function ActionRow({ row, selection = NO_SELECTION, onLeave }: { row: Wor
       nextStep={row.consequence_text}
       pill={row.status_text ? <StatusPill tone={OWNER_PILL[row.owner] ?? "lavender"} testId="home-row-status">{row.status_text}</StatusPill> : null}
       severity={<Severity severity={row.severity} />}
+      tone={SEVERITY_TONE[row.severity] ?? null}
+      tag={row.severity === "CRITICAL" || row.severity === "CAUTION" ? t(`hv2.sev.${row.severity}` as const) : null}
     />
   );
 }
@@ -102,6 +107,7 @@ export function CustomerRow({ customer, selection = NO_SELECTION, onLeave }: { c
       nextStep={customer.detail_text}
       pill={customer.status_text ? <StatusPill tone={CUSTOMER_PILL[customer.tone]} testId="home-row-status">{customer.status_text}</StatusPill> : null}
       severity={<Severity severity={TONE_SEVERITY[customer.tone]} />}
+      tone={SEVERITY_TONE[TONE_SEVERITY[customer.tone]] ?? null}
     />
   );
 }
@@ -118,7 +124,21 @@ function scrollToAction(reduced: boolean) {
  * together), a search over the rows already fetched (by the customers' `search_terms`; nothing is computed), a header row (Customer / deal, Next step, Status), the rows and the way to the
  * full list. A row opens its item in place. The same body is the desktop table and the phone list.
  */
-export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECTION, onLeave, showAlert = true }: { read: WorklistView; customers: CustomersView | null; onAlertGo?: () => void; selection?: HomeSelection; onLeave?: () => void; showAlert?: boolean }) {
+export function WorklistBody({
+  read,
+  customers,
+  onAlertGo,
+  selection = NO_SELECTION,
+  onLeave,
+  showAlert = true,
+}: {
+  read: WorklistView;
+  customers: CustomersView | null;
+  onAlertGo?: () => void;
+  selection?: HomeSelection;
+  onLeave?: () => void;
+  showAlert?: boolean;
+}) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const uid = useId();
@@ -247,7 +267,25 @@ export function WorklistBody({ read, customers, onAlertGo, selection = NO_SELECT
  * The worklist card (`f-card`): "Your worklist" with its count, "All deals ↗" at the right, then the table. `read` null is a server that does not have the worklist; the page then has no
  * card. A read in flight is a loading block, a read that failed is the error state with Retry. A fresh read does not reorder the list while focus is in it.
  */
-export function WorklistPanel({ read, customers, loading, error, onRetry, onAlertGo, selection, showAlert }: { read: WorklistView | null | undefined; customers: CustomersView | null | undefined; loading: boolean; error: Error | undefined; onRetry: () => void; onAlertGo?: () => void; selection?: HomeSelection; showAlert?: boolean }) {
+export function WorklistPanel({
+  read,
+  customers,
+  loading,
+  error,
+  onRetry,
+  onAlertGo,
+  selection,
+  showAlert,
+}: {
+  read: WorklistView | null | undefined;
+  customers: CustomersView | null | undefined;
+  loading: boolean;
+  error: Error | undefined;
+  onRetry: () => void;
+  onAlertGo?: () => void;
+  selection?: HomeSelection;
+  showAlert?: boolean;
+}) {
   const { t } = useI18n();
   const [settled, handlers] = useSettled(read ?? undefined);
   const titleId = useId();

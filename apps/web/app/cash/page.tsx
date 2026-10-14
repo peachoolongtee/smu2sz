@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { CashForecast, type ChosenLine } from "@/components/business/cash-forecast";
-import { CurrentFunding } from "@/components/business/current-funding";
+import { CashFigures, CashForecast, type ChosenLine } from "@/components/business/cash-forecast";
+import { CashMix } from "@/components/home/v2/cash-mix";
+import { FundingCard } from "@/components/business/current-funding";
 import { PartialRead } from "@/components/business/freshness";
 import { FacilityExplainer } from "@/components/business/facility-explainer";
 import { FundingOptions, isRecommendedRow, optionName, rowKey } from "@/components/business/funding-options";
@@ -13,50 +14,19 @@ import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { StressContext } from "@/components/business/stress-context";
 import { EventPicture, eventPictureReady } from "@/components/home/event-picture";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { SparkIcon, WalletIcon } from "@/components/icons";
-import { FoldCard, ToolTile } from "@/components/business/surface";
-import { Badge, Card, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
-import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding } from "@/lib/api";
+import { ArrowRightIcon, BankIcon, SparkIcon } from "@/components/icons";
+import { FoldCard } from "@/components/business/surface";
+import { Badge, ButtonLink, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
+import { getBuyerExposure, getCustomers, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
 import { lateReadOf, originOf, parseStress } from "@/lib/cash-stress";
 import { bump, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
-import type { FundingView, HomeView, MenuRow } from "@/lib/types";
+import type { FundingView } from "@/lib/types";
 import { useAsync, useStrategyAsync } from "@/lib/use-async";
 import { splitSentence } from "@/lib/price-sentence";
 import { useNarrow } from "@/lib/use-narrow";
 import { Disclosure } from "@/components/business/kit";
-
-/** Your funding sources: each facility with how much of its limit is drawn (a bar sized by `drawn_fen` against `limit_fen`), the server's limit, drawn and available strings and how fast the money arrives. */
-function FundingSources({ facilities, menu }: { facilities: HomeView["facilities"]; menu: MenuRow[] | undefined }) {
-  const { t } = useI18n();
-  const rows = facilities.filter((f) => (f.limit_fen ?? 1) > 0);
-  if (!rows.length) return null;
-  return (
-    <ul className="divide-y divide-line" data-testid="cash-facilities">
-      {rows.map((f) => {
-        const pct = f.limit_fen && f.drawn_fen !== undefined && f.limit_fen > 0 ? Math.min((f.drawn_fen / f.limit_fen) * 100, 100) : 0;
-        const ttc = menu?.find((m) => m.facility.id === f.id)?.time_to_cash_display;
-        return (
-          <li key={f.id} className="py-3" data-testid={`cash-facility-${f.id}`}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
-              <span className="text-sm font-semibold text-ink">{f.name}</span>
-              {ttc ? <span className="text-supporting text-ink-3">{t("biz.facility.speed", { ttc })}</span> : null}
-            </div>
-            <div role="img" aria-label={`${t("biz.cash.sources.used")}: ${f.drawn_display} / ${f.limit_display}`} className="mt-1.5 h-1.5 max-w-md rounded-pill bg-subtle" data-testid="cash-facility-bar" data-pct={Math.round(pct)}>
-              <div className="h-full rounded-pill bg-brand-600" style={{ width: `${pct}%` }} />
-            </div>
-            <dl className="mt-1.5 flex flex-wrap gap-x-6 gap-y-0.5 text-supporting text-ink-2">
-              <div className="flex gap-1.5"><dt>{t("fund.limit")}</dt><dd className="font-semibold tabular-nums text-ink">{f.limit_display}</dd></div>
-              <div className="flex gap-1.5"><dt>{t("biz.drawn")}</dt><dd className="font-semibold tabular-nums text-ink">{f.drawn_display}</dd></div>
-              <div className="flex gap-1.5"><dt>{t("biz.available")}</dt><dd className="font-semibold tabular-nums text-ink">{f.available_display}</dd></div>
-            </dl>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
 
 /**
  * The price sentence on one line: its first clause, with the rest of the server's sentence under "More". A sentence with no break is the
@@ -105,6 +75,9 @@ function Cash() {
   // A phone reads the answer, then the plan to run, then the picture; a desktop reads the picture and then the plan bar under it.
   const narrow = useNarrow();
   const home = useAsync(() => getHome(lang), [lang]);
+  // The customers' names, to name a customer's early payment by its short name in the ring and the current funding.
+  const customerList = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
+  const names = customerList.data?.customers;
   // The monthly readings only; the chart draws the home's own series so it cannot disagree with the headline.
   const traj = useAsync(() => getTrajectory("CONSERVATIVE"), []);
   // The one sentence on what earlier cash is worth (strategy MVP, build-time flag). Null while loading, when the server has it
@@ -207,7 +180,7 @@ function Cash() {
   const stressNow = stressView?.stress?.now;
   const picture = h ? (
     <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} aria-busy={stressPending} className="motion-reveal card-flat min-w-0 space-y-2">
-      {stressPending ? <LoadingBlock rows={3} label={t("cash.stress.loading")} /> : stressed && late ? <EventPicture h={h} lateRead={late} /> : <CashForecast h={h} chosen={chosen} />}
+      {stressPending ? <LoadingBlock rows={3} label={t("cash.stress.loading")} /> : stressed && late ? <EventPicture h={h} lateRead={late} /> : <CashForecast h={h} chosen={chosen} figures={false} />}
       {/* The picture cannot be drawn (the home read has no rail): the late-payment sentences are still said, never dropped. */}
       {late && !stressed ? (
         <div className="space-y-1.5 border-l-2 border-line-strong pl-3" data-testid="cash-stress-fallback">
@@ -225,7 +198,20 @@ function Cash() {
     </section>
   ) : null;
   // After a cure that did not restore the reserve there is no plan to run: the one remaining task takes the plan's place.
-  const slot = h && !h.next_action ? h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : covered ? <CurrentFunding h={h} /> : null : null;
+  // Every source of money in one card ("Your funding"): at the top once no further action is needed (the position is the news), else under the plans.
+  const fundingCard = h ? (
+    <FundingCard h={h} customers={names} menu={plan.data?.menu}>
+      {plan.data ? (
+        <Disclosure testId="cash-sources" className="mt-2" summary={t("biz.cash.sources")}>
+          <div className="mt-2">
+            <FacilityExplainer menu={plan.data.menu} inPlan={new Set(plan.data.committed.actions.map((a) => a.facility_id))} />
+          </div>
+        </Disclosure>
+      ) : null}
+    </FundingCard>
+  ) : null;
+  const fundingOnTop = Boolean(h && !h.next_action && !h.remaining_task && covered);
+  const slot = h && !h.next_action ? h.remaining_task ? <RemainingTaskBlock text={h.remaining_task} links={h.remaining_task_links ?? []} decisionId={h.remaining_task_decision_id} primary={h.pending_count === 0} /> : fundingOnTop ? fundingCard : null : null;
 
   return (
     <>
@@ -271,6 +257,13 @@ function Cash() {
             ) : null}
           </header>
 
+          {/* The main numbers at a glance, and where the cash comes from (the same ring as Home's): the page's summary before its detail. */}
+          <section aria-label={t("biz.cash.summary")} className="motion-reveal card-flat grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" data-testid="cash-summary" data-tour="cash-summary">
+            <CashFigures h={h} big />
+            <div className="min-w-0 lg:border-l lg:border-line lg:pl-5">
+              <CashMix h={h} customers={names} bare />
+            </div>
+          </section>
           <PartialRead partial={h.partial} onRetry={home.reload} />
           <FixResult flat result={fixer.result} error={fixer.error} changed={fixer.changed} slow={fixer.slow} rechecked={fixer.rechecked} onRecheck={fixer.recheck} />
           {slot}
@@ -289,6 +282,12 @@ function Cash() {
           {stressed ? picture : action}
           {stressed ? action : picture}
 
+          {/* The two things to do from here: try other terms and funding in the sandbox (the loud card), or find more funding with loans and purchases. */}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+            <TryTermsCard />
+            <MoreFundingCard />
+          </div>
+
           {covered ? (
             !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
               <Disclosure card testId="cash-options" summary={t("biz.cash.options.considered")}>
@@ -296,21 +295,14 @@ function Cash() {
               </Disclosure>
             )
           ) : (
-            <Card flat id="cash-options" title={t("biz.cash.options")} subtitle={t("biz.cash.options.sub3")}>
-              {options}
-            </Card>
+            <>
+              <FoldCard testId="cash-options-all" title={t("biz.cash.gap.all")} hint={rows.length ? t("biz.cash.gap.allHint", { n: rows.length }) : t("biz.cash.options.sub3")}>
+                {options}
+              </FoldCard>
+            </>
           )}
 
-          <Card flat id="cash-sources-now" title={t("biz.cash.sources.title")} subtitle={t("biz.cash.sources.sub")}>
-            <FundingSources facilities={h.facilities} menu={plan.data?.menu} />
-            {plan.data ? (
-              <Disclosure testId="cash-sources" className="mt-2" summary={t("biz.cash.sources")}>
-                <div className="mt-2">
-                  <FacilityExplainer menu={plan.data.menu} inPlan={new Set(plan.data.committed.actions.map((a) => a.facility_id))} />
-                </div>
-              </Disclosure>
-            ) : null}
-          </Card>
+          {fundingOnTop ? null : fundingCard}
 
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (
@@ -351,17 +343,62 @@ function Cash() {
             </FoldCard>
           ) : null}
 
-          {/* The two tools that start from the cash: testing terms and checking a purchase. */}
-          <nav aria-label={t("biz.cash.doors")} className="grid grid-cols-2 gap-3">
-            <div id="cash-whatif" className="min-w-0">
-              <ToolTile href="/whatif" icon={SparkIcon} title={t("biz.cash.whatif.open")} body={t("biz.cash.whatif.sub")} />
-            </div>
-            <div id="cash-capex" className="min-w-0">
-              <ToolTile href="/capex" icon={WalletIcon} title={t("biz.cash.capex.open")} body={t("biz.cash.capex.sub")} />
-            </div>
-          </nav>
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * The sandbox, made obvious: the loud card under the forecast (Home's ink, the dot texture and a small drawing of two cash lines), saying what can be tried there (terms,
+ * discounts, how the gap is funded) and that nothing is booked, with the one button that opens it.
+ */
+function TryTermsCard() {
+  const { t } = useI18n();
+  return (
+    <section id="cash-whatif" aria-labelledby="cash-try-title" className="motion-reveal relative isolate flex flex-col overflow-hidden rounded-[var(--radius-f-card)] bg-f-btn p-5 text-f-btn-ink shadow-(--shadow-lift) sm:p-6" data-testid="cash-try" data-tour="cash-try">
+      <span aria-hidden className="dash-dots absolute inset-y-0 right-0 -z-10 w-2/3" />
+      {/* Two cash lines, one moved: what the sandbox shows. Decoration only. */}
+      <svg aria-hidden viewBox="0 0 160 64" className="absolute right-5 top-5 -z-10 hidden h-16 w-40 opacity-80 sm:block">
+        <path d="M2 18 H40 V40 H86 V54 H122 V30 H158" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="2.5" strokeDasharray="5 4" />
+        <path d="M2 18 H40 V28 H86 V36 H122 V14 H158" fill="none" stroke="var(--color-f-green)" strokeWidth="3" strokeLinejoin="round" />
+      </svg>
+      <p className="flex items-center gap-1.5 text-supporting font-bold uppercase tracking-[0.08em] text-f-btn-ink/70">
+        <SparkIcon aria-hidden width={14} height={14} />
+        {t("cash.try.eyebrow")}
+      </p>
+      <h2 id="cash-try-title" className="mt-2 max-w-[22ch] font-display text-xl font-bold leading-tight tracking-[-0.015em] sm:text-2xl">
+        {t("cash.try.title")}
+      </h2>
+      <p className="mt-2 max-w-[52ch] text-sm text-f-btn-ink/75">{t("cash.try.body")}</p>
+      <div className="mt-auto pt-5">
+        <Link href="/whatif" className="motion-press inline-flex min-h-10 items-center gap-1.5 rounded-control bg-card px-4 text-sm font-bold text-f-ink shadow-(--shadow-f) hover:shadow-(--shadow-lift) touch:min-h-11" data-testid="cash-try-open">
+          {t("cash.try.cta")}
+          <ArrowRightIcon aria-hidden width={14} height={14} />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+/** "Need more funding?": when the plan is not enough, or to fund a purchase, the way to loans and financing structures (capex). Always on the page. */
+function MoreFundingCard() {
+  const { t } = useI18n();
+  return (
+    <section id="cash-capex" aria-labelledby="cash-more-title" className="motion-reveal card-flat flex flex-col" data-testid="cash-more" data-tour="cash-more">
+      <span aria-hidden className="grid size-11 place-items-center rounded-pill bg-subtle text-ink">
+        <BankIcon width={20} height={20} />
+      </span>
+      <h2 id="cash-more-title" className="sec-title mt-3 font-display text-lg font-bold tracking-[-0.01em] text-ink">
+        {t("cash.more.title")}
+      </h2>
+      <p className="mt-1 text-sm text-ink-2">{t("cash.more.body")}</p>
+      <div className="mt-auto pt-5">
+        <ButtonLink href="/capex" variant="secondary" data-testid="cash-gap-loans">
+          {t("cash.more.cta")}
+          <ArrowRightIcon aria-hidden width={14} height={14} />
+        </ButtonLink>
+      </div>
+    </section>
   );
 }

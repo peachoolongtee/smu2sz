@@ -52,9 +52,6 @@ const initials = (name: string) =>
     .map((w) => w[0]!.toUpperCase())
     .join("") || name.slice(0, 1);
 
-/** A negotiation's address on Deals: the customer and the decision, as a queue row selects it. */
-const dealHref = (customer: string, decision: string) => `/deals?customer=${encodeURIComponent(customer)}&decision=${encodeURIComponent(decision)}`;
-
 /**
  * Sorts every buyer into one row: an open offer (the deals read says whether the reply has gone out), else the latest offer's record (agreed,
  * no deal, ...), else a message not yet read, else the contract on file, else nothing set up. Unknown senders are set aside. The page decides
@@ -97,6 +94,7 @@ export function useDealRows({
     const record = latestOffer ? (records.find((r) => r.id === dealRecordId(latestOffer.offer.offer_id)) ?? null) : null;
     const offerMeta = latestOffer ? `${te("channel", latestOffer.documents[0]?.channel ?? "chat")} · ${record?.updated_when ?? whenText(latestOffer.offer.received_day, today, t)}` : null;
     const open = deal?.open_offer ?? null;
+    // A deal opens on its customer: every deal with that buyer, the next one to act on outlined; nothing is selected for the owner.
     const base = { key: id, buyerId: id, name, href: `/deals?customer=${encodeURIComponent(id)}` };
 
     if (known && !known.has(id)) {
@@ -104,13 +102,11 @@ export function useDealRows({
       rows.push({ ...base, meta: metaOf(latestMessage), line: t("deals.list.line.setAside"), quoted: false, pill: { text: t("deals.list.pill.setAside"), tone: "bad" }, figure: null, group: "closed", href: "/trust" });
     } else if (open) {
       const sent = open.stages.some((s) => s.key === "sent" && s.state === "now");
-      const href = dealHref(id, dealRecordId(open.offer_id));
       rows.push(
         sent
-          ? { ...base, href, meta: offerMeta ?? metaOf(latestMessage), line: t("deals.list.line.waiting"), quoted: false, pill: { text: t("deals.list.pill.waiting"), tone: "info" }, figure: null, group: "waiting" }
+          ? { ...base, meta: offerMeta ?? metaOf(latestMessage), line: t("deals.list.line.waiting"), quoted: false, pill: { text: t("deals.list.pill.waiting"), tone: "info" }, figure: null, group: "waiting" }
           : {
               ...base,
-              href,
               meta: offerMeta ?? metaOf(latestMessage),
               line: open.headline_short ?? open.read_text ?? open.asks_text,
               quoted: false,
@@ -134,7 +130,6 @@ export function useDealRows({
       const line = neg ? (neg.outcome === "DEAL" ? (accepted ? t("deals.list.line.accepted", { option: accepted }) : t("deals.list.line.agreed")) : t("deals.list.line.refused")) : record.headline;
       rows.push({
         ...base,
-        href: dealHref(id, record.id),
         meta: offerMeta,
         line,
         quoted: false,
@@ -179,7 +174,7 @@ export function DealList({ rows }: { rows: DealListRow[] }) {
     <section aria-labelledby="deal-list-title" className="space-y-4" data-testid="deal-list">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="deal-list-title" className="font-display text-xl font-bold tracking-[-0.01em] text-ink">
+          <h2 id="deal-list-title" className="sec-title font-display text-xl font-bold tracking-[-0.01em] text-ink">
             {t("deals.list.title")}
           </h2>
           <p className="text-supporting text-ink-3">{t("deals.list.sub")}</p>

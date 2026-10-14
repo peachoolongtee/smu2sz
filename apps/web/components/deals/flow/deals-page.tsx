@@ -26,6 +26,7 @@ import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
 import { dealTabCounts, dealTabOf, negotiationRows, TABLE_FROM, type DealTab } from "./deal-model";
 import { QueuePanel, type QueueLayout } from "./queue-table";
+import { TaskProgress } from "./next-step-guide";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
 const XL = "(min-width: 1280px)";
@@ -134,8 +135,6 @@ export function DealsPage() {
   const [reading, setReading] = useState<string | null>(null);
   const [readError, setReadError] = useState<string | null>(null);
   const [inboxPref, setInboxPref] = useState<boolean | null>(null);
-  // Open while nothing is selected and nothing needs the owner (the next thing to do is read a message); folded to one row once a negotiation is selected.
-  const inboxOpen = inboxPref ?? Boolean(queue && !decision && queue.counts.needs_you === 0);
   // The messages Business mode shows: the senders the books know (the same rule as the list itself).
   const inboxCount = INBOX.filter((m) => mode !== "business" || (known ? known.has(m.counterparty_id) : false)).length;
   async function openMessage(m: InboxMessage) {
@@ -182,6 +181,29 @@ export function DealsPage() {
   });
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
+  // The one next click while nothing is selected: the first request in view that needs the owner, else the first message not read yet, else nothing here.
+  const scope = sel.customer ?? params.get("buyer") ?? null;
+  const inView = rows.filter((x) => !scope || x.row.customer_id === scope);
+  // Only a request that needs the owner is a next click: an agreed or waiting deal is never outlined.
+  const firstRequest = inView.find((x) => x.tier === "needs_you") ?? null;
+  const firstUnread =
+    // Only a buyer's newest message (the head of its thread, first in INBOX) is a next click; the earlier ones in the thread are history.
+    INBOX.find(
+      (m) =>
+        INBOX.find((x) => x.counterparty_id === m.counterparty_id) === m &&
+        (!scope || m.counterparty_id === scope) &&
+        (mode !== "business" || (known ? known.has(m.counterparty_id) : false)) &&
+        !readDocIds.includes(m.document.doc_id),
+    ) ?? null;
+
+  // The next click is a message when nothing is selected and no request is open in view (outlined in the inbox). With nothing selected the inbox IS the right-hand side, open;
+  // once a negotiation is selected the negotiation takes that side and the inbox folds to one row under the queue.
+  const nextIsMessage = !decision && !firstRequest && firstUnread !== null;
+  const inboxOpen = !decision || (inboxPref ?? false);
+  // Where the owner is on a request (open it, check it, send or approve): the selected negotiation's own step, reported by its pane; with nothing selected, the first step
+  // when there is something to open, else none.
+  const [paneStep, setPaneStep] = useState<number | null>(null);
+  const progress = decision ? paneStep : firstRequest || firstUnread ? 0 : null;
   const tableMode = Boolean(queue) && layout === "table" && rows.length >= TABLE_FROM;
   const QUEUE_NODE = (
     <QueuePanel
@@ -200,13 +222,13 @@ export function DealsPage() {
       layout={layout}
       onLayout={setLayout}
       onlyCustomer={!decision ? (sel.customer ?? params.get("buyer") ?? null) : null}
-      onShowAll={() => go({ customer: null, buyer: null })}
+      nextKey={!decision ? (firstRequest?.row.key ?? null) : null}
     />
   );
   const INBOX_NODE =
     /* Not drawn until the queue is read: whether it is open depends on what the queue says (it would open and fold under the owner's hand). */
     queue === undefined ? null : (
-      <div key="inbox" className="flow-card p-4 sm:p-5" data-testid="deals-inbox">
+      <div key="inbox" className={`flow-card ${decision ? "p-4 sm:p-5" : "p-5 sm:p-7"}`} data-testid="deals-inbox">
         {inboxOpen ? null : (
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="inbox-collapsed">
             <h2 className="font-display text-base font-extrabold text-ink">{t("deals.inbox.title", { n: inboxCount })}</h2>
@@ -227,7 +249,8 @@ export function DealsPage() {
             onOpen={(m) => void openMessage(m)}
             loadError={books.error}
             onRetry={books.reload}
-            onCollapse={() => setInboxPref(false)}
+            onCollapse={decision ? () => setInboxPref(false) : undefined}
+            nextDocId={nextIsMessage ? (firstUnread?.document.doc_id ?? null) : null}
             refusals={ledger.data?.refusals ?? null}
           />
         ) : null}
@@ -236,12 +259,9 @@ export function DealsPage() {
   const PANE = (
         <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" data-testid="deals-detail">
           {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
-          ) : queue === undefined ? null : (
-            <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
-              <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
-              <p className="mt-1 max-w-[56ch] text-sm text-ink-2">{t("deals.select.body")}</p>
-            </section>
+            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} onStep={setPaneStep} />
+          ) : (
+            INBOX_NODE
           )}
         </div>
   );
@@ -304,20 +324,24 @@ export function DealsPage() {
           screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
           From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
       {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
-      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,850px)] xl:items-start">
-        {!twoPanes && decision ? (
+      {/* Where the owner is on a request, as a task's progress across the top: open it, check it against the limits, send or approve FLOW's reply. */}
+      <TaskProgress current={progress} className="mb-6" />
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)] xl:items-start">
+        {/* The right-hand side is the selected negotiation, or (nothing selected) the inbox; below the two-pane width it comes first. The inbox sits under the queue only
+            while a negotiation holds the right-hand side. */}
+        {!twoPanes && (decision || queue !== undefined) ? (
           <>
             {PANE}
             <div className="min-w-0 space-y-6">
               {tableMode ? null : QUEUE_NODE}
-              {INBOX_NODE}
+              {decision ? INBOX_NODE : null}
             </div>
           </>
         ) : (
           <>
             <div className="min-w-0 space-y-6">
               {tableMode ? null : QUEUE_NODE}
-              {INBOX_NODE}
+              {decision ? INBOX_NODE : null}
             </div>
             {PANE}
           </>

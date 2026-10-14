@@ -162,7 +162,7 @@ export function Card({
         {title ? (
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div className="min-w-0">
-              <h2 id={id ? `${id}-title` : undefined} className="text-balance font-display text-lg font-bold tracking-[-0.01em] text-ink">
+              <h2 id={id ? `${id}-title` : undefined} className="sec-title text-balance font-display text-lg font-bold tracking-[-0.01em] text-ink">
                 {title}
               </h2>
               {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
@@ -183,7 +183,7 @@ export function Card({
       {title ? (
         <div className="flex flex-wrap items-start justify-between gap-2 px-5 pt-4">
           <div className="min-w-0">
-            <h2 id={id ? `${id}-title` : undefined} className="type-card-title text-balance text-ink">
+            <h2 id={id ? `${id}-title` : undefined} className="sec-title type-card-title text-balance text-ink">
               {title}
             </h2>
             {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
@@ -316,8 +316,9 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md";
 
 const variantClass: Record<ButtonVariant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 border-transparent",
-  secondary: "bg-surface text-ink border-line-ui hover:bg-subtle",
+  primary: "bg-brand-600 text-white border-transparent shadow-(--shadow-f) hover:shadow-(--shadow-lift) hover:brightness-110",
+  // A white face, a visible edge and the soft shadow: on a panel card it still reads as something to press.
+  secondary: "bg-card text-ink border-line-ui shadow-(--shadow-f) hover:border-ink-3 hover:bg-subtle",
   ghost: "bg-transparent text-ink-2 border-transparent hover:bg-subtle hover:text-ink",
   danger: "bg-bad-solid text-white border-transparent hover:brightness-90",
 };
