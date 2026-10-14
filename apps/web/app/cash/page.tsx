@@ -13,7 +13,8 @@ import { RemainingTaskBlock } from "@/components/business/open-decisions";
 import { StressContext } from "@/components/business/stress-context";
 import { EventPicture, eventPictureReady } from "@/components/home/event-picture";
 import { FixResult, useFixAlert } from "@/components/home/fix-alert";
-import { ChevronRightIcon } from "@/components/icons";
+import { SparkIcon, WalletIcon } from "@/components/icons";
+import { FoldCard, ToolTile } from "@/components/business/surface";
 import { Badge, Card, ErrorState, Formula, LoadingBlock, TableWrap, tableCls, tdCls, textLinkClass, thCls } from "@/components/ui";
 import { getBuyerExposure, getHome, getPriceCurve, getReceivables, getTrajectory, planFunding } from "@/lib/api";
 import { onSignedIn } from "@/lib/auth";
@@ -192,7 +193,12 @@ function Cash() {
     </>
   );
 
-  const action = h?.next_action ? <NextActionBlock key="action" variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} /> : null;
+  // The plan to run is the page's loudest part: a ring in Home's ink around the plan bar.
+  const action = h?.next_action ? (
+    <div key="action" className="rounded-[var(--radius-f-card)] ring-2 ring-brand-600 ring-offset-4 ring-offset-canvas" data-testid="cash-plan-ring">
+      <NextActionBlock variant="bar" sticky={false} a={h.next_action} stateVersion={h.state_version} fixer={fixer} />
+    </div>
+  ) : null;
   const stressView = link ? stressCurrent?.view : null;
   const invoiceRow = ctx.invoice ? invoiceRead.data?.rows?.find((r) => r.receivable_id === ctx.invoice && (!r.buyer_id || r.buyer_id === link?.buyerId)) : null;
   const late = h && stressView ? lateReadOf(stressView, invoiceRow, t) : null;
@@ -200,7 +206,7 @@ function Cash() {
   const stressPending = Boolean(link && stressCurrent === undefined && !stressRead.error);
   const stressNow = stressView?.stress?.now;
   const picture = h ? (
-    <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} aria-busy={stressPending} className="motion-reveal min-w-0 space-y-2">
+    <section key="picture" id="cash-chart" aria-label={t("biz.cash.forecast")} aria-busy={stressPending} className="motion-reveal card-flat min-w-0 space-y-2">
       {stressPending ? <LoadingBlock rows={3} label={t("cash.stress.loading")} /> : stressed && late ? <EventPicture h={h} lateRead={late} /> : <CashForecast h={h} chosen={chosen} />}
       {/* The picture cannot be drawn (the home read has no rail): the late-payment sentences are still said, never dropped. */}
       {late && !stressed ? (
@@ -279,9 +285,9 @@ function Cash() {
               {stressNow.unavailable_text}
             </p>
           ) : null}
-          {/* With the late-payment picture the owner came for it: it comes first on a phone too. */}
-          {narrow && !stressed ? action : picture}
-          {narrow && !stressed ? picture : action}
+          {/* The plan to run is the page's most important part: it comes first at every width, except when the owner came for the late-payment picture. */}
+          {stressed ? picture : action}
+          {stressed ? action : picture}
 
           {covered ? (
             !plan.loading && (!plan.data || !comparison(plan.data).length) ? null : (
@@ -308,7 +314,7 @@ function Cash() {
 
           {/* The debt readings are the forecast's own footer: the same projection, read by month. */}
           {view?.trajectory.months.length ? (
-            <Disclosure testId="cash-readings" className="border-t border-line pt-1" summary={t("biz.readings")}>
+            <FoldCard testId="cash-readings" title={t("biz.readings")} hint={t("biz.readings.hint")}>
               <div>
                 {/* The first line is the home's own reading (the same projection as the table's first month). */}
                 {h.cash.dscr_text || h.cash.leverage_text ? (
@@ -342,24 +348,16 @@ function Cash() {
                   </table>
                 </TableWrap>
               </div>
-            </Disclosure>
+            </FoldCard>
           ) : null}
 
-          {/* Two quiet doors to other pages. */}
-          <nav aria-label={t("biz.cash.doors")} className="flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-4">
+          {/* The two tools that start from the cash: testing terms and checking a purchase. */}
+          <nav aria-label={t("biz.cash.doors")} className="grid grid-cols-2 gap-3">
             <div id="cash-whatif" className="min-w-0">
-              <Link href="/whatif" className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`}>
-                {t("biz.cash.whatif.open")}
-                <ChevronRightIcon />
-              </Link>
-              <p className="text-supporting text-ink-3">{t("biz.cash.whatif.sub")}</p>
+              <ToolTile href="/whatif" icon={SparkIcon} title={t("biz.cash.whatif.open")} body={t("biz.cash.whatif.sub")} />
             </div>
             <div id="cash-capex" className="min-w-0">
-              <Link href="/capex" className={`${textLinkClass} inline-flex items-center gap-1 text-sm font-medium`}>
-                {t("biz.cash.capex.open")}
-                <ChevronRightIcon />
-              </Link>
-              <p className="text-supporting text-ink-3">{t("biz.cash.capex.sub")}</p>
+              <ToolTile href="/capex" icon={WalletIcon} title={t("biz.cash.capex.open")} body={t("biz.cash.capex.sub")} />
             </div>
           </nav>
         </div>

@@ -7,7 +7,11 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
-import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { DealList, useDealRows } from "@/components/deals/deal-list";
+import { DealTools } from "@/components/deals/tools";
+import { FoldCard } from "@/components/business/surface";
+import { ArrowLeftIcon } from "@/components/icons";
+import { Button, ErrorState, LoadingBlock, PageHeader } from "@/components/ui";
 import { contractsOff } from "@/components/documents";
 import { getClock, getCustomers, getDeals, getLedger, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
@@ -32,6 +36,9 @@ const subscribeXl = (onChange: () => void) => {
 };
 /** True from the two-pane width (`xl`); false below it and while rendering on the server. */
 const useTwoPanes = () => useSyncExternalStore(subscribeXl, () => window.matchMedia(XL).matches, () => false);
+
+/** The address names nothing (the Deals tab itself): the page is the list of every deal. Anything it names (a customer, a deal, a tab) opens the queue and the deal in full. */
+const DETAIL_PARAMS = ["customer", "buyer", "decision", "invoice", "path", "tab", "show", "scenario", "compare", "chart", "investigate"];
 
 /**
  * Deals (tickets #126 to #129): the stable title "Deals" with the state sentence under it, the queue (one row per task, by who owes the next step) beside the selected negotiation. The
@@ -155,6 +162,24 @@ export function DealsPage() {
   const counts = queue ? dealTabCounts(queue) : undefined;
   const subtitle = !counts ? undefined : counts.needs_you > 0 ? t("deals.state.needs", { n: counts.needs_you, w: counts.waiting }) : counts.waiting > 0 ? t("deals.state.waiting", { w: counts.waiting }) : t("deals.state.none");
   const back = deals.data?.context?.back ?? openOffer?.context?.back ?? null;
+  const listMode = !DETAIL_PARAMS.some((k) => params.get(k));
+  const today = clock.data?.day ?? books.data?.day ?? 0;
+  const buyerName = (id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id;
+  const readDocIds = Object.values(demo.offers)
+    .map((o) => o.documents[0]?.doc_id)
+    .filter((d): d is string => Boolean(d));
+  // The list's rows are read from what the page already has: the deals read, the deals' records, the offers read and the inbox.
+  const listRows = useDealRows({
+    deals: deals.data?.deals ?? [],
+    records: records.data?.decisions ?? [],
+    offers: Object.values(demo.offers),
+    negotiations: demo.negotiations,
+    verdicts: demo.verdicts,
+    readDocIds,
+    known,
+    nameOf: buyerName,
+    today,
+  });
   const irrelevantText = opened.decision === decision ? (deals.data?.context?.irrelevant_text ?? null) : null;
 
   const tableMode = Boolean(queue) && layout === "table" && rows.length >= TABLE_FROM;
@@ -221,6 +246,36 @@ export function DealsPage() {
         </div>
   );
 
+  if (listMode)
+    return (
+      <div className="flow-f min-w-0" data-testid="deals-page" data-view="list">
+        <PageHeader section="deals" title={t("nav.deals")} subtitle={t("deals.list.pageSub")} />
+        <div className="space-y-6">
+          <DealTools />
+          {dealsError ? <ErrorState error={dealsError} onRetry={deals.reload} /> : null}
+          {books.error ? <ErrorState error={books.error} onRetry={books.reload} /> : null}
+          {readError ? <ErrorState error={readError} /> : null}
+          {(deals.loading && !deals.data) || (!books.data && !books.error) ? <LoadingBlock rows={3} /> : <DealList rows={listRows} />}
+          {/* Every message, as it arrived: a dropdown under the list. Opening one reads it and opens its deal in full. */}
+          <FoldCard title={t("deals.list.messages")} hint={t("deals.list.messages.hint", { n: inboxCount })} testId="deal-list-messages">
+            <InboxList
+              currentDocId={null}
+              readDocIds={readDocIds}
+              known={known}
+              busy={reading}
+              today={today}
+              mode={mode}
+              statusFor={statusFor}
+              onOpen={(m) => void openMessage(m)}
+              loadError={books.error}
+              onRetry={books.reload}
+              refusals={ledger.data?.refusals ?? null}
+            />
+          </FoldCard>
+        </div>
+      </div>
+    );
+
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
       <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
@@ -228,7 +283,13 @@ export function DealsPage() {
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}
         </Link>
-      ) : null}
+      ) : (
+        // The way back to the list of every deal.
+        <Link href="/deals" className="mb-3 inline-flex min-h-8 items-center gap-1 text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="deal-list-back">
+          <ArrowLeftIcon width={14} height={14} />
+          {t("deals.list.back")}
+        </Link>
+      )}
       {dealsError ? (
         <div className="mb-4">
           <ErrorState error={dealsError} onRetry={deals.reload} />
@@ -266,8 +327,8 @@ export function DealsPage() {
       {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
       <div className="mt-8" data-testid="deals-agreements">
         <ActiveCommitments
-          today={clock.data?.day ?? books.data?.day ?? 0}
-          buyerName={(id: string) => books.data?.state.counterparties.find((c) => c.id === id)?.name ?? deals.data?.deals.find((d) => d.counterparty_id === id)?.counterparty_name ?? id}
+          today={today}
+          buyerName={buyerName}
           hideEmpty
           agreed={(deals.data?.deals ?? []).filter(isAgreed)}
           dealsDay={deals.data?.day ?? null}
