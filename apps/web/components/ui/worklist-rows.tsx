@@ -21,7 +21,7 @@ export interface UnderlineTab<T extends string> {
  * The worklist's filters as the mockup's: text tabs, the chosen one a white pill (the count beside each label at 13 px in neutral text; colour is for the status pill only). A tablist:
  * one tab stop, arrow keys, Home and End move and the choice follows the focus.
  */
-export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, dense = false }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[]; /** Tighter padding for a narrow card (the Deals queue's 340 px). */ dense?: boolean }) {
+export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, dense = false }: { label: string; value: T; onChange: (v: T) => void; tabs: UnderlineTab<T>[]; /** For a narrow card (the Deals queue): tighter padding, and the count a small badge so the tabs keep one line. */ dense?: boolean }) {
   const track = useRef<HTMLDivElement>(null);
   const selected = tabs.findIndex((t) => t.value === value);
   const els = () => Array.from(track.current?.querySelectorAll<HTMLButtonElement>("[role=tab]") ?? []);
@@ -49,10 +49,13 @@ export function UnderlineTabs<T extends string>({ label, value, onChange, tabs, 
             data-testid={t.testId}
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKey(e, i)}
-            className={`motion-press inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-pill ${dense ? "px-2.5 text-sm" : "px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
+            className={`motion-press inline-flex h-10 items-center whitespace-nowrap rounded-pill ${dense ? "gap-1 px-1.5 text-sm" : "gap-1.5 px-3.5 text-[15px]"} font-medium transition-colors duration-(--dur-fast) hover:text-ink touch:h-11 ${on ? "bg-card text-ink shadow-f" : "text-ink-3"}`}
           >
             {t.label}
-            <span className={`text-supporting tabular-nums ${on ? "text-ink" : "text-ink-3"}`} data-testid={t.countTestId}>
+            <span
+              className={`text-supporting tabular-nums ${dense ? `inline-grid min-w-[1.125rem] place-items-center rounded-pill px-1 font-semibold leading-[1.125rem] ${on ? "bg-subtle text-ink" : "bg-subtle/60 text-ink-3"}` : on ? "text-ink" : "text-ink-3"}`}
+              data-testid={t.countTestId}
+            >
               {t.count}
             </span>
           </button>

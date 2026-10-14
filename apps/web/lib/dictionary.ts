@@ -2555,7 +2555,7 @@ export const en = {
   "deals.tab.all": "All",
   "deals.tab.needs_you": "Needs you",
   "deals.tab.waiting": "Waiting",
-  "deals.tab.agreements": "Agreements",
+  "deals.tab.agreements": "Agreed",
   "deals.tab.customers": "Customers",
   "deals.hint.needs_you": "Tasks only you can do. The company alert is not counted here.",
   "deals.hint.waiting": "What FLOW is waiting for: a buyer, a bank, a payment.",

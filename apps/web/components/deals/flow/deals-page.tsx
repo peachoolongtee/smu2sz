@@ -239,11 +239,11 @@ export function DealsPage() {
           <ErrorState error={readError} />
         </div>
       ) : null}
-      {/* Round two widths: the queue is 340 px, the workspace is fluid up to 850 px (the page's content holds at 1400 px, flow-look.css). Below `xl` a selected negotiation comes first (its decision is inside the first
+      {/* Round two widths: the queue is 380 px (four tabs with their counts on one line), the workspace is fluid up to 850 px (the page's content holds at 1400 px, flow-look.css). Below `xl` a selected negotiation comes first (its decision is inside the first
           screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
           From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
       {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
-      <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,850px)] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,850px)] xl:items-start">
         {!twoPanes && decision ? (
           <>
             {PANE}

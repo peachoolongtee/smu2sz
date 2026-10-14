@@ -55,7 +55,7 @@ function SeverityDot({ severity }: { severity: QueueRowView["severity"] }) {
 }
 
 /**
- * One negotiation of the queue, a compact row for the 340 px card: the customer and the obligation (the server's `subject_text`, never an id in Business), the lifecycle pill (the server's word,
+ * One negotiation of the queue, a compact row for the 380 px card: the customer and the obligation (the server's `subject_text`, never an id in Business), the lifecycle pill (the server's word,
  * the tone says who acts) and, under it, the one consequence with the severity dot. The row is one target (a button that selects the negotiation in place, or a link to the page that does
  * the task); the customer's name inside it is its own link, carrying THIS row's customer, decision and invoice and the origin. The selected row is the lavender fill with a purple edge and
  * `aria-current`; a row is held (disabled) while a send is in flight.
