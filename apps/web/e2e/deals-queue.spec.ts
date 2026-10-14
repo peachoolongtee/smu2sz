@@ -315,3 +315,24 @@ test("axe finds nothing serious or critical on the queue with the review, the co
   await openCompare(page);
   await scan(page, "/deals open");
 });
+
+for (const lang of ["en", "zh"] as const) {
+  for (const width of [1280, 1440] as const) {
+    test(`the four tabs share one line inside the queue at ${width}, in ${lang === "en" ? "English" : "Chinese"}, with a two-digit count and no label cut`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name === "phone", "the desktop widths");
+      await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
+      await page.setViewportSize({ width, height: 900 });
+      await checkedDeal(page);
+      const ids = ["all", "needs_you", "waiting", "agreements"];
+      // A busy book: two digits on All, one on the others.
+      await page.evaluate((list) => list.forEach((k, i) => (document.querySelector(`[data-testid="queue-count-${k}"]`)!.textContent = i === 0 ? "12" : "8")), ids);
+      const boxes = await Promise.all(ids.map((k) => page.getByTestId(`queue-tab-${k}`).evaluate((el) => ({ top: Math.round(el.getBoundingClientRect().top), right: el.getBoundingClientRect().right, clipped: el.scrollWidth > el.clientWidth + 1 }))));
+      expect(new Set(boxes.map((b) => b.top)).size, `${lang} ${width}: one line`).toBe(1);
+      const queue = await page.getByTestId("deals-queue").evaluate((el) => el.getBoundingClientRect().right);
+      for (const b of boxes) {
+        expect(b.right, "inside the queue").toBeLessThanOrEqual(queue);
+        expect(b.clipped, "no label cut").toBe(false);
+      }
+    });
+  }
+}
