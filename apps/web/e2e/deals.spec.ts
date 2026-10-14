@@ -101,6 +101,8 @@ test("opening a message reads it into a negotiation; Check against my limits is 
   await expect(page.getByTestId("deal-negotiation")).toContainText("The buyer accepted Option A. The agreement is on your books.");
   // What ran is the server's own summary, said once under the result; the agreement receipt's "Runs now" line is the same summary, not the state word "Agreed".
   await expect(page.getByTestId("deal-sent-ran")).toHaveText("Agreement with Foshan Home Retail Co. recorded. Funding of ¥149,986.20 was requested and has landed.");
+  // The agreed deal's Overview is the tracker; the record's own account (the agreement's receipt, what was agreed, what is left) is its Terms tab.
+  await page.getByTestId("deal-tab-terms").click();
   await expect(page.getByTestId("deal-agreement-receipt").getByTestId("receipt-line-executes_now")).toContainText("Agreement with Foshan Home Retail Co. recorded.");
   await expect(page.getByTestId("deal-agreement-receipt").getByTestId("receipt-line-executes_now")).not.toHaveText(/Runs now\s*Agreed$/);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");

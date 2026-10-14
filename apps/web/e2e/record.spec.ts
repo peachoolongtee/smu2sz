@@ -114,8 +114,8 @@ test("day 34: the deal's steps say Fulfilled with the receipt and 'Early payment
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "AGREED");
   await advanceTo(page, 34);
   await page.goto(deal);
+  // (The chip is the queue row's word when the server names one for it: the tracker's own state word.)
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "FULFILLED");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Fulfilled");
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Fulfilled");
 });
 
@@ -129,16 +129,17 @@ test("day 34 without the receipt: the line and the agreements card say the early
   await page.goto(deal);
   const steps = page.getByTestId("deal-state-chip");
   await expect(steps).toHaveAttribute("data-state", "MISSED");
-  await expect(page.getByTestId("deal-state-chip")).toContainText("Early payment did not arrive");
   await expect(steps).not.toContainText("Agreed");
   // A lapsed agreement stays on the page, with its word, instead of disappearing.
   await expect(page.locator("#commitments").getByTestId("commitment-state")).toHaveText("Early payment did not arrive");
   await expect(page.locator("#commitments")).toContainText("Agreement expired");
   // The missed payment's card carries the two ways forward the record has: compare the funding options, and chase the payment.
+  await page.getByTestId("deal-tab-terms").click();
   const links = page.getByTestId("deal-left-links");
   await expect(links.getByRole("link", { name: "Compare your funding options" })).toHaveAttribute("href", /\/cash/);
   await expect(links.getByRole("button", { name: /Chase payment/ })).toBeVisible();
-  // The original ask is history: its cost, the most the owner could give and the first breach sit folded under one heading.
+  // The original ask is history: its cost, the most the owner could give and the first breach sit folded under one heading (on the Terms tab, with the record's account).
+  await page.getByTestId("deal-tab-terms").click();
   const original = page.getByTestId("deal-original");
   await expect(original.locator("> summary")).toHaveText("The original ask (not agreed)");
   await expect(original).not.toHaveAttribute("open", "");

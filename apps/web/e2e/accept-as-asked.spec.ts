@@ -104,6 +104,7 @@ test.describe("live", () => {
     // The server's own account of what ran, then the record: Agreed, with the agreement's receipt.
     await expect(page.getByTestId("deal-accepted-ran")).not.toBeEmpty();
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await expect(page.getByTestId("deal-record")).toBeVisible();
     await expect(page.getByTestId("deal-state-chip")).toContainText("Agreed");
     await expect(page.getByTestId("accept-go")).toHaveCount(0);
@@ -137,6 +138,7 @@ test.describe("live", () => {
     // The Deals pane: the record's agreement line and the agreement receipt.
     await page.goto(`/deals?decision=${encodeURIComponent(decision)}`);
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await clean(page.getByTestId("deal-agreement"), "the agreement line");
     await expect(page.getByTestId("deal-agreement")).toHaveText(/\S/);
     await expect(page.getByTestId("deal-agreement-receipt")).toContainText("In force.");

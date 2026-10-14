@@ -108,7 +108,7 @@ test("a quiet day: the sidebar carries no counts", async ({ page }) => {
 test("an offer waiting: the sidebar counts the deal, and Deals leads with FLOW's read after the check", async ({ page }) => {
   await page.goto("/deals");
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
-  await expect(page.getByTestId("inbox-collapsed")).toBeVisible();
+  await expect(page.getByTestId("deals-inbox")).toHaveCount(0); // the buyer's messages are the deal's Messages tab
   await expect(page.getByTestId("next-step")).toBeVisible();
   const deal = page.url(); // the address is the selection
   await page.goto("/");

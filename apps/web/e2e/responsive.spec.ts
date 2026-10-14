@@ -219,8 +219,11 @@ test("Deals (checked) and Cash on a phone: no sideways scroll, the folded inbox 
   // The buyer's messages are the deal's Messages tab: no inbox card is under the queue while a deal is selected.
   await expect(page.getByTestId("deals-inbox")).toHaveCount(0);
   // The page's order on the Overview: the verdict, what they ask, FLOW's reply, the terms by scope.
-  const overview = ["queue-heading", "queue-ask", "queue-recommends", "deal-terms-section"];
-  const orderTops = await page.evaluate((list) => list.map((id) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1), overview);
+  // (The ask is one line when the deals read has the open offer, else the buyer's own message.)
+  const askId = (await page.getByTestId("queue-ask").count()) ? "queue-ask" : "deal-ask-quote";
+  const overview = ["queue-heading", askId, "queue-recommends", "deal-terms-section"];
+  await page.getByTestId("deal-terms-section").waitFor();
+  const orderTops = await page.evaluate((list) => list.map((id) => (document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1e9) + scrollY), overview);
   expect(orderTops.every((y) => y >= 0)).toBe(true);
   expect(orderTops).toEqual([...orderTops].sort((a, b) => a - b));
   await openCompare(page);

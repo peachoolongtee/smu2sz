@@ -385,6 +385,26 @@ export function DecisionPane({
     </nav>
   );
 
+  // The original ask is history once the deal has an outcome: folded, and said not to be the agreement.
+  const originalAsk = (
+    <Disclosure testId="deal-original" className="mt-5 border-t border-line pt-1" summary={t("biz.deals.original.ask")}>
+      <div className="pt-2">
+        <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
+        {doc?.text ? (
+          <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote">
+            <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+            <figcaption className="mt-1 text-supporting text-ink-3">{record?.source.received_when ? t("biz.deals.messageWhen", { channel: te("channel", doc.channel ?? "chat"), when: record.source.received_when }) : te("channel", doc.channel ?? "chat")}</figcaption>
+          </figure>
+        ) : null}
+        {open?.asks_text && !doc?.text ? (
+          <p className="mt-2 max-w-[68ch] text-sm leading-snug text-ink-2" data-testid="queue-ask">
+            {t("dq.ask", { buyer: buyerShort, asks: open.asks_text })}
+          </p>
+        ) : null}
+      </div>
+    </Disclosure>
+  );
+
   const pane = (
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
       <Announce text={title} />
@@ -673,14 +693,14 @@ export function DecisionPane({
                   <h3 className="mb-1 text-supporting font-bold text-ink-3">{t("deals.terms.agreedCost")}</h3>
                   <CostTable paths={[agreedPath]} heads={[t("deals.terms.agreed")]} caption={t("deals.terms.agreedCost")} testId="deal-agreed-cost-table" />
                 </div>
-                <p className="text-sm">
-                  <Link href={`/decisions/${encodeURIComponent(decision)}`} className={quietLink} data-testid="deal-record-link">
-                    {t("deals.record")}
-                  </Link>
-                </p>
+                {record ? <RecordBlock record={record} decision={decision} /> : null}
+                {originalAsk}
               </div>
             ) : record ? (
-              <RecordBlock record={record} decision={decision} />
+              <>
+                <RecordBlock record={record} decision={decision} />
+                {originalAsk}
+              </>
             ) : null}
           </div>
         ) : null}

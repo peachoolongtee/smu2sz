@@ -686,7 +686,7 @@ test.describe("the Agreements tier's groups (slice f)", () => {
     await expect(group(page, "payment_late")).toHaveCount(0);
     await expect(group(page, "closed")).toHaveCount(0);
     await expect(group(page, "awaiting_payment").getByTestId("queue-row")).toHaveCount(2);
-    await expect(group(page, "awaiting_payment").getByTestId("queue-status").first()).toHaveText("Agreed");
+    await expect(group(page, "awaiting_payment").locator('[data-testid="queue-row"][data-kind="AGREEMENT"]').getByTestId("queue-status")).toHaveText("Agreed");
     await page.goto("/demo");
     await walkStory(page, 3, 3);
     await page.goto("/deals");

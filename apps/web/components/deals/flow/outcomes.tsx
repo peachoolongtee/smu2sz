@@ -138,7 +138,7 @@ export function HeadroomPlot({ picture, paths }: { picture: Pick<OfferPictureVie
             <li key={d.key} className="grid h-12 grid-cols-[5.5rem_minmax(0,1fr)] items-center" data-testid="deal-headroom-row" data-below={d.below ? "true" : "false"}>
               <span className="pr-2 text-sm font-bold text-ink">{d.label}</span>
               <span className="relative block h-full border-b border-line">
-                <span className={`absolute top-1/2 size-0 ${reduced ? "" : "transition-[left] duration-300 ease-out"}`} style={{ left: settled ? `${d.at}%` : "0%" }} data-testid="deal-headroom-dot">
+                <span className={`absolute top-1/2 size-0 ${reduced ? "" : "transition-[left] duration-(--dur-expanded) ease-out"}`} style={{ left: settled ? `${d.at}%` : "0%" }} data-testid="deal-headroom-dot">
                   <span aria-hidden className={`absolute -left-[7px] -top-[7px] block size-3.5 rounded-pill ${d.below ? "bg-bad-solid" : "bg-f-ink"}`} />
                   <span className={`absolute top-[10px] whitespace-nowrap font-display text-supporting font-bold tabular-nums ${side(d.at)} ${d.below ? "text-bad-fg" : "text-ink"}`}>
                     {d.short}

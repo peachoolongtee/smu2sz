@@ -329,6 +329,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-sent")).toBeVisible();
     await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(AGREED)}`);
     await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-state", "AGREED");
+    await page.getByTestId("deal-tab-terms").click();
     await expect(page.getByTestId("deal-record")).toBeVisible();
     await expect(page.getByTestId("deal-agreement-receipt")).toBeVisible();
     await expect(page.getByTestId("deal-abstentions")).toHaveCount(0);
