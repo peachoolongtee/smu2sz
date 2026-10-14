@@ -3578,6 +3578,9 @@ export interface QueueRowView {
   why_first_text?: string | null;
   /** The negotiation's lifecycle key (round two): counter_ready, owner_review, awaiting_buyer, more_info, agreed, declined, lapsed. `status_text` is then the lifecycle word alone. Absent from an older server (the tier decides the pill's tone and `status_text` is "state . who acts"). */
   lifecycle?: string | null;
+  /** Round three, section 11: the Agreements tier's three groups, in this order: payment_late, awaiting_payment, closed. A deal with money still owed is never closed. The label is the server's word ("Payment late"). */
+  after_group?: "payment_late" | "awaiting_payment" | "closed" | null;
+  after_group_label?: string | null;
   /** The subject with the offer's id appended: the Demo view's (Business never shows an id). */
   subject_demo_text?: string | null;
   /** The day of the negotiation's latest activity (round two) and the server's words for it ("today", "3 days ago"): the "Latest activity" sort. Absent: that sort is not offered. */
@@ -3591,7 +3594,7 @@ export interface QueueRowView {
 }
 
 /** The counts of the negotiations the Deals queue lists (round two). `agreements` counts the agreements in force; `closed` the agreed deals that are over (round three, section 11). */
-export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements" | "closed", number>>;
+export type DealsCounts = Partial<Record<"all" | "total" | "needs_you" | "waiting" | "agreements" | "closed" | "awaiting_payment" | "payment_late", number>>;
 
 /** One step of a deal's whole life (round three, section 11): the offer's stages before agreement (Received, Analysed, Reply ready or Owner review, Sent, Agreed), the contract stages after it. `state_text` is the server's word for the state; `when_text` says when a done stage happened. A stage the deal does not have is absent. */
 export interface LifecycleStageView {

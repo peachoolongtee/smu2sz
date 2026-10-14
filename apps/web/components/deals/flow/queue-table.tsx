@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
-import { canSortLatest, dealTabCounts, DEAL_TABS, groupByCustomer, isClosedRow, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
+import { canSortLatest, dealTabCounts, DEAL_TABS, afterGroupOf, AFTER_GROUPS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
 
 export type QueueLayout = "compact" | "table";
@@ -332,19 +332,39 @@ export function QueuePanel({
             ) : (
               <>
                 <ul className={listClass} aria-label={t("deals.list")} data-testid="queue-list">
-                  {rowsOf(sorted.filter((x) => !isClosedRow(x.row)))}
+                  {rowsOf(sorted.filter((x) => afterGroupOf(x.row) === null))}
                 </ul>
-                {/* The Closed group (round three, section 11): agreed deals that are over stay in the queue, after the agreements in force. */}
-                {sorted.some((x) => isClosedRow(x.row)) ? (
-                  <section className="mt-4" aria-label={t("deals.closed.title")} data-testid="queue-closed">
-                    <h3 className="px-1 pb-1.5 text-supporting font-bold text-ink-2" data-testid="queue-closed-heading">
-                      {t("deals.closed.title")} <span className="font-semibold tabular-nums text-ink-3">({sorted.filter((x) => isClosedRow(x.row)).length})</span>
-                    </h3>
-                    <ul className={listClass} aria-label={t("deals.closed.title")} data-testid="queue-closed-list">
-                      {rowsOf(sorted.filter((x) => isClosedRow(x.row)))}
-                    </ul>
-                  </section>
-                ) : null}
+                {/* The Agreements tier's groups (round three, section 11): payment late, awaiting payment, closed: the server's label and count; an empty group is not drawn; Closed is folded. */}
+                {AFTER_GROUPS.map((g) => {
+                  const list = sorted.filter((x) => afterGroupOf(x.row) === g);
+                  if (!list.length) return null;
+                  const label = list.find((x) => x.row.after_group_label)?.row.after_group_label ?? t("deals.closed.title");
+                  const head = (
+                    <span className={`inline-flex items-center gap-1.5 ${g === "payment_late" ? "text-bad-fg" : "text-ink-2"}`}>
+                      {g === "payment_late" ? <span aria-hidden className="size-2 rounded-pill bg-bad-solid" /> : null}
+                      {label} <span className="font-semibold tabular-nums text-ink-3">({list.length})</span>
+                    </span>
+                  );
+                  return g === "closed" ? (
+                    <details key={g} className="mt-4" data-testid="queue-after-group" data-group={g}>
+                      <summary className="hit flex min-h-8 cursor-pointer list-none items-center gap-2 px-1 text-supporting font-bold [&::-webkit-details-marker]:hidden touch:min-h-11" data-testid="queue-after-group-heading">
+                        {head}
+                      </summary>
+                      <ul className={`${listClass} mt-1.5`} aria-label={label} data-testid="queue-after-list">
+                        {rowsOf(list)}
+                      </ul>
+                    </details>
+                  ) : (
+                    <section key={g} className="mt-4" aria-label={label} data-testid="queue-after-group" data-group={g}>
+                      <h3 className="px-1 pb-1.5 text-supporting font-bold" data-testid="queue-after-group-heading">
+                        {head}
+                      </h3>
+                      <ul className={listClass} aria-label={label} data-testid="queue-after-list">
+                        {rowsOf(list)}
+                      </ul>
+                    </section>
+                  );
+                })}
               </>
             )}
           </>

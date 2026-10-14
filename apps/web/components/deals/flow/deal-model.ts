@@ -418,3 +418,12 @@ export function chosenLines(paths: Pick<PicturePath, "key" | "kind" | "recommend
 
 /** A row of the Closed group under the Agreed tab: an agreed deal that is over (its status is the tracker's state word, its consequence the close-out sentence). */
 export const isClosedRow = (row: Pick<QueueRowView, "lifecycle">): boolean => lifecycleOf(row) === "closed";
+
+export type AfterGroup = "payment_late" | "awaiting_payment" | "closed";
+/** The Agreements tier's groups in the server's order (payment late, awaiting payment, closed). */
+export const AFTER_GROUPS: readonly AfterGroup[] = ["payment_late", "awaiting_payment", "closed"];
+/** The group an agreement row stands in: the server's `after_group`; an older server's closed row is the Closed group; any other row stands in none. */
+export function afterGroupOf(row: Pick<QueueRowView, "lifecycle" | "after_group">): AfterGroup | null {
+  if (row.after_group && (AFTER_GROUPS as readonly string[]).includes(row.after_group)) return row.after_group;
+  return isClosedRow(row) ? "closed" : null;
+}

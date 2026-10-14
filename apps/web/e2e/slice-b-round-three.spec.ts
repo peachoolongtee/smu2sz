@@ -618,6 +618,58 @@ test.describe("the whole life of a deal (slice f)", () => {
   });
 });
 
+test.describe("Chinese and a phone (slice b round three)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("zh: the tabs, the header, the mandate sentence, the comparison and the chart speak the owner's voice, with the same figures", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
+    await checkedDeal(page);
+    await expect(page.getByTestId("deal-tabs").getByRole("tab")).toHaveText(["概览", "比较回复", "现金影响", "消息"]);
+    await expect(page.getByTestId("queue-review-open")).toHaveText("查看还价");
+    // The server's recommendation and terms, in Chinese.
+    await expect(page.getByTestId("deal-mandate")).toContainText(/[一-鿿]/);
+    await expect(page.getByTestId("deal-mandate")).not.toContainText("Option A is the reply");
+    await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText(/[一-鿿]/);
+    await page.getByTestId("deal-tab-compare").click();
+    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toContainText("超出授权");
+    await expect(page.getByTestId("deal-compare-row-economic").locator("th")).toContainText("经济影响");
+    await expect(page.getByTestId("deal-why-rule")).toContainText("它不按成本对回复排序");
+    await expect(page.getByTestId("deal-outcome-row-lowest")).toContainText("¥165k");
+    await page.getByTestId("deal-tab-cash").click();
+    await expect(page.getByTestId("deal-inspector-day").getByRole("heading", { level: 4 })).toHaveText("这一天");
+    await expect(page.getByTestId("deal-inspector-lowest").getByRole("heading", { level: 4 })).toHaveText("各方案的最低点");
+    await expect(page.getByTestId("deal-chart-funding")).toContainText("每个方案各用自己的融资安排");
+    // No English dictionary label of this round is left on the page.
+    const text = await page.getByTestId("deal-pane").innerText();
+    for (const english of ["Compare responses", "Cash impact", "Review the counter", "Business consequences", "Why these results differ"]) expect(text, english).not.toContain(english);
+  });
+
+  test("a phone (390 px): every tab fits with no sideways scroll, the header's review button and the tabs reach 44 px, and the queue is below the workspace with no rail", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await checkedDeal(page);
+    const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    for (const view of ["overview", "compare", "cash", "messages"]) {
+      await page.getByTestId(`deal-tab-${view}`).click();
+      await expect(page.getByTestId(`deal-panel-${view}`)).toBeVisible();
+      await page.waitForTimeout(400);
+      expect(await overflow(), `${view}: no sideways scroll`).toBeLessThanOrEqual(1);
+      await expect(page.getByTestId("queue-rail")).toHaveCount(0);
+    }
+    for (const id of ["queue-review-open", "deal-tab-overview", "deal-tab-compare", "deal-tab-cash", "deal-tab-messages", "deal-close"]) {
+      const box = (await page.getByTestId(id).boundingBox())!;
+      expect(box.height, id).toBeGreaterThanOrEqual(44);
+    }
+    // The chart's chips and the timing switch fit the page (their touch height is the coarse pointer's rule, pinned on the phone project).
+    await page.getByTestId("deal-tab-cash").click();
+    for (const id of ["deal-chip-asked", "deal-scenario-late"]) {
+      const box = (await page.getByTestId(id).boundingBox())!;
+      expect(box.x + box.width, `${id} fits`).toBeLessThanOrEqual(391);
+    }
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");
