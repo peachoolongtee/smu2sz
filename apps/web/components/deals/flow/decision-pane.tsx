@@ -595,6 +595,11 @@ export function DecisionPane({
               ) : null}
               {sent ? <SendResult n={sent} /> : null}
             </>
+          ) : picture === undefined && n.error ? (
+            // The reply's picture could not be read (a slow or failed read): say so, with Retry, never "Loading" for ever.
+            <div data-testid="paths-failed">
+              <ErrorState error={n.error} onRetry={n.reload} />
+            </div>
           ) : picture === undefined ? (
             <div data-testid="paths-loading">
               <LoadingBlock rows={3} />
@@ -705,8 +710,8 @@ export function DecisionPane({
         ) : null}
 
         {(current === "compare" || current === "cash") && picture === undefined ? (
-          <div className="flow-card mt-1 p-5 sm:p-7" data-testid="paths-loading">
-            <LoadingBlock rows={3} />
+          <div className="flow-card mt-1 p-5 sm:p-7" data-testid={n.error ? "paths-failed" : "paths-loading"}>
+            {n.error ? <ErrorState error={n.error} onRetry={n.reload} /> : <LoadingBlock rows={3} />}
           </div>
         ) : null}
 

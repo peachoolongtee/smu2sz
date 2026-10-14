@@ -159,3 +159,17 @@ export async function openOperatorTools(page: Page): Promise<void> {
   await fold.waitFor();
   if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) await fold.locator("> summary").click();
 }
+
+/**
+ * Reads the cash picture of every open negotiation once, so the server's cache holds it: on the busy books the first read of a picture takes several seconds (it composes the scenarios from the
+ * exposure and compare reads), longer than the e2e build's 6 s request limit. A spec that opens such a deal in the page warms the cache first, as an earlier visit would have.
+ */
+export async function warmPictures(request: APIRequestContext): Promise<void> {
+  if (test.info().project.name !== "live") return;
+  test.setTimeout(test.info().timeout + 120_000);
+  const base = `http://localhost:${process.env.E2E_API_PORT ?? 8000}`;
+  const headers = { "X-Owner-Token": DEMO_TOKEN };
+  const deals = (await (await request.get(`${base}/deals?lang=en`, { headers })).json()) as { queue?: { needs_you: { decision_id?: string | null }[]; waiting: { decision_id?: string | null }[] } };
+  const ids = [...(deals.queue?.needs_you ?? []), ...(deals.queue?.waiting ?? [])].map((r) => r.decision_id).filter((d): d is string => Boolean(d?.startsWith("deal:")));
+  for (const id of ids) await request.get(`${base}/offers/${encodeURIComponent(id.slice("deal:".length))}/picture?lang=en`, { headers, timeout: 90_000 });
+}
