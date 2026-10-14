@@ -16,6 +16,7 @@ from app.api.runtime import Runtime, get_runtime, set_runtime
 from app.config import get_settings
 from app.mandate.fixture import demo_owner_public_key_hex
 from app.persistence import InMemoryLedgerStore
+from tests.api.conftest import agree_on_rcv_a
 
 OWNER = {"X-Owner-Token": "demo-owner-token"}
 EXPECTED_FEN = 302777  # the supplier cost the sent counter stored: the figure the decision record shows
@@ -267,9 +268,10 @@ def test_without_a_receipt_the_missed_promise_costs_nothing_until_the_cure_runs(
 
 
 def test_the_busy_books_agreed_deal(api: TestClient) -> None:
+    # the busy seed holds no agreement now (Slice B): the deal is agreed through the routes the web uses, on invoice RCV-A
     assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
-    ids = [x["id"] for x in api.get("/decisions", params={"family": "DEAL"}).json()["decisions"] if x["state"] == "AGREED"]
-    assert len(ids) == 1
+    assert not [x for x in api.get("/decisions", params={"family": "DEAL"}).json()["decisions"] if x["state"] == "AGREED"]
+    ids = [f"deal:{agree_on_rcv_a(api)}"]
     d = _tracker(api, ids[0])
     assert d["available"] is True and d["buyer_id"] == "BUYER-1" and d["cost"]["lines"][0]["key"] == "terms"
     assert d["promises"] and d["promise_counts"]["buyer_total"] >= 1
@@ -631,7 +633,7 @@ def test_no_english_sentence_is_left_in_chinese(api: TestClient) -> None:
 def test_a_day_five_cure_on_the_busy_books_is_never_counted_in_the_agreed_deal(api: TestClient) -> None:
     """Only the other buyer (Dongguan, overdue from the first day) is late on day 5, so the cure quoted then is not this deal's to count."""
     assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
-    [did] = [x["id"] for x in api.get("/decisions", params={"family": "DEAL"}).json()["decisions"] if x["state"] == "AGREED"]
+    did = f"deal:{agree_on_rcv_a(api)}"  # the busy seed holds no agreement now: agree one the way the web does
     api.post("/clock/advance", json={"to_day": 5})
     alert = next(a for a in api.get("/alerts").json()["alerts"] if a["kind"] == "RESERVE_BREACH_AHEAD")
     assert api.post(f"/alerts/{alert['id']}/act").status_code == 200
@@ -735,12 +737,19 @@ def test_the_expected_components_come_from_the_quote_and_the_plan_that_ran_shows
     _check_sums(d)
 
 
-def test_a_receipt_at_face_before_the_agreement_gives_no_booked_discount(api: TestClient) -> None:
+def test_a_send_after_a_receipt_on_the_invoice_is_closed(api: TestClient) -> None:
+    # the path the verifier used (a receipt on the invoice, then a send without the version check) is closed: the offer has lapsed
     offer, did = _offer_evaluated(api)
     assert _pay(api, "face", 1_000_000) == "EXECUTED"
-    assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
-    d = _tracker(api, did)
-    assert _lines(d)["terms"]["actual_fen"] == 0
+    closed = api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"})
+    assert closed.status_code == 409
+
+
+def test_a_receipt_at_face_right_after_the_agreement_books_no_discount(api: TestClient) -> None:
+    agreed = _agree(api)
+    assert _pay(api, "face-2", 42_000_000) == "EXECUTED"
+    d = _tracker(api, agreed)
+    assert _lines(d)["terms"]["actual_fen"] == 0 and d["cost"]["actual"]["amount_fen"] == 84157
     _check_sums(d)
 
 
@@ -751,3 +760,22 @@ def test_the_headline_after_the_agreement_says_the_planned_funding_has_run_and_a
     api.post("/clock/advance", json={"to_day": 2})
     assert _tracker(api, did)["agreed_text"] == "Agreed 2 days ago"
     assert re.search(r"[\u4e00-\u9fff]", _tracker(api, did, "zh")["agreed_text"]) and "天前" in _tracker(api, did, "zh")["agreed_text"]
+
+
+def test_every_deal_state_dev_has_reads_without_an_error_and_is_available_only_with_an_agreement(api: TestClient, rt: Runtime) -> None:
+    """On the busy books after one agreement the other Foshan replies are LAPSED; the seed also holds received, clarification and response
+    states. Each answers 200: available exactly when the decision has an agreement, else a sentence."""
+    assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
+    agreed = f"deal:{agree_on_rcv_a(api)}"
+    api.post("/clock/advance", json={"to_day": 34})
+    seen: dict[str, bool] = {}
+    for row in api.get("/decisions", params={"family": "DEAL", "limit": 200}).json()["decisions"]:
+        r = api.get(f"/decisions/{row['id']}/tracker")
+        assert r.status_code == 200, (row["state"], r.text)
+        d = r.json()
+        has_agreement = bool([c for c in rt.store.commitments() if f"deal:{c.offer_id}" == row["id"]])
+        assert d["available"] is has_agreement, (row["state"], d["unavailable_text"])
+        assert (d["unavailable_text"] is None) == d["available"]
+        seen[row["state"]] = d["available"]
+    assert "LAPSED" in seen and seen["LAPSED"] is False
+    assert any(seen.get(k) for k in ("AGREED", "MISSED", "FULFILLED", "EXPIRED", "REVOKED")) and _tracker(api, agreed)["available"]
