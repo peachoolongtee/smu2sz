@@ -48,7 +48,7 @@ test.describe("mock", () => {
     await checkedDeal(page);
     await page.getByTestId("deal-tab-compare").click();
     await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Outside mandate");
-    await expect(page.getByTestId("deal-why-authority")).toContainText("As they asked.");
+    await expect(page.getByTestId("deal-why-authority")).toContainText("As they asked");
     await expect(page.getByTestId("deal-why-authority")).toContainText(/mandate/i);
     await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
     await expect(page.getByTestId("accept-go")).toHaveCount(0);

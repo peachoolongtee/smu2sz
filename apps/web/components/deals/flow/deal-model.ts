@@ -35,13 +35,16 @@ export function dealTabCounts(q: Queue): Record<DealTab, number> {
   const rows = negotiationRows(q);
   const held = { needs_you: rows.filter((x) => x.tier === "needs_you").length, waiting: rows.filter((x) => x.tier === "waiting").length, agreements: rows.filter((x) => x.tier === "agreements").length };
   const served: DealsCounts | null = q.deals ? ("counts" in q.deals && q.deals.counts ? q.deals.counts : (q.deals as DealsCounts)) : null;
-  // Round three (section 11): the Agreed tab holds the agreements in force and, after them, the closed ones; the server counts them apart (`agreements`, `closed`) and the tab says both together.
+  // Round three (section 11): the Agreed tab counts the deals in force, as the server counts them (`awaiting_payment` + `payment_late`: deals, not rows; a promised payment is a row of its deal);
+  // the closed ones are counted apart (`closed`, the Closed group's own count). The browser counts no rows when the server sends these.
+  const byGroup = served && (served.awaiting_payment !== undefined || served.payment_late !== undefined);
+  const inForce = byGroup ? (served?.awaiting_payment ?? 0) + (served?.payment_late ?? 0) : null;
   const n = {
     needs_you: served?.needs_you ?? held.needs_you,
     waiting: served?.waiting ?? held.waiting,
-    agreements: served ? (served.agreements ?? held.agreements) + (served.closed ?? 0) : held.agreements,
+    agreements: inForce ?? (served ? (served.agreements ?? held.agreements) + (served.closed ?? 0) : held.agreements),
   };
-  return { all: served?.all ?? served?.total ?? n.needs_you + n.waiting + n.agreements, ...n };
+  return { all: served?.all ?? served?.total ?? n.needs_you + n.waiting + n.agreements + (byGroup ? (served?.closed ?? 0) : 0), ...n };
 }
 
 // ---------------------------------------------------------------- the lifecycle pill

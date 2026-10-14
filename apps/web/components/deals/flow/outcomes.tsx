@@ -39,7 +39,7 @@ export function FinancialOutcomes({ picture, paths, heading = true }: { picture:
               <td className="border-b border-line-strong" />
               {paths.map((p) => (
                 <th key={p.key} scope="col" className="border-b border-line-strong px-2 py-2 text-left align-bottom text-sm font-bold text-ink sm:px-3">
-                  {p.kind === "asked" ? t("deals.cost.col.asked") : p.label}
+                  {p.label}
                 </th>
               ))}
             </tr>

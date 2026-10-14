@@ -43,8 +43,9 @@ export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, 
             <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.authority")}</p>
             <ul className="space-y-1">
               {authority.map(({ p, text }) => (
-                <li key={p.key}>
-                  <b className="font-bold text-ink">{p.label}.</b> {text}
+                <li key={p.key} className="flex flex-wrap gap-x-2">
+                  <span className="font-bold text-ink">{p.label}</span>
+                  <span className="min-w-0 flex-1 basis-64">{text}</span>
                 </li>
               ))}
             </ul>
@@ -55,8 +56,9 @@ export function WhyDiffer({ picture, paths }: { picture: Pick<OfferPictureView, 
             <p className="mb-1 text-supporting font-bold text-ink-3">{t("deals.why.assumes")}</p>
             <ul className="space-y-1">
               {assumes.map((p) => (
-                <li key={p.key}>
-                  <b className="font-bold text-ink">{p.label}.</b> {p.scenario_assumption_text ?? p.assumption_text}
+                <li key={p.key} className="flex flex-wrap gap-x-2">
+                  <span className="font-bold text-ink">{p.label}</span>
+                  <span className="min-w-0 flex-1 basis-64">{p.scenario_assumption_text ?? p.assumption_text}</span>
                 </li>
               ))}
             </ul>

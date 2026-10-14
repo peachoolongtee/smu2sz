@@ -134,3 +134,13 @@ test("every new Deals word has its Chinese twin, and the rule sentence is the se
   assert.equal("deals.why.rule" in en, false);
   assert.equal("deals.why.rule" in zh, false);
 });
+
+test("the Agreed tab's count is the server's deals in force (awaiting payment + payment late), never the rows; closed is counted apart", () => {
+  const row = (key, kind) => ({ key, kind, customer_id: "BUYER-1", subject_text: "Foshan", status_text: "Agreed", consequence_text: "", severity: "NORMAL", href: "/deals" });
+  const q = { counts: { needs_you: 0, waiting: 0, agreements: 2, customers: 2 }, alert: null, needs_you: [], waiting: [], agreements: [row("agreement:deal:A", "AGREEMENT"), row("promise:CMT:O2", "PROMISE")], customers: [], fallback: false };
+  // One deal, two rows (the agreement and its promised payment): the tab says 1.
+  assert.equal(m.dealTabCounts({ ...q, deals: { needs_you: 0, waiting: 0, agreements: 2, awaiting_payment: 1, payment_late: 0, closed: 0 } }).agreements, 1);
+  assert.equal(m.dealTabCounts({ ...q, deals: { needs_you: 0, waiting: 0, agreements: 3, awaiting_payment: 1, payment_late: 1, closed: 2 } }).agreements, 2, "closed is not in the tab's count");
+  assert.equal(m.dealTabCounts({ ...q, deals: { needs_you: 1, waiting: 0, agreements: 3, awaiting_payment: 1, payment_late: 1, closed: 2 } }).all, 5, "All is every deal the queue lists, closed ones included");
+  assert.deepEqual(m.afterGroupCounts({ ...q, deals: { awaiting_payment: 1, payment_late: 0, closed: 2 } }), { payment_late: 0, awaiting_payment: 1, closed: 2 });
+});

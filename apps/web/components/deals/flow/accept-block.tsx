@@ -15,7 +15,8 @@ import { acceptRefusal } from "@/lib/accept";
 import { useI18n } from "@/lib/i18n";
 import type { AcceptBlock as AcceptView, OfferPictureView, PicturePath } from "@/lib/types";
 import { CostTable } from "./cost-table";
-import { quietLink } from "./flow-parts";
+import { StateWord } from "@/components/ui/state-word";
+import { AUTH_TONE, quietLink } from "./flow-parts";
 import { Statements } from "./send-block";
 import { TermsTable } from "./terms-table";
 
@@ -206,18 +207,23 @@ export function AcceptBlock({
                   <h3 id={`${uid}-title`} ref={titleRef} tabIndex={-1} className="font-display text-base font-extrabold leading-snug text-ink outline-none">
                     {t("receipt.title.accept", { buyer })}
                   </h3>
+                  {asked?.authority_short_text ? (
+                    <p className="m-0" data-testid="accept-authority" data-authority={asked.authority ?? ""}>
+                      <StateWord tone={AUTH_TONE[asked.authority ?? ""] ?? "neutral"}>{asked.authority_short_text}</StateWord>
+                    </p>
+                  ) : null}
+                  {asked ? (
+                    <div data-testid="accept-cost">
+                      <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
+                      <CostTable paths={[asked]} heads={[asked.label]} caption={t("deals.cost.title")} testId="accept-cost-table" />
+                    </div>
+                  ) : null}
                   <Statements receipt={accept.receipt!} cash={accept.receipt?.cash_text} />
                   {asked ? (
-                    <>
-                      <div data-testid="accept-terms">
-                        <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("accept.terms")}</h4>
-                        <TermsTable paths={[asked]} heads={[t("deals.terms.col.asked")]} caption={t("accept.terms")} testId="accept-terms-table" />
-                      </div>
-                      <div data-testid="accept-cost">
-                        <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
-                        <CostTable paths={[asked]} heads={[t("deals.cost.col.asked")]} caption={t("deals.cost.title")} testId="accept-cost-table" />
-                      </div>
-                    </>
+                    <div data-testid="accept-terms">
+                      <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("accept.terms")}</h4>
+                      <TermsTable paths={[asked]} heads={[asked.label]} caption={t("accept.terms")} testId="accept-terms-table" />
+                    </div>
                   ) : null}
                 </section>
               ) : preparing ? (

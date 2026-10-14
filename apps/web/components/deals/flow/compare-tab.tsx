@@ -83,7 +83,8 @@ export function CompareTab({
       else n.add(k);
       return n;
     });
-  const heads = (p: PicturePath) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label);
+  // The server's own label for each response, everywhere (one response, one name).
+  const heads = (p: PicturePath) => p.label;
   const rowLabel = (k: CompareRowKey) => t(`deals.cmp.row.${k}` as const);
   const calcLabel = (k: CompareRowKey) => t(`deals.cmp.calc.${k as "terms" | "economic"}` as const);
   const choose = (p: PicturePath) => {

@@ -303,7 +303,6 @@ export function DecisionPane({
   const recommended = paths.find((p) => p.kind === "reply" && p.recommended) ?? null;
   const picked = pickedKey ? (paths.find((p) => p.kind === "reply" && p.key === pickedKey) ?? null) : null;
   const focus: PicturePath | null = picked ?? recommended;
-  const firstReply = paths.find((p) => p.kind === "reply") ?? null;
   const showsRecommended = focus !== null && focus.key === recommended?.key;
   // The share clause of the economics read (what this concession is, against what the customer brings in a year): drawn only when the server carries it.
   const shareClause = exposure?.economics?.context_text ?? exposure?.economics?.sentence ?? null;
@@ -682,8 +681,7 @@ export function DecisionPane({
                 <ScopeTerms
                   picture={picture}
                   paths={paths}
-                  heads={paths.map((p) => (p.kind === "asked" ? t("deals.ov.col.asked") : p.key === firstReply?.key ? t("deals.ov.col.reply") : p.label))}
-                  subs={paths.map((p) => (p.kind === "reply" && p.key === firstReply?.key ? p.label : null))}
+                  heads={paths.map((p) => p.label)}
                 />
               </section>
 

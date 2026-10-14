@@ -89,7 +89,7 @@ test("Overview: the ask in one line, FLOW's reply, the mandate sentence, the ter
   await page.getByTestId("deal-tab-overview").click();
   // The terms by scope, the changed cells marked by a tint (and carrying the server's "instead of" words), never an underline.
   const terms = page.getByTestId("deal-scope-terms-table");
-  await expect(terms.locator("thead th")).toHaveText(["Buyer asks", /^FLOW counters/, "Option B"]);
+  await expect(terms.locator("thead th")).toHaveText(["As they asked", "Option A", "Option B"]);
   await expect(page.getByTestId("deal-scope-terms-row-future")).toContainText("60 days");
   await expect(page.getByTestId("deal-scope-terms-row-future").locator("td[data-changed=true]")).toHaveCount(2);
   // Who decides and why, and both costs with their basis words, are in the comparison.
@@ -140,7 +140,7 @@ test("Compare responses: the packages in one table with their short words, the e
   await expect(page.getByTestId("deal-why-reason")).toContainText("Recommended because");
   await expect(page.getByTestId("deal-why-rule")).toHaveText("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.");
   const table = page.getByTestId("deal-compare-table");
-  await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^Buyer request/, /^Option A/, /^Option B/]);
+  await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^As they asked/, /^Option A/, /^Option B/]);
   await expect(page.getByTestId("deal-compare-cell-economic-reply").nth(1)).toContainText("Net economic cost over 12 months");
   await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("One-off cost, nothing ongoing");
   await expect(page.getByTestId("deal-outcome-row-reserve")).toContainText("Held, no buffer at the lowest point");

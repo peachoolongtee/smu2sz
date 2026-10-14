@@ -21,8 +21,8 @@ test.describe("mock", () => {
     await expect(terms.getByTestId("deal-scope-terms-bar-asked")).toHaveAttribute("data-days", "60");
     await expect(terms.getByTestId("deal-scope-terms-bar-reply").first()).toHaveAttribute("data-days", "45");
     await expect(terms).toContainText("Now 45 days");
-    await expect(terms.getByTestId("deal-scope-terms-head-asked")).toHaveText("Buyer asks");
-    await expect(terms.getByTestId("deal-scope-terms-head-reply").first()).toContainText("FLOW counters");
+    await expect(terms.getByTestId("deal-scope-terms-head-asked")).toHaveText("As they asked");
+    await expect(terms.getByTestId("deal-scope-terms-head-reply").first()).toHaveText("Option A");
     await expect(page.getByTestId("deal-scope-terms-delta-asked")).toHaveText("+15 days requested by buyer");
     // The standalone timing diagram section is gone.
     await expect(page.getByTestId("deal-timing")).toHaveCount(0);
@@ -57,7 +57,7 @@ test.describe("mock", () => {
     const why = page.getByTestId("deal-why");
     await expect(why).toContainText("Why these results differ");
     await expect(page.getByTestId("deal-why-reason")).toContainText("Recommended because");
-    await expect(page.getByTestId("deal-why-authority")).toContainText("Option A.");
+    await expect(page.getByTestId("deal-why-authority")).toContainText("Option A");
     await expect(page.getByTestId("deal-why-rule")).toHaveText("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.");
     await expect(page.locator('[data-testid="deal-compare-table"]:visible')).toBeVisible();
     await page.getByTestId("deal-tab-cash").click();

@@ -13,7 +13,8 @@ import { bump, recordNegotiation, useDemo } from "@/lib/demo-store";
 import { errorText } from "@/lib/error-text";
 import { isTimeout } from "@/lib/errors";
 import { CostTable } from "./cost-table";
-import { quietLink } from "./flow-parts";
+import { StateWord } from "@/components/ui/state-word";
+import { AUTH_TONE, quietLink } from "./flow-parts";
 import { TermsTable } from "./terms-table";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
@@ -180,14 +181,20 @@ export function SendBlock({
               <h3 id={`${uid}-receipt-title`} className="font-display text-base font-extrabold leading-snug text-ink">
                 {t("receipt.title.send", { label: path.label })}
               </h3>
+              {path.authority_short_text ? (
+                <p className="m-0" data-testid="send-authority" data-authority={path.authority ?? ""}>
+                  <StateWord tone={AUTH_TONE[path.authority ?? ""] ?? "neutral"}>{path.authority_short_text}</StateWord>
+                </p>
+              ) : null}
+              {/* The cost comes before the statements: one of them points back to this total ("already inside the ... above"). */}
+              <div data-testid="send-cost">
+                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
+                <CostTable paths={[path]} heads={[path.label]} caption={t("deals.cost.title")} testId="send-cost-table" />
+              </div>
               <Statements receipt={receipt} />
               <div data-testid="send-terms">
                 <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.review.terms")}</h4>
                 <TermsTable paths={[path]} heads={[path.label]} caption={t("deals.review.terms")} testId="send-terms-table" />
-              </div>
-              <div data-testid="send-cost">
-                <h4 className="mb-1 text-supporting font-bold text-ink-2">{t("deals.cost.title")}</h4>
-                <CostTable paths={[path]} heads={[path.label]} caption={t("deals.cost.title")} testId="send-cost-table" />
               </div>
             </section>
           ) : verdict ? (
