@@ -1,0 +1,54 @@
+{
+  "en": {
+    "day": 0,
+    "lang": "en",
+    "purchases": [
+      {
+        "direction": "BUY",
+        "document_id": "DOC-000004",
+        "title": "Equipment purchase contract GZPM-2026-114",
+        "vendor_id": "VENDOR-GZPM",
+        "vendor_name": "Guangzhou Precision Machinery Co., Ltd.",
+        "vendor_registered": false,
+        "document_status": "CONFIRMED",
+        "stage": "AWAITING_APPROVAL",
+        "next_action": "Approve the purchase commitment",
+        "price_fen": 60000000,
+        "price_display": "¥600,000.00",
+        "approval_id": "APR-000001",
+        "committed_seq": null,
+        "payments": [],
+        "paid_fen": 0,
+        "to_pay_fen": 0,
+        "paid_display": "¥0.00",
+        "to_pay_display": "¥0.00"
+      }
+    ]
+  },
+  "zh": {
+    "day": 0,
+    "lang": "zh",
+    "purchases": [
+      {
+        "direction": "BUY",
+        "document_id": "DOC-000004",
+        "title": "Equipment purchase contract GZPM-2026-114",
+        "vendor_id": "VENDOR-GZPM",
+        "vendor_name": "Guangzhou Precision Machinery Co., Ltd.",
+        "vendor_registered": false,
+        "document_status": "CONFIRMED",
+        "stage": "AWAITING_APPROVAL",
+        "next_action": "批准该采购承诺",
+        "price_fen": 60000000,
+        "price_display": "¥600,000.00",
+        "approval_id": "APR-000001",
+        "committed_seq": null,
+        "payments": [],
+        "paid_fen": 0,
+        "to_pay_fen": 0,
+        "paid_display": "¥0.00",
+        "to_pay_display": "¥0.00"
+      }
+    ]
+  }
+}

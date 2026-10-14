@@ -1,0 +1,12 @@
+[
+  {
+    "id": "GZPM_EQUIPMENT_PURCHASE",
+    "kind": "CAPEX_CONTRACT",
+    "counterparty_id": "VENDOR-GZPM",
+    "counterparty_name": "Guangzhou Precision Machinery Co., Ltd.",
+    "title": "Equipment purchase contract GZPM-2026-114",
+    "formats": [
+      "md"
+    ]
+  }
+]

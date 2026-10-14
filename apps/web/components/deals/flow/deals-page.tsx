@@ -7,9 +7,9 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ActiveCommitments } from "@/components/deals/commitments";
 import { isAgreed } from "@/components/deals/deal-summary";
 import { InboxList } from "@/components/deals/inbox-list";
-import { Button, ErrorState, PageHeader } from "@/components/ui";
+import { Button, ButtonLink, ErrorState, PageHeader } from "@/components/ui";
 import { contractsOff } from "@/components/documents";
-import { getClock, getCustomers, getDeals, getLedger, getState, getWorklist, submitOffer } from "@/lib/api";
+import { getClock, getCustomers, getDeals, getLedger, getPurchases, getState, getWorklist, submitOffer } from "@/lib/api";
 import { dealRecordId } from "@/lib/decision";
 import { recordOffer, useDemo } from "@/lib/demo-store";
 import { useI18n } from "@/lib/i18n";
@@ -68,6 +68,8 @@ export function DealsPage() {
   const needWorklist = deals.data !== undefined && !deals.data.queue;
   const worklist = useAsync(() => (needWorklist ? getWorklist(lang) : Promise.resolve(null)), [lang, needWorklist]);
   const customers = useAsync(() => getCustomers(lang).catch(() => null), [lang]);
+  // The buying side (ADR-0013): its link shows only when the server answers it (the feature can be switched off).
+  const buying = useAsync(() => getPurchases(lang).then(() => true).catch(() => false), [lang]);
   const queue = deals.data === undefined ? undefined : deals.data.queue ? buildQueue(deals.data, null, customers.data, WORDS(t)) : worklist.data === undefined ? undefined : buildQueue(deals.data, worklist.data, customers.data, WORDS(t));
   const rows = queue ? negotiationRows(queue) : [];
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
@@ -223,7 +225,12 @@ export function DealsPage() {
 
   return (
     <div className="flow-f min-w-0" data-testid="deals-page">
-      <PageHeader section="deals" title={t("nav.deals")} subtitle={subtitle} />
+      <PageHeader
+        section="deals"
+        title={t("nav.deals")}
+        subtitle={subtitle}
+        actions={buying.data ? <ButtonLink href="/buy" variant="secondary" data-testid="deals-buying">{t("deals.buying")}</ButtonLink> : undefined}
+      />
       {back ? (
         <Link href={back.href} className="mb-3 inline-flex min-h-8 items-center text-sm font-bold text-brand-700 hover:underline focus-visible:underline touch:min-h-11" data-testid="queue-back">
           ‹ {back.label}

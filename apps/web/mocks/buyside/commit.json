@@ -1,0 +1,99 @@
+{
+  "approval_id": "APR-000001",
+  "status": "PENDING_APPROVAL",
+  "result": {
+    "op_id": "capex-commit-DOC-000004-d43fb36e6a1e",
+    "kind": "COMMIT_PURCHASE",
+    "status": "PENDING_APPROVAL",
+    "tier": "TIER_2",
+    "violations": [],
+    "seq": 5,
+    "entry_hash": "4d4fc1f26abac7b3e080ca34925b8ecc50ac210fb7c0c11e2777434601e446e1",
+    "prev_hash": "cfcb59614da6638446be7243bfd69446a8825ab794a91240c6542cb246b8c8ce",
+    "effective_day": 0,
+    "approval_id": "APR-000001",
+    "message": "Queued for owner approval (APR-000001): commit to the purchase under document DOC-000004: ¥600,000.00 on the contract's payment schedule"
+  },
+  "schedule": {
+    "price_fen": 60000000,
+    "payments": [
+      {
+        "n": 1,
+        "day": 20,
+        "amount_fen": 18000000,
+        "share_bp": 3000,
+        "kind": "MILESTONE",
+        "event": "SIGNING",
+        "offset_days": 0,
+        "label": "30.00% on signing of this Contract",
+        "clause": "4.1",
+        "quote": "30% of the Contract Price is payable on signing of this Contract",
+        "day_formula": "signing day 20 (your timeline) + 0 days",
+        "owner_dated": true,
+        "amount_display": "¥180,000.00",
+        "share_display": "30.00%"
+      },
+      {
+        "n": 2,
+        "day": 105,
+        "amount_fen": 36000000,
+        "share_bp": 6000,
+        "kind": "MILESTONE",
+        "event": "DELIVERY",
+        "offset_days": 45,
+        "label": "60.00% within forty-five (45) days after delivery of the Equipment",
+        "clause": "4.2",
+        "quote": "60% of the Contract Price is payable within forty-five (45) days after delivery of the Equipment",
+        "day_formula": "delivery day 60 (your timeline) + 45 days",
+        "owner_dated": true,
+        "amount_display": "¥360,000.00",
+        "share_display": "60.00%"
+      },
+      {
+        "n": 3,
+        "day": 440,
+        "amount_fen": 6000000,
+        "share_bp": 1000,
+        "kind": "RETENTION",
+        "event": "ACCEPTANCE",
+        "offset_days": 360,
+        "label": "10.00% retention, released 360 days after acceptance",
+        "clause": "4.3",
+        "quote": "The Buyer shall retain 10% of the Contract Price as retention for twelve (12) months after Acceptance, as security for the Seller's warranty obligations",
+        "day_formula": "acceptance day 80 (your timeline) + 360 days",
+        "owner_dated": true,
+        "amount_display": "¥60,000.00",
+        "share_display": "10.00%"
+      }
+    ],
+    "early_pay": {
+      "payment_n": 2,
+      "rate_bp": 200,
+      "window_days": 5,
+      "pay_by_day": 65,
+      "due_day": 105,
+      "days_earlier": 40,
+      "discount_fen": 720000,
+      "pay_early_fen": 35280000,
+      "implied_annual_rate": {
+        "num": 73,
+        "den": 392,
+        "text": "0.19"
+      },
+      "clause": "4.5",
+      "quote": "If the Buyer pays the delivery payment early, within five (5) days of Delivery, the Seller grants a discount of 2% of that payment",
+      "formula": "d / (1 − d) × 365 / days earlier = 2.00% / (1 − 2.00%) × 365 / 40; discount ¥7,200.00 on ¥360,000.00, rounded once",
+      "rate_display": "2.00%",
+      "discount_display": "¥7,200.00",
+      "pay_early_display": "¥352,800.00"
+    },
+    "early_pay_note": null,
+    "assumptions": [
+      "A month is counted as 30 days and business days as calendar days: for a payment, the earlier reading.",
+      "The contract's payment terms are not added on top of a milestone: each milestone falls due on the day its own words give.",
+      "Days marked as yours rest on your timeline (signing, delivery, acceptance, invoice), not on the contract's text."
+    ],
+    "schedule_hash": "d43fb36e6a1e39475e3b834227711664c55598781681cdfabd5672e10338e37e",
+    "price_display": "¥600,000.00"
+  }
+}
