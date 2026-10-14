@@ -7,22 +7,22 @@ import { expect, test } from "./fixtures";
  * recording (mocks/buyside).
  */
 
-test("Deals shows the buying side in its own card under the selling queue, each purchase with its next step", async ({ page }) => {
+test("Deals shows the buying side in its own card under the list of every deal, each purchase with its next step", async ({ page }) => {
   await page.goto("/deals");
   const card = page.getByTestId("deals-buying");
   await expect(card).toBeVisible();
   await expect(page.locator("header").getByTestId("deals-buying")).toHaveCount(0);
   await expect(card.getByRole("heading", { name: /Buying/ })).toContainText("1");
-  // selling stays first: the queue comes before the buying card in the reading order, the inbox after it
-  const [queueFirst, inboxAfter] = await page.evaluate(() => {
-    const queue = document.querySelector('[data-testid="deals-queue"]');
+  // selling stays first: the list of deals comes before the buying card in the reading order, the buyers' messages after it
+  const [listFirst, messagesAfter] = await page.evaluate(() => {
+    const list = document.querySelector('[data-testid="deal-list"]');
     const buying = document.querySelector('[data-testid="deals-buying"]');
-    const inbox = document.querySelector('[data-testid="deals-inbox"]');
+    const messages = document.querySelector('[data-testid="deal-list-messages"]');
     const follows = (a: Element | null, b: Element | null) => Boolean(a && b && a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    return [follows(queue, buying), follows(buying, inbox)];
+    return [follows(list, buying), follows(buying, messages)];
   });
-  expect(queueFirst).toBe(true);
-  expect(inboxAfter).toBe(true);
+  expect(listFirst).toBe(true);
+  expect(messagesAfter).toBe(true);
   const row = card.getByTestId("deals-buying-DOC-000004");
   await expect(row).toContainText("Choose the timeline and financing, then commit");
   await expect(row).toContainText("¥600,000.00");
@@ -30,6 +30,7 @@ test("Deals shows the buying side in its own card under the selling queue, each 
   await expect(card.getByTestId("deals-buying-finance")).toHaveText("Financial health and loans");
   await expect(card.getByTestId("deals-buying-plans")).toHaveText("Long-term plans");
   // while a selling negotiation is open the card steps aside: that page is the selling decision
+  await page.getByTestId("deal-list-messages").locator("summary").first().click();
   await page.getByTestId("inbox-list").getByTestId("inbox-msg-EX01").click();
   await expect(page.getByTestId("deal-pane")).toBeVisible();
   await expect(page.getByTestId("deals-buying")).toHaveCount(0);
@@ -84,6 +85,7 @@ test("financial health, the owner's ratios and loan eligibility", async ({ page 
   await expect(page.getByTestId("finance-capacity")).toContainText("Equipment term loan");
   await expect(page.getByTestId("finance-liquidity")).toContainText("need your inventory");
 
+  await page.getByTestId("finance-ratios").locator("summary").first().click();
   await page.getByTestId("finance-inventory_fen").fill("300000");
   await page.getByTestId("finance-other_current_assets_fen").fill("0");
   await page.getByTestId("finance-trade_payables_fen").fill("250000");
