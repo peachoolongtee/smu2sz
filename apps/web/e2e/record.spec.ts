@@ -74,7 +74,7 @@ test("the send names its option, says the reply is simulated, and carries what w
   await openCompare(page);
   await page.locator('[data-testid^="deal-use-CTR-"]:visible').last().click();
   await expect(page.locator('[data-testid^="deal-use-CTR-"]:visible').last()).toHaveText("Option B is selected");
-  await expect(page.getByTestId("deal-compare-cell-authority-reply").nth(1)).toContainText("Needs your approval");
+  await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Needs your approval");
   await openReview(page);
   await expect(page.getByRole("button", { name: "Send Option B to Foshan" })).toBeVisible();
   await expect(page.getByTestId("deal-send")).toHaveCount(1);

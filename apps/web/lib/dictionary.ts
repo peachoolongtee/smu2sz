@@ -2822,9 +2822,6 @@ export const en = {
   "deals.cmp.row.cash": "Cash outcome",
   "deals.cmp.row.authority": "Authorization",
   "deals.cmp.row.status": "Buyer status",
-  "deals.cmp.calc.terms": "View terms by scope →",
-  "deals.cmp.calc.economic": "View cost calculation →",
-  "deals.cmp.calc.cash": "View funding plan →",
   "deals.cmp.hide": "Hide",
   "deals.cmp.choose": "Choose {label}",
   "deals.cmp.review": "Review {label}",
@@ -2871,6 +2868,8 @@ export const en = {
   "deals.terms.agreed": "Agreed",
   "deals.terms.agreedCost": "What it was quoted to cost when agreed",
   "deals.tracker.unavailable": "The tracker is not available for this deal yet.",
+  "deals.cmp.calc.terms": "View terms by scope",
+  "deals.cmp.calc.economic": "View cost calculation",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5691,9 +5690,6 @@ export const zh: Record<DictKey, string> = {
   "deals.cmp.row.cash": "现金结果",
   "deals.cmp.row.authority": "授权",
   "deals.cmp.row.status": "买方状态",
-  "deals.cmp.calc.terms": "查看各范围的条款 →",
-  "deals.cmp.calc.economic": "查看成本计算 →",
-  "deals.cmp.calc.cash": "查看融资安排 →",
   "deals.cmp.hide": "收起",
   "deals.cmp.choose": "选择{label}",
   "deals.cmp.review": "查看{label}",
@@ -5740,4 +5736,6 @@ export const zh: Record<DictKey, string> = {
   "deals.terms.agreed": "已达成",
   "deals.terms.agreedCost": "达成时报价的成本",
   "deals.tracker.unavailable": "这笔交易暂时没有跟踪记录。",
+  "deals.cmp.calc.terms": "查看各范围的条款",
+  "deals.cmp.calc.economic": "查看成本计算",
 };

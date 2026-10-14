@@ -41,6 +41,8 @@ export interface InspectorSection {
   note?: string | null;
   causeTitle?: string;
   cause?: string | null;
+  /** The cause as a short list per line (the server's `cause_lines`); `cause` is shown when there is none. */
+  causeLines?: { label: string; items: string[] }[] | null;
 }
 
 /** What the fixed strip under the chart says for one day, every word the server's (`when`, `display`, the effect rows' labels and amounts). */
@@ -414,10 +416,25 @@ export function CashPreview({
                   ))}
                 </dl>
                 {sec.note ? <p className="mt-1 text-supporting text-ink-2">{sec.note}</p> : null}
-                {sec.cause ? (
+                {sec.cause || sec.causeLines?.length ? (
                   <div className="mt-2 border-t border-line pt-2" data-testid="deal-cause">
                     <h5 className="text-supporting font-bold text-ink-3">{sec.causeTitle}</h5>
-                    <p className="mt-0.5 text-sm text-ink">{sec.cause}</p>
+                    {sec.causeLines?.length ? (
+                      <ul className="m-0 mt-1 list-none space-y-2 p-0" data-testid="deal-cause-lines">
+                        {sec.causeLines.map((l, i) => (
+                          <li key={`${l.label}-${i}`} className="text-sm text-ink" data-testid="deal-cause-line">
+                            <p className="m-0 font-bold">{l.label}</p>
+                            <ul className="m-0 mt-0.5 list-disc space-y-0.5 pl-5 text-ink-2">
+                              {l.items.map((it, j) => (
+                                <li key={j}>{it}</li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-0.5 text-sm text-ink">{sec.cause}</p>
+                    )}
                   </div>
                 ) : null}
               </section>

@@ -33,15 +33,15 @@ test.describe("mock", () => {
     await page.getByTestId("deal-tab-compare").click();
     await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("¥28,326.92");
     await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("¥3,027.77");
-    await expect(page.getByTestId("deal-compare-cell-cash-reply").first()).toContainText("¥300k");
+    await expect(page.getByTestId("deal-outcome-row-lowest")).toContainText("¥300k");
     const toggle = page.getByTestId("deal-compare-expand-economic");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table")).toBeVisible();
-    await page.getByTestId("deal-compare-expand-cash").click();
+    await page.getByTestId("deal-compare-expand-terms").click();
     await expect(page.getByTestId("deal-compare-calc-economic")).toBeVisible();
-    await expect(page.getByTestId("deal-compare-calc-cash")).toBeVisible();
+    await expect(page.getByTestId("deal-compare-calc-terms")).toBeVisible();
     // Escape: the queue returns from its rail first (the address keeps the tab); the next one clears the selection.
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("deals-queue")).toBeVisible();
@@ -91,7 +91,7 @@ test.describe("mock", () => {
     await expect(heads.nth(1)).toHaveAttribute("data-selected", "true");
     await expect(heads.first()).not.toHaveAttribute("data-selected", "true");
     // The comparison still says the recommended reply's authority in the short word, Option A's column alone.
-    await expect(heads.first().getByTestId("deal-compare-badge")).toHaveText("FLOW can send");
+    await expect(page.getByTestId("deal-outcome-row-send")).toContainText("FLOW can send");
     await page.getByTestId("deal-tab-overview").click();
     await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
     await expect(page.getByTestId("deal-mandate")).toHaveText("Option A is the reply FLOW can send within your mandate.");
@@ -160,7 +160,7 @@ test.describe("live", () => {
     await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText("15 days", { timeout: 45_000 });
     await expect(page.getByTestId("deal-scope-terms-bar-current")).toBeVisible();
     await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText(/Breached by/);
+    await expect(page.getByTestId("deal-outcome-row-reserve")).toContainText(/Breached by/);
     await page.getByTestId("deal-tab-overview").click();
     await page.getByTestId("deal-selected-customer").click();
     await expect(page.getByTestId("customer-relationship")).toContainText("Foshan contributes an estimated");

@@ -91,7 +91,7 @@ export function CashTab({ picture, paths, exposure, buyer, lines, late, onLines,
       cells: dayCells,
       events: [],
       sections: [
-        { key: "day", title: t("deals.insp.onDay"), cells: dayCells, note: second ? t("deals.insp.onDay.note") : null, causeTitle: t("deals.insp.cause"), cause: pw?.cause ?? null },
+        { key: "day", title: t("deals.insp.onDay"), cells: dayCells, note: second ? t("deals.insp.onDay.note") : null, causeTitle: t("deals.insp.cause"), cause: pw?.cause ?? null, causeLines: pw?.causeLines ?? null },
         { key: "lowest", title: t("deals.insp.lowest"), cells: lowCells, note: chosenPaths.length > 1 ? t("deals.insp.lowest.note") : null },
       ],
     };

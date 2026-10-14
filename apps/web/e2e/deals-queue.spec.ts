@@ -109,15 +109,17 @@ test("Overview: the ask in one line, FLOW's reply, the mandate sentence, the ter
 test("Cash consequences: the outcome table and the compared cash rows hold the request against the replies; the payment-timing tabs are bound to ?scenario= on Cash impact", async ({ page }) => {
   await checkedDeal(page);
   await page.getByTestId("deal-tab-compare").click();
-  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("¥165k");
-  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("in 60 days");
-  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("Breached by ¥135k for 15 days");
-  await expect(page.getByTestId("deal-compare-cell-authority-reply").first()).toContainText("FLOW can send");
-  // Each path states its own footing (the server's short words) in the cash row's expansion; the request carries no funding plan, the reply carries its own.
-  await expandRow(page, "cash");
-  const funding = page.locator('[data-testid="deal-funding-plans"]:visible');
-  await expect(funding).toContainText("No new funding");
-  await expect(funding).toContainText("Funding plan required: ¥150k");
+  // One place per fact: the cash, the reserve, the financing and who may send each response are the outcome table's (the columns above it carry the terms, the economics and the buyer's status).
+  const outcomes = page.getByTestId("deal-outcomes");
+  await expect(outcomes.getByTestId("deal-outcome-row-lowest")).toContainText("¥165k");
+  await expect(outcomes.getByTestId("deal-outcome-row-when")).toContainText("in 60 days");
+  await expect(outcomes.getByTestId("deal-outcome-row-reserve")).toContainText("Breached by ¥135k for 15 days");
+  await expect(outcomes.getByTestId("deal-outcome-row-send")).toContainText("FLOW can send");
+  await expect(outcomes.getByTestId("deal-outcome-row-financing")).toContainText("¥150k credit-line draw today");
+  await expect(page.getByTestId("deal-compare-row-cash")).toHaveCount(0);
+  await expect(page.getByTestId("deal-compare-row-authority")).toHaveCount(0);
+  // The funding each response rests on is said in "What each option assumes", once.
+  await expect(page.getByTestId("deal-why-assumes")).toContainText("¥150k credit-line draw today");
   await page.getByTestId("deal-tab-cash").click();
   // The timing assumption is the address: back and forward restore it.
   const tabs = page.getByRole("tablist", { name: "Payment timing assumption" });
@@ -141,8 +143,8 @@ test("Compare responses: the packages in one table with their short words, the e
   await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^Buyer request/, /^Option A/, /^Option B/]);
   await expect(page.getByTestId("deal-compare-cell-economic-reply").nth(1)).toContainText("Net economic cost over 12 months");
   await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("One-off cost, nothing ongoing");
-  await expect(page.getByTestId("deal-compare-cell-cash-reply").first()).toContainText("Held, no buffer at the lowest point");
-  await expect(page.getByTestId("deal-compare-cell-authority-reply").nth(1)).toContainText("Needs your approval");
+  await expect(page.getByTestId("deal-outcome-row-reserve")).toContainText("Held, no buffer at the lowest point");
+  await expect(page.getByTestId("deal-outcome-row-send")).toContainText("Needs your approval");
   // A comparison never binds the commit: "Review Option B" only chooses which reply the review is about.
   await page.locator(`[data-testid="deal-use-${OPTION_B}"]:visible`).click();
   await expect(page).toHaveURL(new RegExp(`path=${OPTION_B}`));

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CustomerName } from "@/components/customer-link";
 import { Disclosure } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
@@ -41,6 +41,43 @@ export interface DealView {
 
 const AGREED_STATES: ReadonlySet<string> = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED"]);
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
+
+const MD = "(min-width: 768px)";
+const subscribeMd = (onChange: () => void) => {
+  const list = window.matchMedia(MD);
+  list.addEventListener("change", onChange);
+  return () => list.removeEventListener("change", onChange);
+};
+/** True from the tablet width (`md`); where it is false (a phone) the sticky part of the deal header is the compact title and tabs only. */
+const useMd = () => useSyncExternalStore(subscribeMd, () => window.matchMedia(MD).matches, () => true);
+
+/**
+ * A tab change brings the new tab's top to just below the sticky part of the deal header (the page keeps its scroll otherwise, and a tall tab left behind would hide the new one's top under the
+ * header). Nothing moves when the tab's top is already in view below the header.
+ */
+function TabScroll({ view }: { view: DealViewKey }) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const id = window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => {
+        const panel = document.querySelector<HTMLElement>('[data-testid^="deal-panel-"]');
+        const header = document.querySelector<HTMLElement>('[data-testid="deal-header"]');
+        const bar = document.querySelector<HTMLElement>('[data-testid="deal-sticky-bar"]');
+        if (!panel) return;
+        const appHeader = 64;
+        const stuck = header && getComputedStyle(header).position === "sticky" ? header.offsetHeight : bar ? bar.offsetHeight : 0;
+        const desired = panel.getBoundingClientRect().top + window.scrollY - appHeader - stuck - 8;
+        if (window.scrollY > desired) window.scrollTo({ top: Math.max(0, desired), behavior: "auto" });
+      }),
+    );
+    return () => window.cancelAnimationFrame(id);
+  }, [view]);
+  return null;
+}
 
 /** An address that names a tab the deal does not have (Compare on a deal with nothing to compare, Terms before agreement) is written as the tab it shows. */
 function Canonical({ want, have, onGo }: { want: DealViewKey; have: DealViewKey; onGo: (patch: Record<string, string | null>, how?: "push" | "replace") => void }) {
@@ -211,6 +248,7 @@ export function DecisionPane({
   const uid = useId();
   const mode = useMode();
   const n = useNegotiation(decision, { agreedPicture: view.view === "terms" });
+  const isMd = useMd();
   // An agreed deal's Overview is the tracker (round three, section 11): the same read and the same body as the tracker's own page.
   const agreedNow = AGREED_STATES.has(n.record?.state ?? "");
   const tracker = useTracker(agreedNow ? decision : null);
@@ -409,9 +447,10 @@ export function DecisionPane({
     <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
       <Announce text={title} />
       <Canonical want={view.view} have={current} onGo={onGo} />
+      <TabScroll view={current} />
       <div key={decision} className="motion-slide">
         {/* The deal header holds still while the page scrolls (from md and where the window is tall enough): the primary action never leaves the screen. */}
-        <div className="z-20 bg-canvas pb-3 [@media(min-height:44rem)]:md:sticky [@media(min-height:44rem)]:md:top-16" data-testid="deal-header">
+        <div className="z-20 -mx-3 bg-canvas px-3 pb-3 pt-1 [@media(min-height:44rem)]:md:sticky [@media(min-height:44rem)]:md:top-16" data-testid="deal-header">
           <div className="flow-card px-5 pt-4 sm:px-7">
             <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
               <div className="min-w-0">
@@ -439,10 +478,21 @@ export function DecisionPane({
                 </Button>
               </div>
             </header>
-            <LifecycleStrip stages={lifeStages} />
-            <DealTabs label={t("deals.pane.tabs")} tabs={tabs.map((k) => ({ value: k, label: tabLabel(k) }))} value={current} onChange={(k) => onGo({ view: k === "overview" ? null : k })} idPrefix={uid} />
+            <LifecycleStrip stages={lifeStages} scroll={!isMd} />
+            {isMd ? <DealTabs label={t("deals.pane.tabs")} tabs={tabs.map((k) => ({ value: k, label: tabLabel(k) }))} value={current} onChange={(k) => onGo({ view: k === "overview" ? null : k })} idPrefix={uid} /> : <div className="pb-4" />}
           </div>
         </div>
+        {/* A phone: the header above scrolls away; what stays under the app's header is the compact title and the tabs (the review button and the strip do not stick). */}
+        {isMd ? null : (
+          <div className="sticky top-16 z-20 -mx-3 bg-canvas px-3 pb-1 pt-1" data-testid="deal-sticky-bar">
+            <div className="flow-card px-4 pt-2">
+              <p className="truncate text-sm font-bold text-ink" data-testid="deal-sticky-title">
+                {title}
+              </p>
+              <DealTabs label={t("deals.pane.tabs")} tabs={tabs.map((k) => ({ value: k, label: tabLabel(k) }))} value={current} onChange={(k) => onGo({ view: k === "overview" ? null : k })} idPrefix={uid} />
+            </div>
+          </div>
+        )}
 
         {reviewSlot || sent || outcome ? (
           <div className="mt-1 space-y-3" data-testid="deal-review-slot">

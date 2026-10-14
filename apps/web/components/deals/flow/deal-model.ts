@@ -328,8 +328,10 @@ export const viewIn = (view: DealViewKey, tabs: DealViewKey[]): DealViewKey => (
 
 // ---------------------------------------------------------------- the comparison's rows and the outcome plot (round three, sections 1 and 5)
 
-export type CompareRowKey = "terms" | "economic" | "cash" | "authority" | "status";
-export const COMPARE_ROWS: readonly CompareRowKey[] = ["terms", "economic", "cash", "authority", "status"];
+// One place per fact (round three, review of the preview): the comparison's columns carry the commercial terms, the economic impact and the buyer status; the cash, the reserve, the financing and who may
+// send each response are the outcome table's alone.
+export type CompareRowKey = "terms" | "economic" | "status";
+export const COMPARE_ROWS: readonly CompareRowKey[] = ["terms", "economic", "status"];
 
 export interface CompareCellModel {
   /** The cell's main word and the words under it: each is one server field. */
@@ -343,7 +345,7 @@ export interface CompareCellModel {
 }
 
 /**
- * The comparison as one model: for each of the five default rows, one cell per path. Every cell is a server word (`economic_headline_text`, `lowest_short`, `reserve_state_text`, `authority_short_text`,
+ * The comparison as one model: for each of the three default rows, one cell per path. Every cell is a server word (`economic_headline_text` with its basis,
  * `buyer_status_text`, the terms' `cell_text`); an older server that lacks the short words leaves the cell with what it did send (the cost headline, the band). Nothing is composed or computed.
  */
 export function comparisonRows(paths: PicturePath[]): { key: CompareRowKey; cells: CompareCellModel[] }[] {
@@ -357,8 +359,6 @@ export function comparisonRows(paths: PicturePath[]): { key: CompareRowKey; cell
         const h = costHeadline(p);
         return { ...empty, value: p.economic_headline_text ?? h.display, sub: p.economic_basis_text ?? h.basis };
       }
-      if (key === "cash") return { value: p.lowest_short, sub: p.lowest_when, note: p.reserve_state_text ?? p.band_text, bad: p.first_breach_when !== null };
-      if (key === "authority") return { ...empty, value: p.authority_short_text ?? null };
       return { ...empty, value: p.buyer_status_text ?? null };
     }),
   }));
@@ -393,7 +393,9 @@ export function headroomPlot(paths: PicturePath[], floorFen: number): Plot | nul
   const hi = Math.max(...values);
   const span = hi - lo;
   // Room at each end so a dot on the scale's end is not clipped.
-  const at = (v: number) => (span > 0 ? 8 + ((v - lo) / span) * 84 : 50);
+  // Room at each end, and more beyond the highest (the reserve is often the highest mark): the reserve line and the dots at it keep clear of the plot's edge.
+  const room = span * 0.35;
+  const at = (v: number) => (span > 0 ? 6 + ((v - lo) / (span + room)) * 88 : 50);
   return {
     reserveAt: at(floorFen),
     dots: drawn.map((p) => ({ key: p.key, label: p.label, short: p.lowest_short as string, when: p.lowest_when, at: at(p.lowest_fen), below: p.lowest_fen < floorFen })),

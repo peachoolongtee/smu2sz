@@ -206,19 +206,23 @@ test.describe("Compare responses (slice c)", () => {
     const table = page.getByTestId("deal-compare-table");
     await expect(table.getByRole("columnheader").filter({ hasText: /\S/ })).toHaveCount(3);
     await expect(page.getByTestId("deal-compare-head-asked")).toContainText("Buyer request");
-    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toHaveText("Outside mandate");
     await expect(page.getByTestId("deal-compare-head-reply").first()).toContainText("Option A");
-    await expect(page.getByTestId("deal-compare-head-reply").first().getByTestId("deal-compare-badge")).toHaveText("FLOW can send");
-    await expect(page.getByTestId("deal-compare-head-reply").nth(1).getByTestId("deal-compare-badge")).toHaveText("Needs your approval");
-    const rowKeys = ["terms", "economic", "cash", "authority", "status"];
-    const rowLabels = ["Commercial terms", "Economic impact", "Cash outcome", "Authorization", "Buyer status"];
-    await expect(table.locator('tbody tr[data-testid^="deal-compare-row-"]')).toHaveCount(5);
+    // One place per fact: the columns carry the terms, the economic impact and the buyer's status; who may send each response is the outcome table's.
+    await expect(page.getByTestId("deal-compare-badge")).toHaveCount(0);
+    const send = page.getByTestId("deal-outcome-row-send");
+    await expect(send).toContainText("Outside mandate");
+    await expect(send).toContainText("FLOW can send");
+    await expect(send).toContainText("Needs your approval");
+    const rowKeys = ["terms", "economic", "status"];
+    const rowLabels = ["Commercial terms", "Economic impact", "Buyer status"];
+    await expect(table.locator('tbody tr[data-testid^="deal-compare-row-"]')).toHaveCount(3);
     for (const [i, k] of rowKeys.entries()) await expect(table.getByTestId(`deal-compare-row-${k}`).locator("th")).toContainText(rowLabels[i]);
     await expect(page.getByTestId("deal-compare-cell-terms-reply").first()).toContainText("Not offered");
     await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("¥5,040.00 once, ¥28,326.92 over 12 months");
     await expect(page.getByTestId("deal-compare-cell-economic-asked")).toContainText("Two parts, not added together");
     await expect(page.getByTestId("deal-compare-cell-economic-reply").nth(1)).toContainText("About ¥0");
-    await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("Breached by ¥135k for 15 days");
+    await expect(page.getByTestId("deal-compare-row-cash")).toHaveCount(0);
+    await expect(page.getByTestId("deal-compare-row-authority")).toHaveCount(0);
     await expect(page.getByTestId("deal-compare-cell-status-asked")).toHaveText("Asked by Foshan");
     await expect(page.getByTestId("deal-compare-cell-status-reply").first()).toHaveText("Not yet sent");
     // Doing nothing and the buyer stopping are Business consequences on Cash impact, not columns here.
@@ -228,15 +232,13 @@ test.describe("Compare responses (slice c)", () => {
     await expect(page.getByTestId("deal-review-request")).toHaveCount(0);
   });
 
-  test("a row expands in place to its calculation: the terms by scope, the cost rows, the funding each response rests on", async ({ page }) => {
+  test("a row expands in place to its calculation: the terms by scope and the cost rows (no arrow glyph: a chevron says it opens)", async ({ page }) => {
     await checkedDeal(page);
     await page.getByTestId("deal-tab-compare").click();
     await page.getByTestId("deal-compare-expand-economic").click();
     await expect(page.getByTestId("deal-compare-expand-economic")).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table")).toBeVisible();
     await expect(page.getByTestId("deal-compare-calc-economic").getByTestId("deal-cost-table-total-asked")).toBeVisible();
-    await page.getByTestId("deal-compare-expand-cash").click();
-    await expect(page.getByTestId("deal-compare-calc-cash").getByTestId("deal-funding-plans")).toContainText("Funding plan required: ¥150k credit-line draw today");
     await page.getByTestId("deal-compare-expand-terms").click();
     await expect(page.getByTestId("deal-compare-calc-terms").getByTestId("deal-compare-scope-terms")).toBeVisible();
     await page.getByTestId("deal-compare-expand-economic").click();
@@ -525,11 +527,13 @@ test.describe("the pair's cause (slice d, task 4)", () => {
     await expect(inspector).toHaveAttribute("data-day", "0");
     const cause = inspector.getByTestId("deal-inspector-day").getByTestId("deal-cause");
     await expect(cause.getByRole("heading", { name: "What caused the difference?" })).toBeVisible();
-    await expect(cause).toContainText("Option A: Credit line draw ¥150k today.");
+    await expect(cause).toContainText("Option A");
+    await expect(cause).toContainText("Credit line draw ¥150k today");
     // Day 2: the request's early payment is on one line and not the other, said by the server.
     await page.keyboard.press("ArrowRight");
     await expect(inspector).toHaveAttribute("data-day", "2");
-    await expect(cause).toContainText("As asked: Early payment from Foshan Home Retail Co.");
+    await expect(cause).toContainText("As asked");
+    await expect(cause).toContainText("Early payment from Foshan Home Retail Co.");
     // Two replies: Option A and Option B, the request off.
     await page.getByTestId(`deal-chip-${"CTR-6b07cbf70441"}`).click();
     await page.getByTestId("deal-chip-asked").click();
@@ -538,7 +542,7 @@ test.describe("the pair's cause (slice d, task 4)", () => {
     await expect(inspector).toHaveAttribute("data-day", "0");
     await expect(inspector.getByTestId("deal-inspector-day-diff")).toContainText("−¥59,986.20");
     await expect(inspector.getByTestId("deal-inspector-day")).toContainText("Option B against Option A");
-    await expect(cause).toContainText("Option A: Credit line draw ¥150k today. Option B: Credit line draw ¥90k today.");
+    for (const word of ["Option A", "Credit line draw ¥150k today", "Option B", "Credit line draw ¥90k today"]) await expect(cause).toContainText(word);
   });
 });
 
@@ -641,7 +645,7 @@ test.describe("Chinese and a phone (slice b round three)", () => {
     await expect(page.getByTestId("deal-mandate")).not.toContainText("Option A is the reply");
     await expect(page.getByTestId("deal-scope-terms-delta-asked")).toContainText(/[一-鿿]/);
     await page.getByTestId("deal-tab-compare").click();
-    await expect(page.getByTestId("deal-compare-head-asked").getByTestId("deal-compare-badge")).toContainText("超出授权");
+    await expect(page.getByTestId("deal-outcome-row-send")).toContainText("超出授权");
     await expect(page.getByTestId("deal-compare-row-economic").locator("th")).toContainText("经济影响");
     await expect(page.getByTestId("deal-why-rule")).toContainText("它不按成本对回复排序");
     await expect(page.getByTestId("deal-outcome-row-lowest")).toContainText("¥165k");
@@ -709,6 +713,145 @@ test.describe("the Agreements tier's groups (slice f)", () => {
     await late.getByTestId("queue-select").click();
     await expect(page.getByTestId("deal-tracker")).toBeVisible();
     await expect(page.getByTestId("deal-state-chip")).toContainText("Payment late");
+  });
+});
+
+test.describe("the owner's preview defects (round three review)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+
+  test("1. the queue opened from its rail fits its column: no inner horizontal scroll and no clipped row", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    await page.getByTestId("queue-rail-show").click();
+    const side = page.getByTestId("deals-side");
+    await expect(page.getByTestId("deals-queue")).toBeVisible();
+    const m = await side.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+    expect(m.scroll, "no inner horizontal scroll").toBeLessThanOrEqual(m.client + 1);
+    const card = (await page.getByTestId("deals-queue").boundingBox())!;
+    const row = (await page.getByTestId("queue-row").first().locator(".flow-row").boundingBox())!;
+    expect(row.x, "the row starts inside the card").toBeGreaterThanOrEqual(card.x);
+    expect(row.x + row.width, "the row ends inside the card").toBeLessThanOrEqual(card.x + card.width);
+    // The 1 px edge that joins the selected row to the workspace is still drawn.
+    await expect(page.getByTestId("row-connector")).toBeVisible();
+  });
+
+  test("2. a tab change brings the new tab's top to just below the sticky header", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.getByTestId("deal-tab-cash").click();
+    await expect.poll(async () => {
+      const h = (await page.getByTestId("deal-header").boundingBox())!;
+      const p = (await page.getByTestId("deal-panel-cash").boundingBox())!;
+      return Math.round(p.y - (h.y + h.height));
+    }).toBeGreaterThanOrEqual(-2);
+    const h = (await page.getByTestId("deal-header").boundingBox())!;
+    const p = (await page.getByTestId("deal-panel-cash").boundingBox())!;
+    expect(p.y - (h.y + h.height), "the panel's top is just below the header, not hidden under it").toBeLessThanOrEqual(24);
+    await expect(page.getByTestId("deal-chart")).toBeVisible();
+  });
+
+  test("3. the sticky header has an opaque backing that reaches past the card's rounded corners", async ({ page }) => {
+    await checkedDeal(page);
+    const header = page.getByTestId("deal-header");
+    expect(await header.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    const outer = (await header.boundingBox())!;
+    const card = (await header.locator(".flow-card").first().boundingBox())!;
+    expect(card.x - outer.x, "backing left of the card").toBeGreaterThanOrEqual(6);
+    expect(outer.x + outer.width - (card.x + card.width), "backing right of the card").toBeGreaterThanOrEqual(6);
+    expect(outer.y + outer.height - (card.y + card.height), "backing below the card").toBeGreaterThanOrEqual(6);
+  });
+
+  for (const width of [375, 390]) {
+    test(`4. a phone (${width}): only the compact title and the tabs stick; the review button and the strip scroll away; all four tabs are reachable and the row says it scrolls`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await checkedDeal(page);
+      expect(await page.getByTestId("deal-header").evaluate((el) => getComputedStyle(el).position), "the full header does not stick on a phone").toBe("static");
+      const tabs = page.getByTestId("deal-tabs");
+      await expect(tabs).toHaveAttribute("data-more-right", "true");
+      await page.evaluate(() => window.scrollTo(0, 900));
+      const bar = (await page.getByTestId("deal-sticky-bar").boundingBox())!;
+      expect(bar.y, "the bar sits under the app's header").toBeLessThanOrEqual(72);
+      expect(bar.height, "the bar is compact").toBeLessThanOrEqual(120);
+      expect(bar.height / 800, "well under half the screen").toBeLessThan(0.2);
+      const review = await page.getByTestId("queue-review-open").boundingBox();
+      expect((review?.y ?? -999) + (review?.height ?? 0), "the review button has scrolled away").toBeLessThanOrEqual(64);
+      for (const view of ["messages", "cash", "compare", "overview"]) {
+        await page.getByTestId(`deal-tab-${view}`).click();
+        const t = (await page.getByTestId(`deal-tab-${view}`).boundingBox())!;
+        const row = (await tabs.boundingBox())!;
+        expect(t.x, `${view} is in view (left)`).toBeGreaterThanOrEqual(row.x - 1);
+        expect(t.x + t.width, `${view} is in view (right)`).toBeLessThanOrEqual(row.x + row.width + 1);
+        await expect(page.getByTestId(`deal-tab-${view}`)).toHaveAttribute("aria-selected", "true");
+      }
+      await page.getByTestId("deal-tab-messages").click();
+      await expect(tabs).toHaveAttribute("data-more-left", "true");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    });
+  }
+
+  test("5. Compare says each fact once: the columns carry terms, economics and buyer status; the outcome table carries the cash, the reserve, the financing and who may send it", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    const rows = page.locator('[data-testid="deal-compare-table"]:visible tbody tr[data-testid^="deal-compare-row-"]');
+    await expect(rows).toHaveCount(3);
+    const text = (await page.getByTestId("deal-compare-table").innerText()).replace(/\s+/g, " ");
+    for (const outcomeWord of ["Breached by", "Held, no buffer", "FLOW can send", "Outside mandate", "Needs your approval", "credit-line draw"]) expect(text, outcomeWord).not.toContain(outcomeWord);
+    const outcomes = (await page.getByTestId("deal-outcomes").innerText()).replace(/\s+/g, " ");
+    for (const outcomeWord of ["Breached by", "Held, no buffer", "FLOW can send", "Outside mandate", "Needs your approval", "credit-line draw"]) expect(outcomes, outcomeWord).toContain(outcomeWord);
+  });
+
+  for (const [width, height] of [[1440, 900], [390, 844]] as const) {
+    test(`6. the headroom plot at ${width}: room beyond the reserve, and no label crosses the reserve line, a dot or another label`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await checkedDeal(page);
+      await page.getByTestId("deal-tab-compare").click();
+      await page.getByTestId("deal-headroom").scrollIntoViewIfNeeded();
+      await page.waitForTimeout(500);
+      const geo = await page.getByTestId("deal-headroom").evaluate((fig) => {
+        const box = (el: Element) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, r: r.right, b: r.bottom }; };
+        const line = box(fig.querySelector('[data-testid="deal-headroom-reserve"]')!);
+        const tracks = Array.from(fig.querySelectorAll('[data-testid="deal-headroom-row"]')).map((li) => box(li.children[1]));
+        const words = Array.from(fig.querySelectorAll('[data-testid="deal-headroom-words"]')).map(box);
+        const dots = Array.from(fig.querySelectorAll('[data-testid="deal-headroom-dot"]')).map((d) => { const r = d.firstElementChild!.getBoundingClientRect(); return { x: r.x, r: r.right }; });
+        const label = box(fig.querySelector('[data-testid="deal-headroom-reserve-label"]')!);
+        return { line, tracks, words, dots, label, fig: box(fig) };
+      });
+      for (const w of geo.words) expect(w.x >= geo.line.r || w.r <= geo.line.x, "a dot's words do not cross the reserve line").toBe(true);
+      for (let i = 1; i < geo.words.length; i++) expect(geo.words[i].y, "the words do not overlap").toBeGreaterThanOrEqual(geo.words[i - 1].b - 1);
+      for (const w of geo.words) for (const d of geo.dots) expect(w.x >= d.r || w.r <= d.x, "the words keep clear of every dot").toBe(true);
+      expect(geo.label.r, "the reserve's label is inside the figure").toBeLessThanOrEqual(geo.fig.r + 1);
+      // Room beyond the reserve: the line is not at the track's right edge.
+      expect(geo.tracks[0].r - geo.line.r, "room beyond the reserve").toBeGreaterThan(20);
+    });
+  }
+
+  test("7. What caused the difference? is a short list per line from the server's cause_lines (the cause_text is the fallback)", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-cash").click();
+    const inspector = page.getByTestId("hv2-inspector");
+    await page.getByTestId("home-chart").focus();
+    await page.keyboard.press("Home");
+    await page.keyboard.press("ArrowRight");
+    await expect(inspector).toHaveAttribute("data-day", "2");
+    const lines = inspector.getByTestId("deal-cause-line");
+    await expect(lines).toHaveCount(2);
+    await expect(lines.nth(0).locator("p")).toHaveText("As asked");
+    await expect(lines.nth(0).locator("li")).toHaveText(["Early payment from Foshan Home Retail Co. ¥420k in 2 days", "Early-payment discount −¥5k in 2 days"]);
+    await expect(lines.nth(1).locator("p")).toHaveText("Option A");
+    await expect(lines.nth(1).locator("li")).toHaveCount(3);
+  });
+
+  test("8. the row-expanding links carry a chevron, not an arrow glyph", async ({ page }) => {
+    await checkedDeal(page);
+    await page.getByTestId("deal-tab-compare").click();
+    for (const row of ["terms", "economic"]) {
+      const link = page.getByTestId(`deal-compare-expand-${row}`);
+      expect((await link.innerText()).replace(/\s+/g, " ")).not.toMatch(/[→⇄←>]/);
+      await expect(link.locator("svg")).toHaveCount(1);
+    }
   });
 });
 

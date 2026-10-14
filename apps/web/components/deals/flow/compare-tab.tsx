@@ -5,18 +5,25 @@ import { BeforeTheyAsk } from "@/components/deals/before-they-ask";
 import { Disclosure } from "@/components/business/kit";
 import { Button } from "@/components/ui";
 import { ActionGroup } from "@/components/ui/action-group";
-import { StateWord } from "@/components/ui/state-word";
 import { STRATEGY_MVP } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import type { OfferPictureView, PicturePath } from "@/lib/types";
 import { CostTable } from "./cost-table";
 import { comparisonRows, type CompareCellModel, type CompareRowKey } from "./deal-model";
-import { AUTH_TONE, Cell, NONE, quietLink } from "./flow-parts";
+import { Cell, NONE, quietLink } from "./flow-parts";
 import { EnvelopePackages, WhyDiffer } from "./investigate";
 import { FinancialOutcomes } from "./outcomes";
 import { ScopeTerms } from "./scope-terms";
 
-const EXPANDABLE: CompareRowKey[] = ["terms", "economic", "cash"];
+const EXPANDABLE: CompareRowKey[] = ["terms", "economic"];
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg aria-hidden viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`ml-1 inline-block transition-transform duration-(--dur-fast) ${open ? "rotate-180" : ""}`}>
+      <path d="m4 6 4 4 4-4" />
+    </svg>
+  );
+}
 
 function CellView({ row, cell }: { row: CompareRowKey; cell: CompareCellModel }) {
   if (row === "terms") {
@@ -33,7 +40,7 @@ function CellView({ row, cell }: { row: CompareRowKey; cell: CompareCellModel })
     );
   }
   if (!cell.value && !cell.sub && !cell.note) return NONE;
-  return <Cell value={row === "authority" || row === "status" ? null : cell.value} sub={cell.sub} note={cell.note} bad={cell.bad} />;
+  return <Cell value={row === "status" ? null : cell.value} sub={cell.sub} note={cell.note} bad={cell.bad} />;
 }
 
 /**
@@ -78,13 +85,12 @@ export function CompareTab({
     });
   const heads = (p: PicturePath) => (p.kind === "asked" ? t("deals.cost.col.asked") : p.label);
   const rowLabel = (k: CompareRowKey) => t(`deals.cmp.row.${k}` as const);
-  const calcLabel = (k: CompareRowKey) => t(`deals.cmp.calc.${k as "terms" | "economic" | "cash"}` as const);
+  const calcLabel = (k: CompareRowKey) => t(`deals.cmp.calc.${k as "terms" | "economic"}` as const);
   const choose = (p: PicturePath) => {
     onPick(p.key);
     // The selection brings the review into view (the button that opens it).
     window.requestAnimationFrame(() => reviewRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" }));
   };
-  const badge = (p: PicturePath) => (p.authority_short_text ? <StateWord tone={AUTH_TONE[p.authority ?? ""] ?? "neutral"}>{p.authority_short_text}</StateWord> : null);
   const action = (p: PicturePath): ReactNode => {
     if (p.kind === "asked") {
       return onReviewRequest ? (
@@ -103,19 +109,7 @@ export function CompareTab({
   };
   const expansion = (k: CompareRowKey): ReactNode => {
     if (k === "terms") return <ScopeTerms picture={picture} paths={paths} heads={paths.map(heads)} testId="deal-compare-scope-terms" />;
-    if (k === "economic") return <CostTable paths={paths} heads={paths.map(heads)} caption={t("deals.cost.title")} testId="deal-cost-table" />;
-    return (
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${paths.length}, minmax(0, 1fr))` }} data-testid="deal-funding-plans">
-        {paths.map((p) => (
-          <div key={p.key} className="min-w-0 text-sm text-ink-2" data-testid={`deal-funding-${p.kind === "asked" ? "asked" : "reply"}`}>
-            <p className="font-bold text-ink">{heads(p)}</p>
-            {p.financing_needed_text ? <p className="mt-0.5 text-ink">{p.financing_needed_text}</p> : null}
-            {p.funding_assumption_text ? <p className="mt-0.5">{p.funding_assumption_text}</p> : null}
-            {p.scenario_assumption_text ? <p className="mt-0.5 text-supporting text-ink-3">{p.scenario_assumption_text}</p> : null}
-          </div>
-        ))}
-      </div>
-    );
+    return <CostTable paths={paths} heads={paths.map(heads)} caption={t("deals.cost.title")} testId="deal-cost-table" />;
   };
   const cols = paths.length;
   const labelCell = "border-b border-line py-3 pr-3 text-left align-top text-supporting font-bold text-ink-3";
@@ -140,9 +134,6 @@ export function CompareTab({
                 {paths.map((p) => (
                   <th key={p.key} scope="col" className={`border-b border-line-strong px-3 py-2 text-left align-bottom ${focusKey === p.key ? "bg-f-purple-soft" : ""}`} data-testid={`deal-compare-head-${p.kind === "asked" ? "asked" : "reply"}`} data-selected={focusKey === p.key ? "true" : undefined}>
                     <span className="block text-sm font-bold text-ink">{heads(p)}</span>
-                    <span className="mt-1 block" data-testid="deal-compare-badge">
-                      {badge(p)}
-                    </span>
                   </th>
                 ))}
               </tr>
@@ -156,12 +147,13 @@ export function CompareTab({
                       {EXPANDABLE.includes(r.key) ? (
                         <button type="button" aria-expanded={open.has(r.key)} aria-controls={`deal-calc-${r.key}`} onClick={() => toggle(r.key)} className={`${quietLink} mt-1 -ml-2 block text-left`} data-testid={`deal-compare-expand-${r.key}`}>
                           {open.has(r.key) ? t("deals.cmp.hide") : calcLabel(r.key)}
+                          <Chevron open={open.has(r.key)} />
                         </button>
                       ) : null}
                     </th>
                     {r.cells.map((c, i) => (
                       <td key={paths[i].key} className={`${bodyCell} ${focusKey === paths[i].key ? "bg-f-purple-soft/40" : ""}`} data-testid={`deal-compare-cell-${r.key}-${paths[i].kind === "asked" ? "asked" : "reply"}`}>
-                        {r.key === "authority" || r.key === "status" ? (c.value ? <span className={r.key === "authority" ? "" : "text-ink"}>{c.value}</span> : NONE) : <CellView row={r.key} cell={c} />}
+                        {r.key === "status" ? (c.value ? <span className="text-ink">{c.value}</span> : NONE) : <CellView row={r.key} cell={c} />}
                       </td>
                     ))}
                   </tr>
@@ -191,12 +183,11 @@ export function CompareTab({
           {paths.map((p, i) => (
             <article key={p.key} className={`rounded-tile border border-line p-4 ${focusKey === p.key ? "bg-f-purple-soft/40" : ""}`} aria-label={heads(p)}>
               <h3 className="text-sm font-bold text-ink">{heads(p)}</h3>
-              <div className="mt-1">{badge(p)}</div>
               <dl className="mt-3 divide-y divide-line">
                 {rows.map((r) => (
                   <div key={r.key} className="py-2">
                     <dt className="text-supporting font-bold text-ink-3">{rowLabel(r.key)}</dt>
-                    <dd className="m-0 mt-0.5 text-sm">{r.key === "authority" || r.key === "status" ? (r.cells[i].value ?? NONE) : <CellView row={r.key} cell={r.cells[i]} />}</dd>
+                    <dd className="m-0 mt-0.5 text-sm">{r.key === "status" ? (r.cells[i].value ?? NONE) : <CellView row={r.key} cell={r.cells[i]} />}</dd>
                   </div>
                 ))}
               </dl>

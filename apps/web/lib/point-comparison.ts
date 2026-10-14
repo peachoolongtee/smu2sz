@@ -1,4 +1,4 @@
-import type { HomeSeriesPoint, PointComparison, PointComparisonLegacy } from "@/lib/types";
+import type { CauseLine, HomeSeriesPoint, PointComparison, PointComparisonLegacy } from "@/lib/types";
 
 /** What the chart's inspector says about one chosen pair on one day: both values and the signed difference as the server wrote them, and the cause of the difference. Nothing here is computed. */
 export interface PairWords {
@@ -9,6 +9,8 @@ export interface PairWords {
   /** Which of the pair the difference belongs to ("of" against the other): the reply for a pair with the request; the second of the server's pair key for two replies. */
   differenceOf: "a" | "b";
   cause: string | null;
+  /** The cause as the server's list per line, when it sends one (`cause_lines`); `cause` is the fallback. */
+  causeLines: CauseLine[] | null;
   /** The pair includes the request. */
   againstAsked: boolean;
 }
@@ -41,11 +43,11 @@ export function pairWords(a: Ref, b: Ref, pointOf: (key: string) => HomeSeriesPo
     else if (isLegacyStrip(cmp) && reply.recommended) entry = { asked_display: cmp.asked_display, reply_display: cmp.recommended_display, difference_display: cmp.difference_display, cause_text: null };
     if (!entry) return null;
     const askedFirst = a.kind === "asked";
-    return { aDisplay: askedFirst ? entry.asked_display : entry.reply_display, bDisplay: askedFirst ? entry.reply_display : entry.asked_display, difference: entry.difference_display ?? null, differenceOf: askedFirst ? "b" : "a", cause: entry.cause_text ?? null, againstAsked: true };
+    return { aDisplay: askedFirst ? entry.asked_display : entry.reply_display, bDisplay: askedFirst ? entry.reply_display : entry.asked_display, difference: entry.difference_display ?? null, differenceOf: askedFirst ? "b" : "a", cause: entry.cause_text ?? null, causeLines: entry.cause_lines ?? null, againstAsked: true };
   }
   const direct = pointOf(a.key)?.comparison_pairs?.[`${a.key}:${b.key}`];
-  if (direct) return { aDisplay: direct.asked_display, bDisplay: direct.reply_display, difference: direct.difference_display ?? null, differenceOf: "b", cause: direct.cause_text ?? null, againstAsked: false };
+  if (direct) return { aDisplay: direct.asked_display, bDisplay: direct.reply_display, difference: direct.difference_display ?? null, differenceOf: "b", cause: direct.cause_text ?? null, causeLines: direct.cause_lines ?? null, againstAsked: false };
   const reversed = pointOf(a.key)?.comparison_pairs?.[`${b.key}:${a.key}`];
-  if (reversed) return { aDisplay: reversed.reply_display, bDisplay: reversed.asked_display, difference: reversed.difference_display ?? null, differenceOf: "a", cause: reversed.cause_text ?? null, againstAsked: false };
+  if (reversed) return { aDisplay: reversed.reply_display, bDisplay: reversed.asked_display, difference: reversed.difference_display ?? null, differenceOf: "a", cause: reversed.cause_text ?? null, causeLines: reversed.cause_lines ?? null, againstAsked: false };
   return null;
 }

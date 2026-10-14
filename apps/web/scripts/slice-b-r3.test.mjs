@@ -52,16 +52,16 @@ const ASKED = { key: "asked", kind: "asked" };
 test("pair words: the request against a reply reads the reply's map entry; the old strip beside it is only the fallback for the recommended reply", () => {
   const map = { label: "Same day", asked_display: "¥400,000.00", recommended_display: "¥549,986.20", difference_display: "+¥149,986.20", A: { asked_display: "¥400,000.00", reply_display: "¥549,986.20", difference_display: "+¥149,986.20", cause_text: "Option A: draw ¥150k." }, B: { asked_display: "¥400,000.00", reply_display: "¥490,000.00", difference_display: "+¥90,000.00", cause_text: "Option B: draw ¥90k." } };
   const pointOf = (k) => (k === "A" || k === "B" ? point(map, {}) : undefined);
-  assert.deepEqual(pairWords(ASKED, A, pointOf), { aDisplay: "¥400,000.00", bDisplay: "¥549,986.20", difference: "+¥149,986.20", differenceOf: "b", cause: "Option A: draw ¥150k.", againstAsked: true });
+  assert.deepEqual(pairWords(ASKED, A, pointOf), { aDisplay: "¥400,000.00", bDisplay: "¥549,986.20", difference: "+¥149,986.20", differenceOf: "b", cause: "Option A: draw ¥150k.", causeLines: null, againstAsked: true });
   // Not the recommended reply: its own entry, not the strip.
   assert.equal(pairWords(ASKED, B, pointOf)?.difference, "+¥90,000.00");
   assert.equal(pairWords(ASKED, B, pointOf)?.cause, "Option B: draw ¥90k.");
   // The pair in the other order: the values swap, the difference stays the reply's.
-  assert.deepEqual(pairWords(A, ASKED, pointOf), { aDisplay: "¥549,986.20", bDisplay: "¥400,000.00", difference: "+¥149,986.20", differenceOf: "a", cause: "Option A: draw ¥150k.", againstAsked: true });
+  assert.deepEqual(pairWords(A, ASKED, pointOf), { aDisplay: "¥549,986.20", bDisplay: "¥400,000.00", difference: "+¥149,986.20", differenceOf: "a", cause: "Option A: draw ¥150k.", causeLines: null, againstAsked: true });
   // An older server: the single strip, the request against the recommended reply, with no cause.
   const strip = { label: "Same day", asked_display: "¥400,000.00", recommended_display: "¥549,986.20", difference_display: "+¥149,986.20" };
   const old = () => point(strip, undefined);
-  assert.deepEqual(pairWords(ASKED, A, old), { aDisplay: "¥400,000.00", bDisplay: "¥549,986.20", difference: "+¥149,986.20", differenceOf: "b", cause: null, againstAsked: true });
+  assert.deepEqual(pairWords(ASKED, A, old), { aDisplay: "¥400,000.00", bDisplay: "¥549,986.20", difference: "+¥149,986.20", differenceOf: "b", cause: null, causeLines: null, againstAsked: true });
   assert.equal(pairWords(ASKED, B, old), null, "the strip says nothing of another reply");
   // Nothing written for the day: no words, and nothing is subtracted by the browser.
   assert.equal(pairWords(ASKED, A, () => point(null, {})), null);
@@ -69,12 +69,22 @@ test("pair words: the request against a reply reads the reply's map entry; the o
   assert.equal(pairWords(ASKED, { key: "asked", kind: "asked" }, old), null);
 });
 
+test("pair words carry the server's cause_lines beside cause_text, and never split the string themselves", () => {
+  const lines = [{ label: "As asked", items: ["Early payment ¥420k in 2 days"] }, { label: "Option A", items: ["Credit line draw ¥150k today", "Early payment ¥257k in 2 days"] }];
+  const map = { A: { asked_display: "1", reply_display: "2", difference_display: "+1", cause_text: "As asked: Early payment ¥420k in 2 days. Option A: Credit line draw ¥150k today; Early payment ¥257k in 2 days.", cause_lines: lines } };
+  const w = pairWords(ASKED, A, () => point(map, {}));
+  assert.deepEqual(w.causeLines, lines);
+  assert.match(w.cause, /^As asked: /);
+  const old = pairWords(ASKED, A, () => point({ A: { ...map.A, cause_lines: undefined } }, {}));
+  assert.equal(old.causeLines, null, "an older server sends none: the text is shown whole");
+});
+
 test("pair words: two replies read comparison_pairs on the first's point, in the server's order or the reverse, with whose difference it is", () => {
   const pairs = { "A:B": { asked_display: "¥549,986.20", reply_display: "¥490,000.00", difference_display: "−¥59,986.20", cause_text: "Option B: ¥90k drawn, not ¥150k." } };
   const pointOf = () => point(null, pairs);
-  assert.deepEqual(pairWords(A, B, pointOf), { aDisplay: "¥549,986.20", bDisplay: "¥490,000.00", difference: "−¥59,986.20", differenceOf: "b", cause: "Option B: ¥90k drawn, not ¥150k.", againstAsked: false });
+  assert.deepEqual(pairWords(A, B, pointOf), { aDisplay: "¥549,986.20", bDisplay: "¥490,000.00", difference: "−¥59,986.20", differenceOf: "b", cause: "Option B: ¥90k drawn, not ¥150k.", causeLines: null, againstAsked: false });
   // Chosen the other way round: the server's pair is read reversed; the difference is still B's against A's.
-  assert.deepEqual(pairWords(B, A, pointOf), { aDisplay: "¥490,000.00", bDisplay: "¥549,986.20", difference: "−¥59,986.20", differenceOf: "a", cause: "Option B: ¥90k drawn, not ¥150k.", againstAsked: false });
+  assert.deepEqual(pairWords(B, A, pointOf), { aDisplay: "¥490,000.00", bDisplay: "¥549,986.20", difference: "−¥59,986.20", differenceOf: "a", cause: "Option B: ¥90k drawn, not ¥150k.", causeLines: null, againstAsked: false });
   assert.equal(pairWords(A, { key: "C", kind: "reply" }, pointOf), null);
 });
 
@@ -93,17 +103,14 @@ test("the headroom plot: positions scale from the fen numbers only; the reserve 
   assert.equal(m.headroomPlot([path("A")], 100), null);
 });
 
-test("the comparison's five rows are server words: the short authority and buyer status, the economic headline, the cash outcome; the terms cells list each scope's own word", () => {
+test("the comparison's three rows are server words: the economic headline and the buyer status; the terms cells list each scope's own word", () => {
   const asked = path("asked", { economic_headline_text: "¥5,040.00 once, ¥28,326.92 over 12 months", economic_basis_text: "Two parts, not added together", authority_short_text: "Outside mandate", buyer_status_text: "Asked by Foshan", lowest_short: "¥165k", lowest_when: "in 60 days", reserve_state_text: "Breached by ¥135k for 15 days", first_breach_when: "in 47 days", terms: [{ key: "payment_terms", label: "Payment terms", value_text: "60 days", instead_of_text: null, scope: "future_invoices", scope_label: "Future invoices", cell_text: "60 days" }] });
   const reply = path("A", { economic_headline_text: "¥3,027.77", economic_basis_text: "One-off cost, nothing ongoing", authority_short_text: "FLOW can send", buyer_status_text: "Not yet sent", lowest_short: "¥300k", lowest_when: "in 30 days", reserve_state_text: "Held, no buffer at the lowest point", terms: [{ key: "payment_terms", label: "Payment terms", value_text: "45 days", instead_of_text: "instead of 60", scope: "future_invoices", scope_label: "Future invoices", cell_text: "45 days" }] });
   const rows = m.comparisonRows([asked, reply]);
-  assert.deepEqual(rows.map((r) => r.key), ["terms", "economic", "cash", "authority", "status"]);
+  assert.deepEqual(rows.map((r) => r.key), ["terms", "economic", "status"], "the cash, the reserve and who may send it are the outcome table's");
   const by = Object.fromEntries(rows.map((r) => [r.key, r.cells]));
   assert.deepEqual(by.terms[1].lines, [{ scope: "Future invoices", text: "45 days" }]);
   assert.deepEqual([by.economic[0].value, by.economic[0].sub], ["¥5,040.00 once, ¥28,326.92 over 12 months", "Two parts, not added together"]);
-  assert.deepEqual([by.cash[0].value, by.cash[0].sub, by.cash[0].note, by.cash[0].bad], ["¥165k", "in 60 days", "Breached by ¥135k for 15 days", true]);
-  assert.equal(by.cash[1].bad, false);
-  assert.deepEqual([by.authority[0].value, by.authority[1].value], ["Outside mandate", "FLOW can send"]);
   assert.deepEqual([by.status[0].value, by.status[1].value], ["Asked by Foshan", "Not yet sent"]);
 });
 

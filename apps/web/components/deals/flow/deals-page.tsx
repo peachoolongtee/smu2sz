@@ -324,7 +324,8 @@ export function DealsPage() {
           </>
         ) : (
           <>
-            <div className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto" data-testid="deals-side">
+            {/* The queue scrolls inside its own column (never sideways): it reaches into the gap so the 1 px edge that joins the selected row to the workspace is inside it. */}
+            <div className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:-mr-6 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:pr-6 xl:[overflow-x:clip]" data-testid="deals-side">
               {tableMode ? null : QUEUE_NODE}
               {INBOX_SLOT}
             </div>

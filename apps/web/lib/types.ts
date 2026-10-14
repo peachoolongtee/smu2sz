@@ -2653,6 +2653,13 @@ export interface PointComparison {
   reply_display: string;
   difference_display: string;
   cause_text?: string | null;
+  /** The same cause as a list per line: `{label: "Option A", items: ["Credit line draw ¥150k today", ...]}`, one entry per line of the pair, one item per event. The server splits it; the browser never does. */
+  cause_lines?: CauseLine[] | null;
+}
+
+export interface CauseLine {
+  label: string;
+  items: string[];
 }
 
 /** One day of a projection the server already ran: closing cash (fen for the axis only) and the events that moved it. */
