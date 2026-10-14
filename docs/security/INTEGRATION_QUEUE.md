@@ -90,7 +90,9 @@ Sharded by test directory (31 shards; this repo's pytest config prints no totals
   (the handoff lists `test_lang`; the capex reviewer saw the digest pin on the base). Not security; not caused by these branches.
 - **Candidate v1** (first SEC-05): same two plus `tests/operations` (`test_approvals_and_circuit.py:170` owner AddFacility, and the
   SEC-03 test relying on the circuit). Both corrected (9127aef2, 8616ee31).
-- **Candidate v2** `sec/candidate` e6863990: RESULT_PENDING
+- **Candidate v2** `sec/candidate` e6863990 (branches 1-5; `sec/headers` not included): all 31 shards exit 0 except the same two
+  pre-existing failures (`test_modules_on_books.py:207`, `test_lang.py:77` ×2), identical to baseline. Attack catalogue on the same
+  tree: 126 API + 133 NL attacks, 0 with harm, detection 98.4%. `sec/headers` was tested on its own (`tests/security`, startup).
 
 ## Not yet queued (fix design needs a decision, or is in progress)
 
