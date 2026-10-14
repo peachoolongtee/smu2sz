@@ -750,7 +750,9 @@ def get_decision(decision_id: str, lang: str = "en", *, sel: Annotated[Selection
         subject = ds.offer if ds.offer is not None else ds.commitment
         context = build_context(rt, lang, sel, page="decision", buyer=subject.counterparty_id if subject is not None else None,
                                 deal=decision_id)
-        return {**decision_detail(ctx, ds, inp, lang), "context": context}
+        from app.api.lifecycle import workspace_words  # lifecycle reads the tracker, which reads this module
+
+        return {**decision_detail(ctx, ds, inp, lang), "context": context, **(workspace_words(rt, offer_id_of(decision_id), lang) if offer_id_of(decision_id) else {})}
 
 
 __all__ = ["Context", "Reconciled", "decision_detail", "decision_summary", "family_of", "load_context", "record_fact", "router"]

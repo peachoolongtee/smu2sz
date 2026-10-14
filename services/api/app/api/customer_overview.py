@@ -931,6 +931,17 @@ def _relationship_text(r: _Read, contribution: int | None, open_count: int) -> s
     return f"{who} {joined}."
 
 
+def _deals_history(r: _Read) -> list[dict[str, Any]]:
+    """The buyer's agreed and closed deals, newest first (subject, the tracker's state word, its close-out or agreed sentence, the link into Deals)."""
+    from app.api.lifecycle import deals_history
+
+    try:
+        return deals_history(r.ctx, r.buyer_id, r.lang)
+    except Exception:  # noqa: BLE001  a words read: the page stands without it
+        log.exception("the deals history could not be read for the customer overview")
+        return []
+
+
 def _open_negotiations(r: _Read) -> tuple[list[dict[str, Any]], dict[str, Any] | None, int]:
     """(the open negotiations as rows, the primary decision, how many others are open). The primary decision is the one the page's `decision`
     block is about when it waits for the owner, else the first that does; it is null when none waits for the owner."""
@@ -1344,6 +1355,7 @@ def _build(rt: Runtime, buyer_id: str, lang: Lang) -> tuple[dict[str, Any], bool
         "receivable_flow": _receivable_flow(r), "links": _links(r, negotiations, primary),
         "exposure_comparison": _exposure_comparison(r),
         "open_negotiations": negotiations, "primary_decision": primary, "other_open_count": others,
+        "deals_history": _deals_history(r),
         "decision": decision, "none_text": none_text if decision is None else None, "actions": actions,
         "economics": econ_rows, "economics_note": econ_note,
         # the inputs sheet is Phase 2 (FEATURE_CUSTOMER_ECONOMICS): until it is on there is nowhere to send the owner, and the label stays
