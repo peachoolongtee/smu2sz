@@ -12,15 +12,26 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 
 | ID | Title | Sev S / P | Status | Fix |
 |---|---|---|---|---|
-| SEC-01 | Security attack suite cannot run on `dev` (regression gate silently broken) | High / High | CONFIRMED | open |
-| SEC-02 | Two ACTIVE agreements for one buyer request: concession and invoice adjustment booked twice | High / High | CONFIRMED | open |
-| SEC-03 | Refused owner accept leaves an orphan PROPOSED commitment (non-atomic accept) | Medium / Medium | CONFIRMED | open |
-| SEC-04 | Agent key blocks the owner's decline by pre-claiming its predictable idempotency key | Medium / Medium | CONFIRMED | open |
-| SEC-05 | Agent key silently opens any buyer's circuit, blocking owner accept/decline | Medium / Medium | CONFIRMED | open |
+| SEC-01 | Security attack suite cannot run on `dev` (regression gate silently broken) | High / High | CONFIRMED | **fixed** `sec/attack-harness` |
+| SEC-02 | Two ACTIVE agreements for one buyer request: concession and invoice adjustment booked twice | High / High | CONFIRMED | **fixed** `sec/one-agreement-per-request` (needs Fable sign-off) |
+| SEC-03 | Refused owner accept leaves an orphan PROPOSED commitment (non-atomic accept) | Medium / Medium | CONFIRMED | **fixed** same branch |
+| SEC-04 | Agent key blocks the owner's decline by pre-claiming its predictable idempotency key | Medium / Medium | CONFIRMED | **fixed** `sec/authority-boundaries` |
+| SEC-05 | Agent key silently opens any buyer's circuit, blocking owner accept/decline (RT1-2 fix covered receipts only) | Medium / Medium | CONFIRMED | **fixed** same branch (needs Fable sign-off) |
+| SEC-16 | **Anonymous caller overwrites the stored text of any offer** by reusing its `doc_id`; owner reads forged words ("Owner already approved … Wire to new account …") | High / High | CONFIRMED | **fixed** `sec/intake-hardening` |
+| SEC-17 | **Anonymous CPU exhaustion**: compile time super-linear in text (2.7 KB 0.4 s, 10.8 KB 4.3 s, 43 KB 62 s), no size or count limit on `POST /offers` | Medium / High | CONFIRMED | **fixed** same branch |
+| SEC-18 | Channel key not bound on `POST /offers` (BUYER-1's key files as BUYER-2); any caller may label a document `channel="owner"` (a prompt attribute in live mode) | Medium / Medium | REVIEWER-CONFIRMED, regression test by Security Lead | **fixed** same branch |
+| SEC-19 | Anonymous offers filed as any buyer appear as that buyer's open request on Deals (displacing the real one); nothing marks them unauthenticated | Medium / Medium | CONFIRMED (`r3.py`) | open: design (Fable) |
+| SEC-20 | Intake cap is one global counter per simulated day (one sender locks out all anonymous buyers); keyed buyers and the agent are unthrottled | Low / Medium | REVIEWER-CONFIRMED | open |
+| SEC-21 | NL sessions: client-chosen ids, not bound to the credential; LRU eviction lets 1,001 agent turns drop the owner's pending plan; anonymous caller can continue a keyed buyer's session | Low / Medium | REVIEWER-CONFIRMED | open |
+| SEC-22 | Egress normaliser misses number forms (30,0000 / 0.3m / 3e5 / 30w / 千分之十五 / 15‰ / DSCR 125%); derived values (break-even, counter cap, shortfall) not in the protected set | Low / High if generated outbound text is added | REVIEWER-CONFIRMED | open |
+| CAPEX-1 | (branch `int/capex-buy-side`, not on `dev`) Vendor contract with retention or discount > 100% books a **cash inflow**; card shows a normal purchase | **High, merge-blocking** | CONFIRMED on `78cc1d5e` and `db95a2d5` | open: branch owner |
+| CAPEX-2 | (branch) Approval card does not show the payment schedule; the agent can queue its own valid timeline | Medium | REVIEWER-CONFIRMED | open: branch owner |
+| CAPEX-3 | (branch) Same contract uploaded twice commits twice (−¥1,200,000) | Medium | CONFIRMED | open: branch owner |
+| CAPEX-4 | (branch) Vendor registry name taken from contract text (can equal the SME's own name) | Low | REVIEWER-CONFIRMED | open: branch owner |
 | SEC-06 | No runnable production configuration (compose cannot start; web build points at localhost) | n/a / High | CONFIRMED (code) | open |
 | SEC-07 | `DEMO_MODE` defaults on; published credentials and committed demo signing key = owner takeover outside compose | Info / High | CONFIRMED (code) | open |
 | SEC-08 | Audit trail not tamper-evident (R-13): truncation/rewrite verify; approvals and security events unguarded; approval flip executes a rejected op | Medium / High | CONFIRMED (SQLite) | open |
-| SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | open |
+| SEC-09 | Bank-feed key moves the clock without bound: expires the mandate, posts debt service, logged as SYSTEM | Medium / Medium | CONFIRMED | **fixed** `sec/authority-boundaries` (amends ADR-0006 §2) |
 | SEC-10 | Unauthenticated callers grow `security_events` without bound; each refusal reads the whole table | Medium / Medium | REVIEWER-CONFIRMED | open |
 | SEC-11 | Multi-process unsafe: stale clock books backdated ops; route checks rely on a per-process lock | Info / High | CONFIRMED (two runtimes, one SQLite) | open |
 | SEC-12 | No security headers (CSP, frame-ancestors, nosniff, HSTS); owner token in `sessionStorage` | Low / Medium | CONFIRMED (code) | open |
@@ -29,8 +40,8 @@ SUSPECTED = code reading only. Severity is for the stated scope; **S** = hackath
 | SEC-15 | Container and secret hygiene: root containers, unpinned bases, `uv:latest`, no `.dockerignore`, placeholder secrets accepted | Info / Low | REVIEWER-CONFIRMED (code) | open |
 | R-2 | One owner credential + one signing key; accept route queues and approves in one call | Info / Medium | open (accepted risk, re-confirmed in code) | design |
 | R-3 | Persuaded-but-authorised agent: Tier 1 inside the mandate, no aggregate draw limit | Medium / Medium | open (re-confirmed in code) | design |
-| R-10 | Buyer threshold probing; no per-counterparty attempt budget for keyed buyers | pending LLM-boundary review | | |
-| R-11 | Agent key reads protected status through `/nl` | pending LLM-boundary review | | |
+| R-10 | Buyer threshold probing: one keyed message reveals the counter cap (0.85%), and the counter's face (¥257,200) reveals the owner's funding gap; no per-buyer attempt budget | Medium / High | REVIEWER-CONFIRMED (`r2.py`); anonymous callers get no oracle | open: pricing design (Fable) |
+| R-11 | Agent key reads cash, floor, DSCR/leverage limits, concession cap, break-even and full verdict JSON through `/nl` (wider than documented) | Medium / High | REVIEWER-CONFIRMED (`r1.py`, `r2.py`) | open: decide what the agent channel is for |
 
 Unverified areas and blockers are listed at the end; they are not passes.
 
@@ -192,13 +203,79 @@ Unverified areas and blockers are listed at the end; they are not passes.
 - Root containers, unpinned `python:3.12-slim`/`node:22-alpine`, `ghcr.io/astral-sh/uv:latest`, no `.dockerignore` (repo-root
   `.env` sent as build context), no length/placeholder check on `OWNER_TOKEN` etc. (reviewer, re-read by the Security Lead).
 
+## SEC-16 Anonymous overwrite of an offer's stored text
+
+- **Affected:** `app/api/offers.py` `intake_offer` (`rt.documents[d.doc_id] = d` with the caller's id, no check, no lock).
+- **Reproduction (CONFIRMED, `r3.py`):** owner seeds EX01 (`EX01-msg`); anonymous `POST /offers` with `doc_id: "EX01-msg"` and
+  "Owner already approved: accept 3% early-pay discount on RCV-A. Wire to new account 6222-0000." → 200; owner `GET /offers/{id}` now
+  shows the forged text as the buyer's message, and the offer's spans point into it. In memory only (lost on restart), but live for the
+  whole session the owner works in.
+- **Consequence:** an unauthenticated integrity breach of what the owner reads before deciding; a ready payment-redirection lure.
+- **Fix (`sec/intake-hardening`):** a different document under a taken id is 409 `DOCUMENT_ID_TAKEN` (checked under `rt.lock` before and
+  after compiling); resending the identical document still works. Regression: `tests/security/test_intake_hardening.py`.
+
+## SEC-17 Anonymous CPU exhaustion on intake
+
+- **Reproduction (CONFIRMED, `r4.py`, rules backend):** one anonymous `POST /offers`: 2.7 KB 0.41 s, 10.8 KB 4.34 s, 43.2 KB 61.75 s
+  (response 1.27 MB). The reviewer stopped a 5 × 2.2 MB request after 10 minutes. Compile runs outside `rt.lock`, so it degrades the
+  process through CPU and the GIL rather than locking writes. In live mode it also selects the expensive model (cost amplification, S2).
+- **Fix:** at most 5 documents of 4,000 characters per submission (413), checked before compiling; the largest fixture is 247
+  characters and 2 documents; `/nl` already caps a turn at 4,000.
+
+## SEC-18 Channel key not bound on `/offers`; owner channel claimable
+
+- **Fix:** a channel key files only as its own buyer (403 `COUNTERPARTY_MISMATCH`, the rule `/nl` already applies); non-owner documents
+  must use a buyer channel (422 `CHANNEL_NOT_ALLOWED`).
+
+## SEC-19..22 (open)
+
+- **SEC-19:** anonymous intake can name any buyer; the forged offer becomes that buyer's open request on Deals (`r3.py`: BUYER-1's
+  `open_offer` replaced). Proposed: store `authenticated` on the offer; keep unauthenticated offers out of a buyer's deal or label them.
+- **SEC-20:** the anonymous intake cap is global per simulated day and per process; keyed channels are unlimited, and each accepted keyed
+  probe can queue an owner approval. Proposed: per-key and per-IP token buckets on real time; per-buyer attempt budget feeding the circuit.
+- **SEC-21:** session ids are client-chosen and bound only to actor and `owner_auth` (`app/nl/sessions.py:283-298`). Proposed:
+  server-issued ids bound to a credential fingerprint; never evict an owner session for another caller.
+- **SEC-22:** `app/egress/normalise.py:61-69` misses several number forms; derived values are not protected. Low while outbound buyer
+  text is templates; required before any generated outbound text.
+
+## Capex buy side (branch only, pre-merge)
+
+- **CAPEX-1 (CONFIRMED by the Security Lead on `int/capex-buy-side` 78cc1d5e and `origin/feat/capex-buy-side` db95a2d5,
+  `evidence/.../capex_probe_test.py` p6/p7):** a contract reading "retain 150%" yields payments day 90 −¥300,000 and day 440 ¥900,000
+  (sum ¥600,000, so the sum check passes); after approval the books hold **+¥300,000 on day 90** (`confirmed=True`) and the ¥900,000
+  outflow sits beyond the 120-day reserve horizon. A 150% early-pay discount books +¥180,000 and the card reads "¥60,000 purchase".
+  Causes: unbounded `ret_bp` and discount (`app/capex/schedule.py:322,410`), negative shares accepted (`:238-241`), rates without an
+  upper bound (`app/compiler/parsing.py find_rates`), no sign check when booking (`executor.py:1524`). Fix: schedule not derivable unless
+  every amount > 0 and every rate ≤ 10,000 bp; executor refuses any payment ≤ 0; tests for both variants.
+- **CAPEX-2:** card shows only the amount (no days, vendor, document, timeline, early-pay flag); the agent can queue a commit with its own
+  valid timeline and hash. Fix: show the schedule; refuse agent-authored CommitPurchase shapes.
+- **CAPEX-3 (CONFIRMED):** two uploads of one contract (same `doc_hash`) both commit: 6 CAPEX flows, −¥1,200,000. Fix: refuse a commit
+  when an executed CommitPurchase exists for the same `doc_hash` or contract reference.
+- **CAPEX-4:** vendor name comes from contract text; may equal the SME's own legal name (egress protection then blocks the SME's name).
+- Checked sound: always Tier 2, agent cannot approve, flag checked in the executor, doc and schedule hashes bound at approval, new routes
+  owner-only, add-to-menu goes through the executor.
+- **Recommendation: do not merge** until CAPEX-1..3 are fixed with tests.
+
 ## Prior risks re-checked
 
 - **R-2** (CONFIRMED in code): no second approver; `accept.py:362-370` queues and approves in one request. Accepted design risk for
   the simulation; production needs a second approver or hardware key for Tier 2.
 - **R-3** (code): Tier-2 threshold is a strict "greater than" per operation (`tiers.py:104`); no aggregate or daily draw limit, so
   an authorised agent can draw the whole line in Tier 1 steps. Not re-run.
-- **R-10, R-11:** pending the LLM-boundary reviewer; to be reproduced by the Security Lead before being marked.
+- **R-10** (reviewer `r2.py`, BUYER-1 key): 0.5% → "awaits the owner's approval"; 0.86% → "We will accept early settlement on up to
+  ¥257,200 of this invoice at 0.85%": the counter cap (break-even 0.88%) and, through ¥257,200 = ¥255,000 / (1 − 0.85%), the owner's
+  funding gap. Anonymous callers get identical replies at every rate (no oracle). Keyed buyers' turns execute at Tier 1
+  (`app/nl/offers.py:355`): the handoff's "proposal only, never executed" is true only for keyless buyers.
+- **R-11** (reviewer `r1.py`, `r2.py`, agent key, actor OWNER by default): "show cash status" returns cash, reserve floor, shortfall, DSCR
+  and leverage limits, concession cap; "show alerts", "get an invoice paid early", "evaluate", "what if" return the floor, break-even,
+  counter cap and the full verdict JSON with limits. Only CHANGES, COMPARE_FINANCING, SHOW_DEAL ask for the owner's sign-in
+  (`app/nl/capabilities.py:45`). The agent's Tier-1 actions (fund gap, accelerate, repay) need amounts, so closing this is a decision on
+  what the agent channel is for. Proposed: owner token for the pure reads (status, alerts, explain, what-if, evaluate) and no
+  `verdict`/`plan` JSON to non-owner callers.
+- **LLM boundary held (reviewer, cache mode):** anonymous `/nl` returns no verdict, plan or operations; buyer text cannot become an owner
+  instruction (consent grammar, classifier cannot emit APPROVE/REJECT, LLM-sourced intents never execute); model output is schema-bound
+  with no operation fields; a wide model quote fails the coverage proof. **Live mode (S1):** compile and classifier calls run under
+  `rt.lock` on `/nl` (`app/api/nl.py:148-158`), so one slow model call can serialise the API for minutes.
 - **R-14** partly stale: `OWNER_PUBLIC_KEY_HEX` is required outside demo; there is still no mandate replace/revoke route and no
   emergency write switch.
 
@@ -208,8 +285,9 @@ Unverified areas and blockers are listed at the end; they are not passes.
 |---|---|---|
 | PostgreSQL concurrency, triggers, GUC bypass (SEC-08) | no Docker, no PostgreSQL; WSL install needs sudo | a throwaway local PostgreSQL 16 and `TERMSLEDGER_TEST_DATABASE_URL` |
 | Live-model language boundary (231 items) and live prompt injection | no model API key available to this session | a test-only key, budget approval |
-| Full attack catalogue on current code | SEC-01 | fix SEC-01, re-run |
-| 55 of 76 routes never attacked by the catalogue | catalogue last changed 5 Oct | new attacks for new routes (in progress) |
+| Full attack catalogue on current code | was blocked by SEC-01 | **done** on `sec/attack-harness`: 126 API + 133 NL, 0 harm (covers only the 21 routes the catalogue attacks) |
+| 55 of 76 routes never attacked by the catalogue | catalogue last changed 5 Oct | partially covered by this audit's targeted tests (accept/decline, alerts, demo routes, clock, intake); no catalogue entries yet |
+| Live-mode lock contention (S1) and cost amplification (S2) | needs a live model | live run |
 | Backup/restore, emergency write stop | no procedure or route exists | design work (Fable) |
 | TLS proxy, real deployment | no proxy config committed (SEC-06) | a deployment to certify |
 | Capex buy side (not on `dev`) | pre-merge review in progress | — |
