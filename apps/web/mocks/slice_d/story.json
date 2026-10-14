@@ -242,6 +242,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -516,6 +528,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -794,6 +818,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -1070,6 +1106,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -1358,6 +1406,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -1644,6 +1704,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -1936,6 +2008,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -2226,6 +2310,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -2531,6 +2627,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -2834,6 +2942,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -3141,6 +3261,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -3446,6 +3578,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -3762,6 +3906,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -4076,6 +4232,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -4394,6 +4562,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -4710,6 +4890,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -5028,6 +5220,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -5344,6 +5548,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -5675,6 +5891,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -6004,6 +6232,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -6335,6 +6575,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -6664,6 +6916,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -6997,6 +7261,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -7328,6 +7604,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -7597,6 +7885,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -7864,6 +8164,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }
@@ -8133,6 +8445,18 @@
               {
                 "label": "Evidence export",
                 "href": "/evidence"
+              },
+              {
+                "label": "Alerts",
+                "href": "/alerts"
+              },
+              {
+                "label": "Reconciliation",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "Security",
+                "href": "/security"
               }
             ]
           }
@@ -8400,6 +8724,18 @@
               {
                 "label": "证据导出",
                 "href": "/evidence"
+              },
+              {
+                "label": "预警",
+                "href": "/alerts"
+              },
+              {
+                "label": "对账",
+                "href": "/reconciliation"
+              },
+              {
+                "label": "安全",
+                "href": "/security"
               }
             ]
           }

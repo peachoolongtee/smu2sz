@@ -102,7 +102,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -316,7 +317,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -2814,7 +2816,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -3054,7 +3057,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -3296,7 +3300,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -3536,7 +3541,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -3770,7 +3776,8 @@
           ],
           "economics": null,
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -3944,7 +3951,8 @@
           ],
           "economics": null,
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4128,7 +4136,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4342,7 +4351,8 @@
             "basis_facility_name": "Invoice financing (onboarded platform)"
           },
           "funding_blocked": null
-        }
+        },
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4508,7 +4518,8 @@
       "response": {
         "counters": [],
         "recommended_counter_id": null,
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4598,7 +4609,8 @@
       "response": {
         "counters": [],
         "recommended_counter_id": null,
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4707,7 +4719,8 @@
           }
         ],
         "recommended_counter_id": "CTR-193394b6ba8b",
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4814,7 +4827,8 @@
           }
         ],
         "recommended_counter_id": "CTR-193394b6ba8b",
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -4923,7 +4937,8 @@
           }
         ],
         "recommended_counter_id": "CTR-72a07f7c0f50",
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -5030,7 +5045,8 @@
           }
         ],
         "recommended_counter_id": "CTR-72a07f7c0f50",
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -5122,7 +5138,8 @@
       "response": {
         "counters": [],
         "recommended_counter_id": null,
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
@@ -5212,7 +5229,8 @@
       "response": {
         "counters": [],
         "recommended_counter_id": null,
-        "sent": null
+        "sent": null,
+        "accepted_as_asked": null
       },
       "quote": null,
       "authorization": null,
