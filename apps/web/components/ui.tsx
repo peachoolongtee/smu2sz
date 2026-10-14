@@ -114,12 +114,12 @@ export function PageHeader({
   const pathname = usePathname();
   const chip = section && shellFor(pathname, mode) === "business";
   return (
-    <header className="motion-reveal mb-5 flex flex-wrap items-start justify-between gap-3">
+    <header className="motion-reveal mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
       <div className="flex min-w-0 items-start gap-3">
-        {chip ? <PageIcon section={section} icon={icon} /> : null}
+        {chip ? <PageIcon section={section} icon={icon} size="lg" /> : null}
         <div className="min-w-0">
-          <h1 className={`type-headline text-balance text-ink ${chip ? "leading-10" : ""}`}>{title}</h1>
-          {subtitle ? <p className="mt-1 max-w-3xl text-pretty text-sm text-ink-2">{subtitle}</p> : null}
+          <h1 className={`type-headline text-balance text-ink ${chip ? "sm:text-[44px] sm:leading-[48px]" : ""}`}>{title}</h1>
+          {subtitle ? <p className="mt-1.5 max-w-3xl text-pretty text-base text-ink-2">{subtitle}</p> : null}
         </div>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -149,19 +149,20 @@ export function Card({
   className?: string;
   id?: string;
   tone?: Tone;
-  /** No card chrome (the seamless Home): a small-caps heading over the content, no box, no fill, no shadow. */
+  /** A section card in Home's look (`.card-flat`): the panel, 24 px, the one soft shadow, a sentence-case heading. */
   flat?: boolean;
   /** The id of a heading inside that names the card, when its title is not the `title` prop. */
   labelledBy?: string;
 }) {
-  const border = tone ? toneBorder[tone] : "border-line";
+  // An untoned card takes `.card-standard`'s own hairline (none in Home's look); a tone's border is a utility and always shows.
+  const border = tone ? toneBorder[tone] : "";
   if (flat) {
     return (
-      <section id={id} aria-labelledby={title && id ? `${id}-title` : undefined} className={`motion-reveal min-w-0 ${className}`}>
+      <section id={id} aria-labelledby={title && id ? `${id}-title` : undefined} className={`motion-reveal card-flat min-w-0 ${className}`}>
         {title ? (
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-line-strong pb-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div className="min-w-0">
-              <h2 id={id ? `${id}-title` : undefined} className="text-balance text-meta font-extrabold uppercase tracking-[0.08em] text-ink-3">
+              <h2 id={id ? `${id}-title` : undefined} className="text-balance font-display text-lg font-bold tracking-[-0.01em] text-ink">
                 {title}
               </h2>
               {subtitle ? <p className="mt-0.5 text-pretty text-supporting text-ink-3">{subtitle}</p> : null}
@@ -169,7 +170,7 @@ export function Card({
             {actions}
           </div>
         ) : null}
-        <div className={title ? "pt-2" : ""}>{children}</div>
+        <div className={title ? "pt-3" : ""}>{children}</div>
       </section>
     );
   }

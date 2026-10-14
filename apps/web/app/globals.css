@@ -912,6 +912,36 @@ details[open]:not(.menu, :has(> .disclosure-body))::details-content {
     background: var(--color-card);
     border-radius: 16px;
   }
+  /* A Business page's section as a raised card in Home's look (the panel, 24 px, the one soft shadow) with room around its words. */
+  .card-flat {
+    background: var(--color-panel);
+    border-radius: var(--radius-f-card);
+    box-shadow: var(--shadow-f);
+    padding: 1.25rem;
+  }
+  @media (min-width: 40rem) {
+    .card-flat {
+      padding: 1.5rem;
+    }
+  }
+  /* In Home's look the standard card is a panel like Home's own: no hairline, the one soft shadow (a tone's border, a utility, still shows). */
+  .home-f .card-standard {
+    border-color: transparent;
+    box-shadow: var(--shadow-f);
+  }
+  /* A card inside a card never stacks a second box: the inner one keeps its words and drops its chrome. */
+  :is(.card-flat, .f-card, .flow-card, .card-standard, .card-decision) .card-flat {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  /* The ink hero card's texture: a field of faint dots that fades out towards the figure. Decoration only. */
+  .dash-dots {
+    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1.2px, transparent 1.6px);
+    background-size: 11px 11px;
+    mask-image: radial-gradient(ellipse 80% 90% at 85% 40%, #000 30%, transparent 75%);
+  }
 }
 
 /* The donut's slices draw in over 300 ms on first paint (round two); the end value is each circle's own dash array, the circumference is the page's `--f-c`. None under reduced motion. */
