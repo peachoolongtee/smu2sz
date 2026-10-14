@@ -109,7 +109,8 @@ _HINT = {  # id -> (en, zh): where the control takes you or what it does (never 
     "proof": ("Opens Activity, the record of everything that happened.", "打开动态页面，查看发生的一切记录。"),
 }
 _ENGINE = (("Signed mandate", "已签名授权书", "/mandate"), ("Cash line", "现金线", "/trajectory"), ("Debt Desk", "融资台", "/funding"),
-           ("Verdict", "裁决", "/verdict"), ("Ledger", "账本", "/ledger"), ("Evidence export", "证据导出", "/evidence"))
+           ("Verdict", "裁决", "/verdict"), ("Ledger", "账本", "/ledger"), ("Evidence export", "证据导出", "/evidence"),
+           ("Alerts", "预警", "/alerts"), ("Reconciliation", "对账", "/reconciliation"), ("Security", "安全", "/security"))
 
 
 def _plural(n: int, one_en: str, many_en: str) -> str:
