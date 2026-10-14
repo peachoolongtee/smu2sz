@@ -123,3 +123,8 @@ skipped, 0 failed**; live `tracker.spec.ts` 1 passed (`record.spec.ts` is not in
 server's `agreed_text`. Still to do, unchanged: the verifier's third pass, the lead's own gate (whole mock, the whole live
 project, tests/api on the merged tree), the merge after Slice D. Because this branch already holds dev, Slice D should merge
 dev first and land first; then merge dev into this branch once more before its gate.
+
+## Update, 14 Oct midday
+- Slice D was finished and merged into dev by the other session (4804370d), with the owner's "Which books?" addendum. Nothing of Slice D remains on this machine's list.
+- The deal tracker is merged into dev (86e8a9bb): #149, #150 and #151 closed with their counts; the map (#148) frontier is now #152 (entry points, unblocked), #153 (one measure), #154 (close-out and carry-over, unblocked) and #155 (owner decisions). The switch stays on Option A.
+- The gate on dev + the tracker found dev's own failures, filed as #157 (demo.spec.ts:527 and live.spec.ts:329 broken by Slice D's last commits; three flaky) and an update on #156.
