@@ -288,3 +288,31 @@ export function lifecyclePill(lifecycle: string | null | undefined, text: string
   const lc = lifecycleOf({ lifecycle });
   return { tone: lc ? LIFECYCLE_TONE[lc] : "amber", text, lifecycle: lc };
 }
+
+// ---------------------------------------------------------------- the selected deal's tabs and address (round three, section 7)
+
+/** The five views of the selected deal. Before agreement: Overview, Compare responses, Cash impact, Messages; from agreement on: Overview, Terms, Messages. */
+export type DealViewKey = "overview" | "compare" | "cash" | "terms" | "messages";
+export const DEAL_VIEWS: readonly DealViewKey[] = ["overview", "compare", "cash", "terms", "messages"];
+/** The views that take the full width: the queue steps aside to its 72 px rail. */
+export const WIDE_VIEWS: ReadonlySet<DealViewKey> = new Set<DealViewKey>(["compare", "cash"]);
+/** The addresses of round two that opened sections under the page; they all land on Compare responses. */
+const LEGACY_KEYS = ["investigate", "compare", "chart", "show"] as const;
+
+/** The view the address names: `view=`, else (an old link with `investigate`, `compare`, `chart` or `show`) Compare responses, else Overview. `legacy` is true when the address still carries a retired key. */
+export function viewOf(params: { get(name: string): string | null }): { view: DealViewKey; legacy: boolean } {
+  const raw = params.get("view");
+  const legacy = LEGACY_KEYS.some((k) => params.get(k) !== null);
+  if (raw && (DEAL_VIEWS as readonly string[]).includes(raw)) return { view: raw as DealViewKey, legacy };
+  return { view: legacy ? "compare" : "overview", legacy };
+}
+export const LEGACY_VIEW_KEYS: readonly string[] = LEGACY_KEYS;
+
+/** The tabs a deal has: before agreement the comparison and the cash; from agreement on the terms (the Overview is the tracker). A deal with nothing to draw has neither comparison tab. */
+export function tabsOf(opts: { agreed: boolean; analysis: boolean }): DealViewKey[] {
+  if (opts.agreed) return ["overview", "terms", "messages"];
+  return opts.analysis ? ["overview", "compare", "cash", "messages"] : ["overview", "messages"];
+}
+
+/** A view the deal has, else the Overview. */
+export const viewIn = (view: DealViewKey, tabs: DealViewKey[]): DealViewKey => (tabs.includes(view) ? view : "overview");

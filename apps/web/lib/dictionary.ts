@@ -2799,6 +2799,17 @@ export const en = {
   "deals.why.assumes": "What each option assumes",
   "deals.why.rule": "FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.",
   "deals.terms.col.pick": "Your pick · {label}",
+  "deals.pane.tabs": "Views of this deal",
+  "deals.pane.overview": "Overview",
+  "deals.pane.compare": "Compare responses",
+  "deals.pane.cash": "Cash impact",
+  "deals.pane.terms": "Terms",
+  "deals.pane.messages": "Messages",
+  "deals.pane.crumbs": "Where you are in this deal",
+  "deals.review.counter": "Review the counter",
+  "deals.rail.label": "Deals queue, collapsed",
+  "deals.rail.show": "Show queue",
+  "deals.rail.open": "Open {name}",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -5596,4 +5607,15 @@ export const zh: Record<DictKey, string> = {
   "deals.why.assumes": "各方案的前提假设",
   "deals.why.rule": "FLOW 建议的是在您的授权范围内它可以发送的第一个回复；它不按成本对回复排序。",
   "deals.terms.col.pick": "您的选择 · {label}",
+  "deals.pane.tabs": "此交易的视图",
+  "deals.pane.overview": "概览",
+  "deals.pane.compare": "比较回复",
+  "deals.pane.cash": "现金影响",
+  "deals.pane.terms": "条款",
+  "deals.pane.messages": "消息",
+  "deals.pane.crumbs": "您在此交易中的位置",
+  "deals.review.counter": "查看还价",
+  "deals.rail.label": "交易队列（已收起）",
+  "deals.rail.show": "显示队列",
+  "deals.rail.open": "打开{name}",
 };

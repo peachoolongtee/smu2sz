@@ -46,6 +46,9 @@ export function AcceptBlock({
   initialOpen,
   onDone,
   onBusy,
+  openSignal = 0,
+  hideTrigger = false,
+  onReviewing,
 }: {
   offerId: string;
   accept: AcceptView;
@@ -57,6 +60,12 @@ export function AcceptBlock({
   initialOpen: boolean;
   onDone: (outcome: AcceptOutcome) => void;
   onBusy: (busy: boolean) => void;
+  /** The header's [Review the request] opens the review from outside: each press raises this number. */
+  openSignal?: number;
+  /** The open button is the header's (or the comparison's), not this block's. */
+  hideTrigger?: boolean;
+  /** Told whether the review is open. */
+  onReviewing?: (open: boolean) => void;
 }) {
   const { t } = useI18n();
   const uid = useId();
@@ -108,6 +117,18 @@ export function AcceptBlock({
     void prepare();
     requestAnimationFrame(() => (titleRef.current ?? regionRef.current)?.focus({ preventScroll: false }));
   }
+
+  const lastSignal = useRef(openSignal);
+  useEffect(() => {
+    if (openSignal === lastSignal.current) return;
+    lastSignal.current = openSignal;
+    open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [openSignal]);
+  useEffect(() => {
+    onReviewing?.(reviewing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback
+  }, [reviewing]);
 
   // Arrived with `review=1`: the review is open already, and its version is read once.
   useEffect(() => {
@@ -169,7 +190,7 @@ export function AcceptBlock({
 
   return (
     <div className="space-y-3">
-      {reviewing ? null : (
+      {reviewing || hideTrigger ? null : (
         <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
           <Button ref={openRef} variant="secondary" aria-expanded={false} aria-controls={`${uid}-review`} onClick={open} data-testid="accept-review-open">
             {t("accept.review")}

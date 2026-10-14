@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { CustomerName } from "@/components/customer-link";
 import { Disclosure } from "@/components/business/kit";
 import { ChasePayment } from "@/components/business/chase-payment";
@@ -14,6 +13,7 @@ import { OpenSection } from "@/components/ui/open-section";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { StateWord } from "@/components/ui/state-word";
 import { StatusPill } from "@/components/ui/status-pill";
+import type { DictKey } from "@/lib/dictionary";
 import { evaluate as evaluateAndCache } from "@/lib/demo";
 import { errorText } from "@/lib/error-text";
 import { useI18n } from "@/lib/i18n";
@@ -22,28 +22,34 @@ import type { DecisionView, NegotiationView, OpenOffer, PicturePath, QueueRowVie
 import { AcceptBlock, type AcceptOutcome } from "./accept-block";
 import { AnalysisCards, type ShowKey } from "./analysis-cards";
 import { CostTable } from "./cost-table";
-import { costHeadline, paneStatus, timingOf } from "./deal-model";
+import { costHeadline, paneStatus, tabsOf, timingOf, viewIn, type DealViewKey } from "./deal-model";
 import { AUTH_TONE, Cell, NONE, quietLink, toneOfDeal } from "./flow-parts";
 import { Investigate, lowestOf } from "./investigate";
+import { DealTabs } from "./deal-tabs";
 import { TermsTable } from "./terms-table";
 import { TimingDiagram } from "./timing-diagram";
 import { SendBlock } from "./send-block";
 import { useNegotiation } from "./use-negotiation";
 
-/** The deal's own view of the page, in the address: which investigation is open (`compare=1`, `chart=1`) and the payment-timing assumption (`scenario=late`). */
+/** The deal's own view of the page, in the address: the tab (`view=`), the payment-timing assumption (`scenario=late`) and the accept review open on arrival (`review=1`). */
 export interface DealView {
-  compare: boolean;
-  chart: boolean;
+  view: DealViewKey;
   late: boolean;
-  /** "Full analysis" is open (`investigate=1`): the Investigate level with the reasons. */
-  investigate: boolean;
-  /** Which of the two cards is open (`show=cost|cash`; `none` both folded); null is the default card. */
-  show: ShowKey | null;
   /** The accept review is open on arrival (`review=1`): a link from Home or the Customer page to a request that needs the owner's review. */
   review: boolean;
 }
 
+const AGREED_STATES: ReadonlySet<string> = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED"]);
 const RECORD_DONE = new Set(["AGREED", "FULFILLED", "MISSED", "EXPIRED", "REVOKED", "NO_DEAL", "DECLINED", "FAILED", "LAPSED"]);
+
+/** An address that names a tab the deal does not have (Compare on a deal with nothing to compare, Terms before agreement) is written as the tab it shows. */
+function Canonical({ want, have, onGo }: { want: DealViewKey; have: DealViewKey; onGo: (patch: Record<string, string | null>, how?: "push" | "replace") => void }) {
+  useEffect(() => {
+    if (want !== have) onGo({ view: have === "overview" ? null : have }, "replace");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mismatch
+  }, [want, have]);
+  return null;
+}
 
 function Announce({ text }: { text: string }) {
   return (
@@ -174,7 +180,7 @@ export function DecisionPane({
   open,
   view,
   pickedKey,
-  onView,
+  onGo,
   onPick,
   onClose,
   onBusy,
@@ -190,7 +196,8 @@ export function DecisionPane({
   view: DealView;
   /** The path the address names (`path`), else null: the recommended reply. */
   pickedKey: string | null;
-  onView: (patch: Partial<DealView>) => void;
+  /** Change the address in place (a null removes the key). */
+  onGo: (patch: Record<string, string | null>, how?: "push" | "replace") => void;
   onPick: (key: string | null) => void;
   onClose: () => void;
   onBusy: (busy: boolean) => void;
@@ -200,8 +207,6 @@ export function DecisionPane({
   const { t, te } = useI18n();
   const uid = useId();
   const mode = useMode();
-  // The investigation is wider than the pane beside the queue: it opens in a full-width slot the page keeps under both columns.
-  const slot = typeof document !== "undefined" ? document.getElementById("deals-investigate") : null;
   const n = useNegotiation(decision);
   const [sent, setSent] = useState<NegotiationView | null>(null);
   // The owner's accept or decline of a request as asked, once it has been answered: the review is gone when the record moves on, its words stay beside the record.
@@ -209,6 +214,11 @@ export function DecisionPane({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  // The deal header's review button: each press opens the review (the send or the accept block, mounted under the header on every tab); the blocks say whether it is open.
+  const [reviewing, setReviewing] = useState(false);
+  const [signal, setSignal] = useState(0);
+  // Which of the Overview's two cards is open (a view choice, held by the page).
+  const [card, setCard] = useState<ShowKey | null>(null);
   const offer = n.offer;
   const buyerId = offer?.offer.counterparty_id ?? null;
   // Another customer's negotiation than the address names is a selection that names nothing: ask, never substitute.
@@ -328,7 +338,7 @@ export function DecisionPane({
 
   const timing = picture ? timingOf(picture, asked, focus) : null;
   // The open card: the address's, else the one the recommendation reason names (cash when the request breaches the reserve or exceeds the mandate, whose authority row is in the cash table), cost when the server does not say.
-  const shown: ShowKey = view.show ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
+  const shown: ShowKey = card ?? (["cash", "authority"].includes((recommended ?? focus)?.recommended_reason_kind ?? "") ? "cash" : "cost");
   const waitsOnApproval = stateCode === "AUTHORIZATION_REQUIRED";
   const approvalId = record?.authorization?.approval_id ?? null;
   const whatifHref = `/whatif?customer=${encodeURIComponent(buyerId ?? "")}&decision=${encodeURIComponent(decision)}&from=deal`;
@@ -349,25 +359,115 @@ export function DecisionPane({
     </p>
   );
 
-  const pane = (
-    <section aria-labelledby={`${uid}-title`} className="flow-card min-w-0 p-5 sm:p-7" data-testid="deal-pane" data-decision={decision} data-state={stateCode}>
-      <Announce text={title} />
-      <div key={decision} className="motion-slide">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="mb-1.5" data-testid="deal-state-chip" data-state={stateCode}>
-              <StatusPill tone={status.tone}>{status.text}</StatusPill>
-            </p>
-            <h2 id={`${uid}-title`} tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
-              {title}
-            </h2>
-            {customerLine}
-          </div>
-          <Button variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
-            <span aria-hidden>×</span> {t("deals.dismiss")}
-          </Button>
-        </header>
+  // ---- the tabs (round three, section 7): Overview, Compare responses, Cash impact, Messages before agreement; Overview, Terms, Messages from it
+  const agreedDeal = AGREED_STATES.has(stateCode);
+  // (While the picture is on its way the comparison tabs stay: an address that names one is not rewritten before its data has come.)
+  const tabs = tabsOf({ agreed: agreedDeal, analysis: analysis || (picture === undefined && !done && !waitsOnApproval) });
+  const current: DealViewKey = viewIn(view.view, tabs);
+  const accept = picture?.accept ?? null;
+  const decisionReady = Boolean(picture && evaluated && picture.available !== false && !done && !waitsOnApproval && stateCode !== "NEEDS_CLARIFICATION" && !sent);
+  // The one review the header offers: the send review of the reply in focus, else the owner's accept of the request as asked (a request FLOW has no reply for).
+  const reviewKind: "send" | "accept" | null = canSend && focus && picture ? "send" : decisionReady && !focus && asked && accept && (accept.available || accept.reason_text || (accept.decline_label && accept.decline_available !== false)) ? "accept" : null;
+  const topic = row?.topic_text ?? title;
+  const tabLabel = (k: DealViewKey) => t(`deals.pane.${k}` as DictKey);
+  const reviewSlot =
+    reviewKind === "send" && focus && picture ? (
+      <SendBlock
+        // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
+        key={`${offer.offer.offer_id}:${focus.label}`}
+        offerId={offer.offer.offer_id}
+        path={focus}
+        picture={picture}
+        buyer={buyerShort}
+        recordHref={`/decisions/${encodeURIComponent(decision)}`}
+        onSent={setSent}
+        onBusy={setBusyBoth}
+        openSignal={signal}
+        hideTrigger
+        onReviewing={setReviewing}
+      />
+    ) : reviewKind === "accept" && asked && accept && picture ? (
+      <AcceptBlock
+        key={offer.offer.offer_id}
+        offerId={offer.offer.offer_id}
+        accept={accept}
+        asked={asked}
+        picture={picture}
+        buyer={buyerShort}
+        recordHref={`/decisions/${encodeURIComponent(decision)}`}
+        initialOpen={view.review}
+        onDone={setOutcome}
+        onBusy={setBusyBoth}
+        openSignal={signal}
+        hideTrigger
+        onReviewing={setReviewing}
+      />
+    ) : null;
+  const crumbs = (label: string) => (
+    <nav aria-label={t("deals.pane.crumbs")} className="mb-4" data-testid="deal-crumbs">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-2">
+        <li>
+          <CustomerName id={buyerId} decision={decision} className="font-bold text-ink" testId="deal-crumb-customer">
+            {buyerShort}
+          </CustomerName>
+        </li>
+        <li aria-hidden>/</li>
+        <li>
+          <button type="button" onClick={() => onGo({ view: null })} className="inline-flex min-h-8 items-center font-bold text-ink underline-offset-2 hover:underline focus-visible:underline touch:min-h-11" data-testid="deal-crumb-deal">
+            {topic}
+          </button>
+        </li>
+        <li aria-hidden>/</li>
+        <li aria-current="page" className="font-bold text-ink">
+          {label}
+        </li>
+      </ol>
+    </nav>
+  );
 
+  const pane = (
+    <section aria-labelledby={`${uid}-title`} className="min-w-0" data-testid="deal-pane" data-decision={decision} data-state={stateCode} data-view={current}>
+      <Announce text={title} />
+      <Canonical want={view.view} have={current} onGo={onGo} />
+      <div key={decision} className="motion-slide">
+        {/* The deal header holds still while the page scrolls (from md and where the window is tall enough): the primary action never leaves the screen. */}
+        <div className="z-20 bg-canvas pb-3 [@media(min-height:44rem)]:md:sticky [@media(min-height:44rem)]:md:top-16" data-testid="deal-header">
+          <div className="flow-card px-5 pt-4 sm:px-7">
+            <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+              <div className="min-w-0">
+                <p className="mb-1.5" data-testid="deal-state-chip" data-state={stateCode}>
+                  <StatusPill tone={status.tone}>{status.text}</StatusPill>
+                </p>
+                <h2 id={`${uid}-title`} tabIndex={-1} className="type-section text-balance text-ink" data-testid="queue-heading">
+                  {title}
+                </h2>
+                {customerLine}
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2" data-testid="deal-header-actions">
+                {reviewKind && !reviewing ? (
+                  <Button variant={reviewKind === "send" ? "primary" : "secondary"} aria-expanded={false} onClick={() => setSignal((n) => n + 1)} data-testid={reviewKind === "send" ? "queue-review-open" : "accept-review-open"}>
+                    {reviewKind === "send" ? t("deals.review.counter") : t("accept.review")}
+                  </Button>
+                ) : null}
+                <Button variant="ghost" onClick={onClose} disabled={busy} aria-label={t("deals.close")} data-testid="deal-close">
+                  <span aria-hidden>×</span> {t("deals.dismiss")}
+                </Button>
+              </div>
+            </header>
+            <DealTabs label={t("deals.pane.tabs")} tabs={tabs.map((k) => ({ value: k, label: tabLabel(k) }))} value={current} onChange={(k) => onGo({ view: k === "overview" ? null : k })} idPrefix={uid} />
+          </div>
+        </div>
+
+        {reviewSlot || sent || outcome ? (
+          <div className="mt-1 space-y-3" data-testid="deal-review-slot">
+            {reviewSlot ? <div className={reviewing ? "flow-card p-5 sm:p-7" : ""}>{reviewSlot}</div> : null}
+            {sent && current !== "overview" ? <SendResult n={sent} /> : null}
+            {outcome && current !== "overview" ? <AcceptResult outcome={outcome} /> : null}
+          </div>
+        ) : null}
+
+        {current === "overview" ? (
+        <div id={`${uid}-panel-overview`} role="tabpanel" aria-labelledby={`${uid}-tab-overview`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-overview">
         {/* Level 1: decide */}
         <div className="mt-5 space-y-5" data-testid="deal-level-decide">
           {/* What the buyer asked: open while it is the question; once the deal has an outcome it is history, folded and said not to be the agreement. */}
@@ -529,48 +629,19 @@ export function DecisionPane({
                 </div>
               )}
 
-              {canSend && focus && picture ? (
-                <SendBlock
-                  // (keyed by the reply's name, not its id: checking again names new counters, and the review that is open stays open)
-                  key={`${offer.offer.offer_id}:${focus.label}`}
-                  offerId={offer.offer.offer_id}
-                  path={focus}
-                  picture={picture}
-                  buyer={buyerShort}
-                  recordHref={`/decisions/${encodeURIComponent(decision)}`}
-                  onSent={setSent}
-                  onBusy={setBusyBoth}
-                >
-                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
-                  {mode === "demo" ? (
-                    <Link href="/verdict#negotiation" className={quietLink}>
-                      {t("biz.deals.negotiateLink")}
-                    </Link>
-                  ) : null}
-                </SendBlock>
-              ) : !focus && asked && picture.accept && !sent ? (
-                <AcceptBlock
-                  key={offer.offer.offer_id}
-                  offerId={offer.offer.offer_id}
-                  accept={picture.accept}
-                  asked={asked}
-                  picture={picture}
-                  buyer={buyerShort}
-                  recordHref={`/decisions/${encodeURIComponent(decision)}`}
-                  initialOpen={view.review}
-                  onDone={setOutcome}
-                  onBusy={setBusyBoth}
-                />
-              ) : (
-                <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-                  {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
-                  {mode === "demo" ? (
-                    <Link href="/verdict#negotiation" className={quietLink}>
-                      {t("biz.deals.negotiateLink")}
-                    </Link>
-                  ) : null}
-                </ActionGroup>
-              )}
+              <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
+                {paths.length > 1 ? (
+                  <Button size="sm" onClick={() => onGo({ view: "compare" })} data-testid="deal-to-compare">
+                    {t("deals.pane.compare")}
+                  </Button>
+                ) : null}
+                {paths.length > 1 ? <CompareButtons whatif={whatifHref} /> : null}
+                {mode === "demo" ? (
+                  <Link href="/verdict#negotiation" className={quietLink}>
+                    {t("biz.deals.negotiateLink")}
+                  </Link>
+                ) : null}
+              </ActionGroup>
               {sent ? <SendResult n={sent} /> : null}
             </>
           )}
@@ -597,7 +668,7 @@ export function DecisionPane({
             <div className="mt-6 border-t border-line pt-6" data-testid="deal-level-consequence" role="region" aria-label={t("deals.cards.region")}>
               <AnalysisCards
                 open={shown}
-                onShow={(k) => onView({ show: k })}
+                onShow={(k) => setCard(k)}
                 costTitle={t("deals.card.cost")}
                 cashTitle={t("deals.card.cash")}
                 cost={pair.map((p) => ({ label: p.kind === "asked" ? t("deals.cost.col.asked") : p.label, value: costHeadline(p).display, note: costHeadline(p).basis }))}
@@ -618,7 +689,7 @@ export function DecisionPane({
                           compact
                           label={t("hv2.deal.timing")}
                           value={late ? "late" : "expected"}
-                          onChange={(x) => onView({ late: x === "late" })}
+                          onChange={(x) => onGo({ scenario: x === "late" ? "late" : null }, "replace")}
                           tabs={[
                             { value: "expected", label: t("home.hy.scenario.expected"), testId: "deal-scenario-current" },
                             { value: "late", label: t("home.hy.scenario.late", { buyer: buyerShort, n: delay }), testId: "deal-scenario-late" },
@@ -642,42 +713,54 @@ export function DecisionPane({
                   </div>
                 }
               />
-              {paths.length > 1 ? (
-                <p className="mt-3">
-                  <Button size="sm" aria-expanded={view.investigate} aria-controls="deal-investigate-panel" onClick={() => onView({ investigate: !view.investigate })} data-testid="deal-compare-toggle">
-                    {t("deals.full")}
-                    <Chevron on={view.investigate} />
-                  </Button>
-                </p>
-              ) : null}
             </div>
           </>
         ) : null}
 
+        </div>
+        ) : null}
+
+        {(current === "compare" || current === "cash") && picture === undefined ? (
+          <div className="flow-card mt-1 p-5 sm:p-7" data-testid="paths-loading">
+            <LoadingBlock rows={3} />
+          </div>
+        ) : null}
+
+        {current === "compare" && picture && analysis ? (
+          <div id={`${uid}-panel-compare`} role="tabpanel" aria-labelledby={`${uid}-tab-compare`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-compare">
+            {crumbs(t("deals.pane.compare"))}
+            <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen chartOpen={false} why />
+          </div>
+        ) : null}
+
+        {current === "cash" && picture && analysis ? (
+          <div id={`${uid}-panel-cash`} role="tabpanel" aria-labelledby={`${uid}-tab-cash`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-cash">
+            {crumbs(t("deals.pane.cash"))}
+            <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={false} chartOpen why={false} />
+          </div>
+        ) : null}
+
+        {current === "terms" ? (
+          <div id={`${uid}-panel-terms`} role="tabpanel" aria-labelledby={`${uid}-tab-terms`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-terms">
+            {record ? <RecordBlock record={record} decision={decision} /> : null}
+          </div>
+        ) : null}
+
+        {current === "messages" ? (
+          <div id={`${uid}-panel-messages`} role="tabpanel" aria-labelledby={`${uid}-tab-messages`} className="flow-card mt-1 p-5 sm:p-7" data-testid="deal-panel-messages">
+            <h3 className="text-supporting font-bold text-ink-3">{t("deals.askTitle", { buyer: buyerShort })}</h3>
+            {doc?.text ? (
+              <figure className="mt-1.5 border-l-2 border-line-strong pl-3" data-testid="deal-ask-quote-messages">
+                <blockquote className="max-w-[68ch] text-[15px] leading-snug text-ink">“{doc.text}”</blockquote>
+              </figure>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );
-  const investigating = Boolean(picture && evaluated && picture.available !== false && (view.compare || view.chart || view.investigate) && !done);
-  const investigate =
-    investigating && picture ? (
-      <div id="deal-investigate-panel" className="flow-card p-5 sm:p-7" data-testid="deal-investigate">
-        <Investigate offerId={offer.offer.offer_id} buyer={buyerShort} buyerId={buyerId ?? ""} picture={picture} exposure={exposure} late={late} pickedKey={pickedKey} onPick={(k) => onPick(k)} compareOpen={view.compare || view.investigate} chartOpen={view.chart || view.investigate} why={view.investigate} />
-      </div>
-    ) : null;
-  return (
-    <>
-      {pane}
-      {investigate ? (slot ? createPortal(investigate, slot) : investigate) : null}
-    </>
-  );
-}
 
-function Chevron({ on }: { on: boolean }) {
-  return (
-    <svg aria-hidden viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className={`transition-transform duration-(--dur) ${on ? "rotate-180" : ""}`}>
-      <path d="m4 6 4 4 4-4" />
-    </svg>
-  );
+  return pane;
 }
 
 /** The commit area's companion: the way to try other terms (the filled button is the commit's; the cash chart and every response are the full analysis, under the cost and cash cards). */

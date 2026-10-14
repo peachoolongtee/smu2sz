@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Disclosure } from "@/components/business/kit";
 import { Button, Callout, ErrorState, LoadingBlock, Segmented, SlowNotice } from "@/components/ui";
@@ -41,6 +41,9 @@ export function SendBlock({
   recordHref,
   onSent,
   onBusy,
+  openSignal = 0,
+  hideTrigger = false,
+  onReviewing,
   children,
 }: {
   offerId: string;
@@ -53,6 +56,12 @@ export function SendBlock({
   onSent: (n: NegotiationView) => void;
   /** Told whenever a send or a check is in flight: the page holds the selection then. */
   onBusy: (busy: boolean) => void;
+  /** The deal header's [Review the counter] opens the review from outside: each press raises this number. */
+  openSignal?: number;
+  /** The review button is the header's, not this block's. */
+  hideTrigger?: boolean;
+  /** Told whether the review is open (the header's button gives way to the commit button while it is). */
+  onReviewing?: (open: boolean) => void;
   /** The other buttons of the decision level, beside the review button. */
   children?: ReactNode;
 }) {
@@ -75,6 +84,17 @@ export function SendBlock({
   const [slow, setSlow] = useState(false);
   const [rechecked, setRechecked] = useState(false);
   const inFlight = sending || checking || preparing;
+  useEffect(() => {
+    onReviewing?.(reviewing);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the state, not the callback
+  }, [reviewing]);
+  const lastSignal = useRef(openSignal);
+  useEffect(() => {
+    if (openSignal === lastSignal.current) return;
+    lastSignal.current = openSignal;
+    void open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per press
+  }, [openSignal]);
   useEffect(() => {
     onBusy(inFlight);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reports the flight, not the callback
@@ -133,14 +153,16 @@ export function SendBlock({
 
   return (
     <div className="space-y-3">
-      <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
-        {reviewing ? null : (
-          <Button variant="primary" aria-expanded={false} aria-controls="counters" onClick={() => void open()} data-testid="queue-review-open">
-            {t("dq.review")}
-          </Button>
-        )}
-        {children}
-      </ActionGroup>
+      {hideTrigger ? null : (
+        <ActionGroup className="mt-4" testId="deal-actions" label={t("deals.actions")}>
+          {reviewing ? null : (
+            <Button variant="primary" aria-expanded={false} aria-controls="counters" onClick={() => void open()} data-testid="queue-review-open">
+              {t("dq.review")}
+            </Button>
+          )}
+          {children}
+        </ActionGroup>
+      )}
       {changed ? (
         <div role="alert" data-testid="deal-counter-changed" data-reason={changed.reason}>
           <Callout tone="warn" title={t("biz.deals.changed.title")}>

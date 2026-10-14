@@ -20,11 +20,14 @@ import type { DealsContext } from "@/lib/types";
 import { useAsync } from "@/lib/use-async";
 import { useDecisions } from "@/lib/use-decision";
 import { type DealView, DecisionPane } from "./decision-pane";
-import { dealTabCounts, dealTabOf, negotiationRows, TABLE_FROM, type DealTab } from "./deal-model";
+import { dealTabCounts, dealTabOf, LEGACY_VIEW_KEYS, negotiationRows, TABLE_FROM, viewOf, WIDE_VIEWS, type DealTab } from "./deal-model";
+import { QueueRail } from "./queue-rail";
 import { QueuePanel, type QueueLayout } from "./queue-table";
 import { buildQueue, rowDecision, type RowTarget } from "./queue-model";
 
 const XL = "(min-width: 1280px)";
+/** The keys of round two that opened sections under the page: an address that carries one lands on `view=compare` and the key is dropped. */
+const RETIRED: Record<string, null> = Object.fromEntries(LEGACY_VIEW_KEYS.map((k) => [k, null]));
 const subscribeXl = (onChange: () => void) => {
   const list = window.matchMedia(XL);
   list.addEventListener("change", onChange);
@@ -52,15 +55,8 @@ export function DealsPage() {
   const tab = dealTabOf(params.get("tab")) ?? "all";
   // Home's table is the queue's layout from 20 negotiations; the compact rows are the default (a view choice, held by the page so the queue can take the full width).
   const [layout, setLayout] = useState<QueueLayout>("compact");
-  const showRaw = params.get("show");
-  const view: DealView = {
-    compare: params.get("compare") === "1",
-    chart: params.get("chart") === "1",
-    late: sel.scenario === "late",
-    investigate: params.get("investigate") === "1",
-    show: showRaw === "cost" || showRaw === "cash" || showRaw === "none" ? showRaw : null,
-    review: params.get("review") === "1",
-  };
+  const { view: viewKey, legacy } = viewOf(params);
+  const view: DealView = { view: viewKey, late: sel.scenario === "late", review: params.get("review") === "1" };
   const demo = useDemo();
   // What the page was opened with: the deals read then says where the owner came from (`context.back`) and whether the selection names anything; later picks in the page do not change it.
   const [opened] = useState<DealsContext>(() => ({ customer: sel.customer ?? null, invoice: sel.invoice ?? null, path: sel.path ?? null, decision: sel.decision ?? null, from: sel.from ?? null }));
@@ -75,8 +71,17 @@ export function DealsPage() {
   const row = decision ? (rows.find((x) => rowDecision(x.row) === decision)?.row ?? null) : null;
   const openOffer = decision ? (deals.data?.deals.find((d) => d.open_offer?.offer_id === offerOf(decision))?.open_offer ?? null) : null;
   const [sending, setSending] = useState(false);
+  // The queue steps aside to its rail while Compare responses or Cash impact is open (the owner may bring it back for that view; Escape does too).
+  const [shownFor, setShownFor] = useState<string | null>(null);
+  const railKey = `${decision ?? ""}:${viewKey}`;
   const paneRef = useRef<HTMLDivElement>(null);
   const twoPanes = useTwoPanes();
+  const railed = twoPanes && Boolean(decision) && WIDE_VIEWS.has(viewKey) && shownFor !== railKey && Boolean(queue);
+  // An old address (`investigate`, `compare`, `chart`, `show`) is written as the view it means.
+  useEffect(() => {
+    if (legacy) router.replace(patchedHref(pathname, search, { view: viewKey === "overview" ? null : viewKey, ...RETIRED }), { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per address
+  }, [legacy, search]);
   // First visit with nothing selected: the top row's chevron pulses twice (remembered in this browser once it has been shown; none is drawn, and nothing remembered, under reduced motion).
   const [hint, setHint] = useState(false);
   // Under reduced motion there is no cue to give, so the one-time flag is not spent: the owner who later allows motion still gets it.
@@ -103,23 +108,12 @@ export function DealsPage() {
   const go = (patch: Record<string, string | null>, how: "push" | "replace" = "push") => router[how](patchedHref(pathname, search, patch), { scroll: false });
   const select = (customer: string | null, dec: string, invoice: string | null) => {
     if (sending) return;
-    go({ customer, decision: dec, invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
+    go({ customer, decision: dec, invoice, path: null, view: null, lines: null, review: null, ...RETIRED });
   };
-  const close = () => go({ decision: null, customer: null, invoice: null, path: null, compare: null, chart: null, investigate: null, show: null, review: null });
+  const close = () => go({ decision: null, customer: null, invoice: null, path: null, view: null, lines: null, review: null, ...RETIRED });
   const onTab = (k: DealTab) => go({ tab: k === "all" ? null : k }, "replace");
   // A row's target as an address (the table's links): a negotiation selects in place with this row's own customer, decision and invoice.
-  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, compare: null, chart: null, investigate: null, show: null, review: null }));
-  const onView = (patch: Partial<DealView>) =>
-    go(
-      {
-        ...(patch.compare !== undefined ? { compare: patch.compare ? "1" : null } : {}),
-        ...(patch.chart !== undefined ? { chart: patch.chart ? "1" : null } : {}),
-        ...(patch.late !== undefined ? { scenario: patch.late ? "late" : null } : {}),
-        ...(patch.investigate !== undefined ? { investigate: patch.investigate ? "1" : null, compare: null, chart: null } : {}),
-        ...(patch.show !== undefined ? { show: patch.show } : {}),
-      },
-      "replace",
-    );
+  const hrefOf = (target: RowTarget) => (target.kind === "go" ? target.href : patchedHref(pathname, search, { customer: target.customer, decision: target.decision, invoice: target.invoice, path: null, view: null, lines: null, review: null, ...RETIRED }));
   const onPick = (key: string | null) => go({ path: key }, "replace");
 
   // Escape closes the selection (not while typing in a field or with a dialog open).
@@ -129,12 +123,14 @@ export function DealsPage() {
       if (e.key !== "Escape" || e.defaultPrevented || sending || document.querySelector("dialog[open]")) return;
       const el = e.target instanceof HTMLInputElement ? e.target : null;
       if (el && el.value) return;
+      // With the queue folded to its rail the first Escape brings it back; the next closes the selection.
+      if (railed) return setShownFor(railKey);
       close();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- close reads the current address
-  }, [decision, sending, search]);
+  }, [decision, sending, search, railed, railKey]);
   // Below the two-pane width the negotiation opens under the list: bring it into view.
   useEffect(() => {
     if (!decision || typeof window === "undefined" || window.matchMedia(XL).matches) return;
@@ -233,9 +229,9 @@ export function DealsPage() {
       </div>
     );
   const PANE = (
-        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:rounded-[var(--radius-f-card)]" data-testid="deals-detail">
+        <div key="pane" ref={paneRef} className="min-w-0 scroll-mt-4" data-testid="deals-detail">
           {decision ? (
-            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onView={onView} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
+            <DecisionPane key={decision} decision={decision} customer={sel.customer ?? null} row={row} open={openOffer} view={view} pickedKey={sel.path ?? null} onGo={go} onPick={onPick} onClose={close} onBusy={setSending} irrelevantText={irrelevantText} />
           ) : queue === undefined ? null : (
             <section className="flow-card p-5 sm:p-7" data-testid="deals-select" aria-label={t("deals.select.title")}>
               <h2 className="type-section text-ink">{t("deals.select.title")}</h2>
@@ -275,7 +271,7 @@ export function DealsPage() {
           screen of a phone) and the queue follows; from `xl` the queue is the left pane and the workspace scrolls on its own where it is taller than the window. The DOM order is the reading and focus order.
           From 20 negotiations the owner may switch the queue to Home's table: it then takes the full width above, and the inbox and the workspace share the row beneath. */}
       {tableMode ? <div className="mb-6">{QUEUE_NODE}</div> : null}
-      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,850px)] xl:items-start">
+      <div className={`grid gap-6 xl:items-start ${railed ? "xl:grid-cols-[72px_minmax(0,1400px)]" : "xl:grid-cols-[380px_minmax(0,850px)]"}`} data-testid="deals-grid" data-rail={railed ? "true" : "false"}>
         {!twoPanes && decision ? (
           <>
             {PANE}
@@ -284,9 +280,16 @@ export function DealsPage() {
               {INBOX_NODE}
             </div>
           </>
+        ) : railed && queue ? (
+          <>
+            <div className="min-w-0 xl:sticky xl:top-20" data-testid="deals-side">
+              <QueueRail queue={queue} selectedDecision={decision} locked={sending} onSelect={select} onShow={() => setShownFor(railKey)} />
+            </div>
+            {PANE}
+          </>
         ) : (
           <>
-            <div className="min-w-0 space-y-6">
+            <div className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto" data-testid="deals-side">
               {tableMode ? null : QUEUE_NODE}
               {INBOX_NODE}
             </div>
@@ -294,7 +297,6 @@ export function DealsPage() {
           </>
         )}
       </div>
-      <div id="deals-investigate" className="mt-6 max-w-[1214px] empty:hidden" />
       {/* The agreements in force, each with its deal summary (the confirmed contract beside the books): under the panes, where the queue's Agreements tab leads the eye. */}
       <div className="mt-8" data-testid="deals-agreements">
         <ActiveCommitments
