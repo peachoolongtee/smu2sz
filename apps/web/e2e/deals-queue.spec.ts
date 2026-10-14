@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkedDeal, filledBrand, openCompare, openInbox, openReview } from "./helpers";
+import { checkedDeal, expandRow, filledBrand, openCompare, openInbox, openReview } from "./helpers";
 
 /**
  * Deals (map #121, Slice B; tickets #126 to #132): the queue (one row per task, five tabs with the server's counts, a search), the selected negotiation in three levels
@@ -29,13 +29,12 @@ test("cold: the page is 'Deals' with the state sentence under it, the server's w
   await page.goto("/deals");
   await expect(page.locator("h1")).toHaveText("Deals");
   await expect(page.locator("h1")).toHaveCount(1);
-  // Nothing needs the owner at the opening books: the sentence says so, the tabs carry the server's counts, the agreement in force is a row, the alert is pinned above the tabs.
+  // Nothing needs the owner at the opening books: the sentence says so; the alert is the page's own row above the queue.
   await expect(page.getByText("Nothing needs you today.")).toBeVisible();
   await expect(page.getByTestId("queue-alert")).toContainText("FLOW action ready");
-  await expect(page.getByTestId("queue-count-all")).toHaveText("0");
-  await expect(page.getByTestId("queue-count-needs_you")).toHaveText("0");
-  await expect(page.getByTestId("queue-count-waiting")).toHaveText("0");
-  await expect(page.getByTestId("queue-count-agreements")).toHaveText("0");
+  // Round three (section 9): with fewer than two negotiations the queue is its rows and nothing else (no lifecycle tabs); the total is the queue's own, and the alert is the page's row, counted nowhere.
+  await expect(page.getByTestId("queue-total")).toHaveText("0");
+  await expect(page.getByTestId("queue-tabs")).toHaveCount(0);
   // The queue lists negotiations only (round two): there is no Customers tab, and an approval or a collection is not a row here.
   await expect(page.getByTestId("queue-tab-customers")).toHaveCount(0);
   // Nothing is open: the tab says so in the server's words, and "No records" is not said.
@@ -57,7 +56,7 @@ test("a message read becomes a negotiation: the address is the selection, the ro
   await expect(row.getByTestId("queue-status")).toHaveText("Counter ready");
   await expect(row).toHaveAttribute("data-selected", "true");
   await expect(row).toHaveAttribute("data-tier", "needs_you");
-  await expect(page.getByTestId("queue-count-needs_you")).toHaveText("1");
+  await expect(page.getByTestId("queue-total")).toHaveText("1");
   await expect(page.getByText("1 task needs you.")).toBeVisible();
   await expect(page.getByTestId("deal-pane")).toHaveAttribute("data-decision", DECISION);
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
@@ -69,137 +68,120 @@ test("a message read becomes a negotiation: the address is the selection, the ro
   await expect(page.getByTestId("deal-state-chip")).toHaveAttribute("data-state", "RESPONSE_READY");
 });
 
-test("the tabs filter by who acts next, the search filters the words already read, and an empty tab says so in its own words", async ({ page }) => {
+test("with one negotiation the tabs, the search and the controls are not offered; the lifecycle tabs, search, sort and group appear with more rows (the busy books, in slice-b-round-three.spec.ts)", async ({ page }) => {
   await checkedDeal(page);
-  await page.getByTestId("queue-tab-needs_you").click();
-  await expect(page).toHaveURL(/tab=needs_you/);
+  for (const gone of ["queue-tabs", "queue-tab-needs_you", "queue-search", "queue-controls", "queue-sort-urgency", "queue-group"]) await expect(page.getByTestId(gone)).toHaveCount(0);
   await expect(page.getByTestId("queue-row")).toHaveCount(1);
-  await page.getByTestId("queue-tab-waiting").click();
-  await expect(page.getByTestId("queue-empty")).toContainText("Nothing is waiting on anyone else.");
-  await page.getByTestId("queue-tab-agreements").click();
-  await expect(page.getByTestId("queue-empty")).toContainText("No agreement is in force.");
-  await page.getByTestId("queue-tab-all").click();
+  // A tab named in an old address changes nothing for a queue that has none.
+  await page.goto(`${new URL(page.url()).pathname}${new URL(page.url()).search}&tab=waiting`);
   await expect(page.getByTestId("queue-row")).toHaveCount(1);
-  await page.getByTestId("queue-search").fill("zzz");
-  await expect(page.getByTestId("queue-empty")).toContainText("Nothing matches “zzz”.");
-  await page.getByTestId("queue-search").fill("60-day terms");
-  await expect(page.getByTestId("queue-row")).toHaveCount(1);
-  // Arrow keys move between the tabs and the choice follows the focus.
-  await page.getByTestId("queue-search").fill("");
-  await page.getByTestId("queue-tab-all").focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByTestId("queue-tab-needs_you")).toHaveAttribute("aria-selected", "true");
 });
-
-test("Decide: the ask in the buyer's words, what we recommend and why, who decides and why, and both costs with their basis words", async ({ page }) => {
+test("Overview: the ask in one line, FLOW's reply, the mandate sentence, the terms by scope; who decides and the costs are one tab on (Compare responses)", async ({ page }) => {
   await checkedDeal(page);
   await expect(page.getByTestId("queue-heading")).toHaveText("Counter instead of accepting as asked");
-  await expect(page.getByTestId("deal-ask-quote")).toContainText("We'll settle the ¥420k early at 1.2%");
-  await expect(page.getByTestId("deal-recommends-title")).toHaveText("What we recommend · Option A");
+  await expect(page.getByTestId("queue-ask")).toContainText("early settlement of ¥420,000.00 at 1.20%");
+  await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW's reply · Option A");
   await expect(page.getByTestId("queue-option")).toContainText("Terms stay at 45 days, no rebate.");
-  await expect(page.getByTestId("deal-recommended-reason")).toHaveText("Recommended because FLOW can send it within your mandate without your approval.");
-  await expect(page.getByTestId("queue-authority")).toContainText("FLOW can send it");
-  await expect(page.getByTestId("deal-authority-reason")).toContainText("within the 1.50% limit you signed");
-  // The terms side by side (what the buyer requests, what FLOW recommends), the changed values marked, and the cost table's totals each with the words that say what they cover.
-  // The recommendation reason is about cash (the request breaches the reserve), so the cash card is open; the cost card opens in its place.
-  await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "true");
-  await page.getByTestId("deal-card-cost-toggle").click();
-  const terms = page.getByTestId("deal-terms-table-table");
-  await expect(terms.locator("thead th")).toHaveText(["Buyer requests", /^FLOW recommends/]);
-  await expect(page.getByTestId("deal-terms-table-row-payment_terms")).toContainText("60 days");
-  await expect(page.getByTestId("deal-terms-table-row-payment_terms").locator("[data-changed=true]")).toHaveCount(2);
-  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
-  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("over 12 months, plus ¥5,040.00 once");
-  await expect(page.getByTestId("deal-cost-table-total-reply")).toContainText("¥3,027.77");
-  await expect(page.getByTestId("deal-cost-table-total-reply")).toContainText("once, nothing ongoing");
-  // One filled primary in the commit area; the other two buttons are outlined.
+  await expect(page.getByTestId("deal-mandate")).toHaveText("Option A is the reply FLOW can send within your mandate.");
+  // The buyer's own words are in the Messages tab.
+  await page.getByTestId("deal-tab-messages").click();
+  await expect(page.getByTestId("deal-ask-quote-messages")).toContainText("We'll settle the ¥420k early at 1.2%");
+  await page.getByTestId("deal-tab-overview").click();
+  // The terms by scope, the changed cells marked by a tint (and carrying the server's "instead of" words), never an underline.
+  const terms = page.getByTestId("deal-scope-terms-table");
+  await expect(terms.locator("thead th")).toHaveText(["Buyer asks", /^FLOW counters/, "Option B"]);
+  await expect(page.getByTestId("deal-scope-terms-row-future")).toContainText("60 days");
+  await expect(page.getByTestId("deal-scope-terms-row-future").locator("td[data-changed=true]")).toHaveCount(2);
+  // Who decides and why, and both costs with their basis words, are in the comparison.
+  await page.getByTestId("deal-tab-compare").click();
+  await expect(page.getByTestId("deal-why-reason")).toHaveText("Recommended because FLOW can send it within your mandate without your approval.");
+  await expect(page.getByTestId("deal-why-authority")).toContainText("within the 1.50% limit you signed");
+  await expandRow(page, "economic");
+  const visible = (id: string) => page.locator(`[data-testid="${id}"]:visible`);
+  await expect(visible("deal-cost-table-total-asked")).toContainText("¥28,326.92");
+  await expect(visible("deal-cost-table-total-asked")).toContainText("over 12 months, plus ¥5,040.00 once");
+  await expect(visible("deal-cost-table-total-reply").first()).toContainText("¥3,027.77");
+  await expect(visible("deal-cost-table-total-reply").first()).toContainText("once, nothing ongoing");
+  // One filled primary: the header's review; the Overview's Compare responses is outlined.
   expect(await filledBrand(page)).toBe(1);
-  await expect(page.getByTestId("queue-review-open")).toHaveText("Review and send the counter");
-  await expect(page.getByTestId("deal-compare-toggle")).toHaveText("Full analysis");
+  await expect(page.getByTestId("queue-review-open")).toHaveText("Review the counter");
 });
-
-test("Consequence: the request against the recommended reply, the payment-timing tabs bound to ?scenario=, and the sentence under each column that says what it assumes", async ({ page }) => {
+test("Cash consequences: the outcome table and the compared cash rows hold the request against the replies; the payment-timing tabs are bound to ?scenario= on Cash impact", async ({ page }) => {
   await checkedDeal(page);
-  // Two cards: the cash one is open by default (the server's reason is about cash); the cost card opens in its place and the address says which.
-  await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "true");
-  await expect(page.getByTestId("deal-card-cost")).toHaveAttribute("data-open", "false");
-  await page.getByTestId("deal-card-cost-toggle").click();
-  await expect(page).toHaveURL(/show=cost/);
-  await expect(page.getByTestId("deal-card-cash")).toHaveAttribute("data-open", "false");
-  await page.getByTestId("deal-card-cash-toggle").click();
-  await expect(page).toHaveURL(/show=cash/);
-  const table = page.getByTestId("deal-consequence");
-  await expect(table.locator("thead th")).toHaveText(["Financial consequence", "As they askedOver your limit", "Option AFLOW recommends"]);
-  await expect(page.getByTestId("deal-consequence-row-lowest")).toContainText("¥165k");
-  await expect(page.getByTestId("deal-consequence-row-lowest")).toContainText("in 60 days");
-  await expect(page.getByTestId("deal-consequence-row-reserve")).toContainText(/below it for 15 days/i);
-  await expect(page.getByTestId("deal-consequence-row-approval")).toContainText("FLOW can send it");
-  // Each path states its own footing in a row of the table (the server's short words): the request carries no funding plan, the reply carries its own. The longer sentence is not repeated under it.
-  await expect(page.getByTestId("deal-consequence-row-funding")).toContainText("No new funding");
-  await expect(page.getByTestId("deal-consequence-row-funding")).toContainText("Funding plan required: ¥150k");
-  await expect(page.getByTestId("deal-assumption")).toHaveCount(0);
+  await page.getByTestId("deal-tab-compare").click();
+  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("¥165k");
+  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("in 60 days");
+  await expect(page.getByTestId("deal-compare-cell-cash-asked")).toContainText("Breached by ¥135k for 15 days");
+  await expect(page.getByTestId("deal-compare-cell-authority-reply").first()).toContainText("FLOW can send");
+  // Each path states its own footing (the server's short words) in the cash row's expansion; the request carries no funding plan, the reply carries its own.
+  await expandRow(page, "cash");
+  const funding = page.locator('[data-testid="deal-funding-plans"]:visible');
+  await expect(funding).toContainText("No new funding");
+  await expect(funding).toContainText("Funding plan required: ¥150k");
+  await page.getByTestId("deal-tab-cash").click();
   // The timing assumption is the address: back and forward restore it.
   const tabs = page.getByRole("tablist", { name: "Payment timing assumption" });
   await expect(tabs.getByRole("tab", { name: "Expected payments" })).toHaveAttribute("aria-selected", "true");
   await tabs.getByRole("tab", { name: /30 days late/ }).click();
   await expect(page).toHaveURL(/scenario=late/);
-  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "late");
-  await expect(page.getByTestId("deal-consequence-row-lowest")).toContainText("−¥250k");
-  await page.goBack();
+  await expect(page.getByTestId("deal-chart")).toHaveAttribute("data-late", "true");
+  await expect(page.getByTestId("deal-inspector-lowest-asked")).toContainText("−¥250k");
+  await tabs.getByRole("tab", { name: "Expected payments" }).click();
+  await expect(page.getByTestId("deal-chart")).toHaveAttribute("data-late", "false");
 });
-
-test("Investigate on request: every response in one table with its basis words, the late-payment row, and a pick that changes what the review is about", async ({ page }) => {
+test("Compare responses: the packages in one table with their short words, the evidence behind it, and a pick that changes what the review is about", async ({ page }) => {
   await checkedDeal(page);
-  await expect(page.getByTestId("deal-investigate")).toHaveCount(0);
+  await expect(page.getByTestId("deal-panel-compare")).toHaveCount(0);
   await openCompare(page);
-  await expect(page).toHaveURL(/investigate=1/);
-  // "Why FLOW recommends this": the server's reason, who decides each path and why, the assumptions, and the rule in words.
+  await expect(page).toHaveURL(/view=compare/);
+  // "Why these results differ": the server's reason, who decides each path and why, the assumptions, and the rule in words.
   await expect(page.getByTestId("deal-why-reason")).toContainText("Recommended because");
   await expect(page.getByTestId("deal-why-rule")).toHaveText("FLOW recommends the first reply it may send within your mandate; it does not rank replies by cost.");
   const table = page.getByTestId("deal-compare-table");
-  await expect(table.locator("thead th")).toHaveText(["Compare responses", /^As they asked/, /^Option AFLOW recommends/, /^Option BNeeds your approval/, "Do nothing"]);
-  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("net over 12 months");
-  await expect(page.getByTestId("deal-compare-table-row-economics")).toContainText("once, nothing ongoing");
-  await expect(page.getByTestId("deal-compare-table-row-lowest")).toContainText("Assumes the buyer accepts this reply");
-  await expect(page.getByTestId("deal-compare-table-row-stress")).toContainText("−¥250k");
-  await expect(page.getByTestId("deal-compare-table-row-approval")).toContainText("Needs your approval");
-  // A comparison never binds the commit: "Review Option B" only chooses which reply the review above is about.
+  await expect(table.locator("thead th").filter({ hasText: /\S/ })).toHaveText([/^Buyer request/, /^Option A/, /^Option B/]);
+  await expect(page.getByTestId("deal-compare-cell-economic-reply").nth(1)).toContainText("Net economic cost over 12 months");
+  await expect(page.getByTestId("deal-compare-cell-economic-reply").first()).toContainText("One-off cost, nothing ongoing");
+  await expect(page.getByTestId("deal-compare-cell-cash-reply").first()).toContainText("Held, no buffer at the lowest point");
+  await expect(page.getByTestId("deal-compare-cell-authority-reply").nth(1)).toContainText("Needs your approval");
+  // A comparison never binds the commit: "Review Option B" only chooses which reply the review is about.
   await page.locator(`[data-testid="deal-use-${OPTION_B}"]:visible`).click();
   await expect(page).toHaveURL(new RegExp(`path=${OPTION_B}`));
-  await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
-  await expect(page.getByTestId("queue-authority")).toContainText("Needs your approval");
-  await expect(page.getByTestId("path-reply-back")).toHaveText("Back to Option A");
   await openReviewFor(page);
   await expect(page.getByTestId("deal-send")).toHaveText("Send Option B to Foshan");
   // The review reads Option B's own receipt (the server priced every sendable reply), not Option A's and not words composed from the path.
   const receiptB = (await page.getByTestId("commitment-receipt").textContent())!;
   await expect(page.getByTestId("deal-unpriced")).toHaveCount(0);
   await page.getByTestId("queue-review-close").click();
+  await page.getByTestId("deal-back").click();
+  await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
+  await expect(page.getByTestId("path-reply-back")).toHaveText("Back to Option A");
   await page.getByTestId("path-reply-back").click();
   await openReviewFor(page);
   expect((await page.getByTestId("commitment-receipt").textContent())!, "Option A's receipt is not Option B's").not.toBe(receiptB);
   await page.getByTestId("queue-review-close").click();
-  await expect(page.getByTestId("deal-recommends-title")).toHaveText("What we recommend · Option A");
-  // The full analysis carries the deal's cash chart too.
+  await expect(page.getByTestId("deal-recommends-title")).toHaveText("FLOW's reply · Option A");
+  // The deal's cash chart is on Cash impact.
+  await page.getByTestId("deal-tab-cash").click();
   await expect(page.getByTestId("deal-chart")).toBeVisible();
 });
-
 async function openReviewFor(page: Page) {
   await page.getByTestId("queue-review-open").click();
   await page.getByTestId("queue-review").waitFor();
 }
 
-test("the address restores the whole state: customer, decision, path, timing and the open investigation, in a fresh read", async ({ page }) => {
+test("the address restores the whole state: customer, decision, path, timing, the tab and the lines, in a fresh read", async ({ page }, testInfo) => {
   await checkedDeal(page);
-  await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=${OPTION_B}&scenario=late&compare=1&show=cash&tab=needs_you`);
+  await page.goto(`/deals?customer=BUYER-1&decision=${encodeURIComponent(DECISION)}&path=${OPTION_B}&scenario=late&view=cash&lines=asked,${OPTION_B}`);
+  await expect(page.getByTestId("deal-tab-cash")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("deal-chart")).toHaveAttribute("data-late", "true");
+  await expect(page.getByTestId(`deal-chip-${OPTION_B}`)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("deal-chip-CTR-193394b6ba8b")).toHaveAttribute("aria-pressed", "false");
+  // (Cash impact folds the queue to its rail from the two-pane width: the selected row is marked there.)
+  if (!testInfo.project.name.includes("phone")) await expect(page.getByTestId("queue-rail-row").first()).toHaveAttribute("data-selected", "true");
+  await page.getByTestId("deal-tab-overview").click();
   await expect(page.getByTestId("deal-recommends-title")).toHaveText("The response you picked · Option B");
-  await expect(page.getByTestId("deal-scenario-panel")).toHaveAttribute("data-scenario", "late");
-  await expect(page.getByTestId("deal-compare-table")).toBeVisible();
-  await expect(page.getByTestId("queue-tab-needs_you")).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByTestId("queue-row").first()).toHaveAttribute("data-selected", "true");
 });
-
-test("selecting pushes history, Escape and Close clear the selection, and back restores it", async ({ page }) => {
+test("selecting pushes history, Escape and Close clear the selection, and back restores it", async ({ page }, testInfo) => {
   await checkedDeal(page);
   await page.getByTestId("deal-close").click();
   await expect(page).toHaveURL(/\/deals$/);
@@ -207,10 +189,15 @@ test("selecting pushes history, Escape and Close clear the selection, and back r
   await page.getByTestId("queue-select").first().click();
   await expect(page).toHaveURL(/decision=/);
   await expect(page.getByTestId("deal-pane")).toBeVisible();
-  await expect(page.getByTestId("deal-card-cost")).toBeVisible();
-  // The first Escape folds the open card (the address then says `show=none`); the next one clears the selection.
-  await page.keyboard.press("Escape");
-  await expect(page).toHaveURL(/show=none/);
+  await expect(page.getByTestId("deal-panel-overview")).toBeVisible();
+  // On the Overview Escape clears the selection (the queue is already beside it); on Compare or Cash it first brings the queue back from its rail.
+  await page.getByTestId("deal-tab-compare").click();
+  if (!phoneProject(testInfo)) {
+    await expect(page.getByTestId("queue-rail")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("deals-queue")).toBeVisible();
+    await expect(page).toHaveURL(/view=compare/);
+  }
   await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/\/deals$/);
   await page.goBack();
@@ -218,7 +205,6 @@ test("selecting pushes history, Escape and Close clear the selection, and back r
   await page.getByTestId("queue-select").first().focus();
   await expect(page.getByTestId("queue-select").first()).toBeFocused();
 });
-
 test("the customer link carries the row's own context and the origin; the aside to the customer's page and back lands on the same negotiation", async ({ page }) => {
   await checkedDeal(page);
   await expect(page.getByTestId("queue-customer").first()).toHaveAttribute("href", `/customers/BUYER-1?decision=${encodeURIComponent(DECISION)}&from=deal`);
@@ -286,11 +272,11 @@ test("the page in Chinese: the same negotiation in the owner's voice with the sa
   await page.addInitScript(() => localStorage.setItem("tl-lang", JSON.stringify({ lang: "zh" })));
   await checkedDeal(page);
   await expect(page.locator("h1")).toHaveText("交易");
-  await expect(page.getByTestId("queue-tab-needs_you")).toContainText("需要您");
-  await expect(page.getByTestId("deal-recommends-title")).toContainText("我们的建议");
-  await expect(page.getByTestId("queue-review-open")).toHaveText("查看并发送还价");
-  await page.getByTestId("deal-card-cost-toggle").click();
-  await expect(page.getByTestId("deal-cost-table-total-asked")).toContainText("¥28,326.92");
+  await expect(page.getByTestId("deal-recommends-title")).toContainText("FLOW 的回复");
+  await expect(page.getByTestId("queue-review-open")).toHaveText("查看还价");
+  await page.getByTestId("deal-tab-compare").click();
+  await expandRow(page, "economic");
+  await expect(page.locator('[data-testid="deal-cost-table-total-asked"]:visible')).toContainText("¥28,326.92");
   await scan(page, "/deals zh");
 });
 
@@ -298,7 +284,7 @@ test("a phone: the rows stack, nothing scrolls sideways, the tabs scroll inside 
   await page.setViewportSize({ width: 390, height: 844 });
   await checkedDeal(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  for (const id of ["queue-review-open", "deal-compare-toggle"]) {
+  for (const id of ["queue-review-open", "deal-to-compare"]) {
     const box = (await page.getByTestId(id).boundingBox())!;
     expect(box.height, id).toBeGreaterThanOrEqual(44);
     expect(box.x >= 0 && box.x + box.width <= 390, `${id} fits`).toBe(true);
@@ -316,26 +302,7 @@ test("axe finds nothing serious or critical on the queue with the review, the co
   await scan(page, "/deals open");
 });
 
-for (const lang of ["en", "zh"] as const) {
-  for (const width of [1280, 1440] as const) {
-    test(`the four tabs share one line inside the queue at ${width}, in ${lang === "en" ? "English" : "Chinese"}, with a two-digit count and no label cut`, async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name === "phone", "the desktop widths");
-      await page.addInitScript((l) => localStorage.setItem("tl-lang", JSON.stringify({ lang: l })), lang);
-      await page.setViewportSize({ width, height: 900 });
-      await checkedDeal(page);
-      const ids = ["all", "needs_you", "waiting", "agreements"];
-      // A busy book: two digits on All, one on the others.
-      await page.evaluate((list) => list.forEach((k, i) => (document.querySelector(`[data-testid="queue-count-${k}"]`)!.textContent = i === 0 ? "12" : "8")), ids);
-      const boxes = await Promise.all(ids.map((k) => page.getByTestId(`queue-tab-${k}`).evaluate((el) => ({ top: Math.round(el.getBoundingClientRect().top), right: el.getBoundingClientRect().right, clipped: el.scrollWidth > el.clientWidth + 1 }))));
-      expect(new Set(boxes.map((b) => b.top)).size, `${lang} ${width}: one line`).toBe(1);
-      const queue = await page.getByTestId("deals-queue").evaluate((el) => el.getBoundingClientRect().right);
-      for (const b of boxes) {
-        expect(b.right, "inside the queue").toBeLessThanOrEqual(queue);
-        expect(b.clipped, "no label cut").toBe(false);
-      }
-    });
-  }
-}
+// The four tabs sharing one line inside the queue at 1280 and 1440, in English and Chinese, need a queue with two or more rows: they are pinned on the busy books in slice-b-round-three.spec.ts (live).
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------
 // The owner's cue that a row opens the workspace beside it (the chevron, the connector, the empty sentence, the slide, the first-visit pulse)
@@ -383,7 +350,7 @@ test("every queue row has a decorative chevron, quiet at rest, ink on hover and 
   }
 });
 
-test("at 1440 the selected row opens into the workspace: a 2 px purple connector at the row's centre reaches the workspace; a phone has none", async ({ page }, testInfo) => {
+test("at 1440 the selected row opens into the workspace: a 1 px purple connector at the row's centre reaches the workspace; a phone has none", async ({ page }, testInfo) => {
   await checkedDeal(page);
   const row = page.locator('[data-testid="queue-row"][data-selected="true"]').first();
   if (phoneProject(testInfo)) {
@@ -393,7 +360,7 @@ test("at 1440 the selected row opens into the workspace: a 2 px purple connector
   const connector = row.getByTestId("row-connector");
   await expect(connector).toBeVisible();
   const [c, r, pane] = await Promise.all([connector.boundingBox(), row.locator(".flow-row").boundingBox(), page.getByTestId("deals-detail").boundingBox()]);
-  expect(c!.height).toBeCloseTo(2, 0);
+  expect(c!.height).toBeCloseTo(1, 0);
   expect(Math.abs(c!.y + c!.height / 2 - (r!.y + r!.height / 2)), "aligned to the row's vertical centre").toBeLessThan(1);
   expect(Math.abs(c!.x - (r!.x + r!.width)), "starts at the row's right edge").toBeLessThan(1);
   expect(Math.abs(c!.x + c!.width - pane!.x), "ends at the workspace").toBeLessThan(1.5);

@@ -25,8 +25,8 @@ export function FinancialOutcomes({ picture, paths, heading = true }: { picture:
           {t("deals.out.title")}
         </h3>
       ) : null}
-      <div className="overflow-x-auto" data-testid="deal-outcome-scroll">
-        <table className="w-full min-w-[420px] table-fixed border-separate border-spacing-0" data-testid="deal-outcome-table">
+      <div className="overflow-x-auto" role="region" aria-label={t("deals.out.table")} tabIndex={0} data-testid="deal-outcome-scroll">
+        <table className="w-full table-fixed border-separate border-spacing-0" data-testid="deal-outcome-table">
           <caption className="sr-only">{t("deals.out.table")}</caption>
           <colgroup>
             <col className="w-[28%]" />
@@ -119,7 +119,9 @@ export function HeadroomPlot({ picture, paths }: { picture: Pick<OfferPictureVie
   const plot = headroomPlot(paths, picture.floor_fen);
   if (!plot) return null;
   const settled = reduced || placed;
-  const x = `calc(7.5rem + (100% - 7.5rem) * ${plot.reserveAt / 100})`;
+  const x = `calc(5.5rem + (100% - 5.5rem) * ${plot.reserveAt / 100})`;
+  // Near an end of the scale a label is set toward the middle so it stays in the page.
+  const side = (at: number) => (at > 66 ? "right-[-7px] text-right" : at < 22 ? "left-[-7px]" : "left-0 -translate-x-1/2 text-center");
   return (
     <figure className="m-0 mt-5" data-testid="deal-headroom" aria-label={t("deals.plot.aria")}>
       <figcaption className="mb-1 text-supporting font-bold text-ink-3">{t("deals.plot.title")}</figcaption>
@@ -127,18 +129,18 @@ export function HeadroomPlot({ picture, paths }: { picture: Pick<OfferPictureVie
         {/* The reserve: one amber dashed line through every row, labelled once with the server's words. */}
         <span aria-hidden className="absolute bottom-0 top-5 border-l-2 border-dashed border-f-amber-ink" style={{ left: x }} data-testid="deal-headroom-reserve" />
         <p className="relative m-0 h-5 text-supporting font-bold text-f-amber-ink" data-testid="deal-headroom-reserve-label">
-          <span className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: x }}>
+          <span className={`absolute whitespace-nowrap ${plot.reserveAt > 66 ? "right-0" : plot.reserveAt < 22 ? "left-0" : ""}`} style={plot.reserveAt > 66 || plot.reserveAt < 22 ? undefined : { left: x, transform: "translateX(-50%)" }}>
             {t("biz.picture.reserve", { amount: picture.floor_short })}
           </span>
         </p>
         <ul className="m-0 list-none space-y-1 p-0">
           {plot.dots.map((d) => (
-            <li key={d.key} className="grid h-12 grid-cols-[7.5rem_minmax(0,1fr)] items-center" data-testid="deal-headroom-row" data-below={d.below ? "true" : "false"}>
+            <li key={d.key} className="grid h-12 grid-cols-[5.5rem_minmax(0,1fr)] items-center" data-testid="deal-headroom-row" data-below={d.below ? "true" : "false"}>
               <span className="pr-2 text-sm font-bold text-ink">{d.label}</span>
               <span className="relative block h-full border-b border-line">
-                <span className={`absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center ${reduced ? "" : "transition-[left] duration-300 ease-out"}`} style={{ left: settled ? `${d.at}%` : "0%" }} data-testid="deal-headroom-dot">
-                  <span aria-hidden className={`size-3.5 rounded-pill ${d.below ? "bg-bad-solid" : "bg-f-ink"}`} />
-                  <span className={`mt-0.5 whitespace-nowrap font-display text-supporting font-bold tabular-nums ${d.below ? "text-bad-fg" : "text-ink"}`}>
+                <span className={`absolute top-1/2 size-0 ${reduced ? "" : "transition-[left] duration-300 ease-out"}`} style={{ left: settled ? `${d.at}%` : "0%" }} data-testid="deal-headroom-dot">
+                  <span aria-hidden className={`absolute -left-[7px] -top-[7px] block size-3.5 rounded-pill ${d.below ? "bg-bad-solid" : "bg-f-ink"}`} />
+                  <span className={`absolute top-[10px] whitespace-nowrap font-display text-supporting font-bold tabular-nums ${side(d.at)} ${d.below ? "text-bad-fg" : "text-ink"}`}>
                     {d.short}
                     {d.when ? <span className="font-normal text-ink-3"> · {d.when}</span> : null}
                   </span>

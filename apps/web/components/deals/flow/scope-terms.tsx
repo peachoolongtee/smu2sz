@@ -33,7 +33,7 @@ export function ScopeTerms({ picture, paths, heads, subs = [], testId = "deal-sc
   const max = days.length ? Math.max(...days) : 0;
   const head = "px-2 py-1 text-left align-bottom text-sm font-bold text-ink sm:px-3";
   return (
-    <div className="overflow-x-auto" data-testid={testId}>
+    <div className="overflow-x-auto" role="region" aria-label={t("deals.ov.terms")} tabIndex={0} data-testid={testId}>
       <table className="w-full min-w-[520px] table-fixed border-separate border-spacing-0" data-testid={`${testId}-table`}>
         <caption className="sr-only">{t("deals.ov.terms")}</caption>
         <colgroup>

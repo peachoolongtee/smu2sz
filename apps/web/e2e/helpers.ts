@@ -113,12 +113,20 @@ export async function openReview(page: Page): Promise<void> {
   await page.getByTestId("queue-review").waitFor();
 }
 
-/** "Compare responses" opens the full table of every response under the two panes; opens it when it is closed. */
+/** "Compare responses" is a tab of the selected deal (round three): opens it and waits for the table of every response. */
 export async function openCompare(page: Page): Promise<void> {
-  const toggle = page.getByTestId("deal-compare-toggle");
-  await toggle.waitFor();
-  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  await page.getByTestId("deal-compare-table").or(page.getByTestId("deal-compare-stack")).first().waitFor();
+  const tab = page.getByTestId("deal-tab-compare");
+  await tab.waitFor();
+  if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click();
+  await page.locator('[data-testid="deal-compare-table"]:visible, [data-testid="deal-compare-stack"]:visible').first().waitFor();
+}
+
+/** Expands a row of the comparison to its calculation: the row's own button from the table's width, the fold of the stacked form on a phone. */
+export async function expandRow(page: Page, row: "terms" | "economic" | "cash"): Promise<void> {
+  await page.locator('[data-testid="deal-compare-table"]:visible, [data-testid="deal-compare-stack"]:visible').first().waitFor();
+  const button = page.getByTestId(`deal-compare-expand-${row}`);
+  if (await button.isVisible()) await button.click();
+  else await page.getByTestId(`deal-compare-stack-calc-${row}`).locator("summary").click();
 }
 
 /** The inbox card opens on Deals while nothing needs the owner and no negotiation is selected, and folds to one row otherwise: opens it when it is folded. */
