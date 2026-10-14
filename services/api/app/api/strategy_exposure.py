@@ -101,7 +101,7 @@ def _check_response(rt: Runtime, offer_id: str, response: str) -> None:
         raise _not_found("COUNTER_NOT_FOUND", f"Offer {offer_id} has no {response}.")
 
 
-def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en", "zh"], spare: bool) -> dict[str, Any]:
+def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en", "zh"], spare: bool, deal_words: bool = True) -> dict[str, Any]:
     """The block for the offer's buyer: the books (without this offer's own commitments), the mandate, the day, the verdict and the
     owner's inputs are read together under the runtime's lock; the assembly is cached and does its own locking for the log."""
     with rt.lock:
@@ -126,7 +126,7 @@ def _answer(rt: Runtime, offer: CompiledOffer, response: str, lang: Literal["en"
                                               "while you were reading. Read it again.") from None
     try:
         core = assembly.exposure(rt, books, mandate, day, offer, verdict, lang, held, inputs, response=response, spare=spare,
-                                 deal_words=True)
+                                 deal_words=deal_words)
     except EngineError as exc:
         raise HTTPException(422, f"cannot project: {exc}") from None
     return {"buyer_id": offer.counterparty_id, "buyer_name": core["buyer"]["name"], "response": response, "lang": lang, **core,
