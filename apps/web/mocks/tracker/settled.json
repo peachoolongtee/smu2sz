@@ -11,6 +11,8 @@
     "terms_text": "0.85% off up to ¥257,200.00 if paid early",
     "headline_text": "This deal is costing more than you agreed to",
     "state_word": "Payment late",
+    "state_key": "late",
+    "ended": false,
     "state_tone": "bad",
     "state_text": "The buyer paid the early part it promised. The rest of the invoice is 6 days late, and you arranged funding after it.",
     "stages": [
@@ -246,6 +248,8 @@
     "terms_text": "提前付款可减 0.85%，最高 ¥257,200.00",
     "headline_text": "这笔交易的成本超出了您同意的范围",
     "state_word": "付款逾期",
+    "state_key": "late",
+    "ended": false,
     "state_tone": "bad",
     "state_text": "买方已支付它承诺提前支付的部分。发票余款已逾期 6 天，您在此之后安排了融资。",
     "stages": [

@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dictionary";
 import { useI18n } from "@/lib/i18n";
 import { useMode } from "@/lib/mode";
 import type { CustomersView, QueueRowView } from "@/lib/types";
-import { canSortLatest, dealTabCounts, DEAL_TABS, afterGroupOf, AFTER_GROUPS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
+import { canSortLatest, dealTabCounts, DEAL_TABS, afterGroupCounts, afterGroupOf, AFTER_GROUPS, groupByCustomer, negotiationRows, rowPill, sortRows, TABLE_FROM, type DealRow, type DealTab, type DealTier, type SortKey } from "./deal-model";
 import { matchesRow, rowDecision, rowTarget, type Queue, type RowTarget } from "./queue-model";
 
 export type QueueLayout = "compact" | "table";
@@ -205,6 +205,7 @@ export function QueuePanel({
       </section>
     );
   const counts = dealTabCounts(queue);
+  const groupCounts = afterGroupCounts(queue);
   const all = negotiationRows(queue);
   const only = onlyCustomer ? (queue.customers.find((c) => c.customer_id === onlyCustomer)?.name ?? null) : null;
   // Progressive controls (round three, section 9): one negotiation is its row and nothing else; the lifecycle tabs and the search appear at two rows, Sort at four, Group by customer at six, the table switch at twenty.
@@ -342,7 +343,7 @@ export function QueuePanel({
                   const head = (
                     <span className={`inline-flex items-center gap-1.5 ${g === "payment_late" ? "text-bad-fg" : "text-ink-2"}`}>
                       {g === "payment_late" ? <span aria-hidden className="size-2 rounded-pill bg-bad-solid" /> : null}
-                      {label} <span className="font-semibold tabular-nums text-ink-3">({list.length})</span>
+                      {label} <span className="font-semibold tabular-nums text-ink-3">({groupCounts?.[g] ?? list.length})</span>
                     </span>
                   );
                   return g === "closed" ? (

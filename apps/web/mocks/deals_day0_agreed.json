@@ -399,7 +399,9 @@
       "needs_you": 0,
       "waiting": 0,
       "agreements": 2,
-      "closed": 0
+      "closed": 0,
+      "awaiting_payment": 1,
+      "payment_late": 0
     },
     "alert": null,
     "needs_you": [],
@@ -426,6 +428,8 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": null,
         "approval_id": null,
+        "after_group": "awaiting_payment",
+        "after_group_label": "Awaiting payment",
         "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
       },
       {
@@ -449,6 +453,8 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": "RCV-A",
         "approval_id": null,
+        "after_group": "awaiting_payment",
+        "after_group_label": "Awaiting payment",
         "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21&invoice=RCV-A"
       }
     ],

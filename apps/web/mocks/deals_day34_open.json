@@ -447,14 +447,16 @@
     "counts": {
       "needs_you": 1,
       "waiting": 0,
-      "agreements": 0,
+      "agreements": 1,
       "customers": 2
     },
     "deals": {
       "needs_you": 0,
       "waiting": 0,
-      "agreements": 0,
-      "closed": 1
+      "agreements": 1,
+      "closed": 0,
+      "awaiting_payment": 0,
+      "payment_late": 1
     },
     "alert": {
       "key": "company-cash",
@@ -490,6 +492,8 @@
         "decision_id": null,
         "invoice_id": "RCV-A",
         "approval_id": null,
+        "after_group": null,
+        "after_group_label": null,
         "href": "/receivables?customer=BUYER-1&invoice=RCV-A&from=deals"
       }
     ],
@@ -503,7 +507,7 @@
         "customer_short": "Foshan",
         "subject_text": "Foshan · 60-day terms on future invoices and 2 more terms",
         "subject_demo_text": "Foshan · 60-day terms on future invoices and 2 more terms · OFF-f806f79b6c21",
-        "lifecycle": "closed",
+        "lifecycle": "agreed",
         "topic_text": "Payment terms",
         "last_activity_day": 0,
         "last_activity_text": "34 days ago",
@@ -516,6 +520,8 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": null,
         "approval_id": null,
+        "after_group": "payment_late",
+        "after_group_label": "Payment late",
         "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
       }
     ],

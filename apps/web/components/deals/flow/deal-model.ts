@@ -73,6 +73,8 @@ export function recordTone(state: string): PillTone {
  */
 export function rowPill(tier: DealTier, row: QueueRowView): { tone: PillTone; text: string; next: string | null; lifecycle: Lifecycle | null } {
   const lifecycle = lifecycleOf(row);
+  // An agreed deal whose payment is late carries the tracker's bad tone (it stays in Agreements, never in Needs you).
+  if (lifecycle && row.after_group === "payment_late") return { tone: "bad", text: row.status_text, next: null, lifecycle };
   if (lifecycle) return { tone: LIFECYCLE_TONE[lifecycle], text: row.status_text, next: null, lifecycle };
   const { state, next } = statusCells(row);
   const tone = pillTone(tier, row);
@@ -422,6 +424,13 @@ export const isClosedRow = (row: Pick<QueueRowView, "lifecycle">): boolean => li
 export type AfterGroup = "payment_late" | "awaiting_payment" | "closed";
 /** The Agreements tier's groups in the server's order (payment late, awaiting payment, closed). */
 export const AFTER_GROUPS: readonly AfterGroup[] = ["payment_late", "awaiting_payment", "closed"];
+/** The Agreements tier's group counts as the server sends them (`queue.deals.awaiting_payment`, `payment_late`, `closed`: deals, not rows); null where it sends none (the rows are counted). */
+export function afterGroupCounts(q: Queue): Partial<Record<AfterGroup, number>> | null {
+  const served = q.deals ? ("counts" in q.deals && q.deals.counts ? q.deals.counts : (q.deals as DealsCounts)) : null;
+  if (!served || (served.awaiting_payment === undefined && served.payment_late === undefined && served.closed === undefined)) return null;
+  return { payment_late: served.payment_late ?? 0, awaiting_payment: served.awaiting_payment ?? 0, closed: served.closed ?? 0 };
+}
+
 /** The group an agreement row stands in: the server's `after_group`; an older server's closed row is the Closed group; any other row stands in none. */
 export function afterGroupOf(row: Pick<QueueRowView, "lifecycle" | "after_group">): AfterGroup | null {
   if (row.after_group && (AFTER_GROUPS as readonly string[]).includes(row.after_group)) return row.after_group;

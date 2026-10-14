@@ -6,7 +6,7 @@ import { negotiationRows, rowPill } from "./deal-model";
 import { rowDecision, rowTarget, type Queue } from "./queue-model";
 
 /** The lifecycle dot's fill by the pill's tone (amber: the owner's turn, lavender: the buyer's, green: agreed, grey: closed). The word is the row's accessible name, never the colour alone. */
-const DOT: Record<PillTone, string> = { amber: "bg-warn-solid", lavender: "bg-f-purple", green: "bg-ok-solid", neutral: "bg-ink-3" };
+const DOT: Record<PillTone, string> = { amber: "bg-warn-solid", lavender: "bg-f-purple", green: "bg-ok-solid", neutral: "bg-ink-3", bad: "bg-bad-solid" };
 
 /**
  * The queue stepping aside (round three, section 7): while Compare responses or Cash impact is open the queue is a 72 px rail. Each negotiation is its customer's initial and its lifecycle

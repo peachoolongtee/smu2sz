@@ -670,6 +670,40 @@ test.describe("Chinese and a phone (slice b round three)", () => {
   });
 });
 
+test.describe("the Agreements tier's groups (slice f)", () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(live(testInfo), "mock-mode: the recorded reads");
+  });
+  const group = (page: import("@playwright/test").Page, g: string) => page.locator(`[data-testid="queue-after-group"][data-group="${g}"]`);
+
+  test("at agreement the deal is Awaiting payment; on the late day it is Payment late (the bad tone), in Agreements and never in Needs you; an empty group is not drawn", async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.goto("/demo");
+    await walkStory(page, 3);
+    await page.goto("/deals");
+    // Two rows (the agreement and its promised payment) make the queue offer its tabs; the groups are the server's, headed by its label and the count of deals.
+    await expect(group(page, "awaiting_payment").getByTestId("queue-after-group-heading")).toHaveText("Awaiting payment (1)");
+    await expect(group(page, "payment_late")).toHaveCount(0);
+    await expect(group(page, "closed")).toHaveCount(0);
+    await expect(group(page, "awaiting_payment").getByTestId("queue-row")).toHaveCount(2);
+    await expect(group(page, "awaiting_payment").getByTestId("queue-status").first()).toHaveText("Agreed");
+    await page.goto("/demo");
+    await walkStory(page, 3, 3);
+    await page.goto("/deals");
+    const late = group(page, "payment_late");
+    await expect(late.getByTestId("queue-after-group-heading")).toHaveText("Payment late (1)");
+    await expect(late.getByTestId("queue-status")).toHaveText("Payment late");
+    await expect(late.getByTestId("queue-status")).toHaveAttribute("data-tone", "bad");
+    await expect(group(page, "awaiting_payment")).toHaveCount(0);
+    // The late deal is not a task for the owner: it is in no Needs you list.
+    await expect(late.getByTestId("queue-row")).toHaveAttribute("data-tier", "agreements");
+    // Its Overview is the tracker with the one next step in the header.
+    await late.getByTestId("queue-select").click();
+    await expect(page.getByTestId("deal-tracker")).toBeVisible();
+    await expect(page.getByTestId("deal-state-chip")).toContainText("Payment late");
+  });
+});
+
 test.describe("live", () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(!live(testInfo), "live-mode: a real API");

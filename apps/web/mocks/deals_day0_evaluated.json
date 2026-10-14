@@ -431,7 +431,9 @@
       "needs_you": 1,
       "waiting": 0,
       "agreements": 0,
-      "closed": 0
+      "closed": 0,
+      "awaiting_payment": 0,
+      "payment_late": 0
     },
     "alert": {
       "key": "company-cash",
@@ -467,6 +469,8 @@
         "decision_id": "deal:OFF-f806f79b6c21",
         "invoice_id": null,
         "approval_id": null,
+        "after_group": null,
+        "after_group_label": null,
         "href": "/deals?customer=BUYER-1&decision=deal%3AOFF-f806f79b6c21"
       }
     ],
