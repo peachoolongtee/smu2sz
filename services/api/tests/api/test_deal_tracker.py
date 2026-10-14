@@ -723,23 +723,24 @@ def test_an_invoice_paid_before_the_cure_was_quoted_is_not_late_for_that_cure(ap
     assert after["cost"]["actual"]["amount_fen"] == before["cost"]["actual"]["amount_fen"]
 
 
-def test_the_expected_components_come_from_the_quote_and_the_plan_that_ran_shows_on_its_own_line(api: TestClient) -> None:
-    """Evaluated on day 0, agreed on day 1 without the state version: the plan that ran cost 81,527 against 84,157 quoted."""
+def test_the_expected_components_come_from_the_stored_facts_and_the_plan_that_ran_is_the_stored_one(api: TestClient, rt: Runtime) -> None:
+    """Evaluated on day 0, agreed on day 1 without the state version: the SENT fact stores the plan that was sent (81,527), and both expected
+    components are read from it, never from the live promises."""
     offer, did = _offer_evaluated(api)
     api.post("/clock/advance", json={"to_day": 1})
     assert api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"}).json()["outcome"] == "DEAL"
     d = _tracker(api, did)
+    supplier, plan = _stored_split(rt)
     terms, planned = d["cost"]["lines"]
-    assert terms["expected_fen"] == 218620 and planned["expected_fen"] == 84157 and d["cost"]["expected"]["amount_fen"] == 302777
-    assert planned["actual_fen"] == 81527 and planned["figure_fen"] == 81527 and d["cost"]["unmeasured_fen"] == 0
-    assert planned["actual_note_text"] == "The plan that ran cost ¥815.27 against ¥841.57 quoted."
+    assert (terms["expected_fen"], planned["expected_fen"]) == (supplier - plan, plan) and d["cost"]["expected"]["amount_fen"] == supplier == 302777
+    assert planned["actual_fen"] == planned["figure_fen"] == plan == 81527 and d["cost"]["unmeasured_fen"] == 0
     assert d["cost"]["actual"]["amount_fen"] == 81527 and d["agreed_text"] == "Agreed today"
     _check_sums(d)
 
 
 def test_a_send_after_a_receipt_on_the_invoice_is_closed(api: TestClient) -> None:
     # the path the verifier used (a receipt on the invoice, then a send without the version check) is closed: the offer has lapsed
-    offer, did = _offer_evaluated(api)
+    offer, _did = _offer_evaluated(api)
     assert _pay(api, "face", 1_000_000) == "EXECUTED"
     closed = api.post(f"/negotiate/{offer}", json={"buyer_profile": "cooperative"})
     assert closed.status_code == 409
@@ -779,3 +780,79 @@ def test_every_deal_state_dev_has_reads_without_an_error_and_is_available_only_w
         seen[row["state"]] = d["available"]
     assert "LAPSED" in seen and seen["LAPSED"] is False
     assert any(seen.get(k) for k in ("AGREED", "MISSED", "FULFILLED", "EXPIRED", "REVOKED")) and _tracker(api, agreed)["available"]
+
+
+def _stored_split(rt: Runtime) -> tuple[int, int]:
+    """(supplier cost, gap plan cost) as the SENT fact stored them."""
+    import json
+
+    sent = next(json.loads(f.body_json) for f in rt.store.decision_facts() if f.fact == "SENT")
+    return int(sent["counter_economics"]["supplier_cost_fen"]), int(sent["gap_plan"]["total_cost_fen"])
+
+
+def test_the_expected_columns_are_the_stored_facts_whatever_the_cash_does_afterwards(api: TestClient, rt: Runtime) -> None:
+    did = _agree(api)
+    supplier, plan = _stored_split(rt)
+    expected = lambda d: [(x["key"], x["expected_fen"]) for x in d["cost"]["lines"]]
+    before = _tracker(api, did)
+    assert expected(before) == [("terms", supplier - plan), ("planned_funding", plan)]
+    api.post("/clock/advance", json={"to_day": 1})
+    assert _pay(api, "part", 1_000_000) == "EXECUTED"  # a part early payment shrinks the reconciliation's current posted discount
+    after = _tracker(api, did)
+    assert expected(after) == expected(before) and after["cost"]["unmeasured_fen"] == 0
+    assert after["cost"]["expected"]["amount_fen"] == supplier
+    _check_sums(after)
+
+
+def test_a_revoked_agreement_keeps_its_split_and_says_the_terms_were_withdrawn(api: TestClient, rt: Runtime) -> None:
+    from app.domain.models import CommitmentStatus
+
+    did = _agree(api)
+    supplier, plan = _stored_split(rt)
+    first = rt.store.commitments()[0]
+    rt.store.put_commitment(first.model_copy(update={"status": CommitmentStatus.REVOKED}))
+    assert _pay(api, "all", 42_000_000) == "EXECUTED"
+    d = _tracker(api, did)
+    assert [x["expected_fen"] for x in d["cost"]["lines"]] == [supplier - plan, plan]
+    assert d["cost"]["unmeasured_fen"] == 0 and d["cost"]["actual"]["amount_fen"] == plan
+    assert d["closeout_text"] is not None and "withdrawn before the discount was given" in d["closeout_text"]
+    assert "never measured" not in d["closeout_text"] and _lines(d)["terms"]["actual_note_text"] == "The agreement was withdrawn before the discount was given."
+    zh = _tracker(api, did, "zh")
+    assert "撤回" in zh["closeout_text"]
+    _check_sums(d)
+
+
+def test_a_cure_quoted_while_the_buyer_was_late_counts_whether_it_is_approved_before_or_after_the_buyer_pays(api: TestClient) -> None:
+    did = _agree(api)
+    api.post("/clock/advance", json={"to_day": 2})
+    api.post("/demo/bank-receipt")
+    _to_day34(api)
+    approval = _cure(api)  # queued while the rest of the invoice is late
+    assert _pay(api, "rest", 16_280_000) == "EXECUTED"  # the buyer pays, then the owner approves
+    assert api.post(f"/approvals/{approval}", json={"decision": "APPROVE"}).json()["result"]["status"] == "EXECUTED"
+    d = _tracker(api, did)
+    f = _lines(d)["funding"]
+    assert (f["relation"], f["counted"], f["actual_fen"]) == ("after_late_payment", True, 178219)
+    assert d["cost"]["actual"]["amount_fen"] == 480996 and d["cost"]["difference_fen"] == 178219 == d["cost"]["related_fen"]
+    _check_sums(d)
+
+
+def test_the_unavailable_read_has_a_sentence_for_each_reason(api: TestClient) -> None:
+    offer, did = _offer_evaluated(api)
+    assert _tracker(api, did)["unavailable_text"] == "This deal has not been agreed yet, so there is nothing to track."
+    sent = api.post(f"/negotiate/{offer}", json={"buyer_profile": "hard_line"}).json()
+    assert sent["outcome"] == "NO_DEAL"
+    assert _tracker(api, did)["unavailable_text"] == "No deal was agreed on this offer, so there is nothing to track."
+    assert re.search(r"[\u4e00-\u9fff]", _tracker(api, did, "zh")["unavailable_text"])
+
+
+def test_a_lapsed_offer_and_a_funding_decision_have_their_own_sentences(api: TestClient) -> None:
+    assert api.post("/demo/reset", params={"scenario": "busy"}).status_code == 200
+    agree_on_rcv_a(api)
+    lapsed = [x for x in api.get("/decisions", params={"family": "DEAL", "limit": 200}).json()["decisions"] if x["state"] == "LAPSED"]
+    assert lapsed
+    assert _tracker(api, lapsed[0]["id"])["unavailable_text"] == "This offer lapsed before it was agreed, so there is nothing to track."
+    assert re.search(r"[\u4e00-\u9fff]", _tracker(api, lapsed[0]["id"], "zh")["unavailable_text"])
+    funding = [x for x in api.get("/decisions", params={"family": "FUNDING", "limit": 200}).json()["decisions"]]
+    if funding:
+        assert "funding decision" in _tracker(api, funding[0]["id"])["unavailable_text"]
