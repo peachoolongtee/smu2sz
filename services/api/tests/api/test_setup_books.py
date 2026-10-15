@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from app.api import setup as setup_api
 from app.api.runtime import get_runtime
 from app.mandate import verify_signature
 from app.mandate.fixture import demo_owner_public_key_hex
@@ -39,6 +40,28 @@ DRAFT: dict[str, Any] = {
               {"label": "Raw materials", "kind": "SUPPLIER", "amount": "180,000", "next_date": "2026-11-02", "repeats": "ONCE"}],
     "limits": {"min_cash": "300,000", "max_apr_pct": "15", "concession_cap": "5,000", "approval_above": "100,000", "valid_days": 90},
 }
+
+
+@pytest.fixture(autouse=True)
+def _today_is_fixed(monkeypatch):
+    """The start date is bounded against the server's today; the drafts below are written for mid-October 2026."""
+    import datetime
+
+    import app.setup as setup_mod
+
+    monkeypatch.setattr(setup_mod, "today", lambda: datetime.date(2026, 10, 15))
+
+
+@pytest.fixture(autouse=True)
+def _no_documents_left_over():
+    setup_api._setup_docs.clear()
+    yield
+    setup_api._setup_docs.clear()
+
+
+def blank(client) -> None:
+    """Setup opens only the blank books."""
+    assert client.post("/demo/reset?scenario=blank").status_code == 200
 
 
 def draft(**changes: Any) -> dict[str, Any]:
@@ -121,9 +144,18 @@ def test_a_monthly_loss_is_refused_not_hidden() -> None:
 # ---------------------------------------------------------------- the routes
 
 
-def test_status_names_the_demo_books(client) -> None:
+def test_status_names_the_demo_books_and_says_opening_waits_for_the_blank_books(client) -> None:
     body = client.get("/setup/status").json()
-    assert body["books"] == "demo" and body["can_open"] is True and body["opened"] is None
+    assert body["books"] == "demo" and body["can_open"] is False and body["opened"] is None
+    assert body["can_open_text"].startswith("Books are already open on this server")
+    zh = client.get("/setup/status?lang=zh").json()["can_open_text"]
+    assert zh.startswith("此服务器上已有开立的账簿")
+
+
+def test_status_on_the_blank_books_can_open(client) -> None:
+    client.post("/demo/reset?scenario=blank")
+    body = client.get("/setup/status").json()
+    assert body["books"] == "blank" and body["can_open"] is True and body["can_open_text"] is None
 
 
 def test_setup_routes_are_owner_only(client) -> None:
@@ -158,12 +190,14 @@ def test_open_needs_the_owner_password(client) -> None:
 
 
 def test_open_refuses_an_invalid_draft(client) -> None:
+    blank(client)
     r = client.post("/setup/open", json={"draft": draft(limits={}), "password": "demo-owner-token"})
     assert r.status_code == 422 and r.json()["detail"]["code"] == "SETUP_INVALID"
-    assert get_runtime().store.get_state().scenario == "golden_sme"
+    assert get_runtime().store.get_state().scenario == "blank"
 
 
 def test_open_replaces_the_books_and_starts_the_record(client) -> None:
+    blank(client)
     r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
     assert r.status_code == 200, r.text
     rt = get_runtime()
@@ -193,14 +227,18 @@ def test_a_contract_the_row_came_from_is_confirmed_under_the_new_customer(client
     assert row["contract"]["next_invoice_date"] >= "2026-10-14"
     assert supply["progress"]["sent"] >= 1 and all(i["sent_on"] < "2026-10-14" for i in row["invoices"])
     line = next(d for d in docs if d["kind"] == "LENDER_AGREEMENT" and d["row"]["kind"] == "CREDIT_LINE")
+    # Setup opens only the blank books, which hold no documents: the confirmed ones wait as documents read during setup.
+    kept = get_runtime().store.contract_records()
+    blank(client)
+    setup_api._setup_docs.update({rec.id: rec for rec in kept})
     d = draft()
     d["customers"][0]["contract"]["document_id"] = supply["document_id"]
     d["borrowing"][0]["document_id"] = line["document_id"]
     r = client.post("/setup/open", json={"draft": d, "password": "demo-owner-token"})
     assert r.status_code == 200 and len(r.json()["confirmed_documents"]) == 2
     rt = get_runtime()
-    records = {rec.counterparty_id: rec for rec in rt.store.contract_records()}
-    assert records["BUYER-1"].status.value == "CONFIRMED" and records["LENDER-1"].linked_facility_id == "FAC-1"
+    by_party = {rec.counterparty_id: rec for rec in rt.store.contract_records()}
+    assert by_party["BUYER-1"].status.value == "CONFIRMED" and by_party["LENDER-1"].linked_facility_id == "FAC-1"
     assert [o.kind for o in rt.store.operations()] == ["OPEN_BOOKS", "CONFIRM_DOCUMENT", "CONFIRM_DOCUMENT"]
     assert rt.store.verify_chain()
 
@@ -228,6 +266,7 @@ def test_blank_scenario_is_a_new_business(client) -> None:
 
 
 def _two_invoice_books(client) -> None:
+    blank(client)
     d = draft()
     d["customers"] = [{"name": "Foshan Home Retail Co.", "contract": {"amount": "420,000", "every_days": 30, "terms_days": 45,
                                                                         "next_invoice_date": "2026-11-02"},
@@ -256,3 +295,196 @@ def test_an_offer_naming_an_invoice_only_by_amount_says_which_invoices_it_could_
     assert "the one dated 18 Sep 2026 or the one dated 3 Oct 2026" in c["ask_buyer_text"]
     zh = client.get(f"/decisions/deal:{offer_id}?lang=zh").json()["evaluation"]["clarification"]
     assert "哪一张" in zh["text"] and "2026年9月18日" in zh["text"]
+
+
+# ---------------------------------------------------------------- opening replaces only the blank books
+
+
+def _counts() -> tuple[str, int, int, int]:
+    rt = get_runtime()
+    return (rt.store.get_state().model_dump_json(), len(rt.store.commitments()), len(rt.store.operations()),
+            len(rt.store.approvals()))
+
+
+def test_a_second_open_is_refused_and_nothing_changes(client) -> None:
+    blank(client)
+    first = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert first.status_code == 200, first.text
+    before = _counts()
+    again = client.post("/setup/open", json={"draft": draft(business={**DRAFT["business"], "cash": "1,000"}),
+                                             "password": "demo-owner-token"})
+    assert again.status_code == 409 and again.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert "reset to the blank books first" in again.json()["detail"]["message"]
+    zh = client.post("/setup/open?lang=zh", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert zh.status_code == 409 and "空白账簿" in zh.json()["detail"]["message"]
+    assert _counts() == before and before[2] == 1
+    assert get_runtime().store.verify_chain()
+
+
+def test_opening_over_the_golden_books_is_refused(client) -> None:
+    client.post("/demo/reset")
+    before = _counts()
+    assert before[2] > 0  # the golden books come with their documents confirmed
+    r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "BOOKS_ALREADY_OPEN"
+    assert _counts() == before and get_runtime().store.get_state().scenario == "golden_sme"
+
+
+def test_the_blank_books_stay_openable_after_a_restart(client) -> None:
+    blank(client)
+    rt = get_runtime()
+    rt.scenario = "golden_sme"  # a restarted process reads the scenario from the stored books, not from memory
+    rt.hydrate()
+    assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+
+
+def test_a_failure_while_opening_puts_the_blank_books_back(client, monkeypatch) -> None:
+    blank(client)
+    rt = get_runtime()
+
+    def boom(*a, **k):
+        raise RuntimeError("disk on fire /srv/secret/path")
+
+    monkeypatch.setattr(rt.store, "append_operation", boom)
+    r = client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert r.status_code == 500 and r.json()["detail"]["code"] == "SETUP_FAILED"
+    assert "nothing was opened" in r.json()["detail"]["message"] and "disk on fire" not in r.text
+    zh = client.post("/setup/open?lang=zh", json={"draft": DRAFT, "password": "demo-owner-token"})
+    assert zh.status_code == 500 and "空白账簿" in zh.json()["detail"]["message"]
+    monkeypatch.undo()
+    state = rt.store.get_state()
+    assert state.scenario == "blank" and state.cash_fen == 0 and rt.scenario == "blank" and rt.day == 0
+    assert rt.store.operations() == [] and rt.store.commitments() == [] and rt.store.verify_chain()
+    assert client.get("/setup/status").json()["books"] == "blank"
+    # and the books can still be opened afterwards
+    assert client.post("/setup/open", json={"draft": DRAFT, "password": "demo-owner-token"}).status_code == 200
+
+
+# ---------------------------------------------------------------- bounds on what is typed
+
+
+def _lim(**k: Any) -> dict:
+    return {"limits": {**DRAFT["limits"], **k}}
+
+
+def _biz(**k: Any) -> dict:
+    return {"business": {**DRAFT["business"], **k}}
+
+
+@pytest.mark.parametrize(("change", "path"), [
+    (_biz(cash="10,000,000,000,000.01"), "business.cash"),
+    (_biz(cash="9" * 400), "business.cash"),
+    (_lim(min_cash="20,000,000,000,000"), "limits.min_cash"),
+    (_lim(approval_above="10,000,000,000,000.01"), "limits.approval_above"),
+    (_lim(concession_cap="99,999,999,999,999,999"), "limits.concession_cap"),
+    ({"customers": [{"name": "X", "invoices": [{"sent_on": "2026-10-01", "amount": "90,000,000,000,000,000", "terms_days": 30}]}]},
+     "customers[0].invoices[0].amount"),
+    (_biz(start_date="2027-11-20"), "business.start_date"),
+    (_biz(start_date="2025-09-09"), "business.start_date"),
+    (_biz(start_date="9999-12-31"), "business.start_date"),
+    ({"customers": [{"name": "Foshan Home Retail"}, {"name": "  foshan   HOME retail "}]}, "customers[1].name"),
+    (_lim(min_dscr="0.00001"), "limits.min_dscr"),
+    (_lim(min_dscr="0.99"), "limits.min_dscr"),
+    (_lim(min_dscr="10.01"), "limits.min_dscr"),
+    (_lim(min_dscr="0"), "limits.min_dscr"),
+    (_lim(max_leverage="0.1"), "limits.max_leverage"),
+    (_lim(max_leverage="11"), "limits.max_leverage"),
+])
+def test_out_of_bounds_entries_are_errors_in_both_languages(change: dict, path: str) -> None:
+    built = build_books(SetupDraft.model_validate(draft(**change)))
+    assert built.state is None and built.mandate is None
+    hit = [e for e in built.errors if e.path == path]
+    assert hit and all(e.en and e.zh and e.zh != e.en for e in hit)
+
+
+@pytest.mark.parametrize("change", [
+    _biz(cash="10,000,000,000,000"), _biz(start_date="2027-11-19"), _biz(start_date="2025-09-10"),
+    _lim(min_dscr="1"), _lim(min_dscr="10"), _lim(max_leverage="0.5"), _lim(max_leverage="10"),
+])
+def test_the_edges_of_the_bounds_are_allowed(change: dict) -> None:
+    # (a start date moved to the edge leaves the other dates of this draft before it, so only the bound itself is checked)
+    errors = build_books(SetupDraft.model_validate(draft(**change))).errors
+    assert not [e for e in errors if e.path in ("business.start_date", "business.cash") or e.path.startswith("limits.")]
+
+
+def test_the_same_invoice_twice_is_a_warning_not_an_error() -> None:
+    twice = {"sent_on": "2026-10-01", "amount": "80,000", "terms_days": 30}
+    built = build_books(SetupDraft.model_validate(draft(customers=[{"name": "Customer B", "invoices": [twice, dict(twice)]}])))
+    assert built.errors == [] and built.state is not None and len(built.state.receivables) == 2
+    dup = [w for w in built.warnings if w.path == "customers[0].invoices[1]"]
+    assert dup and "same date" in dup[0].en and dup[0].zh
+    other = build_books(SetupDraft.model_validate(draft(customers=[
+        {"name": "Customer B", "invoices": [twice, {**twice, "amount": "80,001"}]}])))
+    assert not [w for w in other.warnings if "same date" in w.en]
+
+
+def test_a_far_bill_date_never_becomes_a_server_error(client) -> None:
+    bills = [{"label": "Rent", "kind": "RENT", "amount": "9,000", "next_date": "9999-12-31", "repeats": "MONTHLY"},
+             {"label": "Tax", "kind": "TAX", "amount": "9,000", "next_date": "2026-11-30", "repeats": "YEARLY", "until": "9999-12-31"}]
+    r = client.post("/setup/preview", json={"draft": draft(bills=bills)})
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert build_books(SetupDraft.model_validate(draft(bills=bills))).state is not None
+    assert not [f for f in build_books(SetupDraft.model_validate(draft(bills=bills))).state.flows if f.label == "Rent"]
+    far = client.post("/setup/preview", json={"draft": draft(**_biz(start_date="0001-01-01"))})
+    assert far.status_code == 200 and far.json()["ok"] is False
+
+
+# ---------------------------------------------------------------- who may use setup, and where
+
+
+SETUP_CALLS = [("get", "/setup/status", None), ("get", "/setup/documents", None),
+               ("post", "/setup/documents", {"kind": "BUYER_CONTRACT", "text": "Supply agreement"}),
+               ("post", "/setup/preview", {"draft": DRAFT}), ("post", "/setup/open", {"draft": DRAFT, "password": "demo-owner-token"})]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), SETUP_CALLS)
+@pytest.mark.parametrize("headers", [{"X-Agent-Key": "demo-agent-key"}, {"X-Bank-Feed-Key": "demo-bank-feed-key"},
+                                     {"X-Counterparty-Key": "demo-buyer-1-key"}, {}])
+def test_only_the_owner_reaches_setup(client, method: str, path: str, body: dict | None, headers: dict) -> None:
+    before = _counts()
+    r = client.request(method.upper(), path, json=body, headers={"X-Owner-Token": "", **headers})
+    assert r.status_code == 401, (path, r.text)
+    assert _counts() == before and setup_api._setup_docs == {}
+
+
+def test_without_demo_mode_open_and_documents_are_refused(client, monkeypatch) -> None:
+    blank(client)
+    monkeypatch.setenv("DEMO_MODE", "0")
+    monkeypatch.setenv("OWNER_TOKEN", "a-real-owner-token")
+    owner = {"X-Owner-Token": "a-real-owner-token"}
+    before = _counts()
+    text = "SUPPLY AGREEMENT between Acme Parts Co. (Supplier) and Delta Retail Co. (Buyer). The Buyer shall pay within thirty (30) days."
+    for r in (client.post("/setup/open", json={"draft": DRAFT, "password": "a-real-owner-token"}, headers=owner),
+              client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": text}, headers=owner),
+              client.get("/setup/documents", headers=owner)):
+        assert r.status_code == 403 and r.json()["detail"]["code"] == "SETUP_REFUSED"
+    assert _counts() == before and setup_api._setup_docs == {}
+    assert client.get("/setup/status", headers=owner).json()["can_open"] is False
+
+
+def test_setup_holds_at_most_ten_documents(client) -> None:
+    for i in range(setup_api.MAX_SETUP_DOCS):
+        text = (f"SUPPLY AGREEMENT {i} between Acme Parts Co. (Supplier) and Delta Retail {i} Co. (Buyer). "
+                "The Buyer shall pay each invoice within thirty (30) days of the invoice date.")
+        assert client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": text}).status_code == 200
+    assert len(setup_api._setup_docs) == setup_api.MAX_SETUP_DOCS
+    r = client.post("/setup/documents", json={"kind": "BUYER_CONTRACT", "text": "SUPPLY AGREEMENT one more, pay within 30 days."})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "SETUP_DOCUMENTS_FULL"
+    zh = client.post("/setup/documents?lang=zh", json={"kind": "BUYER_CONTRACT", "text": "SUPPLY AGREEMENT one more."})
+    assert zh.status_code == 409 and "份文件" in zh.json()["detail"]["message"]
+    assert len(setup_api._setup_docs) == setup_api.MAX_SETUP_DOCS
+
+
+def test_a_projection_failure_is_logged_not_shown(client, monkeypatch, caplog) -> None:
+    def boom(*a, **k):
+        raise RuntimeError("secret engine detail /srv/app/financial.py")
+
+    monkeypatch.setattr(setup_api, "_first_look", boom)
+    with caplog.at_level("ERROR"):
+        r = client.post("/setup/preview", json={"draft": DRAFT})
+        zh = client.post("/setup/preview?lang=zh", json={"draft": DRAFT})
+    assert r.status_code == 200 and r.json()["ok"] is False and r.json()["summary"] is None
+    assert r.json()["errors"][0]["text"] == "FLOW could not project these books. Check the figures you entered, then try again."
+    assert "无法对这些账簿做预测" in zh.json()["errors"][0]["text"]
+    assert "secret engine detail" not in r.text and "secret engine detail" not in zh.text
+    assert "secret engine detail" in caplog.text

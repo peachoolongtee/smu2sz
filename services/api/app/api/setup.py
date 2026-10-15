@@ -10,7 +10,7 @@
     POST /setup/preview             check the draft: the issues to fix, what to look at, the summary and a first forecast
     POST /setup/open                the owner signs the limits and opens the books: one OPEN_BOOKS entry starts the record
 
-Owner only. Opening replaces the books, so it is allowed where the demo reset is (DEMO_MODE, or the in-memory store), and the
+Owner only. Opening replaces the books, so it is allowed only on the blank books, and only where the demo reset is (DEMO_MODE, or the in-memory store), and the
 limits are signed with the demo owner key, which exists only there: a real deployment's owner signs with their own key, which
 this server never holds. The owner re-types their sign-in token to sign. Every number the page shows is computed here; the
 page computes nothing."""
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import date, timedelta
 from fractions import Fraction
 from typing import Any, Literal
@@ -46,12 +47,15 @@ from app.domain.money import fmt_pct, fmt_yuan
 from app.persistence import InMemoryLedgerStore
 from app.setup import Built, SetupDraft, build_books
 
+log = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(require_owner)])
 Lang = Literal["en", "zh"]
 
 OPEN_BOOKS_KIND = "OPEN_BOOKS"
 SETUP_COUNTERPARTY = "SETUP"
 FORECAST_DAYS = 90
+#: Documents the setup holds in memory at once; opening the books (or a restart) empties them.
+MAX_SETUP_DOCS = 10
 
 #: Documents read during setup, before their customer or lender exists: id -> record. In memory, like the other session caches.
 _setup_docs: dict[str, ContractRecord] = {}
@@ -77,6 +81,25 @@ def _pct_input(bp: int) -> str:
 
 def _can_open() -> bool:
     return demo_mode() or isinstance(get_runtime().store, InMemoryLedgerStore)
+
+
+def _refuse_unless_can_open(lg: Lang) -> None:
+    """Setup is for a server that may open books (the same check as `POST /setup/open`); elsewhere it holds nothing and reads nothing."""
+    if not (_can_open() and demo_mode()):
+        raise HTTPException(403, {"code": "SETUP_REFUSED", "message": t(
+            lg, "Setting up books from the app needs demo mode on this server; nothing was changed.",
+            "在此服务器上通过应用设置账簿需要演示模式；未做任何更改。")})
+
+
+def _books_are_blank() -> bool:
+    """The blank books are the only ones setup may replace. The scenario name is stored with the books, so this holds after a restart."""
+    return get_runtime().store.get_state().scenario == "blank"
+
+
+def _already_open(lg: Lang) -> HTTPException:
+    return HTTPException(409, {"code": "BOOKS_ALREADY_OPEN", "message": t(
+        lg, "Your books are already open, so nothing was changed. To start over, reset to the blank books first.",
+        "您的账簿已经开立，因此未做任何更改。如需重新开始，请先重置为空白账簿。")})
 
 
 def _opened_entry() -> dict | None:
@@ -121,12 +144,19 @@ def setup_status(lang: str = "en") -> dict:
     state = rt.store.get_state()
     opened = _opened_entry()
     books = "blank" if state.scenario == "blank" else ("own" if state.scenario is None else "demo")
-    can = _can_open() and demo_mode()
+    server_ok = _can_open() and demo_mode()
+    can = server_ok and books == "blank"  # opening replaces only the blank books (`POST /setup/open` refuses the rest)
+    if not server_ok:
+        why = t(lg, "Setting up books from the app needs demo mode on this server: a real deployment's owner signs the limits "
+                    "with their own key.", "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。")
+    elif not can:
+        why = t(lg, "Books are already open on this server, so opening new ones is off. To start over, reset to the blank "
+                    "books first.", "此服务器上已有开立的账簿，因此不能再开立新的账簿。如需重新开始，请先重置为空白账簿。")
+    else:
+        why = None
     out: dict[str, Any] = {
         "books": books, "scenario": state.scenario, "can_open": can,
-        "can_open_text": None if can else t(lg, "Setting up books from the app needs demo mode on this server: a real "
-                                                "deployment's owner signs the limits with their own key.",
-                                            "在此服务器上通过应用设置账簿需要演示模式：正式部署由业主用自己的密钥签署规则。"),
+        "can_open_text": why,
         "opened": None,
     }
     if books == "own" and opened:
@@ -248,6 +278,7 @@ def _parse_start(start_date: str | None) -> date | None:
 @router.get("/setup/documents")
 def setup_documents(start_date: str | None = None, lang: str = "en") -> dict:
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)
     start = _parse_start(start_date)
     return {"documents": [_doc_view(r, start, lg) for r in _usable_documents()]}
 
@@ -287,6 +318,11 @@ def read_setup_document(body: SetupDocumentIn, lang: str = "en") -> dict:
     from app.ingest import DocumentTooLarge, IngestError, extract_text
 
     lg = _lang(lang)
+    _refuse_unless_can_open(lg)
+    if len(_setup_docs) >= MAX_SETUP_DOCS:
+        raise HTTPException(409, {"code": "SETUP_DOCUMENTS_FULL", "message": t(
+            lg, f"FLOW is already holding {MAX_SETUP_DOCS} documents for your setup. Open your books, or fill a row from one "
+                "of them, before adding more.", f"FLOW 已为您的设置保存了 {MAX_SETUP_DOCS} 份文件。请先开立账簿，或用其中一份填写一行，再添加更多。")})
     if body.content_base64 is not None:
         if not body.filename:
             raise HTTPException(422, {"code": "FILENAME_REQUIRED", "message": t(lg, "An upload needs its file name.", "上传文件需要文件名。")})
@@ -422,10 +458,13 @@ def setup_preview(body: PreviewIn, lang: str = "en") -> dict:
     try:
         out["summary"] = _summary(built, body.draft, lg)
         out["first_look"] = _first_look(built, lg)
-    except Exception as e:  # noqa: BLE001  the engine refused these books: say so, never a 500
+    except Exception:  # noqa: BLE001  the engine refused these books: say so, never a 500
+        log.exception("setup: the preview could not project the draft")
         out["ok"] = False
-        out["errors"].append({"step": 6, "path": "", "text": t(lg, f"FLOW could not project these books: {e}",
-                                                               f"FLOW 无法对这些账簿做预测：{e}")})
+        out["summary"] = out["first_look"] = None
+        out["errors"].append({"step": 6, "path": "", "text": t(
+            lg, "FLOW could not project these books. Check the figures you entered, then try again.",
+            "FLOW 无法对这些账簿做预测。请检查您填写的数字，然后重试。")})
     return out
 
 
@@ -453,24 +492,29 @@ def _carry_documents(draft: SetupDraft, docs: dict[str, ContractRecord]) -> list
     return out
 
 
+def _restore_blank(rt: Any) -> None:
+    """After a failed open: the blank books again, never half-built ones."""
+    try:
+        rt.reset_demo("blank")
+    except Exception:  # noqa: BLE001  the caller still answers with the refusal; the log says what else went wrong
+        log.exception("setup: the blank books could not be put back after a failed open")
+
+
 @router.post("/setup/open")
 def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
-    from app.api.strategy_exposure import clear_cache as clear_exposure_cache
     from app.mandate import load_demo_owner_key, sign
-    from app.nl import reset_sessions
     from app.persistence.canonical import canonical_json
 
     lg = _lang(lang)
     rt = get_runtime()
-    if not (_can_open() and demo_mode()):
-        raise HTTPException(403, {"code": "SETUP_REFUSED", "message": t(
-            lg, "Setting up books from the app needs demo mode on this server; nothing was changed.",
-            "在此服务器上通过应用设置账簿需要演示模式；未做任何更改。")})
+    _refuse_unless_can_open(lg)
     if not is_owner(body.password):
         log_refusal(request, "setup: the signature's password did not match the owner token")
         raise HTTPException(403, {"code": "SIGNATURE_REFUSED", "message": t(
             lg, "That password does not match your sign-in, so nothing was signed or opened.",
             "密码与您的登录凭证不符，未签署也未开立任何内容。")})
+    if not _books_are_blank():
+        raise _already_open(lg)
     built = build_books(body.draft)
     if built.errors or built.state is None or built.mandate is None or built.start is None:
         raise HTTPException(422, {"code": "SETUP_INVALID", "message": t(lg, "Some entries need fixing first.", "部分内容需要先修改。"),
@@ -479,37 +523,44 @@ def setup_open(body: OpenIn, request: Request, lang: str = "en") -> dict:
     state = built.state
     company = (body.draft.business.company_name or "").strip()
     with rt.lock:
+        if not _books_are_blank():  # the books may have changed while the draft was being checked
+            raise _already_open(lg)
         carried = _carry_documents(body.draft, {r.id: r for r in _usable_documents()})
-        rt.store.reset()
-        rt.store.put_state(state)
-        rt.store.put_mandate(mandate)
-        rt.day, rt.scenario, rt.fresh = 0, "own", None
-        rt.latest_verdict.clear()
-        rt.documents.clear()
-        rt.intake_day, rt.intake_count = 0, 0
-        reset_sessions()
-        clear_exposure_cache()
-        op_id = f"open-books-{state.as_of}"
-        digest = hashlib.sha256(state.model_dump_json().encode() + mandate.model_dump_json().encode()).hexdigest()
-        payload = {"kind": OPEN_BOOKS_KIND, "op_id": op_id, "requested_by": Actor.OWNER.value, "day": 0,
-                   "company_name": company, "start_date": state.as_of, "cash_fen": state.cash_fen,
-                   "facilities": len(state.facilities), "debts": len(state.debts), "receivables": len(state.receivables),
-                   "recurring_invoices": len(state.recurring_invoices), "flows": len(state.flows),
-                   "mandate_version": mandate.version, "books_sha256": digest}
-        words = open_books_words(payload, "en")
-        msg = f"{words['event_text']} {words['event_detail']}"
-        result = OperationResult(op_id=op_id, kind=OPEN_BOOKS_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,
-                                 effective_day=0, message=msg)
-        rec = rt.store.append_operation(op_id, OPEN_BOOKS_KIND, op_id, canonical_json(payload), canonical_json(result))
-        confirmed = []
-        for doc, facility in carried:
-            fresh = doc.model_copy(update={"status": DocumentStatus.PROPOSED, "decided_day": None, "decided_seq": None,
-                                           "uploaded_day": 0, "suggested_facility_id": None, "linked_facility_id": None,
-                                           "superseded_by": None})
-            rid = rt.store.add_contract_record(fresh)
-            res = rt.executor.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=fresh.doc_hash, link_facility_id=facility)
-            if res.status == OperationStatus.EXECUTED:
-                confirmed.append(rid)
+        try:
+            rt.store.reset()
+            with rt.store.transaction():  # the new books, their first entry and the documents land together or not at all
+                rt.store.put_state(state)
+                rt.store.put_mandate(mandate)
+                rt.day, rt.scenario, rt.fresh = 0, "own", None
+                op_id = f"open-books-{state.as_of}"
+                digest = hashlib.sha256(state.model_dump_json().encode() + mandate.model_dump_json().encode()).hexdigest()
+                payload = {"kind": OPEN_BOOKS_KIND, "op_id": op_id, "requested_by": Actor.OWNER.value, "day": 0,
+                           "company_name": company, "start_date": state.as_of, "cash_fen": state.cash_fen,
+                           "facilities": len(state.facilities), "debts": len(state.debts), "receivables": len(state.receivables),
+                           "recurring_invoices": len(state.recurring_invoices), "flows": len(state.flows),
+                           "mandate_version": mandate.version, "books_sha256": digest}
+                words = open_books_words(payload, "en")
+                msg = f"{words['event_text']} {words['event_detail']}"
+                result = OperationResult(op_id=op_id, kind=OPEN_BOOKS_KIND, status=OperationStatus.EXECUTED, tier=Tier.TIER_2,
+                                         effective_day=0, message=msg)
+                rec = rt.store.append_operation(op_id, OPEN_BOOKS_KIND, op_id, canonical_json(payload), canonical_json(result))
+                confirmed = []
+                for doc, facility in carried:
+                    fresh = doc.model_copy(update={"status": DocumentStatus.PROPOSED, "decided_day": None, "decided_seq": None,
+                                                   "uploaded_day": 0, "suggested_facility_id": None, "linked_facility_id": None,
+                                                   "superseded_by": None})
+                    rid = rt.store.add_contract_record(fresh)
+                    res = rt.executor.decide_document(rid, Actor.OWNER, confirm=True, doc_hash=fresh.doc_hash,
+                                                      link_facility_id=facility)
+                    if res.status == OperationStatus.EXECUTED:
+                        confirmed.append(rid)
+        except Exception:
+            log.exception("setup: opening the books failed; putting the blank books back")
+            _restore_blank(rt)
+            raise HTTPException(500, {"code": "SETUP_FAILED", "message": t(
+                lg, "FLOW could not open your books, so nothing was opened and you are back at the blank books. "
+                    "Please try again.", "FLOW 无法开立您的账簿，因此未开立任何内容，已回到空白账簿。请重试。")}) from None
+        rt.clear_session_caches()
         _setup_docs.clear()
     return {"ok": True, "seq": rec.seq, "entry_hash": rec.entry_hash, "confirmed_documents": confirmed,
             "text": t(lg, "Your books are open. Home now answers from your own figures.", "账簿已开立。首页现在根据您自己的数据作答。")}
