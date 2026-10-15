@@ -386,7 +386,7 @@ test.describe("live", () => {
     await expect(page.getByText(/Settle only part of RCV/)).toHaveCount(0);
     // The assumption the sandbox runs on and the negotiation's own figure stand under the subject, as the server sent them; the cash word is the server's, not derived from a breach day.
     await expect(page.getByTestId("whatif-scope-text")).toContainText(/^The sandbox applies the terms to every Zhuhai invoice for the next 12 months, not only the next one; the negotiation itself asks for one invoice\.$/);
-    await expect(page.getByTestId("whatif-compare")).toContainText(/^The negotiation as asked: .*(within|over) your limit\.$/);
+    await expect(page.getByTestId("whatif-compare")).toContainText(/^The negotiation if you accept their request: .*(within|over) your limit\.$/);
     await expect(page.getByTestId("whatif-cash-fig")).toHaveText(/^(Stays above it|Below it for \d+ days?)$/);
     // Another buyer, another invoice.
     await page.goto(run("OFF-4f6bf9834d4d", "BUYER-1"));

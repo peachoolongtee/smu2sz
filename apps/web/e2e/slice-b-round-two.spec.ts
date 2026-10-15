@@ -147,7 +147,8 @@ test.describe("live", () => {
     // The request breaches the reserve: its cash outcome says so in the comparison; the terms say the difference of the period.
     await expect(page.getByTestId("deal-choice-cell-terms-asked")).toContainText("days", { timeout: 45_000 });
     await expect(page.getByTestId("deal-choice-cell-lowest-asked")).toContainText(/Breached by/);
-    await page.getByTestId("deal-tab-overview").click();
+    // The choices table is the Overview (the redesign): the Overview link shows only from another section.
+    if (await page.getByTestId("deal-tab-overview").count()) await page.getByTestId("deal-tab-overview").click();
     await page.getByTestId("deal-selected-customer").click();
     await expect(page.getByTestId("customer-relationship")).toContainText("Foshan contributes an estimated");
     await expect(page.getByTestId("customer-decision-heading")).toContainText("60-day terms");

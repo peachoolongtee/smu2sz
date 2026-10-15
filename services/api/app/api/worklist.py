@@ -760,7 +760,7 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
 
     # One row per agreed deal: a promise folds into its deal's AGREEMENT row (its words join the row's consequence); a promise whose deal has no
     # AGREEMENT row of its own stays a row, so no promise is lost
-    hosts = [item(r, AGREEMENTS_TIER) for r in _agreement_rows(ctx, lang)]
+    hosts = [{**item(r, AGREEMENTS_TIER), "promises": []} for r in _agreement_rows(ctx, lang)]  # `promises`: the folded promises' own status words
     by_decision = {r["decision_id"]: r for r in hosts}
     loose = []
     for w in promises:
@@ -770,6 +770,7 @@ def _queue(ctx: Context, lang: Lang, needs: list[Row], waiting: list[dict[str, A
         if host is None or p is None or host["lifecycle"] == "closed":
             loose.append(row)
             continue
+        host["promises"].append({"status_text": w["status_text"], "invoice_id": row["invoice_id"], "expected_day": w.get("expected_day")})
         said = _promise_said(p, ctx.today, lang)
         had = str(host["consequence_text"] or "").rstrip()
         if had and had[-1] not in ".。":

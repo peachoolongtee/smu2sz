@@ -270,9 +270,9 @@ def _queue_parts(ctx: NlContext, who: str, rows: list[dict[str, Any]]) -> list[s
     elif clarifying:
         parts.append(t(ctx, f"FLOW is waiting for {who}'s clarification on {len(clarifying)} offers",
                        f"FLOW 正在等待{who}就 {len(clarifying)} 项报价作出澄清"))
-    for r in rows:
-        if r["kind"] == "PROMISE":
-            status = _lower_first(str(r.get("status_text") or "")).replace(" · ", "，" if zh else ", ")
+    for r in rows:  # a promise is a row of its own only when no agreement carries it; otherwise it is on its agreement's row (`promises`)
+        for said in ([r] if r["kind"] == "PROMISE" else r.get("promises") or []):
+            status = _lower_first(str(said.get("status_text") or "")).replace(" · ", "，" if zh else ", ")
             parts.append(t(ctx, f"{who}'s promised payment is {status}", f"{who}承诺的付款：{status}"))
     return parts
 
@@ -289,7 +289,7 @@ def waiting(ctx: NlContext) -> Turn:
     r = h.get("receivables") or {}
     zh = ctx.lang == "zh"
     rows = [x for tier in ("needs_you", "waiting", "agreements") for x in q.get(tier) or []
-            if x["kind"] in ("DECISION", "SETUP", "BUYER_REPLY", "PROMISE") and _queue_mine(ctx, x)]
+            if x["kind"] in ("DECISION", "SETUP", "BUYER_REPLY", "PROMISE", "AGREEMENT") and _queue_mine(ctx, x)]
     by_customer: dict[str, list[dict[str, Any]]] = {}
     for x in rows:
         by_customer.setdefault(str(x["customer_id"]), []).append(x)
