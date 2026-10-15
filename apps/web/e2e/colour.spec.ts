@@ -65,13 +65,21 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
       };
       const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
       const lum = ([r, g, b]: number[]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-      const ground = lum(rgb(getComputedStyle(card).backgroundColor));
+      // The ground of a text is the nearest solid fill under it (the card's tint, or a button's own fill).
+      const groundOf = (el: Element) => {
+        for (let n: Element | null = el; n; n = n.parentElement) {
+          const b = getComputedStyle(n).backgroundColor;
+          if (b !== "rgba(0, 0, 0, 0)" && b !== "transparent") return lum(rgb(b));
+        }
+        return lum(rgb(getComputedStyle(card).backgroundColor));
+      };
       let min = 21;
       for (const el of Array.from(card.querySelectorAll("*"))) {
         if (![...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? "").trim())) continue;
         // The alarm strip is white on the solid risk red, not on the tint.
         if (el.closest('[data-testid="hv2-alarm"]')) continue;
         const fg = lum(rgb(getComputedStyle(el).color));
+        const ground = groundOf(el);
         min = Math.min(min, (Math.max(fg, ground) + 0.05) / (Math.min(fg, ground) + 0.05));
       }
       return min;
@@ -82,7 +90,7 @@ test("the Home headline sits on the canvas with no card; the planned pill meets 
   expect(await bar.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe("none");
   expect(await bar.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe("24px");
   expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow)).toContain("rgba(0, 0, 0, 0.08) 0px 1px 2px -1px");
-  expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5);
+  if (!alarm) expect(contrast(await color(page.getByTestId("home-action-text")), fill)).toBeGreaterThan(4.5); // on the alarm tint every text is measured above
   expect(await color(page.getByTestId("home-kpi-lowest-value"))).toBe("rgb(168, 50, 34)");
   expect(contrast(await color(page.getByTestId("home-kpi-lowest-value")), PANEL)).toBeGreaterThan(4.5);
   // The one filled button is the ink primary with white text.
@@ -100,7 +108,8 @@ test("one filled brand button per Business page, no gradient anywhere, the deep 
   for (const [path, expected, loaded] of [
     ["/", 1, "[data-testid=home-next-action]"],
     ["/cash", 1, "[data-testid=cash-forecast]"],
-    ["/receivables", 1, "[data-testid=recv3-page]"], // the one primary is "Explore the cash impact"
+    ["/receivables", 0, "[data-testid=recv3-page]"], // the customers' list has no primary
+    ["/receivables?customer=BUYER-1", 1, "[data-testid=recv3-page]"], // a customer's page: the one primary is "Explore the cash impact"
     ["/activity", 0, "#activity-timeline"],
   ] as const) {
     await page.goto(path);

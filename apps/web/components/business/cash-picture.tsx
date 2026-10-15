@@ -584,7 +584,11 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
 
       {/* A phone reads the numbered moves as a list (the markers are too close to touch one by one): the number, what moved, the amount and when. */}
       {phone && moves.length ? (
-        <ol className="space-y-1.5 text-supporting text-ink-2" data-testid="picture-moves">
+        <details className="group" data-testid="picture-moves-fold">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+            {t("biz.forecast.col.events")} ({moves.length})
+          </summary>
+        <ol className="mt-1 space-y-1.5 text-supporting text-ink-2" data-testid="picture-moves">
           {moves.map((m) => (
             <li key={m.day} className="flex min-h-11 items-center gap-3 rounded-tile bg-subtle px-3 py-1.5" data-testid="picture-move" data-day={m.day}>
               <span aria-hidden className={`grid size-6 shrink-0 place-items-center rounded-pill border-2 text-supporting font-bold leading-none tabular-nums ${m.neg ? "border-bad-solid text-bad-fg" : "border-ok-solid text-ok-fg"}`}>
@@ -597,6 +601,7 @@ export function CashPicture({ baseline, alternative, baselineLabel, alternativeL
             </li>
           ))}
         </ol>
+        </details>
       ) : null}
 
       {/* The same picture as a table, for a screen reader and anyone who prefers numbers: the labelled days, in the server's figures. */}

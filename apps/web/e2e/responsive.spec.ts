@@ -185,6 +185,8 @@ test("a phone's controls reach 44 px (the pill itself may stay compact: its hit 
       const markers = await page.locator('[data-testid^="picture-marker-"]').count();
       const rows = page.getByTestId("picture-move");
       expect(markers).toBeGreaterThan(0);
+      await page.getByTestId("picture-moves-fold").locator("summary").click(); // the list is a fold: its summary is a 44 px target too
+      expect((await page.getByTestId("picture-moves-fold").locator("summary").boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await expect(rows).toHaveCount(markers);
       for (const row of await rows.all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
